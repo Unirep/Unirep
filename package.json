@@ -1,0 +1,41 @@
+{
+    "name": "unirep",
+    "version": "0.0.1",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "tsdx test",
+        "lint": "tsdx lint"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/NIC619/UniRep.git"
+    },
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/NIC619/UniRep/issues"
+    },
+    "homepage": "https://github.com/NIC619/UniRep#readme",
+    "devDependencies": {
+        "@nomiclabs/buidler": "^1.3.8",
+        "@nomiclabs/buidler-ethers": "^2.0.0",
+        "@nomiclabs/buidler-waffle": "^2.0.0",
+        "@types/chai": "^4.2.11",
+        "@types/mocha": "^7.0.2",
+        "@types/node": "^14.0.20",
+        "chai": "^4.2.0",
+        "ethereum-waffle": "^3.0.1",
+        "ethers": "^5.0.5",
+        "ts-node": "^8.10.2",
+        "tsdx": "^0.13.1",
+        "typescript": "^3.9.6"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^2.4.0",
+        "circom": "0.0.34",
+        "circomlib": "git+https://github.com/ChihChengLiang/circomlib.git#e39ff9c27a5bc4eca5c00908ccb26496c37fce63",
+        "snarkjs": "git+https://github.com/weijiekoh/snarkjs.git#52e0ceba0256bc9bf94cbc9500139dfc37018f91",
+        "truffle-artifactor": "^4.0.30"
+    }
+}
