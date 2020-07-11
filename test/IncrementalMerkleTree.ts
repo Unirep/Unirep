@@ -1,9 +1,10 @@
 import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
-import { deployContract, link, solidity } from "ethereum-waffle"
+import { deployContract, solidity } from "ethereum-waffle"
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { IncrementalQuinTree } from '../crypto/IncrementalQuinTree'
+import { linkLibrary } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -11,10 +12,11 @@ const { expect } = chai
 import ComputeRoot from "../artifacts/ComputeRoot.json"
 import IncrementalMerkleTree from "../artifacts/IncrementalMerkleTree.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
+import PoseidonT6 from "../artifacts/PoseidonT6.json"
 
 let mtContract
 let crContract
-let PoseidonT3Contract
+let PoseidonT3Contract, PoseidonT6Contract
 
 const DEPTH = 32
 
@@ -24,22 +26,21 @@ describe('IncrementalMerkleTree', () => {
         let accounts: Signer[]
         accounts = await ethers.getSigners()
 
-        console.log('Deploying PoseidonT3Contract')
+        console.log('Deploying PoseidonT3C')
         PoseidonT3Contract = (await deployContract(
             <Wallet>accounts[0],
             PoseidonT3
         ))
+        console.log('Deploying PoseidonT6')
+        PoseidonT6Contract = (await deployContract(
+            <Wallet>accounts[0],
+            PoseidonT6
+        ))
 
         // Link the IncrementalMerkleTree contract to PoseidonT3 contract
-        let linkableContract = {
-            evm: {
-                bytecode: {
-                    object: IncrementalMerkleTree.bytecode,
-                }
-            }
-        }
-        link(linkableContract, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address);
-        IncrementalMerkleTree.bytecode = linkableContract.evm.bytecode.object
+        linkLibrary(IncrementalMerkleTree, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
+        // Link the IncrementalMerkleTree contract to PoseidonT6 contract
+        linkLibrary(IncrementalMerkleTree, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
 
         console.log('Deploying IncrementalMerkleTree')
         mtContract = (await deployContract(
@@ -51,16 +52,11 @@ describe('IncrementalMerkleTree', () => {
             ]
         ))
 
-        // Link the IncrementalMerkleTree contract to PoseidonT3 contract
-        linkableContract = {
-            evm: {
-                bytecode: {
-                    object: ComputeRoot.bytecode,
-                }
-            }
-        }
-        link(linkableContract, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address);
-        ComputeRoot.bytecode = linkableContract.evm.bytecode.object
+        // Link the ComputeRoot contract to PoseidonT3 contract
+        linkLibrary(ComputeRoot, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
+        // Link the ComputeRoot contract to PoseidonT6 contract
+        linkLibrary(ComputeRoot, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
+
         console.log('Deploying ComputeRoot')
         crContract = (await deployContract(
             <Wallet>accounts[0],
@@ -81,7 +77,6 @@ describe('IncrementalMerkleTree', () => {
     })
 
     it('the on-chain root should match an off-chain root after various insertions', async () => {
-        // expect.assertions(8)
         for (let i = 0; i < 8; i++) {
             const leaf = genRandomSalt()
 

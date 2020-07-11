@@ -115,6 +115,7 @@ export {
     NOTHING_UP_MY_SLEEVE,
     PoseidonParams,
     POSEIDON_T3_PARAMS,
+    POSEIDON_T6_PARAMS,
     SnarkBigInt,
     bigInt,
     genRandomSalt,

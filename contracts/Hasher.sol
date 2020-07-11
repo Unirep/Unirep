@@ -7,12 +7,16 @@
 
 pragma solidity ^0.5.0;
 
-import {PoseidonT3} from "./Poseidon.sol";
+import {PoseidonT3, PoseidonT6} from "./Poseidon.sol";
 
 import {SnarkConstants} from "./SnarkConstants.sol";
 
 
 contract Hasher is SnarkConstants {
+    function hash5(uint256[] memory array) public pure returns (uint256) {
+        return PoseidonT6.poseidon(array);
+    }
+
     function hashLeftRight(uint256 _left, uint256 _right)
         public
         pure

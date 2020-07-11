@@ -1,6 +1,6 @@
 const Artifactor = require("truffle-artifactor");
 
-import {PoseidonParams, POSEIDON_T3_PARAMS} from '../crypto/crypto'
+import {PoseidonParams, POSEIDON_T3_PARAMS, POSEIDON_T6_PARAMS} from '../crypto/crypto'
 
 const poseidonGenContract = require('circomlib/src/poseidon_gencontract.js')
 const artifactor = new Artifactor('artifacts/')
@@ -17,8 +17,17 @@ const buildPoseidonT3 = async () => {
   })
 }
 
-if (require.main === module) {
-  buildPoseidonT3()
+const buildPoseidonT6 = async () => {
+  await artifactor.save({
+    contractName: 'PoseidonT6',
+    abi: poseidonGenContract.abi,
+    unlinked_binary: poseidonCreateCode(POSEIDON_T6_PARAMS)
+  })
 }
 
-export { buildPoseidonT3 }
+if (require.main === module) {
+  buildPoseidonT3()
+  buildPoseidonT6()
+}
+
+export { buildPoseidonT3, buildPoseidonT6 }
