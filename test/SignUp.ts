@@ -73,4 +73,36 @@ describe('IncrementalMerkleTree', () => {
         expect(globalStateTreeDepth.toString()).equal(treeDepths_.globalStateTreeDepth.toString())
         expect(userStateTreeDepth.toString()).equal(treeDepths_.userStateTreeDepth.toString())
     })
+
+    describe('Sign-ups', () => {
+
+        it('initial global state GSTree should have the correct root', async () => {
+            const root1 = await unirepContract.getStateTreeRoot()
+            expect(GSTree.root.toString()).equal(root1.toString())
+        })
+
+        it('sign up should succeed', async () => {
+            const id = genIdentity()
+            const commitment = genIdentityCommitment(id)
+
+            const tx = await unirepContract.userSignUp(commitment)
+            const receipt = await tx.wait()
+
+            expect(receipt.status).equal(1)
+
+            const numUserSignUps_ = await unirepContract.numUserSignUps()
+            expect((1).toString()).equal(numUserSignUps_.toString())
+
+            const emptyUserStateRoot_ = await unirepContract.emptyUserStateRoot()
+            const hashedStateLeaf = await unirepContract.hashStateLeaf(
+                [
+                    commitment.toString(),
+                    emptyUserStateRoot_.toString()
+                ]
+            )
+            GSTree.insert(hashedStateLeaf)
+            const root1 = await unirepContract.getStateTreeRoot()
+            expect(GSTree.root.toString()).equal(root1.toString())
+        })
+    })
 })
