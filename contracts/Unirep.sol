@@ -63,4 +63,46 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         // Create the state tree
         stateTree = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
     }
+
+    /*
+     * User signs up by providing an identity commitment. It also inserts a fresh state
+     * leaf into the state tree.
+     * @param _identityCommitment Commitment of the user's identity which is a semaphore identity.
+     */
+    function userSignUp(uint256 _identityCommitment) public {
+        require(hasUserSignedUp[_identityCommitment] == false, "Unirep: the user has already signed up");
+        require(numUserSignUps < maxUsers, "Unirep: maximum number of signups reached");
+
+        // Create, hash, and insert a fresh state leaf
+        StateLeaf memory stateLeaf = StateLeaf({
+            identityCommitment: _identityCommitment,
+            userStateRoot: emptyUserStateRoot
+        });
+
+        uint256 hashedLeaf = hashStateLeaf(stateLeaf);
+
+        stateTree.insertLeaf(hashedLeaf);
+
+        hasUserSignedUp[_identityCommitment] = true;
+        numUserSignUps ++;
+
+        emit UserSignUp(currentEpoch, _identityCommitment, hashedLeaf);
+    }
+    
+    function hashedBlankStateLeaf() public view returns (uint256) {
+        StateLeaf memory stateLeaf = StateLeaf({
+            identityCommitment: 0,
+            userStateRoot: emptyUserStateRoot
+        });
+
+        return hashStateLeaf(stateLeaf);
+    }
+
+    function calcEmptyUserStateTreeRoot(uint8 _levels) public pure returns (uint256) {
+        return computeEmptyRoot(_levels, 0);
+    }
+
+    function getStateTreeRoot() public view returns (uint256) {
+        return stateTree.root();
+    }
 }
