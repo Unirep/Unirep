@@ -1,5 +1,5 @@
 import { ethers } from "@nomiclabs/buidler"
-import { Signer, Wallet } from "ethers"
+import { Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
 import { globalStateTreeDepth, userStateTreeDepth, maxUsers} from '../config/testLocal'
@@ -74,7 +74,7 @@ describe('IncrementalMerkleTree', () => {
         expect(userStateTreeDepth.toString()).equal(treeDepths_.userStateTreeDepth.toString())
     })
 
-    describe('Sign-ups', () => {
+    describe('User sign-ups', () => {
         const id = genIdentity()
         const commitment = genIdentityCommitment(id)
 
@@ -105,11 +105,8 @@ describe('IncrementalMerkleTree', () => {
         })
 
         it('double sign up should fail', async () => {
-            try {
-                await unirepContract.userSignUp(commitment)
-            } catch (e) {
-                expect(e.message.endsWith('Unirep: the user has already signed up')).to.be.true
-            }
+            await expect(unirepContract.userSignUp(commitment))
+                .to.be.revertedWith('Unirep: the user has already signed up')
         })
 
         it('sign up should fail if max capacity reached', async () => {
@@ -120,13 +117,33 @@ describe('IncrementalMerkleTree', () => {
                 let receipt = await tx.wait()
                 expect(receipt.status).equal(1)
             }
-            try {
-                await unirepContract.userSignUp(
-                    genIdentityCommitment(genIdentity())
-                )
-            } catch (e) {
-                expect(e.message.endsWith('Unirep: maximum number of signups reached')).to.be.true
-            }
+            await expect(unirepContract.userSignUp(genIdentityCommitment(genIdentity())))
+                .to.be.revertedWith('Unirep: maximum number of signups reached')
+        })
+    })
+
+    describe('Attester sign-ups', () => {
+        let attester
+        let unirepContractCalledByAttester
+
+        it('sign up should succeed', async () => {
+            attester = accounts[1]
+            unirepContractCalledByAttester = new Contract(unirepContract.address, Unirep.abi, attester)
+            const tx = await unirepContractCalledByAttester.attesterSignUp()
+            const receipt = await tx.wait()
+
+            expect(receipt.status).equal(1)
+
+            const attesterId = await unirepContract.attesters(await attester.getAddress())
+            expect((1).toString()).equal(attesterId.toString())
+            const nextAttesterId_ = await unirepContract.nextAttesterId()
+            // nextAttesterId starts with 1 so now it should be 2
+            expect((2).toString()).equal(nextAttesterId_.toString())
+        })
+
+        it('double sign up should fail', async () => {
+            await expect(unirepContractCalledByAttester.attesterSignUp())
+                .to.be.revertedWith('Unirep: attester has already signed up')
         })
     })
 })
