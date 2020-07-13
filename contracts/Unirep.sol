@@ -17,7 +17,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     uint256 public currentEpoch = 0;
 
     // The tree that tracks each user's public key and votes
-    IncrementalMerkleTree public stateTree;
+    IncrementalMerkleTree public globalStateTree;
 
     // To store the Merkle root of a tree with 2 **
     // treeDepths.userStateTreeDepth leaves of value 0
@@ -29,6 +29,13 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     uint256 public numUserSignUps = 0;
 
     mapping(uint256 => bool) public hasUserSignedUp;
+
+    // A mapping between each attesters’ Ethereum address and their attester ID.
+    // Attester IDs are incremental and start from 1.
+    // No attesters with and ID of 0 should exist.
+    mapping(address => uint256) public attesters;
+
+    uint256 public nextAttesterId = 1;
 
     TreeDepths public treeDepths;
 
@@ -42,7 +49,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     constructor(
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues
-    ) Ownable() public {
+    ) public Ownable() {
 
         treeDepths = _treeDepths;
 
@@ -61,7 +68,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         uint256 h = hashedBlankStateLeaf();
 
         // Create the state tree
-        stateTree = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
+        globalStateTree = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
     }
 
     /*
@@ -81,14 +88,21 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         uint256 hashedLeaf = hashStateLeaf(stateLeaf);
 
-        stateTree.insertLeaf(hashedLeaf);
+        globalStateTree.insertLeaf(hashedLeaf);
 
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
 
         emit UserSignUp(currentEpoch, _identityCommitment, hashedLeaf);
     }
-    
+
+    function attesterSignUp() public payable {
+        require(attesters[msg.sender] == 0, "Unirep: attester has already signed up");
+
+        attesters[msg.sender] = nextAttesterId;
+        nextAttesterId ++;
+    }
+
     function hashedBlankStateLeaf() public view returns (uint256) {
         StateLeaf memory stateLeaf = StateLeaf({
             identityCommitment: 0,
@@ -103,6 +117,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function getStateTreeRoot() public view returns (uint256) {
-        return stateTree.root();
+        return globalStateTree.root();
     }
 }
