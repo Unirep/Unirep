@@ -1,5 +1,5 @@
 import { ethers } from "@nomiclabs/buidler"
-import { Contract, Signer, Wallet } from "ethers"
+import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
 import { globalStateTreeDepth, userStateTreeDepth, maxUsers} from '../config/testLocal'
@@ -128,7 +128,7 @@ describe('IncrementalMerkleTree', () => {
 
         it('sign up should succeed', async () => {
             attester = accounts[1]
-            unirepContractCalledByAttester = new Contract(unirepContract.address, Unirep.abi, attester)
+            unirepContractCalledByAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attester)
             const tx = await unirepContractCalledByAttester.attesterSignUp()
             const receipt = await tx.wait()
 

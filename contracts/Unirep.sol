@@ -96,7 +96,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         emit UserSignUp(currentEpoch, _identityCommitment, hashedLeaf);
     }
 
-    function attesterSignUp() public payable {
+    function attesterSignUp() public {
         require(attesters[msg.sender] == 0, "Unirep: attester has already signed up");
 
         attesters[msg.sender] = nextAttesterId;
