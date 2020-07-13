@@ -75,6 +75,8 @@ describe('IncrementalMerkleTree', () => {
     })
 
     describe('Sign-ups', () => {
+        const id = genIdentity()
+        const commitment = genIdentityCommitment(id)
 
         it('initial global state GSTree should have the correct root', async () => {
             const root1 = await unirepContract.getStateTreeRoot()
@@ -82,9 +84,6 @@ describe('IncrementalMerkleTree', () => {
         })
 
         it('sign up should succeed', async () => {
-            const id = genIdentity()
-            const commitment = genIdentityCommitment(id)
-
             const tx = await unirepContract.userSignUp(commitment)
             const receipt = await tx.wait()
 
@@ -103,6 +102,31 @@ describe('IncrementalMerkleTree', () => {
             GSTree.insert(hashedStateLeaf)
             const root1 = await unirepContract.getStateTreeRoot()
             expect(GSTree.root.toString()).equal(root1.toString())
+        })
+
+        it('double sign up should fail', async () => {
+            try {
+                await unirepContract.userSignUp(commitment)
+            } catch (e) {
+                expect(e.message.endsWith('Unirep: the user has already signed up')).to.be.true
+            }
+        })
+
+        it('sign up should fail if max capacity reached', async () => {
+            for (let i = 1; i < maxUsers; i++) {
+                let tx = await unirepContract.userSignUp(
+                    genIdentityCommitment(genIdentity())
+                )
+                let receipt = await tx.wait()
+                expect(receipt.status).equal(1)
+            }
+            try {
+                await unirepContract.userSignUp(
+                    genIdentityCommitment(genIdentity())
+                )
+            } catch (e) {
+                expect(e.message.endsWith('Unirep: maximum number of signups reached')).to.be.true
+            }
         })
     })
 })
