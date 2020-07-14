@@ -103,6 +103,27 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
+    function attesterSignUpViaRelayer(address attester, uint8 v, bytes32 r, bytes32 s) public {
+        require(attesters[attester] == 0, "Unirep: attester has already signed up");
+
+        // Attester signs over it's own address concatenated with this contract address
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(
+                    abi.encodePacked(attester, this)
+                )
+            )
+        );
+        require(
+            ecrecover(messageHash, v, r, s) == attester,
+            "Unirep: invalid attester sign up signature"
+        );
+
+        attesters[attester] = nextAttesterId;
+        nextAttesterId ++;
+    }
+
     function hashedBlankStateLeaf() public view returns (uint256) {
         StateLeaf memory stateLeaf = StateLeaf({
             identityCommitment: 0,
