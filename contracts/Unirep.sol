@@ -30,12 +30,21 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
     mapping(uint256 => bool) public hasUserSignedUp;
 
+    // Fee required for submitting an attestation
+    uint256 public attestingFee;
+
     // A mapping between each attesters’ Ethereum address and their attester ID.
     // Attester IDs are incremental and start from 1.
     // No attesters with and ID of 0 should exist.
     mapping(address => uint256) public attesters;
 
     uint256 public nextAttesterId = 1;
+
+    // Keep track of whether an attester has attested to an epoch key
+    mapping(bytes32 => mapping(address => bool)) public attestationsMade;
+
+    // Mapping between epoch key and hashchain of attestations which attest to the epoch key
+    mapping(bytes32 => bytes32) public epochKeyHashchain;
 
     TreeDepths public treeDepths;
 
@@ -46,9 +55,20 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _hashedLeaf
     );
 
+    event AttestationSubmitted(
+        bytes32 indexed _epochKey,
+        address indexed _attester,
+        uint256 _attesterId,
+        uint256 _posRep,
+        uint256 _negRep,
+        uint256 _graffiti,
+        bool _overwriteGraffiti
+    );
+
     constructor(
         TreeDepths memory _treeDepths,
-        MaxValues memory _maxValues
+        MaxValues memory _maxValues,
+        uint256 _attestingFee
     ) public Ownable() {
 
         treeDepths = _treeDepths;
@@ -69,6 +89,8 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         // Create the state tree
         globalStateTree = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
+
+        attestingFee = _attestingFee;
     }
 
     /*
@@ -76,7 +98,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
      * leaf into the state tree.
      * @param _identityCommitment Commitment of the user's identity which is a semaphore identity.
      */
-    function userSignUp(uint256 _identityCommitment) public {
+    function userSignUp(uint256 _identityCommitment) external {
         require(hasUserSignedUp[_identityCommitment] == false, "Unirep: the user has already signed up");
         require(numUserSignUps < maxUsers, "Unirep: maximum number of signups reached");
 
@@ -96,14 +118,14 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         emit UserSignUp(currentEpoch, _identityCommitment, hashedLeaf);
     }
 
-    function attesterSignUp() public {
+    function attesterSignUp() external {
         require(attesters[msg.sender] == 0, "Unirep: attester has already signed up");
 
         attesters[msg.sender] = nextAttesterId;
         nextAttesterId ++;
     }
 
-    function attesterSignUpViaRelayer(address attester, uint8 v, bytes32 r, bytes32 s) public {
+    function attesterSignUpViaRelayer(address attester, uint8 v, bytes32 r, bytes32 s) external {
         require(attesters[attester] == 0, "Unirep: attester has already signed up");
 
         // Attester signs over it's own address concatenated with this contract address
@@ -122,6 +144,43 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         attesters[attester] = nextAttesterId;
         nextAttesterId ++;
+    }
+
+    function submitAttestation(Attestation calldata attestation, bytes32 epochKey) external payable {
+        require(attesters[msg.sender] > 0, "Unirep: attester has not yet registered");
+        require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
+        require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
+        require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
+
+        // Burn the fee
+        address(0).transfer(msg.value);
+
+        // Initialize the hash chain if it's nonexistent
+        bytes memory packedAttestation = abi.encodePacked(
+            attestation.attesterId,
+            attestation.posRep,
+            attestation.negRep,
+            attestation.graffiti,
+            attestation.overwriteGraffiti
+        );
+        epochKeyHashchain[epochKey] = keccak256(
+            abi.encodePacked(
+                packedAttestation,
+                epochKeyHashchain[epochKey]
+            )
+        );
+
+        attestationsMade[epochKey][msg.sender] = true;
+
+        emit AttestationSubmitted(
+            epochKey,
+            msg.sender,
+            attestation.attesterId,
+            attestation.posRep,
+            attestation.negRep,
+            attestation.graffiti,
+            attestation.overwriteGraffiti
+        );
     }
 
     function hashedBlankStateLeaf() public view returns (uint256) {
