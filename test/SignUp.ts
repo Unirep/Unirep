@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
-import { globalStateTreeDepth, userStateTreeDepth, maxUsers} from '../config/testLocal'
+import { attestingFee, globalStateTreeDepth, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { IncrementalQuinTree } from '../crypto/IncrementalQuinTree'
@@ -17,19 +17,15 @@ import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import { splitSignature } from "ethers/lib/utils"
 
 
-describe('IncrementalMerkleTree', () => {
+describe('Signup', () => {
     let unirepContract
-    let PoseidonT3Contract, PoseidonT6Contract
     let GSTree
-
+    
     let accounts: Signer[]
-    let user1
-    let user2
-
+    
     before(async () => {
+        let PoseidonT3Contract, PoseidonT6Contract
         accounts = await ethers.getSigners()
-        user1 = accounts[1]
-        user2 = accounts[2]
 
         console.log('Deploying PoseidonT3C')
         PoseidonT3Contract = (await deployContract(
@@ -58,7 +54,8 @@ describe('IncrementalMerkleTree', () => {
                 },
                 {
                     maxUsers
-                }
+                },
+                attestingFee
             ]
         ))
 
