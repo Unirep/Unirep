@@ -12,4 +12,17 @@ contract DomainObjs is Hasher {
     function hashStateLeaf(StateLeaf memory _stateLeaf) public pure returns (uint256) {
         return hashLeftRight(_stateLeaf.identityCommitment, _stateLeaf.userStateRoot);
     }
+
+    struct Attestation {
+        // The attester’s ID
+        uint256 attesterId;
+        // Positive reputation
+        uint256 posRep;
+        // Negative reputation
+        uint256 negRep;
+        // A hash of an arbitary string
+        uint256 graffiti;
+        // Whether or not to overwrite the graffiti in the user’s state
+        bool overwriteGraffiti;
+    }
 }
