@@ -24,8 +24,19 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return ethers.utils.solidityKeccak256(["uint256", "uint256", "uint256"], [identityNullifier.toString(), epoch, nonce])
 }
 
+const genStubEPKProof = (isValid: Boolean) => {
+    let firstElement;
+    if(isValid) {
+        firstElement = 1;
+    } else {
+        firstElement = 0;
+    }
+    return [firstElement, 2, 3, 4, 5, 6, 7, 8]
+}
+
 export {
     SimpleContractJSON,
     genEpochKey,
+    genStubEPKProof,
     linkLibrary,
 }

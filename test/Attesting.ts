@@ -5,7 +5,7 @@ import { deployContract, solidity } from "ethereum-waffle"
 import { attestingFee, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
-import { genEpochKey, linkLibrary } from './utils'
+import { genEpochKey, genStubEPKProof, linkLibrary } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -13,7 +13,7 @@ const { expect } = chai
 import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
-import { splitSignature } from "ethers/lib/utils"
+import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
 
 
 describe('Attesting', () => {
@@ -25,8 +25,11 @@ describe('Attesting', () => {
 
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
+    let validEPKProof = genStubEPKProof(true)
+    let invalidEPKProof = genStubEPKProof(false)
+
     before(async () => {
-        let PoseidonT3Contract, PoseidonT6Contract
+        let PoseidonT3Contract, PoseidonT6Contract, EpochKeyValidityVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -40,12 +43,18 @@ describe('Attesting', () => {
             PoseidonT6
         ))
 
+        console.log('Deploying EpochKeyValidityVerifier')
+        EpochKeyValidityVerifierContract = (await deployContract(
+            <Wallet>accounts[0],
+            EpochKeyValidityVerifier
+        ))
+
+        console.log('Deploying Unirep')
         // Link the IncrementalMerkleTree contract to PoseidonT3 contract
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
         // Link the IncrementalMerkleTree contract to PoseidonT6 contract
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
 
-        console.log('Deploying Unirep')
         unirepContract = (await deployContract(
             <Wallet>accounts[0],
             Unirep,
@@ -58,6 +67,7 @@ describe('Attesting', () => {
                     maxUsers,
                     maxEpochKeyNonce
                 },
+                EpochKeyValidityVerifierContract.address,
                 attestingFee
             ]
         ))
@@ -91,7 +101,12 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
-        const tx = await unirepContractCalledByAttester.submitAttestation(attestation, epochKey, {value: attestingFee})
+        const tx = await unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: attestingFee}
+        )
         const receipt = await tx.wait()
 
         expect(receipt.status).equal(1)
@@ -129,8 +144,12 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
-        await expect(unirepContractCalledByAttester.submitAttestation(attestation, epochKey, {value: attestingFee}))
-            .to.be.revertedWith('Unirep: attester has already attested to this epoch key')
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: attester has already attested to this epoch key')
     })
 
     it('attestation with incorrect attesterId should fail', async () => {
@@ -145,8 +164,12 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
-        await expect(unirepContractCalledByAttester.submitAttestation(attestation, epochKey, {value: attestingFee}))
-            .to.be.revertedWith('Unirep: mismatched attesterId')
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: mismatched attesterId')
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {
@@ -161,12 +184,59 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
-        await expect(unirepContractCalledByAttester.submitAttestation(attestation, epochKey))
+        await expect(unirepContractCalledByAttester.submitAttestation(attestation, epochKey, validEPKProof))
             .to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
-        await expect(unirepContractCalledByAttester.submitAttestation(attestation, epochKey, {value: (attestingFee.sub(1))}))
-            .to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
-        await expect(unirepContractCalledByAttester.submitAttestation(attestation, epochKey, {value: (attestingFee.add(1))}))
-            .to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: (attestingFee.sub(1))})
+        ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: (attestingFee.add(1))})
+        ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
+    })
+
+    it('attest to invalid epoch key should fail', async () => {
+        // Mismatched epoch number
+        let epoch = 999
+        let nonce = 0
+        // Same identity nullifier, epoch and nonce will result in the same epoch key
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        let attestation = {
+            attesterId: attesterId.toString(),
+            posRep: 1,
+            negRep: 0,
+            graffiti: genRandomSalt().toString(),
+            overwriteGraffiti: true,
+        }
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            invalidEPKProof,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: invalid epoch key validity proof')
+
+        // Invalid nonce
+        epoch = 1
+        nonce = maxEpochKeyNonce + 1
+        epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        attestation = {
+            attesterId: attesterId.toString(),
+            posRep: 1,
+            negRep: 0,
+            graffiti: genRandomSalt().toString(),
+            overwriteGraffiti: true,
+        }
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            invalidEPKProof,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: invalid epoch key validity proof')
     })
 
     it('attestation from unregistered attester should fail', async () => {
@@ -186,8 +256,12 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
-        await expect(unirepContractCalledByNonAttester.submitAttestation(attestation, epochKey, {value: attestingFee}))
-            .to.be.revertedWith('Unirep: attester has not signed up yet')
+        await expect(unirepContractCalledByNonAttester.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: attester has not signed up yet')
     })
 
     it('attestation hash chain should match', async () => {
@@ -215,7 +289,12 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
-        tx = await unirepContractCalledByAttester2.submitAttestation(attestation, epochKey, {value: attestingFee})
+        tx = await unirepContractCalledByAttester2.submitAttestation(
+            attestation,
+            epochKey,
+            validEPKProof,
+            {value: attestingFee}
+        )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 

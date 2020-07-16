@@ -14,6 +14,7 @@ const { expect } = chai
 import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
+import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
 import { splitSignature } from "ethers/lib/utils"
 
 
@@ -24,7 +25,7 @@ describe('Signup', () => {
     let accounts: Signer[]
     
     before(async () => {
-        let PoseidonT3Contract, PoseidonT6Contract
+        let PoseidonT3Contract, PoseidonT6Contract, EpochKeyValidityVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -38,12 +39,18 @@ describe('Signup', () => {
             PoseidonT6
         ))
 
+        console.log('Deploying EpochKeyValidityVerifier')
+        EpochKeyValidityVerifierContract = (await deployContract(
+            <Wallet>accounts[0],
+            EpochKeyValidityVerifier
+        ))
+
+        console.log('Deploying Unirep')
         // Link the IncrementalMerkleTree contract to PoseidonT3 contract
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
         // Link the IncrementalMerkleTree contract to PoseidonT6 contract
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
 
-        console.log('Deploying Unirep')
         unirepContract = (await deployContract(
             <Wallet>accounts[0],
             Unirep,
@@ -56,6 +63,7 @@ describe('Signup', () => {
                     maxUsers,
                     maxEpochKeyNonce
                 },
+                EpochKeyValidityVerifierContract.address,
                 attestingFee
             ]
         ))

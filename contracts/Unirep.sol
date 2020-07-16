@@ -6,6 +6,7 @@ import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
+import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 
 contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
@@ -13,6 +14,9 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     // A nothing-up-my-sleeve zero value
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
+
+     // Verifier Contracts
+    EpochKeyValidityVerifier internal epkValidityVerifier;
 
     uint256 public currentEpoch = 0;
 
@@ -71,10 +75,14 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     constructor(
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
+        EpochKeyValidityVerifier _epkValidityVerifier,
         uint256 _attestingFee
     ) public Ownable() {
 
         treeDepths = _treeDepths;
+
+        // Set the verifier contracts
+        epkValidityVerifier = _epkValidityVerifier;
 
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
@@ -150,11 +158,30 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
-    function submitAttestation(Attestation calldata attestation, bytes32 epochKey) external payable {
+    function submitAttestation(Attestation calldata attestation, bytes32 epochKey, uint256[8] calldata _proof) external payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
+
+        // Verify validity of the epoch key:
+        // 1. epoch matches current epoch
+        // 2. nonce is no greater than maxEpochKeyNonce
+        uint256[2] memory publicSignals = [
+            currentEpoch,
+            maxEpochKeyNonce
+        ];
+
+        // Unpack the snark proof
+        (
+            uint256[2] memory a,
+            uint256[2][2] memory b,
+            uint256[2] memory c
+        ) = unpackProof(_proof);
+
+        // Verify the proof
+        bool isValid = epkValidityVerifier.verifyProof(a, b, c, publicSignals);
+        require(isValid == true, "Unirep: invalid epoch key validity proof");
 
         // Burn the fee
         address(0).transfer(msg.value);
@@ -184,6 +211,28 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
             attestation.negRep,
             attestation.graffiti,
             attestation.overwriteGraffiti
+        );
+    }
+
+    /*
+     * A helper function to convert an array of 8 uint256 values into the a, b,
+     * and c array values that the zk-SNARK verifier's verifyProof accepts.
+     */
+    function unpackProof(
+        uint256[8] memory _proof
+    ) public pure returns (
+        uint256[2] memory,
+        uint256[2][2] memory,
+        uint256[2] memory
+    ) {
+
+        return (
+            [_proof[0], _proof[1]],
+            [
+                [_proof[2], _proof[3]],
+                [_proof[4], _proof[5]]
+            ],
+            [_proof[6], _proof[7]]
         );
     }
 
