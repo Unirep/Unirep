@@ -16,6 +16,7 @@ const config: BuidlerConfig = {
   defaultNetwork: "buidlerevm",
   solc: {
     version: "0.5.16",
+    optimizer: { enabled: true, runs: 200 }
   },
 };
 
