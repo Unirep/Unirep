@@ -147,7 +147,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function submitAttestation(Attestation calldata attestation, bytes32 epochKey) external payable {
-        require(attesters[msg.sender] > 0, "Unirep: attester has not yet registered");
+        require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");

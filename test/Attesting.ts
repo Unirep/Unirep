@@ -136,7 +136,6 @@ describe('Attesting', () => {
         let epoch = 1
         // Increment nonce to get different epoch key
         let nonce = 1
-        // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation = {
             attesterId: 999,
@@ -178,7 +177,6 @@ describe('Attesting', () => {
         let unirepContractCalledByNonAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, nonAttester)
         let epoch = 1
         let nonce = 0
-        // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation = {
             attesterId: nonAttesterId.toString(),
@@ -188,7 +186,7 @@ describe('Attesting', () => {
             overwriteGraffiti: true,
         }
         await expect(unirepContractCalledByNonAttester.submitAttestation(attestation, epochKey, {value: attestingFee}))
-            .to.be.revertedWith('Unirep: attester has not yet registered')
+            .to.be.revertedWith('Unirep: attester has not signed up yet')
     })
 
     it('attestation hash chain should match', async () => {
@@ -204,6 +202,7 @@ describe('Attesting', () => {
         // The hash chain should include only attester1's attestation.
         let epoch = 1
         let nonce = 0
+        // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestationHashChainBefore = await unirepContract.epochKeyHashchain(epochKey)
 
