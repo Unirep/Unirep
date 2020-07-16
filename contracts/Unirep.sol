@@ -18,7 +18,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
 
-    uint256 public currentEpoch = 0;
+    uint256 public currentEpoch = 1;
 
     uint256 public epochLength;
 
@@ -176,6 +176,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         // 1. epoch matches current epoch
         // 2. nonce is no greater than maxEpochKeyNonce
         // 3. user has signed up
+        // 4. user has transitioned to current epoch
         uint256[2] memory publicSignals = [
             currentEpoch,
             maxEpochKeyNonce

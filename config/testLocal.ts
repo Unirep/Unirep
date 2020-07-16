@@ -10,8 +10,11 @@ const attestingFee = ethers.utils.parseEther("0.01")
 
 const maxEpochKeyNonce = 2;
 
+const epochLenth = 30;  // 30 seconds
+
 export {
     attestingFee,
+    epochLenth,
     globalStateTreeDepth,
     maxEpochKeyNonce,
     maxUsers,

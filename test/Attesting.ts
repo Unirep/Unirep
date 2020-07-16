@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
-import { attestingFee, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLenth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { genEpochKey, genStubEPKProof, linkLibrary } from './utils'
@@ -68,6 +68,7 @@ describe('Attesting', () => {
                     maxEpochKeyNonce
                 },
                 EpochKeyValidityVerifierContract.address,
+                epochLenth,
                 attestingFee
             ]
         ))
@@ -91,7 +92,7 @@ describe('Attesting', () => {
     })
 
     it('submit attestation should succeed', async () => {
-        let epoch = 1
+        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation = {
@@ -133,7 +134,7 @@ describe('Attesting', () => {
     })
 
     it('attest to same epoch key again should fail', async () => {
-        let epoch = 1
+        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -153,7 +154,7 @@ describe('Attesting', () => {
     })
 
     it('attestation with incorrect attesterId should fail', async () => {
-        let epoch = 1
+        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -173,7 +174,7 @@ describe('Attesting', () => {
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {
-        let epoch = 1
+        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -221,7 +222,7 @@ describe('Attesting', () => {
         ).to.be.revertedWith('Unirep: invalid epoch key validity proof')
 
         // Invalid nonce
-        epoch = 1
+        epoch = await unirepContract.currentEpoch()
         nonce = maxEpochKeyNonce + 1
         epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         attestation = {
@@ -246,7 +247,7 @@ describe('Attesting', () => {
         expect((0).toString()).equal(nonAttesterId.toString())
 
         let unirepContractCalledByNonAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, nonAttester)
-        let epoch = 1
+        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation = {
@@ -275,7 +276,7 @@ describe('Attesting', () => {
 
         // Get the latest hash chain before submitting this attestation.
         // The hash chain should include only attester1's attestation.
-        let epoch = 1
+        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
