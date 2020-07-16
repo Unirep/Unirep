@@ -24,8 +24,8 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
     uint256 public latestEpochTransitionTime;
 
-    // The tree that tracks each user's public key and votes
-    IncrementalMerkleTree public globalStateTree;
+    // The mapping of epoch to global state tree
+    mapping(uint256 => IncrementalMerkleTree) public globalStateTrees;
 
     // To store the Merkle root of a tree with 2 **
     // treeDepths.userStateTreeDepth leaves of value 0
@@ -107,8 +107,8 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         // Compute the hash of a blank state leaf
         uint256 h = hashedBlankStateLeaf();
 
-        // Create the state tree
-        globalStateTree = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
+        // Create a global state tree for first epoch
+        globalStateTrees[currentEpoch] = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
 
         attestingFee = _attestingFee;
     }
@@ -130,7 +130,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         uint256 hashedLeaf = hashStateLeaf(stateLeaf);
 
-        globalStateTree.insertLeaf(hashedLeaf);
+        globalStateTrees[currentEpoch].insertLeaf(hashedLeaf);
 
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
@@ -176,7 +176,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         // 1. epoch matches current epoch
         // 2. nonce is no greater than maxEpochKeyNonce
         // 3. user has signed up
-        // 4. user has transitioned to current epoch
+        // 4. user has transitioned to current epoch(by proving membership in current globalStateTrees)
         uint256[2] memory publicSignals = [
             currentEpoch,
             maxEpochKeyNonce
@@ -224,6 +224,20 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         );
     }
 
+    function beginEpochTransition() external {
+        require(now - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
+
+        latestEpochTransitionTime = now;
+        currentEpoch += 1;
+
+        // Create a new global state tree
+        uint256 h = hashedBlankStateLeaf();
+        globalStateTrees[currentEpoch] = new IncrementalMerkleTree(treeDepths.globalStateTreeDepth, h);
+
+        // Pay the caller
+        // msg.sender.transfer();
+    }
+
     /*
      * A helper function to convert an array of 8 uint256 values into the a, b,
      * and c array values that the zk-SNARK verifier's verifyProof accepts.
@@ -260,6 +274,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function getStateTreeRoot() public view returns (uint256) {
-        return globalStateTree.root();
+        return globalStateTrees[currentEpoch].root();
     }
 }
