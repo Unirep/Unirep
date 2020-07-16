@@ -8,9 +8,12 @@ const maxUsers = 2 ** globalStateTreeDepth - 1;
 
 const attestingFee = ethers.utils.parseEther("0.01")
 
+const maxEpochKeyNonce = 2;
+
 export {
     attestingFee,
     globalStateTreeDepth,
+    maxEpochKeyNonce,
     maxUsers,
     userStateTreeDepth
 }

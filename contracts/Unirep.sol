@@ -33,6 +33,9 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     // Fee required for submitting an attestation
     uint256 public attestingFee;
 
+    // Maximum number of epoch keys allowed for an user to generate in one epoch
+    uint8 public maxEpochKeyNonce;
+
     // A mapping between each attesters’ Ethereum address and their attester ID.
     // Attester IDs are incremental and start from 1.
     // No attesters with and ID of 0 should exist.
@@ -79,6 +82,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         uint256 stateTreeMaxLeafIndex = uint256(2) ** _treeDepths.globalStateTreeDepth - 1;
         require(_maxValues.maxUsers <= stateTreeMaxLeafIndex, "Unirep: invalid maxUsers value");
         maxUsers = _maxValues.maxUsers;
+        maxEpochKeyNonce = _maxValues.maxEpochKeyNonce;
 
         // Calculate and store the empty user state tree root. This value must
         // be set before we call hashedBlankStateLeaf() later

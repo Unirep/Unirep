@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
-import { attestingFee, globalStateTreeDepth, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { IncrementalQuinTree } from '../crypto/IncrementalQuinTree'
@@ -53,7 +53,8 @@ describe('Signup', () => {
                     userStateTreeDepth
                 },
                 {
-                    maxUsers
+                    maxUsers,
+                    maxEpochKeyNonce
                 },
                 attestingFee
             ]
