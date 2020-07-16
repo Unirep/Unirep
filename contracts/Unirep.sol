@@ -20,6 +20,10 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
     uint256 public currentEpoch = 0;
 
+    uint256 public epochLength;
+
+    uint256 public latestEpochTransitionTime;
+
     // The tree that tracks each user's public key and votes
     IncrementalMerkleTree public globalStateTree;
 
@@ -76,6 +80,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
         EpochKeyValidityVerifier _epkValidityVerifier,
+        uint256 _epochLength,
         uint256 _attestingFee
     ) public Ownable() {
 
@@ -83,6 +88,9 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
+
+        epochLength = _epochLength;
+        latestEpochTransitionTime = now;
 
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
@@ -167,6 +175,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         // Verify validity of the epoch key:
         // 1. epoch matches current epoch
         // 2. nonce is no greater than maxEpochKeyNonce
+        // 3. user has signed up
         uint256[2] memory publicSignals = [
             currentEpoch,
             maxEpochKeyNonce
