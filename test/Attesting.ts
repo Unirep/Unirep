@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
-import { attestingFee, epochLenth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { genEpochKey, genStubEPKProof, linkLibrary } from './utils'
@@ -14,6 +14,7 @@ import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
+import EpochTreeConstructionVerifier from "../artifacts/EpochTreeConstructionVerifier.json"
 
 
 describe('Attesting', () => {
@@ -29,7 +30,8 @@ describe('Attesting', () => {
     let invalidEPKProof = genStubEPKProof(false)
 
     before(async () => {
-        let PoseidonT3Contract, PoseidonT6Contract, EpochKeyValidityVerifierContract
+        let PoseidonT3Contract, PoseidonT6Contract
+        let EpochKeyValidityVerifierContract, EpochTreeConstructionVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -47,6 +49,12 @@ describe('Attesting', () => {
         EpochKeyValidityVerifierContract = (await deployContract(
             <Wallet>accounts[0],
             EpochKeyValidityVerifier
+        ))
+
+        console.log('Deploying EpochTreeConstructionVerifier')
+        EpochTreeConstructionVerifierContract = (await deployContract(
+            <Wallet>accounts[0],
+            EpochTreeConstructionVerifier
         ))
 
         console.log('Deploying Unirep')
@@ -68,9 +76,13 @@ describe('Attesting', () => {
                     maxEpochKeyNonce
                 },
                 EpochKeyValidityVerifierContract.address,
-                epochLenth,
+                EpochTreeConstructionVerifierContract.address,
+                epochLength,
                 attestingFee
-            ]
+            ],
+            {
+                gasLimit: 9000000,
+            }
         ))
 
         console.log('User sign up')
@@ -126,11 +138,17 @@ describe('Attesting', () => {
                         attestation.overwriteGraffiti
                     ]
                 ),
-                ethers.utils.zeroPad("0x", 32)
+                ethers.utils.hexZeroPad("0x", 32)
             ]
         )
         let attestationHashChain_ = await unirepContract.epochKeyHashchain(epochKey)
         expect(attestationHashChain).equal(attestationHashChain_)
+
+        // Verify epoch key is added to epoch key list
+        let numEpochKey = await unirepContract.getNumEpochKey(epoch)
+        expect(numEpochKey).equal(1)
+        let epochKey_ = await unirepContract.getEpochKey(epoch, 0)
+        expect(epochKey).equal(epochKey_)
     })
 
     it('attest to same epoch key again should fail', async () => {
@@ -318,5 +336,9 @@ describe('Attesting', () => {
             ]
         )
         expect(attestationHashChain).equal(attestationHashChainAfter)
+
+        // Verify epoch key is NOT added into epoch key list again
+        let numEpochKey = await unirepContract.getNumEpochKey(epoch)
+        expect(numEpochKey).equal(1)
     })
 })

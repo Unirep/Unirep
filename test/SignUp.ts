@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
-import { attestingFee, epochLenth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { IncrementalQuinTree } from '../crypto/IncrementalQuinTree'
@@ -15,6 +15,7 @@ import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
+import EpochTreeConstructionVerifier from "../artifacts/EpochTreeConstructionVerifier.json"
 import { splitSignature } from "ethers/lib/utils"
 
 
@@ -25,7 +26,8 @@ describe('Signup', () => {
     let accounts: Signer[]
     
     before(async () => {
-        let PoseidonT3Contract, PoseidonT6Contract, EpochKeyValidityVerifierContract
+        let PoseidonT3Contract, PoseidonT6Contract
+        let EpochKeyValidityVerifierContract, EpochTreeConstructionVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -43,6 +45,12 @@ describe('Signup', () => {
         EpochKeyValidityVerifierContract = (await deployContract(
             <Wallet>accounts[0],
             EpochKeyValidityVerifier
+        ))
+
+        console.log('Deploying EpochTreeConstructionVerifier')
+        EpochTreeConstructionVerifierContract = (await deployContract(
+            <Wallet>accounts[0],
+            EpochTreeConstructionVerifier
         ))
 
         console.log('Deploying Unirep')
@@ -64,9 +72,13 @@ describe('Signup', () => {
                     maxEpochKeyNonce
                 },
                 EpochKeyValidityVerifierContract.address,
-                epochLenth,
+                EpochTreeConstructionVerifierContract.address,
+                epochLength,
                 attestingFee
-            ]
+            ],
+            {
+                gasLimit: 9000000,
+            }
         ))
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
