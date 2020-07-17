@@ -13,4 +13,11 @@ contract UnirepParameters {
         uint256 maxUsers;
         uint8 maxEpochKeyNonce;
     }
+
+    struct ProofsRelated {
+        uint256[2] a;
+        uint256[2][2] b;
+        uint256[2] c;
+        bool isValid;
+    }
 }
