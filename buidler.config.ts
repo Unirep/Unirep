@@ -14,6 +14,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, bre) => {
 
 const config: BuidlerConfig = {
   defaultNetwork: "buidlerevm",
+  networks: {
+    buidlerevm: {
+      blockGasLimit: 12000000
+    }
+  },
   solc: {
     version: "0.5.16",
     optimizer: { enabled: true, runs: 200 }

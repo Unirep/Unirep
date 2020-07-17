@@ -4,8 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "tsdx test",
-        "lint": "tsdx lint"
+        "test": "npx buidler compile && npx ts-node scripts/buildPoseidon.ts && npx buidler test"
     },
     "repository": {
         "type": "git",
@@ -28,7 +27,6 @@
         "ethereum-waffle": "^3.0.1",
         "ethers": "^5.0.5",
         "ts-node": "^8.10.2",
-        "tsdx": "^0.13.1",
         "typescript": "^3.9.6"
     },
     "dependencies": {
