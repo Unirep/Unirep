@@ -14,6 +14,7 @@ import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
+import NewUserStateVerifier from "../artifacts/NewUserStateVerifier.json"
 
 
 describe('Attesting', () => {
@@ -30,7 +31,7 @@ describe('Attesting', () => {
 
     before(async () => {
         let PoseidonT3Contract, PoseidonT6Contract
-        let EpochKeyValidityVerifierContract
+        let EpochKeyValidityVerifierContract, NewUserStateVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -48,6 +49,12 @@ describe('Attesting', () => {
         EpochKeyValidityVerifierContract = (await deployContract(
             <Wallet>accounts[0],
             EpochKeyValidityVerifier
+        ))
+
+        console.log('Deploying NewUserStateVerifier')
+        NewUserStateVerifierContract = (await deployContract(
+            <Wallet>accounts[0],
+            NewUserStateVerifier
         ))
 
         console.log('Deploying Unirep')
@@ -69,6 +76,7 @@ describe('Attesting', () => {
                     maxEpochKeyNonce
                 },
                 EpochKeyValidityVerifierContract.address,
+                NewUserStateVerifierContract.address,
                 epochLength,
                 attestingFee
             ],

@@ -7,6 +7,7 @@ import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
 import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
+import { NewUserStateVerifier } from './NewUserStateVerifier.sol';
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 
 contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
@@ -17,6 +18,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
+    NewUserStateVerifier internal newUserStateVerifier;
 
     uint256 public currentEpoch = 1;
 
@@ -25,7 +27,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     uint256 public latestEpochTransitionTime;
 
     // The mapping of epoch to epoch tree
-    mapping(uint256 => bytes32) public epochTrees;
+    mapping(uint256 => uint256) public epochTrees;
 
     // The mapping of epoch to global state tree
     mapping(uint256 => IncrementalMerkleTree) public globalStateTrees;
@@ -59,6 +61,9 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(bytes32 => bytes32) public epochKeyHashchain;
+
+    // Indicate if an epoch key nullifier has been spent
+    mapping(uint256 => bool) public epochKeyNullifier;
 
     struct EpochKeyList {
         uint256 numKeys;
@@ -99,6 +104,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
         EpochKeyValidityVerifier _epkValidityVerifier,
+        NewUserStateVerifier _newUserStateVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
     ) public Ownable() {
@@ -107,6 +113,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
+        newUserStateVerifier = _newUserStateVerifier;
 
         epochLength = _epochLength;
         latestEpochTransitionTime = now;
@@ -271,8 +278,8 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         // msg.sender.transfer();
     }
 
-    function finalizeAllAttestations() internal returns(bytes32) {
-        bytes32 epochTree;
+    function finalizeAllAttestations() internal returns(uint256) {
+        uint256 epochTree;
         bytes32 epochKey;
         uint256[] memory epochKeyList = new uint256[](epochKeys[currentEpoch].numKeys);
         uint256[] memory epochKeyHashChainList = new uint256[](epochKeys[currentEpoch].numKeys);
@@ -291,6 +298,56 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         }
         // epochTree = new SparseMerkleTree(epochKeyList, epochKeyHashChainList[i]);
         return epochTree;
+    }
+
+    function updateUserStateRoot(
+        uint256 _identityCommitment,
+        uint256 transitionFromEpoch,
+        uint256 _newUserStateRoot,
+        uint256[8] calldata _proof,
+        uint256[] calldata _epochKeyNullifiers) external {
+
+        // Verify nullifiers have not been spent
+        uint256 nullifier;
+        for( uint i = 0; i < _epochKeyNullifiers.length; i++) {
+            nullifier = _epochKeyNullifiers[i];
+            require(epochKeyNullifier[nullifier] == false, "Unirep: epoch key nullifier has been spent");
+            epochKeyNullifier[nullifier] == true;
+        }
+
+        uint256 globalStateTree = globalStateTrees[transitionFromEpoch].root();
+        uint256 epochTree = epochTrees[transitionFromEpoch];
+        // Verify validity of new user state:
+        // 1. User's identity and state is in the global state tree
+        // 2. attestations to each epoch key are processed and processed correctly
+        uint256[3] memory publicSignals = [
+            globalStateTree,
+            epochTree,
+            _newUserStateRoot
+            // _epochKeyNullifiers,
+        ];
+
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_proof);
+
+        // Verify the proof
+        proof.isValid = newUserStateVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        require(proof.isValid == true, "Unirep: invalid user state update proof");
+
+        // Create, hash, and insert a fresh state leaf
+        StateLeaf memory stateLeaf = StateLeaf({
+            identityCommitment: _identityCommitment,
+            userStateRoot: _newUserStateRoot
+        });
+
+        uint256 hashedLeaf = hashStateLeaf(stateLeaf);
+
+        globalStateTrees[currentEpoch].insertLeaf(hashedLeaf);
     }
 
     /*
