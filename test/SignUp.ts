@@ -15,7 +15,6 @@ import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
-import EpochTreeConstructionVerifier from "../artifacts/EpochTreeConstructionVerifier.json"
 import { splitSignature } from "ethers/lib/utils"
 
 
@@ -27,7 +26,7 @@ describe('Signup', () => {
     
     before(async () => {
         let PoseidonT3Contract, PoseidonT6Contract
-        let EpochKeyValidityVerifierContract, EpochTreeConstructionVerifierContract
+        let EpochKeyValidityVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -45,12 +44,6 @@ describe('Signup', () => {
         EpochKeyValidityVerifierContract = (await deployContract(
             <Wallet>accounts[0],
             EpochKeyValidityVerifier
-        ))
-
-        console.log('Deploying EpochTreeConstructionVerifier')
-        EpochTreeConstructionVerifierContract = (await deployContract(
-            <Wallet>accounts[0],
-            EpochTreeConstructionVerifier
         ))
 
         console.log('Deploying Unirep')
@@ -72,7 +65,6 @@ describe('Signup', () => {
                     maxEpochKeyNonce
                 },
                 EpochKeyValidityVerifierContract.address,
-                EpochTreeConstructionVerifierContract.address,
                 epochLength,
                 attestingFee
             ],

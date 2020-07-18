@@ -14,7 +14,6 @@ import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
-import EpochTreeConstructionVerifier from "../artifacts/EpochTreeConstructionVerifier.json"
 
 
 describe('Epoch Transition', () => {
@@ -27,12 +26,10 @@ describe('Epoch Transition', () => {
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
     let validEPKProof = genStubEPKProof(true)
-    let validEPTreeProof = validEPKProof
-    let invalidEPTreeProof = genStubEPKProof(false)
 
     before(async () => {
         let PoseidonT3Contract, PoseidonT6Contract
-        let EpochKeyValidityVerifierContract, EpochTreeConstructionVerifierContract
+        let EpochKeyValidityVerifierContract
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3C')
@@ -50,12 +47,6 @@ describe('Epoch Transition', () => {
         EpochKeyValidityVerifierContract = (await deployContract(
             <Wallet>accounts[0],
             EpochKeyValidityVerifier
-        ))
-
-        console.log('Deploying EpochTreeConstructionVerifier')
-        EpochTreeConstructionVerifierContract = (await deployContract(
-            <Wallet>accounts[0],
-            EpochTreeConstructionVerifier
         ))
 
         console.log('Deploying Unirep')
@@ -77,7 +68,6 @@ describe('Epoch Transition', () => {
                     maxEpochKeyNonce
                 },
                 EpochKeyValidityVerifierContract.address,
-                EpochTreeConstructionVerifierContract.address,
                 epochLength,
                 attestingFee
             ],
@@ -146,11 +136,8 @@ describe('Epoch Transition', () => {
     })
 
     it('premature epoch transition should fail', async () => {
-        let epochTree = ethers.utils.solidityKeccak256(["string"], ["stub"])
-        await expect(unirepContract.beginEpochTransition(
-            epochTree,
-            validEPTreeProof)
-        ).to.be.revertedWith('Unirep: epoch not yet ended')
+        await expect(unirepContract.beginEpochTransition()
+            ).to.be.revertedWith('Unirep: epoch not yet ended')
     })
 
     it('epoch transition should succeed', async () => {
@@ -166,19 +153,16 @@ describe('Epoch Transition', () => {
         }
 
         // Fast-forward epochLength of seconds
-        await ethers.provider.send("evm_increaseTime", [60])
+        await ethers.provider.send("evm_increaseTime", [epochLength])
         // Begin epoch transition
-        let epochTree = ethers.utils.solidityKeccak256(["string"], ["stub"])
-        let tx = await unirepContract.beginEpochTransition(
-            epochTree,
-            validEPTreeProof
-        )
+        let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // Verify epoch tree
-        let epochTree_ = await unirepContract.epochTrees(epoch)
-        expect(epochTree_).equal(epochTree)
+        // let epochTree
+        // let epochTree_ = await unirepContract.epochTrees(epoch)
+        // expect(epochTree_).equal(epochTree)
 
         // Verify each epoch key hash chain is sealed
         let hashChainAfter
@@ -209,13 +193,9 @@ describe('Epoch Transition', () => {
         expect(numEpochKey).equal(0)
 
         // Fast-forward epochLength of seconds
-        await ethers.provider.send("evm_increaseTime", [60])
+        await ethers.provider.send("evm_increaseTime", [epochLength])
         // Begin epoch transition
-        let epochTree = ethers.utils.solidityKeccak256(["string"], ["stub"])
-        let tx = await unirepContract.beginEpochTransition(
-            epochTree,
-            validEPTreeProof
-        )
+        let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -230,36 +210,5 @@ describe('Epoch Transition', () => {
 
         let epoch_ = await unirepContract.currentEpoch()
         expect(epoch_).equal(Number(epoch) + 1)
-    })
-
-    it('invalid epoch tree proof should fail', async () => {
-        // Submit an attestation
-        let epoch = await unirepContract.currentEpoch()
-        let nonce = 0
-        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        let attestation = {
-            attesterId: attesterId.toString(),
-            posRep: 1,
-            negRep: 0,
-            graffiti: genRandomSalt().toString(),
-            overwriteGraffiti: true,
-        }
-        let tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            validEPKProof,
-            {value: attestingFee}
-        )
-        let receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        // Fast-forward epochLength of seconds
-        await ethers.provider.send("evm_increaseTime", [60])
-        // Begin epoch transition
-        let epochTree = ethers.utils.solidityKeccak256(["string"], ["stub"])
-        await expect(unirepContract.beginEpochTransition(
-            epochTree,
-            invalidEPTreeProof)
-        ).to.be.revertedWith('Unirep: invalid epoch tree construction proof')
     })
 })

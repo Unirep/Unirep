@@ -7,7 +7,6 @@ import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
 import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
-import { EpochTreeConstructionVerifier } from './EpochTreeConstructionVerifier.sol';
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 
 contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
@@ -18,7 +17,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
-    EpochTreeConstructionVerifier internal epTreeConstructionVerifier;
 
     uint256 public currentEpoch = 1;
 
@@ -101,7 +99,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
         EpochKeyValidityVerifier _epkValidityVerifier,
-        EpochTreeConstructionVerifier _epTreeConstructionVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
     ) public Ownable() {
@@ -110,7 +107,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
-        epTreeConstructionVerifier = _epTreeConstructionVerifier;
 
         epochLength = _epochLength;
         latestEpochTransitionTime = now;
@@ -257,30 +253,11 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         );
     }
 
-    function beginEpochTransition(bytes32 _epochTree, uint256[8] calldata _proof) external {
+    function beginEpochTransition() external {
         require(now - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
 
         if(epochKeys[currentEpoch].numKeys > 0) {
-            // Verify construction of the epoch tree:
-            // 1. leaves include all epoch keys in current epoch and nothing else
-            bytes32 epochKeysCommitment = finalizeAllAttestations();
-            uint256[1] memory publicSignals = [
-                uint256(epochKeysCommitment)
-            ];
-
-            ProofsRelated memory proof;
-            // Unpack the snark proof
-            (
-                proof.a,
-                proof.b,
-                proof.c
-            ) = unpackProof(_proof);
-
-            // Verify the proof
-            proof.isValid = epTreeConstructionVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
-            require(proof.isValid == true, "Unirep: invalid epoch tree construction proof");
-
-            epochTrees[currentEpoch] = _epochTree;
+            epochTrees[currentEpoch] = finalizeAllAttestations();
         }
 
         latestEpochTransitionTime = now;
@@ -295,8 +272,10 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function finalizeAllAttestations() internal returns(bytes32) {
-        bytes32 epochKeysCommitment;
+        bytes32 epochTree;
         bytes32 epochKey;
+        uint256[] memory epochKeyList = new uint256[](epochKeys[currentEpoch].numKeys);
+        uint256[] memory epochKeyHashChainList = new uint256[](epochKeys[currentEpoch].numKeys);
         for( uint i = 0; i < epochKeys[currentEpoch].numKeys; i++) {
             // Seal the hash chain of this epoch key
             epochKey = epochKeys[currentEpoch].keys[i];
@@ -307,22 +286,11 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
                 )
             );
 
-            // Add this epoch key into the epochKeyCommitment(also a hash chain)
-            epochKeysCommitment = keccak256(
-                abi.encodePacked(
-                    epochKey,
-                    epochKeysCommitment
-                )
-            );
+            epochKeyList[i] = uint256(epochKey);
+            epochKeyHashChainList[i] = uint256(epochKeyHashchain[epochKey]);
         }
-        // Seal the hash chain of epochKeyCommitment
-        epochKeysCommitment = keccak256(
-            abi.encodePacked(
-                bytes32(uint256(1)),
-                epochKeysCommitment
-            )
-        );
-        return epochKeysCommitment;
+        // epochTree = new SparseMerkleTree(epochKeyList, epochKeyHashChainList[i]);
+        return epochTree;
     }
 
     /*
