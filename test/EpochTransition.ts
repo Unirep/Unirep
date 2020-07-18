@@ -158,7 +158,7 @@ describe('Epoch Transition', () => {
         let numEpochKey = await unirepContract.getNumEpochKey(epoch)
         let epochKeyHashchainMap = {}
         let epochKey_, hashChainBefore
-        for (let i = 1; i < numEpochKey; i++) {
+        for (let i = 0; i < numEpochKey; i++) {
             epochKey_ = await unirepContract.getEpochKey(epoch, i)
             hashChainBefore = await unirepContract.epochKeyHashchain(epochKey_)
             epochKeyHashchainMap[epochKey_] = hashChainBefore

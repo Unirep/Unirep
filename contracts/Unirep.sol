@@ -284,7 +284,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         }
 
         latestEpochTransitionTime = now;
-        currentEpoch += 1;
+        currentEpoch ++;
 
         // Create a new global state tree
         uint256 h = hashedBlankStateLeaf();
