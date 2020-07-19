@@ -91,6 +91,8 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         bool _overwriteGraffiti
     );
 
+    event  EpochEnded(uint256 indexed _epoch);
+
     function getNumEpochKey(uint256 epoch) public view returns (uint256) {
         return epochKeys[epoch].numKeys;
     }
@@ -266,6 +268,8 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         if(epochKeys[currentEpoch].numKeys > 0) {
             epochTrees[currentEpoch] = finalizeAllAttestations();
         }
+
+        emit EpochEnded(currentEpoch);
 
         latestEpochTransitionTime = now;
         currentEpoch ++;
