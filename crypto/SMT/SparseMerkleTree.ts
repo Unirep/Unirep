@@ -86,36 +86,20 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
 
     public async getLeaf(leafKey: BigNumber, rootHash?: Buffer): Promise<Buffer> {
         if (!!rootHash && !rootHash.equals(this.root.hash)) {
-            console.log(
-                `Cannot get Leaf [${leafKey.toString(
-                    10
-                )}] because root hash does not match.`
-            )
             return undefined!
         }
 
         const nodesInPath: MerkleTreeNode[] = await this.getNodesInPath(leafKey)
         if (!nodesInPath || nodesInPath.length !== this.height) {
-            console.log(
-                `Cannot get Leaf [${leafKey.toString(
-                    10
-                )}] because nodes in path does not equal tree height.`
-            )
             return undefined!
         }
         const leaf: MerkleTreeNode = nodesInPath[nodesInPath.length - 1]
 
         // Will only match if we were able to traverse all the way to the leaf
         if (!leaf.key.equals(leafKey)) {
-            console.log(
-                `Cannot get Leaf because leaf key does not match. Path: [${leafKey.toString(
-                    10
-                )}], leaf key: ${leaf.key.toString(10)}.`
-            )
             return undefined!
         }
 
-        console.log(`Returning leaf value: [${leaf.value.toString()}].`)
         return leaf.value
     }
 
@@ -565,11 +549,6 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         this.zeroHashes = hashes.reverse()
 
         if (!!rootHash) {
-            console.log(
-                `Attempting to initialize SMT with root hash ${rootHash.toString(
-                    'hex'
-                )}`
-            )
             this.root = await this.getNode(rootHash, ZERO)
         }
 
@@ -578,17 +557,6 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
                 rootHash || this.zeroHashes[0],
                 undefined!,
                 ZERO
-            )
-            console.log(
-                `Initialized Sparse Merkle Tree with root ${(
-                    rootHash || this.zeroHashes[0]
-                ).toString('hex')}`
-            )
-        } else {
-            console.log(
-                `Initialized Sparse Merkle Tree with root ${this.root.hash.toString(
-                    'hex'
-                )}`
             )
         }
     }
