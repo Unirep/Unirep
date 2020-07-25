@@ -174,7 +174,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         leafKey: BigNumber,
         leafValue: Buffer,
     ): Promise<boolean> {
-        assert(leafKey.lt(this.numLeaves), 'Root hash must be 32 bytes')
+        if(leafKey.gt(this.numLeaves)) return false
         let nodesToUpdate: MerkleTreeNode[] = await this.getNodesInPath(leafKey)
 
         if (!nodesToUpdate) {

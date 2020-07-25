@@ -30,16 +30,17 @@ contract OneTimeSparseMerkleTree {
         require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
 
         uint256[] memory parentLayerIndices;
-        uint256[] memory currentLayerIndices = _leafIndices;  // Starts from the bottom layer
+        uint256[] memory currentLayerIndices = new uint256[](_leafIndices.length);  // Starts from the bottom layer
         uint currentDefaultHashesLevel = 0;
         bytes32[] memory defaultHashes = getDefaultHashes();
 
         uint256 nodeIndex;
         // Write leaves into storage
-        for (uint i = 0; i < currentLayerIndices.length; i++) {
+        for (uint i = 0; i < _leafIndices.length; i++) {
+            require(_leafIndices[i] <= numLeaves, "Index of inserted leaf is greater than total number of leaves");
             // First we convert the passed in leaf indices into node indices.
             // Leaf index starts with 0 which is equivalent to node index of (0 + numLeaves)
-            currentLayerIndices[i] = currentLayerIndices[i] + numLeaves;
+            currentLayerIndices[i] = _leafIndices[i] + numLeaves;
             nodeIndex = currentLayerIndices[i];
             nodes[nodeIndex] = _leafData[i];
         }

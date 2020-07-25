@@ -1,4 +1,3 @@
-import assert from 'assert'
 import * as crypto from 'crypto'
 import Keyv from "keyv"
 import chai from "chai"
@@ -10,6 +9,7 @@ import { epochTreeDepth } from '../config/testLocal'
 
 import {
     BigNumber,
+    ONE,
     SparseMerkleTreeImpl,
     TWO,
     bufToHexString,
@@ -122,7 +122,6 @@ describe('OneTimeSparseMerkleTree', () => {
             for (let i = 0; i < numLeavesToInsert; i++) {
                 numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
                 leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
-                assert(leafIndices[i].lt(numLeaves), "Index of inserted leaf is larger than total number of leaves")
                 dataBlocks[i] = hexStrToBuf(crypto.randomBytes(32).toString('hex'))
                 leafData[i] = keccak256(dataBlocks[i])
             }
@@ -144,6 +143,25 @@ describe('OneTimeSparseMerkleTree', () => {
             expect(receipt.status).equal(1)
             let OTSMTRoot = await OneTimeSMT.getRoot()
             expect(OTSMTRoot).to.be.equal(treeRoot)
+        })
+
+        it('inserting leaf with out of bound index should fail', async () => {
+            let defaultRoot = await OneTimeSMT.getRoot()
+            expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
+            let leafIndex = numLeaves.add(ONE)
+            let dataBlock = hexStrToBuf(crypto.randomBytes(32).toString('hex'))
+            let leafData = keccak256(dataBlock)
+            let result
+            result = await tree.update(leafIndex, dataBlock)
+            expect(result).to.be.false
+
+            await expect(OneTimeSMT.genSMT(
+                [leafIndex.toString(10)],
+                [leafData],
+                {
+                    gasLimit: 9000000,
+                }
+            )).to.be.revertedWith('Index of inserted leaf is greater than total number of leaves')
         })
     })
 })
