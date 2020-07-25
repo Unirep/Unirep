@@ -7,7 +7,8 @@ contract OneTimeSparseMerkleTree {
     // The address of the default hash storage.
     mapping(uint256 => bytes32) defaultHashStorage;
 
-    uint256 public treeHeight;
+    // The tree depth
+    uint256 public treeLevels;
     uint256 public numLeaves;
 
     mapping(uint256 => bytes32) public nodes;
@@ -16,17 +17,17 @@ contract OneTimeSparseMerkleTree {
      * @notice Initialize a new SparseMerkleUtils contract, computing the default hashes for the sparse merkle tree (SMT) and saving them
      * as a contract.
      */
-    constructor(uint256 _treeHeight) public {
-        treeHeight = _treeHeight;
-        numLeaves = 2 ** (_treeHeight - 1);
+    constructor(uint256 _treeLevels) public {
+        treeLevels = _treeLevels;
+        numLeaves = 2 ** _treeLevels;
     }
 
     /* Methods */
     function getDefaultHashes()
     public view returns(bytes32[] memory) {
-        bytes32[] memory defaultHashes = new bytes32[](treeHeight);
+        bytes32[] memory defaultHashes = new bytes32[](treeLevels);
         defaultHashes[0] = keccak256(abi.encodePacked(uint256(0)));
-        for (uint256 i = 1; i < treeHeight; i ++) {
+        for (uint256 i = 1; i < treeLevels; i ++) {
             defaultHashes[i] = keccak256(abi.encodePacked(defaultHashes[i-1], defaultHashes[i-1]));
         }
         return defaultHashes;
@@ -60,7 +61,7 @@ contract OneTimeSparseMerkleTree {
         bool isLeftChildeNode;
         bytes32 theNode;
         bytes32 siblingNode;
-        for (uint i = 0; i < treeHeight - 1; i++) {
+        for (uint i = 0; i < treeLevels; i++) {
             nextLevelIndices = new uint256[](currentLevelIndices.length);
             nextInsertIndex = 0;
             // Calculate the nodes for the currentDefaultHashesLevel

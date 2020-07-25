@@ -12,9 +12,12 @@ const maxEpochKeyNonce = 2;
 
 const epochLength = 30;  // 30 seconds
 
+const epochTreeDepth = 8;
+
 export {
     attestingFee,
     epochLength,
+    epochTreeDepth,
     globalStateTreeDepth,
     maxEpochKeyNonce,
     maxUsers,

@@ -1,10 +1,12 @@
 import assert from 'assert'
 import * as crypto from 'crypto'
+import Keyv from "keyv"
+import chai from "chai"
 import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
-import chai from "chai"
 import { deployContract, solidity } from "ethereum-waffle"
-import Keyv from "keyv"
+
+import { epochTreeDepth } from '../config/testLocal'
 
 import {
     BigNumber,
@@ -20,13 +22,19 @@ const { expect } = chai
 import * as OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import { keccak256 } from "ethers/lib/utils";
 
-const treeHeight = 20
-const numLeaves = TWO.pow(new BigNumber(treeHeight - 1))
-const sizeKeySpaceInBytes: number = Math.floor((treeHeight - 1) / 8)
+const numLeaves = TWO.pow(new BigNumber(epochTreeDepth))
+const sizeKeySpaceInBytes: number = Math.floor(epochTreeDepth / 8)
 
 async function getNewSMT(rootHash?: Buffer): Promise<SparseMerkleTreeImpl> {
     const keyv = new Keyv();
-    return SparseMerkleTreeImpl.create(keyv, rootHash, treeHeight)
+    return SparseMerkleTreeImpl.create(
+        keyv,
+        rootHash,
+        // The current SparseMerkleTreeImpl has different tree depth implementation.
+        // It has tree depth of 1 with a single root node while in this case tree depth is 0 in OneTimeSparseMerkleTree contract.
+        // So we increment the tree depth passed into SparseMerkleTreeImpl by 1.
+        epochTreeDepth + 1
+    )
 }
 
 /* Begin tests */
@@ -43,7 +51,7 @@ describe('OneTimeSparseMerkleTree', () => {
         OneTimeSMT = (await deployContract(
             <Wallet>accounts[0],
             OneTimeSparseMerkleTree,
-            [treeHeight],
+            [epochTreeDepth],
             {
                 gasLimit: 9000000,
             }
@@ -60,12 +68,12 @@ describe('OneTimeSparseMerkleTree', () => {
             expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
 
             let defaultHashes = await OneTimeSMT.getDefaultHashes()
-            let count = defaultHashes.length - 1
+            let count = defaultHashes.length
             for(var hash of defaultHashes) {
                 expect(hash).to.be.equal(bufToHexString(tree.getZeroHash(count)))
                 count = count - 1
             }
-            expect(defaultHashes.length).to.be.equal(treeHeight)
+            expect(defaultHashes.length).to.be.equal(epochTreeDepth)
         })
     })
 

@@ -57,7 +57,9 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         hashFunction: HashFunction = keccak256
     ) {
         assert(height > 0, 'SMT height needs to be > 0')
-        this.numLeaves = TWO.shiftLeft(height - 2)
+
+        // Tree with height 1 has one leaf node
+        this.numLeaves = TWO.pow(new BigNumber(height - 1))
 
         // TODO: Hack for now -- change everything to string if/when it makes sense
         this.hashFunction = (buff: Buffer) =>
