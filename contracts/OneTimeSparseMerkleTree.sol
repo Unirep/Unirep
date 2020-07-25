@@ -3,26 +3,18 @@ pragma experimental ABIEncoderV2;
 
 
 contract OneTimeSparseMerkleTree {
-    /* Fields */
-    // The address of the default hash storage.
-    mapping(uint256 => bytes32) defaultHashStorage;
-
-    // The tree depth
+   // The tree depth
     uint256 public treeLevels;
     uint256 public numLeaves;
 
     mapping(uint256 => bytes32) public nodes;
 
-    /**
-     * @notice Initialize a new SparseMerkleUtils contract, computing the default hashes for the sparse merkle tree (SMT) and saving them
-     * as a contract.
-     */
     constructor(uint256 _treeLevels) public {
+        require(_treeLevels > 0, "Tree level(depth) should be at least one, i.e., have at least two leaf nodes");
         treeLevels = _treeLevels;
         numLeaves = 2 ** _treeLevels;
     }
 
-    /* Methods */
     function getDefaultHashes()
     public view returns(bytes32[] memory) {
         bytes32[] memory defaultHashes = new bytes32[](treeLevels);
@@ -33,26 +25,22 @@ contract OneTimeSparseMerkleTree {
         return defaultHashes;
     }
 
-    /**
-     * @notice Get the sparse merkle root computed from some set of data blocks.
-     * @param _leafData The data being used to generate the tree.
-     */
     function genSMT(uint256[] calldata _leafIndices, bytes32[] calldata _leafData) external {
         require(_leafIndices.length <= numLeaves, "Can not insert more than total number of leaves");
         require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
 
-        uint256[] memory nextLevelIndices;
-        // uint256[] memory currentLevelIndices = new uint256[](_leafIndices.length);
-        uint256[] memory currentLevelIndices = _leafIndices;
+        uint256[] memory parentLayerIndices;
+        uint256[] memory currentLayerIndices = _leafIndices;  // Starts from the bottom layer
         uint currentDefaultHashesLevel = 0;
         bytes32[] memory defaultHashes = getDefaultHashes();
 
         uint256 nodeIndex;
         // Write leaves into storage
-        for (uint i = 0; i < currentLevelIndices.length; i++) {
-            // Leaf index starts with 0 which is equivalent to node index 0 + numLeaves
-            currentLevelIndices[i] = currentLevelIndices[i] + numLeaves;
-            nodeIndex = currentLevelIndices[i];
+        for (uint i = 0; i < currentLayerIndices.length; i++) {
+            // First we convert the passed in leaf indices into node indices.
+            // Leaf index starts with 0 which is equivalent to node index of (0 + numLeaves)
+            currentLayerIndices[i] = currentLayerIndices[i] + numLeaves;
+            nodeIndex = currentLayerIndices[i];
             nodes[nodeIndex] = _leafData[i];
         }
 
@@ -62,23 +50,23 @@ contract OneTimeSparseMerkleTree {
         bytes32 theNode;
         bytes32 siblingNode;
         for (uint i = 0; i < treeLevels; i++) {
-            nextLevelIndices = new uint256[](currentLevelIndices.length);
+            parentLayerIndices = new uint256[](currentLayerIndices.length);
             nextInsertIndex = 0;
-            // Calculate the nodes for the currentDefaultHashesLevel
-            for (uint j = 0; j < currentLevelIndices.length; j++) {
-                nodeIndex = currentLevelIndices[j];
+            // Compute parent nodes for the nodes in current layer
+            for (uint j = 0; j < currentLayerIndices.length; j++) {
+                nodeIndex = currentLayerIndices[j];
                 parentNodeIndex = nodeIndex / 2;
 
-                // Parent node is already generated during processing previous node, i.e., the sibling node
+                // Parent node is already generated during processing previous node, i.e., the sibling node,
+                // so we skip this node.
                 if(nodes[parentNodeIndex] != 0) continue;
 
-                // Insert parent node index into next level indices list
-                nextLevelIndices[nextInsertIndex] = parentNodeIndex;
+                // Insert parent node index into parent layer indices list
+                parentLayerIndices[nextInsertIndex] = parentNodeIndex;
                 nextInsertIndex ++;
 
                 theNode = nodes[nodeIndex];
-                // isLeftChildeNode = (nodeIndex & 1 == 0)? true : false;
-                isLeftChildeNode = (nodeIndex % 2 == 0)? true : false;
+                isLeftChildeNode = (nodeIndex & 1 == 0)? true : false;
                 if(isLeftChildeNode) {
                     siblingNode = nodes[nodeIndex + 1];
                     if(siblingNode == 0) {
@@ -93,19 +81,18 @@ contract OneTimeSparseMerkleTree {
                     nodes[parentNodeIndex] = keccak256(abi.encodePacked(siblingNode, theNode));
                 }
             }
-            require(nextInsertIndex > 0, "Should insert at least one node index into next level indices list");
-            currentLevelIndices = new uint256[](nextInsertIndex);
+            require(nextInsertIndex > 0, "Should insert at least one node index into parent layer indices list");
+
+            // Copy parent layer indices to current layer indices
+            currentLayerIndices = new uint256[](nextInsertIndex);
             for (uint k = 0; k < nextInsertIndex; k++) {
-                currentLevelIndices[k] = nextLevelIndices[k];
+                currentLayerIndices[k] = parentLayerIndices[k];
             }
+
             currentDefaultHashesLevel ++;
         }
     }
 
-    /**
-     * @notice Get our stored tree's root
-     * @return The merkle root of the tree
-     */
     function getRoot() public view returns(bytes32) {
         return nodes[1];
     }
