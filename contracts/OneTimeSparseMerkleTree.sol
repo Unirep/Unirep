@@ -7,7 +7,17 @@ contract OneTimeSparseMerkleTree {
     uint256 public treeLevels;
     uint256 public numLeaves;
 
-    mapping(uint256 => bytes32) public nodes;
+    bytes32 public root;
+
+    struct TreeNodes {
+        uint256 nodeIndex;
+        bytes32 theNode;
+        uint256 parentNodeIndex;
+        bytes32 siblingNode;
+        bool find;
+        bool isLeftChildeNode;
+        uint256 nextInsertIndex;
+    }
 
     constructor(uint256 _treeLevels) public {
         require(_treeLevels > 0, "Tree level(depth) should be at least one, i.e., have at least two leaf nodes");
@@ -25,6 +35,24 @@ contract OneTimeSparseMerkleTree {
         return defaultHashes;
     }
 
+    function isInList(uint256 target, uint256[] memory list) internal pure returns(bool) {
+        for (uint i = 0; i < list.length; i++) {
+            if(target != list[i]) continue;
+            else return true;
+        }
+        return false;
+    }
+
+    function getDataInList(uint256 index, uint256[] memory indicesList, bytes32[] memory dataList) internal pure returns(bool, bytes32) {
+        require(indicesList.length == dataList.length, "Indices and data not of the same length");
+
+        for (uint i = 0; i < indicesList.length; i++) {
+            if(index != indicesList[i]) continue;
+            else return (true, dataList[i]);
+        }
+        return (false, bytes32(0));
+    }
+
     function genSMT(uint256[] calldata _leafIndices, bytes32[] calldata _leafData) external {
         uint256 _numLeaves = numLeaves;
         uint256 _treeLevels = treeLevels;
@@ -33,76 +61,96 @@ contract OneTimeSparseMerkleTree {
         require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
 
         uint256[] memory parentLayerIndices;
-        uint256[] memory currentLayerIndices = new uint256[](_leafIndices.length);  // Starts from the bottom layer
-        uint currentDefaultHashesLevel = 0;
+        bytes32[] memory parentLayerData;
+        // We start processing from the bottom layer
+        uint256[] memory currentLayerIndices = new uint256[](_leafIndices.length);
+        bytes32[] memory currentLayerData = _leafData;
         bytes32[] memory defaultHashes = getDefaultHashes();
+        uint currentDefaultHashesLevel = 0;
 
-        uint256 nodeIndex;
-        // Write leaves into storage
+        TreeNodes memory vars;
+
+        // Check validity of inputs and convert leaf index into node index
         for (uint i = 0; i < _leafIndices.length; i++) {
             require(_leafIndices[i] <= _numLeaves, "Index of inserted leaf is greater than total number of leaves");
-            // First we convert the passed in leaf indices into node indices.
+
+            // // If we require input indices to be strictly increasing
+            // // Check that indices are strictly increasing
+            // if(i > 0) require(_leafIndices[i] > _leafIndices[i-1], "Indices in list are not sorted (should increase strictly)");
+
             // Leaf index starts with 0 which is equivalent to node index of (0 + numLeaves)
             currentLayerIndices[i] = _leafIndices[i] + _numLeaves;
-            nodeIndex = currentLayerIndices[i];
-            nodes[nodeIndex] = _leafData[i];
         }
 
-        uint256 nextInsertIndex;
-        uint256 parentNodeIndex;
-        bool isLeftChildeNode;
-        bytes32 theNode;
-        bytes32 siblingNode;
         for (uint i = 0; i < _treeLevels; i++) {
             parentLayerIndices = new uint256[](currentLayerIndices.length);
-            nextInsertIndex = 0;
-            // Compute parent nodes for the nodes in current layer
+            parentLayerData = new bytes32[](currentLayerData.length);
+            vars.nextInsertIndex = 0;
+            // Compute parent nodes of the nodes in current layer
             for (uint j = 0; j < currentLayerIndices.length; j++) {
-                nodeIndex = currentLayerIndices[j];
-                parentNodeIndex = nodeIndex / 2;
+                vars.nodeIndex = currentLayerIndices[j];
+                vars.parentNodeIndex = vars.nodeIndex / 2;
 
-                // Parent node is already generated during processing previous node, i.e., the sibling node,
-                // so we skip this node.
-                if(nodes[parentNodeIndex] != 0) continue;
+                // If parent node is already generated during processing previous node, i.e., the sibling node,
+                // then we skip this node.
+                if(isInList(vars.parentNodeIndex, parentLayerIndices)) continue;
 
                 // Insert parent node index into parent layer indices list
-                parentLayerIndices[nextInsertIndex] = parentNodeIndex;
-                nextInsertIndex ++;
+                parentLayerIndices[vars.nextInsertIndex] = vars.parentNodeIndex;
 
-                theNode = nodes[nodeIndex];
-                isLeftChildeNode = (nodeIndex & 1 == 0)? true : false;
-                if(isLeftChildeNode) {
-                    siblingNode = nodes[nodeIndex + 1];
-                    if(siblingNode == 0) {
-                        siblingNode = defaultHashes[currentDefaultHashesLevel];
+                vars.theNode = currentLayerData[j];
+                vars.isLeftChildeNode = (vars.nodeIndex & 1 == 0)? true : false;
+                if(vars.isLeftChildeNode) {
+                    // If we require input indices to be strictly increasing, then we can assume sibling node to be in either (j+1) or (j-1).
+                    // if(j < (currentLayerIndices.length - 1)) {
+                    //     vars.siblingNode = (currentLayerIndices[j+1] == vars.nodeIndex + 1) ? currentLayerData[j+1] : defaultHashes[currentDefaultHashesLevel];
+                    // } else {
+                    //     vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
+                    // }
+
+                    (vars.find, vars.siblingNode) = getDataInList(vars.nodeIndex + 1, currentLayerIndices, currentLayerData);
+                    if(vars.find == false) {
+                        vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
                     }
-                    nodes[parentNodeIndex] = keccak256(abi.encodePacked(theNode, siblingNode));
+                    parentLayerData[vars.nextInsertIndex] = keccak256(abi.encodePacked(vars.theNode, vars.siblingNode));
                 } else {
-                    siblingNode = nodes[nodeIndex - 1];
-                    if(siblingNode == 0) {
-                        siblingNode = defaultHashes[currentDefaultHashesLevel];
+                    // If we require input indices to be strictly increasing, then we can assume sibling node to be in either (j+1) or (j-1).
+                    // if(j > 0) {
+                    //     vars.siblingNode = (currentLayerIndices[j-1] == vars.nodeIndex - 1) ? currentLayerData[j-1] : defaultHashes[currentDefaultHashesLevel];
+                    // } else {
+                    //     vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
+                    // }
+
+                    (vars.find, vars.siblingNode) = getDataInList(vars.nodeIndex - 1, currentLayerIndices, currentLayerData);
+                    if(vars.find == false) {
+                        vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
                     }
-                    nodes[parentNodeIndex] = keccak256(abi.encodePacked(siblingNode, theNode));
+                    parentLayerData[vars.nextInsertIndex] = keccak256(abi.encodePacked(vars.siblingNode, vars.theNode));
                 }
-            }
-            require(nextInsertIndex > 0, "Should insert at least one node index into parent layer indices list");
 
-            // Clean the storage of current layer indices
-            for (uint j = 0; j < currentLayerIndices.length; j++) {
-                delete nodes[currentLayerIndices[j]];
+                vars.nextInsertIndex ++;
             }
+            require(vars.nextInsertIndex > 0, "Should insert at least one node index into parent layer indices list");
 
-            // Copy parent layer indices to current layer indices
-            currentLayerIndices = new uint256[](nextInsertIndex);
-            for (uint j = 0; j < nextInsertIndex; j++) {
+            // Copy parent layer indices/data to current layer indices/data
+            currentLayerIndices = new uint256[](vars.nextInsertIndex);
+            currentLayerData = new bytes32[](vars.nextInsertIndex);
+            for (uint j = 0; j < vars.nextInsertIndex; j++) {
                 currentLayerIndices[j] = parentLayerIndices[j];
+                currentLayerData[j] = parentLayerData[j];
             }
 
             currentDefaultHashesLevel ++;
         }
+
+        // After final step processing, current layer would be one layer below top layer
+        // and parent layer would be the top layer.
+        // So parent layer should have only one node.
+        require(vars.nextInsertIndex == 1, "Can not have more than one root");
+        root = parentLayerData[0];
     }
 
     function getRoot() public view returns(bytes32) {
-        return nodes[1];
+        return root;
     }
 }
