@@ -67,6 +67,11 @@ describe('OneTimeSparseMerkleTree', () => {
             let defaultRoot = await OneTimeSMT.getRoot()
             expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
 
+            let numLeaves_ = (await OneTimeSMT.numLeaves()).toString()
+            expect(numLeaves_).to.be.equal(tree.numLeaves.toString(10))
+            expect(numLeaves_).to.be.equal(numLeaves.toString(10))
+            console.log("num of leaves", numLeaves.toString(10))
+
             let defaultHashes = await OneTimeSMT.getDefaultHashes()
             let count = defaultHashes.length
             for(var hash of defaultHashes) {
@@ -81,6 +86,7 @@ describe('OneTimeSparseMerkleTree', () => {
         it('inserting leaves with adjacent indices should match', async () => {
             let defaultRoot = await OneTimeSMT.getRoot()
             expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
+            // const numLeavesToInsert = 2
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
             let leafIndices: BigNumber[] = []
             let dataBlocks: Buffer[] = []
@@ -105,11 +111,12 @@ describe('OneTimeSparseMerkleTree', () => {
                     gasLimit: 9000000,
                 }
             )
+
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
-            console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with adjacent  " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
             let OTSMTRoot = await OneTimeSMT.getRoot()
             expect(OTSMTRoot).to.be.equal(treeRoot)
+            console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with adjacent  " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
         })
 
         it('inserting leaves with random indices should match', async () => {
@@ -140,11 +147,13 @@ describe('OneTimeSparseMerkleTree', () => {
                     gasLimit: 9000000,
                 }
             )
+
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
-            console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with adjacent  " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
             let OTSMTRoot = await OneTimeSMT.getRoot()
             expect(OTSMTRoot).to.be.equal(treeRoot)
+            console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with random " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
+
         })
 
         it('inserting leaf with out of bound index should fail', async () => {
