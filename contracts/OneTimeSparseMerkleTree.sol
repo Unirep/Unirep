@@ -26,7 +26,10 @@ contract OneTimeSparseMerkleTree {
     }
 
     function genSMT(uint256[] calldata _leafIndices, bytes32[] calldata _leafData) external {
-        require(_leafIndices.length <= numLeaves, "Can not insert more than total number of leaves");
+        uint256 _numLeaves = numLeaves;
+        uint256 _treeLevels = treeLevels;
+
+        require(_leafIndices.length <= _numLeaves, "Can not insert more than total number of leaves");
         require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
 
         uint256[] memory parentLayerIndices;
@@ -37,10 +40,10 @@ contract OneTimeSparseMerkleTree {
         uint256 nodeIndex;
         // Write leaves into storage
         for (uint i = 0; i < _leafIndices.length; i++) {
-            require(_leafIndices[i] <= numLeaves, "Index of inserted leaf is greater than total number of leaves");
+            require(_leafIndices[i] <= _numLeaves, "Index of inserted leaf is greater than total number of leaves");
             // First we convert the passed in leaf indices into node indices.
             // Leaf index starts with 0 which is equivalent to node index of (0 + numLeaves)
-            currentLayerIndices[i] = _leafIndices[i] + numLeaves;
+            currentLayerIndices[i] = _leafIndices[i] + _numLeaves;
             nodeIndex = currentLayerIndices[i];
             nodes[nodeIndex] = _leafData[i];
         }
@@ -50,7 +53,7 @@ contract OneTimeSparseMerkleTree {
         bool isLeftChildeNode;
         bytes32 theNode;
         bytes32 siblingNode;
-        for (uint i = 0; i < treeLevels; i++) {
+        for (uint i = 0; i < _treeLevels; i++) {
             parentLayerIndices = new uint256[](currentLayerIndices.length);
             nextInsertIndex = 0;
             // Compute parent nodes for the nodes in current layer
@@ -84,10 +87,15 @@ contract OneTimeSparseMerkleTree {
             }
             require(nextInsertIndex > 0, "Should insert at least one node index into parent layer indices list");
 
+            // Clean the storage of current layer indices
+            for (uint j = 0; j < currentLayerIndices.length; j++) {
+                delete nodes[currentLayerIndices[j]];
+            }
+
             // Copy parent layer indices to current layer indices
             currentLayerIndices = new uint256[](nextInsertIndex);
-            for (uint k = 0; k < nextInsertIndex; k++) {
-                currentLayerIndices[k] = parentLayerIndices[k];
+            for (uint j = 0; j < nextInsertIndex; j++) {
+                currentLayerIndices[j] = parentLayerIndices[j];
             }
 
             currentDefaultHashesLevel ++;
