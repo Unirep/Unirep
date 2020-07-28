@@ -6,7 +6,6 @@ import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
-import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
 import { NewUserStateVerifier } from './NewUserStateVerifier.sol';
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -17,7 +16,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 
      // Verifier Contracts
-    EpochKeyValidityVerifier internal epkValidityVerifier;
     NewUserStateVerifier internal newUserStateVerifier;
 
     uint256 public currentEpoch = 1;
@@ -105,7 +103,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     constructor(
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
-        EpochKeyValidityVerifier _epkValidityVerifier,
         NewUserStateVerifier _newUserStateVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
@@ -114,7 +111,6 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         treeDepths = _treeDepths;
 
         // Set the verifier contracts
-        epkValidityVerifier = _epkValidityVerifier;
         newUserStateVerifier = _newUserStateVerifier;
 
         epochLength = _epochLength;
@@ -194,33 +190,17 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
-    function submitAttestation(Attestation calldata attestation, bytes32 epochKey, uint256[8] calldata _proof) external payable {
+    function submitAttestation(Attestation calldata attestation, bytes32 epochKey) external payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
 
-        // Verify validity of the epoch key:
+        // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. epoch matches current epoch
         // 2. nonce is no greater than maxEpochKeyNonce
         // 3. user has signed up
         // 4. user has transitioned to current epoch(by proving membership in current globalStateTrees)
-        uint256[2] memory publicSignals = [
-            currentEpoch,
-            maxEpochKeyNonce
-        ];
-
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (
-            proof.a,
-            proof.b,
-            proof.c
-        ) = unpackProof(_proof);
-
-        // Verify the proof
-        proof.isValid = epkValidityVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
-        require(proof.isValid == true, "Unirep: invalid epoch key validity proof");
 
         // Burn the fee
         address(0).transfer(msg.value);
