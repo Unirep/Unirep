@@ -25,8 +25,6 @@ describe('Epoch Transition', () => {
 
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
-    let validEPKProof = genStubEPKProof(true)
-
     before(async () => {
         let PoseidonT3Contract, PoseidonT6Contract
         let NewUserStateVerifierContract
@@ -107,7 +105,6 @@ describe('Epoch Transition', () => {
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
             epochKey,
-            validEPKProof,
             {value: attestingFee}
         )
         receipt = await tx.wait()
@@ -125,7 +122,6 @@ describe('Epoch Transition', () => {
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
             epochKey,
-            validEPKProof,
             {value: attestingFee}
         )
         receipt = await tx.wait()
