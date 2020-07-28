@@ -311,6 +311,16 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
             // _epochKeyNullifiers,
         ];
 
+        // Ensure that each public input is within range of the snark scalar
+        // field.
+        // TODO: consider having more granular revert reasons
+        for (uint8 i=0; i < publicSignals.length; i++) {
+            require(
+                publicSignals[i] < SNARK_SCALAR_FIELD,
+                "Unirep: each public signal must be lt the snark scalar field"
+            );
+        }
+
         ProofsRelated memory proof;
         // Unpack the snark proof
         (
