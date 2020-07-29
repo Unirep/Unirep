@@ -114,7 +114,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         newUserStateVerifier = _newUserStateVerifier;
 
         epochLength = _epochLength;
-        latestEpochTransitionTime = now;
+        latestEpochTransitionTime = block.timestamp;
 
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
@@ -243,7 +243,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function beginEpochTransition() external {
-        require(now - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
+        require(block.timestamp - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
 
         if(epochKeys[currentEpoch].numKeys > 0) {
             epochTrees[currentEpoch] = finalizeAllAttestations();
@@ -251,7 +251,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
 
         emit EpochEnded(currentEpoch);
 
-        latestEpochTransitionTime = now;
+        latestEpochTransitionTime = block.timestamp;
         currentEpoch ++;
 
         // Create a new global state tree
