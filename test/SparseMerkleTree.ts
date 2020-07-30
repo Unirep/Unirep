@@ -70,7 +70,6 @@ describe('OneTimeSparseMerkleTree', () => {
             let numLeaves_ = (await OneTimeSMT.numLeaves()).toString()
             expect(numLeaves_).to.be.equal(tree.numLeaves.toString(10))
             expect(numLeaves_).to.be.equal(numLeaves.toString(10))
-            console.log("num of leaves", numLeaves.toString(10))
 
             let defaultHashes = await OneTimeSMT.getDefaultHashes()
             let count = defaultHashes.length
@@ -122,7 +121,8 @@ describe('OneTimeSparseMerkleTree', () => {
         it('inserting leaves with random indices should match', async () => {
             let defaultRoot = await OneTimeSMT.getRoot()
             expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
-            const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
+            const numLeavesToInsert = 1
+            // const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
             let leafIndices: BigNumber[] = []
             let dataBlocks: Buffer[] = []
             let leafData: string[] = []
