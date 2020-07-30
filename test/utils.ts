@@ -30,7 +30,7 @@ const deployUnirep = async (deployer: ethers.Wallet) => {
     let PoseidonT3Contract, PoseidonT6Contract
     let NewUserStateVerifierContract
 
-    console.log('Deploying PoseidonT3C')
+    console.log('Deploying PoseidonT3')
     PoseidonT3Contract = (await deployContract(
         deployer,
         PoseidonT3
@@ -48,10 +48,13 @@ const deployUnirep = async (deployer: ethers.Wallet) => {
     ))
 
     console.log('Deploying Unirep')
-    // Link the IncrementalMerkleTree contract to PoseidonT3 contract
-    linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
-    // Link the IncrementalMerkleTree contract to PoseidonT6 contract
-    linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
+    // Link the library code if it has not been linked yet
+    if(Unirep.bytecode.indexOf("$") > 0) {
+        // Link the Unirep contract to PoseidonT3 contract
+        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
+        // Link the Unirep contract to PoseidonT6 contract
+        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
+    }
 
     return (await deployContract(
         deployer,
