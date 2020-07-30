@@ -88,5 +88,5 @@ describe('IncrementalMerkleTree', () => {
 
             expect(tree.root.toString()).equal(root1.toString())
         }
-    })
+    }).timeout(100000)
 })
