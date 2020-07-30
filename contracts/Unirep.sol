@@ -7,9 +7,8 @@ import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
 import { NewUserStateVerifier } from './NewUserStateVerifier.sol';
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
+contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     // A nothing-up-my-sleeve zero value
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
@@ -106,7 +105,7 @@ contract Unirep is Ownable, DomainObjs, ComputeRoot, UnirepParameters {
         NewUserStateVerifier _newUserStateVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
-    ) public Ownable() {
+    ) public {
 
         treeDepths = _treeDepths;
 
