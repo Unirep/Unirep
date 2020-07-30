@@ -56,11 +56,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Keep track of whether an attester has attested to an epoch key
     mapping(bytes32 => mapping(address => bool)) public attestationsMade;
 
+    uint256 public nullifierTreeRoot;
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(bytes32 => bytes32) public epochKeyHashchain;
-
-    // Indicate if an epoch key nullifier has been spent
-    mapping(uint256 => bool) public epochKeyNullifier;
 
     struct EpochKeyList {
         uint256 numKeys;
@@ -287,33 +285,29 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _identityCommitment,
         uint256 transitionFromEpoch,
         uint256 _newUserStateRoot,
-        uint256[8] calldata _proof,
-        uint256[] calldata _epochKeyNullifiers) external {
-
-        // Verify nullifiers have not been spent
-        uint256 nullifier;
-        for( uint i = 0; i < _epochKeyNullifiers.length; i++) {
-            nullifier = _epochKeyNullifiers[i];
-            require(epochKeyNullifier[nullifier] == false, "Unirep: epoch key nullifier has been spent");
-            epochKeyNullifier[nullifier] == true;
-        }
+        uint256 _newNullifierTreeRoot,
+        uint256[8] calldata _proof) external {
+        // NOTE: this impl assumes all attestations are processed in a single snark.
 
         uint256 globalStateTree = globalStateTrees[transitionFromEpoch].root();
         uint256 epochTree = epochTrees[transitionFromEpoch];
         // Verify validity of new user state:
         // 1. User's identity and state is in the global state tree
-        // 2. attestations to each epoch key are processed and processed correctly
-        uint256[3] memory publicSignals = [
+        // 2. Attestations to each epoch key are processed and processed correctly
+        // 3. Nullifiers of all processed attestations have not been seen before
+        // 4. Nullifier tree is updated correctly
+        uint256[5] memory publicSignals = [
             globalStateTree,
             epochTree,
-            _newUserStateRoot
-            // _epochKeyNullifiers,
+            _newUserStateRoot,
+            nullifierTreeRoot,
+            _newNullifierTreeRoot
         ];
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        for (uint8 i=0; i < publicSignals.length; i++) {
+        for (uint8 i = 0; i < publicSignals.length; i++) {
             require(
                 publicSignals[i] < SNARK_SCALAR_FIELD,
                 "Unirep: each public signal must be lt the snark scalar field"
@@ -331,6 +325,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // Verify the proof
         proof.isValid = newUserStateVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
         require(proof.isValid == true, "Unirep: invalid user state update proof");
+
+        // Update nullifier tree root
+        nullifierTreeRoot = _newNullifierTreeRoot;
 
         // Create, hash, and insert a fresh state leaf
         StateLeaf memory stateLeaf = StateLeaf({
