@@ -1,20 +1,17 @@
 import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
-import { deployContract, solidity } from "ethereum-waffle"
-import { attestingFee, epochLength, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { solidity } from "ethereum-waffle"
+import { globalStateTreeDepth, maxUsers, userStateTreeDepth} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { IncrementalQuinTree } from '../crypto/IncrementalQuinTree'
-import { linkLibrary } from './utils'
+import { deployUnirep } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/Unirep.json"
-import PoseidonT3 from "../artifacts/PoseidonT3.json"
-import PoseidonT6 from "../artifacts/PoseidonT6.json"
-import NewUserStateVerifier from "../artifacts/NewUserStateVerifier.json"
 import { splitSignature } from "ethers/lib/utils"
 
 
@@ -25,53 +22,9 @@ describe('Signup', () => {
     let accounts: Signer[]
     
     before(async () => {
-        let PoseidonT3Contract, PoseidonT6Contract
-        let NewUserStateVerifierContract
         accounts = await ethers.getSigners()
 
-        console.log('Deploying PoseidonT3C')
-        PoseidonT3Contract = (await deployContract(
-            <Wallet>accounts[0],
-            PoseidonT3
-        ))
-        console.log('Deploying PoseidonT6')
-        PoseidonT6Contract = (await deployContract(
-            <Wallet>accounts[0],
-            PoseidonT6
-        ))
-
-        console.log('Deploying NewUserStateVerifier')
-        NewUserStateVerifierContract = (await deployContract(
-            <Wallet>accounts[0],
-            NewUserStateVerifier
-        ))
-
-        console.log('Deploying Unirep')
-        // Link the IncrementalMerkleTree contract to PoseidonT3 contract
-        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
-        // Link the IncrementalMerkleTree contract to PoseidonT6 contract
-        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
-
-        unirepContract = (await deployContract(
-            <Wallet>accounts[0],
-            Unirep,
-            [
-                {
-                    globalStateTreeDepth,
-                    userStateTreeDepth
-                },
-                {
-                    maxUsers,
-                    maxEpochKeyNonce
-                },
-                NewUserStateVerifierContract.address,
-                epochLength,
-                attestingFee
-            ],
-            {
-                gasLimit: 9000000,
-            }
-        ))
+        unirepContract = await deployUnirep(<Wallet>accounts[0])
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
         GSTree = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)

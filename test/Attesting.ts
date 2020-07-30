@@ -1,19 +1,16 @@
 import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
-import { deployContract, solidity } from "ethereum-waffle"
-import { attestingFee, epochLength, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { solidity } from "ethereum-waffle"
+import { attestingFee} from '../config/testLocal'
 import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
-import { genEpochKey, genStubEPKProof, linkLibrary } from './utils'
+import { deployUnirep, genEpochKey } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/Unirep.json"
-import PoseidonT3 from "../artifacts/PoseidonT3.json"
-import PoseidonT6 from "../artifacts/PoseidonT6.json"
-import NewUserStateVerifier from "../artifacts/NewUserStateVerifier.json"
 
 
 describe('Attesting', () => {
@@ -26,53 +23,9 @@ describe('Attesting', () => {
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
     before(async () => {
-        let PoseidonT3Contract, PoseidonT6Contract
-        let NewUserStateVerifierContract
         accounts = await ethers.getSigners()
 
-        console.log('Deploying PoseidonT3C')
-        PoseidonT3Contract = (await deployContract(
-            <Wallet>accounts[0],
-            PoseidonT3
-        ))
-        console.log('Deploying PoseidonT6')
-        PoseidonT6Contract = (await deployContract(
-            <Wallet>accounts[0],
-            PoseidonT6
-        ))
-
-        console.log('Deploying NewUserStateVerifier')
-        NewUserStateVerifierContract = (await deployContract(
-            <Wallet>accounts[0],
-            NewUserStateVerifier
-        ))
-
-        console.log('Deploying Unirep')
-        // Link the IncrementalMerkleTree contract to PoseidonT3 contract
-        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
-        // Link the IncrementalMerkleTree contract to PoseidonT6 contract
-        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
-
-        unirepContract = (await deployContract(
-            <Wallet>accounts[0],
-            Unirep,
-            [
-                {
-                    globalStateTreeDepth,
-                    userStateTreeDepth
-                },
-                {
-                    maxUsers,
-                    maxEpochKeyNonce
-                },
-                NewUserStateVerifierContract.address,
-                epochLength,
-                attestingFee
-            ],
-            {
-                gasLimit: 9000000,
-            }
-        ))
+        unirepContract = await deployUnirep(<Wallet>accounts[0])
 
         console.log('User sign up')
         userId = genIdentity()
