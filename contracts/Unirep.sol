@@ -263,10 +263,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function finalizeAllAttestations() internal returns(uint256) {
-        uint256 epochTree;
+        OneTimeSparseMerkleTree epochTree;
         bytes32 epochKey;
         uint256[] memory epochKeyList = new uint256[](epochKeys[currentEpoch].numKeys);
-        uint256[] memory epochKeyHashChainList = new uint256[](epochKeys[currentEpoch].numKeys);
+        bytes32[] memory epochKeyHashChainList = new bytes32[](epochKeys[currentEpoch].numKeys);
         for( uint i = 0; i < epochKeys[currentEpoch].numKeys; i++) {
             // Seal the hash chain of this epoch key
             epochKey = epochKeys[currentEpoch].keys[i];
@@ -278,10 +278,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             );
 
             epochKeyList[i] = uint256(epochKey);
-            epochKeyHashChainList[i] = uint256(epochKeyHashchain[epochKey]);
+            epochKeyHashChainList[i] = epochKeyHashchain[epochKey];
         }
-        // epochTree = new SparseMerkleTree(epochKeyList, epochKeyHashChainList[i]);
-        return epochTree;
+
+        epochTree = new OneTimeSparseMerkleTree(treeDepths.epochTreeDepth);
+        epochTree.genSMT(epochKeyList, epochKeyHashChainList);
+        return uint256(epochTree.getRoot());
     }
 
     function updateUserStateRoot(
