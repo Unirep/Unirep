@@ -7,13 +7,13 @@ contract OneTimeSparseMerkleTree {
     uint256 public treeLevels;
     uint256 public numLeaves;
 
-    bytes32 public root;
+    uint256 public root;
 
     struct TreeNodes {
         uint256 nodeIndex;
-        bytes32 theNode;
+        uint256 theNode;
         uint256 parentNodeIndex;
-        bytes32 siblingNode;
+        uint256 siblingNode;
         bool find;
         bool isLeftChildeNode;
         uint256 nextInsertIndex;
@@ -26,11 +26,11 @@ contract OneTimeSparseMerkleTree {
     }
 
     function getDefaultHashes()
-    public view returns(bytes32[] memory) {
-        bytes32[] memory defaultHashes = new bytes32[](treeLevels);
-        defaultHashes[0] = keccak256(abi.encodePacked(uint256(0)));
+    public view returns(uint256[] memory) {
+        uint256[] memory defaultHashes = new uint256[](treeLevels);
+        defaultHashes[0] = uint256(keccak256(abi.encodePacked(uint256(0))));
         for (uint256 i = 1; i < treeLevels; i ++) {
-            defaultHashes[i] = keccak256(abi.encodePacked(defaultHashes[i-1], defaultHashes[i-1]));
+            defaultHashes[i] = uint256(keccak256(abi.encodePacked(defaultHashes[i-1], defaultHashes[i-1])));
         }
         return defaultHashes;
     }
@@ -43,17 +43,17 @@ contract OneTimeSparseMerkleTree {
         return false;
     }
 
-    function getDataInList(uint256 index, uint256[] memory indicesList, bytes32[] memory dataList) internal pure returns(bool, bytes32) {
+    function getDataInList(uint256 index, uint256[] memory indicesList, uint256[] memory dataList) internal pure returns(bool, uint256) {
         require(indicesList.length == dataList.length, "Indices and data not of the same length");
 
         for (uint i = 0; i < indicesList.length; i++) {
             if(index != indicesList[i]) continue;
             else return (true, dataList[i]);
         }
-        return (false, bytes32(0));
+        return (false, uint256(0));
     }
 
-    function genSMT(uint256[] calldata _leafIndices, bytes32[] calldata _leafData) external {
+    function genSMT(uint256[] calldata _leafIndices, uint256[] calldata _leafData) external {
         uint256 _numLeaves = numLeaves;
         uint256 _treeLevels = treeLevels;
 
@@ -61,11 +61,11 @@ contract OneTimeSparseMerkleTree {
         require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
 
         uint256[] memory parentLayerIndices;
-        bytes32[] memory parentLayerData;
+        uint256[] memory parentLayerData;
         // We start processing from the bottom layer
         uint256[] memory currentLayerIndices = new uint256[](_leafIndices.length);
-        bytes32[] memory currentLayerData = _leafData;
-        bytes32[] memory defaultHashes = getDefaultHashes();
+        uint256[] memory currentLayerData = _leafData;
+        uint256[] memory defaultHashes = getDefaultHashes();
         uint currentDefaultHashesLevel = 0;
 
         TreeNodes memory vars;
@@ -84,7 +84,7 @@ contract OneTimeSparseMerkleTree {
 
         for (uint i = 0; i < _treeLevels; i++) {
             parentLayerIndices = new uint256[](currentLayerIndices.length);
-            parentLayerData = new bytes32[](currentLayerData.length);
+            parentLayerData = new uint256[](currentLayerData.length);
             vars.nextInsertIndex = 0;
             // Compute parent nodes of the nodes in current layer
             for (uint j = 0; j < currentLayerIndices.length; j++) {
@@ -112,7 +112,7 @@ contract OneTimeSparseMerkleTree {
                     if(vars.find == false) {
                         vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
                     }
-                    parentLayerData[vars.nextInsertIndex] = keccak256(abi.encodePacked(vars.theNode, vars.siblingNode));
+                    parentLayerData[vars.nextInsertIndex] = uint256(keccak256(abi.encodePacked(vars.theNode, vars.siblingNode)));
                 } else {
                     // If we require input indices to be strictly increasing, then we can assume sibling node to be in either (j+1) or (j-1).
                     // if(j > 0) {
@@ -125,7 +125,7 @@ contract OneTimeSparseMerkleTree {
                     if(vars.find == false) {
                         vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
                     }
-                    parentLayerData[vars.nextInsertIndex] = keccak256(abi.encodePacked(vars.siblingNode, vars.theNode));
+                    parentLayerData[vars.nextInsertIndex] = uint256(keccak256(abi.encodePacked(vars.siblingNode, vars.theNode)));
                 }
 
                 vars.nextInsertIndex ++;
@@ -134,7 +134,7 @@ contract OneTimeSparseMerkleTree {
 
             // Copy parent layer indices/data to current layer indices/data
             currentLayerIndices = new uint256[](vars.nextInsertIndex);
-            currentLayerData = new bytes32[](vars.nextInsertIndex);
+            currentLayerData = new uint256[](vars.nextInsertIndex);
             for (uint j = 0; j < vars.nextInsertIndex; j++) {
                 currentLayerIndices[j] = parentLayerIndices[j];
                 currentLayerData[j] = parentLayerData[j];
@@ -150,7 +150,7 @@ contract OneTimeSparseMerkleTree {
         root = parentLayerData[0];
     }
 
-    function getRoot() public view returns(bytes32) {
+    function getRoot() public view returns(uint256) {
         return root;
     }
 }
