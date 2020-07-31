@@ -3,6 +3,7 @@ pragma solidity ^0.6.0;
 
 import { DomainObjs } from './DomainObjs.sol';
 import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
+import { OneTimeSparseMerkleTree } from "./OneTimeSparseMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
@@ -56,6 +57,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Keep track of whether an attester has attested to an epoch key
     mapping(bytes32 => mapping(address => bool)) public attestationsMade;
 
+    uint256 nullifierTreeLevel = 254;
     uint256 public nullifierTreeRoot;
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(bytes32 => bytes32) public epochKeyHashchain;
@@ -132,6 +134,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         globalStateTrees[currentEpoch] = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
 
         attestingFee = _attestingFee;
+
+        nullifierTreeRoot = getDefaultRoot(nullifierTreeLevel, uint256(0));
     }
 
     /*
