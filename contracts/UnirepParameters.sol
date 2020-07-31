@@ -7,6 +7,8 @@ contract UnirepParameters {
     struct TreeDepths {
         uint8 globalStateTreeDepth;
         uint8 userStateTreeDepth;
+        uint8 nullifierTreeDepth;
+        uint8 epochTreeDepth;
     }
 
     struct MaxValues {

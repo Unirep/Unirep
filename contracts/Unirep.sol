@@ -57,7 +57,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Keep track of whether an attester has attested to an epoch key
     mapping(bytes32 => mapping(address => bool)) public attestationsMade;
 
-    uint256 nullifierTreeLevel = 254;
     uint256 public nullifierTreeRoot;
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(bytes32 => bytes32) public epochKeyHashchain;
@@ -135,7 +134,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         attestingFee = _attestingFee;
 
-        nullifierTreeRoot = getDefaultRoot(nullifierTreeLevel, uint256(0));
+        nullifierTreeRoot = getDefaultRoot(_treeDepths.nullifierTreeDepth, uint256(0));
     }
 
     /*

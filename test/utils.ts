@@ -1,7 +1,7 @@
 import * as ethers from 'ethers'
 import { deployContract, link } from "ethereum-waffle"
 import { SnarkBigInt, bigInt } from '../crypto/crypto'
-import { attestingFee, epochLength, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
 import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
@@ -62,7 +62,9 @@ const deployUnirep = async (deployer: ethers.Wallet) => {
         [
             {
                 globalStateTreeDepth,
-                userStateTreeDepth
+                userStateTreeDepth,
+                nullifierTreeDepth,
+                epochTreeDepth
             },
             {
                 maxUsers,
