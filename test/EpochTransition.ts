@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength } from '../config/testLocal'
 import { genRandomSalt } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
-import { deployUnirep, genEpochKey, toCompleteHexString } from './utils'
+import { deployUnirep, genEpochKey } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -57,7 +57,7 @@ describe('Epoch Transition', () => {
         }
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
-            toCompleteHexString(epochKey.toString(16), 32),
+            epochKey,
             {value: attestingFee}
         )
         receipt = await tx.wait()
@@ -74,7 +74,7 @@ describe('Epoch Transition', () => {
         }
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
-            toCompleteHexString(epochKey.toString(16), 32),
+            epochKey,
             {value: attestingFee}
         )
         receipt = await tx.wait()
@@ -104,15 +104,10 @@ describe('Epoch Transition', () => {
         // Fast-forward epochLength of seconds
         await ethers.provider.send("evm_increaseTime", [epochLength])
         // Begin epoch transition
-        let tx = await unirepContract.beginEpochTransition({gasLimit: 9000000})
+        let tx = await unirepContract.beginEpochTransition({gasLimit: 12000000})
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
         console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
-
-        // Verify epoch tree
-        // let epochTree
-        // let epochTree_ = await unirepContract.epochTrees(epoch)
-        // expect(epochTree_).equal(epochTree)
 
         // Verify each epoch key hash chain is sealed
         let hashChainAfter

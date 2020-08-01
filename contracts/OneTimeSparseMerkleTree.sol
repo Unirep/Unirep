@@ -46,10 +46,6 @@ contract OneTimeSparseMerkleTree is Hasher {
         }
     }
 
-    function hashOne(uint256 pi) public pure returns(uint256) {
-        return hashLeftRight(pi, uint256(0));
-    }
-
     function getDefaultHashes()
     public view returns(uint256[] memory) {
         uint256[] memory defaultHashes = new uint256[](treeLevels);

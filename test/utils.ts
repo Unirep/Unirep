@@ -81,10 +81,11 @@ const deployUnirep = async (deployer: ethers.Wallet) => {
     ))
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): SnarkBigInt => {
-    const epochKey = bigInt(ethers.utils.solidityKeccak256(["uint256", "uint256", "uint256"], [identityNullifier.toString(), epoch, nonce])) % SNARK_FIELD_SIZE
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): string => {
+    let epochKey = bigInt(ethers.utils.solidityKeccak256(["uint256", "uint256", "uint256"], [identityNullifier.toString(), epoch, nonce])) % SNARK_FIELD_SIZE
     // Adjust epoch key size according to epoch tree depth
-    return epochKey % bigInt(2).pow(bigInt(epochTreeDepth))
+    epochKey = epochKey % bigInt(2).pow(bigInt(epochTreeDepth))
+    return toCompleteHexString(epochKey.toString(16), 32)
 }
 
 const toCompleteHexString = (str: string, len?: number): string => {
