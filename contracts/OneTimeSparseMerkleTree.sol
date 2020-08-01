@@ -1,8 +1,9 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
+import { Hasher } from "./Hasher.sol";
 
-contract OneTimeSparseMerkleTree {
+contract OneTimeSparseMerkleTree is Hasher {
    // The tree depth
     uint256 public treeLevels;
     uint256 public numLeaves;
@@ -25,12 +26,16 @@ contract OneTimeSparseMerkleTree {
         numLeaves = 2 ** _treeLevels;
     }
 
+    function hashOne(uint256 pi) public pure returns(uint256) {
+        return hashLeftRight(pi, uint256(0));
+    }
+
     function getDefaultHashes()
     public view returns(uint256[] memory) {
         uint256[] memory defaultHashes = new uint256[](treeLevels);
-        defaultHashes[0] = uint256(keccak256(abi.encodePacked(uint256(0))));
+        defaultHashes[0] = hashLeftRight(uint256(0), uint256(0));
         for (uint256 i = 1; i < treeLevels; i ++) {
-            defaultHashes[i] = uint256(keccak256(abi.encodePacked(defaultHashes[i-1], defaultHashes[i-1])));
+            defaultHashes[i] = hashLeftRight(defaultHashes[i-1], defaultHashes[i-1]);
         }
         return defaultHashes;
     }
@@ -112,7 +117,7 @@ contract OneTimeSparseMerkleTree {
                     if(vars.find == false) {
                         vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
                     }
-                    parentLayerData[vars.nextInsertIndex] = uint256(keccak256(abi.encodePacked(vars.theNode, vars.siblingNode)));
+                    parentLayerData[vars.nextInsertIndex] = hashLeftRight(vars.theNode, vars.siblingNode);
                 } else {
                     // If we require input indices to be strictly increasing, then we can assume sibling node to be in either (j+1) or (j-1).
                     // if(j > 0) {
@@ -125,7 +130,7 @@ contract OneTimeSparseMerkleTree {
                     if(vars.find == false) {
                         vars.siblingNode = defaultHashes[currentDefaultHashesLevel];
                     }
-                    parentLayerData[vars.nextInsertIndex] = uint256(keccak256(abi.encodePacked(vars.siblingNode, vars.theNode)));
+                    parentLayerData[vars.nextInsertIndex] = hashLeftRight(vars.siblingNode, vars.theNode);
                 }
 
                 vars.nextInsertIndex ++;
