@@ -281,8 +281,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             epochKeyHashChainList[i] = uint256(epochKeyHashchain[epochKey]);
         }
 
-        epochTree = new OneTimeSparseMerkleTree(treeDepths.epochTreeDepth);
-        epochTree.genSMT(epochKeyList, epochKeyHashChainList);
+        epochTree = new OneTimeSparseMerkleTree(treeDepths.epochTreeDepth, epochKeyList, epochKeyHashChainList);
+        epochTree.genSMT();
         return uint256(epochTree.getRoot());
     }
 

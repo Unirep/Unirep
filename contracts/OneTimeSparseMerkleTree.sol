@@ -10,6 +10,14 @@ contract OneTimeSparseMerkleTree is Hasher {
 
     uint256 public root;
 
+    struct LeavesToInsert {
+        uint256 numLeavesToInsert;
+        uint256[] leafIndices;
+        uint256[] leafData;
+    }
+    LeavesToInsert leavesToInsert;
+
+    // Grouped local variables to bypass compiler "stack too deep" warning
     struct TreeNodes {
         uint256 nodeIndex;
         uint256 theNode;
@@ -20,10 +28,22 @@ contract OneTimeSparseMerkleTree is Hasher {
         uint256 nextInsertIndex;
     }
 
-    constructor(uint256 _treeLevels) public {
+    constructor(uint256 _treeLevels, uint256[] memory _leafIndices, uint256[] memory _leafData) public {
         require(_treeLevels > 0, "Tree level(depth) should be at least one, i.e., have at least two leaf nodes");
         treeLevels = _treeLevels;
-        numLeaves = 2 ** _treeLevels;
+        uint256 _numLeaves = 2 ** _treeLevels;
+        numLeaves = _numLeaves;
+
+        require(_leafIndices.length <= _numLeaves, "Can not insert more than total number of leaves");
+        require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
+        leavesToInsert.numLeavesToInsert = _leafIndices.length;
+        leavesToInsert.leafIndices = new uint256[](_leafIndices.length);
+        leavesToInsert.leafData = new uint256[](_leafData.length);
+        for (uint256 i = 0; i < _leafIndices.length; i ++) {
+            require(_leafIndices[i] <= _numLeaves, "Index of inserted leaf is greater than total number of leaves");
+            leavesToInsert.leafIndices[i] = _leafIndices[i];
+            leavesToInsert.leafData[i] = _leafData[i];
+        }
     }
 
     function hashOne(uint256 pi) public pure returns(uint256) {
@@ -39,6 +59,18 @@ contract OneTimeSparseMerkleTree is Hasher {
         }
         return defaultHashes;
     }
+
+    function getLeavesToInsert() public view returns(uint256[] memory, uint256[] memory) {
+        uint256 numLeavesToInsert = leavesToInsert.numLeavesToInsert;
+        uint256[] memory _leafIndices = new uint256[](numLeavesToInsert);
+        uint256[] memory _leafData = new uint256[](numLeavesToInsert);
+        for (uint256 i = 0; i < numLeavesToInsert; i ++) {
+            _leafIndices[i] = leavesToInsert.leafIndices[i];
+            _leafData[i] = leavesToInsert.leafData[i];
+        }
+        return (_leafIndices, _leafData);
+    }
+
 
     function isInList(uint256 target, uint256[] memory list) internal pure returns(bool) {
         for (uint i = 0; i < list.length; i++) {
@@ -58,33 +90,31 @@ contract OneTimeSparseMerkleTree is Hasher {
         return (false, uint256(0));
     }
 
-    function genSMT(uint256[] calldata _leafIndices, uint256[] calldata _leafData) external {
+    function genSMT() external {
         uint256 _numLeaves = numLeaves;
         uint256 _treeLevels = treeLevels;
-
-        require(_leafIndices.length <= _numLeaves, "Can not insert more than total number of leaves");
-        require(_leafIndices.length == _leafData.length, "Indices and data not of the same length");
+        uint256 _numLeavesToInsert = leavesToInsert.numLeavesToInsert;
 
         uint256[] memory parentLayerIndices;
         uint256[] memory parentLayerData;
         // We start processing from the bottom layer
-        uint256[] memory currentLayerIndices = new uint256[](_leafIndices.length);
-        uint256[] memory currentLayerData = _leafData;
+        uint256[] memory currentLayerIndices = new uint256[](_numLeavesToInsert);
+        uint256[] memory currentLayerData = new uint256[](_numLeavesToInsert);
         uint256[] memory defaultHashes = getDefaultHashes();
         uint currentDefaultHashesLevel = 0;
 
         TreeNodes memory vars;
 
         // Check validity of inputs and convert leaf index into node index
-        for (uint i = 0; i < _leafIndices.length; i++) {
-            require(_leafIndices[i] <= _numLeaves, "Index of inserted leaf is greater than total number of leaves");
+        for (uint i = 0; i < _numLeavesToInsert; i++) {
 
             // // If we require input indices to be strictly increasing
             // // Check that indices are strictly increasing
-            // if(i > 0) require(_leafIndices[i] > _leafIndices[i-1], "Indices in list are not sorted (should increase strictly)");
+            // if(i > 0) require(leavesToInsert.leafIndices[i] > leavesToInsert.leafIndices[i-1], "Indices in list are not sorted (should increase strictly)");
 
             // Leaf index starts with 0 which is equivalent to node index of (0 + numLeaves)
-            currentLayerIndices[i] = _leafIndices[i] + _numLeaves;
+            currentLayerIndices[i] = leavesToInsert.leafIndices[i] + _numLeaves;
+            currentLayerData[i] = leavesToInsert.leafData[i];
         }
 
         for (uint i = 0; i < _treeLevels; i++) {
