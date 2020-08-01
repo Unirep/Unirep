@@ -48,7 +48,6 @@ describe('OneTimeSparseMerkleTree', () => {
     let accounts: Signer[]
 
     let tree: SparseMerkleTreeImpl
-    let OneTimeSMT
 
     beforeEach(async () => {
         let PoseidonT3Contract, PoseidonT6Contract
@@ -73,23 +72,29 @@ describe('OneTimeSparseMerkleTree', () => {
             linkLibrary(OneTimeSparseMerkleTree, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
         }
 
-        console.log('Deploying OneTimeSparseMerkleTree')
-        OneTimeSMT = (await deployContract(
-            <Wallet>accounts[0],
-            OneTimeSparseMerkleTree,
-            [epochTreeDepth],
-            {
-                gasLimit: 9000000,
-            }
-        ))
-        let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
-        console.log("Gas cost of deploying OneTimeSparseMerkleTree:", receipt.gasUsed.toString())
-
         tree = await getNewSMT()
     })
 
     describe('initialization ', async () => {
         it('default values should match', async () => {
+            console.log('Deploying OneTimeSparseMerkleTree')
+            let leafIndices: BigNumber[] = []
+            let leafData: SnarkBigInt[] = []
+            const OneTimeSMT = (await deployContract(
+                <Wallet>accounts[0],
+                OneTimeSparseMerkleTree,
+                [
+                    epochTreeDepth,
+                    leafIndices.map((bn) => bn.toString(10)),
+                    leafData
+                ],
+                {
+                    gasLimit: 9000000,
+                }
+            ))
+            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+            console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
+
             let defaultRoot = await OneTimeSMT.getRoot()
             expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
 
@@ -109,8 +114,6 @@ describe('OneTimeSparseMerkleTree', () => {
 
     describe('genSMT() ', async () => {
         it('inserting leaves with adjacent indices should match', async () => {
-            let defaultRoot = await OneTimeSMT.getRoot()
-            expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
             let leafIndices: BigNumber[] = []
             let dataBlocks: string[] = []
@@ -121,6 +124,25 @@ describe('OneTimeSparseMerkleTree', () => {
                 dataBlocks[i] = crypto.randomBytes(32).toString('hex')
                 leafData[i] = hashOne('0x' + dataBlocks[i])
             }
+
+            console.log('Deploying OneTimeSparseMerkleTree')
+            const OneTimeSMT = (await deployContract(
+                <Wallet>accounts[0],
+                OneTimeSparseMerkleTree,
+                [
+                    epochTreeDepth,
+                    leafIndices.map((bn) => bn.toString(10)),
+                    leafData
+                ],
+                {
+                    gasLimit: 9000000,
+                }
+            ))
+            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+            console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
+            let defaultRoot = await OneTimeSMT.getRoot()
+            expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
+
             let result
             for (let i = 0; i < numLeavesToInsert; i++) {
                 result = await tree.update(leafIndices[i], hexStrToBuf(dataBlocks[i]))
@@ -129,14 +151,12 @@ describe('OneTimeSparseMerkleTree', () => {
             let treeRoot = bufToHexString(tree.getRootHash())
 
             let tx = await OneTimeSMT.genSMT(
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
                 {
                     gasLimit: 9000000,
                 }
             )
 
-            let receipt = await tx.wait()
+            receipt = await tx.wait()
             expect(receipt.status).equal(1)
             let OTSMTRoot = await OneTimeSMT.getRoot()
             expect(OTSMTRoot).to.be.equal(treeRoot)
@@ -144,8 +164,6 @@ describe('OneTimeSparseMerkleTree', () => {
         })
 
         it('inserting leaves with random indices should match', async () => {
-            let defaultRoot = await OneTimeSMT.getRoot()
-            expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
             const numLeavesToInsert = 1
             // const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
             let leafIndices: BigNumber[] = []
@@ -158,6 +176,25 @@ describe('OneTimeSparseMerkleTree', () => {
                 dataBlocks[i] = crypto.randomBytes(32).toString('hex')
                 leafData[i] = hashOne('0x' + dataBlocks[i])
             }
+
+            console.log('Deploying OneTimeSparseMerkleTree')
+            const OneTimeSMT = (await deployContract(
+                <Wallet>accounts[0],
+                OneTimeSparseMerkleTree,
+                [
+                    epochTreeDepth,
+                    leafIndices.map((bn) => bn.toString(10)),
+                    leafData
+                ],
+                {
+                    gasLimit: 9000000,
+                }
+            ))
+            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+            console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
+            let defaultRoot = await OneTimeSMT.getRoot()
+            expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
+
             let result
             for (let i = 0; i < numLeavesToInsert; i++) {
                 result = await tree.update(leafIndices[i], hexStrToBuf(dataBlocks[i]))
@@ -166,14 +203,12 @@ describe('OneTimeSparseMerkleTree', () => {
             let treeRoot = bufToHexString(tree.getRootHash())
 
             let tx = await OneTimeSMT.genSMT(
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
                 {
                     gasLimit: 9000000,
                 }
             )
 
-            let receipt = await tx.wait()
+            receipt = await tx.wait()
             expect(receipt.status).equal(1)
             let OTSMTRoot = await OneTimeSMT.getRoot()
             expect(OTSMTRoot).to.be.equal(treeRoot)
@@ -181,18 +216,19 @@ describe('OneTimeSparseMerkleTree', () => {
         })
 
         it('inserting leaf with out of bound index should fail', async () => {
-            let defaultRoot = await OneTimeSMT.getRoot()
-            expect(defaultRoot).to.be.equal(ethers.utils.hexZeroPad("0x", 32))
-            let leafIndex = numLeaves.add(ONE)
+            let leafIndices = [numLeaves.add(ONE)]
             let dataBlock = crypto.randomBytes(32).toString('hex')
-            let leafData = hashOne('0x' + dataBlock)
-            let result
-            result = await tree.update(leafIndex, hexStrToBuf(dataBlock))
-            expect(result).to.be.false
+            let leafData = [hashOne('0x' + dataBlock)]
 
-            await expect(OneTimeSMT.genSMT(
-                [leafIndex.toString(10)],
-                [leafData],
+            console.log('Deploying OneTimeSparseMerkleTree which is expected to fail')
+            await expect(deployContract(
+                <Wallet>accounts[0],
+                OneTimeSparseMerkleTree,
+                [
+                    epochTreeDepth,
+                    leafIndices.map((n => n.toString(10))),
+                    leafData
+                ],
                 {
                     gasLimit: 9000000,
                 }
