@@ -79,6 +79,19 @@ const hashLeftRight = (left: SnarkBigInt, right: SnarkBigInt): SnarkBigInt => {
     return poseidonT3([left, right])
 }
 
+const wrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): string => {
+    let result: SnarkBigInt
+    if ( elements.length == 1) {
+        result = hashOne(elements[0])
+    } else if ( elements.length == 2) {
+        result = hashLeftRight(elements[0], elements[1])
+    } else {
+        throw new Error(`elements length should not greater than 2, got ${elements.length}`)
+    }
+
+    return ethers.utils.hexZeroPad('0x' + result.toString(16), 32)
+}
+
 const genRandomBabyJubValue: SnarkBigInt = (
 ) => {
 
@@ -124,4 +137,5 @@ export {
     hashLeftRight,
     stringifyBigInts,
     unstringifyBigInts,
+    wrappedPoseidonT3Hash,
 }

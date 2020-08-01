@@ -1,5 +1,6 @@
 import * as ethers from 'ethers'
 
+import { SnarkBigInt } from '../crypto'
 
 export const bufToHexString = (buf: Buffer): string => {
     return '0x' + buf.toString('hex')
@@ -42,4 +43,4 @@ export const keccak256 = (value: string): string => {
     return remove0x(ethers.utils.keccak256(preimage))
 }
 
-export type HashFunction = (string) => string
+export type HashFunction = (...inputs: SnarkBigInt[]) => string
