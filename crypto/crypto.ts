@@ -129,6 +129,7 @@ export {
     PoseidonParams,
     POSEIDON_T3_PARAMS,
     POSEIDON_T6_PARAMS,
+    SNARK_FIELD_SIZE,
     SnarkBigInt,
     bigInt,
     genRandomSalt,

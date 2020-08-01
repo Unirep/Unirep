@@ -1,6 +1,7 @@
 import * as ethers from 'ethers'
 import { deployContract, link } from "ethereum-waffle"
-import { SnarkBigInt, bigInt } from '../crypto/crypto'
+import { add0x } from '../crypto/SMT'
+import { SnarkBigInt, SNARK_FIELD_SIZE, bigInt } from '../crypto/crypto'
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
 import Unirep from "../artifacts/Unirep.json"
@@ -80,8 +81,16 @@ const deployUnirep = async (deployer: ethers.Wallet) => {
     ))
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): string => {
-    return ethers.utils.solidityKeccak256(["uint256", "uint256", "uint256"], [identityNullifier.toString(), epoch, nonce])
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): SnarkBigInt => {
+    const epochKey = bigInt(ethers.utils.solidityKeccak256(["uint256", "uint256", "uint256"], [identityNullifier.toString(), epoch, nonce])) % SNARK_FIELD_SIZE
+    // Adjust epoch key size according to epoch tree depth
+    return epochKey % bigInt(2).pow(bigInt(epochTreeDepth))
+}
+
+const toCompleteHexString = (str: string, len?: number): string => {
+    str = add0x(str)
+    if (len) str = ethers.utils.hexZeroPad(str, len)
+    return str
 }
 
 const genStubEPKProof = (isValid: Boolean) => {
@@ -100,4 +109,5 @@ export {
     genEpochKey,
     genStubEPKProof,
     linkLibrary,
+    toCompleteHexString,
 }
