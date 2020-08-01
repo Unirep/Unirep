@@ -4,6 +4,10 @@
 import assert from 'assert'
 
 /* Internal Imports */
+import {
+    bigInt,
+    wrappedPoseidonT3Hash,
+} from '../crypto'
 import { KeyValueStore } from './kvstore'
 import {
     BIG_ENDIAN,
@@ -19,7 +23,7 @@ import {
     SparseMerkleTree,
 } from './tree-types'
 
-import { keccak256, HashFunction } from './utils'
+import { remove0x, HashFunction } from './utils'
 
 
 /**
@@ -32,7 +36,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
     protected root!: MerkleTreeNode
     private zeroHashes!: Buffer[]
 
-    private readonly hashFunction: (Buffer) => Buffer
+    private readonly hashFunction: (buf: Buffer, isInternalNode?: boolean) => Buffer
     private readonly hashBuffer: Buffer = Buffer.alloc(64)
 
     public readonly numLeaves: BigNumber
@@ -41,7 +45,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         db: KeyValueStore,
         rootHash?: Buffer,
         height: number = 160,
-        hashFunction = keccak256
+        hashFunction = wrappedPoseidonT3Hash
     ): Promise<SparseMerkleTreeImpl> {
         assert(!rootHash || rootHash.length === 32, 'Root hash must be 32 bytes')
 
@@ -54,16 +58,26 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
     constructor(
         protected db: KeyValueStore,
         private height: number = 160,
-        hashFunction: HashFunction = keccak256
+        hashFunction: HashFunction = wrappedPoseidonT3Hash
     ) {
         assert(height > 0, 'SMT height needs to be > 0')
 
         // Tree with height 1 has one leaf node
         this.numLeaves = TWO.pow(new BigNumber(height - 1))
 
-        // TODO: Hack for now -- change everything to string if/when it makes sense
-        this.hashFunction = (buff: Buffer) =>
-            Buffer.from(hashFunction(buff.toString('hex')), 'hex')
+        this.hashFunction = (buf: Buffer, isInternalNode?: boolean) => {
+            let digest
+            if (isInternalNode === true) {
+                const leftNode: Buffer = Buffer.alloc(32)
+                const rightNode: Buffer = Buffer.alloc(32)
+                buf.copy(leftNode, 0, 0, 32)
+                buf.copy(rightNode, 0, 32, 64)
+                digest = hashFunction(bigInt('0x' + leftNode.toString('hex')), bigInt('0x' + rightNode.toString('hex')))
+            } else {
+                digest = hashFunction(bigInt('0x' + buf.toString('hex')))
+            }
+            return Buffer.from(remove0x(digest), 'hex')
+        }
     }
 
     private async init(rootHash?: Buffer): Promise<void> {
@@ -441,7 +455,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         } else {
             node.value.fill(updatedChild.hash, 32)
         }
-        node.hash = this.hashFunction(node.value)
+        node.hash = this.hashFunction(node.value, true)
         return node
     }
 
@@ -525,7 +539,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         }
 
         return this.createNode(
-            this.hashFunction(value),
+            this.hashFunction(value, true),
             value,
             this.getNodeKey(leafKey, depth)
         )
@@ -544,7 +558,8 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
 
         for (let i = 1; i < this.height; i++) {
             hashes[i] = this.hashFunction(
-                this.hashBuffer.fill(hashes[i - 1], 0, 32).fill(hashes[i - 1], 32)
+                this.hashBuffer.fill(hashes[i - 1], 0, 32).fill(hashes[i - 1], 32),
+                true
             )
         }
 
