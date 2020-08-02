@@ -3,7 +3,7 @@ import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee} from '../config/testLocal'
-import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
+import { genRandomSalt } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
 import { deployUnirep, genEpochKey } from './utils'
 

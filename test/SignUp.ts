@@ -3,9 +3,8 @@ import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { globalStateTreeDepth, maxUsers, userStateTreeDepth} from '../config/testLocal'
-import { genRandomSalt, NOTHING_UP_MY_SLEEVE } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
-import { IncrementalQuinTree } from '../crypto/IncrementalQuinTree'
+import { IncrementalQuinTree } from 'maci-crypto'
 import { deployUnirep } from './utils'
 
 chai.use(solidity)

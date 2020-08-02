@@ -1,6 +1,6 @@
 const Artifactor = require("truffle-artifactor");
 
-import {PoseidonParams, POSEIDON_T3_PARAMS, POSEIDON_T6_PARAMS} from '../crypto/crypto'
+import {PoseidonParams, POSEIDON_T3_PARAMS, POSEIDON_T6_PARAMS} from 'maci-crypto'
 
 const poseidonGenContract = require('circomlib/src/poseidon_gencontract.js')
 const artifactor = new Artifactor('artifacts/')
