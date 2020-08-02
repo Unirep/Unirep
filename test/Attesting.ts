@@ -2,9 +2,9 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
-import { attestingFee} from '../config/testLocal'
+import { attestingFee } from '../config/testLocal'
 import { genRandomSalt } from '../crypto/crypto'
-import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
+import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey } from './utils'
 
 chai.use(solidity)

@@ -34,6 +34,7 @@
         "circom": "0.0.34",
         "circomlib": "git+https://github.com/ChihChengLiang/circomlib.git#e39ff9c27a5bc4eca5c00908ccb26496c37fce63",
         "keyv": "^4.0.1",
+        "libsemaphore": "^1.0.15",
         "maci-crypto": "^0.1.8",
         "snarkjs": "git+https://github.com/weijiekoh/snarkjs.git#52e0ceba0256bc9bf94cbc9500139dfc37018f91",
         "truffle-artifactor": "^4.0.30"

@@ -3,7 +3,7 @@ import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { globalStateTreeDepth, maxUsers, userStateTreeDepth} from '../config/testLocal'
-import { genIdentity, genIdentityCommitment } from '../crypto/idendity'
+import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
 import { deployUnirep } from './utils'
 
