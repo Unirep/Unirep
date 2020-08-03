@@ -24,15 +24,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     uint256 public latestEpochTransitionTime;
 
-    // The mapping of epoch to epoch tree
-    mapping(uint256 => uint256) public epochTrees;
-
-    // The mapping of epoch to global state tree
-    mapping(uint256 => IncrementalMerkleTree) public globalStateTrees;
-
     // To store the Merkle root of a tree with 2 **
     // treeDepths.userStateTreeDepth leaves of value 0
     uint256 public emptyUserStateRoot;
+    // To store the Merkle root of a tree with 2 **
+    // treeDepths.userStateTreeDepth leaves of value 0
+    uint256 public emptyGlobalStateTreeRoot;
+    // To store the Merkle root of a tree with 2 **
+    // treeDepths.userStateTreeDepth leaves of value 0
+    uint256 public emptyNullifierTreeRoot;
 
     // The maximum number of signups allowed
     uint256 public maxUsers;
@@ -57,7 +57,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Keep track of whether an attester has attested to an epoch key
     mapping(bytes32 => mapping(address => bool)) public attestationsMade;
 
-    uint256 public nullifierTreeRoot;
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(bytes32 => bytes32) public epochKeyHashchain;
 
@@ -87,7 +86,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         bool _overwriteGraffiti
     );
 
-    event  EpochEnded(uint256 indexed _epoch);
+    event EpochEnded(uint256 indexed _epoch, address _epochTreeAddr);
+
+    event UserStateTransitioned(
+        uint256 indexed _epoch,
+        uint256 indexed _identityCommitment,
+        uint256 _newUserStateRoot,
+        uint256 _hashedLeaf,
+        uint256 _newNullifierTreeRoot
+    );
 
     function getNumEpochKey(uint256 epoch) public view returns (uint256) {
         return epochKeys[epoch].numKeys;
@@ -123,18 +130,14 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         maxEpochKeyNonce = _maxValues.maxEpochKeyNonce;
 
         // Calculate and store the empty user state tree root. This value must
-        // be set before we call hashedBlankStateLeaf() later
+        // be set before we compute empty global state tree root later
         emptyUserStateRoot = calcEmptyUserStateTreeRoot(_treeDepths.userStateTreeDepth);
 
-        // Compute the hash of a blank state leaf
-        uint256 h = hashedBlankStateLeaf();
+        emptyGlobalStateTreeRoot = calcEmptyGlobalStateTreeRoot(_treeDepths.globalStateTreeDepth);
 
-        // Create a global state tree for first epoch
-        globalStateTrees[currentEpoch] = new IncrementalMerkleTree(_treeDepths.globalStateTreeDepth, h);
+        emptyNullifierTreeRoot = calcEmptyNullifierTreeRoot(_treeDepths.nullifierTreeDepth);
 
         attestingFee = _attestingFee;
-
-        nullifierTreeRoot = getDefaultRoot(_treeDepths.nullifierTreeDepth, uint256(0));
     }
 
     /*
@@ -153,8 +156,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         });
 
         uint256 hashedLeaf = hashStateLeaf(stateLeaf);
-
-        globalStateTrees[currentEpoch].insertLeaf(hashedLeaf);
 
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
@@ -245,24 +246,21 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function beginEpochTransition() external {
         require(block.timestamp - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
 
+        address epochTreeAddr;
         if(epochKeys[currentEpoch].numKeys > 0) {
-            epochTrees[currentEpoch] = finalizeAllAttestations();
+            epochTreeAddr = finalizeAllAttestations();
         }
 
-        emit EpochEnded(currentEpoch);
+        emit EpochEnded(currentEpoch, epochTreeAddr);
 
         latestEpochTransitionTime = block.timestamp;
         currentEpoch ++;
-
-        // Create a new global state tree
-        uint256 h = hashedBlankStateLeaf();
-        globalStateTrees[currentEpoch] = new IncrementalMerkleTree(treeDepths.globalStateTreeDepth, h);
 
         // Pay the caller
         // msg.sender.transfer();
     }
 
-    function finalizeAllAttestations() internal returns(uint256) {
+    function finalizeAllAttestations() internal returns (address) {
         OneTimeSparseMerkleTree epochTree;
         bytes32 epochKey;
         uint256[] memory epochKeyList = new uint256[](epochKeys[currentEpoch].numKeys);
@@ -282,30 +280,30 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         }
 
         epochTree = new OneTimeSparseMerkleTree(treeDepths.epochTreeDepth, epochKeyList, epochKeyHashChainList);
-        epochTree.genSMT();
-        return epochTree.getRoot();
+        return address(epochTree);
     }
 
     function updateUserStateRoot(
         uint256 _identityCommitment,
         uint256 transitionFromEpoch,
+        uint256 _fromGlobalStateTree,
+        uint256 _fromEpochTree,
+        uint256 _fromNullifierTreeRoot,
         uint256 _newUserStateRoot,
         uint256 _newNullifierTreeRoot,
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
 
-        uint256 globalStateTree = globalStateTrees[transitionFromEpoch].root();
-        uint256 epochTree = epochTrees[transitionFromEpoch];
         // Verify validity of new user state:
         // 1. User's identity and state is in the global state tree
         // 2. Attestations to each epoch key are processed and processed correctly
         // 3. Nullifiers of all processed attestations have not been seen before
         // 4. Nullifier tree is updated correctly
         uint256[5] memory publicSignals = [
-            globalStateTree,
-            epochTree,
+            _fromGlobalStateTree,
+            _fromEpochTree,
+            _fromNullifierTreeRoot,
             _newUserStateRoot,
-            nullifierTreeRoot,
             _newNullifierTreeRoot
         ];
 
@@ -331,9 +329,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         proof.isValid = newUserStateVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
         require(proof.isValid == true, "Unirep: invalid user state update proof");
 
-        // Update nullifier tree root
-        nullifierTreeRoot = _newNullifierTreeRoot;
-
         // Create, hash, and insert a fresh state leaf
         StateLeaf memory stateLeaf = StateLeaf({
             identityCommitment: _identityCommitment,
@@ -342,7 +337,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         uint256 hashedLeaf = hashStateLeaf(stateLeaf);
 
-        globalStateTrees[currentEpoch].insertLeaf(hashedLeaf);
+        emit UserStateTransitioned(currentEpoch, _identityCommitment, _newUserStateRoot, hashedLeaf, _newNullifierTreeRoot);
     }
 
     /*
@@ -376,11 +371,18 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         return hashStateLeaf(stateLeaf);
     }
 
-    function calcEmptyUserStateTreeRoot(uint8 _levels) public pure returns (uint256) {
+    function calcEmptyUserStateTreeRoot(uint8 _levels) internal pure returns (uint256) {
         return computeEmptyRoot(_levels, 0);
     }
 
-    function getStateTreeRoot() public view returns (uint256) {
-        return globalStateTrees[currentEpoch].root();
+    function calcEmptyGlobalStateTreeRoot(uint8 _levels) internal view returns (uint256) {
+        // Compute the hash of a blank state leaf
+        uint256 h = hashedBlankStateLeaf();
+
+        return computeEmptyRoot(_levels, h);
+    }
+
+    function calcEmptyNullifierTreeRoot(uint8 _levels) internal pure returns (uint256) {
+        return computeEmptyRoot(_levels, 0);
     }
 }
