@@ -1,5 +1,5 @@
 import { ethers } from "@nomiclabs/buidler"
-import { Signer, Wallet } from "ethers"
+import { BigNumber, Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength } from '../config/testLocal'
@@ -10,11 +10,12 @@ import { deployUnirep, genEpochKey } from './utils'
 chai.use(solidity)
 const { expect } = chai
 
+import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import Unirep from "../artifacts/Unirep.json"
 
 
 describe('Epoch Transition', () => {
-    let unirepContract
+    let unirepContract: Contract
 
     let accounts: Signer[]
 
@@ -108,10 +109,23 @@ describe('Epoch Transition', () => {
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
         console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
+        
+        // Parse epoch tree address and read from epoch tree
+        // And verify that epoch keys and hashchains both match
+        const parsed_log = unirepContract.interface.parseLog(receipt.logs[0])
+        const epochTreeAddr = parsed_log['args']['_epochTreeAddr']
+        expect(epochTreeAddr).to.be.not.equal(ethers.utils.hexZeroPad("0x", 20))
+
+        const epochTreeContract: Contract = await ethers.getContractAt(OneTimeSparseMerkleTree.abi, epochTreeAddr)
+        let [epochKeys_, epochKeyHashchains_] = await epochTreeContract.getLeavesToInsert()
+        epochKeys_ = epochKeys_.map((epk) => ethers.utils.hexZeroPad(epk.toHexString(), 32))
+        epochKeyHashchains_ = epochKeyHashchains_.map((hc) => ethers.utils.hexZeroPad(hc.toHexString(), 32))
+        expect(epochKeys_.length).to.be.equal(numEpochKey)
 
         // Verify each epoch key hash chain is sealed
         let hashChainAfter
         let sealedHashChain
+        let epkIndex
         for (epochKey_ in epochKeyHashchainMap) {
             sealedHashChain = ethers.utils.solidityKeccak256(
                 ["bytes32", "bytes32"],
@@ -122,7 +136,16 @@ describe('Epoch Transition', () => {
             )
             hashChainAfter = await unirepContract.epochKeyHashchain(epochKey_)
             expect(hashChainAfter).equal(sealedHashChain)
+
+            // Check that epoch keys and hashchains also match the ones in epoch tree
+            epkIndex = epochKeys_.indexOf(epochKey_)
+            expect(epkIndex >= 0).to.be.true
+            expect(epochKeyHashchains_[epkIndex]).to.be.equal(sealedHashChain)
         }
+
+        // Epoch tree root should not be 0x0
+        const root_ = await epochTreeContract.genSMT()
+        expect(root_).to.be.not.equal(ethers.utils.hexZeroPad("0x", 32))
 
         // Verify latestEpochTransitionTime and currentEpoch
         let latestEpochTransitionTime = await unirepContract.latestEpochTransitionTime()
@@ -145,9 +168,9 @@ describe('Epoch Transition', () => {
         expect(receipt.status).equal(1)
 
         // Verify epoch tree: since there are no epoch keys, no epoch tree is formed
-        // epoch tree should be bytes32(0)
-        let epochTree_ = await unirepContract.epochTrees(epoch)
-        expect(epochTree_).equal(ethers.utils.hexZeroPad("0x", 32))
+        const parsed_log = unirepContract.interface.parseLog(receipt.logs[0])
+        const epochTreeAddr = parsed_log['args']['_epochTreeAddr']
+        expect(epochTreeAddr).to.be.equal(ethers.utils.hexZeroPad("0x", 20))
 
         // Verify latestEpochTransitionTime and currentEpoch
         let latestEpochTransitionTime = await unirepContract.latestEpochTransitionTime()

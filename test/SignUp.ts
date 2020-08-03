@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
-import { globalStateTreeDepth, maxUsers, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
 import { deployUnirep } from './utils'
@@ -17,6 +17,7 @@ import { splitSignature } from "ethers/lib/utils"
 describe('Signup', () => {
     let unirepContract
     let GSTree
+    let emptyUserStateRoot
     
     let accounts: Signer[]
     
@@ -30,22 +31,38 @@ describe('Signup', () => {
     })
 
     it('should have the correct config value', async () => {
+        const attestingFee_ = await unirepContract.attestingFee()
+        expect(attestingFee.toString()).equal(attestingFee_.toString())
+        const epochLength_ = await unirepContract.epochLength()
+        expect(epochLength.toString()).equal(epochLength_.toString())
+        const maxEpochKeyNonce_ = await unirepContract.maxEpochKeyNonce()
+        expect(maxEpochKeyNonce.toString()).equal(maxEpochKeyNonce_.toString())
         const maxUsers_ = await unirepContract.maxUsers()
         expect(maxUsers.toString()).equal(maxUsers_.toString())
 
         const treeDepths_ = await unirepContract.treeDepths()
+        expect(epochTreeDepth.toString()).equal(treeDepths_.epochTreeDepth.toString())
         expect(globalStateTreeDepth.toString()).equal(treeDepths_.globalStateTreeDepth.toString())
+        expect(nullifierTreeDepth.toString()).equal(treeDepths_.nullifierTreeDepth.toString())
         expect(userStateTreeDepth.toString()).equal(treeDepths_.userStateTreeDepth.toString())
+    })
+
+    it('should have the correct default value', async () => {
+        const emptyUSTree = new IncrementalQuinTree(userStateTreeDepth, 0, 2)
+        emptyUserStateRoot = await unirepContract.emptyUserStateRoot()
+        expect(emptyUSTree.root.toString()).equal(emptyUserStateRoot.toString())
+
+        const emptyGlobalStateTreeRoot = await unirepContract.emptyGlobalStateTreeRoot()
+        expect(GSTree.root.toString()).equal(emptyGlobalStateTreeRoot.toString())
+
+        const emptyNullifierTree = new IncrementalQuinTree(nullifierTreeDepth, 0, 2)
+        const emptyNullifierTreeRoot = await unirepContract.emptyNullifierTreeRoot()
+        expect(emptyNullifierTree.root.toString()).equal(emptyNullifierTreeRoot.toString())
     })
 
     describe('User sign-ups', () => {
         const id = genIdentity()
         const commitment = genIdentityCommitment(id)
-
-        it('initial global state GSTree should have the correct root', async () => {
-            const root1 = await unirepContract.getStateTreeRoot()
-            expect(GSTree.root.toString()).equal(root1.toString())
-        })
 
         it('sign up should succeed', async () => {
             const tx = await unirepContract.userSignUp(commitment)
@@ -56,16 +73,13 @@ describe('Signup', () => {
             const numUserSignUps_ = await unirepContract.numUserSignUps()
             expect((1).toString()).equal(numUserSignUps_.toString())
 
-            const emptyUserStateRoot_ = await unirepContract.emptyUserStateRoot()
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
                     commitment.toString(),
-                    emptyUserStateRoot_.toString()
+                    emptyUserStateRoot.toString()
                 ]
             )
             GSTree.insert(hashedStateLeaf)
-            const root1 = await unirepContract.getStateTreeRoot()
-            expect(GSTree.root.toString()).equal(root1.toString())
         })
 
         it('double sign up should fail', async () => {
