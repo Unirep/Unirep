@@ -8,8 +8,6 @@ contract OneTimeSparseMerkleTree is Hasher {
     uint256 public treeLevels;
     uint256 public numLeaves;
 
-    uint256 public root;
-
     struct LeavesToInsert {
         uint256 numLeavesToInsert;
         uint256[] leafIndices;
@@ -17,7 +15,7 @@ contract OneTimeSparseMerkleTree is Hasher {
     }
     LeavesToInsert leavesToInsert;
 
-    // Grouped local variables to bypass compiler "stack too deep" warning
+    // Grouped local variables to bypass compiler "stack too deep" error
     struct TreeNodes {
         uint256 nodeIndex;
         uint256 theNode;
@@ -47,7 +45,7 @@ contract OneTimeSparseMerkleTree is Hasher {
     }
 
     function getDefaultHashes()
-    public view returns(uint256[] memory) {
+    public view returns (uint256[] memory) {
         uint256[] memory defaultHashes = new uint256[](treeLevels);
         defaultHashes[0] = hashLeftRight(uint256(0), uint256(0));
         for (uint256 i = 1; i < treeLevels; i ++) {
@@ -56,7 +54,7 @@ contract OneTimeSparseMerkleTree is Hasher {
         return defaultHashes;
     }
 
-    function getLeavesToInsert() public view returns(uint256[] memory, uint256[] memory) {
+    function getLeavesToInsert() public view returns (uint256[] memory, uint256[] memory) {
         uint256 numLeavesToInsert = leavesToInsert.numLeavesToInsert;
         uint256[] memory _leafIndices = new uint256[](numLeavesToInsert);
         uint256[] memory _leafData = new uint256[](numLeavesToInsert);
@@ -68,7 +66,7 @@ contract OneTimeSparseMerkleTree is Hasher {
     }
 
 
-    function isInList(uint256 target, uint256[] memory list) internal pure returns(bool) {
+    function isInList(uint256 target, uint256[] memory list) internal pure returns (bool) {
         for (uint i = 0; i < list.length; i++) {
             if(target != list[i]) continue;
             else return true;
@@ -76,7 +74,7 @@ contract OneTimeSparseMerkleTree is Hasher {
         return false;
     }
 
-    function getDataInList(uint256 index, uint256[] memory indicesList, uint256[] memory dataList) internal pure returns(bool, uint256) {
+    function getDataInList(uint256 index, uint256[] memory indicesList, uint256[] memory dataList) internal pure returns (bool, uint256) {
         require(indicesList.length == dataList.length, "Indices and data not of the same length");
 
         for (uint i = 0; i < indicesList.length; i++) {
@@ -86,7 +84,7 @@ contract OneTimeSparseMerkleTree is Hasher {
         return (false, uint256(0));
     }
 
-    function genSMT() external {
+    function genSMT() external view returns (uint256) {
         uint256 _numLeaves = numLeaves;
         uint256 _treeLevels = treeLevels;
         uint256 _numLeavesToInsert = leavesToInsert.numLeavesToInsert;
@@ -178,10 +176,6 @@ contract OneTimeSparseMerkleTree is Hasher {
         // and parent layer would be the top layer.
         // So parent layer should have only one node.
         require(vars.nextInsertIndex == 1, "Can not have more than one root");
-        root = parentLayerData[0];
-    }
-
-    function getRoot() public view returns(uint256) {
-        return root;
+        return parentLayerData[0];
     }
 }
