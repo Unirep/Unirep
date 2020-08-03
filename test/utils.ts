@@ -27,7 +27,7 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
     contractJson.bytecode = linkableContract.evm.bytecode.object
 }
 
-const deployUnirep = async (deployer: ethers.Wallet) => {
+const deployUnirep = async (deployer: ethers.Wallet): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
     let NewUserStateVerifierContract
 
@@ -50,35 +50,44 @@ const deployUnirep = async (deployer: ethers.Wallet) => {
 
     console.log('Deploying Unirep')
     // Link the library code if it has not been linked yet
-    if(Unirep.bytecode.indexOf("$") > 0) {
+    const notLinkedYet = Unirep.bytecode.indexOf("$") > 0
+    if (notLinkedYet) {
         // Link the Unirep contract to PoseidonT3 contract
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
         // Link the Unirep contract to PoseidonT6 contract
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
     }
 
-    return (await deployContract(
-        deployer,
-        Unirep,
-        [
-            {
-                globalStateTreeDepth,
-                userStateTreeDepth,
-                nullifierTreeDepth,
-                epochTreeDepth
-            },
-            {
-                maxUsers,
-                maxEpochKeyNonce
-            },
-            NewUserStateVerifierContract.address,
-            epochLength,
-            attestingFee
-        ],
+    const f = new ethers.ContractFactory(Unirep.abi, Unirep.bytecode, deployer)
+    const c = await (f.deploy(
+        {
+            globalStateTreeDepth,
+            userStateTreeDepth,
+            nullifierTreeDepth,
+            epochTreeDepth
+        },
+        {
+            maxUsers,
+            maxEpochKeyNonce
+        },
+        NewUserStateVerifierContract.address,
+        epochLength,
+        attestingFee,
         {
             gasLimit: 9000000,
         }
     ))
+
+    // Print out deployment info if the contract is been deployed the first time
+    if (notLinkedYet) {
+        console.log("-----------------------------------------------------------------")
+        console.log("Bytecode size of Unirep:", Math.floor(Unirep.bytecode.length / 2), "bytes")
+        let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
+        console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
+        console.log("-----------------------------------------------------------------")
+    }
+
+    return c
 }
 
 const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): string => {

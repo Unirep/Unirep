@@ -2,7 +2,7 @@ import * as crypto from 'crypto'
 import Keyv from "keyv"
 import chai from "chai"
 import { ethers } from "@nomiclabs/buidler"
-import { Signer, Wallet } from "ethers"
+import { ContractFactory, Signer, Wallet } from "ethers"
 import { deployContract, solidity } from "ethereum-waffle"
 
 import { epochTreeDepth } from '../config/testLocal'
@@ -48,6 +48,7 @@ async function getNewSMT(rootHash?: Buffer): Promise<SparseMerkleTreeImpl> {
 describe('OneTimeSparseMerkleTree', () => {
     let accounts: Signer[]
 
+    let OTSMTFactory: ContractFactory
     let tree: SparseMerkleTreeImpl
 
     beforeEach(async () => {
@@ -73,6 +74,7 @@ describe('OneTimeSparseMerkleTree', () => {
             linkLibrary(OneTimeSparseMerkleTree, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
         }
 
+        OTSMTFactory = new ContractFactory(OneTimeSparseMerkleTree.abi, OneTimeSparseMerkleTree.bytecode, accounts[0])
         tree = await getNewSMT()
     })
 
@@ -81,18 +83,14 @@ describe('OneTimeSparseMerkleTree', () => {
             console.log('Deploying OneTimeSparseMerkleTree')
             let leafIndices: BigNumber[] = [ONE]
             let leafData: SnarkBigInt[] = [bigInt(1)]
-            const OneTimeSMT = (await deployContract(
-                <Wallet>accounts[0],
-                OneTimeSparseMerkleTree,
-                [
-                    epochTreeDepth,
-                    leafIndices.map((bn) => bn.toString(10)),
-                    leafData
-                ],
+            const OneTimeSMT = await OTSMTFactory.deploy(
+                epochTreeDepth,
+                leafIndices.map((bn) => bn.toString(10)),
+                leafData,
                 {
                     gasLimit: 9000000,
                 }
-            ))
+            )
             let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
@@ -124,18 +122,14 @@ describe('OneTimeSparseMerkleTree', () => {
             }
 
             console.log('Deploying OneTimeSparseMerkleTree')
-            const OneTimeSMT = (await deployContract(
-                <Wallet>accounts[0],
-                OneTimeSparseMerkleTree,
-                [
-                    epochTreeDepth,
-                    leafIndices.map((bn) => bn.toString(10)),
-                    leafData
-                ],
+            const OneTimeSMT = await OTSMTFactory.deploy(
+                epochTreeDepth,
+                leafIndices.map((bn) => bn.toString(10)),
+                leafData,
                 {
                     gasLimit: 9000000,
                 }
-            ))
+            )
             let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
@@ -167,18 +161,14 @@ describe('OneTimeSparseMerkleTree', () => {
             }
 
             console.log('Deploying OneTimeSparseMerkleTree')
-            const OneTimeSMT = (await deployContract(
-                <Wallet>accounts[0],
-                OneTimeSparseMerkleTree,
-                [
-                    epochTreeDepth,
-                    leafIndices.map((bn) => bn.toString(10)),
-                    leafData
-                ],
+            const OneTimeSMT = await OTSMTFactory.deploy(
+                epochTreeDepth,
+                leafIndices.map((bn) => bn.toString(10)),
+                leafData,
                 {
                     gasLimit: 9000000,
                 }
-            ))
+            )
             let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
@@ -201,14 +191,10 @@ describe('OneTimeSparseMerkleTree', () => {
             let leafData = [hashOne('0x' + dataBlock)]
 
             console.log('Deploying OneTimeSparseMerkleTree which is expected to fail')
-            await expect(deployContract(
-                <Wallet>accounts[0],
-                OneTimeSparseMerkleTree,
-                [
-                    epochTreeDepth,
-                    leafIndices.map((n => n.toString(10))),
-                    leafData
-                ],
+            await expect(OTSMTFactory.deploy(
+                epochTreeDepth,
+                leafIndices.map((bn) => bn.toString(10)),
+                leafData,
                 {
                     gasLimit: 9000000,
                 }
