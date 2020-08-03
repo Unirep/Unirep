@@ -13,14 +13,6 @@ contract DomainObjs is Hasher {
         return hashLeftRight(_stateLeaf.identityCommitment, _stateLeaf.userStateRoot);
     }
 
-    function getDefaultRoot(uint256 _treeLevels, uint256 _zeroValue) public pure returns(uint256) {
-        uint256 node = _zeroValue;
-        for (uint256 i = 1; i < _treeLevels; i ++) {
-            node = hashLeftRight(node, node);
-        }
-        return node;
-    }
-
     struct Attestation {
         // The attester’s ID
         uint256 attesterId;
