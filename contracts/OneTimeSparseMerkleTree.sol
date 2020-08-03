@@ -28,6 +28,7 @@ contract OneTimeSparseMerkleTree is Hasher {
 
     constructor(uint256 _treeLevels, uint256[] memory _leafIndices, uint256[] memory _leafData) public {
         require(_treeLevels > 0, "Tree level(depth) should be at least one, i.e., have at least two leaf nodes");
+        require(_leafIndices.length > 0, "Can not create a tree without inserting any leaves");
         treeLevels = _treeLevels;
         uint256 _numLeaves = 2 ** _treeLevels;
         numLeaves = _numLeaves;
@@ -54,10 +55,11 @@ contract OneTimeSparseMerkleTree is Hasher {
         return defaultHashes;
     }
 
-    function getLeavesToInsert() public view returns (uint256[] memory, uint256[] memory) {
+    function getLeavesToInsert() public view returns (uint256[] memory _leafIndices, uint256[] memory _leafData) {
         uint256 numLeavesToInsert = leavesToInsert.numLeavesToInsert;
-        uint256[] memory _leafIndices = new uint256[](numLeavesToInsert);
-        uint256[] memory _leafData = new uint256[](numLeavesToInsert);
+        if (numLeavesToInsert == 0) return (_leafIndices, _leafData);
+        _leafIndices = new uint256[](numLeavesToInsert);
+        _leafData = new uint256[](numLeavesToInsert);
         for (uint256 i = 0; i < numLeavesToInsert; i ++) {
             _leafIndices[i] = leavesToInsert.leafIndices[i];
             _leafData[i] = leavesToInsert.leafData[i];
@@ -98,6 +100,8 @@ contract OneTimeSparseMerkleTree is Hasher {
         uint currentDefaultHashesLevel = 0;
 
         TreeNodes memory vars;
+
+        if (_numLeavesToInsert == 0) return 0;
 
         // Check validity of inputs and convert leaf index into node index
         for (uint i = 0; i < _numLeavesToInsert; i++) {
