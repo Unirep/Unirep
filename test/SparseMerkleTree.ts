@@ -144,7 +144,7 @@ describe('OneTimeSparseMerkleTree', () => {
 
             expect(OTSMTRoot).to.be.equal(treeRoot)
             console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with adjacent " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
-        })
+        }).timeout(100000)
 
         it('inserting leaves with random indices should match', async () => {
             const numLeavesToInsert = 1
