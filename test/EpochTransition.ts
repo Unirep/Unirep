@@ -155,6 +155,28 @@ describe('Epoch Transition', () => {
         expect(epoch_).equal(Number(epoch) + 1)
     })
 
+    it('attesting to a sealed epoch key should fail', async () => {
+        let attestation = {
+            attesterId: attesterId.toString(),
+            posRep: 1,
+            negRep: 0,
+            graffiti: genRandomSalt().toString(),
+            overwriteGraffiti: true,
+        }
+
+        let prevEpoch = (await unirepContract.currentEpoch()).sub(1)
+        let numEpochKey = await unirepContract.getNumEpochKey(prevEpoch)
+        for (let i = 0; i < numEpochKey; i++) {
+            let epochKey_ = await unirepContract.getEpochKey(prevEpoch, i)
+
+            await expect(unirepContractCalledByAttester.submitAttestation(
+                attestation,
+                epochKey_,
+                {value: attestingFee}
+            )).to.be.revertedWith('Unirep: this hash chain of this epoch key is sealed')
+        }
+    })
+
     it('epoch transition with no attestations and epoch keys should also succeed', async () => {
         let epoch = await unirepContract.currentEpoch()
         let numEpochKey = await unirepContract.getNumEpochKey(epoch)

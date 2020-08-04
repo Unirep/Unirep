@@ -27,12 +27,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // To store the Merkle root of a tree with 2 **
     // treeDepths.userStateTreeDepth leaves of value 0
     uint256 public emptyUserStateRoot;
-    // To store the Merkle root of a tree with 2 **
-    // treeDepths.userStateTreeDepth leaves of value 0
+
     uint256 public emptyGlobalStateTreeRoot;
-    // To store the Merkle root of a tree with 2 **
-    // treeDepths.userStateTreeDepth leaves of value 0
+
     uint256 public emptyNullifierTreeRoot;
+
+    // Maximum number of epoch keys allowed for an user to generate in one epoch
+    uint8 public maxEpochKeyNonce;
 
     // The maximum number of signups allowed
     uint256 public maxUsers;
@@ -44,9 +45,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Fee required for submitting an attestation
     uint256 public attestingFee;
 
-    // Maximum number of epoch keys allowed for an user to generate in one epoch
-    uint8 public maxEpochKeyNonce;
-
     // A mapping between each attesters’ Ethereum address and their attester ID.
     // Attester IDs are incremental and start from 1.
     // No attesters with and ID of 0 should exist.
@@ -56,6 +54,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     // Keep track of whether an attester has attested to an epoch key
     mapping(bytes32 => mapping(address => bool)) public attestationsMade;
+
+    // Indicate if hash chain of an epoch key is sealed
+    mapping(bytes32 => bool) public isEpochKeyHashChainSealed;
 
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(bytes32 => bytes32) public epochKeyHashchain;
@@ -194,6 +195,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function submitAttestation(Attestation calldata attestation, bytes32 epochKey) external payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
+        require(isEpochKeyHashChainSealed[epochKey] == false, "Unirep: this hash chain of this epoch key is sealed");
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
 
@@ -277,6 +279,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
             epochKeyList[i] = uint256(epochKey);
             epochKeyHashChainList[i] = uint256(epochKeyHashchain[epochKey]);
+            isEpochKeyHashChainSealed[epochKey] = true;
         }
 
         epochTree = new OneTimeSparseMerkleTree(treeDepths.epochTreeDepth, epochKeyList, epochKeyHashChainList);
