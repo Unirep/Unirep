@@ -7,6 +7,7 @@ import { OneTimeSparseMerkleTree } from "./OneTimeSparseMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
+import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
 import { NewUserStateVerifier } from './NewUserStateVerifier.sol';
 
 contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
@@ -16,6 +17,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 
      // Verifier Contracts
+    EpochKeyValidityVerifier internal epkValidityVerifier;
     NewUserStateVerifier internal newUserStateVerifier;
 
     uint256 public currentEpoch = 1;
@@ -90,11 +92,14 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     event EpochEnded(uint256 indexed _epoch, address _epochTreeAddr);
 
     event UserStateTransitioned(
-        uint256 indexed _epoch,
-        uint256 indexed _identityCommitment,
-        uint256 _newUserStateRoot,
-        uint256 _hashedLeaf,
-        uint256 _newNullifierTreeRoot
+        uint256 _fromEpoch,
+        uint256 indexed _toEpoch,
+        uint256 _fromGlobalStateTree,
+        uint256 _fromEpochTree,
+        uint256 _fromNullifierTreeRoot,
+        uint256 _newGlobalStateTree,
+        uint256 _newNullifierTreeRoot,
+        uint256[8] _proof
     );
 
     function getNumEpochKey(uint256 epoch) public view returns (uint256) {
@@ -109,6 +114,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     constructor(
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
+        EpochKeyValidityVerifier _epkValidityVerifier,
         NewUserStateVerifier _newUserStateVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
@@ -287,26 +293,87 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function updateUserStateRoot(
-        uint256 _identityCommitment,
-        uint256 transitionFromEpoch,
+        uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
-        uint256 _newUserStateRoot,
+        uint256 _newGlobalStateTree,
         uint256 _newNullifierTreeRoot,
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
 
+        emit UserStateTransitioned(
+            _transitionFromEpoch,
+            currentEpoch,
+            _fromGlobalStateTree,
+            _fromEpochTree,
+            _fromNullifierTreeRoot,
+            _newGlobalStateTree,
+            _newNullifierTreeRoot,
+            _proof
+        );
+    }
+
+    function verifyEpochKeyValidity(
+        uint256 _epoch,
+        uint256 _globalStateTree,
+        uint256 _identityCommitment,
+        uint256[8] calldata _proof) external returns (bool) {
+        // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
+        // 1. user has signed up
+        // 2. nonce is no greater than maxEpochKeyNonce
+        // 3. provided `_globalStateTree` matches the global state tree of that epoch
+        // 4. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
+        // 5. epoch key is correctly computed
+        require(hasUserSignedUp[_identityCommitment] == true, "Unirep: epoch key from user who has not signed up is invalid");
+
+        uint256[3] memory publicSignals = [
+            _epoch,
+            _globalStateTree,
+            maxEpochKeyNonce
+        ];
+
+        // Ensure that each public input is within range of the snark scalar
+        // field.
+        // TODO: consider having more granular revert reasons
+        for (uint8 i = 0; i < publicSignals.length; i++) {
+            require(
+                publicSignals[i] < SNARK_SCALAR_FIELD,
+                "Unirep: each public signal must be lt the snark scalar field"
+            );
+        }
+
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_proof);
+
+        // Verify the proof
+        proof.isValid = epkValidityVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        return proof.isValid;
+    }
+
+    function verifyUserStateTransition(
+        uint256 _fromGlobalStateTree,
+        uint256 _fromEpochTree,
+        uint256 _fromNullifierTreeRoot,
+        uint256 _newGlobalStateTree,
+        uint256 _newNullifierTreeRoot,
+        uint256[8] calldata _proof) external returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state is in the global state tree
         // 2. Attestations to each epoch key are processed and processed correctly
         // 3. Nullifiers of all processed attestations have not been seen before
         // 4. Nullifier tree is updated correctly
+
         uint256[5] memory publicSignals = [
             _fromGlobalStateTree,
             _fromEpochTree,
             _fromNullifierTreeRoot,
-            _newUserStateRoot,
+            _newGlobalStateTree,
             _newNullifierTreeRoot
         ];
 
@@ -330,17 +397,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // Verify the proof
         proof.isValid = newUserStateVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
-        require(proof.isValid == true, "Unirep: invalid user state update proof");
-
-        // Create, hash, and insert a fresh state leaf
-        StateLeaf memory stateLeaf = StateLeaf({
-            identityCommitment: _identityCommitment,
-            userStateRoot: _newUserStateRoot
-        });
-
-        uint256 hashedLeaf = hashStateLeaf(stateLeaf);
-
-        emit UserStateTransitioned(currentEpoch, _identityCommitment, _newUserStateRoot, hashedLeaf, _newNullifierTreeRoot);
+        return proof.isValid;
     }
 
     /*

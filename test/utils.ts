@@ -7,6 +7,7 @@ import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpo
 import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
+import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
 import NewUserStateVerifier from "../artifacts/NewUserStateVerifier.json"
 
 // Copy contract json type from ethereum-waffle
@@ -29,7 +30,7 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
 
 const deployUnirep = async (deployer: ethers.Wallet): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
-    let NewUserStateVerifierContract
+    let EpochKeyValidityVerifierContract, NewUserStateVerifierContract
 
     console.log('Deploying PoseidonT3')
     PoseidonT3Contract = (await deployContract(
@@ -40,6 +41,12 @@ const deployUnirep = async (deployer: ethers.Wallet): Promise<ethers.Contract> =
     PoseidonT6Contract = (await deployContract(
         deployer,
         PoseidonT6
+    ))
+
+    console.log('Deploying EpochKeyValidityVerifier')
+    EpochKeyValidityVerifierContract = (await deployContract(
+        deployer,
+        EpochKeyValidityVerifier
     ))
 
     console.log('Deploying NewUserStateVerifier')
@@ -70,6 +77,7 @@ const deployUnirep = async (deployer: ethers.Wallet): Promise<ethers.Contract> =
             maxUsers,
             maxEpochKeyNonce
         },
+        EpochKeyValidityVerifierContract.address,
         NewUserStateVerifierContract.address,
         epochLength,
         attestingFee,
