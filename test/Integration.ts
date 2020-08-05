@@ -20,7 +20,7 @@ describe('Integration', () => {
     let users = new Array(2)
     let epochKeyToAttestationsMap = {}
 
-    let attesters = new Array(3)
+    let attesters = new Array(2)
     let unirepContractCalledByFisrtAttester, unirepContractCalledBySecondAttester
 
     let unirepContract: Contract
@@ -178,7 +178,7 @@ describe('Integration', () => {
         })
 
         it('Second attester signs up', async () => {
-            attesters[1] = accounts[2]
+            attesters[1] = new Object()
             attesters[1]['acct'] = accounts[2]
             attesters[1]['addr'] = await attesters[1]['acct'].getAddress()
             unirepContractCalledBySecondAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attesters[1]['acct'])
@@ -257,23 +257,41 @@ describe('Integration', () => {
         })
 
         it('Attestations gathered from events should match', async () => {
-            const attestationsFilter = unirepContract.filters.AttestationSubmitted(currentEpoch)
-            const attestationsEvent = await unirepContract.queryFilter(attestationsFilter)
-            const attestations_: any[] = attestationsEvent.map((event: any) => event['args'])
-            expect(attestations_.length).to.be.equal(3)
-            for (let attestation_ of attestations_) {
-                let epochKey_ = attestation_['_epochKey']
-                expect(epochKey_ in epochKeyToAttestationsMap).to.be.true
-                let attestations = Object.values(epochKeyToAttestationsMap[epochKey_])
-                let matchedAttestations = attestations.filter((a: any) => a['attesterId'] == attestation_['_attesterId'].toString())
-                expect(matchedAttestations.length).to.be.equal(1)
-                let matchedAttestation: any = matchedAttestations[0]
-                expect(
-                    matchedAttestation['posRep'] == attestation_['_posRep'].toNumber() &&
-                    matchedAttestation['negRep'] == attestation_['_negRep'].toNumber() &&
-                    matchedAttestation['graffiti'] == attestation_['_graffiti'].toString() &&
-                    matchedAttestation['overwriteGraffiti'] == attestation_['_overwriteGraffiti']
-                ).to.be.true
+            // First filter by epoch
+            const attestationsByEpochFilter = unirepContract.filters.AttestationSubmitted(currentEpoch)
+            const attestationsByEpochEvent = await unirepContract.queryFilter(attestationsByEpochFilter)
+            expect(attestationsByEpochEvent.length).to.be.equal(3)
+
+            // Second filter by attester
+            for (let attester of attesters) {
+                let attestationsByAttesterFilter = unirepContract.filters.AttestationSubmitted(null, null, attester['addr'])
+                let attestationsByAttesterEvent = await unirepContract.queryFilter(attestationsByAttesterFilter)
+                if (attester['id'] == 1) {
+                    expect(attestationsByAttesterEvent.length).to.be.equal(2)
+                } else if (attester['id'] == 2) {
+                    expect(attestationsByAttesterEvent.length).to.be.equal(1)
+                } else {
+                    throw new Error(`Invalid attester id ${attester['id']}`)
+                }
+            }
+
+            // Last filter by epoch key
+            for (let epochKey in epochKeyToAttestationsMap) {
+                let attestationsByEpochKeyFilter = unirepContract.filters.AttestationSubmitted(null, epochKey)
+                let attestationsByEpochKeyEvent = await unirepContract.queryFilter(attestationsByEpochKeyFilter)
+                expect(attestationsByEpochKeyEvent.length).to.be.equal(epochKeyToAttestationsMap[epochKey].length)
+                let attestations_: any[] = attestationsByEpochKeyEvent.map((event: any) => event['args'])
+                let attestations: any[] = Object.values(epochKeyToAttestationsMap[epochKey])
+
+                for (let i = 0; i < attestations_.length; i++) {
+                    expect(
+                        attestations[i]['attesterId'] == attestations_[i]['_attesterId'].toString() &&
+                        attestations[i]['posRep'] == attestations_[i]['_posRep'].toNumber() &&
+                        attestations[i]['negRep'] == attestations_[i]['_negRep'].toNumber() &&
+                        attestations[i]['graffiti'] == attestations_[i]['_graffiti'].toString() &&
+                        attestations[i]['overwriteGraffiti'] == attestations_[i]['_overwriteGraffiti']
+                    ).to.be.true
+                }
             }
         })
 
