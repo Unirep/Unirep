@@ -10,7 +10,7 @@ import {
     hashOne,
     bigInt,
 } from '../crypto/crypto'
-import { getNewSMT, linkLibrary } from './utils'
+import { getNewSMT, linkLibrary, toCompleteHexString } from './utils'
 
 import {
     BigNumber,
@@ -177,11 +177,18 @@ describe('OneTimeSparseMerkleTree', () => {
             const numLeavesToInsert = 1
             let leafIndices: BigNumber[] = []
             let leafData: SnarkBigInt[] = []
+            let leafDataBuffer: Buffer[] = []
             let numKeyBytes: number
             for (let i = 0; i < numLeavesToInsert; i++) {
                 numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
                 leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
                 leafData[i] = hashOne('0x' + crypto.randomBytes(32).toString('hex'))
+                leafDataBuffer[i] = hexStrToBuf(
+                    toCompleteHexString(
+                        leafData[i].toString(16),
+                        32
+                    )
+                )
             }
 
             const OneTimeSMT = await OTSMTFactory.deploy(
@@ -192,11 +199,10 @@ describe('OneTimeSparseMerkleTree', () => {
                     gasLimit: 9000000,
                 }
             )
-            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
 
             let result
             for (let i = 0; i < numLeavesToInsert; i++) {
-                result = await tree.update(leafIndices[i], hexStrToBuf(leafData[i].toString(16)), true)
+                result = await tree.update(leafIndices[i], leafDataBuffer[i], true)
                 expect(result).to.be.true
             }
             let treeRoot = bufToHexString(tree.getRootHash())

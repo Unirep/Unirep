@@ -106,6 +106,18 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return toCompleteHexString(epochKey.toString(16), 32)
 }
 
+const genNoAttestationNullifier = (identityNullifier: SnarkBigInt, epoch: number): string => {
+    let nullifier = bigInt(ethers.utils.solidityKeccak256(["uint256", "uint256"], [identityNullifier.toString(), epoch])) % SNARK_FIELD_SIZE
+    // Adjust epoch key size according to epoch tree depth
+    nullifier = nullifier % bigInt(2).pow(bigInt(nullifierTreeDepth))
+    return nullifier.toString(16)
+}
+
+const genNoAttestationNullifierValue = (): string => {
+    let value = bigInt(ethers.utils.solidityKeccak256(["bytes32", "bytes32"], [ethers.utils.hexZeroPad("0x01", 32), ethers.utils.hexZeroPad("0x01", 32)])) % SNARK_FIELD_SIZE
+    return toCompleteHexString(value.toString(16), 32)
+}
+
 const toCompleteHexString = (str: string, len?: number): string => {
     str = add0x(str)
     if (len) str = ethers.utils.hexZeroPad(str, len)
@@ -127,7 +139,10 @@ const getNewSMT = async (treeDepth: number, rootHash?: Buffer): Promise<SparseMe
     return SparseMerkleTreeImpl.create(
         keyv,
         rootHash,
-        treeDepth
+        // The current SparseMerkleTreeImpl has different tree depth implementation.
+        // It has tree depth of 1 with a single root node while in this case tree depth is 0 in OneTimeSparseMerkleTree contract.
+        // So we increment the tree depth passed into SparseMerkleTreeImpl by 1.
+        treeDepth + 1
     )
 }
 
