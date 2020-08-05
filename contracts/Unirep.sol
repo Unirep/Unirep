@@ -73,10 +73,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     TreeDepths public treeDepths;
 
     // Events
+    event NewGSTLeafInserted(
+        uint256 indexed _epoch,
+        uint256 _hashedLeaf
+    );
     event UserSignUp(
         uint256 indexed _epoch,
-        uint256 indexed _identityCommitment,
-        uint256 _hashedLeaf
+        uint256 indexed _identityCommitment
     );
 
     event AttestationSubmitted(
@@ -167,7 +170,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
 
-        emit UserSignUp(currentEpoch, _identityCommitment, hashedLeaf);
+        emit UserSignUp(currentEpoch, _identityCommitment);
+        emit NewGSTLeafInserted(currentEpoch, hashedLeaf);
     }
 
     function attesterSignUp() external {
@@ -297,6 +301,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
+        uint256 _hashedLeaf,
         uint256 _newGlobalStateTree,
         uint256 _newNullifierTreeRoot,
         uint256[8] calldata _proof) external {
@@ -312,6 +317,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             _newNullifierTreeRoot,
             _proof
         );
+        emit NewGSTLeafInserted(currentEpoch, _hashedLeaf);
+
     }
 
     function verifyEpochKeyValidity(
