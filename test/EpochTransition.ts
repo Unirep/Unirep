@@ -1,5 +1,5 @@
 import { ethers } from "@nomiclabs/buidler"
-import { BigNumber, Contract, Signer, Wallet } from "ethers"
+import { Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength } from '../config/testLocal'
