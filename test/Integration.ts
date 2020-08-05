@@ -18,6 +18,7 @@ const genStubUserStateTransitionProof = genStubEPKProof
 
 describe('Integration', () => {
     let users = new Array(2)
+    let epochKeyToAttestationsMap = {}
 
     let attesters = new Array(3)
     let unirepContractCalledByFisrtAttester, unirepContractCalledBySecondAttester
@@ -71,13 +72,14 @@ describe('Integration', () => {
         it('First attester signs up', async () => {
             attesters[0] = new Object()
             attesters[0]['acct'] = accounts[1]
+            attesters[0]['addr'] = await attesters[0]['acct'].getAddress()
             unirepContractCalledByFisrtAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attesters[0]['acct'])
 
             const tx = await unirepContractCalledByFisrtAttester.attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            attesters[0]['id'] = await unirepContract.attesters(await attesters[0]['acct'].getAddress())
+            attesters[0]['id'] = await unirepContract.attesters(attesters[0]['addr'])
         })
 
         it('Global state tree built from events should match', async () => {
@@ -178,19 +180,20 @@ describe('Integration', () => {
         it('Second attester signs up', async () => {
             attesters[1] = accounts[2]
             attesters[1]['acct'] = accounts[2]
+            attesters[1]['addr'] = await attesters[1]['acct'].getAddress()
             unirepContractCalledBySecondAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attesters[1]['acct'])
             
             const tx = await unirepContractCalledBySecondAttester.attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            attesters[1]['id'] = await unirepContract.attesters(await attesters[1]['acct'].getAddress())
+            attesters[1]['id'] = await unirepContract.attesters(attesters[1]['addr'])
         })
 
         it('First attester attest to first user', async () => {
             const nonce = 0
             const firstUserEpochKey = genEpochKey(users[0]['id'].identityNullifier, currentEpoch.toNumber(), nonce)
-            let attestation = {
+            const attestation = {
                 attesterId: attesters[0]['id'].toString(),
                 posRep: 1,
                 negRep: 0,
@@ -204,12 +207,15 @@ describe('Integration', () => {
             )
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
+
+            epochKeyToAttestationsMap[firstUserEpochKey] = new Array()
+            epochKeyToAttestationsMap[firstUserEpochKey].push(attestation)
         })
 
         it('First attester attest to second user', async () => {
             const nonce = 0
             const secondUserEpochKey = genEpochKey(users[1]['id'].identityNullifier, currentEpoch.toNumber(), nonce)
-            let attestation = {
+            const attestation = {
                 attesterId: attesters[0]['id'].toString(),
                 posRep: 2,
                 negRep: 0,
@@ -223,12 +229,15 @@ describe('Integration', () => {
             )
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
+
+            epochKeyToAttestationsMap[secondUserEpochKey] = new Array()
+            epochKeyToAttestationsMap[secondUserEpochKey].push(attestation)
         })
 
         it('Second attester attest to second user', async () => {
             const nonce = 1
-            const secondUserEpochKey = genEpochKey(users[1]['id'].identityNullifier, currentEpoch.toNumber(), nonce)
-            let attestation = {
+            const secondUserEpochKey2 = genEpochKey(users[1]['id'].identityNullifier, currentEpoch.toNumber(), nonce)
+            const attestation = {
                 attesterId: attesters[1]['id'].toString(),
                 posRep: 0,
                 negRep: 3,
@@ -237,11 +246,35 @@ describe('Integration', () => {
             }
             const tx = await unirepContractCalledBySecondAttester.submitAttestation(
                 attestation,
-                secondUserEpochKey,
+                secondUserEpochKey2,
                 {value: attestingFee}
             )
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
+
+            epochKeyToAttestationsMap[secondUserEpochKey2] = new Array()
+            epochKeyToAttestationsMap[secondUserEpochKey2].push(attestation)
+        })
+
+        it('Attestations gathered from events should match', async () => {
+            const attestationsFilter = unirepContract.filters.AttestationSubmitted(currentEpoch)
+            const attestationsEvent = await unirepContract.queryFilter(attestationsFilter)
+            const attestations_: any[] = attestationsEvent.map((event: any) => event['args'])
+            expect(attestations_.length).to.be.equal(3)
+            for (let attestation_ of attestations_) {
+                let epochKey_ = attestation_['_epochKey']
+                expect(epochKey_ in epochKeyToAttestationsMap).to.be.true
+                let attestations = Object.values(epochKeyToAttestationsMap[epochKey_])
+                let matchedAttestations = attestations.filter((a: any) => a['attesterId'] == attestation_['_attesterId'].toString())
+                expect(matchedAttestations.length).to.be.equal(1)
+                let matchedAttestation: any = matchedAttestations[0]
+                expect(
+                    matchedAttestation['posRep'] == attestation_['_posRep'].toNumber() &&
+                    matchedAttestation['negRep'] == attestation_['_negRep'].toNumber() &&
+                    matchedAttestation['graffiti'] == attestation_['_graffiti'].toString() &&
+                    matchedAttestation['overwriteGraffiti'] == attestation_['_overwriteGraffiti']
+                ).to.be.true
+            }
         })
 
         it('Global state tree built from events should match', async () => {

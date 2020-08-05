@@ -83,6 +83,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     );
 
     event AttestationSubmitted(
+        uint256 indexed _epoch,
         bytes32 indexed _epochKey,
         address indexed _attester,
         uint256 _attesterId,
@@ -245,6 +246,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         attestationsMade[epochKey][msg.sender] = true;
 
         emit AttestationSubmitted(
+            currentEpoch,
             epochKey,
             msg.sender,
             attestation.attesterId,
