@@ -1,5 +1,4 @@
 import * as crypto from 'crypto'
-import Keyv from "keyv"
 import chai from "chai"
 import { ethers } from "@nomiclabs/buidler"
 import { ContractFactory, Signer, Wallet } from "ethers"
@@ -11,7 +10,7 @@ import {
     hashOne,
     bigInt,
 } from '../crypto/crypto'
-import { linkLibrary } from './utils'
+import { getNewSMT, linkLibrary } from './utils'
 
 import {
     BigNumber,
@@ -31,18 +30,6 @@ import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 
 const numLeaves = TWO.pow(new BigNumber(epochTreeDepth))
 const sizeKeySpaceInBytes: number = Math.floor(epochTreeDepth / 8)
-
-async function getNewSMT(rootHash?: Buffer): Promise<SparseMerkleTreeImpl> {
-    const keyv = new Keyv();
-    return SparseMerkleTreeImpl.create(
-        keyv,
-        rootHash,
-        // The current SparseMerkleTreeImpl has different tree depth implementation.
-        // It has tree depth of 1 with a single root node while in this case tree depth is 0 in OneTimeSparseMerkleTree contract.
-        // So we increment the tree depth passed into SparseMerkleTreeImpl by 1.
-        epochTreeDepth + 1
-    )
-}
 
 /* Begin tests */
 describe('OneTimeSparseMerkleTree', () => {

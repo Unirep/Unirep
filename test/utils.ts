@@ -1,6 +1,7 @@
 import * as ethers from 'ethers'
+import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
-import { add0x } from '../crypto/SMT'
+import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, SNARK_FIELD_SIZE, bigInt } from '../crypto/crypto'
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
@@ -121,10 +122,23 @@ const genStubEPKProof = (isValid: Boolean) => {
     return [firstElement, 2, 3, 4, 5, 6, 7, 8]
 }
 
+const getNewSMT = async (rootHash?: Buffer): Promise<SparseMerkleTreeImpl> => {
+    const keyv = new Keyv();
+    return SparseMerkleTreeImpl.create(
+        keyv,
+        rootHash,
+        // The current SparseMerkleTreeImpl has different tree depth implementation.
+        // It has tree depth of 1 with a single root node while in this case tree depth is 0 in OneTimeSparseMerkleTree contract.
+        // So we increment the tree depth passed into SparseMerkleTreeImpl by 1.
+        epochTreeDepth + 1
+    )
+}
+
 export {
     SimpleContractJSON,
     deployUnirep,
     genEpochKey,
+    getNewSMT,
     genStubEPKProof,
     linkLibrary,
     toCompleteHexString,
