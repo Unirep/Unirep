@@ -62,7 +62,8 @@ describe('OneTimeSparseMerkleTree', () => {
         }
 
         OTSMTFactory = new ContractFactory(OneTimeSparseMerkleTree.abi, OneTimeSparseMerkleTree.bytecode, accounts[0])
-        tree = await getNewSMT()
+
+        tree = await getNewSMT(epochTreeDepth)
     })
 
     describe('initialization ', async () => {
@@ -170,6 +171,39 @@ describe('OneTimeSparseMerkleTree', () => {
 
             expect(OTSMTRoot).to.be.equal(treeRoot)
             console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with random " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
+        })
+
+        it('inserting leaf with unknown value should succeed', async () => {
+            const numLeavesToInsert = 1
+            let leafIndices: BigNumber[] = []
+            let leafData: SnarkBigInt[] = []
+            let numKeyBytes: number
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
+                leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
+                leafData[i] = hashOne('0x' + crypto.randomBytes(32).toString('hex'))
+            }
+
+            const OneTimeSMT = await OTSMTFactory.deploy(
+                epochTreeDepth,
+                leafIndices.map((bn) => bn.toString(10)),
+                leafData,
+                {
+                    gasLimit: 9000000,
+                }
+            )
+            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+
+            let result
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                result = await tree.update(leafIndices[i], hexStrToBuf(leafData[i].toString(16)), true)
+                expect(result).to.be.true
+            }
+            let treeRoot = bufToHexString(tree.getRootHash())
+
+            const OTSMTRoot = await OneTimeSMT.genSMT()
+
+            expect(OTSMTRoot).to.be.equal(treeRoot)
         })
 
         it('inserting leaf with out of bound index should fail', async () => {

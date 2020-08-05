@@ -31,6 +31,7 @@ import { remove0x, HashFunction } from './utils'
  */
 export class SparseMerkleTreeImpl implements SparseMerkleTree {
     public static readonly emptyBuffer: Buffer = Buffer.alloc(32).fill('\x00')
+    public static readonly unknownLeafValueBuffer: Buffer = Buffer.alloc(32).fill('\xff')
     private static readonly siblingBuffer: Buffer = Buffer.alloc(1).fill('\x00')
 
     protected root!: MerkleTreeNode
@@ -187,8 +188,13 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
     public async update(
         leafKey: BigNumber,
         leafValue: Buffer,
+        // `unknownValue == true` means actual leaf value is unknown and leaf value is used directly as leaf hash
+        unknownValue: boolean = false
     ): Promise<boolean> {
-        if(leafKey.gt(this.numLeaves)) return false
+        if(leafKey.gt(this.numLeaves)) {
+            console.log("leaf key exceeds total number of leaves")
+            return false
+        }
         let nodesToUpdate: MerkleTreeNode[] = await this.getNodesInPath(leafKey)
 
         if (!nodesToUpdate) {
@@ -207,8 +213,13 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
 
         const leaf: MerkleTreeNode = nodesToUpdate[nodesToUpdate.length - 1]
         const idsToDelete: Buffer[] = [this.getNodeID(leaf)]
-        leaf.hash = this.hashFunction(leafValue)
-        leaf.value = leafValue
+        if(unknownValue) {
+            leaf.hash = leafValue
+            leaf.value = SparseMerkleTreeImpl.unknownLeafValueBuffer
+        } else {
+            leaf.hash = this.hashFunction(leafValue)
+            leaf.value = leafValue
+        }
 
         let updatedChild: MerkleTreeNode = leaf
         let depth: number = nodesToUpdate.length - 2 // -2 because this array also contains the leaf
@@ -260,7 +271,8 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
 
     public async getMerkleProof(
         leafKey: BigNumber,
-        leafValue: Buffer
+        leafValue: Buffer,
+        unknownValue: boolean = false
     ): Promise<MerkleTreeInclusionProof> {
         if (!this.root || !this.root.hash) {
             return undefined!
@@ -290,9 +302,12 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
             }
         }
 
-        if (!node.hash.equals(this.hashFunction(leafValue))) {
-            // Provided leaf doesn't match stored leaf
-            return undefined!
+        // Verify node hash against hash of leaf value if leaf value is known
+        if (!unknownValue) {
+            if (!node.hash.equals(this.hashFunction(leafValue))) {
+                // Provided leaf doesn't match stored leaf
+                return undefined!
+            }
         }
 
         const result: MerkleTreeInclusionProof = {
