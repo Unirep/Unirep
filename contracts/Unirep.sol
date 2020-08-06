@@ -127,6 +127,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         treeDepths = _treeDepths;
 
         // Set the verifier contracts
+        epkValidityVerifier = _epkValidityVerifier;
         newUserStateVerifier = _newUserStateVerifier;
 
         epochLength = _epochLength;
@@ -210,11 +211,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
 
-        // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
-        // 1. epoch matches current epoch
-        // 2. nonce is no greater than maxEpochKeyNonce
-        // 3. user has signed up
-        // 4. user has transitioned to current epoch(by proving membership in current globalStateTrees)
+        // Before attesting to a given epoch key, an attester must
+        // verify validity of the epoch key using `verifyEpochKeyValidity` function.
 
         // Burn the fee
         address(0).transfer(msg.value);
@@ -327,13 +325,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _epoch,
         uint256 _globalStateTree,
         uint256 _identityCommitment,
-        uint256[8] calldata _proof) external returns (bool) {
+        uint256[8] calldata _proof) external view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. user has signed up
         // 2. nonce is no greater than maxEpochKeyNonce
-        // 3. provided `_globalStateTree` matches the global state tree of that epoch
-        // 4. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
-        // 5. epoch key is correctly computed
+        // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
+        // 4. epoch key is correctly computed
         require(hasUserSignedUp[_identityCommitment] == true, "Unirep: epoch key from user who has not signed up is invalid");
 
         uint256[3] memory publicSignals = [
@@ -371,12 +368,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromNullifierTreeRoot,
         uint256 _newGlobalStateTree,
         uint256 _newNullifierTreeRoot,
-        uint256[8] calldata _proof) external returns (bool) {
+        uint256[8] calldata _proof) external view returns (bool) {
         // Verify validity of new user state:
-        // 1. User's identity and state is in the global state tree
-        // 2. Attestations to each epoch key are processed and processed correctly
-        // 3. Nullifiers of all processed attestations have not been seen before
-        // 4. Nullifier tree is updated correctly
+        // 1. User's identity and state exist in the provided global state tree
+        // 2. Global state tree is updated correctly
+        // 3. Attestations to each epoch key are processed and processed correctly
+        // 4. Nullifiers of all processed attestations have not been seen before
+        // 5. Nullifier tree is updated correctly
 
         uint256[5] memory publicSignals = [
             _fromGlobalStateTree,
