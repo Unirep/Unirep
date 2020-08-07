@@ -333,9 +333,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 4. epoch key is correctly computed
         require(hasUserSignedUp[_identityCommitment] == true, "Unirep: epoch key from user who has not signed up is invalid");
 
-        uint256[3] memory publicSignals = [
+        uint256[4] memory publicSignals = [
             _epoch,
             _globalStateTree,
+            _identityCommitment,
             maxEpochKeyNonce
         ];
 
