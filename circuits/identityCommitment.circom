@@ -14,17 +14,17 @@ template CalculateIdentityCommitment(IDENTITY_PK_SIZE_IN_BITS, NULLIFIER_TRAPDOO
     component identity_commitment = Pedersen(3*256);
     for (var i = 0; i < 256; i++) {
         if (i < IDENTITY_PK_SIZE_IN_BITS) {
-        identity_commitment.in[i] <== identity_pk[i];
+            identity_commitment.in[i] <== identity_pk[i];
         } else {
-        identity_commitment.in[i] <== 0;
+            identity_commitment.in[i] <== 0;
         }
 
         if (i < NULLIFIER_TRAPDOOR_SIZE_IN_BITS) {
-        identity_commitment.in[i + 256] <== identity_nullifier[i];
-        identity_commitment.in[i + 2*256] <== identity_trapdoor[i];
+            identity_commitment.in[i + 256] <== identity_nullifier[i];
+            identity_commitment.in[i + 2*256] <== identity_trapdoor[i];
         } else {
-        identity_commitment.in[i + 256] <== 0;
-        identity_commitment.in[i + 2*256] <== 0;
+            identity_commitment.in[i + 256] <== 0;
+            identity_commitment.in[i + 2*256] <== 0;
         }
     }
 
@@ -66,11 +66,11 @@ template IdentityCommitment() {
     // BEGIN identity commitment
     component identity_commitment = CalculateIdentityCommitment(IDENTITY_PK_SIZE_IN_BITS, NULLIFIER_TRAPDOOR_SIZE_IN_BITS);
     for (var i = 0; i < IDENTITY_PK_SIZE_IN_BITS; i++) {
-      identity_commitment.identity_pk[i] <== identity_pk_0_bits.out[i];
+        identity_commitment.identity_pk[i] <== identity_pk_0_bits.out[i];
     }
     for (var i = 0; i < NULLIFIER_TRAPDOOR_SIZE_IN_BITS; i++) {
-      identity_commitment.identity_nullifier[i] <== identity_nullifier_bits.out[i];
-      identity_commitment.identity_trapdoor[i] <== identity_trapdoor_bits.out[i];
+        identity_commitment.identity_nullifier[i] <== identity_nullifier_bits.out[i];
+        identity_commitment.identity_trapdoor[i] <== identity_trapdoor_bits.out[i];
     }
     out <== identity_commitment.out;
     // END identity commitment

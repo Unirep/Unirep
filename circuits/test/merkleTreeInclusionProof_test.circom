@@ -1,3 +1,3 @@
-include "../incrementalMerkleTree.circom"
+include "../globalStateTree.circom"
 
-component main = MerkleTreeInclusionProof(4);
+component main = GSTMerkleTreeInclusionProof(4);
