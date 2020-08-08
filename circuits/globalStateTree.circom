@@ -1,4 +1,3 @@
-include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";

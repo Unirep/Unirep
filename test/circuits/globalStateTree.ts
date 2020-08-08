@@ -13,10 +13,7 @@ import { deployUnirep } from '../utils'
 import {
     genRandomSalt,
     IncrementalQuinTree,
-    hashOne,
-    SnarkBigInt,
 } from 'maci-crypto'
-import { id } from "ethers/lib/utils"
 
 const LEVELS = 4
 
@@ -24,13 +21,12 @@ describe('Global State Tree circuits', () => {
     let accounts: Signer[]
     let unirepContract: Contract
 
-    let emptyUserStateRoot, ZERO_VALUE
+    let ZERO_VALUE
 
     beforeEach(async () => {
         accounts = await ethers.getSigners()
 
         unirepContract = await deployUnirep(<Wallet>accounts[0])
-        emptyUserStateRoot = await unirepContract.emptyUserStateRoot()
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
     })
 
