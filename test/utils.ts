@@ -101,7 +101,7 @@ const deployUnirep = async (deployer: ethers.Wallet, _globalStateTreeDepth: numb
 
 const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): string => {
     const values: any[] = [
-        identityNullifier.toString(),
+        identityNullifier,
         epoch,
         nonce,
         bigInt(0),
@@ -114,7 +114,7 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
 }
 
 const genNoAttestationNullifier = (identityNullifier: SnarkBigInt, epoch: number): string => {
-    let nullifier = hashLeftRight(identityNullifier.toString(), epoch)
+    let nullifier = hashLeftRight(identityNullifier, epoch)
     // Adjust epoch key size according to epoch tree depth
     nullifier = nullifier % bigInt(2).pow(bigInt(nullifierTreeDepth))
     return nullifier.toString(16)
