@@ -16,6 +16,7 @@ template VerifyEpochKey(GST_tree_depth) {
     signal input root;
 
     signal private input nonce;
+    signal input epoch;
     signal input epoch_key;
 
     /* Check if user exists in the Global State Tree */
@@ -45,6 +46,12 @@ template VerifyEpochKey(GST_tree_depth) {
 
 
     /* Check epoch key is computed correctly */
-    // TODO
+    component epochKeyHasher = Hasher5();
+    epochKeyHasher.in[0] <== identity_nullifier;
+    epochKeyHasher.in[1] <== epoch;
+    epochKeyHasher.in[2] <== nonce;
+    epochKeyHasher.in[3] <== 0;
+    epochKeyHasher.in[4] <== 0;
+    epoch_key === epochKeyHasher.hash;
     /* End of check*/
 }
