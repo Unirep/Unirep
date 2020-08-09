@@ -16,8 +16,15 @@ const epochLength = 30;  // 30 seconds
 
 const epochTreeDepth = 80;
 
+
+const circuitGlobalStateTreeDepth = 4;
+
+const circuitEpochTreeDepth = 256;
+
 export {
     attestingFee,
+    circuitGlobalStateTreeDepth,
+    circuitEpochTreeDepth,
     epochLength,
     epochTreeDepth,
     globalStateTreeDepth,

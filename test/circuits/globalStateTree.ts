@@ -5,6 +5,7 @@ import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 
 const { expect } = chai
 
+import { circuitGlobalStateTreeDepth } from '../../config/testLocal'
 import {
     compileAndLoadCircuit,
 } from './utils'
@@ -15,8 +16,6 @@ import {
     IncrementalQuinTree,
 } from 'maci-crypto'
 
-const LEVELS = 4
-
 describe('Global State Tree circuits', () => {
     let accounts: Signer[]
     let unirepContract: Contract
@@ -26,7 +25,7 @@ describe('Global State Tree circuits', () => {
     beforeEach(async () => {
         accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<Wallet>accounts[0], LEVELS)
+        unirepContract = await deployUnirep(<Wallet>accounts[0], circuitGlobalStateTreeDepth)
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
     })
 
@@ -38,10 +37,10 @@ describe('Global State Tree circuits', () => {
         })
 
         it('Valid LeafExists inputs should work', async () => {
-            const tree = new IncrementalQuinTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
             const leaves: any[] = []
 
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const id = genIdentity()
                 const commitment = genIdentityCommitment(id)
                 const stateRoot = genRandomSalt()
@@ -61,7 +60,7 @@ describe('Global State Tree circuits', () => {
 
             const root = tree.root
 
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const proof = tree.genMerklePath(i)
                 const id = leaves[i]['id']
                 const stateRoot = leaves[i]['stateRoot']
@@ -80,10 +79,10 @@ describe('Global State Tree circuits', () => {
         })
 
         it('Invalid LeafExists inputs should not work', async () => {
-            const tree = new IncrementalQuinTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
             const leaves: any[] = []
 
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const id = genIdentity()
                 const commitment = genIdentityCommitment(id)
                 const stateRoot = genRandomSalt()
@@ -103,7 +102,7 @@ describe('Global State Tree circuits', () => {
 
             const root = tree.root
 
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const proof = tree.genMerklePath(i)
                 const id = leaves[i]['id']
                 const stateRoot = leaves[i]['stateRoot']
@@ -131,11 +130,11 @@ describe('Global State Tree circuits', () => {
         })
 
         it('Valid update proofs should work', async () => {
-            const tree = new IncrementalQuinTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
             const leaves: any[] = []
 
             // Populate the tree
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const id = genIdentity()
                 const commitment = genIdentityCommitment(id)
                 const stateRoot = genRandomSalt()
@@ -153,7 +152,7 @@ describe('Global State Tree circuits', () => {
                 })
             }
 
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const newStateRoot = genRandomSalt()
 
                 const newHashedStateLeaf = await unirepContract.hashStateLeaf(
@@ -188,11 +187,11 @@ describe('Global State Tree circuits', () => {
         })
 
         it('Invalid update proofs should not work', async () => {
-            const tree = new IncrementalQuinTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
             const leaves: any[] = []
 
             // Populate the tree
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const id = genIdentity()
                 const commitment = genIdentityCommitment(id)
                 const stateRoot = genRandomSalt()
@@ -210,7 +209,7 @@ describe('Global State Tree circuits', () => {
                 })
             }
 
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitGlobalStateTreeDepth; i++) {
                 const id = genIdentity()
                 const commitment = genIdentityCommitment(id)
                 const stateRoot = genRandomSalt()

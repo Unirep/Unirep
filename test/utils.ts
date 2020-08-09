@@ -29,7 +29,10 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
     contractJson.bytecode = linkableContract.evm.bytecode.object
 }
 
-const deployUnirep = async (deployer: ethers.Wallet, _globalStateTreeDepth: number = globalStateTreeDepth): Promise<ethers.Contract> => {
+const deployUnirep = async (
+    deployer: ethers.Wallet,
+    _globalStateTreeDepth: number = globalStateTreeDepth,
+    _epochTreeDepth: number = epochTreeDepth): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
     let EpochKeyValidityVerifierContract, NewUserStateVerifierContract
 
@@ -72,7 +75,7 @@ const deployUnirep = async (deployer: ethers.Wallet, _globalStateTreeDepth: numb
             globalStateTreeDepth: _globalStateTreeDepth,
             userStateTreeDepth,
             nullifierTreeDepth,
-            epochTreeDepth
+            epochTreeDepth: _epochTreeDepth
         },
         {
             maxUsers,
@@ -99,7 +102,7 @@ const deployUnirep = async (deployer: ethers.Wallet, _globalStateTreeDepth: numb
     return c
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): string => {
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = epochTreeDepth): string => {
     const values: any[] = [
         identityNullifier,
         epoch,
@@ -109,7 +112,7 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     ]
     let epochKey = hash5(values)
     // Adjust epoch key size according to epoch tree depth
-    epochKey = epochKey % bigInt(2).pow(bigInt(epochTreeDepth))
+    epochKey = epochKey % bigInt(2).pow(bigInt(_epochTreeDepth))
     return toCompleteHexString(epochKey.toString(16), 32)
 }
 
