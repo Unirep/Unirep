@@ -29,7 +29,7 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
     contractJson.bytecode = linkableContract.evm.bytecode.object
 }
 
-const deployUnirep = async (deployer: ethers.Wallet): Promise<ethers.Contract> => {
+const deployUnirep = async (deployer: ethers.Wallet, _globalStateTreeDepth: number = globalStateTreeDepth): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
     let EpochKeyValidityVerifierContract, NewUserStateVerifierContract
 
@@ -69,7 +69,7 @@ const deployUnirep = async (deployer: ethers.Wallet): Promise<ethers.Contract> =
     const f = new ethers.ContractFactory(Unirep.abi, Unirep.bytecode, deployer)
     const c = await (f.deploy(
         {
-            globalStateTreeDepth,
+            globalStateTreeDepth: _globalStateTreeDepth,
             userStateTreeDepth,
             nullifierTreeDepth,
             epochTreeDepth

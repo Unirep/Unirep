@@ -26,7 +26,7 @@ describe('Global State Tree circuits', () => {
     beforeEach(async () => {
         accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<Wallet>accounts[0])
+        unirepContract = await deployUnirep(<Wallet>accounts[0], LEVELS)
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
     })
 
