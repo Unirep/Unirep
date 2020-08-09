@@ -2,7 +2,7 @@ import * as ethers from 'ethers'
 import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
-import { SnarkBigInt, SNARK_FIELD_SIZE, bigInt } from '../crypto/crypto'
+import { SnarkBigInt, SNARK_FIELD_SIZE, bigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
 import Unirep from "../artifacts/Unirep.json"
@@ -100,21 +100,28 @@ const deployUnirep = async (deployer: ethers.Wallet, _globalStateTreeDepth: numb
 }
 
 const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): string => {
-    let epochKey = bigInt(ethers.utils.solidityKeccak256(["uint256", "uint256", "uint256"], [identityNullifier.toString(), epoch, nonce])) % SNARK_FIELD_SIZE
+    const values: any[] = [
+        identityNullifier.toString(),
+        epoch,
+        nonce,
+        bigInt(0),
+        bigInt(0),
+    ]
+    let epochKey = hash5(values)
     // Adjust epoch key size according to epoch tree depth
     epochKey = epochKey % bigInt(2).pow(bigInt(epochTreeDepth))
     return toCompleteHexString(epochKey.toString(16), 32)
 }
 
 const genNoAttestationNullifier = (identityNullifier: SnarkBigInt, epoch: number): string => {
-    let nullifier = bigInt(ethers.utils.solidityKeccak256(["uint256", "uint256"], [identityNullifier.toString(), epoch])) % SNARK_FIELD_SIZE
+    let nullifier = hashLeftRight(identityNullifier.toString(), epoch)
     // Adjust epoch key size according to epoch tree depth
     nullifier = nullifier % bigInt(2).pow(bigInt(nullifierTreeDepth))
     return nullifier.toString(16)
 }
 
 const genNoAttestationNullifierValue = (): string => {
-    let value = bigInt(ethers.utils.solidityKeccak256(["bytes32", "bytes32"], [ethers.utils.hexZeroPad("0x01", 32), ethers.utils.hexZeroPad("0x01", 32)])) % SNARK_FIELD_SIZE
+    let value = hashLeftRight(bigInt(1), bigInt(1))
     return toCompleteHexString(value.toString(16), 32)
 }
 
