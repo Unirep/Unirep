@@ -1,4 +1,19 @@
 include "./poseidon/poseidonHashT3.circom"
+include "./poseidon/poseidonHashT6.circom"
+
+template Hasher5() {
+  var length = 5;
+  signal input in[length];
+  signal output hash;
+
+  component hasher = PoseidonHashT6();
+
+  for (var i = 0; i < length; i++) {
+    hasher.inputs[i] <== in[i];
+  }
+
+  hash <== hasher.out;
+}
 
 template HashLeftRight() {
     signal input left;
