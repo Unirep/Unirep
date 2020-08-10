@@ -77,6 +77,7 @@ describe('Verify Epoch Key circuits', () => {
     })
 
     it('Invalid membership proof in global state tree should not pass check', async () => {
+        // Validate against wrong Id
         const fakeId = genIdentity()
         const circuitInputs = {
             identity_pk: fakeId['keypair']['pubKey'],
@@ -92,6 +93,24 @@ describe('Verify Epoch Key circuits', () => {
         }
         expect(() => {
             circuit.calculateWitness(circuitInputs)
+        }).to.throw
+
+        // Validate against different GST tree root
+        const otherTreeRoot = genRandomSalt()
+        const circuitInputs2 = {
+            identity_pk: id['keypair']['pubKey'],
+            identity_nullifier: id['identityNullifier'], 
+            identity_trapdoor: id['identityTrapdoor'],
+            user_state_root: stateRoot,
+            path_elements: proof.pathElements,
+            path_index: proof.indices,
+            root: otherTreeRoot,
+            nonce: nonce,
+            epoch: currentEpoch,
+            epoch_key: epochKey,
+        }
+        expect(() => {
+            circuit.calculateWitness(circuitInputs2)
         }).to.throw
     })
 

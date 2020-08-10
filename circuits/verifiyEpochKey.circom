@@ -4,7 +4,7 @@ include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./globalStateTree.circom";
 
-template VerifyEpochKey(GST_tree_depth) {
+template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
@@ -52,6 +52,11 @@ template VerifyEpochKey(GST_tree_depth) {
     epochKeyHasher.in[2] <== nonce;
     epochKeyHasher.in[3] <== 0;
     epochKeyHasher.in[4] <== 0;
-    epoch_key === epochKeyHasher.hash;
+    // circom's best practices state that we should avoid using <-- unless
+    // we know what we are doing. But this is the only way to perform the
+    // modulo operation.
+    signal epochKeyModed;
+    epochKeyModed <-- epochKeyHasher.hash % (2 ** epoch_tree_depth);
+    epoch_key === epochKeyModed;
     /* End of check*/
 }

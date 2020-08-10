@@ -19,7 +19,7 @@ const epochTreeDepth = 80;
 
 const circuitGlobalStateTreeDepth = 4;
 
-const circuitEpochTreeDepth = 256;
+const circuitEpochTreeDepth = 4;
 
 export {
     attestingFee,
