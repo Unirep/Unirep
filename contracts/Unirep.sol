@@ -323,6 +323,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function verifyEpochKeyValidity(
         uint256 _epoch,
+        uint256 _epochKey,
         uint256 _globalStateTree,
         uint256[8] calldata _proof) external view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
@@ -331,8 +332,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 
-        uint256[3] memory publicSignals = [
+        uint256[4] memory publicSignals = [
             _epoch,
+            _epochKey,
             _globalStateTree,
             maxEpochKeyNonce
         ];

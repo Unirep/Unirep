@@ -68,6 +68,7 @@ describe('Verify Epoch Key circuits', () => {
                 path_index: proof.indices,
                 root: root,
                 nonce: n,
+                max_nonce: maxEpochKeyNonce,
                 epoch: currentEpoch,
                 epoch_key: epk,
             }
@@ -88,6 +89,7 @@ describe('Verify Epoch Key circuits', () => {
             path_index: proof.indices,
             root: root,
             nonce: nonce,
+            max_nonce: maxEpochKeyNonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
         }
@@ -106,6 +108,7 @@ describe('Verify Epoch Key circuits', () => {
             path_index: proof.indices,
             root: otherTreeRoot,
             nonce: nonce,
+            max_nonce: maxEpochKeyNonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
         }
@@ -125,6 +128,7 @@ describe('Verify Epoch Key circuits', () => {
             path_index: proof.indices,
             root: root,
             nonce: invalidNonce,
+            max_nonce: maxEpochKeyNonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
         }
@@ -144,6 +148,7 @@ describe('Verify Epoch Key circuits', () => {
             path_index: proof.indices,
             root: root,
             nonce: nonce,
+            max_nonce: maxEpochKeyNonce,
             epoch: invalidEpoch,
             epoch_key: epochKey,
         }

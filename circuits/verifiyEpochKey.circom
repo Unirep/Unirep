@@ -15,6 +15,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     signal input root;
 
     signal private input nonce;
+    signal input max_nonce;
     signal input epoch;
     signal input epoch_key;
 
@@ -40,12 +41,11 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
 
 
     /* Check nonce validity */
-    var maxNonceInBits = 2;
-    var maxEpochKeyNonce = 2;
+    var maxNonceInBits = 8;
 
     component lt = LessEqThan(maxNonceInBits);
     lt.in[0] <== nonce;
-    lt.in[1] <== maxEpochKeyNonce;
+    lt.in[1] <== max_nonce;
     lt.out === 1;
     /* End of check*/
 
