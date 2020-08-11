@@ -43,10 +43,10 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     /* Check nonce validity */
     var maxNonceInBits = 8;
 
-    component lt = LessEqThan(maxNonceInBits);
-    lt.in[0] <== nonce;
-    lt.in[1] <== max_nonce;
-    lt.out === 1;
+    component nonce_lt = LessEqThan(maxNonceInBits);
+    nonce_lt.in[0] <== nonce;
+    nonce_lt.in[1] <== max_nonce;
+    nonce_lt.out === 1;
     /* End of check*/
 
 
@@ -57,11 +57,25 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     epochKeyHasher.in[2] <== nonce;
     epochKeyHasher.in[3] <== 0;
     epochKeyHasher.in[4] <== 0;
+
+    signal quotient;
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
-    signal epochKeyModed;
-    epochKeyModed <-- epochKeyHasher.hash % (2 ** epoch_tree_depth);
-    epoch_key === epochKeyModed;
+    quotient <-- epochKeyHasher.hash \ (2 ** epoch_tree_depth);
+
+    // Range check on epoch key
+    component epk_lt = LessEqThan(epoch_tree_depth);
+    epk_lt.in[0] <== epoch_key;
+    epk_lt.in[1] <== 2 ** epoch_tree_depth - 1;
+    epk_lt.out === 1;
+
+    // Range check on quotient
+    component quot_lt = LessEqThan(254 - epoch_tree_depth);
+    quot_lt.in[0] <== quotient;
+    quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
+    quot_lt.out === 1;
+
+    epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epoch_key;
     /* End of check*/
 }
