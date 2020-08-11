@@ -95,7 +95,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw
+        }).to.throw()
 
         // Validate against different GST tree root
         const otherTreeRoot = genRandomSalt()
@@ -114,7 +114,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         expect(() => {
             circuit.calculateWitness(circuitInputs2)
-        }).to.throw
+        }).to.throw()
     })
 
     it('Invalid nonce should not pass check', async () => {
@@ -134,7 +134,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw
+        }).to.throw()
     })
 
     it('Invalid epoch should not pass check', async () => {
@@ -154,6 +154,6 @@ describe('Verify Epoch Key circuits', () => {
         }
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw
+        }).to.throw()
     })
 })

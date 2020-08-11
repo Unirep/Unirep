@@ -1,7 +1,7 @@
 import * as ethers from 'ethers'
 import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
-import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
+import { SparseMerkleTreeImpl, add0x, bufToHexString, hexStrToBuf } from '../crypto/SMT'
 import { SnarkBigInt, SNARK_FIELD_SIZE, bigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
@@ -120,7 +120,7 @@ const genNoAttestationNullifier = (identityNullifier: SnarkBigInt, epoch: number
     let nullifier = hashLeftRight(identityNullifier, epoch)
     // Adjust epoch key size according to epoch tree depth
     nullifier = nullifier % bigInt(2).pow(bigInt(nullifierTreeDepth))
-    return nullifier.toString(16)
+    return toCompleteHexString(nullifier.toString(16))
 }
 
 const genNoAttestationNullifierValue = (): string => {
@@ -156,8 +156,18 @@ const getNewSMT = async (treeDepth: number, rootHash?: Buffer): Promise<SparseMe
     )
 }
 
+const bufToBigInt = (buf: Buffer): SnarkBigInt => {
+    return bigInt(bufToHexString(buf))
+}
+
+const bigIntToBuf = (bn: SnarkBigInt): Buffer => {
+    return hexStrToBuf(toCompleteHexString(bn.toString(16), 32))
+}
+
 export {
     SimpleContractJSON,
+    bigIntToBuf,
+    bufToBigInt,
     deployUnirep,
     genEpochKey,
     getNewSMT,

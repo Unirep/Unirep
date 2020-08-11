@@ -23,7 +23,7 @@ import {
     SparseMerkleTree,
 } from './tree-types'
 
-import { remove0x, HashFunction } from './utils'
+import { remove0x, HashFunction, bufToHexString } from './utils'
 
 
 /**
@@ -282,7 +282,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         const siblings: Buffer[] = []
         for (
             let depth = 0;
-            depth < this.height &&
+            depth < (this.height - 1) &&
             !!node &&
             !!node.value &&
             node.value.length === 64;
@@ -292,6 +292,17 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
             node = await this.getChild(node, depth, leafKey)
         }
 
+        const nodeHash = bufToHexString(node.hash)
+        const zHashes = this.zeroHashes.map((h) => bufToHexString(h))
+        const zeroHashIndex = zHashes.indexOf(nodeHash)
+        // Fill the rest siblings with zeroHashes if
+        // previous step is stopped because a node with zeroHash is reached
+        if ( (siblings.length !== this.height - 1) && zeroHashIndex >= 0) {
+            const numZHashesToFill = this.height - 1 - siblings.length
+            for ( let i = 0; i < numZHashesToFill; i++ ) {
+                siblings.push(this.zeroHashes[zeroHashIndex + 1 + i])
+            }
+        }
         if (siblings.length !== this.height - 1) {
             // TODO: A much better way of indicating this
             return {
