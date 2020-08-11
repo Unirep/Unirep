@@ -116,11 +116,11 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return toCompleteHexString(epochKey.toString(16), 32)
 }
 
-const genNoAttestationNullifier = (identityNullifier: SnarkBigInt, epoch: number): string => {
+const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number): string => {
     let nullifier = hashLeftRight(identityNullifier, epoch)
     // Adjust epoch key size according to epoch tree depth
     nullifier = nullifier % bigInt(2).pow(bigInt(nullifierTreeDepth))
-    return toCompleteHexString(nullifier.toString(16))
+    return nullifier.toString(16)
 }
 
 const genNoAttestationNullifierValue = (): string => {
@@ -171,7 +171,7 @@ export {
     deployUnirep,
     genEpochKey,
     getNewSMT,
-    genNoAttestationNullifier,
+    genNoAttestationNullifierKey,
     genNoAttestationNullifierValue,
     genStubEPKProof,
     linkLibrary,

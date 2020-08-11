@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree, SnarkBigInt, genRandomSalt } from 'maci-crypto'
-import { deployUnirep, getNewSMT, genNoAttestationNullifier, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey } from './utils'
+import { deployUnirep, getNewSMT, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -126,7 +126,7 @@ describe('Integration', () => {
         it('First user transition from first epoch', async () => {
             const firstUserTransitionedFromEpoch = users[0]['latestTransitionedToEpoch']
             let oldNullifierTreeRoot = nullifierTree.getRootHash()
-            const nullifier = genNoAttestationNullifier(users[0]['id'].identityNullifier, prevEpoch.toNumber())
+            const nullifier = genNoAttestationNullifierKey(users[0]['id'].identityNullifier, prevEpoch.toNumber())
             let result = await nullifierTree.update(new smtBN(nullifier, 'hex'), hexStrToBuf(genNoAttestationNullifierValue()), true)
             expect(result).to.be.true
 
