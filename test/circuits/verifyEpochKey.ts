@@ -13,6 +13,7 @@ import { deployUnirep, genEpochKey } from '../utils'
 import {
     genRandomSalt,
     IncrementalQuinTree,
+    bigInt,
 } from 'maci-crypto'
 import { maxEpochKeyNonce, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
 
@@ -78,7 +79,8 @@ describe('Verify Epoch Key circuits', () => {
     })
 
     it('Invalid epoch key should not pass check', async () => {
-        const invalidEpochKey1 = 2 ** circuitEpochTreeDepth
+        const maxEPK = bigInt(2 ** circuitEpochTreeDepth)
+        const invalidEpochKey1 = maxEPK
         const circuitInputs1 = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
@@ -96,7 +98,7 @@ describe('Verify Epoch Key circuits', () => {
             circuit.calculateWitness(circuitInputs1)
         }).to.throw()
 
-        const invalidEpochKey2 = epochKey +  2 ** circuitEpochTreeDepth
+        const invalidEpochKey2 = epochKey + maxEPK
         const circuitInputs2 = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 

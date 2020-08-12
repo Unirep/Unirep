@@ -55,17 +55,17 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     uint256 public nextAttesterId = 1;
 
     // Keep track of whether an attester has attested to an epoch key
-    mapping(bytes32 => mapping(address => bool)) public attestationsMade;
+    mapping(uint256 => mapping(address => bool)) public attestationsMade;
 
     // Indicate if hash chain of an epoch key is sealed
-    mapping(bytes32 => bool) public isEpochKeyHashChainSealed;
+    mapping(uint256 => bool) public isEpochKeyHashChainSealed;
 
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
-    mapping(bytes32 => bytes32) public epochKeyHashchain;
+    mapping(uint256 => bytes32) public epochKeyHashchain;
 
     struct EpochKeyList {
         uint256 numKeys;
-        mapping(uint256 => bytes32) keys;
+        mapping(uint256 => uint256) keys;
     }
     // Mpapping of epoch to epoch key list
     mapping(uint256 => EpochKeyList) internal epochKeys;
@@ -84,7 +84,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event AttestationSubmitted(
         uint256 indexed _epoch,
-        bytes32 indexed _epochKey,
+        uint256 indexed _epochKey,
         address indexed _attester,
         uint256 _attesterId,
         uint256 _posRep,
@@ -110,7 +110,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         return epochKeys[epoch].numKeys;
     }
 
-    function getEpochKey(uint256 epoch, uint256 index) public view returns (bytes32) {
+    function getEpochKey(uint256 epoch, uint256 index) public view returns (uint256) {
         require(index < epochKeys[epoch].numKeys, "Unirep: epoch key list access out of bound");
         return epochKeys[epoch].keys[index];
     }
@@ -204,7 +204,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
-    function submitAttestation(Attestation calldata attestation, bytes32 epochKey) external payable {
+    function submitAttestation(Attestation calldata attestation, uint256 epochKey) external payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
         require(isEpochKeyHashChainSealed[epochKey] == false, "Unirep: this hash chain of this epoch key is sealed");
@@ -274,7 +274,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function finalizeAllAttestations() internal returns (address) {
         OneTimeSparseMerkleTree epochTree;
-        bytes32 epochKey;
+        uint256 epochKey;
         uint256[] memory epochKeyList = new uint256[](epochKeys[currentEpoch].numKeys);
         uint256[] memory epochKeyHashChainList = new uint256[](epochKeys[currentEpoch].numKeys);
         for( uint i = 0; i < epochKeys[currentEpoch].numKeys; i++) {
@@ -287,7 +287,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
                 )
             );
 
-            epochKeyList[i] = uint256(epochKey);
+            epochKeyList[i] = epochKey;
             epochKeyHashChainList[i] = uint256(epochKeyHashchain[epochKey]);
             isEpochKeyHashChainSealed[epochKey] = true;
         }

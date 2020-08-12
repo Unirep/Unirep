@@ -2,10 +2,10 @@ import { ethers } from "@nomiclabs/buidler"
 import { BigNumber, Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, nullifierTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { IncrementalQuinTree, SnarkBigInt, genRandomSalt } from 'maci-crypto'
-import { deployUnirep, getNewSMT, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey } from './utils'
+import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, bigInt } from 'maci-crypto'
+import { deployUnirep, getNewSMT, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey, toCompleteHexString } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -277,7 +277,8 @@ describe('Integration', () => {
 
             // Last filter by epoch key
             for (let epochKey in epochKeyToAttestationsMap) {
-                let attestationsByEpochKeyFilter = unirepContract.filters.AttestationSubmitted(null, epochKey)
+                const epkInHexStr = toCompleteHexString(bigInt(epochKey).toString(16), 32)
+                let attestationsByEpochKeyFilter = unirepContract.filters.AttestationSubmitted(null, epkInHexStr)
                 let attestationsByEpochKeyEvent = await unirepContract.queryFilter(attestationsByEpochKeyFilter)
                 expect(attestationsByEpochKeyEvent.length).to.be.equal(epochKeyToAttestationsMap[epochKey].length)
                 let attestations_: any[] = attestationsByEpochKeyEvent.map((event: any) => event['args'])

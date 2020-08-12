@@ -102,7 +102,7 @@ const deployUnirep = async (
     return c
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = epochTreeDepth): string => {
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = epochTreeDepth): SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
         epoch,
@@ -113,7 +113,7 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     let epochKey = hash5(values)
     // Adjust epoch key size according to epoch tree depth
     epochKey = epochKey % bigInt(2).pow(bigInt(_epochTreeDepth))
-    return toCompleteHexString(epochKey.toString(16), 32)
+    return epochKey
 }
 
 const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number): string => {

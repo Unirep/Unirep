@@ -118,7 +118,7 @@ describe('Epoch Transition', () => {
 
         const epochTreeContract: Contract = await ethers.getContractAt(OneTimeSparseMerkleTree.abi, epochTreeAddr)
         let [epochKeys_, epochKeyHashchains_] = await epochTreeContract.getLeavesToInsert()
-        epochKeys_ = epochKeys_.map((epk) => ethers.utils.hexZeroPad(epk.toHexString(), 32))
+        epochKeys_ = epochKeys_.map((epk) => epk.toString())
         epochKeyHashchains_ = epochKeyHashchains_.map((hc) => ethers.utils.hexZeroPad(hc.toHexString(), 32))
         expect(epochKeys_.length).to.be.equal(numEpochKey)
 
