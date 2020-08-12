@@ -61,7 +61,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     mapping(uint256 => bool) public isEpochKeyHashChainSealed;
 
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
-    mapping(uint256 => bytes32) public epochKeyHashchain;
+    mapping(uint256 => uint256) public epochKeyHashchain;
 
     struct EpochKeyList {
         uint256 numKeys;
@@ -220,25 +220,24 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // Add the epoch key to epoch key list of current epoch
         // if it is been attested to the first time.
         uint256 index;
-        if(epochKeyHashchain[epochKey] == bytes32(0)) {
+        if(epochKeyHashchain[epochKey] == 0) {
             index = epochKeys[currentEpoch].numKeys;
             epochKeys[currentEpoch].keys[index] = epochKey;
             epochKeys[currentEpoch].numKeys ++;
         }
 
         // Initialize the hash chain if it's nonexistent
-        bytes memory packedAttestation = abi.encodePacked(
-            attestation.attesterId,
-            attestation.posRep,
-            attestation.negRep,
-            attestation.graffiti,
-            attestation.overwriteGraffiti
-        );
-        epochKeyHashchain[epochKey] = keccak256(
-            abi.encodePacked(
-                packedAttestation,
-                epochKeyHashchain[epochKey]
-            )
+        uint256 overwriteGraffiti = attestation.overwriteGraffiti ? 1 : 0;
+        uint256[] memory attestationData = new uint256[](5);
+        attestationData[0] = attestation.attesterId;
+        attestationData[1] = attestation.posRep;
+        attestationData[2] = attestation.negRep;
+        attestationData[3] = attestation.graffiti;
+        attestationData[4] = overwriteGraffiti;
+        
+        epochKeyHashchain[epochKey] = hashLeftRight(
+            hash5(attestationData),
+            epochKeyHashchain[epochKey]
         );
 
         attestationsMade[epochKey][msg.sender] = true;
@@ -280,15 +279,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         for( uint i = 0; i < epochKeys[currentEpoch].numKeys; i++) {
             // Seal the hash chain of this epoch key
             epochKey = epochKeys[currentEpoch].keys[i];
-            epochKeyHashchain[epochKey] = keccak256(
-                abi.encodePacked(
-                    bytes32(uint256(1)),
-                    epochKeyHashchain[epochKey]
-                )
+            epochKeyHashchain[epochKey] = hashLeftRight(
+                1,
+                epochKeyHashchain[epochKey]
             );
 
             epochKeyList[i] = epochKey;
-            epochKeyHashChainList[i] = uint256(epochKeyHashchain[epochKey]);
+            epochKeyHashChainList[i] = epochKeyHashchain[epochKey];
             isEpochKeyHashChainSealed[epochKey] = true;
         }
 

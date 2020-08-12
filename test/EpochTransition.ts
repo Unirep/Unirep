@@ -3,7 +3,7 @@ import { Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength } from '../config/testLocal'
-import { genRandomSalt } from '../crypto/crypto'
+import { genRandomSalt, hashLeftRight } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey } from './utils'
 
@@ -119,7 +119,7 @@ describe('Epoch Transition', () => {
         const epochTreeContract: Contract = await ethers.getContractAt(OneTimeSparseMerkleTree.abi, epochTreeAddr)
         let [epochKeys_, epochKeyHashchains_] = await epochTreeContract.getLeavesToInsert()
         epochKeys_ = epochKeys_.map((epk) => epk.toString())
-        epochKeyHashchains_ = epochKeyHashchains_.map((hc) => ethers.utils.hexZeroPad(hc.toHexString(), 32))
+        // epochKeyHashchains_ = epochKeyHashchains_.map((hc) => ethers.utils.hexZeroPad(hc.toHexString(), 32))
         expect(epochKeys_.length).to.be.equal(numEpochKey)
 
         // Verify each epoch key hash chain is sealed
@@ -127,12 +127,9 @@ describe('Epoch Transition', () => {
         let sealedHashChain
         let epkIndex
         for (epochKey_ in epochKeyHashchainMap) {
-            sealedHashChain = ethers.utils.solidityKeccak256(
-                ["bytes32", "bytes32"],
-                [
-                    ethers.utils.hexZeroPad("0x01", 32),
-                    epochKeyHashchainMap[epochKey_]
-                ]
+            sealedHashChain = hashLeftRight(
+                1,
+                epochKeyHashchainMap[epochKey_]
             )
             hashChainAfter = await unirepContract.epochKeyHashchain(epochKey_)
             expect(hashChainAfter).equal(sealedHashChain)

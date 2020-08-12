@@ -3,7 +3,7 @@ import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee } from '../config/testLocal'
-import { genRandomSalt } from '../crypto/crypto'
+import { genRandomSalt, hash5, hashLeftRight } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey } from './utils'
 
@@ -66,21 +66,16 @@ describe('Attesting', () => {
         expect(receipt.status).equal(1)
 
         // Verify attestation hash chain
-        let attestationHashChain = ethers.utils.solidityKeccak256(
-            ["bytes", "bytes32"],
-            [
-                ethers.utils.solidityPack(
-                    ["uint256", "uint256", "uint256", "uint256", "bool"],
-                    [
-                        attestation.attesterId,
-                        attestation.posRep,
-                        attestation.negRep,
-                        attestation.graffiti,
-                        attestation.overwriteGraffiti
-                    ]
-                ),
-                ethers.utils.hexZeroPad("0x", 32)
-            ]
+        const attestationData: any[5] = [
+            attestation.attesterId,
+            attestation.posRep,
+            attestation.negRep,
+            attestation.graffiti,
+            attestation.overwriteGraffiti
+        ]
+        let attestationHashChain = hashLeftRight(
+            hash5(attestationData),
+            0
         )
         let attestationHashChain_ = await unirepContract.epochKeyHashchain(epochKey)
         expect(attestationHashChain).equal(attestationHashChain_)
@@ -215,21 +210,16 @@ describe('Attesting', () => {
 
         // Verify attestation hash chain
         let attestationHashChainAfter = await unirepContract.epochKeyHashchain(epochKey)
-        let attestationHashChain = ethers.utils.solidityKeccak256(
-            ["bytes", "bytes32"],
-            [
-                ethers.utils.solidityPack(
-                    ["uint256", "uint256", "uint256", "uint256", "bool"],
-                    [
-                        attestation.attesterId,
-                        attestation.posRep,
-                        attestation.negRep,
-                        attestation.graffiti,
-                        attestation.overwriteGraffiti
-                    ]
-                ),
-                attestationHashChainBefore
-            ]
+        const attestationData: any[5] = [
+            attestation.attesterId,
+            attestation.posRep,
+            attestation.negRep,
+            attestation.graffiti,
+            attestation.overwriteGraffiti
+        ]
+        let attestationHashChain = hashLeftRight(
+            hash5(attestationData),
+            attestationHashChainBefore
         )
         expect(attestationHashChain).equal(attestationHashChainAfter)
 
