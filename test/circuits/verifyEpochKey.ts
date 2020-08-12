@@ -77,6 +77,44 @@ describe('Verify Epoch Key circuits', () => {
         }
     })
 
+    it('Invalid epoch key should not pass check', async () => {
+        const invalidEpochKey1 = 2 ** circuitEpochTreeDepth
+        const circuitInputs1 = {
+            identity_pk: id['keypair']['pubKey'],
+            identity_nullifier: id['identityNullifier'], 
+            identity_trapdoor: id['identityTrapdoor'],
+            user_state_root: stateRoot,
+            path_elements: proof.pathElements,
+            path_index: proof.indices,
+            root: root,
+            nonce: nonce,
+            max_nonce: maxEpochKeyNonce,
+            epoch: currentEpoch,
+            epoch_key: invalidEpochKey1,
+        }
+        expect(() => {
+            circuit.calculateWitness(circuitInputs1)
+        }).to.throw()
+
+        const invalidEpochKey2 = epochKey +  2 ** circuitEpochTreeDepth
+        const circuitInputs2 = {
+            identity_pk: id['keypair']['pubKey'],
+            identity_nullifier: id['identityNullifier'], 
+            identity_trapdoor: id['identityTrapdoor'],
+            user_state_root: stateRoot,
+            path_elements: proof.pathElements,
+            path_index: proof.indices,
+            root: root,
+            nonce: nonce,
+            max_nonce: maxEpochKeyNonce,
+            epoch: currentEpoch,
+            epoch_key: invalidEpochKey2,
+        }
+        expect(() => {
+            circuit.calculateWitness(circuitInputs2)
+        }).to.throw()
+    })
+
     it('Invalid membership proof in global state tree should not pass check', async () => {
         // Validate against wrong Id
         const fakeId = genIdentity()
