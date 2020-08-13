@@ -81,7 +81,7 @@ describe('Verify Epoch Key circuits', () => {
     it('Invalid epoch key should not pass check', async () => {
         const maxEPK = bigInt(2 ** circuitEpochTreeDepth)
         const invalidEpochKey1 = maxEPK
-        const circuitInputs1 = {
+        let circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
@@ -95,11 +95,11 @@ describe('Verify Epoch Key circuits', () => {
             epoch_key: invalidEpochKey1,
         }
         expect(() => {
-            circuit.calculateWitness(circuitInputs1)
+            circuit.calculateWitness(circuitInputs)
         }).to.throw()
 
         const invalidEpochKey2 = epochKey + maxEPK
-        const circuitInputs2 = {
+        circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
@@ -113,14 +113,14 @@ describe('Verify Epoch Key circuits', () => {
             epoch_key: invalidEpochKey2,
         }
         expect(() => {
-            circuit.calculateWitness(circuitInputs2)
+            circuit.calculateWitness(circuitInputs)
         }).to.throw()
     })
 
     it('Invalid membership proof in global state tree should not pass check', async () => {
         // Validate against wrong Id
         const fakeId = genIdentity()
-        const circuitInputs = {
+        let circuitInputs = {
             identity_pk: fakeId['keypair']['pubKey'],
             identity_nullifier: fakeId['identityNullifier'], 
             identity_trapdoor: fakeId['identityTrapdoor'],
@@ -139,7 +139,7 @@ describe('Verify Epoch Key circuits', () => {
 
         // Validate against different GST tree root
         const otherTreeRoot = genRandomSalt()
-        const circuitInputs2 = {
+        circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
@@ -153,7 +153,7 @@ describe('Verify Epoch Key circuits', () => {
             epoch_key: epochKey,
         }
         expect(() => {
-            circuit.calculateWitness(circuitInputs2)
+            circuit.calculateWitness(circuitInputs)
         }).to.throw()
     })
 
