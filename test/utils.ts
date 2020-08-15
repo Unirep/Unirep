@@ -116,6 +116,16 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return epochKey
 }
 
+const computeAttestationHash = (attestation: any): SnarkBigInt => {
+    return hash5([
+        attestation['attesterId'],
+        attestation['posRep'],
+        attestation['negRep'],
+        attestation['graffiti'],
+        attestation['overwriteGraffiti'],
+    ])
+}
+
 const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number): string => {
     let nullifier = hashLeftRight(identityNullifier, epoch)
     // Adjust epoch key size according to epoch tree depth
@@ -169,11 +179,12 @@ export {
     bigIntToBuf,
     bufToBigInt,
     deployUnirep,
+    computeAttestationHash,
     genEpochKey,
-    getNewSMT,
     genNoAttestationNullifierKey,
     genNoAttestationNullifierValue,
     genStubEPKProof,
+    getNewSMT,
     linkLibrary,
     toCompleteHexString,
 }

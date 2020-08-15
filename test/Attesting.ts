@@ -3,9 +3,9 @@ import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee } from '../config/testLocal'
-import { genRandomSalt, hash5, hashLeftRight } from '../crypto/crypto'
+import { genRandomSalt, hashLeftRight } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { deployUnirep, genEpochKey } from './utils'
+import { deployUnirep, genEpochKey, computeAttestationHash } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -66,15 +66,8 @@ describe('Attesting', () => {
         expect(receipt.status).equal(1)
 
         // Verify attestation hash chain
-        const attestationData: any[5] = [
-            attestation.attesterId,
-            attestation.posRep,
-            attestation.negRep,
-            attestation.graffiti,
-            attestation.overwriteGraffiti
-        ]
         let attestationHashChain = hashLeftRight(
-            hash5(attestationData),
+            computeAttestationHash(attestation),
             0
         )
         let attestationHashChain_ = await unirepContract.epochKeyHashchain(epochKey)
@@ -210,15 +203,8 @@ describe('Attesting', () => {
 
         // Verify attestation hash chain
         let attestationHashChainAfter = await unirepContract.epochKeyHashchain(epochKey)
-        const attestationData: any[5] = [
-            attestation.attesterId,
-            attestation.posRep,
-            attestation.negRep,
-            attestation.graffiti,
-            attestation.overwriteGraffiti
-        ]
         let attestationHashChain = hashLeftRight(
-            hash5(attestationData),
+            computeAttestationHash(attestation),
             attestationHashChainBefore
         )
         expect(attestationHashChain).equal(attestationHashChainAfter)
