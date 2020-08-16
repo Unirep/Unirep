@@ -107,21 +107,22 @@ describe('Merkle Tree circuits', () => {
                     root,
                 }
 
+                const rootNotMatchRegExp = RegExp('.+ -> ' + root + ' !=.+$')
                 expect(() => {
                     circuit.calculateWitness(circuitInputs)
-                }).to.throw()
+                }).to.throw(rootNotMatchRegExp)
 
                 // Check against wrong leaf index
                 circuitInputs = {
                     leaf: leaf,
-                    leaf_index: ind + 1,
+                    leaf_index: ind < 15 ? (ind + 1) : (ind - 1),
                     path_elements: pathElements,
                     root,
                 }
 
                 expect(() => {
                     circuit.calculateWitness(circuitInputs)
-                }).to.throw()
+                }).to.throw(rootNotMatchRegExp)
 
                 // Check against wrong path elements
                 const otherIndex = emptyLeafIndices[0]
@@ -136,7 +137,7 @@ describe('Merkle Tree circuits', () => {
 
                 expect(() => {
                     circuit.calculateWitness(circuitInputs)
-                }).to.throw()
+                }).to.throw(rootNotMatchRegExp)
             }
         })
     })

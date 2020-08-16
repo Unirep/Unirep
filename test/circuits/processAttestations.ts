@@ -16,14 +16,16 @@ import {
 import { genIdentity } from 'libsemaphore'
 
 describe('Hash chain circuit', () => {
+    let circuit
 
+    const epoch = 1
+    const user = genIdentity()    
+    const NUM_ATTESTATIONS = 3
+
+    before(async () => {
+        circuit = await compileAndLoadCircuit('test/processAttestations_test.circom')
+    })
     it('successfully process attestations', async () => {
-        const circuit = await compileAndLoadCircuit('test/processAttestations_test.circom')
-
-        const epoch = 1
-        const user = genIdentity()
-
-        const NUM_ATTESTATIONS = 3
         const attesterIds: SnarkBigInt[] = []
         const posReps: number[] = []
         const negReps: number[] = []
@@ -31,7 +33,7 @@ describe('Hash chain circuit', () => {
         const overwriteGraffitis: boolean[] = []
 
         const nullifiers: SnarkBigInt[] = []
-        let hash_chain_result = 0
+        let hashChainResult = 0
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attestation = {
                 attesterId: i + 1,
@@ -47,11 +49,11 @@ describe('Hash chain circuit', () => {
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
             const attestation_hash = computeAttestationHash(attestation)
-            hash_chain_result = hashLeftRight(attestation_hash, hash_chain_result)
+            hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
             nullifiers[i] = hash5([user['identityNullifier'], attestation['attesterId'], epoch, 0, 0])
         }
-        hash_chain_result = hashLeftRight(1, hash_chain_result)
+        hashChainResult = hashLeftRight(1, hashChainResult)
 
         const circuitInputs = {
             epoch: epoch,
@@ -61,7 +63,7 @@ describe('Hash chain circuit', () => {
             neg_reps: negReps,
             graffities: graffities,
             overwrite_graffitis: overwriteGraffitis,
-            hash_chain_result: hash_chain_result
+            hash_chain_result: hashChainResult
         }
 
         const witness = circuit.calculateWitness(circuitInputs)
@@ -73,12 +75,6 @@ describe('Hash chain circuit', () => {
     })
 
     it('process attestations with wrong inputs should fail', async () => {
-        const circuit = await compileAndLoadCircuit('test/processAttestations_test.circom')
-
-        const epoch = 1
-        const user = genIdentity()
-
-        const NUM_ATTESTATIONS = 3
         const attesterIds: SnarkBigInt[] = []
         const posReps: number[] = []
         const negReps: number[] = []
@@ -86,7 +82,7 @@ describe('Hash chain circuit', () => {
         const overwriteGraffitis: boolean[] = []
 
         const nullifiers: SnarkBigInt[] = []
-        let hash_chain_result = 0
+        let hashChainResult = 0
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attestation = {
                 attesterId: i + 1,
@@ -102,11 +98,11 @@ describe('Hash chain circuit', () => {
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
             const attestation_hash = computeAttestationHash(attestation)
-            hash_chain_result = hashLeftRight(attestation_hash, hash_chain_result)
+            hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
             nullifiers[i] = hash5([user['identityNullifier'], attestation['attesterId'], epoch, 0, 0])
         }
-        hash_chain_result = hashLeftRight(1, hash_chain_result)
+        hashChainResult = hashLeftRight(1, hashChainResult)
 
         // Verify against wrong epoch
         const wrongEpoch = epoch + 1
@@ -118,7 +114,7 @@ describe('Hash chain circuit', () => {
             neg_reps: negReps,
             graffities: graffities,
             overwrite_graffitis: overwriteGraffitis,
-            hash_chain_result: hash_chain_result
+            hash_chain_result: hashChainResult
         }
 
         let witness = circuit.calculateWitness(circuitInputs)
@@ -138,7 +134,7 @@ describe('Hash chain circuit', () => {
             neg_reps: negReps,
             graffities: graffities,
             overwrite_graffitis: overwriteGraffitis,
-            hash_chain_result: hash_chain_result
+            hash_chain_result: hashChainResult
         }
 
         witness = circuit.calculateWitness(circuitInputs)
@@ -158,19 +154,19 @@ describe('Hash chain circuit', () => {
             neg_reps: negReps,
             graffities: graffities,
             overwrite_graffitis: overwriteGraffitis,
-            hash_chain_result: hash_chain_result
+            hash_chain_result: hashChainResult
         }
 
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw()
+        }).to.throw('Invalid signal identifier: main.attester_ids[' + NUM_ATTESTATIONS + ']')
 
         // Verify against incorrect hash chain result
         const wrongHashChainResult = genRandomSalt()
         circuitInputs = {
             epoch: epoch,
             identity_nullifier: user['identityNullifier'],
-            attester_ids: wrongAttesterIds,
+            attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
             graffities: graffities,
@@ -178,8 +174,9 @@ describe('Hash chain circuit', () => {
             hash_chain_result: wrongHashChainResult
         }
 
+        const resultNotMatchRegExp = RegExp('.+ -> ' + wrongHashChainResult + ' != ' + hashChainResult + '$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw()
+        }).to.throw(resultNotMatchRegExp)
     })
 })

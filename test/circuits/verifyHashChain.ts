@@ -58,9 +58,10 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
+        const resultNotMatchRegExp = RegExp('.+ -> ' + result + ' !=.+$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw()
+        }).to.throw(resultNotMatchRegExp)
 
         // Verify against incorrect elements
         elements.reverse()
@@ -72,10 +73,11 @@ describe('Hash chain circuit', () => {
 
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw()
+        }).to.throw(resultNotMatchRegExp)
         elements.reverse()
 
         // Verify against incorrect number of elements
+        const signalNotAssignedRegExp = RegExp('^Input Signal not assigned:.+')
         circuitInputs = {
             in_first: elements[0],
             in_rest: elements.slice(1),
@@ -84,7 +86,7 @@ describe('Hash chain circuit', () => {
 
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw()
+        }).to.throw(signalNotAssignedRegExp)
 
         // Verify against incorrect result
         const incorrectResult = genRandomSalt()
@@ -94,8 +96,9 @@ describe('Hash chain circuit', () => {
             result: incorrectResult
         }
 
+        const invalidResultRegExp = RegExp('.+ -> .+ != ' + result + '$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
-        }).to.throw()
+        }).to.throw(invalidResultRegExp)
     })
 })
