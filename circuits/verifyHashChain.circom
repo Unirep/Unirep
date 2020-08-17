@@ -7,12 +7,14 @@ template VerifyHashChain(NUM_ELEMENT) {
 
     component hashers[NUM_ELEMENT];
 
-    var cur = in_first;
+    signal cur_hash[NUM_ELEMENT];
+    cur_hash[0] <== in_first;
     for (var i = 0; i < NUM_ELEMENT; i++) {
         hashers[i] = HashLeftRight();
         hashers[i].left <== in_rest[i];
-        hashers[i].right <== cur;
-        cur = hashers[i].hash;
+        hashers[i].right <== cur_hash[i];
+        if(i < NUM_ELEMENT - 1)
+            cur_hash[i + 1] <== hashers[i].hash;
     }
     result === hashers[NUM_ELEMENT - 1].hash;
 }
