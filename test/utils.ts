@@ -134,7 +134,7 @@ const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: num
 }
 
 const genNoAttestationNullifierValue = (): string => {
-    let value = hashLeftRight(bigInt(1), bigInt(1))
+    let value = hashLeftRight(bigInt(1), bigInt(0))
     return toCompleteHexString(value.toString(16), 32)
 }
 
