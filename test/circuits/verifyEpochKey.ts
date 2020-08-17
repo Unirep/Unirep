@@ -24,9 +24,13 @@ describe('Verify Epoch Key circuits', () => {
     let unirepContract: Contract
     let ZERO_VALUE
 
+    const maxEPK = bigInt(2 ** circuitEpochTreeDepth)
+
     let id, commitment, stateRoot
     let tree, proof, root
     let nonce, currentEpoch, epochKey
+
+    let notLessEqThanRegExp: RegExp
 
     before(async () => {
         accounts = await ethers.getSigners()
@@ -80,7 +84,6 @@ describe('Verify Epoch Key circuits', () => {
 
     it('Invalid epoch key inputs should not pass check', async () => {
         // Validate against invalid epoch key
-        const maxEPK = bigInt(2 ** circuitEpochTreeDepth)
         const invalidEpochKey1 = maxEPK
         let circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
@@ -95,14 +98,15 @@ describe('Verify Epoch Key circuits', () => {
             epoch: currentEpoch,
             epoch_key: invalidEpochKey1,
         }
-        const notLessEqThanRegExp = RegExp('.+ -> 0 != 1$')
+        notLessEqThanRegExp = RegExp('.+ -> 0 != 1$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(notLessEqThanRegExp)
+    })
 
-        // Validate against invalid epoch key
+    it('Invalid epoch key should not pass check', async () => {
         const invalidEpochKey2 = epochKey + maxEPK
-        circuitInputs = {
+        const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
@@ -118,10 +122,10 @@ describe('Verify Epoch Key circuits', () => {
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(notLessEqThanRegExp)
-
-        // Validate against wrong Id
+    })
+    it('Wrong Id should not pass check', async () => {
         const fakeId = genIdentity()
-        circuitInputs = {
+        const circuitInputs = {
             identity_pk: fakeId['keypair']['pubKey'],
             identity_nullifier: fakeId['identityNullifier'], 
             identity_trapdoor: fakeId['identityTrapdoor'],
@@ -138,10 +142,11 @@ describe('Verify Epoch Key circuits', () => {
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(rootNotMatchRegExp)
+    })
 
-        // Validate against different GST tree root
+    it('Mismatched GST tree root should not pass check', async () => {
         const otherTreeRoot = genRandomSalt()
-        circuitInputs = {
+        const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
@@ -158,10 +163,11 @@ describe('Verify Epoch Key circuits', () => {
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(invalidRootRegExp)
+    })
 
-        // Validate against invalid nonce
+    it('Invalid nonce should not pass check', async () => {
         const invalidNonce = maxEpochKeyNonce + 1
-        circuitInputs = {
+        const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
@@ -177,10 +183,11 @@ describe('Verify Epoch Key circuits', () => {
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(notLessEqThanRegExp)
+    })
 
-        // Validate against invalid epoch
+    it('Invalid epoch should not pass check', async () => {
         const invalidEpoch = currentEpoch + 1
-        circuitInputs = {
+        const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],

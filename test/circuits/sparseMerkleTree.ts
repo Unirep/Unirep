@@ -16,7 +16,7 @@ import { circuitEpochTreeDepth } from "../../config/testLocal"
 
 const LEVELS = 4
 
-describe('Merkle Tree circuits', () => {
+describe('Sparse Merkle Tree circuits', () => {
 
     describe('LeafExists', () => {
         let circuit
@@ -110,7 +110,7 @@ describe('Merkle Tree circuits', () => {
                 const rootNotMatchRegExp = RegExp('.+ -> ' + root + ' !=.+$')
                 expect(() => {
                     circuit.calculateWitness(circuitInputs)
-                }).to.throw(rootNotMatchRegExp)
+                }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong leaf should not pass check")
 
                 // Check against wrong leaf index
                 circuitInputs = {
@@ -122,7 +122,7 @@ describe('Merkle Tree circuits', () => {
 
                 expect(() => {
                     circuit.calculateWitness(circuitInputs)
-                }).to.throw(rootNotMatchRegExp)
+                }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong leaf index should not pass check")
 
                 // Check against wrong path elements
                 const otherIndex = emptyLeafIndices[0]
@@ -137,7 +137,7 @@ describe('Merkle Tree circuits', () => {
 
                 expect(() => {
                     circuit.calculateWitness(circuitInputs)
-                }).to.throw(rootNotMatchRegExp)
+                }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong path elements should not pass check")
             }
         })
     })
