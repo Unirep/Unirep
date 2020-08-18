@@ -12,6 +12,7 @@ template ProcessAttestations(NUM_ATTESTATIONS) {
     signal input graffities[NUM_ATTESTATIONS];
     signal input overwrite_graffitis[NUM_ATTESTATIONS];
 
+    signal input selectors[NUM_ATTESTATIONS];
     signal input hash_chain_result;
 
     // Nullifiers of the attestations
@@ -22,11 +23,7 @@ template ProcessAttestations(NUM_ATTESTATIONS) {
 
     component nullifier_hashers[NUM_ATTESTATIONS];
 
-    // NUM_ATTESTATIONS + 1 elements are provided because we append 1 in the end to seal the hash chain
-    component hash_chain_verifier = VerifyHashChain(NUM_ATTESTATIONS + 1);
-    // Fill in first and last element which are 0 and 1 respectively
-    hash_chain_verifier.in_first <== 0;
-    hash_chain_verifier.in_rest[NUM_ATTESTATIONS] <== 1;
+    component hash_chain_verifier = VerifyHashChain(NUM_ATTESTATIONS);
     hash_chain_verifier.result <== hash_chain_result;
 
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
@@ -38,6 +35,7 @@ template ProcessAttestations(NUM_ATTESTATIONS) {
         attestation_hashers[i].in[3] <== graffities[i];
         attestation_hashers[i].in[4] <== overwrite_graffitis[i];
         hash_chain_verifier.in_rest[i] <== attestation_hashers[i].hash;
+        hash_chain_verifier.selectors[i] <== selectors[i];
 
         // Compute nullifier of the attestation
         nullifier_hashers[i] = Hasher5();
