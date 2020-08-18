@@ -14,8 +14,6 @@ import { BigNumber as smtBN } from "../../crypto/SMT"
 import { getNewSMT, bigIntToBuf, bufToBigInt } from "../utils"
 import { circuitEpochTreeDepth } from "../../config/testLocal"
 
-const LEVELS = 4
-
 describe('Sparse Merkle Tree circuits', () => {
 
     describe('LeafExists', () => {
@@ -33,14 +31,14 @@ describe('Sparse Merkle Tree circuits', () => {
         })
 
         it('Valid LeafExists inputs should work', async () => {
-            const half = 2 ** (LEVELS - 1)
+            const half = 2 ** (circuitEpochTreeDepth - 1)
 
             // Insert half of the leaves
             leafIndicesToInsert = []
             for (let i = 0; i < half; i++) {
-                let ind = Math.floor(Math.random() * (2 ** LEVELS))
+                let ind = Math.floor(Math.random() * (2 ** circuitEpochTreeDepth))
                 while (leafIndicesToInsert.indexOf(ind) >= 0) {
-                    ind = Math.floor(Math.random() * (2 ** LEVELS))
+                    ind = Math.floor(Math.random() * (2 ** circuitEpochTreeDepth))
                 }
                 leafIndicesToInsert.push(ind)
             }
@@ -73,7 +71,7 @@ describe('Sparse Merkle Tree circuits', () => {
 
             // Prove second half of empty leaves
             emptyLeafIndices = []
-            for (let i = 0; i < 2 ** LEVELS; i++) {
+            for (let i = 0; i < 2 ** circuitEpochTreeDepth; i++) {
                 if (leafIndicesToInsert.indexOf(i) >= 0) continue
                 else emptyLeafIndices.push(i)
             }
@@ -154,7 +152,7 @@ describe('Sparse Merkle Tree circuits', () => {
             const leaves = {}
 
             // Populate the tree
-            for (let ind = 0; ind < 2 ** LEVELS; ind++) {
+            for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
                 const randomVal = Math.floor(Math.random() * 1000)
                 const leaf = hashOne(randomVal)
                 const leafToBuf = bigIntToBuf(leaf)
@@ -164,7 +162,7 @@ describe('Sparse Merkle Tree circuits', () => {
                 leaves[ind] = leaf
             }
 
-            for (let ind = 0; ind < 2 ** LEVELS; ind++) {
+            for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
                 const randomVal = genRandomSalt()
                 const leaf = hashOne(randomVal)
                 const leafToBuf = bigIntToBuf(leaf)

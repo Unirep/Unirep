@@ -1,29 +1,7 @@
 include "../node_modules/circomlib/circuits/bitify.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
+include "./incrementalMerkleTree.circom";
 include "./hasherPoseidon.circom";
-
-template Selector() {
-    signal input input_elem;
-    signal input path_elem;
-    signal input path_index;
-
-    signal output left;
-    signal output right;
-
-    path_index * (1-path_index) === 0
-
-    component mux = MultiMux1(2);
-    mux.c[0][0] <== input_elem;
-    mux.c[0][1] <== path_elem;
-
-    mux.c[1][0] <== path_elem;
-    mux.c[1][1] <== input_elem;
-
-    mux.s <== path_index;
-
-    left <== mux.out[0];
-    right <== mux.out[1];
-}
 
 template SMTInclusionProof(n_levels) {
     signal input leaf;
