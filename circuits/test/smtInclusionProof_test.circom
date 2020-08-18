@@ -1,3 +1,3 @@
 include "../sparseMerkleTree.circom"
 
-component main = MerkleTreeInclusionProof(4);
+component main = SMTInclusionProof(4);

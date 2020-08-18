@@ -1,3 +1,3 @@
 include "../sparseMerkleTree.circom"
 
-component main = LeafExists(4);
+component main = SMTLeafExists(4);

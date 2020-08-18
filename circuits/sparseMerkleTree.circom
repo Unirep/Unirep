@@ -25,7 +25,7 @@ template Selector() {
     right <== mux.out[1];
 }
 
-template MerkleTreeInclusionProof(n_levels) {
+template SMTInclusionProof(n_levels) {
     signal input leaf;
     signal input leaf_index;
     signal input path_elements[n_levels];
@@ -64,7 +64,7 @@ template MerkleTreeInclusionProof(n_levels) {
 }
 
 
-template LeafExists(levels){
+template SMTLeafExists(levels){
     // Ensures that a leaf exists within a merkletree with given `root`
 
     // levels is depth of tree
@@ -75,7 +75,7 @@ template LeafExists(levels){
 
     signal input root;
 
-    component merkletree = MerkleTreeInclusionProof(levels);
+    component merkletree = SMTInclusionProof(levels);
     merkletree.leaf <== leaf;
     merkletree.leaf_index <== leaf_index;
     for (var i = 0; i < levels; i++) {
