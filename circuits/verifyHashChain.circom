@@ -2,7 +2,6 @@ include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
 
 template VerifyHashChain(NUM_ELEMENT) {
-    signal input in_first;
     signal input in_rest[NUM_ELEMENT];
     signal input selectors[NUM_ELEMENT];
     signal input result;
@@ -11,7 +10,7 @@ template VerifyHashChain(NUM_ELEMENT) {
     component toHashOrNot[NUM_ELEMENT];
 
     signal cur_hash[NUM_ELEMENT + 1];
-    cur_hash[0] <== in_first;
+    cur_hash[0] <== 0;
     for (var i = 0; i < NUM_ELEMENT; i++) {
         hashers[i] = HashLeftRight();
         hashers[i].left <== in_rest[i];
@@ -23,5 +22,8 @@ template VerifyHashChain(NUM_ELEMENT) {
         toHashOrNot[i].s <== selectors[i];
         cur_hash[i + 1] <== toHashOrNot[i].out;
     }
-    result === cur_hash[NUM_ELEMENT];
+    component finalHasher = HashLeftRight();
+    finalHasher.left <== 1;
+    finalHasher.right <== cur_hash[NUM_ELEMENT];
+    result === finalHasher.hash;
 }

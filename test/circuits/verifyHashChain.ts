@@ -33,12 +33,11 @@ describe('Hash chain circuit', () => {
                 cur = hashLeftRight(element, cur)
             }
         }
-        result = cur
+        result = hashLeftRight(1, cur)
     })
 
     it('correctly verify hash chain', async () => {
         const circuitInputs = {
-            in_first: 0,
             in_rest: elements,
             selectors: selectors,
             result: result
@@ -48,25 +47,9 @@ describe('Hash chain circuit', () => {
         expect(circuit.checkWitness(witness)).to.be.true
     })
 
-    it('verify incorrect first element should fail', async () => {
-        const incorrectFirstIn = genRandomSalt()
-        const circuitInputs = {
-            in_first: incorrectFirstIn,
-            in_rest: elements,
-            selectors: selectors,
-            result: result
-        }
-
-        resultNotMatchRegExp = RegExp('.+ -> ' + result + ' !=.+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs)
-        }).to.throw(resultNotMatchRegExp)
-    })
-
     it('verify incorrect elements should fail', async () => {
         elements.reverse()
         const circuitInputs = {
-            in_first: 0,
             in_rest: elements,
             selectors: selectors,
             result: result
@@ -83,7 +66,6 @@ describe('Hash chain circuit', () => {
         // Flip one of the selector
         wrongSelectors[NUM_ELEMENT - 5] = wrongSelectors[NUM_ELEMENT - 5] ? 0 : 1
         const circuitInputs = {
-            in_first: 0,
             in_rest: elements,
             selectors: wrongSelectors,
             result: result
@@ -97,7 +79,6 @@ describe('Hash chain circuit', () => {
     it('verify incorrect number of elements should fail', async () => {
         const signalNotAssignedRegExp = RegExp('^Input Signal not assigned:.+')
         const circuitInputs = {
-            in_first: elements[0],
             in_rest: elements.slice(1),
             selectors: selectors,
             result: result
@@ -111,7 +92,6 @@ describe('Hash chain circuit', () => {
     it('verify incorrect result should fail', async () => {
         const incorrectResult = genRandomSalt()
         const circuitInputs = {
-            in_first: 0,
             in_rest: elements,
             selectors: selectors,
             result: incorrectResult
