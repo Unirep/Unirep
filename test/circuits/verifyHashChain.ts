@@ -55,6 +55,7 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
+        resultNotMatchRegExp = RegExp('.+ -> ' + result + ' != .+$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(resultNotMatchRegExp)
@@ -64,13 +65,15 @@ describe('Hash chain circuit', () => {
     it('verify with incorrect selectors should fail', async () => {
         const wrongSelectors = selectors.slice()
         // Flip one of the selector
-        wrongSelectors[NUM_ELEMENT - 5] = wrongSelectors[NUM_ELEMENT - 5] ? 0 : 1
+        const indexWrongSelector = Math.floor(Math.random() * NUM_ELEMENT)
+        wrongSelectors[indexWrongSelector] = wrongSelectors[indexWrongSelector] ? 0 : 1
         const circuitInputs = {
             in_rest: elements,
             selectors: wrongSelectors,
             result: result
         }
 
+        resultNotMatchRegExp = RegExp('.+ -> ' + result + ' != .+$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(resultNotMatchRegExp)
@@ -97,7 +100,7 @@ describe('Hash chain circuit', () => {
             result: incorrectResult
         }
 
-        const invalidResultRegExp = RegExp('.+ -> .+ != ' + result + '$')
+        const invalidResultRegExp = RegExp('.+ -> ' + incorrectResult + ' != .+$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(invalidResultRegExp)
