@@ -1,3 +1,3 @@
 include "../userStateTransition.circom"
 
-component main = UserStateTransition(4, 160, 10);
+component main = UserStateTransition(4, 8, 8, 10);

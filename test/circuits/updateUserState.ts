@@ -18,7 +18,8 @@ import { BigNumber as smtBN } from "../../crypto/SMT"
 import { globalStateTreeDepth } from "../../config/testLocal"
 import { bigIntToBuf, bufToBigInt, computeAttestationHash, getNewSMT, genEpochKey } from "../utils"
 
-const circuitEpochTreeDepth = 160
+const circuitEpochTreeDepth = 8
+const circuitNullifierTreeDepth = 8
 
 describe('Update User State circuits', function () {
     this.timeout(120000)
@@ -35,6 +36,7 @@ describe('Update User State circuits', function () {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, oldUserStateRoot, GSTreeProof
     let epochTree, epochTreeRoot, epochTreePathElements
+    let nullifierTree
 
     let attesterIds: SnarkBigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
@@ -56,6 +58,7 @@ describe('Update User State circuits', function () {
         GSTreeRoot = GSTree.root
 
         epochTree = await getNewSMT(circuitEpochTreeDepth)
+        nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
 
         attesterIds = []
         posReps = []
@@ -116,7 +119,8 @@ describe('Update User State circuits', function () {
             epk_path_elements: epochTreePathElements,
             selectors: selectors,
             hash_chain_result: hashChainResult,
-            epoch_tree_root: epochTreeRoot
+            epoch_tree_root: epochTreeRoot,
+            nullifier_tree_root: bufToBigInt(nullifierTree.getRootHash())
         }
 
         const witness = circuit.calculateWitness(circuitInputs)
