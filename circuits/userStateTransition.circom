@@ -1,10 +1,66 @@
+include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
 include "./sparseMerkleTree.circom";
 include "./processAttestations.circom";
 
-template UserStateTransition(GST_tree_depth, epoch_tree_depth, NUM_ATTESTATIONS) {
+template UpdateNullifierTree(nullifier_tree_depth, NUM_NULLIFIERS) {
+    signal input intermediate_nullifier_tree_root[NUM_NULLIFIERS + 1];
+    signal input nullifiers[NUM_NULLIFIERS];
+    signal input selectors[NUM_NULLIFIERS];
+    signal input path_elements[NUM_NULLIFIERS][nullifier_tree_depth];
+
+    signal zero_leaf;
+    component zero_leaf_hasher = HashLeftRight();
+    zero_leaf_hasher.left <== 0;
+    zero_leaf_hasher.right <== 0;
+    zero_leaf <== zero_leaf_hasher.hash;
+
+    signal one_leaf;
+    component one_leaf_hasher = HashLeftRight();
+    one_leaf_hasher.left <== 1;
+    one_leaf_hasher.right <== 0;
+    one_leaf <== one_leaf_hasher.hash;
+
+    component which_leaf_index_to_check[NUM_NULLIFIERS];
+    signal leaf_index_to_check[NUM_NULLIFIERS];
+    component which_leaf_value_to_check[NUM_NULLIFIERS];
+    signal leaf_value_to_check[NUM_NULLIFIERS];
+    component non_membership_check[NUM_NULLIFIERS]; 
+    component membership_check[NUM_NULLIFIERS]; 
+    for (var i = 0; i < NUM_NULLIFIERS; i++) {
+        which_leaf_index_to_check[i] = Mux1();
+        which_leaf_index_to_check[i].c[0] <== 0;  // Leaf index 0
+        which_leaf_index_to_check[i].c[1] <== nullifiers[i];
+        which_leaf_index_to_check[i].s <== selectors[i];
+        leaf_index_to_check[i] <== which_leaf_index_to_check[i].out;
+
+        which_leaf_value_to_check[i] = Mux1();
+        which_leaf_value_to_check[i].c[0] <== one_leaf;  // Leaf 0 is reserved and has value hashLeftRight(1, 0)
+        which_leaf_value_to_check[i].c[1] <== zero_leaf;
+        which_leaf_value_to_check[i].s <== selectors[i];
+        leaf_value_to_check[i] <== which_leaf_value_to_check[i].out;
+
+        non_membership_check[i] = SMTLeafExists(nullifier_tree_depth);
+        non_membership_check[i].leaf_index <== leaf_index_to_check[i];
+        non_membership_check[i].leaf <== leaf_value_to_check[i];
+        for (var j = 0; j < nullifier_tree_depth; j++) {
+            non_membership_check[i].path_elements[j] <== path_elements[i][j];
+        }
+        non_membership_check[i].root <== intermediate_nullifier_tree_root[i];
+
+        membership_check[i] = SMTLeafExists(nullifier_tree_depth);
+        membership_check[i].leaf_index <== leaf_index_to_check[i];
+        membership_check[i].leaf <== one_leaf;
+        for (var j = 0; j < nullifier_tree_depth; j++) {
+            membership_check[i].path_elements[j] <== path_elements[i][j];
+        }
+        membership_check[i].root <== intermediate_nullifier_tree_root[i + 1];
+    }
+}
+
+template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, NUM_ATTESTATIONS) {
     signal input epoch;
     signal input max_nonce;
     signal private input nonce;  // epoch key nonce
@@ -31,6 +87,9 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, NUM_ATTESTATIONS)
     signal private input selectors[NUM_ATTESTATIONS];
     signal private input hash_chain_result;
     signal input epoch_tree_root;
+
+    // Nullifier tree
+    signal input nullifier_tree_root;
 
     // signal output new_user_state_root;
     // signal output completedUserStateTransition;
