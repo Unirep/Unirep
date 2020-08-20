@@ -17,7 +17,8 @@ import { bigIntToBuf, bufToBigInt, getNewSMT } from "../utils"
 
 const circuitNullifierTreeDepth = 8
 
-describe('Update nullifier tree circuits', () => {
+describe('Update nullifier tree circuits', function () {
+    this.timeout(120000)
 
     let circuit
     
@@ -67,7 +68,7 @@ describe('Update nullifier tree circuits', () => {
         }
     })
 
-    it('Valid user state update inputs should work', async () => {
+    it('Valid nullifier tree update inputs should work', async () => {
         const circuitInputs = {
             intermediate_nullifier_tree_root: intermediateNullifierTreeRoot,
             nullifiers: nullifiers,
