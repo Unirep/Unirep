@@ -7,14 +7,14 @@ include "./processAttestations.circom";
 template UserStateTransition(GST_tree_depth, epoch_tree_depth, NUM_ATTESTATIONS) {
     signal input epoch;
     signal input max_nonce;
-    signal private input nonce;
+    signal private input nonce;  // epoch key nonce
 
+    // Global state tree leaf: Identity & user state root
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
-
     signal private input old_user_state_root;
-
+    // Global state tree
     signal private input GST_path_elements[GST_tree_depth];
     signal private input GST_path_index[GST_tree_depth];
     signal input GST_root;
@@ -26,6 +26,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, NUM_ATTESTATIONS)
     signal private input graffities[NUM_ATTESTATIONS];
     signal private input overwrite_graffitis[NUM_ATTESTATIONS];
 
+    // Epoch key & epoch tree
     signal private input epk_path_elements[epoch_tree_depth];
     signal private input selectors[NUM_ATTESTATIONS];
     signal private input hash_chain_result;
@@ -80,6 +81,8 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, NUM_ATTESTATIONS)
     quot_lt.in[0] <== quotient;
     quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
     quot_lt.out === 1;
+    // Check equality
+    epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epkModed;
 
     // Check if hash chain of the epoch key exists in epoch tree
     component epk_exists = SMTLeafExists(epoch_tree_depth);
