@@ -5,7 +5,7 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
 } from './utils'
-import { computeAttestationHash } from '../utils'
+import { computeAttestationHash, computeNullifier } from '../utils'
 
 import {
     genRandomSalt,
@@ -14,6 +14,8 @@ import {
     SnarkBigInt,
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
+
+const circuitNullifierTreeDepth = 8
 
 describe('Process attestation circuit', () => {
     let circuit
@@ -56,7 +58,7 @@ describe('Process attestation circuit', () => {
             const attestation_hash = computeAttestationHash(attestation)
             hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
-            nullifiers[i] = hash5([user['identityNullifier'], attestation['attesterId'], epoch, 0, 0])
+            nullifiers[i] = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
     })

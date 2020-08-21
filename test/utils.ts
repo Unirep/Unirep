@@ -126,6 +126,12 @@ const computeAttestationHash = (attestation: any): SnarkBigInt => {
     ])
 }
 
+const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: number, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([identityNullifier, attesterId, epoch, 0, 0])
+    nullifier = nullifier % bigInt(2).pow(bigInt(_nullifierTreeDepth))
+    return nullifier
+}
+
 const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number): string => {
     let nullifier = hashLeftRight(identityNullifier, epoch)
     // Adjust epoch key size according to epoch tree depth
@@ -180,6 +186,7 @@ export {
     bufToBigInt,
     deployUnirep,
     computeAttestationHash,
+    computeNullifier,
     genEpochKey,
     genNoAttestationNullifierKey,
     genNoAttestationNullifierValue,

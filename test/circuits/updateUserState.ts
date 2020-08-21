@@ -16,7 +16,7 @@ import {
 } from './utils'
 import { BigNumber as smtBN } from "../../crypto/SMT"
 import { globalStateTreeDepth } from "../../config/testLocal"
-import { bigIntToBuf, bufToBigInt, computeAttestationHash, getNewSMT, genEpochKey } from "../utils"
+import { bigIntToBuf, bufToBigInt, computeAttestationHash, getNewSMT, genEpochKey, computeNullifier } from "../utils"
 
 const circuitEpochTreeDepth = 8
 const circuitNullifierTreeDepth = 8
@@ -86,7 +86,7 @@ describe('Update User State circuits', function () {
             const attestation_hash = computeAttestationHash(attestation)
             hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
-            nullifiers[i] = hash5([user['identityNullifier'], attestation['attesterId'], epoch, 0, 0])
+            nullifiers[i] = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
 
