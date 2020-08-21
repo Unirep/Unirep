@@ -89,8 +89,9 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal input epoch_tree_root;
 
     // Nullifier tree
+    // Last intermediate root is the new nullifier tree root
     signal input intermediate_nullifier_tree_root[NUM_ATTESTATIONS + 1];
-    signal input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
+    signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
 
     // signal output new_user_state_root;
     // signal output completedUserStateTransition;
