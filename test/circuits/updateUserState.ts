@@ -36,11 +36,12 @@ describe('Update User State circuits', function () {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, oldUserStateRoot, GSTreeProof
     let epochTree, epochTreeRoot, epochTreePathElements
-    let nullifierTree
+    let nullifierTree, intermediateNullifierTreeRoot, nullifierTreePathElements
+    const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
+    const NUL_TREE_ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
 
     let attesterIds: SnarkBigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
-    let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
 
     before(async () => {
@@ -58,7 +59,15 @@ describe('Update User State circuits', function () {
         GSTreeRoot = GSTree.root
 
         epochTree = await getNewSMT(circuitEpochTreeDepth)
+
+        intermediateNullifierTreeRoot = []
+        nullifierTreePathElements = []
         nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
+        // Reserve leaf 0
+        let result 
+        result = await nullifierTree.update(new smtBN(0), NUL_TREE_ONE_LEAF, true)
+        expect(result).to.be.true
+        intermediateNullifierTreeRoot.push(bufToBigInt(nullifierTree.getRootHash()))
 
         attesterIds = []
         posReps = []
@@ -66,7 +75,6 @@ describe('Update User State circuits', function () {
         graffities = []
         overwriteGraffitis = []
 
-        nullifiers = []
         hashChainResult = 0
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attestation = {
@@ -81,16 +89,28 @@ describe('Update User State circuits', function () {
             negReps.push(attestation['negRep'])
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
-            selectors.push(1)
 
-            const attestation_hash = computeAttestationHash(attestation)
-            hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+            const sel = Math.floor(Math.random() * 2)
+            selectors.push(sel)
+            
+            if ( sel == 1) {
+                const attestation_hash = computeAttestationHash(attestation)
+                hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+                
+                const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
+                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ZERO_LEAF, true)
+                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
 
-            nullifiers[i] = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
+                result = await nullifierTree.update(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ONE_LEAF, true)
+                expect(result).to.be.true
+            } else {
+                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), NUL_TREE_ONE_LEAF, true)
+                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+            }
+            intermediateNullifierTreeRoot.push(bufToBigInt(nullifierTree.getRootHash()))
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
 
-        let result 
         result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
         expect(result).to.be.true
         
@@ -120,7 +140,8 @@ describe('Update User State circuits', function () {
             selectors: selectors,
             hash_chain_result: hashChainResult,
             epoch_tree_root: epochTreeRoot,
-            nullifier_tree_root: bufToBigInt(nullifierTree.getRootHash())
+            intermediate_nullifier_tree_root: intermediateNullifierTreeRoot,
+            nullifier_tree_path_elements: nullifierTreePathElements
         }
 
         const witness = circuit.calculateWitness(circuitInputs)

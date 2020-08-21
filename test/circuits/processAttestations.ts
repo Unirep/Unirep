@@ -53,12 +53,16 @@ describe('Process attestation circuit', () => {
             negReps.push(attestation['negRep'])
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
-            selectors.push(1)
 
-            const attestation_hash = computeAttestationHash(attestation)
-            hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+            const sel = Math.floor(Math.random() * 2)
+            selectors.push(sel)
 
-            nullifiers[i] = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
+            if ( sel == 1) {
+                const attestation_hash = computeAttestationHash(attestation)
+                hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+            }
+
+            nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
     })
