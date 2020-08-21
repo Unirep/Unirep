@@ -89,7 +89,8 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal input epoch_tree_root;
 
     // Nullifier tree
-    signal input nullifier_tree_root;
+    signal input intermediate_nullifier_tree_root[NUM_ATTESTATIONS + 1];
+    signal input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
 
     // signal output new_user_state_root;
     // signal output completedUserStateTransition;
@@ -152,7 +153,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         epk_exists.path_elements[i] <== epk_path_elements[i];
     }
 
-    component process_attestations = ProcessAttestations(NUM_ATTESTATIONS);
+    component process_attestations = ProcessAttestations(nullifier_tree_depth, NUM_ATTESTATIONS);
     process_attestations.epoch <== epoch;
     process_attestations.identity_nullifier <== identity_nullifier;
     process_attestations.hash_chain_result <== hash_chain_result;
@@ -165,5 +166,16 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         process_attestations.selectors[i] <== selectors[i];
     }
 
+    // Update nullifier tree
+    component update_nullifier_tree = UpdateNullifierTree(nullifier_tree_depth, NUM_ATTESTATIONS);
+    update_nullifier_tree.intermediate_nullifier_tree_root[0] <== intermediate_nullifier_tree_root[0];
+    for (var i = 0; i < NUM_ATTESTATIONS; i++) {
+        update_nullifier_tree.nullifiers[i] <== process_attestations.nullifiers[i];
+        update_nullifier_tree.selectors[i] <== selectors[i];
+        update_nullifier_tree.intermediate_nullifier_tree_root[i + 1] <== intermediate_nullifier_tree_root[i + 1];
+        for (var j = 0; j < nullifier_tree_depth; j++) {
+            update_nullifier_tree.path_elements[i][j] <== nullifier_tree_path_elements[i][j];
+        }
+    }
     /* End of process*/
 }
