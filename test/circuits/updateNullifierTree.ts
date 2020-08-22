@@ -46,7 +46,7 @@ describe('Update nullifier tree circuits', function () {
         nullifierTreePathElements = []
         for (let i = 0; i < NUM_NULLIFIERS; i++) {
             let r = Math.floor(Math.random() * (2 ** circuitNullifierTreeDepth))
-            while (nullifiers.indexOf(r) >= 0) r = Math.floor(Math.random() * (2 ** circuitNullifierTreeDepth))
+            while (nullifiers.indexOf(r) >= 0 || r == 0) r = Math.floor(Math.random() * (2 ** circuitNullifierTreeDepth))
             nullifiers.push(r)
 
             const sel = Math.floor(Math.random() * 2)

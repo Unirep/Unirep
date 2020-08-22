@@ -9,6 +9,7 @@ import {
     genRandomSalt,
     hash5,
     hashLeftRight,
+    bigInt,
 } from 'maci-crypto'
 
 import {
@@ -90,14 +91,17 @@ describe('Update User State circuits', function () {
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-            const sel = Math.floor(Math.random() * 2)
+            let sel = Math.floor(Math.random() * 2)
+            // If nullifier tree is too small, it's likely that nullifier would be zero.
+            // In this case, force selector to be zero.
+            const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
+            if ( nullifier == 0) sel = 0
             selectors.push(sel)
             
             if ( sel == 1) {
                 const attestation_hash = computeAttestationHash(attestation)
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
                 
-                const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
                 const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ZERO_LEAF, true)
                 nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
 
