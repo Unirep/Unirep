@@ -24,12 +24,14 @@ import {
 } from './tree-types'
 
 import { remove0x, HashFunction, bufToHexString } from './utils'
+import { bigIntToBuf, bufToBigInt } from '../../test/utils'
 
 
 /**
  * SparseMerkleTree implementation assuming a 256-bit hash algorithm is used.
  */
 export class SparseMerkleTreeImpl implements SparseMerkleTree {
+    public hasDefaultLeafHash!: boolean
     public static readonly emptyBuffer: Buffer = Buffer.alloc(32).fill('\x00')
     public static readonly unknownLeafValueBuffer: Buffer = Buffer.alloc(32).fill('\xff')
     private static readonly siblingBuffer: Buffer = Buffer.alloc(1).fill('\x00')
@@ -44,21 +46,22 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
 
     public static async create(
         db: KeyValueStore,
+        height: number,
+        defaultLeafHash?: BigInt,
         rootHash?: Buffer,
-        height: number = 160,
         hashFunction = wrappedPoseidonT3Hash
     ): Promise<SparseMerkleTreeImpl> {
         assert(!rootHash || rootHash.length === 32, 'Root hash must be 32 bytes')
 
         const tree = new SparseMerkleTreeImpl(db, height, hashFunction)
 
-        await tree.init(rootHash)
+        await tree.init(defaultLeafHash, rootHash)
         return tree
     }
 
     constructor(
         protected db: KeyValueStore,
-        private height: number = 160,
+        private height: number,
         hashFunction: HashFunction = wrappedPoseidonT3Hash
     ) {
         assert(height > 0, 'SMT height needs to be > 0')
@@ -81,8 +84,10 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         }
     }
 
-    private async init(rootHash?: Buffer): Promise<void> {
-        await this.populateZeroHashesAndRoot(rootHash)
+    private async init(defaultLeafHash?: BigInt, rootHash?: Buffer): Promise<void> {
+        if (!!defaultLeafHash) this.hasDefaultLeafHash = true
+        else this.hasDefaultLeafHash = false
+        await this.populateZeroHashesAndRoot(defaultLeafHash, rootHash)
     }
 
     public getHeight(): number {
@@ -128,7 +133,9 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
             return false
         }
 
-        const leafHash: Buffer = this.hashFunction(inclusionProof.value)
+        let leafHash: Buffer
+        if (this.hasDefaultLeafHash) leafHash = this.zeroHashes[this.zeroHashes.length - 1]
+        else leafHash = this.hashFunction(inclusionProof.value)
         if (!!(await this.getNode(leafHash, inclusionProof.key))) {
             return true
         }
@@ -333,7 +340,10 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
         }
 
         // If this is for an empty leaf, we can store it and create a MerkleProof
-        if (leafValue.equals(SparseMerkleTreeImpl.emptyBuffer)) {
+        let defaultLeafValue: Buffer
+        if (this.hasDefaultLeafHash) defaultLeafValue = SparseMerkleTreeImpl.unknownLeafValueBuffer
+        else defaultLeafValue = SparseMerkleTreeImpl.emptyBuffer
+        if (leafValue.equals(defaultLeafValue)) {
             if (await this.verifyAndStorePartiallyEmptyPath(leafKey)) {
                 return this.getMerkleProof(leafKey, leafValue)
             }
@@ -365,10 +375,13 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
             node = await this.getChild(node, i, leafKey)
         }
 
+        let leafValue: Buffer
+        if (this.hasDefaultLeafHash) leafValue = SparseMerkleTreeImpl.unknownLeafValueBuffer
+        else leafValue = SparseMerkleTreeImpl.emptyBuffer
         return this.verifyAndStore({
             rootHash: this.root.hash,
             key: leafKey,
-            value: SparseMerkleTreeImpl.emptyBuffer,
+            value: leafValue,
             siblings: siblings.reverse(),
         })
     }
@@ -577,9 +590,15 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
      *
      * @param rootHash The optional root hash to assign the tree
      */
-    private async populateZeroHashesAndRoot(rootHash?: Buffer): Promise<void> {
+    private async populateZeroHashesAndRoot(defaultLeafHash?: BigInt, rootHash?: Buffer): Promise<void> {
+        let leafHash: Buffer
+        if (this.hasDefaultLeafHash) {
+            leafHash = bigIntToBuf(defaultLeafHash)
+        } else {
+            leafHash = this.hashFunction(SparseMerkleTreeImpl.emptyBuffer)
+        }
         const hashes: Buffer[] = [
-            this.hashFunction(SparseMerkleTreeImpl.emptyBuffer),
+            leafHash,
         ]
 
         for (let i = 1; i < this.height; i++) {
