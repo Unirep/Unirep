@@ -22,7 +22,7 @@ import { bigIntToBuf, bufToBigInt, computeAttestationHash, getNewSMT, genEpochKe
 const circuitEpochTreeDepth = 8
 const circuitNullifierTreeDepth = 8
 
-describe('Update User State circuits', function () {
+describe('User State Transition circuits', function () {
     this.timeout(120000)
 
     let circuit
