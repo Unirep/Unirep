@@ -6,7 +6,7 @@ include "./sparseMerkleTree.circom";
 include "./processAttestations.circom";
 
 template UpdateNullifierTree(nullifier_tree_depth, NUM_NULLIFIERS) {
-    signal input intermediate_nullifier_tree_root[NUM_NULLIFIERS + 1];
+    signal input intermediate_nullifier_tree_roots[NUM_NULLIFIERS + 1];
     signal input nullifiers[NUM_NULLIFIERS];
     signal input selectors[NUM_NULLIFIERS];
     signal input path_elements[NUM_NULLIFIERS][nullifier_tree_depth];
@@ -48,7 +48,7 @@ template UpdateNullifierTree(nullifier_tree_depth, NUM_NULLIFIERS) {
         for (var j = 0; j < nullifier_tree_depth; j++) {
             non_membership_check[i].path_elements[j] <== path_elements[i][j];
         }
-        non_membership_check[i].root <== intermediate_nullifier_tree_root[i];
+        non_membership_check[i].root <== intermediate_nullifier_tree_roots[i];
 
         membership_check[i] = SMTLeafExists(nullifier_tree_depth);
         membership_check[i].leaf_index <== leaf_index_to_check[i];
@@ -56,7 +56,7 @@ template UpdateNullifierTree(nullifier_tree_depth, NUM_NULLIFIERS) {
         for (var j = 0; j < nullifier_tree_depth; j++) {
             membership_check[i].path_elements[j] <== path_elements[i][j];
         }
-        membership_check[i].root <== intermediate_nullifier_tree_root[i + 1];
+        membership_check[i].root <== intermediate_nullifier_tree_roots[i + 1];
     }
 }
 
@@ -90,7 +90,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
     // Nullifier tree
     // Last intermediate root is the new nullifier tree root
-    signal input intermediate_nullifier_tree_root[NUM_ATTESTATIONS + 1];
+    signal input intermediate_nullifier_tree_roots[NUM_ATTESTATIONS + 1];
     signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
 
     // signal output new_user_state_root;
@@ -169,11 +169,11 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
     // Update nullifier tree
     component update_nullifier_tree = UpdateNullifierTree(nullifier_tree_depth, NUM_ATTESTATIONS);
-    update_nullifier_tree.intermediate_nullifier_tree_root[0] <== intermediate_nullifier_tree_root[0];
+    update_nullifier_tree.intermediate_nullifier_tree_roots[0] <== intermediate_nullifier_tree_roots[0];
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
         update_nullifier_tree.nullifiers[i] <== process_attestations.nullifiers[i];
         update_nullifier_tree.selectors[i] <== selectors[i];
-        update_nullifier_tree.intermediate_nullifier_tree_root[i + 1] <== intermediate_nullifier_tree_root[i + 1];
+        update_nullifier_tree.intermediate_nullifier_tree_roots[i + 1] <== intermediate_nullifier_tree_roots[i + 1];
         for (var j = 0; j < nullifier_tree_depth; j++) {
             update_nullifier_tree.path_elements[i][j] <== nullifier_tree_path_elements[i][j];
         }

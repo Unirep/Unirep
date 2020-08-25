@@ -8,7 +8,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     signal input epoch;
     signal input identity_nullifier;
 
-    signal input intermediate_user_state_tree_root[NUM_ATTESTATIONS + 1];
+    signal input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
     // Inputs of old atttestation records
     signal input old_pos_reps[NUM_ATTESTATIONS];
     signal input old_neg_reps[NUM_ATTESTATIONS];
@@ -130,7 +130,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         for (var j = 0; j < user_state_tree_depth; j++) {
             old_attestation_record_match_check[i].path_elements[j] <== path_elements[i][j];
         }
-        old_attestation_record_match_check[i].root <== intermediate_user_state_tree_root[i];
+        old_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i];
 
         // Top up pos and neg reps
         overwrite_graffiti_muxer[i] = Mux1();
@@ -156,6 +156,6 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         for (var j = 0; j < user_state_tree_depth; j++) {
             new_attestation_record_match_check[i].path_elements[j] <== path_elements[i][j];
         }
-        new_attestation_record_match_check[i].root <== intermediate_user_state_tree_root[i + 1];
+        new_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i + 1];
     }
 }

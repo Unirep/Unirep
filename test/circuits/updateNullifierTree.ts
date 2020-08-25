@@ -23,7 +23,7 @@ describe('Update nullifier tree circuits', function () {
     let circuit
     
     const NUM_NULLIFIERS = 10
-    let nullifierTree, intermediateNullifierTreeRoot, nullifierTreePathElements
+    let nullifierTree, intermediateNullifierTreeRoots, nullifierTreePathElements
     const ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
     const ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
 
@@ -35,13 +35,13 @@ describe('Update nullifier tree circuits', function () {
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
-        intermediateNullifierTreeRoot = []
+        intermediateNullifierTreeRoots = []
         nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
         // Reserve leaf 0
         let result 
         result = await nullifierTree.update(new smtBN(0), ONE_LEAF, true)
         expect(result).to.be.true
-        intermediateNullifierTreeRoot.push(bufToBigInt(nullifierTree.getRootHash()))
+        intermediateNullifierTreeRoots.push(bufToBigInt(nullifierTree.getRootHash()))
 
         nullifierTreePathElements = []
         for (let i = 0; i < NUM_NULLIFIERS; i++) {
@@ -64,13 +64,13 @@ describe('Update nullifier tree circuits', function () {
                 nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
             }
 
-            intermediateNullifierTreeRoot.push(bufToBigInt(nullifierTree.getRootHash()))
+            intermediateNullifierTreeRoots.push(bufToBigInt(nullifierTree.getRootHash()))
         }
     })
 
     it('Valid nullifier tree update inputs should work', async () => {
         const circuitInputs = {
-            intermediate_nullifier_tree_root: intermediateNullifierTreeRoot,
+            intermediate_nullifier_tree_roots: intermediateNullifierTreeRoots,
             nullifiers: nullifiers,
             selectors: selectors,
             path_elements: nullifierTreePathElements,
@@ -81,17 +81,17 @@ describe('Update nullifier tree circuits', function () {
     })
 
     it('Wrong intermediate nullifier tree root should not work', async () => {
-        const wrongIntermediateNullifierTreeRoot = intermediateNullifierTreeRoot.slice()
+        const wrongIntermediateNullifierTreeRoot = intermediateNullifierTreeRoots.slice()
         const indexWrongRoot = Math.floor(Math.random() * NUM_NULLIFIERS)
         wrongIntermediateNullifierTreeRoot[indexWrongRoot] = genRandomSalt()
         const circuitInputs = {
-            intermediate_nullifier_tree_root: wrongIntermediateNullifierTreeRoot,
+            intermediate_nullifier_tree_roots: wrongIntermediateNullifierTreeRoot,
             nullifiers: nullifiers,
             selectors: selectors,
             path_elements: nullifierTreePathElements,
         }
 
-        const rootNotMatchRegExp = RegExp('.+ -> .+ != ' + intermediateNullifierTreeRoot[indexWrongRoot] + '$')
+        const rootNotMatchRegExp = RegExp('.+ -> .+ != ' + intermediateNullifierTreeRoots[indexWrongRoot] + '$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(rootNotMatchRegExp)
@@ -105,13 +105,13 @@ describe('Update nullifier tree circuits', function () {
             while (nullifiers.indexOf(r) >= 0) r = Math.floor(Math.random() * (2 ** circuitNullifierTreeDepth))
             wrongNullifiers[indexWrongNullifier] = r
             const circuitInputs = {
-                intermediate_nullifier_tree_root: intermediateNullifierTreeRoot,
+                intermediate_nullifier_tree_roots: intermediateNullifierTreeRoots,
                 nullifiers: wrongNullifiers,
                 selectors: selectors,
                 path_elements: nullifierTreePathElements,
             }
     
-            const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateNullifierTreeRoot[indexWrongNullifier + 1] + ' != .+$')
+            const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateNullifierTreeRoots[indexWrongNullifier + 1] + ' != .+$')
             expect(() => {
                 circuit.calculateWitness(circuitInputs)
             }).to.throw(rootNotMatchRegExp)
@@ -125,13 +125,13 @@ describe('Update nullifier tree circuits', function () {
         const indexWrongSelector = Math.floor(Math.random() * NUM_NULLIFIERS)
         wrongSelectors[indexWrongSelector] = wrongSelectors[indexWrongSelector] ? 0 : 1
         const circuitInputs = {
-            intermediate_nullifier_tree_root: intermediateNullifierTreeRoot,
+            intermediate_nullifier_tree_roots: intermediateNullifierTreeRoots,
             nullifiers: nullifiers,
             selectors: wrongSelectors,
             path_elements: nullifierTreePathElements,
         }
 
-        const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateNullifierTreeRoot[indexWrongSelector + 1] + ' != .+$')
+        const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateNullifierTreeRoots[indexWrongSelector + 1] + ' != .+$')
         expect(() => {
             circuit.calculateWitness(circuitInputs)
         }).to.throw(rootNotMatchRegExp)

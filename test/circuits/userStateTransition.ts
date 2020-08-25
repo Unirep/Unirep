@@ -37,7 +37,7 @@ describe('User State Transition circuits', function () {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, oldUserStateRoot, GSTreeProof
     let epochTree, epochTreeRoot, epochTreePathElements
-    let nullifierTree, intermediateNullifierTreeRoot, nullifierTreePathElements
+    let nullifierTree, intermediateNullifierTreeRoots, nullifierTreePathElements
     const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
     const NUL_TREE_ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
 
@@ -61,14 +61,14 @@ describe('User State Transition circuits', function () {
 
         epochTree = await getNewSMT(circuitEpochTreeDepth)
 
-        intermediateNullifierTreeRoot = []
+        intermediateNullifierTreeRoots = []
         nullifierTreePathElements = []
         nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
         // Reserve leaf 0
         let result 
         result = await nullifierTree.update(new smtBN(0), NUL_TREE_ONE_LEAF, true)
         expect(result).to.be.true
-        intermediateNullifierTreeRoot.push(bufToBigInt(nullifierTree.getRootHash()))
+        intermediateNullifierTreeRoots.push(bufToBigInt(nullifierTree.getRootHash()))
 
         attesterIds = []
         posReps = []
@@ -111,7 +111,7 @@ describe('User State Transition circuits', function () {
                 const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), NUL_TREE_ONE_LEAF, true)
                 nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
             }
-            intermediateNullifierTreeRoot.push(bufToBigInt(nullifierTree.getRootHash()))
+            intermediateNullifierTreeRoots.push(bufToBigInt(nullifierTree.getRootHash()))
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
 
@@ -144,7 +144,7 @@ describe('User State Transition circuits', function () {
             selectors: selectors,
             hash_chain_result: hashChainResult,
             epoch_tree_root: epochTreeRoot,
-            intermediate_nullifier_tree_root: intermediateNullifierTreeRoot,
+            intermediate_nullifier_tree_roots: intermediateNullifierTreeRoots,
             nullifier_tree_path_elements: nullifierTreePathElements
         }
 
