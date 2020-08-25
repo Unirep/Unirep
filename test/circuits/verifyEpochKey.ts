@@ -82,7 +82,7 @@ describe('Verify Epoch Key circuits', () => {
         }
     })
 
-    it('Invalid epoch key inputs should not pass check', async () => {
+    it('Invalid epoch key should not pass check', async () => {
         // Validate against invalid epoch key
         const invalidEpochKey1 = maxEPK
         let circuitInputs = {
@@ -104,7 +104,7 @@ describe('Verify Epoch Key circuits', () => {
         }).to.throw(notLessEqThanRegExp)
     })
 
-    it('Invalid epoch key should not pass check', async () => {
+    it('Invalid epoch key should not pass check 2', async () => {
         const invalidEpochKey2 = epochKey + maxEPK
         const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
@@ -186,7 +186,13 @@ describe('Verify Epoch Key circuits', () => {
     })
 
     it('Invalid epoch should not pass check', async () => {
-        const invalidEpoch = currentEpoch + 1
+        let invalidEpoch, invalidEpochKey
+        invalidEpoch = currentEpoch + 1
+        invalidEpochKey = genEpochKey(id['identityNullifier'], invalidEpoch, nonce, circuitEpochTreeDepth)
+        while (invalidEpochKey == epochKey) {
+            invalidEpoch += 1
+            invalidEpochKey = genEpochKey(id['identityNullifier'], invalidEpoch, nonce, circuitEpochTreeDepth)
+        }
         const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
