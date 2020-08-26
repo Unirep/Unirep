@@ -60,7 +60,7 @@ template UpdateNullifierTree(nullifier_tree_depth, NUM_NULLIFIERS) {
     }
 }
 
-template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, NUM_ATTESTATIONS) {
+template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS) {
     signal input epoch;
     signal input max_nonce;
     signal private input nonce;  // epoch key nonce
@@ -75,6 +75,14 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input GST_path_index[GST_tree_depth];
     signal input GST_root;
 
+    // User state tree
+    // Last intermediate root is the new user state tree root
+    signal input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
+    // Inputs of old atttestation records
+    signal input old_pos_reps[NUM_ATTESTATIONS];
+    signal input old_neg_reps[NUM_ATTESTATIONS];
+    signal input old_graffities[NUM_ATTESTATIONS];
+    signal input UST_path_elements[NUM_ATTESTATIONS][user_state_tree_depth];
     // Inputs of the atttestations
     signal private input attester_ids[NUM_ATTESTATIONS];
     signal private input pos_reps[NUM_ATTESTATIONS];
@@ -154,11 +162,19 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         epk_exists.path_elements[i] <== epk_path_elements[i];
     }
 
-    component process_attestations = ProcessAttestations(nullifier_tree_depth, NUM_ATTESTATIONS);
+    component process_attestations = ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS);
     process_attestations.epoch <== epoch;
     process_attestations.identity_nullifier <== identity_nullifier;
     process_attestations.hash_chain_result <== hash_chain_result;
+    process_attestations.intermediate_user_state_tree_roots[0] <== intermediate_user_state_tree_roots[0];
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
+        process_attestations.intermediate_user_state_tree_roots[i + 1] <== intermediate_user_state_tree_roots[i + 1];
+        process_attestations.old_pos_reps[i] <== old_pos_reps[i];
+        process_attestations.old_neg_reps[i] <== old_neg_reps[i];
+        process_attestations.old_graffities[i] <== old_graffities[i];
+        for (var j = 0; j < user_state_tree_depth; j++) {
+            process_attestations.path_elements[i][j] <== UST_path_elements[i][j];
+        }
         process_attestations.attester_ids[i] <== attester_ids[i];
         process_attestations.pos_reps[i] <== pos_reps[i];
         process_attestations.neg_reps[i] <== neg_reps[i];
