@@ -79,10 +79,10 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     // Last intermediate root is the new user state tree root
     signal input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
     // Inputs of old atttestation records
-    signal input old_pos_reps[NUM_ATTESTATIONS];
-    signal input old_neg_reps[NUM_ATTESTATIONS];
-    signal input old_graffities[NUM_ATTESTATIONS];
-    signal input UST_path_elements[NUM_ATTESTATIONS][user_state_tree_depth];
+    signal private input old_pos_reps[NUM_ATTESTATIONS];
+    signal private input old_neg_reps[NUM_ATTESTATIONS];
+    signal private input old_graffities[NUM_ATTESTATIONS];
+    signal private input UST_path_elements[NUM_ATTESTATIONS][user_state_tree_depth];
     // Inputs of the atttestations
     signal private input attester_ids[NUM_ATTESTATIONS];
     signal private input pos_reps[NUM_ATTESTATIONS];
