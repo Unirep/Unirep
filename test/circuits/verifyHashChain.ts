@@ -38,7 +38,7 @@ describe('Hash chain circuit', () => {
 
     it('correctly verify hash chain', async () => {
         const circuitInputs = {
-            in_rest: elements,
+            hashes: elements,
             selectors: selectors,
             result: result
         }
@@ -50,7 +50,7 @@ describe('Hash chain circuit', () => {
     it('verify incorrect elements should fail', async () => {
         elements.reverse()
         const circuitInputs = {
-            in_rest: elements,
+            hashes: elements,
             selectors: selectors,
             result: result
         }
@@ -68,7 +68,7 @@ describe('Hash chain circuit', () => {
         const indexWrongSelector = Math.floor(Math.random() * NUM_ELEMENT)
         wrongSelectors[indexWrongSelector] = wrongSelectors[indexWrongSelector] ? 0 : 1
         const circuitInputs = {
-            in_rest: elements,
+            hashes: elements,
             selectors: wrongSelectors,
             result: result
         }
@@ -82,7 +82,7 @@ describe('Hash chain circuit', () => {
     it('verify incorrect number of elements should fail', async () => {
         const signalNotAssignedRegExp = RegExp('^Input Signal not assigned:.+')
         const circuitInputs = {
-            in_rest: elements.slice(1),
+            hashes: elements.slice(1),
             selectors: selectors,
             result: result
         }
@@ -95,7 +95,7 @@ describe('Hash chain circuit', () => {
     it('verify incorrect result should fail', async () => {
         const incorrectResult = genRandomSalt()
         const circuitInputs = {
-            in_rest: elements,
+            hashes: elements,
             selectors: selectors,
             result: incorrectResult
         }

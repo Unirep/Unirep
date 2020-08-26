@@ -36,7 +36,7 @@ describe('User State Transition circuits', function () {
     const user = genIdentity()
     const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
-    let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, oldUserStateRoot, GSTreeProof
+    let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof
     let epochTree, epochTreeRoot, epochTreePathElements
     let nullifierTree, intermediateNullifierTreeRoots, nullifierTreePathElements
     const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
@@ -56,15 +56,6 @@ describe('User State Transition circuits', function () {
         circuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
-
-        // Global state tree
-        GSTree = new IncrementalQuinTree(globalStateTreeDepth, GSTZERO_VALUE, 2)
-        oldUserStateRoot = genRandomSalt()
-        const commitment = genIdentityCommitment(user)
-        const hashedStateLeaf = hashLeftRight(commitment, oldUserStateRoot)
-        GSTree.insert(hashedStateLeaf)
-        GSTreeProof = GSTree.genMerklePath(0)
-        GSTreeRoot = GSTree.root
 
         // Epoch tree
         epochTree = await getNewSMT(circuitEpochTreeDepth)
@@ -115,6 +106,14 @@ describe('User State Transition circuits', function () {
         const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), UST_ONE_LEAF, true)
         const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
         for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(USTLeafZeroPathElements)
+
+        // Global state tree
+        GSTree = new IncrementalQuinTree(globalStateTreeDepth, GSTZERO_VALUE, 2)
+        const commitment = genIdentityCommitment(user)
+        const hashedStateLeaf = hashLeftRight(commitment, bufToBigInt(userStateTree.getRootHash()))
+        GSTree.insert(hashedStateLeaf)
+        GSTreeProof = GSTree.genMerklePath(0)
+        GSTreeRoot = GSTree.root
 
         attesterIds = []
         posReps = []
@@ -218,25 +217,24 @@ describe('User State Transition circuits', function () {
             epoch: epoch,
             nonce: nonce,
             max_nonce: MAX_NONCE,
-            identity_pk: user['keypair']['pubKey'],
-            identity_nullifier: user['identityNullifier'],
-            identity_trapdoor: user['identityTrapdoor'],
-            old_user_state_root: oldUserStateRoot,
-            GST_path_elements: GSTreeProof.pathElements,
-            GST_path_index: GSTreeProof.indices,
-            GST_root: GSTreeRoot,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             UST_path_elements: userStateTreePathElements,
+            identity_pk: user['keypair']['pubKey'],
+            identity_nullifier: user['identityNullifier'],
+            identity_trapdoor: user['identityTrapdoor'],
+            GST_path_elements: GSTreeProof.pathElements,
+            GST_path_index: GSTreeProof.indices,
+            GST_root: GSTreeRoot,
+            selectors: selectors,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
             graffities: graffities,
             overwrite_graffitis: overwriteGraffitis,
             epk_path_elements: epochTreePathElements,
-            selectors: selectors,
             hash_chain_result: hashChainResult,
             epoch_tree_root: epochTreeRoot,
             intermediate_nullifier_tree_roots: intermediateNullifierTreeRoots,

@@ -19,7 +19,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     signal input epoch;
     signal input epoch_key;
 
-    /* Check if user exists in the Global State Tree */
+    /* 1. Check if user exists in the Global State Tree */
     component identity_commitment = IdentityCommitment();
     identity_commitment.identity_pk[0] <== identity_pk[0];
     identity_commitment.identity_pk[1] <== identity_pk[1];
@@ -37,20 +37,20 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
         GST_leaf_exists.path_elements[i] <== path_elements[i];
     }
     GST_leaf_exists.root <== root;
-    /* End of check*/
+    /* End of check 1*/
 
 
-    /* Check nonce validity */
+    /* 2. Check nonce validity */
     var maxNonceInBits = 8;
 
     component nonce_lt = LessEqThan(maxNonceInBits);
     nonce_lt.in[0] <== nonce;
     nonce_lt.in[1] <== max_nonce;
     nonce_lt.out === 1;
-    /* End of check*/
+    /* End of check 2*/
 
 
-    /* Check epoch key is computed correctly */
+    /* 3. Check epoch key is computed correctly */
     component epochKeyHasher = Hasher5();
     epochKeyHasher.in[0] <== identity_nullifier;
     epochKeyHasher.in[1] <== epoch;
@@ -76,6 +76,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
     quot_lt.out === 1;
 
+    // Check equality
     epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epoch_key;
-    /* End of check*/
+    /* End of check 3*/
 }

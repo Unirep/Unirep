@@ -22,6 +22,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     signal input graffities[NUM_ATTESTATIONS];
     signal input overwrite_graffitis[NUM_ATTESTATIONS];
 
+    // Selector is used to determined if the nullifier should be processed
     signal input selectors[NUM_ATTESTATIONS];
     signal input hash_chain_result;
 
@@ -41,18 +42,19 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     signal nullifierHashModed[NUM_ATTESTATIONS];
     component nul_lt[NUM_ATTESTATIONS];
 
+    /* 1. Verify attestation hash chain and compute nullifiers */
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
-        // Compute hash of the attestation
+        // 1.1 Compute hash of the attestation and verify the hash chain of these hashes
         attestation_hashers[i] = Hasher5();
         attestation_hashers[i].in[0] <== attester_ids[i];
         attestation_hashers[i].in[1] <== pos_reps[i];
         attestation_hashers[i].in[2] <== neg_reps[i];
         attestation_hashers[i].in[3] <== graffities[i];
         attestation_hashers[i].in[4] <== overwrite_graffitis[i];
-        hash_chain_verifier.in_rest[i] <== attestation_hashers[i].hash;
+        hash_chain_verifier.hashes[i] <== attestation_hashers[i].hash;
         hash_chain_verifier.selectors[i] <== selectors[i];
 
-        // Compute nullifier of the attestation
+        // 1.2 Compute nullifier of the attestation
         nullifier_hashers[i] = Hasher5();
         nullifier_hashers[i].in[0] <== identity_nullifier;
         nullifier_hashers[i].in[1] <== attester_ids[i];
@@ -66,7 +68,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         // modulo operation.
         quotient[i] <-- nullifier_hashers[i].hash \ (2 ** nullifier_tree_depth);
         nullifierHashModed[i] <-- nullifier_hashers[i].hash % (2 ** nullifier_tree_depth);
-        // Range check on nullifier
+        // Range check on moded nullifier
         nul_lt[i] = LessEqThan(nullifier_tree_depth);
         nul_lt[i].in[0] <== nullifierHashModed[i];
         nul_lt[i].in[1] <== 2 ** nullifier_tree_depth - 1;
@@ -80,19 +82,22 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         nullifier_hashers[i].hash === quotient[i] * (2 ** nullifier_tree_depth) + nullifierHashModed[i];
         nullifiers[i] <== nullifierHashModed[i];
     }
+    /* End of 1. verify attestation hash chain and compute nullifiers */
 
-    // Process attestations
+
+    /* 2. Process attestations and update user state tree */
+
+    // If the attestation is not to be processed, we check and verify leaf 0 instead.
+    // Leaf 0 is reserved and has value hashLeftRight(1, 0)
     component which_leaf_index_to_check[NUM_ATTESTATIONS];
     signal leaf_index_to_check[NUM_ATTESTATIONS];
 
     component old_leaf_value_hasher[NUM_ATTESTATIONS];
     component which_old_leaf_value_to_check[NUM_ATTESTATIONS];
-    signal old_leaf_value_to_check[NUM_ATTESTATIONS];
 
     component overwrite_graffiti_muxer[NUM_ATTESTATIONS];
     component new_leaf_value_hasher[NUM_ATTESTATIONS];
     component which_new_leaf_value_to_check[NUM_ATTESTATIONS];
-    signal new_leaf_value_to_check[NUM_ATTESTATIONS];
 
     component old_attestation_record_match_check[NUM_ATTESTATIONS]; 
     component new_attestation_record_match_check[NUM_ATTESTATIONS];
@@ -104,8 +109,9 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     one_leaf <== one_leaf_hasher.hash;
 
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
-
         which_leaf_index_to_check[i] = Mux1();
+        // Check and verify the attestation record if the selector is true
+        // Check and verify leaf 0 otherwise
         which_leaf_index_to_check[i].c[0] <== 0;  // Leaf index 0
         which_leaf_index_to_check[i].c[1] <== attester_ids[i];
         which_leaf_index_to_check[i].s <== selectors[i];
@@ -118,21 +124,24 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         old_leaf_value_hasher[i].in[3] <== 0;
         old_leaf_value_hasher[i].in[4] <== 0;
 
+        // Attestation record to be checked should have value hash5(pos, neg, graffiti)
+        // while leaf 0 should have value hashLeftRight(1, 0)
         which_old_leaf_value_to_check[i] = Mux1();
-        which_old_leaf_value_to_check[i].c[0] <== one_leaf;  // Leaf 0 is reserved and has value hashLeftRight(1, 0)
+        which_old_leaf_value_to_check[i].c[0] <== one_leaf;
         which_old_leaf_value_to_check[i].c[1] <== old_leaf_value_hasher[i].hash;
         which_old_leaf_value_to_check[i].s <== selectors[i];
-        old_leaf_value_to_check[i] <== which_old_leaf_value_to_check[i].out;
 
+        // Verify merkle proof against pre_processing_tree_root
         old_attestation_record_match_check[i] = SMTLeafExists(user_state_tree_depth);
         old_attestation_record_match_check[i].leaf_index <== leaf_index_to_check[i];
-        old_attestation_record_match_check[i].leaf <== old_leaf_value_to_check[i];
+        old_attestation_record_match_check[i].leaf <== which_old_leaf_value_to_check[i].out;
         for (var j = 0; j < user_state_tree_depth; j++) {
             old_attestation_record_match_check[i].path_elements[j] <== path_elements[i][j];
         }
         old_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i];
 
         // Top up pos and neg reps
+        // Update graffiti if overwrite_graffiti is true
         overwrite_graffiti_muxer[i] = Mux1();
         overwrite_graffiti_muxer[i].c[0] <== old_graffities[i];
         overwrite_graffiti_muxer[i].c[1] <== graffities[i];
@@ -144,18 +153,21 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         new_leaf_value_hasher[i].in[3] <== 0;
         new_leaf_value_hasher[i].in[4] <== 0;
 
+        // Attestation record to be checked should have value hash5(pos, neg, graffiti)
+        // while leaf 0 should have value hashLeftRight(1, 0)
         which_new_leaf_value_to_check[i] = Mux1();
-        which_new_leaf_value_to_check[i].c[0] <== one_leaf;  // Leaf 0 is reserved and has value hashLeftRight(1, 0)
+        which_new_leaf_value_to_check[i].c[0] <== one_leaf;
         which_new_leaf_value_to_check[i].c[1] <== new_leaf_value_hasher[i].hash;
         which_new_leaf_value_to_check[i].s <== selectors[i];
-        new_leaf_value_to_check[i] <== which_new_leaf_value_to_check[i].out;
 
+        // Verify merkle proof against post_processing_tree_root
         new_attestation_record_match_check[i] = SMTLeafExists(user_state_tree_depth);
         new_attestation_record_match_check[i].leaf_index <== leaf_index_to_check[i];
-        new_attestation_record_match_check[i].leaf <== new_leaf_value_to_check[i];
+        new_attestation_record_match_check[i].leaf <== which_new_leaf_value_to_check[i].out;
         for (var j = 0; j < user_state_tree_depth; j++) {
             new_attestation_record_match_check[i].path_elements[j] <== path_elements[i][j];
         }
         new_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i + 1];
     }
+    /* End of 2. process attestations and update user state tree */
 }
