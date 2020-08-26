@@ -91,6 +91,26 @@ describe('User State Transition circuits', function () {
         // Reserve leaf 0
         result = await userStateTree.update(new smtBN(0), UST_ONE_LEAF, true)
         expect(result).to.be.true
+        // Bootstrap user state
+        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+            const  attesterId = i + 1
+            if (attestationRecords[attesterId] === undefined) {
+                attestationRecords[attesterId] = {
+                    posRep: Math.floor(Math.random() * 100),
+                    negRep: Math.floor(Math.random() * 100),
+                    graffiti: genRandomSalt(),
+                }
+            }
+            const newAttestationRecord = hash5([
+                attestationRecords[attesterId]['posRep'],
+                attestationRecords[attesterId]['negRep'],
+                attestationRecords[attesterId]['graffiti'],
+                0,
+                0
+            ])
+            const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
+            expect(result).to.be.true
+        }
         intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
         const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), UST_ONE_LEAF, true)
         const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
@@ -124,13 +144,6 @@ describe('User State Transition circuits', function () {
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-            if (attestationRecords[attestation['attesterId']] === undefined) {
-                attestationRecords[attestation['attesterId']] = {
-                    posRep: 0,
-                    negRep: 0,
-                    graffiti: 0,
-                }
-            }
             oldPosReps.push(attestationRecords[attestation['attesterId']]['posRep'])
             oldNegReps.push(attestationRecords[attestation['attesterId']]['negRep'])
             oldGraffities.push(attestationRecords[attestation['attesterId']]['graffiti'])
