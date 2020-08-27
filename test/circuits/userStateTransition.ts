@@ -38,7 +38,8 @@ describe('User State Transition circuits', function () {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
     let epochTree, epochTreeRoot, epochTreePathElements
-    let nullifierTree
+    let nullifierTree, nullifierTreeRoot, nullifierTreePathElements
+    const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
     const NUL_TREE_ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
     let userStateTree
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
@@ -61,11 +62,13 @@ describe('User State Transition circuits', function () {
         epochTree = await getNewSMT(circuitEpochTreeDepth)
 
         // Nullifier tree
+        nullifierTreePathElements = []
         nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
         // Reserve leaf 0
         let result 
         result = await nullifierTree.update(new smtBN(0), NUL_TREE_ONE_LEAF, true)
         expect(result).to.be.true
+        nullifierTreeRoot = bufToBigInt(nullifierTree.getRootHash())
 
         // User state tree
         const defaultUserStateLeaf = hash5([0, 0, 0, 0, 0])
@@ -184,16 +187,17 @@ describe('User State Transition circuits', function () {
                 const attestation_hash = computeAttestationHash(attestation)
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
-                nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
-
-                result = await nullifierTree.update(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ONE_LEAF, true)
-                expect(result).to.be.true
+                nullifiers.push(nullifier)
+                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ZERO_LEAF, true)
+                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
             } else {
                 const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), UST_ONE_LEAF, true)
                 const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
                 userStateTreePathElements.push(USTLeafZeroPathElements)
 
                 nullifiers.push(bigInt(0))
+                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), NUL_TREE_ONE_LEAF, true)
+                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
             }
             intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
         }
@@ -234,6 +238,8 @@ describe('User State Transition circuits', function () {
             epk_path_elements: epochTreePathElements,
             hash_chain_result: hashChainResult,
             epoch_tree_root: epochTreeRoot,
+            nullifier_tree_root: nullifierTreeRoot,
+            nullifier_tree_path_elements: nullifierTreePathElements
         }
 
         const witness = circuit.calculateWitness(circuitInputs)

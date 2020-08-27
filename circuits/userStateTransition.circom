@@ -111,6 +111,10 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input hash_chain_result;
     signal input epoch_tree_root;
 
+    // Nullifier tree
+    signal input nullifier_tree_root;
+    signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
+
     signal output new_GST_leaf;
     // Nullifiers of the attestations
     signal output nullifiers[NUM_ATTESTATIONS];
@@ -138,7 +142,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     /* End of check 1*/
 
 
-    /* 2. Process the attestations of the epoch key specified by`nonce` and update nullifier tree */
+    /* 2. Process the attestations of the epoch key specified by`nonce` and verify nullifier */
     component epochKeyHasher = Hasher5();
     epochKeyHasher.in[0] <== identity_nullifier;
     epochKeyHasher.in[1] <== epoch;
@@ -197,11 +201,54 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         process_attestations.selectors[i] <== selectors[i];
     }
 
-    // Output nullifiers
+    // 2.3 Check if nullifier has not been seen before
+    // If the nullifier is not to be processed, we check and verify leaf 0 instead.
+    // Leaf 0 is reserved and has value hashLeftRight(1, 0)
+    // Leaf of an unseen nullifier has value hashLeftRight(0, 0)
+    signal zero_leaf;
+    component zero_leaf_hasher = HashLeftRight();
+    zero_leaf_hasher.left <== 0;
+    zero_leaf_hasher.right <== 0;
+    zero_leaf <== zero_leaf_hasher.hash;
+    // Leaf of an seen nullifier has value hashLeftRight(1, 0)
+    signal one_leaf;
+    component one_leaf_hasher = HashLeftRight();
+    one_leaf_hasher.left <== 1;
+    one_leaf_hasher.right <== 0;
+    one_leaf <== one_leaf_hasher.hash;
+
+    component which_leaf_index_to_check[NUM_ATTESTATIONS];
+    component which_leaf_value_to_check[NUM_ATTESTATIONS];
+    component non_membership_check[NUM_ATTESTATIONS]; 
+
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
+        which_leaf_index_to_check[i] = Mux1();
+        // Check and verify the nullifier if the selector is true
+        // Check and verify leaf 0 otherwise
+        which_leaf_index_to_check[i].c[0] <== 0;  // Leaf index 0
+        which_leaf_index_to_check[i].c[1] <== process_attestations.nullifiers[i];
+        which_leaf_index_to_check[i].s <== selectors[i];
+
+        which_leaf_value_to_check[i] = Mux1();
+        // Nullifier to be checked should have value hashLeftRight(0, 0)
+        // while leaf 0 should have value hashLeftRight(1, 0)
+        which_leaf_value_to_check[i].c[0] <== one_leaf;
+        which_leaf_value_to_check[i].c[1] <== zero_leaf;
+        which_leaf_value_to_check[i].s <== selectors[i];
+
+        // Verify merkle proof against nullifier tree root
+        non_membership_check[i] = SMTLeafExists(nullifier_tree_depth);
+        non_membership_check[i].leaf_index <== which_leaf_index_to_check[i].out;
+        non_membership_check[i].leaf <== which_leaf_value_to_check[i].out;
+        for (var j = 0; j < nullifier_tree_depth; j++) {
+            non_membership_check[i].path_elements[j] <== nullifier_tree_path_elements[i][j];
+        }
+        non_membership_check[i].root <== nullifier_tree_root;
+
+        // Output nullifer
         nullifiers[i] <== process_attestations.nullifiers[i];
     }
-    /* End of 2. process the attestations of the epoch key specified by`nonce` and update nullifier tree */
+    /* End of 2. process the attestations of the epoch key specified by`nonce` and verify nullifiers */
 
 
     /* 3. Compute new GST leaf */
