@@ -13,6 +13,7 @@ import {
     hashLeftRight,
     SnarkBigInt,
     hashOne,
+    bigInt,
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
 import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
@@ -138,16 +139,19 @@ describe('Process attestation circuit', () => {
                 result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
                 expect(result).to.be.true
 
+                nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
+
                 const attestation_hash = computeAttestationHash(attestation)
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 const leafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), ONE_LEAF, true)
                 const leafZeroPathElements = leafZeroProof.siblings.map((p) => bufToBigInt(p))
                 userStateTreePathElements.push(leafZeroPathElements)
+
+                nullifiers.push(bigInt(0))
             }
             
             intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
-            nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
     })
@@ -313,8 +317,14 @@ describe('Process attestation circuit', () => {
         const witness = circuit.calculateWitness(circuitInputs)
         expect(circuit.checkWitness(witness)).to.be.true
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                .to.not.equal(nullifiers[i])
+            if (selectors[i] == 0) {
+                // If selector is false, nullifer should be zero
+                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
+                .to.equal(nullifiers[i])
+            } else {
+                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
+                    .to.not.equal(nullifiers[i])
+            }
         }
     })
 
@@ -340,8 +350,14 @@ describe('Process attestation circuit', () => {
         const witness = circuit.calculateWitness(circuitInputs)
         expect(circuit.checkWitness(witness)).to.be.true
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                .to.not.equal(nullifiers[i])
+            if (selectors[i] == 0) {
+                // If selector is false, nullifer should be zero
+                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
+                .to.equal(nullifiers[i])
+            } else {
+                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
+                    .to.not.equal(nullifiers[i])
+            }
         }
     })
 

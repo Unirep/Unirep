@@ -111,13 +111,9 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input hash_chain_result;
     signal input epoch_tree_root;
 
-    // Nullifier tree
-    // First intermediate root is the nullifier tree root before processing nullifiers
-    // Last intermediate root is the new nullifier tree root
-    signal input intermediate_nullifier_tree_roots[NUM_ATTESTATIONS + 1];
-    signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
-
     signal output new_GST_leaf;
+    // Nullifiers of the attestations
+    signal output nullifiers[NUM_ATTESTATIONS];
     // signal output completedUserStateTransition;
 
 
@@ -201,16 +197,9 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         process_attestations.selectors[i] <== selectors[i];
     }
 
-    // 2.3 Update nullifier tree
-    component update_nullifier_tree = UpdateNullifierTree(nullifier_tree_depth, NUM_ATTESTATIONS);
-    update_nullifier_tree.intermediate_nullifier_tree_roots[0] <== intermediate_nullifier_tree_roots[0];
+    // Output nullifiers
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
-        update_nullifier_tree.nullifiers[i] <== process_attestations.nullifiers[i];
-        update_nullifier_tree.selectors[i] <== selectors[i];
-        update_nullifier_tree.intermediate_nullifier_tree_roots[i + 1] <== intermediate_nullifier_tree_roots[i + 1];
-        for (var j = 0; j < nullifier_tree_depth; j++) {
-            update_nullifier_tree.path_elements[i][j] <== nullifier_tree_path_elements[i][j];
-        }
+        nullifiers[i] <== process_attestations.nullifiers[i];
     }
     /* End of 2. process the attestations of the epoch key specified by`nonce` and update nullifier tree */
 

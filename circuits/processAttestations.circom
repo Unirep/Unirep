@@ -41,6 +41,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     component quot_lt[NUM_ATTESTATIONS];
     signal nullifierHashModed[NUM_ATTESTATIONS];
     component nul_lt[NUM_ATTESTATIONS];
+    component nullifier_muxer[NUM_ATTESTATIONS];
 
     /* 1. Verify attestation hash chain and compute nullifiers */
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
@@ -80,7 +81,15 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         quot_lt[i].out === 1;
         // Check equality
         nullifier_hashers[i].hash === quotient[i] * (2 ** nullifier_tree_depth) + nullifierHashModed[i];
-        nullifiers[i] <== nullifierHashModed[i];
+
+        // Ouput nullifiers
+        // Filter by selectors, if selector is true, output actual nullifier,
+        // output 0 otherwise since leaf 0 of nullifier tree is reserved.
+        nullifier_muxer[i] = Mux1();
+        nullifier_muxer[i].c[0] <== 0;
+        nullifier_muxer[i].c[1] <== nullifierHashModed[i];
+        nullifier_muxer[i].s <== selectors[i];
+        nullifiers[i] <== nullifier_muxer[i].out;
     }
     /* End of 1. verify attestation hash chain and compute nullifiers */
 

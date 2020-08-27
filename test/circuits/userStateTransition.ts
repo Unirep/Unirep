@@ -38,8 +38,7 @@ describe('User State Transition circuits', function () {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
     let epochTree, epochTreeRoot, epochTreePathElements
-    let nullifierTree, intermediateNullifierTreeRoots, nullifierTreePathElements
-    const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
+    let nullifierTree
     const NUL_TREE_ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
     let userStateTree
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
@@ -49,6 +48,7 @@ describe('User State Transition circuits', function () {
     let attestationRecords = {}
     let attesterIds: SnarkBigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
+    let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
 
     before(async () => {
@@ -61,14 +61,11 @@ describe('User State Transition circuits', function () {
         epochTree = await getNewSMT(circuitEpochTreeDepth)
 
         // Nullifier tree
-        intermediateNullifierTreeRoots = []
-        nullifierTreePathElements = []
         nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
         // Reserve leaf 0
         let result 
         result = await nullifierTree.update(new smtBN(0), NUL_TREE_ONE_LEAF, true)
         expect(result).to.be.true
-        intermediateNullifierTreeRoots.push(bufToBigInt(nullifierTree.getRootHash()))
 
         // User state tree
         const defaultUserStateLeaf = hash5([0, 0, 0, 0, 0])
@@ -128,6 +125,7 @@ describe('User State Transition circuits', function () {
             else selectors.push(Math.floor(Math.random() * 2))
         }
 
+        nullifiers = []
         hashChainResult = 0
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attestation = {
@@ -185,9 +183,8 @@ describe('User State Transition circuits', function () {
 
                 const attestation_hash = computeAttestationHash(attestation)
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
-                
-                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ZERO_LEAF, true)
-                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+
+                nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
 
                 result = await nullifierTree.update(new smtBN(nullifier.toString(16), 'hex'), NUL_TREE_ONE_LEAF, true)
                 expect(result).to.be.true
@@ -195,12 +192,10 @@ describe('User State Transition circuits', function () {
                 const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), UST_ONE_LEAF, true)
                 const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
                 userStateTreePathElements.push(USTLeafZeroPathElements)
-                
-                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), NUL_TREE_ONE_LEAF, true)
-                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+
+                nullifiers.push(bigInt(0))
             }
             intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
-            intermediateNullifierTreeRoots.push(bufToBigInt(nullifierTree.getRootHash()))
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
 
@@ -239,12 +234,14 @@ describe('User State Transition circuits', function () {
             epk_path_elements: epochTreePathElements,
             hash_chain_result: hashChainResult,
             epoch_tree_root: epochTreeRoot,
-            intermediate_nullifier_tree_roots: intermediateNullifierTreeRoots,
-            nullifier_tree_path_elements: nullifierTreePathElements
         }
 
         const witness = circuit.calculateWitness(circuitInputs)
         expect(circuit.checkWitness(witness)).to.be.true
+        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+            expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
+                .to.equal(nullifiers[i])
+        }
         expect(witness[circuit.getSignalIdx('main.new_GST_leaf')])
             .to.equal(newGSTLeaf)
     })
