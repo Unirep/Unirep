@@ -81,7 +81,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     // User state tree
     // First intermediate root is the user state tree root before processing attestations
     // Last intermediate root is the new user state tree root
-    signal input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
+    signal private input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
     // Inputs of old atttestation records
     signal private input old_pos_reps[NUM_ATTESTATIONS];
     signal private input old_neg_reps[NUM_ATTESTATIONS];
@@ -117,6 +117,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal input intermediate_nullifier_tree_roots[NUM_ATTESTATIONS + 1];
     signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
 
+    signal output new_GST_leaf;
     // signal output completedUserStateTransition;
 
 
@@ -212,4 +213,14 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         }
     }
     /* End of 2. process the attestations of the epoch key specified by`nonce` and update nullifier tree */
+
+
+    /* 3. Compute new GST leaf */
+    component new_leaf = HashLeftRight();
+    new_leaf.left <== identity_commitment.out;
+    // Last intermediate root is the new user state tree root
+    new_leaf.right <== intermediate_user_state_tree_roots[NUM_ATTESTATIONS];
+
+    new_GST_leaf <== new_leaf.hash;
+    /* End of 3. compute new GST leaf matches */
 }

@@ -36,7 +36,7 @@ describe('User State Transition circuits', function () {
     const user = genIdentity()
     const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
-    let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof
+    let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
     let epochTree, epochTreeRoot, epochTreePathElements
     let nullifierTree, intermediateNullifierTreeRoots, nullifierTreePathElements
     const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
@@ -204,6 +204,8 @@ describe('User State Transition circuits', function () {
         }
         hashChainResult = hashLeftRight(1, hashChainResult)
 
+        newGSTLeaf = hashLeftRight(commitment, intermediateUserStateTreeRoots[NUM_ATTESTATIONS])
+
         result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
         expect(result).to.be.true
         
@@ -243,5 +245,7 @@ describe('User State Transition circuits', function () {
 
         const witness = circuit.calculateWitness(circuitInputs)
         expect(circuit.checkWitness(witness)).to.be.true
+        expect(witness[circuit.getSignalIdx('main.new_GST_leaf')])
+            .to.equal(newGSTLeaf)
     })
 })
