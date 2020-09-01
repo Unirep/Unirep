@@ -48,10 +48,12 @@ describe('Prove reputation from attester circuit', () => {
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
             while (attestationRecords[attesterId] !== undefined) attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
+            const graffitiPreImage = genRandomSalt()
             attestationRecords[attesterId] = {
                 posRep: Math.floor(Math.random() * 100),
                 negRep: Math.floor(Math.random() * 100),
-                graffiti: genRandomSalt(),
+                graffitiPreImage: graffitiPreImage,
+                graffiti: hashOne(graffitiPreImage),
             }
             const newAttestationRecord = hash5([
                 attestationRecords[attesterId]['posRep'],
@@ -97,7 +99,8 @@ describe('Prove reputation from attester circuit', () => {
             graffiti: attestationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10
+            max_neg_rep: negRep + 10,
+            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
         const witness = circuit.calculateWitness(circuitInputs)
@@ -127,7 +130,8 @@ describe('Prove reputation from attester circuit', () => {
             graffiti: attestationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10
+            max_neg_rep: negRep + 10,
+            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
         const rootNotMatchRegExp = RegExp('.+ -> ' + userStateRoot + ' != .+$')
@@ -159,7 +163,8 @@ describe('Prove reputation from attester circuit', () => {
             graffiti: attestationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10
+            max_neg_rep: negRep + 10,
+            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
         const rootNotMatchRegExp = RegExp('.+ -> ' + GSTreeRoot + ' != .+$')
@@ -191,7 +196,8 @@ describe('Prove reputation from attester circuit', () => {
             graffiti: attestationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: wrongMinPosRep,
-            max_neg_rep: negRep + 10
+            max_neg_rep: negRep + 10,
+            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
         const equalityCheckFailedRegExp = RegExp('.+ -> 0 != 1$')
@@ -215,11 +221,46 @@ describe('Prove reputation from attester circuit', () => {
             graffiti: attestationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
-            max_neg_rep: wrongMaxNegRep
+            max_neg_rep: wrongMaxNegRep,
+            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
         expect(() => {
             circuit.calculateWitness(circuitInputs2)
         }).to.throw(equalityCheckFailedRegExp)
+    })
+
+    it('prove reputation with wrong graffiti pre image should fail', async () => {
+        const attesterIds = Object.keys(attestationRecords)
+        const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
+        const posRep = attestationRecords[attesterId]['posRep']
+        const negRep = attestationRecords[attesterId]['negRep']
+        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(attestationRecords[attesterId]['recordHash']), true)
+        const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
+        const graffiti = attestationRecords[attesterId]['graffiti']
+        const wrongGraffitiPreImage = genRandomSalt()
+
+        const circuitInputs = {
+            identity_pk: user['keypair']['pubKey'],
+            identity_nullifier: user['identityNullifier'], 
+            identity_trapdoor: user['identityTrapdoor'],
+            user_state_root: userStateRoot,
+            GST_path_index: GSTreeProof.indices,
+            GST_path_elements: GSTreeProof.pathElements,
+            GST_root: GSTreeRoot,
+            attester_id: attesterId,
+            pos_rep: attestationRecords[attesterId]['posRep'],
+            neg_rep: attestationRecords[attesterId]['negRep'],
+            graffiti: attestationRecords[attesterId]['graffiti'],
+            UST_path_elements: pathElements,
+            min_pos_rep: posRep - 10,
+            max_neg_rep: negRep + 10,
+            graffiti_pre_image: wrongGraffitiPreImage
+        }
+
+        const preImageNotMatchRegExp = RegExp('.+ -> .+ != ' + graffiti + '$')
+        expect(() => {
+            circuit.calculateWitness(circuitInputs)
+        }).to.throw(preImageNotMatchRegExp)
     })
 })

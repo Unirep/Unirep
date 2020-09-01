@@ -24,6 +24,8 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     // Condition on repuations to prove
     signal input min_pos_rep;
     signal input max_neg_rep;
+    // Graffiti
+    signal input graffiti_pre_image;
 
     var MAX_REPUTATION_SCORE_BITS = 32;
 
@@ -78,4 +80,11 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     neg_rep_lt.in[1] <== max_neg_rep;
     neg_rep_lt.out === 1;
     /* End of check 3 */
+
+    /* 4. Check pre-image of graffiti */
+    component graffiti_hasher = HashLeftRight();
+    graffiti_hasher.left <== graffiti_pre_image;
+    graffiti_hasher.right <== 0;
+    graffiti_hasher.hash === graffiti;
+    /* End of check 4 */
  }
