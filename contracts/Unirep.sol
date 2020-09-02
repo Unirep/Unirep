@@ -9,6 +9,7 @@ import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
 import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
 import { NewUserStateVerifier } from './NewUserStateVerifier.sol';
+import { ReputationVerifier } from './ReputationVerifier.sol';
 
 contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
@@ -19,6 +20,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
     NewUserStateVerifier internal newUserStateVerifier;
+    ReputationVerifier internal reputationVerifier;
 
     uint256 public currentEpoch = 1;
 
@@ -120,6 +122,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         MaxValues memory _maxValues,
         EpochKeyValidityVerifier _epkValidityVerifier,
         NewUserStateVerifier _newUserStateVerifier,
+        ReputationVerifier _reputationVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
     ) public {
@@ -129,6 +132,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
         newUserStateVerifier = _newUserStateVerifier;
+        reputationVerifier = _reputationVerifier;
 
         epochLength = _epochLength;
         latestEpochTransitionTime = block.timestamp;
@@ -401,6 +405,49 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // Verify the proof
         proof.isValid = newUserStateVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        return proof.isValid;
+    }
+
+    function verifyReputation(
+        uint256 _globalStateTree,
+        uint256 _attesterId,
+        uint256 _min_pos_rep,
+        uint256 _max_neg_rep,
+        uint256 _graffiti_pre_image,
+        uint256[8] calldata _proof) external view returns (bool) {
+        // User prove his reputation by an attester:
+        // 1. positive reputation is greater than `_min_pos_rep`
+        // 2. negative reputation is less than `_max_neg_rep`
+        // 3. hash of graffiti pre-image matches
+
+        uint256[5] memory publicSignals = [
+            _globalStateTree,
+            _attesterId,
+            _min_pos_rep,
+            _max_neg_rep,
+            _graffiti_pre_image
+        ];
+
+        // Ensure that each public input is within range of the snark scalar
+        // field.
+        // TODO: consider having more granular revert reasons
+        for (uint8 i = 0; i < publicSignals.length; i++) {
+            require(
+                publicSignals[i] < SNARK_SCALAR_FIELD,
+                "Unirep: each public signal must be lt the snark scalar field"
+            );
+        }
+
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_proof);
+
+        // Verify the proof
+        proof.isValid = reputationVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
         return proof.isValid;
     }
 
