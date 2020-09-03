@@ -107,6 +107,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
+        uint256 _noAttestationNullifier,
         uint256[NUM_ATTESTATIONS_PER_BATCH] _nullifiers,
         uint256[8] _proof
     );
@@ -306,6 +307,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
         uint256 _newGlobalStateTreeLeaf,
+        uint256 _noAttestationNullifier,
         uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
@@ -316,6 +318,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             _fromGlobalStateTree,
             _fromEpochTree,
             _fromNullifierTreeRoot,
+            _noAttestationNullifier,
             _nullifiers,
             _proof
         );
@@ -370,6 +373,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
         uint256 _newGlobalStateTreeLeaf,
+        uint256 _noAttestationNullifier,
         uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
         uint256[8] calldata _proof) external view returns (bool) {
         // Verify validity of new user state:
@@ -379,15 +383,16 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 4. Nullifiers of all processed attestations match
         // 5. Nullifiers of all processed attestations have not been seen before
 
-        uint256[6 + NUM_ATTESTATIONS_PER_BATCH] memory publicSignals;
+        uint256[7 + NUM_ATTESTATIONS_PER_BATCH] memory publicSignals;
         publicSignals[0] = _transitionFromEpoch;
         publicSignals[1] = MAX_EPOCH_KEY_NONCE;
         publicSignals[2] = _fromGlobalStateTree;
         publicSignals[3] = _fromEpochTree;
         publicSignals[4] = _fromNullifierTreeRoot;
         publicSignals[5] = _newGlobalStateTreeLeaf;
+        publicSignals[6] = _noAttestationNullifier;
         for (uint8 i = 0; i < _nullifiers.length; i++) {
-            publicSignals[i + 6] = _nullifiers[i];
+            publicSignals[i + 7] = _nullifiers[i];
         }
 
         // Ensure that each public input is within range of the snark scalar
