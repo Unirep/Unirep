@@ -12,7 +12,7 @@ const { expect } = chai
 
 import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import Unirep from "../artifacts/Unirep.json"
-import { BigNumber as smtBN, SparseMerkleTreeImpl, hexStrToBuf, bufToHexString } from "../crypto/SMT"
+import { BigNumber as smtBN, SparseMerkleTreeImpl, hexStrToBuf, bufToHexString, remove0x } from "../crypto/SMT"
 
 const genStubUserStateTransitionProof = genStubEPKProof
 
@@ -126,11 +126,6 @@ describe('Integration', () => {
         it('First user transition from first epoch', async () => {
             const firstUserTransitionedFromEpoch = users[0]['latestTransitionedToEpoch']
             let oldNullifierTreeRoot = nullifierTree.getRootHash()
-            for (let nonce = 0; nonce < maxEpochKeyNonce; nonce++) {
-                const nullifier = genNoAttestationNullifierKey(users[0]['id'].identityNullifier, prevEpoch.toNumber(), nonce)
-                let result = await nullifierTree.update(new smtBN(nullifier.toString(16), 'hex'), hexStrToBuf(genNoAttestationNullifierValue()), true)
-                expect(result).to.be.true
-            }
             const zeroNullifiers: number[] = []
             for (let i = 0; i < numAttestationsPerBatch; i++) {
                 zeroNullifiers[i] = 0
@@ -143,20 +138,60 @@ describe('Integration', () => {
                 ]
             )
 
+            const epochKeyNonce = 0
             let tx = await unirepContract.updateUserStateRoot(
                 firstUserTransitionedFromEpoch,
                 GSTrees[firstUserTransitionedFromEpoch].root,
                 epochTrees[firstUserTransitionedFromEpoch].getRootHash(),
                 oldNullifierTreeRoot,
                 hashedStateLeaf,
+                genNoAttestationNullifierKey(users[0]['id']['identityNullifier'], currentEpoch.toNumber(), epochKeyNonce, nullifierTreeDepth),
                 zeroNullifiers,
                 genStubUserStateTransitionProof(true),
             )
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
+        })
 
+        it('Verify state transition of first user', async () => {
+            const stateTransitionByEpochFilter = unirepContract.filters.UserStateTransitioned(null, currentEpoch)
+            const stateTransitionByEpochEvent = await unirepContract.queryFilter(stateTransitionByEpochFilter)
+            expect(stateTransitionByEpochEvent.length).to.be.equal(1)
+
+            const newGSTLeafByEpochFilter = unirepContract.filters.NewGSTLeafInserted(currentEpoch)
+            const newGSTLeafByEpochEvent = await unirepContract.queryFilter(newGSTLeafByEpochFilter)
+            expect(newGSTLeafByEpochEvent.length).to.be.equal(1)
+
+            const stateTransitionArgs: any = stateTransitionByEpochEvent[0]['args']
+            const newGSTLeafArgs: any = newGSTLeafByEpochEvent[0]['args']
+
+            const isProofValid = await unirepContract.verifyUserStateTransition(
+                stateTransitionArgs['_fromEpoch'],
+                stateTransitionArgs['_fromGlobalStateTree'],
+                stateTransitionArgs['_fromEpochTree'],
+                stateTransitionArgs['_fromNullifierTreeRoot'],
+                newGSTLeafArgs['_hashedLeaf'],
+                stateTransitionArgs['_noAttestationNullifier'],
+                stateTransitionArgs['_nullifiers'],
+                stateTransitionArgs['_proof'],
+            )
+            expect(isProofValid).to.be.true
+
+            // Update nullifier tree
+            const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => new smtBN(n.toString()))
+            for (const nullifier of nullifiers) {
+                if (nullifier.gt(new smtBN(0))) {
+                    let result = await nullifierTree.update(nullifier, hexStrToBuf(genNoAttestationNullifierValue()), true)
+                    expect(result).to.be.true
+                }
+            }
+            const noAtteNullifier = remove0x(stateTransitionArgs['_noAttestationNullifier'].toString())
+            let result = await nullifierTree.update(new smtBN(noAtteNullifier), hexStrToBuf(genNoAttestationNullifierValue()), true)
+            expect(result).to.be.true
+
+            // Update GST
             GSTrees[currentEpoch.toString()] = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)
-            GSTrees[currentEpoch.toString()].insert(hashedStateLeaf)
+            GSTrees[currentEpoch.toString()].insert(newGSTLeafArgs['_hashedLeaf'])
 
             users[0]['latestTransitionedToEpoch'] = currentEpoch.toString()
         })
