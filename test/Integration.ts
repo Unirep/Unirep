@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { BigNumber, Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, nullifierTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, nullifierTreeDepth, numAttestationsPerBatch} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, bigInt } from 'maci-crypto'
 import { deployUnirep, getNewSMT, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey, toCompleteHexString } from './utils'
@@ -129,6 +129,10 @@ describe('Integration', () => {
             const nullifier = genNoAttestationNullifierKey(users[0]['id'].identityNullifier, prevEpoch.toNumber())
             let result = await nullifierTree.update(new smtBN(nullifier, 'hex'), hexStrToBuf(genNoAttestationNullifierValue()), true)
             expect(result).to.be.true
+            const zeroNullifiers: number[] = []
+            for (let i = 0; i < numAttestationsPerBatch; i++) {
+                zeroNullifiers[i] = 0
+            }
 
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
@@ -143,8 +147,7 @@ describe('Integration', () => {
                 epochTrees[firstUserTransitionedFromEpoch].getRootHash(),
                 oldNullifierTreeRoot,
                 hashedStateLeaf,
-                GSTrees[firstUserTransitionedFromEpoch].root,  // No attestations so state tree remains the same
-                nullifierTree.getRootHash(),
+                zeroNullifiers,
                 genStubUserStateTransitionProof(true),
             )
             let receipt = await tx.wait()

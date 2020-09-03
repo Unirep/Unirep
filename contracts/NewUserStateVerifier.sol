@@ -9,7 +9,7 @@ contract NewUserStateVerifier {
         uint256[2] memory a,
         uint256[2][2] memory b,
         uint256[2] memory c,
-        uint256[5] memory input
+        uint256[16] memory input
     ) public view returns (bool) {
         // Use a[0] to determine whether verification succeed or fail to faciliate testing
         if(a[0] == 1) {

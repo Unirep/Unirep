@@ -12,6 +12,8 @@ const attestingFee = ethers.utils.parseEther("0.01")
 
 const maxEpochKeyNonce = 2;
 
+const numAttestationsPerBatch = 10;
+
 const epochLength = 30;  // 30 seconds
 
 const epochTreeDepth = 80;
@@ -31,5 +33,6 @@ export {
     maxEpochKeyNonce,
     maxUsers,
     nullifierTreeDepth,
+    numAttestationsPerBatch,
     userStateTreeDepth
 }

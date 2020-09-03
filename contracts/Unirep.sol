@@ -17,6 +17,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 
+    uint256 constant MAX_EPOCH_KEY_NONCE = 2;
+
+    uint256 constant NUM_ATTESTATIONS_PER_BATCH = 10;
+
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
     NewUserStateVerifier internal newUserStateVerifier;
@@ -103,8 +107,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
-        uint256 _newGlobalStateTree,
-        uint256 _newNullifierTreeRoot,
+        uint256[NUM_ATTESTATIONS_PER_BATCH] _nullifiers,
         uint256[8] _proof
     );
 
@@ -211,7 +214,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function submitAttestation(Attestation calldata attestation, uint256 epochKey) external payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
-        require(isEpochKeyHashChainSealed[epochKey] == false, "Unirep: this hash chain of this epoch key is sealed");
+        require(isEpochKeyHashChainSealed[epochKey] == false, "Unirep: hash chain of this epoch key has been sealed");
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
 
@@ -271,7 +274,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         latestEpochTransitionTime = block.timestamp;
         currentEpoch ++;
 
-        // Pay the caller
+        // TODO: Pay the caller
         // msg.sender.transfer();
     }
 
@@ -302,9 +305,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
-        uint256 _hashedLeaf,
-        uint256 _newGlobalStateTree,
-        uint256 _newNullifierTreeRoot,
+        uint256 _newGlobalStateTreeLeaf,
+        uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
 
@@ -314,11 +316,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             _fromGlobalStateTree,
             _fromEpochTree,
             _fromNullifierTreeRoot,
-            _newGlobalStateTree,
-            _newNullifierTreeRoot,
+            _nullifiers,
             _proof
         );
-        emit NewGSTLeafInserted(currentEpoch, _hashedLeaf);
+        emit NewGSTLeafInserted(currentEpoch, _newGlobalStateTreeLeaf);
 
     }
 
@@ -364,26 +365,30 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function verifyUserStateTransition(
+        uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
-        uint256 _newGlobalStateTree,
-        uint256 _newNullifierTreeRoot,
+        uint256 _newGlobalStateTreeLeaf,
+        uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
         uint256[8] calldata _proof) external view returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state exist in the provided global state tree
         // 2. Global state tree is updated correctly
         // 3. Attestations to each epoch key are processed and processed correctly
-        // 4. Nullifiers of all processed attestations have not been seen before
-        // 5. Nullifier tree is updated correctly
+        // 4. Nullifiers of all processed attestations match
+        // 5. Nullifiers of all processed attestations have not been seen before
 
-        uint256[5] memory publicSignals = [
-            _fromGlobalStateTree,
-            _fromEpochTree,
-            _fromNullifierTreeRoot,
-            _newGlobalStateTree,
-            _newNullifierTreeRoot
-        ];
+        uint256[6 + NUM_ATTESTATIONS_PER_BATCH] memory publicSignals;
+        publicSignals[0] = _transitionFromEpoch;
+        publicSignals[1] = MAX_EPOCH_KEY_NONCE;
+        publicSignals[2] = _fromGlobalStateTree;
+        publicSignals[3] = _fromEpochTree;
+        publicSignals[4] = _fromNullifierTreeRoot;
+        publicSignals[5] = _newGlobalStateTreeLeaf;
+        for (uint8 i = 0; i < _nullifiers.length; i++) {
+            publicSignals[i + 6] = _nullifiers[i];
+        }
 
         // Ensure that each public input is within range of the snark scalar
         // field.
