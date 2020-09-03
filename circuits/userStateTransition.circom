@@ -77,6 +77,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
 
     /* 2. Process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
+    // 2.1.1 Compute epoch key
     component epochKeyHasher = Hasher5();
     epochKeyHasher.in[0] <== identity_nullifier;
     epochKeyHasher.in[1] <== epoch;
@@ -86,25 +87,26 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
     signal quotient;
     signal epkModed;
+    // 2.1.2 Mod epoch key
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
     quotient <-- epochKeyHasher.hash \ (2 ** epoch_tree_depth);
     epkModed <-- epochKeyHasher.hash % (2 ** epoch_tree_depth);
-    // Range check on moded epoch key
+    // 2.1.3 Range check on moded epoch key
     component epk_lt = LessEqThan(epoch_tree_depth);
     epk_lt.in[0] <== epkModed;
     epk_lt.in[1] <== 2 ** epoch_tree_depth - 1;
     epk_lt.out === 1;
-    // Range check on quotient
+    // 2.1.4 Range check on quotient
     component quot_lt = LessEqThan(254 - epoch_tree_depth);
     quot_lt.in[0] <== quotient;
     quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
     quot_lt.out === 1;
-    // Check equality
+    // 2.1.5 Check equality
     epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epkModed;
 
-    // 2.1 Check if hash chain of the epoch key exists in epoch tree
+    // 2.1.6 Check if hash chain of the epoch key exists in epoch tree
     component epk_exists = SMTLeafExists(epoch_tree_depth);
     epk_exists.leaf_index <== epkModed;
     epk_exists.leaf <== hash_chain_result;

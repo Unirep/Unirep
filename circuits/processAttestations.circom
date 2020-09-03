@@ -71,23 +71,23 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         nullifier_hashers[i].in[3] <== 0;
         nullifier_hashers[i].in[4] <== 0;
 
-        // Mod nullifier hash
+        // 1.2.2 Mod nullifier hash
         // circom's best practices state that we should avoid using <-- unless
         // we know what we are doing. But this is the only way to perform the
         // modulo operation.
         quotient[i] <-- nullifier_hashers[i].hash \ (2 ** nullifier_tree_depth);
         nullifier_hash_moded[i] <-- nullifier_hashers[i].hash % (2 ** nullifier_tree_depth);
-        // Range check on moded nullifier
+        // 1.2.3 Range check on moded nullifier
         nul_lt[i] = LessEqThan(nullifier_tree_depth);
         nul_lt[i].in[0] <== nullifier_hash_moded[i];
         nul_lt[i].in[1] <== 2 ** nullifier_tree_depth - 1;
         nul_lt[i].out === 1;
-        // Range check on quotient[i]
+        // 1.2.4 Range check on quotient[i]
         quot_lt[i] = LessEqThan(254 - nullifier_tree_depth);
         quot_lt[i].in[0] <== quotient[i];
         quot_lt[i].in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
         quot_lt[i].out === 1;
-        // Check equality
+        // 1.2.5 Check equality
         nullifier_hashers[i].hash === quotient[i] * (2 ** nullifier_tree_depth) + nullifier_hash_moded[i];
 
         // Ouput nullifiers
@@ -135,7 +135,8 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     // 1.2.6 Output no_attestation_nullifier
     component has_no_attestation = IsEqual();
     has_no_attestation.in[0] <== one_leaf;
-    has_no_attestation.in[1] <== hash_chain_result;    // Output `no_attestation_nullifier`, it's either 0 or the nullifier computed above.
+    has_no_attestation.in[1] <== hash_chain_result;
+    // Output `no_attestation_nullifier`, it's either 0 or the nullifier computed above.
     component no_attestation_nullifier_muxer = Mux1();
     no_attestation_nullifier_muxer.c[0] <== 0;
     no_attestation_nullifier_muxer.c[1] <== no_atte_nullifier_hash_moded;
