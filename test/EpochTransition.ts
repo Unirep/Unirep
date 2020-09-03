@@ -170,7 +170,7 @@ describe('Epoch Transition', () => {
                 attestation,
                 epochKey_,
                 {value: attestingFee}
-            )).to.be.revertedWith('Unirep: this hash chain of this epoch key is sealed')
+            )).to.be.revertedWith('Unirep: hash chain of this epoch key has been sealed')
         }
     })
 
