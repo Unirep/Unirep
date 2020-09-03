@@ -126,9 +126,11 @@ describe('Integration', () => {
         it('First user transition from first epoch', async () => {
             const firstUserTransitionedFromEpoch = users[0]['latestTransitionedToEpoch']
             let oldNullifierTreeRoot = nullifierTree.getRootHash()
-            const nullifier = genNoAttestationNullifierKey(users[0]['id'].identityNullifier, prevEpoch.toNumber())
-            let result = await nullifierTree.update(new smtBN(nullifier, 'hex'), hexStrToBuf(genNoAttestationNullifierValue()), true)
-            expect(result).to.be.true
+            for (let nonce = 0; nonce < maxEpochKeyNonce; nonce++) {
+                const nullifier = genNoAttestationNullifierKey(users[0]['id'].identityNullifier, prevEpoch.toNumber(), nonce)
+                let result = await nullifierTree.update(new smtBN(nullifier.toString(16), 'hex'), hexStrToBuf(genNoAttestationNullifierValue()), true)
+                expect(result).to.be.true
+            }
             const zeroNullifiers: number[] = []
             for (let i = 0; i < numAttestationsPerBatch; i++) {
                 zeroNullifiers[i] = 0

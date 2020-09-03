@@ -140,11 +140,11 @@ const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: number, ep
     return nullifier
 }
 
-const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number): string => {
-    let nullifier = hashLeftRight(identityNullifier, epoch)
+const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([identityNullifier, epoch, nonce, 0, 0])
     // Adjust epoch key size according to epoch tree depth
-    nullifier = nullifier % bigInt(2).pow(bigInt(nullifierTreeDepth))
-    return nullifier.toString(16)
+    nullifier = nullifier % bigInt(2).pow(bigInt(_nullifierTreeDepth))
+    return nullifier
 }
 
 const genNoAttestationNullifierValue = (): string => {

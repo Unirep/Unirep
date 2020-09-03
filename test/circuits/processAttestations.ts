@@ -5,7 +5,7 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
 } from './utils'
-import { computeAttestationHash, computeNullifier, getNewSMT, bufToBigInt, bigIntToBuf } from '../utils'
+import { computeAttestationHash, computeNullifier, getNewSMT, bufToBigInt, bigIntToBuf, genNoAttestationNullifierKey } from '../utils'
 
 import {
     genRandomSalt,
@@ -25,6 +25,7 @@ describe('Process attestation circuit', () => {
     let circuit
 
     const epoch = 1
+    const nonce = 0
     const user = genIdentity()
     const NUM_ATTESTATIONS = 3
 
@@ -159,6 +160,7 @@ describe('Process attestation circuit', () => {
     it('successfully process attestations', async () => {
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -180,6 +182,8 @@ describe('Process attestation circuit', () => {
             expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
                 .to.equal(nullifiers[i])
         }
+        expect(witness[circuit.getSignalIdx('main.no_attestation_nullifier')])
+            .to.equal(bigInt(0))
     })
 
     it('successfully process zero attestations', async () => {
@@ -189,6 +193,7 @@ describe('Process attestation circuit', () => {
         const noAttestationIntermediateUserStateTreeRoots = intermediateUserStateTreeRoots.map(() => initialUserStateTreeRoot)
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: noAttestationIntermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -204,8 +209,11 @@ describe('Process attestation circuit', () => {
             hash_chain_result: noAttestationHashChainResult
         }
 
+        const noAttestationNullifier = genNoAttestationNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const witness = circuit.calculateWitness(circuitInputs)
         expect(circuit.checkWitness(witness)).to.be.true
+        expect(witness[circuit.getSignalIdx('main.no_attestation_nullifier')])
+            .to.equal(noAttestationNullifier)
     })
 
     it('process attestations with wrong attestation record should not work', async () => {
@@ -219,6 +227,7 @@ describe('Process attestation circuit', () => {
         wrongOldGraffities[indexWrongAttestationRecord] = genRandomSalt()
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: wrongOldPosReps,
@@ -246,6 +255,7 @@ describe('Process attestation circuit', () => {
         wrongIntermediateUserStateTreeRoots[indexWrongRoot] = genRandomSalt()
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: wrongIntermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -272,6 +282,7 @@ describe('Process attestation circuit', () => {
         userStateTreePathElements[indexWrongPathElements].reverse()
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -299,6 +310,7 @@ describe('Process attestation circuit', () => {
         const wrongEpoch = epoch + 1
         const circuitInputs = {
             epoch: wrongEpoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -332,6 +344,7 @@ describe('Process attestation circuit', () => {
         const otherUser = genIdentity()
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: otherUser['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -365,6 +378,7 @@ describe('Process attestation circuit', () => {
         const wrongAttesterIds = attesterIds.concat([4])
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
@@ -389,6 +403,7 @@ describe('Process attestation circuit', () => {
         const wrongHashChainResult = genRandomSalt()
         const circuitInputs = {
             epoch: epoch,
+            nonce: nonce,
             identity_nullifier: user['identityNullifier'],
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
