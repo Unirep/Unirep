@@ -50,6 +50,8 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal output new_GST_leaf;
     // Nullifiers of the attestations
     signal output nullifiers[NUM_ATTESTATIONS];
+    // Nullifier if there's no attestations to this epoch key
+    signal output no_attestation_nullifier;
     // signal output completedUserStateTransition;
 
 
@@ -152,6 +154,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     component which_leaf_value_to_check[NUM_ATTESTATIONS];
     component nullifier_membership_check[NUM_ATTESTATIONS]; 
 
+    process_attestations.nonce <== nonce;
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
         which_leaf_value_to_check[i] = Mux1();
         // Nullifier to be checked should have value hashLeftRight(0, 0)
@@ -175,6 +178,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         // Output nullifer
         nullifiers[i] <== process_attestations.nullifiers[i];
     }
+    no_attestation_nullifier <== process_attestations.no_attestation_nullifier;
     /* End of 2. process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
 
 
