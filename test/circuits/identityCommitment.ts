@@ -25,7 +25,7 @@ describe('(Semaphore) identity commitment', () => {
             identity_trapdoor: trapdoor
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
 
         const outputIdx = circuit.getSignalIdx('main.out')

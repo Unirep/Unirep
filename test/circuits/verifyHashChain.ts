@@ -43,7 +43,7 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
     })
 
@@ -57,7 +57,7 @@ describe('Hash chain circuit', () => {
 
         resultNotMatchRegExp = RegExp('.+ -> ' + result + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(resultNotMatchRegExp)
         elements.reverse()
     })
@@ -75,7 +75,7 @@ describe('Hash chain circuit', () => {
 
         resultNotMatchRegExp = RegExp('.+ -> ' + result + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(resultNotMatchRegExp)
     })
 
@@ -88,7 +88,7 @@ describe('Hash chain circuit', () => {
         }
 
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(signalNotAssignedRegExp)
     })
 
@@ -102,7 +102,7 @@ describe('Hash chain circuit', () => {
 
         const invalidResultRegExp = RegExp('.+ -> ' + incorrectResult + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(invalidResultRegExp)
     })
 })

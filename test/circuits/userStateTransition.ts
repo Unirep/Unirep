@@ -242,7 +242,7 @@ describe('User State Transition circuits', function () {
             nullifier_tree_path_elements: nullifierTreePathElements
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])

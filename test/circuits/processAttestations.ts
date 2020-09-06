@@ -176,7 +176,7 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
@@ -210,7 +210,7 @@ describe('Process attestation circuit', () => {
         }
 
         const noAttestationNullifier = genNoAttestationNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
         expect(witness[circuit.getSignalIdx('main.no_attestation_nullifier')])
             .to.equal(noAttestationNullifier)
@@ -245,7 +245,7 @@ describe('Process attestation circuit', () => {
 
         const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateUserStateTreeRoots[indexWrongAttestationRecord] + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(rootNotMatchRegExp)
     })
 
@@ -273,7 +273,7 @@ describe('Process attestation circuit', () => {
 
         const rootNotMatchRegExp = RegExp('.+ -> .+ != ' + intermediateUserStateTreeRoots[indexWrongRoot] + '$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(rootNotMatchRegExp)
     })
 
@@ -300,7 +300,7 @@ describe('Process attestation circuit', () => {
         
         const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateUserStateTreeRoots[indexWrongPathElements] + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(rootNotMatchRegExp)
 
         userStateTreePathElements[indexWrongPathElements].reverse()
@@ -326,7 +326,7 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             if (selectors[i] == 0) {
@@ -360,7 +360,7 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             if (selectors[i] == 0) {
@@ -395,7 +395,7 @@ describe('Process attestation circuit', () => {
         }
 
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw('Invalid signal identifier: main.attester_ids[' + NUM_ATTESTATIONS + ']')
     })
 
@@ -421,7 +421,7 @@ describe('Process attestation circuit', () => {
 
         const resultNotMatchRegExp = RegExp('.+ -> ' + wrongHashChainResult + ' != ' + hashChainResult + '$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(resultNotMatchRegExp)
     })
 })

@@ -65,7 +65,7 @@ describe('Sparse Merkle Tree circuits', () => {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = circuit.calculateWitness(circuitInputs)
+                const witness = circuit.calculateWitness(circuitInputs, true)
                 expect(circuit.checkWitness(witness)).to.be.true
             }
 
@@ -84,7 +84,7 @@ describe('Sparse Merkle Tree circuits', () => {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = circuit.calculateWitness(circuitInputs)
+                const witness = circuit.calculateWitness(circuitInputs, true)
                 expect(circuit.checkWitness(witness)).to.be.true
             }
         })
@@ -107,7 +107,7 @@ describe('Sparse Merkle Tree circuits', () => {
 
                 const rootNotMatchRegExp = RegExp('.+ -> ' + root + ' !=.+$')
                 expect(() => {
-                    circuit.calculateWitness(circuitInputs)
+                    circuit.calculateWitness(circuitInputs, true)
                 }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong leaf should not pass check")
 
                 // Check against wrong leaf index
@@ -119,7 +119,7 @@ describe('Sparse Merkle Tree circuits', () => {
                 }
 
                 expect(() => {
-                    circuit.calculateWitness(circuitInputs)
+                    circuit.calculateWitness(circuitInputs, true)
                 }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong leaf index should not pass check")
 
                 // Check against wrong path elements
@@ -134,7 +134,7 @@ describe('Sparse Merkle Tree circuits', () => {
                 }
 
                 expect(() => {
-                    circuit.calculateWitness(circuitInputs)
+                    circuit.calculateWitness(circuitInputs, true)
                 }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong path elements should not pass check")
             }
         })
@@ -182,7 +182,7 @@ describe('Sparse Merkle Tree circuits', () => {
                     path_elements: pathElements,
                 }
 
-                const witness = circuit.calculateWitness(circuitInputs)
+                const witness = circuit.calculateWitness(circuitInputs, true)
                 expect(circuit.checkWitness(witness)).to.be.true
 
                 expect(witness[circuit.getSignalIdx('main.root')].toString())

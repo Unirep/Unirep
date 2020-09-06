@@ -103,7 +103,7 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
-        const witness = circuit.calculateWitness(circuitInputs)
+        const witness = circuit.calculateWitness(circuitInputs, true)
         expect(circuit.checkWitness(witness)).to.be.true
     })
 
@@ -136,7 +136,7 @@ describe('Prove reputation from attester circuit', () => {
 
         const rootNotMatchRegExp = RegExp('.+ -> ' + userStateRoot + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(rootNotMatchRegExp)
     })
 
@@ -169,7 +169,7 @@ describe('Prove reputation from attester circuit', () => {
 
         const rootNotMatchRegExp = RegExp('.+ -> ' + GSTreeRoot + ' != .+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(rootNotMatchRegExp)
     })
 
@@ -202,7 +202,7 @@ describe('Prove reputation from attester circuit', () => {
 
         const equalityCheckFailedRegExp = RegExp('.+ -> 0 != 1$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs1)
+            circuit.calculateWitness(circuitInputs1, true)
         }).to.throw(equalityCheckFailedRegExp)
 
         const wrongMaxNegRep = negRep
@@ -226,7 +226,7 @@ describe('Prove reputation from attester circuit', () => {
         }
 
         expect(() => {
-            circuit.calculateWitness(circuitInputs2)
+            circuit.calculateWitness(circuitInputs2, true)
         }).to.throw(equalityCheckFailedRegExp)
     })
 
@@ -260,7 +260,7 @@ describe('Prove reputation from attester circuit', () => {
 
         const preImageNotMatchRegExp = RegExp('.+ -> .+ != ' + graffiti + '$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(preImageNotMatchRegExp)
     })
 })

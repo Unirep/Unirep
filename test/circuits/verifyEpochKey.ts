@@ -77,7 +77,7 @@ describe('Verify Epoch Key circuits', () => {
                 epoch: currentEpoch,
                 epoch_key: epk,
             }
-            const witness = circuit.calculateWitness(circuitInputs)
+            const witness = circuit.calculateWitness(circuitInputs, true)
             expect(circuit.checkWitness(witness)).to.be.true
         }
     })
@@ -100,7 +100,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         notLessEqThanRegExp = RegExp('.+ -> 0 != 1$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(notLessEqThanRegExp)
     })
 
@@ -120,7 +120,7 @@ describe('Verify Epoch Key circuits', () => {
             epoch_key: invalidEpochKey2,
         }
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(notLessEqThanRegExp)
     })
     it('Wrong Id should not pass check', async () => {
@@ -140,7 +140,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         const rootNotMatchRegExp = RegExp('.+ -> ' + root + ' !=.+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(rootNotMatchRegExp)
     })
 
@@ -161,7 +161,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         const invalidRootRegExp = RegExp('.+ -> .+ != ' + root + '$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(invalidRootRegExp)
     })
 
@@ -181,7 +181,7 @@ describe('Verify Epoch Key circuits', () => {
             epoch_key: epochKey,
         }
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw(notLessEqThanRegExp)
     })
 
@@ -208,7 +208,7 @@ describe('Verify Epoch Key circuits', () => {
         }
         // const epochKeyNotMatchRegExp = RegExp('.+ -> ' + epochKey + ' !=.+$')
         expect(() => {
-            circuit.calculateWitness(circuitInputs)
+            circuit.calculateWitness(circuitInputs, true)
         }).to.throw()
     })
 })

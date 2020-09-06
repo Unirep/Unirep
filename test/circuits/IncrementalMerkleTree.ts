@@ -44,7 +44,7 @@ describe('Merkle Tree circuits', () => {
                     path_index: proof.indices,
                     root,
                 }
-                const witness = circuit.calculateWitness(circuitInputs)
+                const witness = circuit.calculateWitness(circuitInputs, true)
                 expect(circuit.checkWitness(witness)).to.be.true
             }
         })
@@ -71,7 +71,7 @@ describe('Merkle Tree circuits', () => {
                     root,
                 }
                 expect(() => {
-                    circuit.calculateWitness(circuitInputs)
+                    circuit.calculateWitness(circuitInputs, true)
                 }).to.throw
             }
         })
@@ -110,7 +110,7 @@ describe('Merkle Tree circuits', () => {
                     path_index: proof.indices
                 }
 
-                const witness = circuit.calculateWitness(circuitInputs)
+                const witness = circuit.calculateWitness(circuitInputs, true)
                 expect(circuit.checkWitness(witness)).to.be.true
 
                 expect(witness[circuit.getSignalIdx('main.root')].toString())
@@ -144,7 +144,7 @@ describe('Merkle Tree circuits', () => {
                 }
 
                 expect(() => {
-                    circuit.calculateWitness(circuitInputs)
+                    circuit.calculateWitness(circuitInputs, true)
                 }).to.throw
             }
         })
