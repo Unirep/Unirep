@@ -1,11 +1,11 @@
 import * as ethers from 'ethers'
 
-import { SNARK_FIELD_SIZE, SnarkBigInt, bigInt, genRandomSalt, hash5, hashOne, hashLeftRight } from 'maci-crypto'
+import { SNARK_FIELD_SIZE, SnarkBigInt, genRandomSalt, hash5, hashOne, hashLeftRight } from 'maci-crypto'
 
 // A nothing-up-my-sleeve zero value
 // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
 const NOTHING_UP_MY_SLEEVE =
-    bigInt(ethers.utils.solidityKeccak256(['bytes'], [ethers.utils.toUtf8Bytes('Unirep')])) % SNARK_FIELD_SIZE
+    BigInt(ethers.utils.solidityKeccak256(['bytes'], [ethers.utils.toUtf8Bytes('Unirep')])) % SNARK_FIELD_SIZE
 
 const wrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): string => {
     let result: SnarkBigInt
@@ -24,7 +24,6 @@ export {
     NOTHING_UP_MY_SLEEVE,
     SNARK_FIELD_SIZE,
     SnarkBigInt,
-    bigInt,
     genRandomSalt,
     hash5,
     hashOne,

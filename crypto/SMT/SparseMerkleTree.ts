@@ -4,10 +4,7 @@
 import assert from 'assert'
 
 /* Internal Imports */
-import {
-    bigInt,
-    wrappedPoseidonT3Hash,
-} from '../crypto'
+import { wrappedPoseidonT3Hash } from '../crypto'
 import { KeyValueStore } from './kvstore'
 import {
     BIG_ENDIAN,
@@ -76,9 +73,9 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
                 const rightNode: Buffer = Buffer.alloc(32)
                 buf.copy(leftNode, 0, 0, 32)
                 buf.copy(rightNode, 0, 32, 64)
-                digest = hashFunction(bigInt('0x' + leftNode.toString('hex')), bigInt('0x' + rightNode.toString('hex')))
+                digest = hashFunction(BigInt('0x' + leftNode.toString('hex')), BigInt('0x' + rightNode.toString('hex')))
             } else {
-                digest = hashFunction(bigInt('0x' + buf.toString('hex')))
+                digest = hashFunction(BigInt('0x' + buf.toString('hex')))
             }
             return Buffer.from(remove0x(digest), 'hex')
         }
@@ -593,7 +590,7 @@ export class SparseMerkleTreeImpl implements SparseMerkleTree {
     private async populateZeroHashesAndRoot(defaultLeafHash?: BigInt, rootHash?: Buffer): Promise<void> {
         let leafHash: Buffer
         if (this.hasDefaultLeafHash) {
-            leafHash = bigIntToBuf(defaultLeafHash)
+            leafHash = bigIntToBuf(defaultLeafHash!)
         } else {
             leafHash = this.hashFunction(SparseMerkleTreeImpl.emptyBuffer)
         }

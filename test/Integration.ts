@@ -4,7 +4,7 @@ import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, nullifierTreeDepth, numAttestationsPerBatch} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, bigInt } from 'maci-crypto'
+import { IncrementalQuinTree, SnarkBigInt, genRandomSalt } from 'maci-crypto'
 import { deployUnirep, getNewSMT, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey, toCompleteHexString, computeNullifier } from './utils'
 
 chai.use(solidity)
@@ -318,7 +318,7 @@ describe('Integration', () => {
 
             // Last filter by epoch key
             for (let epochKey in epochKeyToAttestationsMap) {
-                const epkInHexStr = toCompleteHexString(bigInt(epochKey).toString(16), 32)
+                const epkInHexStr = toCompleteHexString(BigInt(epochKey).toString(16), 32)
                 let attestationsByEpochKeyFilter = unirepContract.filters.AttestationSubmitted(null, epkInHexStr)
                 let attestationsByEpochKeyEvent = await unirepContract.queryFilter(attestationsByEpochKeyFilter)
                 expect(attestationsByEpochKeyEvent.length).to.be.equal(epochKeyToAttestationsMap[epochKey].length)

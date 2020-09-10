@@ -8,7 +8,6 @@ import { epochTreeDepth } from '../config/testLocal'
 import {
     SnarkBigInt,
     hashOne,
-    bigInt,
 } from '../crypto/crypto'
 import { getNewSMT, linkLibrary, toCompleteHexString } from './utils'
 
@@ -70,7 +69,7 @@ describe('OneTimeSparseMerkleTree', () => {
         it('default values should match', async () => {
             console.log('Deploying OneTimeSparseMerkleTree')
             let leafIndices: BigNumber[] = [ONE]
-            let leafData: SnarkBigInt[] = [bigInt(1)]
+            let leafData: SnarkBigInt[] = [BigInt(1)]
             const OneTimeSMT = await OTSMTFactory.deploy(
                 epochTreeDepth,
                 leafIndices.map((bn) => bn.toString(10)),

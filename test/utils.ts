@@ -2,7 +2,7 @@ import * as ethers from 'ethers'
 import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
 import { SparseMerkleTreeImpl, add0x, bufToHexString, hexStrToBuf } from '../crypto/SMT'
-import { SnarkBigInt, SNARK_FIELD_SIZE, bigInt, hash5, hashLeftRight } from '../crypto/crypto'
+import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
 import Unirep from "../artifacts/Unirep.json"
@@ -45,7 +45,11 @@ const deployUnirep = async (
     console.log('Deploying PoseidonT6')
     PoseidonT6Contract = (await deployContract(
         deployer,
-        PoseidonT6
+        PoseidonT6,
+        [],
+        {
+            gasLimit: 9000000,
+        }
     ))
 
     console.log('Deploying EpochKeyValidityVerifier')
@@ -115,13 +119,13 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
         identityNullifier,
         epoch,
         nonce,
-        bigInt(0),
-        bigInt(0),
+        BigInt(0),
+        BigInt(0),
     ]
     let epochKey = hash5(values)
     // Adjust epoch key size according to epoch tree depth
-    epochKey = epochKey % bigInt(2).pow(bigInt(_epochTreeDepth))
-    return epochKey
+    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
+    return epochKeyModed
 }
 
 const computeAttestationHash = (attestation: any): SnarkBigInt => {
@@ -135,20 +139,20 @@ const computeAttestationHash = (attestation: any): SnarkBigInt => {
 }
 
 const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: number, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([identityNullifier, attesterId, epoch, 0, 0])
-    nullifier = nullifier % bigInt(2).pow(bigInt(_nullifierTreeDepth))
-    return nullifier
+    let nullifier = hash5([identityNullifier, BigInt(attesterId), BigInt(epoch), BigInt(0), BigInt(0)])
+    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
+    return nullifierModed
 }
 
 const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([identityNullifier, epoch, nonce, 0, 0])
+    let nullifier = hash5([identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0), BigInt(0)])
     // Adjust epoch key size according to epoch tree depth
-    nullifier = nullifier % bigInt(2).pow(bigInt(_nullifierTreeDepth))
-    return nullifier
+    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
+    return nullifierModed
 }
 
 const genNoAttestationNullifierValue = (): string => {
-    let value = hashLeftRight(bigInt(1), bigInt(0))
+    let value = hashLeftRight(BigInt(1), BigInt(0))
     return toCompleteHexString(value.toString(16), 32)
 }
 
@@ -182,7 +186,7 @@ const getNewSMT = async (treeDepth: number, defaultLeafHash?: BigInt, rootHash?:
 }
 
 const bufToBigInt = (buf: Buffer): SnarkBigInt => {
-    return bigInt(bufToHexString(buf))
+    return BigInt(bufToHexString(buf))
 }
 
 const bigIntToBuf = (bn: SnarkBigInt): Buffer => {
