@@ -9,11 +9,12 @@ import {
     genRandomSalt,
     hash5,
     hashLeftRight,
-    bigInt,
 } from 'maci-crypto'
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
+    getSignalByName,
 } from './utils'
 import { BigNumber as smtBN } from "../../crypto/SMT"
 import { globalStateTreeDepth } from "../../config/testLocal"
@@ -39,15 +40,15 @@ describe('User State Transition circuits', function () {
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
     let epochTree, epochTreeRoot, epochTreePathElements
     let nullifierTree, nullifierTreeRoot, nullifierTreePathElements
-    const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(0, 0))
-    const NUL_TREE_ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
+    const NUL_TREE_ZERO_LEAF = bigIntToBuf(hashLeftRight(BigInt(0), BigInt(0)))
+    const NUL_TREE_ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
     let userStateTree
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
     let oldPosReps, oldNegReps, oldGraffities
     const UST_ONE_LEAF = NUL_TREE_ONE_LEAF
 
     let attestationRecords = {}
-    let attesterIds: SnarkBigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+    let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
     let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
@@ -71,7 +72,7 @@ describe('User State Transition circuits', function () {
         nullifierTreeRoot = bufToBigInt(nullifierTree.getRootHash())
 
         // User state tree
-        const defaultUserStateLeaf = hash5([0, 0, 0, 0, 0])
+        const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
         userStateTree = await getNewSMT(circuitUserStateTreeDepth, defaultUserStateLeaf)
         intermediateUserStateTreeRoots = []
         userStateTreePathElements = []
@@ -96,7 +97,7 @@ describe('User State Transition circuits', function () {
                 attestationRecords[attesterId]['posRep'],
                 attestationRecords[attesterId]['negRep'],
                 attestationRecords[attesterId]['graffiti'],
-                0,
+                BigInt(0),
                 0
             ])
             const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
@@ -129,7 +130,7 @@ describe('User State Transition circuits', function () {
         }
 
         nullifiers = []
-        hashChainResult = 0
+        hashChainResult = BigInt(0)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attestation = {
                 attesterId: i + 1,
@@ -151,7 +152,7 @@ describe('User State Transition circuits', function () {
             // If nullifier tree is too small, it's likely that nullifier would be zero.
             // In this case, force selector to be zero.
             const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
-            if ( nullifier == 0) {
+            if ( nullifier == BigInt(0) ) {
                 selectors[i] = 0
                 // If unfortunately this is the selector forced to be true,
                 // then we force next selector to be true instead.
@@ -164,8 +165,8 @@ describe('User State Transition circuits', function () {
                     attestationRecords[attestation['attesterId']]['posRep'],
                     attestationRecords[attestation['attesterId']]['negRep'],
                     attestationRecords[attestation['attesterId']]['graffiti'],
-                    0,
-                    0
+                    BigInt(0),
+                    BigInt(0)
                 ])
                 const oldAttestationRecordProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldAttestationRecord), true)
                 userStateTreePathElements.push(oldAttestationRecordProof.siblings.map((p) => bufToBigInt(p)))
@@ -178,8 +179,8 @@ describe('User State Transition circuits', function () {
                     attestationRecords[attestation['attesterId']]['posRep'],
                     attestationRecords[attestation['attesterId']]['negRep'],
                     attestationRecords[attestation['attesterId']]['graffiti'],
-                    0,
-                    0
+                    BigInt(0),
+                    BigInt(0)
                 ])
                 result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
                 expect(result).to.be.true
@@ -195,13 +196,13 @@ describe('User State Transition circuits', function () {
                 const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
                 userStateTreePathElements.push(USTLeafZeroPathElements)
 
-                nullifiers.push(bigInt(0))
+                nullifiers.push(BigInt(0))
                 const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), NUL_TREE_ONE_LEAF, true)
                 nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
             }
             intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
         }
-        hashChainResult = hashLeftRight(1, hashChainResult)
+        hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
 
         newGSTLeaf = hashLeftRight(commitment, intermediateUserStateTreeRoots[NUM_ATTESTATIONS])
 
@@ -242,13 +243,12 @@ describe('User State Transition circuits', function () {
             nullifier_tree_path_elements: nullifierTreePathElements
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                .to.equal(nullifiers[i])
+            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+            expect(nullifier).to.equal(nullifiers[i])
         }
-        expect(witness[circuit.getSignalIdx('main.new_GST_leaf')])
-            .to.equal(newGSTLeaf)
+        const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
+        expect(_newGSTLeaf).to.equal(newGSTLeaf)
     })
 })

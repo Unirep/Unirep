@@ -18,14 +18,14 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input old_pos_reps[NUM_ATTESTATIONS];
     signal private input old_neg_reps[NUM_ATTESTATIONS];
     signal private input old_graffities[NUM_ATTESTATIONS];
-    signal private input UST_path_elements[NUM_ATTESTATIONS][user_state_tree_depth];
+    signal private input UST_path_elements[NUM_ATTESTATIONS][user_state_tree_depth][1];
 
     // Global state tree leaf: Identity & user state root
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
     // Global state tree
-    signal private input GST_path_elements[GST_tree_depth];
+    signal private input GST_path_elements[GST_tree_depth][1];
     signal private input GST_path_index[GST_tree_depth];
     signal input GST_root;
 
@@ -39,13 +39,13 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input overwrite_graffitis[NUM_ATTESTATIONS];
 
     // Epoch key & epoch tree
-    signal private input epk_path_elements[epoch_tree_depth];
+    signal private input epk_path_elements[epoch_tree_depth][1];
     signal private input hash_chain_result;
     signal input epoch_tree_root;
 
     // Nullifier tree
     signal input nullifier_tree_root;
-    signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth];
+    signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth][1];
 
     signal output new_GST_leaf;
     // Nullifiers of the attestations
@@ -70,7 +70,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     GST_leaf_exists.leaf <== leaf.hash;
     for (var i = 0; i < GST_tree_depth; i++) {
         GST_leaf_exists.path_index[i] <== GST_path_index[i];
-        GST_leaf_exists.path_elements[i] <== GST_path_elements[i];
+        GST_leaf_exists.path_elements[i][0] <== GST_path_elements[i][0];
     }
     GST_leaf_exists.root <== GST_root;
     /* End of check 1*/
@@ -112,7 +112,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     epk_exists.leaf <== hash_chain_result;
     epk_exists.root <== epoch_tree_root;
     for (var i = 0; i < epoch_tree_depth; i++) {
-        epk_exists.path_elements[i] <== epk_path_elements[i];
+        epk_exists.path_elements[i][0] <== epk_path_elements[i][0];
     }
 
     // 2.2 Begin processing attestations
@@ -127,7 +127,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         process_attestations.old_neg_reps[i] <== old_neg_reps[i];
         process_attestations.old_graffities[i] <== old_graffities[i];
         for (var j = 0; j < user_state_tree_depth; j++) {
-            process_attestations.path_elements[i][j] <== UST_path_elements[i][j];
+            process_attestations.path_elements[i][j][0] <== UST_path_elements[i][j][0];
         }
         process_attestations.attester_ids[i] <== attester_ids[i];
         process_attestations.pos_reps[i] <== pos_reps[i];
@@ -173,7 +173,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         nullifier_membership_check[i].leaf_index <== process_attestations.nullifiers[i];
         nullifier_membership_check[i].leaf <== which_leaf_value_to_check[i].out;
         for (var j = 0; j < nullifier_tree_depth; j++) {
-            nullifier_membership_check[i].path_elements[j] <== nullifier_tree_path_elements[i][j];
+            nullifier_membership_check[i].path_elements[j][0] <== nullifier_tree_path_elements[i][j][0];
         }
         nullifier_membership_check[i].root <== nullifier_tree_root;
 
