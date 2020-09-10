@@ -31,14 +31,14 @@
     },
     "dependencies": {
         "@openzeppelin/contracts": "^3.1.0",
-        "circom": "0.0.34",
-        "circomlib": "git+https://github.com/ChihChengLiang/circomlib.git#e39ff9c27a5bc4eca5c00908ccb26496c37fce63",
+        "circom": "^0.5.22",
+        "circomlib": "^0.2.4",
         "keyv": "^4.0.1",
         "libsemaphore": "^1.0.15",
-        "maci-config": "^0.1.8",
-        "maci-crypto": "^0.1.8",
+        "maci-config": "^0.2.1",
+        "maci-crypto": "^0.2.1",
         "shelljs": "^0.8.3",
-        "snarkjs": "git+https://github.com/weijiekoh/snarkjs.git#52e0ceba0256bc9bf94cbc9500139dfc37018f91",
+        "snarkjs": "^0.3.23",
         "truffle-artifactor": "^4.0.30"
     }
 }
