@@ -14,7 +14,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     signal input old_pos_reps[NUM_ATTESTATIONS];
     signal input old_neg_reps[NUM_ATTESTATIONS];
     signal input old_graffities[NUM_ATTESTATIONS];
-    signal input path_elements[NUM_ATTESTATIONS][user_state_tree_depth];
+    signal input path_elements[NUM_ATTESTATIONS][user_state_tree_depth][1];
 
     // Inputs of the atttestations
     signal input attester_ids[NUM_ATTESTATIONS];
@@ -190,7 +190,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         old_attestation_record_match_check[i].leaf_index <== leaf_index_to_check[i];
         old_attestation_record_match_check[i].leaf <== which_old_leaf_value_to_check[i].out;
         for (var j = 0; j < user_state_tree_depth; j++) {
-            old_attestation_record_match_check[i].path_elements[j] <== path_elements[i][j];
+            old_attestation_record_match_check[i].path_elements[j][0] <== path_elements[i][j][0];
         }
         old_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i];
 
@@ -219,7 +219,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         new_attestation_record_match_check[i].leaf_index <== leaf_index_to_check[i];
         new_attestation_record_match_check[i].leaf <== which_new_leaf_value_to_check[i].out;
         for (var j = 0; j < user_state_tree_depth; j++) {
-            new_attestation_record_match_check[i].path_elements[j] <== path_elements[i][j];
+            new_attestation_record_match_check[i].path_elements[j][0] <== path_elements[i][j][0];
         }
         new_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i + 1];
     }

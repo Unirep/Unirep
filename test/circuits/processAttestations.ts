@@ -4,6 +4,8 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
+    getSignalByName,
 } from './utils'
 import { computeAttestationHash, computeNullifier, getNewSMT, bufToBigInt, bigIntToBuf, genNoAttestationNullifierKey } from '../utils'
 
@@ -12,8 +14,6 @@ import {
     hash5,
     hashLeftRight,
     SnarkBigInt,
-    hashOne,
-    bigInt,
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
 import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
@@ -30,18 +30,21 @@ describe('Process attestation circuit', () => {
     const NUM_ATTESTATIONS = 3
 
     let userStateTree: SparseMerkleTreeImpl
-    const ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
+    const ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
     let oldPosReps, oldNegReps, oldGraffities
 
     let attestationRecords = {}
-    let attesterIds: SnarkBigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+    let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
     let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
 
     before(async () => {
+        const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/processAttestations_test.circom')
+        const endCompileTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         attesterIds = []
         posReps = []
@@ -50,7 +53,7 @@ describe('Process attestation circuit', () => {
         overwriteGraffitis = []
 
         // User state
-        const defaultUserStateLeaf = hash5([0, 0, 0, 0, 0])
+        const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
         userStateTree = await getNewSMT(circuitUserStateTreeDepth, defaultUserStateLeaf)
         intermediateUserStateTreeRoots = []
         userStateTreePathElements = []
@@ -76,8 +79,8 @@ describe('Process attestation circuit', () => {
                 attestationRecords[attesterId]['posRep'],
                 attestationRecords[attesterId]['negRep'],
                 attestationRecords[attesterId]['graffiti'],
-                0,
-                0
+                BigInt(0),
+                BigInt(0)
             ])
             const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
             expect(result).to.be.true
@@ -95,7 +98,7 @@ describe('Process attestation circuit', () => {
         }
 
         nullifiers = []
-        hashChainResult = 0
+        hashChainResult = BigInt(0)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attestation = {
                 attesterId: i + 1,
@@ -120,8 +123,8 @@ describe('Process attestation circuit', () => {
                     attestationRecords[attestation['attesterId']]['posRep'],
                     attestationRecords[attestation['attesterId']]['negRep'],
                     attestationRecords[attestation['attesterId']]['graffiti'],
-                    0,
-                    0
+                    BigInt(0),
+                    BigInt(0)
                 ])
                 const oldAttestationRecordProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldAttestationRecord), true)
                 userStateTreePathElements.push(oldAttestationRecordProof.siblings.map((p) => bufToBigInt(p)))
@@ -134,8 +137,8 @@ describe('Process attestation circuit', () => {
                     attestationRecords[attestation['attesterId']]['posRep'],
                     attestationRecords[attestation['attesterId']]['negRep'],
                     attestationRecords[attestation['attesterId']]['graffiti'],
-                    0,
-                    0
+                    BigInt(0),
+                    BigInt(0)
                 ])
                 result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
                 expect(result).to.be.true
@@ -149,12 +152,12 @@ describe('Process attestation circuit', () => {
                 const leafZeroPathElements = leafZeroProof.siblings.map((p) => bufToBigInt(p))
                 userStateTreePathElements.push(leafZeroPathElements)
 
-                nullifiers.push(bigInt(0))
+                nullifiers.push(BigInt(0))
             }
             
             intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
         }
-        hashChainResult = hashLeftRight(1, hashChainResult)
+        hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
     })
 
     it('successfully process attestations', async () => {
@@ -176,19 +179,18 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                .to.equal(nullifiers[i])
+            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+            expect(nullifier).to.equal(nullifiers[i])
         }
-        expect(witness[circuit.getSignalIdx('main.no_attestation_nullifier')])
-            .to.equal(bigInt(0))
+        const noAtteNullifier = getSignalByName(circuit, witness, 'main.no_attestation_nullifier')
+        expect(noAtteNullifier).to.equal(BigInt(0))
     })
 
     it('successfully process zero attestations', async () => {
         const zeroSelectors = selectors.map(() => 0)
-        const noAttestationHashChainResult = hashLeftRight(1, 0)
+        const noAttestationHashChainResult = hashLeftRight(BigInt(1), BigInt(0))
         const initialUserStateTreeRoot = intermediateUserStateTreeRoots[0]
         const noAttestationIntermediateUserStateTreeRoots = intermediateUserStateTreeRoots.map(() => initialUserStateTreeRoot)
         const circuitInputs = {
@@ -210,10 +212,9 @@ describe('Process attestation circuit', () => {
         }
 
         const noAttestationNullifier = genNoAttestationNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
-        expect(witness[circuit.getSignalIdx('main.no_attestation_nullifier')])
-            .to.equal(noAttestationNullifier)
+        const witness = await executeCircuit(circuit, circuitInputs)
+        const noAtteNullifier = getSignalByName(circuit, witness, 'main.no_attestation_nullifier')
+        expect(noAtteNullifier).to.equal(noAttestationNullifier)
     })
 
     it('process attestations with wrong attestation record should not work', async () => {
@@ -243,10 +244,15 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateUserStateTreeRoots[indexWrongAttestationRecord] + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(rootNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Root mismatch results from wrong attestation record should throw error")
+        }
     })
 
     it('process attestations with wrong intermediate roots should not work', async () => {
@@ -271,10 +277,15 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const rootNotMatchRegExp = RegExp('.+ -> .+ != ' + intermediateUserStateTreeRoots[indexWrongRoot] + '$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(rootNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Root mismatch results from wrong intermediate roots should throw error")
+        }
     })
 
     it('process attestations with wrong path elements should not work', async () => {
@@ -298,10 +309,15 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
         
-        const rootNotMatchRegExp = RegExp('.+ -> ' + intermediateUserStateTreeRoots[indexWrongPathElements] + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(rootNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Root mismatch results from wrong path elements should throw error")
+        }
 
         userStateTreePathElements[indexWrongPathElements].reverse()
     })
@@ -326,16 +342,15 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
             if (selectors[i] == 0) {
-                // If selector is false, nullifer should be zero
-                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                .to.equal(nullifiers[i])
+                // If selector is false, nullifier should be zero
+                expect(nullifier).to.equal(BigInt(0))
             } else {
-                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                    .to.not.equal(nullifiers[i])
+                // Otherwise nullifier should not be the same as the correct nullifier
+                expect(nullifier).to.not.equal(nullifiers[i])
             }
         }
     })
@@ -360,16 +375,15 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
             if (selectors[i] == 0) {
-                // If selector is false, nullifer should be zero
-                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                .to.equal(nullifiers[i])
+                // If selector is false, nullifier should be zero
+                expect(nullifier).to.equal(BigInt(0))
             } else {
-                expect(witness[circuit.getSignalIdx('main.nullifiers[' + i + ']')])
-                    .to.not.equal(nullifiers[i])
+                // Otherwise nullifier should not be the same as the correct nullifier
+                expect(nullifier).to.not.equal(nullifiers[i])
             }
         }
     })
@@ -394,9 +408,15 @@ describe('Process attestation circuit', () => {
             hash_chain_result: hashChainResult
         }
 
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw('Invalid signal identifier: main.attester_ids[' + NUM_ATTESTATIONS + ']')
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Incorrect number of elements should throw error")
+        }
     })
 
     it('process attestations with incorrect hash chain result should fail', async () => {
@@ -419,9 +439,14 @@ describe('Process attestation circuit', () => {
             hash_chain_result: wrongHashChainResult
         }
 
-        const resultNotMatchRegExp = RegExp('.+ -> ' + wrongHashChainResult + ' != ' + hashChainResult + '$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(resultNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Hash chain result mismatch results from incorrect hash chain result should throw error")
+        }
     })
 })

@@ -4,6 +4,8 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
+    getSignalByName,
 } from './utils'
 
 import {
@@ -43,7 +45,7 @@ describe('Sparse Merkle Tree circuits', () => {
                 leafIndicesToInsert.push(ind)
             }
             for (let ind of leafIndicesToInsert) {
-                const randomVal = Math.floor(Math.random() * 1000)
+                const randomVal = genRandomSalt()
                 const leaf = hashOne(randomVal)
                 const leafToBuf = bigIntToBuf(leaf)
                 let result 
@@ -65,8 +67,7 @@ describe('Sparse Merkle Tree circuits', () => {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = circuit.calculateWitness(circuitInputs, true)
-                expect(circuit.checkWitness(witness)).to.be.true
+                const witness = await executeCircuit(circuit, circuitInputs)
             }
 
             // Prove second half of empty leaves
@@ -84,8 +85,7 @@ describe('Sparse Merkle Tree circuits', () => {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = circuit.calculateWitness(circuitInputs, true)
-                expect(circuit.checkWitness(witness)).to.be.true
+                const witness = await executeCircuit(circuit, circuitInputs)
             }
         })
 
@@ -96,7 +96,7 @@ describe('Sparse Merkle Tree circuits', () => {
                 const pathElements = proof.siblings.map((p) => bufToBigInt(p))
 
                 // Check against wrong leaf
-                const randomVal = Math.floor(Math.random() * 1000)
+                const randomVal = genRandomSalt()
                 const wrongLeaf = hashOne(randomVal)
                 let circuitInputs = {
                     leaf: wrongLeaf,
@@ -105,10 +105,15 @@ describe('Sparse Merkle Tree circuits', () => {
                     root,
                 }
 
-                const rootNotMatchRegExp = RegExp('.+ -> ' + root + ' !=.+$')
-                expect(() => {
-                    circuit.calculateWitness(circuitInputs, true)
-                }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong leaf should not pass check")
+                let error
+                try {
+                    await executeCircuit(circuit, circuitInputs)
+                } catch (e) {
+                    error = e
+                    expect(true).to.be.true
+                } finally {
+                    if (!error) throw Error("Root mismatch results from wrong leaf should throw error")
+                }
 
                 // Check against wrong leaf index
                 circuitInputs = {
@@ -118,9 +123,15 @@ describe('Sparse Merkle Tree circuits', () => {
                     root,
                 }
 
-                expect(() => {
-                    circuit.calculateWitness(circuitInputs, true)
-                }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong leaf index should not pass check")
+                error = undefined
+                try {
+                    await executeCircuit(circuit, circuitInputs)
+                } catch (e) {
+                    error = e
+                    expect(true).to.be.true
+                } finally {
+                    if (!error) throw Error("Root mismatch results from wrong leaf should throw error")
+                }
 
                 // Check against wrong path elements
                 const otherIndex = emptyLeafIndices[0]
@@ -133,9 +144,15 @@ describe('Sparse Merkle Tree circuits', () => {
                     root,
                 }
 
-                expect(() => {
-                    circuit.calculateWitness(circuitInputs, true)
-                }).to.throw(rootNotMatchRegExp, "Root mismatch results from wrong path elements should not pass check")
+                error = undefined
+                try {
+                    await executeCircuit(circuit, circuitInputs)
+                } catch (e) {
+                    error = e
+                    expect(true).to.be.true
+                } finally {
+                    if (!error) throw Error("Root mismatch results from wrong path elements should throw error")
+                }
             }
         })
     })
@@ -153,7 +170,7 @@ describe('Sparse Merkle Tree circuits', () => {
 
             // Populate the tree
             for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
-                const randomVal = Math.floor(Math.random() * 1000)
+                const randomVal = genRandomSalt()
                 const leaf = hashOne(randomVal)
                 const leafToBuf = bigIntToBuf(leaf)
                 let result 
@@ -162,6 +179,7 @@ describe('Sparse Merkle Tree circuits', () => {
                 leaves[ind] = leaf
             }
 
+            // Update the tree and verify inclusion proof
             for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
                 const randomVal = genRandomSalt()
                 const leaf = hashOne(randomVal)
@@ -182,11 +200,10 @@ describe('Sparse Merkle Tree circuits', () => {
                     path_elements: pathElements,
                 }
 
-                const witness = circuit.calculateWitness(circuitInputs, true)
-                expect(circuit.checkWitness(witness)).to.be.true
+                const witness = await executeCircuit(circuit, circuitInputs)
 
-                expect(witness[circuit.getSignalIdx('main.root')].toString())
-                    .equal(root.toString())
+                const circuitRoot = getSignalByName(circuit, witness, 'main.root').toString()
+                expect(circuitRoot).equal(root.toString())
             }
         })
     })

@@ -1,16 +1,18 @@
 include "../node_modules/circomlib/circuits/bitify.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
-include "./incrementalMerkleTree.circom";
 include "./hasherPoseidon.circom";
 
 template SMTInclusionProof(n_levels) {
     signal input leaf;
     signal input leaf_index;
-    signal input path_elements[n_levels];
+    signal input path_elements[n_levels][1];
     signal output root;
 
-    component selectors[n_levels];
     component hashers[n_levels];
+    component mux[n_levels];
+
+    signal levelHashes[n_levels + 1];
+    levelHashes[0] <== leaf;
 
     // Build path indices from leaf index
     signal path_index[n_levels];
@@ -22,23 +24,26 @@ template SMTInclusionProof(n_levels) {
 
 
     for (var i = 0; i < n_levels; i++) {
-        selectors[i] = Selector();
+        // Should be 0 or 1
+        path_index[i] * (1 - path_index[i]) === 0;
+
         hashers[i] = HashLeftRight();
+        mux[i] = MultiMux1(2);
 
-        path_index[i] ==> selectors[i].path_index;
-        path_elements[i] ==> selectors[i].path_elem;
+        mux[i].c[0][0] <== levelHashes[i];
+        mux[i].c[0][1] <== path_elements[i][0];
 
-        selectors[i].left ==> hashers[i].left;
-        selectors[i].right ==> hashers[i].right;
+        mux[i].c[1][0] <== path_elements[i][0];
+        mux[i].c[1][1] <== levelHashes[i];
+
+        mux[i].s <== path_index[i];
+        hashers[i].left <== mux[i].out[0];
+        hashers[i].right <== mux[i].out[1];
+
+        levelHashes[i + 1] <== hashers[i].hash;
     }
 
-    leaf ==> selectors[0].input_elem;
-
-    for (var i = 1; i < n_levels; i++) {
-        hashers[i-1].hash ==> selectors[i].input_elem;
-    }
-
-    root <== hashers[n_levels - 1].hash;
+    root <== levelHashes[n_levels];
 }
 
 
@@ -48,7 +53,7 @@ template SMTLeafExists(levels){
     // levels is depth of tree
     signal input leaf;
 
-    signal private input path_elements[levels];
+    signal private input path_elements[levels][1];
     signal private input leaf_index;
 
     signal input root;
@@ -57,7 +62,7 @@ template SMTLeafExists(levels){
     merkletree.leaf <== leaf;
     merkletree.leaf_index <== leaf_index;
     for (var i = 0; i < levels; i++) {
-        merkletree.path_elements[i] <== path_elements[i];
+        merkletree.path_elements[i][0] <== path_elements[i][0];
     }
 
     root === merkletree.root;
