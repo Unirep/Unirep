@@ -4,32 +4,57 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
+    getSignalByName,
 } from './utils'
 
 import {
     stringifyBigInts,
     genRandomSalt,
     hashLeftRight,
+    hash5,
 } from 'maci-crypto'
 
 describe('Poseidon hash circuits', () => {
+    let circuit
 
-    it('correctly hashes two random values', async () => {
-        const circuit = await compileAndLoadCircuit('test/hashleftright_test.circom')
+    describe('Hasher5', () => {
+        it('correctly hashes 5 random values', async () => {
+            circuit = await compileAndLoadCircuit('test/hasher5_test.circom')
+            const preImages: any = []
+            for (let i = 0; i < 5; i++) {
+                preImages.push(genRandomSalt())
+            }
 
-        const left = genRandomSalt()
-        const right = genRandomSalt()
+            const circuitInputs = stringifyBigInts({
+                in: preImages,
+            })
 
-        const circuitInputs = stringifyBigInts({ left, right })
+            const witness = await executeCircuit(circuit, circuitInputs)
+            const output = getSignalByName(circuit, witness, 'main.hash')
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+            const outputJS = hash5(preImages)
 
-        const outputIdx = circuit.getSignalIdx('main.hash')
-        const output = witness[outputIdx]
+            expect(output.toString()).equal(outputJS.toString())
+        })
+    })
 
-        const outputJS = hashLeftRight(left, right)
+    describe('HashLeftRight', () => {
 
-        expect(output.toString()).equal(outputJS.toString())
+        it('correctly hashes two random values', async () => {
+            const circuit = await compileAndLoadCircuit('test/hashleftright_test.circom')
+
+            const left = genRandomSalt()
+            const right = genRandomSalt()
+
+            const circuitInputs = stringifyBigInts({ left, right })
+
+            const witness = await executeCircuit(circuit, circuitInputs)
+            const output = getSignalByName(circuit, witness, 'main.hash')
+
+            const outputJS = hashLeftRight(left, right)
+
+            expect(output.toString()).equal(outputJS.toString())
+        })
     })
 })

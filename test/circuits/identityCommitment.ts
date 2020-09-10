@@ -4,14 +4,20 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
+    getSignalByName,
 } from './utils'
 
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 
-describe('(Semaphore) identity commitment', () => {
+describe('(Semaphore) identity commitment', function () {
+    this.timeout(100000)
 
     it('identity computed should match', async () => {
+        const startCompileTime = Math.floor(new Date().getTime() / 1000)
         const circuit = await compileAndLoadCircuit('test/identityCommitment_test.circom')
+        const endCompileTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         const id = genIdentity()
         const pk = id['keypair']['pubKey']
@@ -25,11 +31,9 @@ describe('(Semaphore) identity commitment', () => {
             identity_trapdoor: trapdoor
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
+        const output = getSignalByName(circuit, witness, 'main.out')
 
-        const outputIdx = circuit.getSignalIdx('main.out')
-        const output = witness[outputIdx]
 
         expect(output.toString()).equal(commitment.toString())
     })
