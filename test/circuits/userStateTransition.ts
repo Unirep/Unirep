@@ -25,7 +25,7 @@ const circuitNullifierTreeDepth = 8
 const circuitUserStateTreeDepth = 4
 
 describe('User State Transition circuits', function () {
-    this.timeout(200000)
+    this.timeout(400000)
 
     let circuit
 

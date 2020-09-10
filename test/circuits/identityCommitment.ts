@@ -11,7 +11,7 @@ import {
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 
 describe('(Semaphore) identity commitment', function () {
-    this.timeout(100000)
+    this.timeout(200000)
 
     it('identity computed should match', async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)

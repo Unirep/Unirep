@@ -21,7 +21,9 @@ import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
 const circuitNullifierTreeDepth = 8
 const circuitUserStateTreeDepth = 4
 
-describe('Process attestation circuit', () => {
+describe('Process attestation circuit', function () {
+    this.timeout(300000)
+
     let circuit
 
     const epoch = 1

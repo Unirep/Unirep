@@ -22,7 +22,7 @@ import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
 const circuitUserStateTreeDepth = 4
 
 describe('Prove reputation from attester circuit', function () {
-    this.timeout(100000)
+    this.timeout(300000)
 
     let circuit
 

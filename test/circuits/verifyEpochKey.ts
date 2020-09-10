@@ -18,7 +18,7 @@ import {
 import { maxEpochKeyNonce, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
 
 describe('Verify Epoch Key circuits', function () {
-    this.timeout(100000)
+    this.timeout(300000)
 
     let circuit
 
