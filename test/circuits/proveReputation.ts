@@ -4,17 +4,16 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
 } from './utils'
-import { computeAttestationHash, computeNullifier, getNewSMT, bufToBigInt, bigIntToBuf } from '../utils'
+import { getNewSMT, bufToBigInt, bigIntToBuf } from '../utils'
 
 import {
     IncrementalQuinTree,
     genRandomSalt,
     hash5,
     hashLeftRight,
-    SnarkBigInt,
     hashOne,
-    bigInt,
 } from 'maci-crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
@@ -22,7 +21,9 @@ import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
 
 const circuitUserStateTreeDepth = 4
 
-describe('Prove reputation from attester circuit', () => {
+describe('Prove reputation from attester circuit', function () {
+    this.timeout(100000)
+
     let circuit
 
     const user = genIdentity()
@@ -30,15 +31,18 @@ describe('Prove reputation from attester circuit', () => {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof
     let userStateTree: SparseMerkleTreeImpl, userStateRoot
-    const ONE_LEAF = bigIntToBuf(hashLeftRight(1, 0))
+    const ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
 
     let attestationRecords = {}
 
     before(async () => {
+        const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
+        const endCompileTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         // User state
-        const defaultUserStateLeaf = hash5([0, 0, 0, 0, 0])
+        const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
         userStateTree = await getNewSMT(circuitUserStateTreeDepth, defaultUserStateLeaf)
         // Reserve leaf 0
         let result 
@@ -59,8 +63,8 @@ describe('Prove reputation from attester circuit', () => {
                 attestationRecords[attesterId]['posRep'],
                 attestationRecords[attesterId]['negRep'],
                 attestationRecords[attesterId]['graffiti'],
-                0,
-                0
+                BigInt(0),
+                BigInt(0)
             ])
             attestationRecords[attesterId]['recordHash'] = newAttestationRecord
             const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
@@ -103,8 +107,7 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
     })
 
     it('prove reputation with wrong attester Id should fail', async () => {
@@ -134,10 +137,15 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
-        const rootNotMatchRegExp = RegExp('.+ -> ' + userStateRoot + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(rootNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Root mismatch results from wrong attester Id should throw error")
+        }
     })
 
     it('prove reputation with not exist user state should fail', async () => {
@@ -167,10 +175,15 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
-        const rootNotMatchRegExp = RegExp('.+ -> ' + GSTreeRoot + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(rootNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Root mismatch results from wrong user state should throw error")
+        }
     })
 
     it('prove reputation with incorrect reputation should fail', async () => {
@@ -200,10 +213,15 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
-        const equalityCheckFailedRegExp = RegExp('.+ -> 0 != 1$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs1, true)
-        }).to.throw(equalityCheckFailedRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs1)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Mismatch reputation record should throw error")
+        }
 
         const wrongMaxNegRep = negRep
 
@@ -225,9 +243,14 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
         }
 
-        expect(() => {
-            circuit.calculateWitness(circuitInputs2, true)
-        }).to.throw(equalityCheckFailedRegExp)
+        try {
+            await executeCircuit(circuit, circuitInputs2)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Mismatch reputation record should throw error")
+        }
     })
 
     it('prove reputation with wrong graffiti pre image should fail', async () => {
@@ -258,9 +281,14 @@ describe('Prove reputation from attester circuit', () => {
             graffiti_pre_image: wrongGraffitiPreImage
         }
 
-        const preImageNotMatchRegExp = RegExp('.+ -> .+ != ' + graffiti + '$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(preImageNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong graffiti pre-image should throw error")
+        }
     })
 })

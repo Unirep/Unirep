@@ -4,6 +4,8 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
+    getSignalByName,
 } from './utils'
 
 import {
@@ -17,7 +19,7 @@ describe('Hash chain circuit', () => {
 
     const NUM_ELEMENT = 10
     let elements: SnarkBigInt[] = []
-    let cur = 0, result, selectors: number[] = []
+    let cur: BigInt = BigInt(0), result, selectors: number[] = []
 
     let resultNotMatchRegExp: RegExp
 
@@ -33,7 +35,7 @@ describe('Hash chain circuit', () => {
                 cur = hashLeftRight(element, cur)
             }
         }
-        result = hashLeftRight(1, cur)
+        result = hashLeftRight(BigInt(1), cur)
     })
 
     it('correctly verify hash chain', async () => {
@@ -43,8 +45,7 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
-        const witness = circuit.calculateWitness(circuitInputs, true)
-        expect(circuit.checkWitness(witness)).to.be.true
+        const witness = await executeCircuit(circuit, circuitInputs)
     })
 
     it('verify incorrect elements should fail', async () => {
@@ -55,10 +56,15 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
-        resultNotMatchRegExp = RegExp('.+ -> ' + result + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(resultNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong hashes should throw error")
+        }
         elements.reverse()
     })
 
@@ -73,10 +79,15 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
-        resultNotMatchRegExp = RegExp('.+ -> ' + result + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(resultNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong selectors should throw error")
+        }
     })
 
     it('verify incorrect number of elements should fail', async () => {
@@ -87,9 +98,15 @@ describe('Hash chain circuit', () => {
             result: result
         }
 
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(signalNotAssignedRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong number of hashes should throw error")
+        }
     })
 
     it('verify incorrect result should fail', async () => {
@@ -100,9 +117,14 @@ describe('Hash chain circuit', () => {
             result: incorrectResult
         }
 
-        const invalidResultRegExp = RegExp('.+ -> ' + incorrectResult + ' != .+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(invalidResultRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong hash chain result should throw error")
+        }
     })
 })

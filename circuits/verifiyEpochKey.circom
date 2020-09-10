@@ -10,7 +10,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
 
     signal private input user_state_root;
 
-    signal private input path_elements[GST_tree_depth];
+    signal private input path_elements[GST_tree_depth][1];
     signal private input path_index[GST_tree_depth];
     signal input root;
 
@@ -34,7 +34,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     GST_leaf_exists.leaf <== leaf.hash;
     for (var i = 0; i < GST_tree_depth; i++) {
         GST_leaf_exists.path_index[i] <== path_index[i];
-        GST_leaf_exists.path_elements[i] <== path_elements[i];
+        GST_leaf_exists.path_elements[i][0] <== path_elements[i][0];
     }
     GST_leaf_exists.root <== root;
     /* End of check 1*/

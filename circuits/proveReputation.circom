@@ -12,7 +12,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     signal private input user_state_root;
     // Global state tree
     signal private input GST_path_index[GST_tree_depth];
-    signal private input GST_path_elements[GST_tree_depth];
+    signal private input GST_path_elements[GST_tree_depth][1];
     signal input GST_root;
     // Attester to prove attestation from
     signal input attester_id;
@@ -20,7 +20,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     signal private input pos_rep;
     signal private input neg_rep;
     signal private input graffiti;
-    signal private input UST_path_elements[user_state_tree_depth];
+    signal private input UST_path_elements[user_state_tree_depth][1];
     // Condition on repuations to prove
     signal input min_pos_rep;
     signal input max_neg_rep;
@@ -45,7 +45,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     GST_leaf_exists.leaf <== leaf.hash;
     for (var i = 0; i < GST_tree_depth; i++) {
         GST_leaf_exists.path_index[i] <== GST_path_index[i];
-        GST_leaf_exists.path_elements[i] <== GST_path_elements[i];
+        GST_leaf_exists.path_elements[i][0] <== GST_path_elements[i][0];
     }
     GST_leaf_exists.root <== GST_root;
     /* End of check 1*/
@@ -63,7 +63,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     attestation_membership_check.leaf_index <== attester_id;
     attestation_membership_check.leaf <== attestation_hasher.hash;
     for (var i = 0; i < user_state_tree_depth; i++) {
-        attestation_membership_check.path_elements[i] <== UST_path_elements[i];
+        attestation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
     }
     attestation_membership_check.root <== user_state_root;
     /* End of check 2 */

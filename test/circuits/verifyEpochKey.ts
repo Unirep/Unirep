@@ -7,37 +7,40 @@ const { expect } = chai
 
 import {
     compileAndLoadCircuit,
+    executeCircuit,
 } from './utils'
 import { deployUnirep, genEpochKey } from '../utils'
 
 import {
     genRandomSalt,
     IncrementalQuinTree,
-    bigInt,
 } from 'maci-crypto'
 import { maxEpochKeyNonce, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
 
-describe('Verify Epoch Key circuits', () => {
+describe('Verify Epoch Key circuits', function () {
+    this.timeout(100000)
+
     let circuit
 
     let accounts: Signer[]
     let unirepContract: Contract
     let ZERO_VALUE
 
-    const maxEPK = bigInt(2 ** circuitEpochTreeDepth)
+    const maxEPK = BigInt(2 ** circuitEpochTreeDepth)
 
     let id, commitment, stateRoot
     let tree, proof, root
     let nonce, currentEpoch, epochKey
-
-    let notLessEqThanRegExp: RegExp
 
     before(async () => {
         accounts = await ethers.getSigners()
     
         unirepContract = await deployUnirep(<Wallet>accounts[0], circuitGlobalStateTreeDepth)
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
+        const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
+        const endCompileTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
         id = genIdentity()
@@ -50,7 +53,7 @@ describe('Verify Epoch Key circuits', () => {
                 stateRoot.toString()
             ]
         )
-        tree.insert(hashedStateLeaf)
+        tree.insert(BigInt(hashedStateLeaf.toString()))
         proof = tree.genMerklePath(0)
         root = tree.root
 
@@ -77,8 +80,7 @@ describe('Verify Epoch Key circuits', () => {
                 epoch: currentEpoch,
                 epoch_key: epk,
             }
-            const witness = circuit.calculateWitness(circuitInputs, true)
-            expect(circuit.checkWitness(witness)).to.be.true
+            const witness = await executeCircuit(circuit, circuitInputs)
         }
     })
 
@@ -98,31 +100,17 @@ describe('Verify Epoch Key circuits', () => {
             epoch: currentEpoch,
             epoch_key: invalidEpochKey1,
         }
-        notLessEqThanRegExp = RegExp('.+ -> 0 != 1$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(notLessEqThanRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Epoch key too large should throw error")
+        }
     })
 
-    it('Invalid epoch key should not pass check 2', async () => {
-        const invalidEpochKey2 = epochKey + maxEPK
-        const circuitInputs = {
-            identity_pk: id['keypair']['pubKey'],
-            identity_nullifier: id['identityNullifier'], 
-            identity_trapdoor: id['identityTrapdoor'],
-            user_state_root: stateRoot,
-            path_elements: proof.pathElements,
-            path_index: proof.indices,
-            root: root,
-            nonce: nonce,
-            max_nonce: maxEpochKeyNonce,
-            epoch: currentEpoch,
-            epoch_key: invalidEpochKey2,
-        }
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(notLessEqThanRegExp)
-    })
     it('Wrong Id should not pass check', async () => {
         const fakeId = genIdentity()
         const circuitInputs = {
@@ -138,10 +126,15 @@ describe('Verify Epoch Key circuits', () => {
             epoch: currentEpoch,
             epoch_key: epochKey,
         }
-        const rootNotMatchRegExp = RegExp('.+ -> ' + root + ' !=.+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(rootNotMatchRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong Id should throw error")
+        }
     })
 
     it('Mismatched GST tree root should not pass check', async () => {
@@ -159,10 +152,15 @@ describe('Verify Epoch Key circuits', () => {
             epoch: currentEpoch,
             epoch_key: epochKey,
         }
-        const invalidRootRegExp = RegExp('.+ -> .+ != ' + root + '$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(invalidRootRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong GST Root should throw error")
+        }
     })
 
     it('Invalid nonce should not pass check', async () => {
@@ -180,9 +178,15 @@ describe('Verify Epoch Key circuits', () => {
             epoch: currentEpoch,
             epoch_key: epochKey,
         }
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw(notLessEqThanRegExp)
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Invalid nonce should throw error")
+        }
     })
 
     it('Invalid epoch should not pass check', async () => {
@@ -206,9 +210,14 @@ describe('Verify Epoch Key circuits', () => {
             epoch: invalidEpoch,
             epoch_key: epochKey,
         }
-        // const epochKeyNotMatchRegExp = RegExp('.+ -> ' + epochKey + ' !=.+$')
-        expect(() => {
-            circuit.calculateWitness(circuitInputs, true)
-        }).to.throw()
+        let error
+        try {
+            await executeCircuit(circuit, circuitInputs)
+        } catch (e) {
+            error = e
+            expect(true).to.be.true
+        } finally {
+            if (!error) throw Error("Wrong epoch should throw error")
+        }
     })
 })
