@@ -250,8 +250,8 @@ describe('Integration', () => {
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            epochKeyToAttestationsMap[firstUserEpochKey] = new Array()
-            epochKeyToAttestationsMap[firstUserEpochKey].push(attestation)
+            epochKeyToAttestationsMap[firstUserEpochKey.toString()] = new Array()
+            epochKeyToAttestationsMap[firstUserEpochKey.toString()].push(attestation)
         })
 
         it('First attester attest to second user', async () => {
@@ -272,8 +272,8 @@ describe('Integration', () => {
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            epochKeyToAttestationsMap[secondUserEpochKey] = new Array()
-            epochKeyToAttestationsMap[secondUserEpochKey].push(attestation)
+            epochKeyToAttestationsMap[secondUserEpochKey.toString()] = new Array()
+            epochKeyToAttestationsMap[secondUserEpochKey.toString()].push(attestation)
         })
 
         it('Second attester attest to second user', async () => {
@@ -294,7 +294,7 @@ describe('Integration', () => {
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            epochKeyToAttestationsMap[secondUserEpochKey].push(attestation)
+            epochKeyToAttestationsMap[secondUserEpochKey.toString()].push(attestation)
         })
 
         it('Attestations gathered from events should match', async () => {
@@ -397,13 +397,13 @@ describe('Integration', () => {
             const nonce = 0
             const prevEpoch = currentEpoch.toNumber() - 1
             const firstUserEpochKey = genEpochKey(users[0]['id'].identityNullifier, prevEpoch, nonce)
-            expect(epochKeyToAttestationsMap[firstUserEpochKey].length).to.be.equal(1)
-            const attestation = epochKeyToAttestationsMap[firstUserEpochKey][0]
+            expect(epochKeyToAttestationsMap[firstUserEpochKey.toString()].length).to.be.equal(1)
+            const attestation = epochKeyToAttestationsMap[firstUserEpochKey.toString()][0]
             const attestationNullifier = computeNullifier(users[0]['id']['identityNullifier'], attestation['attesterId'], prevEpoch, nullifierTreeDepth)
-            const nullifiers: number[] = []
+            const nullifiers: BigInt[] = []
             nullifiers[0] = attestationNullifier
             for (let i = 1; i < numAttestationsPerBatch; i++) {
-                nullifiers[i] = 0
+                nullifiers[i] = BigInt(0)
             }
 
             const hashedStateLeaf = await unirepContract.hashStateLeaf(

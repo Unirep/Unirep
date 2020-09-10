@@ -128,7 +128,7 @@ describe('Epoch Transition', () => {
         let epkIndex
         for (epochKey_ in epochKeyHashchainMap) {
             sealedHashChain = hashLeftRight(
-                1,
+                BigInt(1),
                 epochKeyHashchainMap[epochKey_]
             )
             hashChainAfter = await unirepContract.epochKeyHashchain(epochKey_)

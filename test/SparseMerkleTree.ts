@@ -49,7 +49,11 @@ describe('OneTimeSparseMerkleTree', () => {
         console.log('Deploying PoseidonT6')
         PoseidonT6Contract = (await deployContract(
             <Wallet>accounts[0],
-            PoseidonT6
+            PoseidonT6,
+            [],
+            {
+                gasLimit: 9000000,
+            }
         ))
 
         // Link the library code if it has not been linked yet
@@ -105,7 +109,7 @@ describe('OneTimeSparseMerkleTree', () => {
             for (let i = 0; i < numLeavesToInsert; i++) {
                 leafIndices[i] = new BigNumber(i + startIndex, 10)
                 dataBlocks[i] = crypto.randomBytes(32).toString('hex')
-                leafData[i] = hashOne('0x' + dataBlocks[i])
+                leafData[i] = hashOne(BigInt('0x' + dataBlocks[i]))
             }
 
             console.log('Deploying OneTimeSparseMerkleTree')
@@ -144,7 +148,7 @@ describe('OneTimeSparseMerkleTree', () => {
                 numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
                 leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
                 dataBlocks[i] = crypto.randomBytes(32).toString('hex')
-                leafData[i] = hashOne('0x' + dataBlocks[i])
+                leafData[i] = hashOne(BigInt('0x' + dataBlocks[i]))
             }
 
             console.log('Deploying OneTimeSparseMerkleTree')
@@ -181,7 +185,7 @@ describe('OneTimeSparseMerkleTree', () => {
             for (let i = 0; i < numLeavesToInsert; i++) {
                 numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
                 leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
-                leafData[i] = hashOne('0x' + crypto.randomBytes(32).toString('hex'))
+                leafData[i] = hashOne(BigInt('0x' + crypto.randomBytes(32).toString('hex')))
                 leafDataBuffer[i] = hexStrToBuf(
                     toCompleteHexString(
                         leafData[i].toString(16),
@@ -214,7 +218,7 @@ describe('OneTimeSparseMerkleTree', () => {
         it('inserting leaf with out of bound index should fail', async () => {
             let leafIndices = [numLeaves.add(ONE)]
             let dataBlock = crypto.randomBytes(32).toString('hex')
-            let leafData = [hashOne('0x' + dataBlock)]
+            let leafData = [hashOne(BigInt('0x' + dataBlock))]
 
             console.log('Deploying OneTimeSparseMerkleTree which is expected to fail')
             await expect(OTSMTFactory.deploy(

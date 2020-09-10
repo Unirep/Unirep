@@ -68,7 +68,7 @@ describe('Attesting', () => {
         // Verify attestation hash chain
         let attestationHashChain = hashLeftRight(
             computeAttestationHash(attestation),
-            0
+            BigInt(0)
         )
         let attestationHashChain_ = await unirepContract.epochKeyHashchain(epochKey)
         expect(attestationHashChain).equal(attestationHashChain_)
