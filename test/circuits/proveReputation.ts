@@ -17,9 +17,7 @@ import {
 } from 'maci-crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
-import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
-
-const circuitUserStateTreeDepth = 4
+import { circuitGlobalStateTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)

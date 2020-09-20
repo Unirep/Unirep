@@ -17,9 +17,7 @@ import {
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
 import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
-
-const circuitNullifierTreeDepth = 8
-const circuitUserStateTreeDepth = 4
+import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)

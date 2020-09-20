@@ -16,7 +16,8 @@ import { BigNumber as smtBN } from "../../crypto/SMT"
 import { getNewSMT, bigIntToBuf, bufToBigInt } from "../utils"
 import { circuitEpochTreeDepth } from "../../config/testLocal"
 
-describe('Sparse Merkle Tree circuits', () => {
+describe('Sparse Merkle Tree circuits', function () {
+    this.timeout(500000)
 
     describe('LeafExists', () => {
         let circuit

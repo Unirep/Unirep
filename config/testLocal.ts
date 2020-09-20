@@ -21,12 +21,18 @@ const epochTreeDepth = 80;
 
 const circuitGlobalStateTreeDepth = 4;
 
-const circuitEpochTreeDepth = 4;
+const circuitUserStateTreeDepth = 4;
+
+const circuitEpochTreeDepth = 8;
+
+const circuitNullifierTreeDepth = 8;
 
 export {
     attestingFee,
     circuitGlobalStateTreeDepth,
+    circuitUserStateTreeDepth,
     circuitEpochTreeDepth,
+    circuitNullifierTreeDepth,
     epochLength,
     epochTreeDepth,
     globalStateTreeDepth,

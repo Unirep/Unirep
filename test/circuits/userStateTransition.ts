@@ -17,12 +17,8 @@ import {
     getSignalByName,
 } from './utils'
 import { BigNumber as smtBN } from "../../crypto/SMT"
-import { globalStateTreeDepth } from "../../config/testLocal"
+import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth } from "../../config/testLocal"
 import { bigIntToBuf, bufToBigInt, computeAttestationHash, getNewSMT, genEpochKey, computeNullifier } from "../utils"
-
-const circuitEpochTreeDepth = 8
-const circuitNullifierTreeDepth = 8
-const circuitUserStateTreeDepth = 4
 
 describe('User State Transition circuits', function () {
     this.timeout(400000)
