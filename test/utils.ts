@@ -3,7 +3,7 @@ import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
 import { SparseMerkleTreeImpl, add0x, bufToHexString, hexStrToBuf } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
 import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
@@ -32,8 +32,22 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
 
 const deployUnirep = async (
     deployer: ethers.Wallet,
-    _globalStateTreeDepth: number = globalStateTreeDepth,
-    _epochTreeDepth: number = epochTreeDepth): Promise<ethers.Contract> => {
+    deployEnv: string = "contract"): Promise<ethers.Contract> => {
+    let _userStateTreeDepth, _globalStateTreeDepth, _epochTreeDepth, _nullifierTreeDepth
+    if (deployEnv === 'contract') {
+        _userStateTreeDepth = userStateTreeDepth
+        _globalStateTreeDepth = globalStateTreeDepth
+        _epochTreeDepth = epochTreeDepth
+        _nullifierTreeDepth = nullifierTreeDepth
+    } else if (deployEnv === 'circuit') {
+        _userStateTreeDepth = circuitUserStateTreeDepth
+        _globalStateTreeDepth = circuitGlobalStateTreeDepth
+        _epochTreeDepth = circuitEpochTreeDepth
+        _nullifierTreeDepth = circuitNullifierTreeDepth
+    } else {
+        throw new Error('Only contract and circuit testing env are supported')
+    }
+
     let PoseidonT3Contract, PoseidonT6Contract
     let EpochKeyValidityVerifierContract, NewUserStateVerifierContract, ReputationVerifierContract
 
@@ -84,8 +98,8 @@ const deployUnirep = async (
     const c = await (f.deploy(
         {
             globalStateTreeDepth: _globalStateTreeDepth,
-            userStateTreeDepth,
-            nullifierTreeDepth,
+            userStateTreeDepth: _userStateTreeDepth,
+            nullifierTreeDepth: _nullifierTreeDepth,
             epochTreeDepth: _epochTreeDepth
         },
         {
