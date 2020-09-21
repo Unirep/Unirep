@@ -6,7 +6,7 @@
         "strict": true,
         "outDir": "./build",
     },
-    "include": ["./scripts", "./test"],
+    "include": ["./scripts"],
     "files": [
         "./buidler.config.ts",
         "node_modules/@nomiclabs/buidler-ethers/src/type-extensions.d.ts",

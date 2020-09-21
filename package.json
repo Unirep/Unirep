@@ -4,6 +4,8 @@
     "description": "",
     "main": "index.js",
     "scripts": {
+        "build": "npm run buildVerifyEpochKeySnark",
+        "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh" ,
         "test": "npx buidler compile && npx ts-node scripts/buildPoseidon.ts && npx buidler test"
     },
     "repository": {
@@ -24,6 +26,7 @@
         "@types/mocha": "^7.0.2",
         "@types/node": "^14.0.20",
         "chai": "^4.2.0",
+        "circom": "^0.5.27",
         "ethereum-waffle": "^3.0.1",
         "ethers": "^5.0.5",
         "ts-node": "^8.10.2",
@@ -31,7 +34,6 @@
     },
     "dependencies": {
         "@openzeppelin/contracts": "^3.1.0",
-        "circom": "^0.5.22",
         "circomlib": "^0.2.4",
         "keyv": "^4.0.1",
         "libsemaphore": "^1.0.15",
