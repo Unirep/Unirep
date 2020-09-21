@@ -48,15 +48,15 @@ const getSignalByName = (
     return witness[circuit.symbols[signal].varIdx]
 }
 
-const genBatchUstProofAndPublicSignals = (
+const genVerifyEpochKeyProofAndPublicSignals = (
     inputs: any,
     circuit?: any
 ) => {
     return genProofAndPublicSignals(
         inputs,
-        'prod/batchUpdateStateTreeVerifier.circom',
-        'batchUst.wasm',
-        'batchUst.zkey',
+        '/test/verifyEpochKey_test.circom',
+        'verifyEpochKey.wasm',
+        'verifyEpochKey.zkey',
         circuit,
     )
 }
@@ -82,13 +82,13 @@ const genProofAndPublicSignals = async (
     circuit?: any,
 ) => {
     const date = Date.now()
-    const zkeyPath = path.join(__dirname, '../build/', zkeyFilename)
-    const circuitWasmPath = path.join(__dirname, '../build/', circuitWasmFilename)
-    const inputJsonPath = path.join(__dirname, '../build/' + date + '.input.json')
-    const witnessPath = path.join(__dirname, '../build/' + date + '.witness.wtns')
-    const witnessJsonPath = path.join(__dirname, '../build/' + date + '.witness.json')
-    const proofPath = path.join(__dirname, '../build/' + date + '.proof.json')
-    const publicJsonPath = path.join(__dirname, '../build/' + date + '.publicSignals.json')
+    const zkeyPath = path.join(__dirname, '../../build/', zkeyFilename)
+    const circuitWasmPath = path.join(__dirname, '../../build/', circuitWasmFilename)
+    const inputJsonPath = path.join(__dirname, '../../build/' + date + '.input.json')
+    const witnessPath = path.join(__dirname, '../../build/' + date + '.witness.wtns')
+    const witnessJsonPath = path.join(__dirname, '../../build/' + date + '.witness.json')
+    const proofPath = path.join(__dirname, '../../build/' + date + '.proof.json')
+    const publicJsonPath = path.join(__dirname, '../../build/' + date + '.publicSignals.json')
 
     fs.writeFileSync(inputJsonPath, JSON.stringify(stringifyBigInts(inputs)))
 
@@ -96,7 +96,7 @@ const genProofAndPublicSignals = async (
         circuit = await compileAndLoadCircuit(circuitFilename)
     }
 
-    const snarkjsCmd = 'node ' + path.join(__dirname, '../node_modules/snarkjs/build/cli.cjs')
+    const snarkjsCmd = 'node ' + path.join(__dirname, '../../node_modules/snarkjs/build/cli.cjs')
     const witnessCmd = `${snarkjsCmd} wc ${circuitWasmPath} ${inputJsonPath} ${witnessPath}`
 
     shell.exec(witnessCmd)
@@ -128,18 +128,18 @@ const verifyProof = async (
     proof: any,
     publicSignals: any,
 ): Promise<boolean> => {
-    const vkFilepath = path.join(__dirname, '../build/', vkFilename)
+    const vkFilepath = path.join(__dirname, '../../build/', vkFilename)
     const vk = JSON.parse(fs.readFileSync(vkFilepath).toString())
 
     return await snarkjs.groth16.verify(vk, publicSignals, proof)
 }
 
-const verifyBatchUstProof = (
+const verifyEPKProof = (
     proof: any,
     publicSignals: any,
 ) => {
 
-    return verifyProof('batchUstVk.json', proof, publicSignals)
+    return verifyProof('verifyEpochKeyVk.json', proof, publicSignals)
 }
 
 const verifyQvtProof = (
@@ -155,9 +155,9 @@ export {
     compileAndLoadCircuit,
     executeCircuit,
     getSignalByName,
-    genBatchUstProofAndPublicSignals,
+    genVerifyEpochKeyProofAndPublicSignals,
     genQvtProofAndPublicSignals,
-    verifyBatchUstProof,
+    verifyEPKProof,
     verifyQvtProof,
     genProofAndPublicSignals,
     verifyProof,

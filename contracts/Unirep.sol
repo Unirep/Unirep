@@ -337,12 +337,11 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 
-        uint256[4] memory publicSignals = [
-            _epoch,
-            _epochKey,
-            _globalStateTree,
-            maxEpochKeyNonce
-        ];
+        uint256[] memory publicSignals = new uint256[](4);
+        publicSignals[0] = _epoch;
+        publicSignals[1] = _epochKey;
+        publicSignals[2] = _globalStateTree;
+        publicSignals[3] = maxEpochKeyNonce;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

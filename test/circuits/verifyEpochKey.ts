@@ -8,12 +8,15 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
+    genVerifyEpochKeyProofAndPublicSignals,
+    verifyEPKProof,
 } from './utils'
 import { deployUnirep, genEpochKey } from '../utils'
 
 import {
     genRandomSalt,
     IncrementalQuinTree,
+    stringifyBigInts,
 } from 'maci-crypto'
 import { maxEpochKeyNonce, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
 
@@ -35,7 +38,7 @@ describe('Verify Epoch Key circuits', function () {
     before(async () => {
         accounts = await ethers.getSigners()
     
-        unirepContract = await deployUnirep(<Wallet>accounts[0], circuitGlobalStateTreeDepth)
+        unirepContract = await deployUnirep(<Wallet>accounts[0], "circuit")
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
@@ -81,6 +84,9 @@ describe('Verify Epoch Key circuits', function () {
                 epoch_key: epk,
             }
             const witness = await executeCircuit(circuit, circuitInputs)
+            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+            const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
+            expect(isValid).to.be.true
         }
     })
 
