@@ -148,7 +148,15 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     /* 2. Process attestations and update user state tree */
 
     // If the attestation is not to be processed, we check and verify leaf 0 instead.
-    // Leaf 0 is reserved and has value hashLeftRight(1, 0)
+    // Leaf 0 is reserved and has value hash5(0, 0, 0, 0, 0)
+    signal default_leaf_zero;
+    component default_leaf_zero_hasher = Hasher5();
+    default_leaf_zero_hasher.in[0] <== 0;
+    default_leaf_zero_hasher.in[1] <== 0;
+    default_leaf_zero_hasher.in[2] <== 0;
+    default_leaf_zero_hasher.in[3] <== 0;
+    default_leaf_zero_hasher.in[4] <== 0;
+    default_leaf_zero <== default_leaf_zero_hasher.hash;
     component which_leaf_index_to_check[NUM_ATTESTATIONS];
     signal leaf_index_to_check[NUM_ATTESTATIONS];
 
@@ -179,9 +187,9 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         old_leaf_value_hasher[i].in[4] <== 0;
 
         // Attestation record to be checked should have value hash5(pos, neg, graffiti)
-        // while leaf 0 should have value hashLeftRight(1, 0)
+        // while leaf 0 should have value hash5(0, 0, 0, 0, 0)
         which_old_leaf_value_to_check[i] = Mux1();
-        which_old_leaf_value_to_check[i].c[0] <== one_leaf;
+        which_old_leaf_value_to_check[i].c[0] <== default_leaf_zero;
         which_old_leaf_value_to_check[i].c[1] <== old_leaf_value_hasher[i].hash;
         which_old_leaf_value_to_check[i].s <== selectors[i];
 
@@ -208,9 +216,9 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         new_leaf_value_hasher[i].in[4] <== 0;
 
         // Attestation record to be checked should have value hash5(pos, neg, graffiti)
-        // while leaf 0 should have value hashLeftRight(1, 0)
+        // while leaf 0 should have value hash5(0, 0, 0, 0, 0)
         which_new_leaf_value_to_check[i] = Mux1();
-        which_new_leaf_value_to_check[i].c[0] <== one_leaf;
+        which_new_leaf_value_to_check[i].c[0] <== default_leaf_zero;
         which_new_leaf_value_to_check[i].c[1] <== new_leaf_value_hasher[i].hash;
         which_new_leaf_value_to_check[i].s <== selectors[i];
 

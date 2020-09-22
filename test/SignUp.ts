@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
-import { deployUnirep } from './utils'
+import { bufToBigInt, deployUnirep, genNewUserStateTree } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -48,16 +48,12 @@ describe('Signup', () => {
     })
 
     it('should have the correct default value', async () => {
-        const emptyUSTree = new IncrementalQuinTree(userStateTreeDepth, 0, 2)
+        const emptyUSTree = await genNewUserStateTree()
         emptyUserStateRoot = await unirepContract.emptyUserStateRoot()
-        expect(emptyUSTree.root.toString()).equal(emptyUserStateRoot.toString())
+        expect(bufToBigInt(emptyUSTree.getRootHash()).toString()).equal(emptyUserStateRoot.toString())
 
         const emptyGlobalStateTreeRoot = await unirepContract.emptyGlobalStateTreeRoot()
         expect(GSTree.root.toString()).equal(emptyGlobalStateTreeRoot.toString())
-
-        const emptyNullifierTree = new IncrementalQuinTree(nullifierTreeDepth, 0, 2)
-        const emptyNullifierTreeRoot = await unirepContract.emptyNullifierTreeRoot()
-        expect(emptyNullifierTree.root.toString()).equal(emptyNullifierTreeRoot.toString())
     })
 
     describe('User sign-ups', () => {

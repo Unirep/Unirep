@@ -38,8 +38,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     uint256 public emptyGlobalStateTreeRoot;
 
-    uint256 public emptyNullifierTreeRoot;
-
     // Maximum number of epoch keys allowed for an user to generate in one epoch
     uint8 public maxEpochKeyNonce;
 
@@ -154,8 +152,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         emptyUserStateRoot = calcEmptyUserStateTreeRoot(_treeDepths.userStateTreeDepth);
 
         emptyGlobalStateTreeRoot = calcEmptyGlobalStateTreeRoot(_treeDepths.globalStateTreeDepth);
-
-        emptyNullifierTreeRoot = calcEmptyNullifierTreeRoot(_treeDepths.nullifierTreeDepth);
 
         attestingFee = _attestingFee;
     }
@@ -492,7 +488,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function calcEmptyUserStateTreeRoot(uint8 _levels) internal pure returns (uint256) {
-        return computeEmptyRoot(_levels, 0);
+        uint256[] memory defaultStateLeafValues = new uint256[](5);
+        for (uint8 i = 0; i < 5; i++) {
+            defaultStateLeafValues[i] = 0;
+        }
+        uint256 defaultUserStateLeaf = hash5(defaultStateLeafValues);
+        return computeEmptyRoot(_levels, defaultUserStateLeaf);
     }
 
     function calcEmptyGlobalStateTreeRoot(uint8 _levels) internal view returns (uint256) {
@@ -500,9 +501,5 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 h = hashedBlankStateLeaf();
 
         return computeEmptyRoot(_levels, h);
-    }
-
-    function calcEmptyNullifierTreeRoot(uint8 _levels) internal pure returns (uint256) {
-        return computeEmptyRoot(_levels, 0);
     }
 }

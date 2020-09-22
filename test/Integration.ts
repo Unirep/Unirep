@@ -5,14 +5,14 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee, circuitEpochTreeDepth, circuitNullifierTreeDepth, epochLength, globalStateTreeDepth, maxEpochKeyNonce, numAttestationsPerBatch} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, stringifyBigInts } from 'maci-crypto'
-import { deployUnirep, getNewSMT, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey, toCompleteHexString, computeNullifier } from './utils'
+import { deployUnirep, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genStubEPKProof, genEpochKey, toCompleteHexString, computeNullifier, genNewEpochTree, genNewNullifierTree, smtBN } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
 
 import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import Unirep from "../artifacts/Unirep.json"
-import { BigNumber as smtBN, SparseMerkleTreeImpl, hexStrToBuf, bufToHexString } from "../crypto/SMT"
+import { SparseMerkleTreeImpl, hexStrToBuf, bufToHexString } from "../crypto/SMT"
 import { compileAndLoadCircuit, executeCircuit, genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from "./circuits/utils"
 
 const genStubUserStateTransitionProof = genStubEPKProof
@@ -46,7 +46,7 @@ describe('Integration', function () {
         blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
         GSTrees[currentEpoch.toString()] = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)
 
-        nullifierTree = await getNewSMT(circuitNullifierTreeDepth)
+        nullifierTree = await genNewNullifierTree("circuit")
     })
 
     describe('First epoch', () => {
@@ -112,7 +112,7 @@ describe('Integration', function () {
             expect(receipt.status).equal(1)
             console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
 
-            epochTrees[prevEpoch.toString()] = await getNewSMT(circuitEpochTreeDepth)
+            epochTrees[prevEpoch.toString()] = await genNewEpochTree()
 
             currentEpoch = await unirepContract.currentEpoch()
             expect(currentEpoch).equal(2)
@@ -417,7 +417,7 @@ describe('Integration', function () {
             expect(receipt.status).equal(1)
             console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
 
-            epochTrees[prevEpoch.toString()] = await getNewSMT(circuitEpochTreeDepth)
+            epochTrees[prevEpoch.toString()] = await genNewEpochTree()
 
             currentEpoch = await unirepContract.currentEpoch()
             expect(currentEpoch).equal(3)
