@@ -12,8 +12,7 @@ import {
     genRandomSalt,
     hashOne,
 } from 'maci-crypto'
-import { BigNumber as smtBN } from "../../crypto/SMT"
-import { getNewSMT, bigIntToBuf, bufToBigInt } from "../utils"
+import { getNewSMT, bigIntToBuf, bufToBigInt, smtBN } from "../utils"
 import { circuitEpochTreeDepth } from "../../config/testLocal"
 
 describe('Sparse Merkle Tree circuits', function () {

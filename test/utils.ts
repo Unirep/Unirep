@@ -1,7 +1,7 @@
 import * as ethers from 'ethers'
 import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
-import { SparseMerkleTreeImpl, add0x, bufToHexString, hexStrToBuf } from '../crypto/SMT'
+import { BigNumber as smtBN, SparseMerkleTreeImpl, add0x, bufToHexString, hexStrToBuf } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
@@ -186,6 +186,17 @@ const genStubEPKProof = (isValid: Boolean) => {
     return [firstElement, 2, 3, 4, 5, 6, 7, 8]
 }
 
+const bufToBigInt = (buf: Buffer): SnarkBigInt => {
+    return BigInt(bufToHexString(buf))
+}
+
+const bigIntToBuf = (bn: SnarkBigInt): Buffer => {
+    return hexStrToBuf(toCompleteHexString(bn.toString(16), 32))
+}
+
+const SMT_ZERO_LEAF = bigIntToBuf(hashLeftRight(BigInt(0), BigInt(0)))
+const SMT_ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
+
 const getNewSMT = async (treeDepth: number, defaultLeafHash?: BigInt, rootHash?: Buffer): Promise<SparseMerkleTreeImpl> => {
     const keyv = new Keyv();
     return SparseMerkleTreeImpl.create(
@@ -199,15 +210,51 @@ const getNewSMT = async (treeDepth: number, defaultLeafHash?: BigInt, rootHash?:
     )
 }
 
-const bufToBigInt = (buf: Buffer): SnarkBigInt => {
-    return BigInt(bufToHexString(buf))
+const genNewEpochTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {
+    let _epochTreeDepth
+    if (deployEnv === 'contract') {
+        _epochTreeDepth = epochTreeDepth
+    } else if (deployEnv === 'circuit') {
+        _epochTreeDepth = circuitEpochTreeDepth
+    } else {
+        throw new Error('Only contract and circuit testing env are supported')
+    }
+    return getNewSMT(_epochTreeDepth)
 }
 
-const bigIntToBuf = (bn: SnarkBigInt): Buffer => {
-    return hexStrToBuf(toCompleteHexString(bn.toString(16), 32))
+const genNewNullifierTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {
+    let _nullifierTreeDepth
+    if (deployEnv === 'contract') {
+        _nullifierTreeDepth = nullifierTreeDepth
+    } else if (deployEnv === 'circuit') {
+        _nullifierTreeDepth = circuitNullifierTreeDepth
+    } else {
+        throw new Error('Only contract and circuit testing env are supported')
+    }
+    const nullifierTree = await getNewSMT(_nullifierTreeDepth)
+    // Reserve leaf 0
+    const result = await nullifierTree.update(new smtBN(0), SMT_ONE_LEAF, true)
+    if (result != true) throw new Error('Reserve nullifier tree leaf 0 failed')
+    return nullifierTree
+}
+
+const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {
+    let _userStateTreeDepth
+    if (deployEnv === 'contract') {
+        _userStateTreeDepth = userStateTreeDepth
+    } else if (deployEnv === 'circuit') {
+        _userStateTreeDepth = circuitUserStateTreeDepth
+    } else {
+        throw new Error('Only contract and circuit testing env are supported')
+    }
+
+    const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
+    return getNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
 }
 
 export {
+    SMT_ONE_LEAF,
+    SMT_ZERO_LEAF,
     SimpleContractJSON,
     bigIntToBuf,
     bufToBigInt,
@@ -218,7 +265,11 @@ export {
     genNoAttestationNullifierKey,
     genNoAttestationNullifierValue,
     genStubEPKProof,
+    genNewEpochTree,
+    genNewNullifierTree,
+    genNewUserStateTree,
     getNewSMT,
     linkLibrary,
+    smtBN,
     toCompleteHexString,
 }

@@ -6,7 +6,7 @@ import {
     compileAndLoadCircuit,
     executeCircuit,
 } from './utils'
-import { getNewSMT, bufToBigInt, bigIntToBuf } from '../utils'
+import { bufToBigInt, bigIntToBuf, SMT_ONE_LEAF, genNewUserStateTree, smtBN } from '../utils'
 
 import {
     IncrementalQuinTree,
@@ -16,7 +16,7 @@ import {
     hashOne,
 } from 'maci-crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
+import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 
 describe('Prove reputation from attester circuit', function () {
@@ -29,7 +29,6 @@ describe('Prove reputation from attester circuit', function () {
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof
     let userStateTree: SparseMerkleTreeImpl, userStateRoot
-    const ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
 
     let attestationRecords = {}
 
@@ -40,12 +39,8 @@ describe('Prove reputation from attester circuit', function () {
         console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         // User state
-        const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
-        userStateTree = await getNewSMT(circuitUserStateTreeDepth, defaultUserStateLeaf)
-        // Reserve leaf 0
-        let result 
-        result = await userStateTree.update(new smtBN(0), ONE_LEAF, true)
-        expect(result).to.be.true
+        userStateTree = await genNewUserStateTree("circuit")
+
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))

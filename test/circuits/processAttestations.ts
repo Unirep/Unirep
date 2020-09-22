@@ -7,7 +7,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { computeAttestationHash, computeNullifier, getNewSMT, bufToBigInt, bigIntToBuf, genNoAttestationNullifierKey } from '../utils'
+import { computeAttestationHash, computeNullifier, bufToBigInt, bigIntToBuf, genNoAttestationNullifierKey, SMT_ONE_LEAF, genNewUserStateTree, smtBN, SMT_ZERO_LEAF } from '../utils'
 
 import {
     genRandomSalt,
@@ -16,7 +16,7 @@ import {
     SnarkBigInt,
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
-import { BigNumber as smtBN, SparseMerkleTreeImpl } from "../../crypto/SMT"
+import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 
 describe('Process attestation circuit', function () {
@@ -30,7 +30,6 @@ describe('Process attestation circuit', function () {
     const NUM_ATTESTATIONS = 3
 
     let userStateTree: SparseMerkleTreeImpl
-    const ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
     let oldPosReps, oldNegReps, oldGraffities
 
@@ -53,18 +52,14 @@ describe('Process attestation circuit', function () {
         overwriteGraffitis = []
 
         // User state
-        const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
-        userStateTree = await getNewSMT(circuitUserStateTreeDepth, defaultUserStateLeaf)
+        userStateTree = await genNewUserStateTree("circuit")
         intermediateUserStateTreeRoots = []
         userStateTreePathElements = []
         noAttestationUserStateTreePathElements = []
         oldPosReps = []
         oldNegReps = []
         oldGraffities = []
-        // Reserve leaf 0
-        let result 
-        result = await userStateTree.update(new smtBN(0), ONE_LEAF, true)
-        expect(result).to.be.true
+
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const  attesterId = i + 1
@@ -86,7 +81,7 @@ describe('Process attestation circuit', function () {
             expect(result).to.be.true
         }
         intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
-        const leafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), ONE_LEAF, true)
+        const leafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
         const leafZeroPathElements = leafZeroProof.siblings.map((p) => bufToBigInt(p))
         for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(leafZeroPathElements)
 
@@ -140,7 +135,7 @@ describe('Process attestation circuit', function () {
                     BigInt(0),
                     BigInt(0)
                 ])
-                result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
+                const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
                 expect(result).to.be.true
 
                 nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
@@ -148,7 +143,7 @@ describe('Process attestation circuit', function () {
                 const attestation_hash = computeAttestationHash(attestation)
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
-                const leafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), ONE_LEAF, true)
+                const leafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
                 const leafZeroPathElements = leafZeroProof.siblings.map((p) => bufToBigInt(p))
                 userStateTreePathElements.push(leafZeroPathElements)
 
