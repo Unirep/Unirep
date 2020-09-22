@@ -48,7 +48,7 @@ describe('Prove reputation from attester circuit', function () {
         expect(result).to.be.true
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTERS; i++) {
-            let attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
+            let attesterId = Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))
             while (attestationRecords[attesterId] !== undefined) attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
             const graffitiPreImage = genRandomSalt()
             attestationRecords[attesterId] = {
