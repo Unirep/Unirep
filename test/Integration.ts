@@ -112,7 +112,7 @@ describe('Integration', function () {
             expect(receipt.status).equal(1)
             console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
 
-            epochTrees[prevEpoch.toString()] = await genNewEpochTree()
+            epochTrees[prevEpoch.toString()] = await genNewEpochTree("circuit")
 
             currentEpoch = await unirepContract.currentEpoch()
             expect(currentEpoch).equal(2)
@@ -417,7 +417,7 @@ describe('Integration', function () {
             expect(receipt.status).equal(1)
             console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
 
-            epochTrees[prevEpoch.toString()] = await genNewEpochTree()
+            epochTrees[prevEpoch.toString()] = await genNewEpochTree("circuit")
 
             currentEpoch = await unirepContract.currentEpoch()
             expect(currentEpoch).equal(3)
