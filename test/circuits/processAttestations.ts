@@ -27,7 +27,7 @@ describe('Process attestation circuit', function () {
     const epoch = 1
     const nonce = 0
     const user = genIdentity()
-    const NUM_ATTESTATIONS = 3
+    const NUM_ATTESTATIONS = 10
 
     let userStateTree: SparseMerkleTreeImpl
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
