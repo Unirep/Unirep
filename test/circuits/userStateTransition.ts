@@ -9,11 +9,14 @@ import {
     genRandomSalt,
     hash5,
     hashLeftRight,
+    stringifyBigInts,
 } from 'maci-crypto'
 
 import {
     compileAndLoadCircuit,
     executeCircuit,
+    genVerifyUserStateTransitionProofAndPublicSignals,
+    verifyUserStateTransitionProof,
     getSignalByName,
 } from './utils'
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth } from "../../config/testLocal"
@@ -235,5 +238,12 @@ describe('User State Transition circuits', function () {
         }
         const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
         expect(_newGSTLeaf).to.equal(newGSTLeaf)
+
+        const startTime = Math.floor(new Date().getTime() / 1000)
+        const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+        const endTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 })

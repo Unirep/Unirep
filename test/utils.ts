@@ -9,7 +9,7 @@ import Unirep from "../artifacts/Unirep.json"
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
-import NewUserStateVerifier from "../artifacts/NewUserStateVerifier.json"
+import UserStateTransitionVerifier from "../artifacts/UserStateTransitionVerifier.json"
 import ReputationVerifier from "../artifacts/ReputationVerifier.json"
 
 // Copy contract json type from ethereum-waffle
@@ -72,10 +72,10 @@ const deployUnirep = async (
         EpochKeyValidityVerifier
     ))
 
-    console.log('Deploying NewUserStateVerifier')
+    console.log('Deploying UserStateTransitionVerifier')
     NewUserStateVerifierContract = (await deployContract(
         deployer,
-        NewUserStateVerifier
+        UserStateTransitionVerifier
     ))
 
     console.log('Deploying ReputationVerifier')
@@ -176,16 +176,6 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const genStubEPKProof = (isValid: Boolean) => {
-    let firstElement;
-    if(isValid) {
-        firstElement = 1;
-    } else {
-        firstElement = 0;
-    }
-    return [firstElement, 2, 3, 4, 5, 6, 7, 8]
-}
-
 const bufToBigInt = (buf: Buffer): SnarkBigInt => {
     return BigInt(bufToHexString(buf))
 }
@@ -265,7 +255,6 @@ export {
     genEpochKey,
     genNoAttestationNullifierKey,
     genNoAttestationNullifierValue,
-    genStubEPKProof,
     genNewEpochTree,
     genNewNullifierTree,
     genNewUserStateTree,

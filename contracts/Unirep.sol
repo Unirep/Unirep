@@ -8,7 +8,7 @@ import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
 import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
-import { NewUserStateVerifier } from './NewUserStateVerifier.sol';
+import { UserStateTransitionVerifier } from './UserStateTransitionVerifier.sol';
 import { ReputationVerifier } from './ReputationVerifier.sol';
 
 contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
@@ -23,7 +23,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
-    NewUserStateVerifier internal newUserStateVerifier;
+    UserStateTransitionVerifier internal userStateTransitionVerifier;
     ReputationVerifier internal reputationVerifier;
 
     uint256 public currentEpoch = 1;
@@ -123,7 +123,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
         EpochKeyValidityVerifier _epkValidityVerifier,
-        NewUserStateVerifier _newUserStateVerifier,
+        UserStateTransitionVerifier _userStateTransitionVerifier,
         ReputationVerifier _reputationVerifier,
         uint256 _epochLength,
         uint256 _attestingFee
@@ -133,7 +133,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
-        newUserStateVerifier = _newUserStateVerifier;
+        userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
 
         epochLength = _epochLength;
@@ -303,8 +303,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
         uint256 _newGlobalStateTreeLeaf,
-        uint256 _noAttestationNullifier,
         uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
+        uint256 _noAttestationNullifier,
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
 
@@ -368,8 +368,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
         uint256 _newGlobalStateTreeLeaf,
-        uint256 _noAttestationNullifier,
         uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
+        uint256 _noAttestationNullifier,
         uint256[8] calldata _proof) external view returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state exist in the provided global state tree
@@ -378,17 +378,17 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 4. Nullifiers of all processed attestations match
         // 5. Nullifiers of all processed attestations have not been seen before
 
-        uint256[7 + NUM_ATTESTATIONS_PER_BATCH] memory publicSignals;
+        uint256[] memory publicSignals = new uint256[](7 + NUM_ATTESTATIONS_PER_BATCH);
         publicSignals[0] = _transitionFromEpoch;
         publicSignals[1] = MAX_EPOCH_KEY_NONCE;
         publicSignals[2] = _fromGlobalStateTree;
         publicSignals[3] = _fromEpochTree;
         publicSignals[4] = _fromNullifierTreeRoot;
         publicSignals[5] = _newGlobalStateTreeLeaf;
-        publicSignals[6] = _noAttestationNullifier;
         for (uint8 i = 0; i < _nullifiers.length; i++) {
-            publicSignals[i + 7] = _nullifiers[i];
+            publicSignals[i + 6] = _nullifiers[i];
         }
+        publicSignals[7 + NUM_ATTESTATIONS_PER_BATCH - 1] = _noAttestationNullifier;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
@@ -409,7 +409,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         ) = unpackProof(_proof);
 
         // Verify the proof
-        proof.isValid = newUserStateVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        proof.isValid = userStateTransitionVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
         return proof.isValid;
     }
 

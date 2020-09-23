@@ -62,15 +62,15 @@ const genVerifyEpochKeyProofAndPublicSignals = (
     )
 }
 
-const genQvtProofAndPublicSignals = (
+const genVerifyUserStateTransitionProofAndPublicSignals = (
     inputs: any,
-    circuit?: any,
+    circuit?: any
 ) => {
     return genProofAndPublicSignals(
         inputs,
-        'prod/quadVoteTally.circom',
-        'qvt.wasm',
-        'qvt.zkey',
+        '/test/userStateTransition_test.circom',
+        'userStateTransition.wasm',
+        'userStateTransition.zkey',
         circuit,
     )
 }
@@ -143,12 +143,12 @@ const verifyEPKProof = (
     return verifyProof('verifyEpochKeyVk.json', proof, publicSignals)
 }
 
-const verifyQvtProof = (
+const verifyUserStateTransitionProof = (
     proof: any,
     publicSignals: any,
 ) => {
 
-    return verifyProof('qvtVk.json', proof, publicSignals)
+    return verifyProof('userStateTransitionVk.json', proof, publicSignals)
 }
 
 const formatProofForVerifierContract = (
@@ -173,9 +173,9 @@ export {
     formatProofForVerifierContract,
     getSignalByName,
     genVerifyEpochKeyProofAndPublicSignals,
-    genQvtProofAndPublicSignals,
+    genVerifyUserStateTransitionProofAndPublicSignals,
     verifyEPKProof,
-    verifyQvtProof,
+    verifyUserStateTransitionProof,
     genProofAndPublicSignals,
     verifyProof,
 }
