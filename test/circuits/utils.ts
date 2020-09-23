@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { SnarkProof } from 'libsemaphore'
 const circom = require('circom')
 const snarkjs = require('snarkjs')
 import * as shell from 'shelljs'
@@ -150,10 +151,26 @@ const verifyQvtProof = (
     return verifyProof('qvtVk.json', proof, publicSignals)
 }
 
+const formatProofForVerifierContract = (
+    _proof: SnarkProof,
+) => {
+
+    return ([
+        _proof.pi_a[0],
+        _proof.pi_a[1],
+        _proof.pi_b[0][1],
+        _proof.pi_b[0][0],
+        _proof.pi_b[1][1],
+        _proof.pi_b[1][0],
+        _proof.pi_c[0],
+        _proof.pi_c[1],
+    ]).map((x) => x.toString())
+}
 
 export {
     compileAndLoadCircuit,
     executeCircuit,
+    formatProofForVerifierContract,
     getSignalByName,
     genVerifyEpochKeyProofAndPublicSignals,
     genQvtProofAndPublicSignals,

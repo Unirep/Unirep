@@ -323,9 +323,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function verifyEpochKeyValidity(
+        uint256 _globalStateTree,
         uint256 _epoch,
         uint256 _epochKey,
-        uint256 _globalStateTree,
         uint256[8] calldata _proof) external view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. user has signed up
@@ -334,10 +334,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 4. epoch key is correctly computed
 
         uint256[] memory publicSignals = new uint256[](4);
-        publicSignals[0] = _epoch;
-        publicSignals[1] = _epochKey;
-        publicSignals[2] = _globalStateTree;
-        publicSignals[3] = maxEpochKeyNonce;
+        publicSignals[0] = _globalStateTree;
+        publicSignals[1] = maxEpochKeyNonce;
+        publicSignals[2] = _epoch;
+        publicSignals[3] = _epochKey;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

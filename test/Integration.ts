@@ -13,7 +13,7 @@ const { expect } = chai
 import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import Unirep from "../artifacts/Unirep.json"
 import { SparseMerkleTreeImpl, hexStrToBuf, bufToHexString } from "../crypto/SMT"
-import { compileAndLoadCircuit, executeCircuit, genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from "./circuits/utils"
+import { compileAndLoadCircuit, executeCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from "./circuits/utils"
 
 const genStubUserStateTransitionProof = genStubEPKProof
 
@@ -65,8 +65,8 @@ describe('Integration', function () {
             users[0]['userStateRoot'][currentEpoch.toString()] = emptyUserStateRoot
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
-                    commitment.toString(),
-                    emptyUserStateRoot.toString()
+                    commitment,
+                    emptyUserStateRoot
                 ]
             )
             GSTrees[currentEpoch.toString()].insert(hashedStateLeaf)
@@ -218,8 +218,8 @@ describe('Integration', function () {
             users[1]['userStateRoot'][currentEpoch.toString()] = emptyUserStateRoot
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
-                    commitment.toString(),
-                    emptyUserStateRoot.toString()
+                    commitment,
+                    emptyUserStateRoot
                 ]
             )
             GSTrees[currentEpoch.toString()].insert(hashedStateLeaf)
@@ -262,6 +262,15 @@ describe('Integration', function () {
             const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
+
+            // Verify on-chain
+            const isProofValid = await unirepContract.verifyEpochKeyValidity(
+                GSTrees[currentEpoch.toString()].root,
+                currentEpoch,
+                firstUserEpochKey,
+                formatProofForVerifierContract(results['proof']),
+            )
+            expect(isProofValid).to.be.true
         })
 
         it('First attester attest to first user', async () => {
@@ -309,6 +318,15 @@ describe('Integration', function () {
             const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
+
+            // Verify on-chain
+            const isProofValid = await unirepContract.verifyEpochKeyValidity(
+                GSTrees[currentEpoch.toString()].root,
+                currentEpoch,
+                secondUserEpochKey,
+                formatProofForVerifierContract(results['proof']),
+            )
+            expect(isProofValid).to.be.true
         })
 
         it('First attester attest to second user', async () => {
@@ -466,8 +484,8 @@ describe('Integration', function () {
             users[0]['userStateRoot'][currentEpoch.toString()] =  users[0]['userStateRoot'][prevEpoch.toString()]
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
-                    users[0]['commitment'].toString(),
-                    users[0]['userStateRoot'][currentEpoch.toString()].toString()
+                    users[0]['commitment'],
+                    users[0]['userStateRoot'][currentEpoch.toString()]
                 ]
             )
 
