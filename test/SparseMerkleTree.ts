@@ -8,8 +8,9 @@ import { epochTreeDepth } from '../config/testLocal'
 import {
     SnarkBigInt,
     hashOne,
+    hashLeftRight,
 } from '../crypto/crypto'
-import { getNewSMT, linkLibrary, toCompleteHexString } from './utils'
+import { genNewEpochTree, linkLibrary, toCompleteHexString } from './utils'
 
 import {
     BigNumber,
@@ -66,7 +67,7 @@ describe('OneTimeSparseMerkleTree', () => {
 
         OTSMTFactory = new ContractFactory(OneTimeSparseMerkleTree.abi, OneTimeSparseMerkleTree.bytecode, accounts[0])
 
-        tree = await getNewSMT(epochTreeDepth)
+        tree = await genNewEpochTree()
     })
 
     describe('initialization ', async () => {

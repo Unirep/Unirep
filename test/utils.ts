@@ -219,7 +219,8 @@ const genNewEpochTree = async (deployEnv: string = "contract"): Promise<SparseMe
     } else {
         throw new Error('Only contract and circuit testing env are supported')
     }
-    return getNewSMT(_epochTreeDepth)
+    const defaultOTSMTHash = hashLeftRight(BigInt(1), BigInt(0))
+    return getNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
 
 const genNewNullifierTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {

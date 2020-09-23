@@ -4,7 +4,10 @@ pragma experimental ABIEncoderV2;
 import { Hasher } from "./Hasher.sol";
 
 contract OneTimeSparseMerkleTree is Hasher {
-   // The tree depth
+    // Default leaf hash
+    uint256 public defaultLeafHash = hashLeftRight(uint256(1), uint256(0));
+
+    // The tree depth
     uint256 public treeLevels;
     uint256 public numLeaves;
 
@@ -48,7 +51,7 @@ contract OneTimeSparseMerkleTree is Hasher {
     function getDefaultHashes()
     public view returns (uint256[] memory) {
         uint256[] memory defaultHashes = new uint256[](treeLevels);
-        defaultHashes[0] = hashLeftRight(uint256(0), uint256(0));
+        defaultHashes[0] = defaultLeafHash;
         for (uint256 i = 1; i < treeLevels; i ++) {
             defaultHashes[i] = hashLeftRight(defaultHashes[i-1], defaultHashes[i-1]);
         }
