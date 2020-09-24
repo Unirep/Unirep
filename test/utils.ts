@@ -49,7 +49,7 @@ const deployUnirep = async (
     }
 
     let PoseidonT3Contract, PoseidonT6Contract
-    let EpochKeyValidityVerifierContract, NewUserStateVerifierContract, ReputationVerifierContract
+    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
     console.log('Deploying PoseidonT3')
     PoseidonT3Contract = (await deployContract(
@@ -73,7 +73,7 @@ const deployUnirep = async (
     ))
 
     console.log('Deploying UserStateTransitionVerifier')
-    NewUserStateVerifierContract = (await deployContract(
+    UserStateTransitionVerifierContract = (await deployContract(
         deployer,
         UserStateTransitionVerifier
     ))
@@ -107,7 +107,7 @@ const deployUnirep = async (
             maxEpochKeyNonce
         },
         EpochKeyValidityVerifierContract.address,
-        NewUserStateVerifierContract.address,
+        UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
         epochLength,
         attestingFee,
