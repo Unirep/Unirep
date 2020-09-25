@@ -33,7 +33,7 @@ describe('Prove reputation from attester circuit', function () {
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof
     let userStateTree: SparseMerkleTreeImpl, userStateRoot
 
-    let attestationRecords = {}
+    let reputationRecords = {}
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -47,23 +47,23 @@ describe('Prove reputation from attester circuit', function () {
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))
-            while (attestationRecords[attesterId] !== undefined) attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
+            while (reputationRecords[attesterId] !== undefined) attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
             const graffitiPreImage = genRandomSalt()
-            attestationRecords[attesterId] = {
+            reputationRecords[attesterId] = {
                 posRep: Math.floor(Math.random() * 100),
                 negRep: Math.floor(Math.random() * 100),
                 graffitiPreImage: graffitiPreImage,
                 graffiti: hashOne(graffitiPreImage),
             }
-            const newAttestationRecord = hash5([
-                attestationRecords[attesterId]['posRep'],
-                attestationRecords[attesterId]['negRep'],
-                attestationRecords[attesterId]['graffiti'],
+            const newReputationRecord = hash5([
+                reputationRecords[attesterId]['posRep'],
+                reputationRecords[attesterId]['negRep'],
+                reputationRecords[attesterId]['graffiti'],
                 BigInt(0),
                 BigInt(0)
             ])
-            attestationRecords[attesterId]['recordHash'] = newAttestationRecord
-            const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
+            reputationRecords[attesterId]['recordHash'] = newReputationRecord
+            const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newReputationRecord), true)
             expect(result).to.be.true
         }
 
@@ -78,11 +78,11 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('successfully prove reputation', async () => {
-        const attesterIds = Object.keys(attestationRecords)
+        const attesterIds = Object.keys(reputationRecords)
         const attesterId = attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
-        const posRep = attestationRecords[attesterId]['posRep']
-        const negRep = attestationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(attestationRecords[attesterId]['recordHash']), true)
+        const posRep = reputationRecords[attesterId]['posRep']
+        const negRep = reputationRecords[attesterId]['negRep']
+        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
         const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
 
         const circuitInputs = {
@@ -94,13 +94,13 @@ describe('Prove reputation from attester circuit', function () {
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
             attester_id: attesterId,
-            pos_rep: attestationRecords[attesterId]['posRep'],
-            neg_rep: attestationRecords[attesterId]['negRep'],
-            graffiti: attestationRecords[attesterId]['graffiti'],
+            pos_rep: reputationRecords[attesterId]['posRep'],
+            neg_rep: reputationRecords[attesterId]['negRep'],
+            graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
             max_neg_rep: negRep + 10,
-            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
+            graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
         const witness = await executeCircuit(circuit, circuitInputs)
@@ -113,11 +113,11 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with wrong attester Id should fail', async () => {
-        const attesterIds = Object.keys(attestationRecords)
+        const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = attestationRecords[attesterId]['posRep']
-        const negRep = attestationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(attestationRecords[attesterId]['recordHash']), true)
+        const posRep = reputationRecords[attesterId]['posRep']
+        const negRep = reputationRecords[attesterId]['negRep']
+        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
         const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
         const wrongAttesterId = attesterId < (NUM_ATTESTERS - 1) ? attesterId + 1 : attesterId - 1
 
@@ -130,13 +130,13 @@ describe('Prove reputation from attester circuit', function () {
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
             attester_id: wrongAttesterId,
-            pos_rep: attestationRecords[attesterId]['posRep'],
-            neg_rep: attestationRecords[attesterId]['negRep'],
-            graffiti: attestationRecords[attesterId]['graffiti'],
+            pos_rep: reputationRecords[attesterId]['posRep'],
+            neg_rep: reputationRecords[attesterId]['negRep'],
+            graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
             max_neg_rep: negRep + 10,
-            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
+            graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
         let error
@@ -151,11 +151,11 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with not exist user state should fail', async () => {
-        const attesterIds = Object.keys(attestationRecords)
+        const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = attestationRecords[attesterId]['posRep']
-        const negRep = attestationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(attestationRecords[attesterId]['recordHash']), true)
+        const posRep = reputationRecords[attesterId]['posRep']
+        const negRep = reputationRecords[attesterId]['negRep']
+        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
         const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
         const wrongUserStateRoot = genRandomSalt()
 
@@ -168,13 +168,13 @@ describe('Prove reputation from attester circuit', function () {
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
             attester_id: attesterId,
-            pos_rep: attestationRecords[attesterId]['posRep'],
-            neg_rep: attestationRecords[attesterId]['negRep'],
-            graffiti: attestationRecords[attesterId]['graffiti'],
+            pos_rep: reputationRecords[attesterId]['posRep'],
+            neg_rep: reputationRecords[attesterId]['negRep'],
+            graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
             max_neg_rep: negRep + 10,
-            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
+            graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
         let error
@@ -189,11 +189,11 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with incorrect reputation should fail', async () => {
-        const attesterIds = Object.keys(attestationRecords)
+        const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = attestationRecords[attesterId]['posRep']
-        const negRep = attestationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(attestationRecords[attesterId]['recordHash']), true)
+        const posRep = reputationRecords[attesterId]['posRep']
+        const negRep = reputationRecords[attesterId]['negRep']
+        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
         const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
         const wrongMinPosRep = posRep
 
@@ -206,13 +206,13 @@ describe('Prove reputation from attester circuit', function () {
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
             attester_id: attesterId,
-            pos_rep: attestationRecords[attesterId]['posRep'],
-            neg_rep: attestationRecords[attesterId]['negRep'],
-            graffiti: attestationRecords[attesterId]['graffiti'],
+            pos_rep: reputationRecords[attesterId]['posRep'],
+            neg_rep: reputationRecords[attesterId]['negRep'],
+            graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: wrongMinPosRep,
             max_neg_rep: negRep + 10,
-            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
+            graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
         let error
@@ -236,13 +236,13 @@ describe('Prove reputation from attester circuit', function () {
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
             attester_id: attesterId,
-            pos_rep: attestationRecords[attesterId]['posRep'],
-            neg_rep: attestationRecords[attesterId]['negRep'],
-            graffiti: attestationRecords[attesterId]['graffiti'],
+            pos_rep: reputationRecords[attesterId]['posRep'],
+            neg_rep: reputationRecords[attesterId]['negRep'],
+            graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
             max_neg_rep: wrongMaxNegRep,
-            graffiti_pre_image: attestationRecords[attesterId]['graffitiPreImage']
+            graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
         try {
@@ -256,13 +256,13 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with wrong graffiti pre image should fail', async () => {
-        const attesterIds = Object.keys(attestationRecords)
+        const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = attestationRecords[attesterId]['posRep']
-        const negRep = attestationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(attestationRecords[attesterId]['recordHash']), true)
+        const posRep = reputationRecords[attesterId]['posRep']
+        const negRep = reputationRecords[attesterId]['negRep']
+        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
         const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
-        const graffiti = attestationRecords[attesterId]['graffiti']
+        const graffiti = reputationRecords[attesterId]['graffiti']
         const wrongGraffitiPreImage = genRandomSalt()
 
         const circuitInputs = {
@@ -274,9 +274,9 @@ describe('Prove reputation from attester circuit', function () {
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
             attester_id: attesterId,
-            pos_rep: attestationRecords[attesterId]['posRep'],
-            neg_rep: attestationRecords[attesterId]['negRep'],
-            graffiti: attestationRecords[attesterId]['graffiti'],
+            pos_rep: reputationRecords[attesterId]['posRep'],
+            neg_rep: reputationRecords[attesterId]['negRep'],
+            graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: posRep - 10,
             max_neg_rep: negRep + 10,

@@ -4,8 +4,8 @@ import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, maxEpochKeyNonce, numAttestationsPerBatch} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, stringifyBigInts, hashLeftRight, hash5 } from 'maci-crypto'
-import { deployUnirep, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genEpochKey, toCompleteHexString, computeNullifier, genNewEpochTree, genNewNullifierTree, smtBN, bigIntToBuf, genNewUserStateTree, bufToBigInt, SMT_ONE_LEAF, SMT_ZERO_LEAF } from './utils'
+import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
+import { deployUnirep, genNoAttestationNullifierKey, genNoAttestationNullifierValue, genEpochKey, toCompleteHexString, computeNullifier, genNewEpochTree, genNewNullifierTree, smtBN, bigIntToBuf, genNewUserStateTree, bufToBigInt, SMT_ONE_LEAF, SMT_ZERO_LEAF, computeReputationHash } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -13,7 +13,7 @@ const { expect } = chai
 import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import Unirep from "../artifacts/Unirep.json"
 import { SparseMerkleTreeImpl, hexStrToBuf, bufToHexString } from "../crypto/SMT"
-import { compileAndLoadCircuit, executeCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyUserStateTransitionProof } from "./circuits/utils"
+import { compileAndLoadCircuit, executeCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
 
 describe('Integration', function () {
     this.timeout(500000)
@@ -37,10 +37,7 @@ describe('Integration', function () {
 
     let usersLocalStateTransitionData = {}
 
-    let circuit
     before(async () => {
-        circuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
-
         accounts = await ethers.getSigners()
 
         unirepContract = await deployUnirep(<Wallet>accounts[0], "circuit")
@@ -67,6 +64,7 @@ describe('Integration', function () {
             users[0]['userStateTree'] = await genNewUserStateTree("circuit")
             users[0]['userStateTreeRoot'] = new Object()
             users[0]['userStateTreeRoot'][currentEpoch.toString()] = users[0]['userStateTree'].getRootHash()
+            users[0]['userStateLeaves'] = new Object()
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
                     commitment,
@@ -89,7 +87,7 @@ describe('Integration', function () {
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            attesters[0]['id'] = await unirepContract.attesters(attesters[0]['addr'])
+            attesters[0]['id'] = (await unirepContract.attesters(attesters[0]['addr'])).toNumber()
         })
 
         it('Global state tree built from events should match', async () => {
@@ -211,13 +209,13 @@ describe('Integration', function () {
                 nullifier_tree_root: bufToBigInt(oldNullifierTreeRoot),
                 nullifier_tree_path_elements: nullifierTreePathElements
             }
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
             const newHashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
-                    users[0]['commitment'].toString(),
+                    users[0]['commitment'],
                     users[0]['userStateTreeRoot'][fromEpoch]
                 ]
             )
@@ -297,6 +295,7 @@ describe('Integration', function () {
             users[1]['userStateTree'] = await genNewUserStateTree("circuit")
             users[1]['userStateTreeRoot'] = new Object()
             users[1]['userStateTreeRoot'][currentEpoch.toString()] = users[1]['userStateTree'].getRootHash()
+            users[1]['userStateLeaves'] = new Object()
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
                     commitment,
@@ -319,7 +318,7 @@ describe('Integration', function () {
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
-            attesters[1]['id'] = await unirepContract.attesters(attesters[1]['addr'])
+            attesters[1]['id'] = (await unirepContract.attesters(attesters[1]['addr'])).toNumber()
         })
 
         it('Verify epoch key of first user', async () => {
@@ -359,11 +358,12 @@ describe('Integration', function () {
         it('First attester attest to first user', async () => {
             const nonce = 0
             const firstUserEpochKey = genEpochKey(users[0]['id'].identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
             const attestation = {
-                attesterId: attesters[0]['id'].toString(),
-                posRep: 1,
-                negRep: 0,
-                graffiti: genRandomSalt().toString(),
+                attesterId: attesters[0]['id'],
+                posRep: 3,
+                negRep: 1,
+                graffiti: hashOne(graffitiPreImage),
                 overwriteGraffiti: true,
             }
             const tx = await unirepContractCalledByFisrtAttester.submitAttestation(
@@ -383,14 +383,16 @@ describe('Integration', function () {
                 posRep: 0,
                 negRep: 0,
                 graffiti: 0,
+                graffitiPreImage: graffitiPreImage
             }
             const newReps = {
                 posRep: 0 + attestation['posRep'],
                 negRep: 0 + attestation['negRep'],
                 graffiti: attestation['overwriteGraffiti'] ? attestation['graffiti'] : 0,
+                graffitiPreImage: attestation['overwriteGraffiti'] ? graffitiPreImage : 0,
             }
-            const oldRepsHash = hash5([BigInt(oldReps['posRep']), BigInt(oldReps['negRep']), BigInt(oldReps['graffiti']), BigInt(0), BigInt(0)])
-            const newRepsHash = hash5([BigInt(newReps['posRep']), BigInt(newReps['negRep']), BigInt(newReps['graffiti']), BigInt(0), BigInt(0)])
+            const oldRepsHash = computeReputationHash(oldReps)
+            const newRepsHash = computeReputationHash(newReps)
             const USTLeafProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldRepsHash), true)
             const USTLeafPathElements = USTLeafProof.siblings.map((p) => bufToBigInt(p))
             const nullifier = computeNullifier(users[0]['id'].identityNullifier, attestation['attesterId'], currentEpoch.toNumber(), circuitNullifierTreeDepth)
@@ -407,6 +409,7 @@ describe('Integration', function () {
             }
             usersLocalStateTransitionData[0][firstUserEpochKey.toString()] = [dataForApplyAttestation]
             // Update user state tree
+            users[0]['userStateLeaves'][attestation['attesterId']] = newReps
             const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newRepsHash), true)
             expect(result).to.be.true
             users[0]['userStateTreeRoot'][currentEpoch.toString()] = users[0]['userStateTree'].getRootHash()
@@ -449,11 +452,12 @@ describe('Integration', function () {
         it('First attester attest to second user', async () => {
             const nonce = 0
             const secondUserEpochKey = genEpochKey(users[1]['id'].identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
             const attestation = {
-                attesterId: attesters[0]['id'].toString(),
+                attesterId: attesters[0]['id'],
                 posRep: 2,
-                negRep: 0,
-                graffiti: genRandomSalt().toString(),
+                negRep: 6,
+                graffiti: hashOne(graffitiPreImage),
                 overwriteGraffiti: true,
             }
             const tx = await unirepContractCalledByFisrtAttester.submitAttestation(
@@ -473,14 +477,16 @@ describe('Integration', function () {
                 posRep: 0,
                 negRep: 0,
                 graffiti: 0,
+                graffitiPreImage: graffitiPreImage,
             }
             const newReps = {
                 posRep: 0 + attestation['posRep'],
                 negRep: 0 + attestation['negRep'],
                 graffiti: attestation['overwriteGraffiti'] ? attestation['graffiti'] : 0,
+                graffitiPreImage: attestation['overwriteGraffiti'] ? graffitiPreImage : 0,
             }
-            const oldRepsHash = hash5([BigInt(oldReps['posRep']), BigInt(oldReps['negRep']), BigInt(oldReps['graffiti']), BigInt(0), BigInt(0)])
-            const newRepsHash = hash5([BigInt(newReps['posRep']), BigInt(newReps['negRep']), BigInt(newReps['graffiti']), BigInt(0), BigInt(0)])
+            const oldRepsHash = computeReputationHash(oldReps)
+            const newRepsHash = computeReputationHash(newReps)
             const USTLeafProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldRepsHash), true)
             const USTLeafPathElements = USTLeafProof.siblings.map((p) => bufToBigInt(p))
             const nullifier = computeNullifier(users[1]['id'].identityNullifier, attestation['attesterId'], currentEpoch.toNumber(), circuitNullifierTreeDepth)
@@ -497,6 +503,7 @@ describe('Integration', function () {
             }
             usersLocalStateTransitionData[1][secondUserEpochKey.toString()] = [dataForApplyAttestation]
             // Update user state tree
+            users[1]['userStateLeaves'][attestation['attesterId']] = newReps
             const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newRepsHash), true)
             expect(result).to.be.true
             users[1]['userStateTreeRoot'][currentEpoch.toString()] = users[1]['userStateTree'].getRootHash()
@@ -505,11 +512,12 @@ describe('Integration', function () {
         it('Second attester attest to second user', async () => {
             const nonce = 0
             const secondUserEpochKey = genEpochKey(users[1]['id'].identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
             const attestation = {
-                attesterId: attesters[1]['id'].toString(),
+                attesterId: attesters[1]['id'],
                 posRep: 0,
                 negRep: 3,
-                graffiti: genRandomSalt().toString(),
+                graffiti: hashOne(graffitiPreImage),
                 overwriteGraffiti: true,
             }
             const tx = await unirepContractCalledBySecondAttester.submitAttestation(
@@ -529,9 +537,10 @@ describe('Integration', function () {
                 posRep: oldReps['posRep'] + attestation['posRep'],
                 negRep: oldReps['negRep'] + attestation['negRep'],
                 graffiti: attestation['overwriteGraffiti'] ? attestation['graffiti'] : oldReps['graffiti'],
+                graffitiPreImage: attestation['overwriteGraffiti'] ? graffitiPreImage : oldReps['graffitiPreImage'],
             }
-            const oldRepsHash = hash5([BigInt(oldReps['posRep']), BigInt(oldReps['negRep']), BigInt(oldReps['graffiti']), BigInt(0), BigInt(0)])
-            const newRepsHash = hash5([BigInt(newReps['posRep']), BigInt(newReps['negRep']), BigInt(newReps['graffiti']), BigInt(0), BigInt(0)])
+            const oldRepsHash = computeReputationHash(oldReps)
+            const newRepsHash = computeReputationHash(newReps)
             const USTLeafProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldRepsHash), true)
             const USTLeafPathElements = USTLeafProof.siblings.map((p) => bufToBigInt(p))
             const nullifier = computeNullifier(users[1]['id'].identityNullifier, attestation['attesterId'], currentEpoch.toNumber(), circuitNullifierTreeDepth)
@@ -547,6 +556,7 @@ describe('Integration', function () {
             }
             usersLocalStateTransitionData[1][secondUserEpochKey.toString()].push(dataForApplyAttestation)
             // Update user state tree
+            users[1]['userStateLeaves'][attestation['attesterId']] = newReps
             const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newRepsHash), true)
             expect(result).to.be.true
             users[1]['userStateTreeRoot'][currentEpoch.toString()] = users[1]['userStateTree'].getRootHash()
@@ -581,13 +591,11 @@ describe('Integration', function () {
                 let attestations: any[] = Object.values(epochKeyToAttestationsMap[epochKey])
 
                 for (let i = 0; i < attestations_.length; i++) {
-                    expect(
-                        attestations[i]['attesterId'] == attestations_[i]['_attesterId'].toString() &&
-                        attestations[i]['posRep'] == attestations_[i]['_posRep'].toNumber() &&
-                        attestations[i]['negRep'] == attestations_[i]['_negRep'].toNumber() &&
-                        attestations[i]['graffiti'] == attestations_[i]['_graffiti'].toString() &&
-                        attestations[i]['overwriteGraffiti'] == attestations_[i]['_overwriteGraffiti']
-                    ).to.be.true
+                    expect(attestations[i]['attesterId']).to.be.equal(attestations_[i]['_attesterId'])
+                    expect(attestations[i]['posRep']).to.be.equal(attestations_[i]['_posRep'])
+                    expect(attestations[i]['negRep']).to.be.equal(attestations_[i]['_negRep'])
+                    expect(attestations[i]['graffiti']).to.be.equal(attestations_[i]['_graffiti'])
+                    expect(attestations[i]['overwriteGraffiti']).to.be.equal(attestations_[i]['_overwriteGraffiti'])
                 }
             }
         })
@@ -747,14 +755,14 @@ describe('Integration', function () {
                 nullifier_tree_root: bufToBigInt(oldNullifierTreeRoot),
                 nullifier_tree_path_elements: nullifierTreePathElements
             }
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
             users[0]['userStateTreeRoot'][currentEpoch.toString()] = users[0]['userStateTreeRoot'][fromEpoch]
             const newHashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
-                    users[0]['commitment'].toString(),
+                    users[0]['commitment'],
                     users[0]['userStateTreeRoot'][fromEpoch]
                 ]
             )
@@ -786,6 +794,7 @@ describe('Integration', function () {
             const stateTransitionArgs: any = stateTransitionByEpochEvent[0]['args']
             const newGSTLeafArgs: any = newGSTLeafByEpochEvent[0]['args']
 
+            // Verify on-chain
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newGSTLeafArgs['_hashedLeaf'],
                 stateTransitionArgs['_nullifiers'],
@@ -818,6 +827,59 @@ describe('Integration', function () {
             users[0]['GSTreeLeafIndex'][currentEpoch.toString()] = 0
 
             users[0]['latestTransitionedToEpoch'] = currentEpoch.toString()
+        })
+
+        it('First user prove his reputation', async () => {
+            const attesterId = 1  // Prove reputation received from first attester
+            const reputationRecord = users[0]['userStateLeaves'][attesterId]
+            const posRep = reputationRecord['posRep']
+            const negRep = reputationRecord['negRep']
+            const graffiti = reputationRecord['graffiti']
+            const graffitiPreImage = reputationRecord['graffitiPreImage']
+            const userStateTree = users[0]['userStateTree']
+            const GSTreeProof = GSTrees[currentEpoch.toString()].genMerklePath(users[0]['GSTreeLeafIndex'][currentEpoch.toString()])
+            const GSTreeRoot = GSTrees[currentEpoch.toString()].root
+            const reputationRecordHash = computeReputationHash(reputationRecord)
+            const reputationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecordHash), true)
+            const pathElements = reputationProof.siblings.map((p) => bufToBigInt(p))
+
+            const minPosRep = 1
+            const maxNegRep = 10
+            const circuitInputs = {
+                identity_pk: users[0]['id']['keypair']['pubKey'],
+                identity_nullifier: users[0]['id']['identityNullifier'], 
+                identity_trapdoor: users[0]['id']['identityTrapdoor'],
+                user_state_root: bufToBigInt(users[0]['userStateTreeRoot'][currentEpoch.toString()]),
+                GST_path_index: GSTreeProof.indices,
+                GST_path_elements: GSTreeProof.pathElements,
+                GST_root: GSTreeRoot,
+                attester_id: attesterId,
+                pos_rep: posRep,
+                neg_rep: negRep,
+                graffiti: graffiti,
+                UST_path_elements: pathElements,
+                min_pos_rep: minPosRep,
+                max_neg_rep: maxNegRep,
+                graffiti_pre_image: graffitiPreImage
+            }
+
+            const startTime = Math.floor(new Date().getTime() / 1000)
+            const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const endTime = Math.floor(new Date().getTime() / 1000)
+            console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+            const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+            expect(isValid).to.be.true
+
+            // Verify on-chain
+            const isProofValid = await unirepContract.verifyReputation(
+                GSTreeRoot,
+                attesterId,
+                minPosRep,
+                maxNegRep,
+                graffitiPreImage,
+                formatProofForVerifierContract(results['proof']),
+            )
+            expect(isProofValid).to.be.true
         })
     })
 })

@@ -152,6 +152,16 @@ const computeAttestationHash = (attestation: any): SnarkBigInt => {
     ])
 }
 
+const computeReputationHash = (reputation: any): SnarkBigInt => {
+    return hash5([
+        reputation['posRep'],
+        reputation['negRep'],
+        reputation['graffiti'],
+        BigInt(0),
+        BigInt(0),
+    ])
+}
+
 const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: number, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
     let nullifier = hash5([identityNullifier, BigInt(attesterId), BigInt(epoch), BigInt(0), BigInt(0)])
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
@@ -252,6 +262,7 @@ export {
     deployUnirep,
     computeAttestationHash,
     computeNullifier,
+    computeReputationHash,
     genEpochKey,
     genNoAttestationNullifierKey,
     genNoAttestationNullifierValue,
