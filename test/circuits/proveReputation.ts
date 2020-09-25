@@ -5,8 +5,10 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
+    genVerifyReputationProofAndPublicSignals,
+    verifyProveReputationProof,
 } from './utils'
-import { bufToBigInt, bigIntToBuf, SMT_ONE_LEAF, genNewUserStateTree, smtBN } from '../utils'
+import { bufToBigInt, bigIntToBuf, genNewUserStateTree, smtBN } from '../utils'
 
 import {
     IncrementalQuinTree,
@@ -14,6 +16,7 @@ import {
     hash5,
     hashLeftRight,
     hashOne,
+    stringifyBigInts,
 } from 'maci-crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
@@ -101,6 +104,12 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const witness = await executeCircuit(circuit, circuitInputs)
+        const startTime = Math.floor(new Date().getTime() / 1000)
+        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+        const endTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('prove reputation with wrong attester Id should fail', async () => {
