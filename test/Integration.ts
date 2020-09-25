@@ -37,7 +37,15 @@ describe('Integration', function () {
 
     let usersLocalStateTransitionData = {}
 
+    let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
     before(async () => {
+        const startCompileTime = Math.floor(new Date().getTime() / 1000)
+        verifyEpochKeyCircuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
+        verifyUserStateTransitionCircuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
+        verifyReputationCircuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
+        const endCompileTime = Math.floor(new Date().getTime() / 1000)
+        console.log(`Total compile time for three circuits: ${endCompileTime - startCompileTime} seconds`)
+
         accounts = await ethers.getSigners()
 
         unirepContract = await deployUnirep(<Wallet>accounts[0], "circuit")
@@ -209,7 +217,7 @@ describe('Integration', function () {
                 nullifier_tree_root: bufToBigInt(oldNullifierTreeRoot),
                 nullifier_tree_path_elements: nullifierTreePathElements
             }
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
@@ -341,7 +349,7 @@ describe('Integration', function () {
                 epoch: currentEpoch.toString(),
                 epoch_key: firstUserEpochKey,
             }
-            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyEpochKeyCircuit)
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
@@ -435,7 +443,7 @@ describe('Integration', function () {
                 epoch: currentEpoch.toString(),
                 epoch_key: secondUserEpochKey,
             }
-            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyEpochKeyCircuit)
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
@@ -755,7 +763,7 @@ describe('Integration', function () {
                 nullifier_tree_root: bufToBigInt(oldNullifierTreeRoot),
                 nullifier_tree_path_elements: nullifierTreePathElements
             }
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
@@ -864,7 +872,7 @@ describe('Integration', function () {
             }
 
             const startTime = Math.floor(new Date().getTime() / 1000)
-            const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyReputationCircuit)
             const endTime = Math.floor(new Date().getTime() / 1000)
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
             const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
