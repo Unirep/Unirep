@@ -75,6 +75,19 @@ const genVerifyUserStateTransitionProofAndPublicSignals = (
     )
 }
 
+const genVerifyReputationProofAndPublicSignals = (
+    inputs: any,
+    circuit?: any
+) => {
+    return genProofAndPublicSignals(
+        inputs,
+        '/test/proveReputation_test.circom',
+        'proveReputation.wasm',
+        'proveReputation.zkey',
+        circuit,
+    )
+}
+
 const genProofAndPublicSignals = async (
     inputs: any,
     circuitFilename: string,
@@ -151,6 +164,14 @@ const verifyUserStateTransitionProof = (
     return verifyProof('userStateTransitionVk.json', proof, publicSignals)
 }
 
+const verifyProveReputationProof = (
+    proof: any,
+    publicSignals: any,
+) => {
+
+    return verifyProof('proveReputationVk.json', proof, publicSignals)
+}
+
 const formatProofForVerifierContract = (
     _proof: SnarkProof,
 ) => {
@@ -173,8 +194,10 @@ export {
     formatProofForVerifierContract,
     getSignalByName,
     genVerifyEpochKeyProofAndPublicSignals,
+    genVerifyReputationProofAndPublicSignals,
     genVerifyUserStateTransitionProofAndPublicSignals,
     verifyEPKProof,
+    verifyProveReputationProof,
     verifyUserStateTransitionProof,
     genProofAndPublicSignals,
     verifyProof,

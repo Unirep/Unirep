@@ -425,13 +425,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 2. negative reputation is less than `_max_neg_rep`
         // 3. hash of graffiti pre-image matches
 
-        uint256[5] memory publicSignals = [
-            _globalStateTree,
-            _attesterId,
-            _min_pos_rep,
-            _max_neg_rep,
-            _graffiti_pre_image
-        ];
+        uint256[] memory publicSignals = new uint256[](5);
+        publicSignals[0] = _globalStateTree;
+        publicSignals[1] = _attesterId;
+        publicSignals[2] = _min_pos_rep;
+        publicSignals[3] = _max_neg_rep;
+        publicSignals[4] = _graffiti_pre_image;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
