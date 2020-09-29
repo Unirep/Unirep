@@ -1,6 +1,7 @@
 pragma experimental ABIEncoderV2;
 pragma solidity ^0.6.0;
 
+import "./SafeMath.sol";
 import { DomainObjs } from './DomainObjs.sol';
 import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
 import { OneTimeSparseMerkleTree } from "./OneTimeSparseMerkleTree.sol";
@@ -12,6 +13,7 @@ import { UserStateTransitionVerifier } from './UserStateTransitionVerifier.sol';
 import { ReputationVerifier } from './ReputationVerifier.sol';
 
 contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
+    using SafeMath for uint256;
 
     // A nothing-up-my-sleeve zero value
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
@@ -50,6 +52,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     // Fee required for submitting an attestation
     uint256 public attestingFee;
+    // Attesting fee collected so far
+    uint256 public collectedAttestingFee;
+    // Mapping of voluteers that execute epoch transition to compensation they earned
+    mapping(address => uint256) public epochTransitionCompenstation;
 
     // A mapping between each attesters’ Ethereum address and their attester ID.
     // Attester IDs are incremental and start from 1.
@@ -214,8 +220,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // Before attesting to a given epoch key, an attester must
         // verify validity of the epoch key using `verifyEpochKeyValidity` function.
 
-        // Burn the fee
-        address(0).transfer(msg.value);
+        // Add to the cumulated attesting fee
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
         // Add the epoch key to epoch key list of current epoch
         // if it is been attested to the first time.
@@ -253,6 +259,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function beginEpochTransition() external {
         require(block.timestamp - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
 
+        uint256 initGas = gasleft();
+
         address epochTreeAddr;
         if(epochKeys[currentEpoch].numKeys > 0) {
             epochTreeAddr = finalizeAllAttestations();
@@ -263,8 +271,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         latestEpochTransitionTime = block.timestamp;
         currentEpoch ++;
 
-        // TODO: Pay the caller
-        // msg.sender.transfer();
+        uint256 gasUsed = gasleft().sub(initGas);
+        epochTransitionCompenstation[msg.sender] = epochTransitionCompenstation[msg.sender].add(gasUsed.mul(tx.gasprice));
     }
 
     function finalizeAllAttestations() internal returns (address) {
@@ -492,5 +500,20 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 h = hashedBlankStateLeaf();
 
         return computeEmptyRoot(_levels, h);
+    }
+
+    /*
+     * Functions to burn fee and collect compenstation.
+     */
+    function burnAttestingFee() external {
+        uint256 amount = collectedAttestingFee;
+        collectedAttestingFee = 0;
+        address(0).call{value: amount};
+    }
+
+    function collectEpochTransitionCompenstation() external {
+        uint256 amount = epochTransitionCompenstation[msg.sender];
+        epochTransitionCompenstation[msg.sender] = 0;
+        msg.sender.call{value: amount};
     }
 }
