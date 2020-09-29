@@ -90,11 +90,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 indexed _epoch,
         uint256 indexed _epochKey,
         address indexed _attester,
-        uint256 _attesterId,
-        uint256 _posRep,
-        uint256 _negRep,
-        uint256 _graffiti,
-        bool _overwriteGraffiti
+        Attestation attestation
     );
 
     event EpochEnded(uint256 indexed _epoch, address _epochTreeAddr);
@@ -250,11 +246,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             currentEpoch,
             epochKey,
             msg.sender,
-            attestation.attesterId,
-            attestation.posRep,
-            attestation.negRep,
-            attestation.graffiti,
-            attestation.overwriteGraffiti
+            attestation
         );
     }
 
