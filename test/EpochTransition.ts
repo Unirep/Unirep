@@ -104,12 +104,16 @@ describe('Epoch Transition', () => {
 
         // Fast-forward epochLength of seconds
         await ethers.provider.send("evm_increaseTime", [epochLength])
+        // Assert no epoch transition compensation is dispensed to volunteer
+        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.be.equal(0)
         // Begin epoch transition
-        let tx = await unirepContract.beginEpochTransition({gasLimit: 12000000})
+        let tx = await unirepContractCalledByAttester.beginEpochTransition({gasLimit: 12000000})
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
         console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
-        
+        // Verify compensation to the volunteer increased
+        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.gt(0)
+
         // Parse epoch tree address and read from epoch tree
         // And verify that epoch keys and hashchains both match
         const parsed_log = unirepContract.interface.parseLog(receipt.logs[0])
@@ -197,5 +201,14 @@ describe('Epoch Transition', () => {
 
         let epoch_ = await unirepContract.currentEpoch()
         expect(epoch_).equal(Number(epoch) + 1)
+    })
+
+    it('collecting epoch transition compensation should succeed', async () => {
+        const compensation = await unirepContract.epochTransitionCompensation(attesterAddress)
+        expect(compensation).to.gt(0)
+        // Set gas price to 0 so attester will not be charged transaction fee
+        await expect(() => unirepContractCalledByAttester.collectEpochTransitionCompensation({gasPrice: 0}))
+            .to.changeBalance(attester, compensation)
+        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.equal(0)
     })
 })

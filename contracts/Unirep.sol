@@ -2,6 +2,7 @@ pragma experimental ABIEncoderV2;
 pragma solidity ^0.6.0;
 
 import "./SafeMath.sol";
+import "./Address.sol";
 import { DomainObjs } from './DomainObjs.sol';
 import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
 import { OneTimeSparseMerkleTree } from "./OneTimeSparseMerkleTree.sol";
@@ -55,7 +56,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
     // Mapping of voluteers that execute epoch transition to compensation they earned
-    mapping(address => uint256) public epochTransitionCompenstation;
+    mapping(address => uint256) public epochTransitionCompensation;
 
     // A mapping between each attesters’ Ethereum address and their attester ID.
     // Attester IDs are incremental and start from 1.
@@ -271,8 +272,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         latestEpochTransitionTime = block.timestamp;
         currentEpoch ++;
 
-        uint256 gasUsed = gasleft().sub(initGas);
-        epochTransitionCompenstation[msg.sender] = epochTransitionCompenstation[msg.sender].add(gasUsed.mul(tx.gasprice));
+        uint256 gasUsed = initGas.sub(gasleft());
+        epochTransitionCompensation[msg.sender] = epochTransitionCompensation[msg.sender].add(gasUsed.mul(tx.gasprice));
     }
 
     function finalizeAllAttestations() internal returns (address) {
@@ -508,12 +509,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function burnAttestingFee() external {
         uint256 amount = collectedAttestingFee;
         collectedAttestingFee = 0;
-        address(0).call{value: amount};
+        Address.sendValue(address(0), amount);
     }
 
-    function collectEpochTransitionCompenstation() external {
-        uint256 amount = epochTransitionCompenstation[msg.sender];
-        epochTransitionCompenstation[msg.sender] = 0;
-        msg.sender.call{value: amount};
+    function collectEpochTransitionCompensation() external {
+        uint256 amount = epochTransitionCompensation[msg.sender];
+        epochTransitionCompensation[msg.sender] = 0;
+        Address.sendValue(msg.sender, amount);
     }
 }

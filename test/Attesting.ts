@@ -56,6 +56,8 @@ describe('Attesting', () => {
             graffiti: genRandomSalt().toString(),
             overwriteGraffiti: true,
         }
+        // Assert no attesting fees are collected yet
+        expect(await unirepContract.collectedAttestingFee()).to.be.equal(0)
         const tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
             epochKey,
@@ -64,6 +66,9 @@ describe('Attesting', () => {
         const receipt = await tx.wait()
 
         expect(receipt.status).equal(1)
+
+        // Verify attesting fee is collected
+        expect(await unirepContract.collectedAttestingFee()).to.be.equal(attestingFee)
 
         // Verify attestation hash chain
         let attestationHashChain = hashLeftRight(
@@ -212,5 +217,12 @@ describe('Attesting', () => {
         // Verify epoch key is NOT added into epoch key list again
         let numEpochKey = await unirepContract.getNumEpochKey(epoch)
         expect(numEpochKey).equal(1)
+    })
+
+    it('burn collected attesting fee should work', async () => {
+        expect(await unirepContract.collectedAttestingFee()).to.be.equal(attestingFee.mul(2))
+        await unirepContractCalledByAttester.burnAttestingFee()
+        expect(await unirepContract.collectedAttestingFee()).to.be.equal(0)
+        expect(await ethers.provider.getBalance(unirepContract.address)).to.equal(0)
     })
 })
