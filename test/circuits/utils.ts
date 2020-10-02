@@ -10,10 +10,11 @@ import {
     unstringifyBigInts,
 } from 'maci-crypto'
 
+const zkutilPath = "~/.cargo/bin/zkutil"
 
 /*
  * @param circuitPath The subpath to the circuit file (e.g.
- *     test/batchProcessMessage_test.circom)
+ *     test/userStateTransition_test.circom)
  */
 const compileAndLoadCircuit = async (
     circuitPath: string
@@ -56,8 +57,9 @@ const genVerifyEpochKeyProofAndPublicSignals = (
     return genProofAndPublicSignals(
         inputs,
         '/test/verifyEpochKey_test.circom',
+        'verifyEpochKeyCircuit.r1cs',
         'verifyEpochKey.wasm',
-        'verifyEpochKey.zkey',
+        'verifyEpochKey.params',
         circuit,
     )
 }
@@ -69,8 +71,9 @@ const genVerifyUserStateTransitionProofAndPublicSignals = (
     return genProofAndPublicSignals(
         inputs,
         '/test/userStateTransition_test.circom',
+        'userStateTransitionCircuit.r1cs',
         'userStateTransition.wasm',
-        'userStateTransition.zkey',
+        'userStateTransition.params',
         circuit,
     )
 }
@@ -82,8 +85,9 @@ const genVerifyReputationProofAndPublicSignals = (
     return genProofAndPublicSignals(
         inputs,
         '/test/proveReputation_test.circom',
+        'proveReputationCircuit.r1cs',
         'proveReputation.wasm',
-        'proveReputation.zkey',
+        'proveReputation.params',
         circuit,
     )
 }
@@ -91,12 +95,14 @@ const genVerifyReputationProofAndPublicSignals = (
 const genProofAndPublicSignals = async (
     inputs: any,
     circuitFilename: string,
+    circuitR1csFilename: string,
     circuitWasmFilename: string,
-    zkeyFilename: string,
+    paramsFilename: string,
     circuit?: any,
 ) => {
     const date = Date.now()
-    const zkeyPath = path.join(__dirname, '../../build/', zkeyFilename)
+    const paramsPath = path.join(__dirname, '../../build/', paramsFilename)
+    const circuitR1csPath = path.join(__dirname, '../../build/', circuitR1csFilename)
     const circuitWasmPath = path.join(__dirname, '../../build/', circuitWasmFilename)
     const inputJsonPath = path.join(__dirname, '../../build/' + date + '.input.json')
     const witnessPath = path.join(__dirname, '../../build/' + date + '.witness.wtns')
@@ -118,7 +124,7 @@ const genProofAndPublicSignals = async (
     const witnessJsonCmd = `${snarkjsCmd} wej ${witnessPath} ${witnessJsonPath}`
     shell.exec(witnessJsonCmd)
 
-    const proveCmd = `${snarkjsCmd} g16p ${zkeyPath} ${witnessPath} ${proofPath} ${publicJsonPath}`
+    const proveCmd = `${zkutilPath} prove -c ${circuitR1csPath} -p ${paramsPath} -w ${witnessJsonPath} -r ${proofPath} -o ${publicJsonPath}`
 
     shell.exec(proveCmd)
 
@@ -138,38 +144,96 @@ const genProofAndPublicSignals = async (
 }
 
 const verifyProof = async (
-    vkFilename: string,
-    proof: any,
-    publicSignals: any,
+    paramsFilename: string,
+    proofFilename: string,
+    publicSignalsFilename: string,
 ): Promise<boolean> => {
-    const vkFilepath = path.join(__dirname, '../../build/', vkFilename)
-    const vk = JSON.parse(fs.readFileSync(vkFilepath).toString())
+    const paramsPath = path.join(__dirname, '../../build/', paramsFilename)
+    const proofPath = path.join(__dirname, '../../build/', proofFilename)
+    const publicSignalsPath = path.join(__dirname, '../../build/', publicSignalsFilename)
 
-    return await snarkjs.groth16.verify(vk, publicSignals, proof)
+    const verifyCmd = `${zkutilPath} verify -p ${paramsPath} -r ${proofPath} -i ${publicSignalsPath}`
+    const output = shell.exec(verifyCmd).stdout.trim()
+
+    shell.rm('-f', proofPath)
+    shell.rm('-f', publicSignalsPath)
+
+    return output === 'Proof is correct'
 }
 
 const verifyEPKProof = (
     proof: any,
     publicSignals: any,
 ) => {
+    const date = Date.now().toString()
+    const proofFilename = `${date}.verifyEpochKey.proof.json`
+    const publicSignalsFilename = `${date}.verifyEpochKey.publicSignals.json`
 
-    return verifyProof('verifyEpochKeyVk.json', proof, publicSignals)
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', proofFilename),
+        JSON.stringify(
+            stringifyBigInts(proof)
+        )
+    )
+
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', publicSignalsFilename),
+        JSON.stringify(
+            stringifyBigInts(publicSignals)
+        )
+    )
+
+    return verifyProof('verifyEpochKey.params', proofFilename, publicSignalsFilename)
 }
 
 const verifyUserStateTransitionProof = (
     proof: any,
     publicSignals: any,
 ) => {
+    const date = Date.now().toString()
+    const proofFilename = `${date}.userStateTransition.proof.json`
+    const publicSignalsFilename = `${date}.userStateTransition.publicSignals.json`
 
-    return verifyProof('userStateTransitionVk.json', proof, publicSignals)
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', proofFilename),
+        JSON.stringify(
+            stringifyBigInts(proof)
+        )
+    )
+
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', publicSignalsFilename),
+        JSON.stringify(
+            stringifyBigInts(publicSignals)
+        )
+    )
+
+    return verifyProof('userStateTransition.params', proofFilename, publicSignalsFilename)
 }
 
 const verifyProveReputationProof = (
     proof: any,
     publicSignals: any,
 ) => {
+    const date = Date.now().toString()
+    const proofFilename = `${date}.proveReputation.proof.json`
+    const publicSignalsFilename = `${date}.proveReputation.publicSignals.json`
 
-    return verifyProof('proveReputationVk.json', proof, publicSignals)
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', proofFilename),
+        JSON.stringify(
+            stringifyBigInts(proof)
+        )
+    )
+
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', publicSignalsFilename),
+        JSON.stringify(
+            stringifyBigInts(publicSignals)
+        )
+    )
+
+    return verifyProof('proveReputation.params', proofFilename, publicSignalsFilename)
 }
 
 const formatProofForVerifierContract = (
