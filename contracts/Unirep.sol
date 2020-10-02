@@ -513,6 +513,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function collectEpochTransitionCompensation() external {
+        // NOTE: currently there are no revenue to pay for epoch transition compensation
         uint256 amount = epochTransitionCompensation[msg.sender];
         epochTransitionCompensation[msg.sender] = 0;
         Address.sendValue(msg.sender, amount);

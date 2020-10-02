@@ -5,6 +5,52 @@ include "./incrementalMerkleTree.circom";
 include "./sparseMerkleTree.circom";
 include "./processAttestations.circom";
 
+template epochKeyExist(epoch_tree_depth) {
+    signal input identity_nullifier;
+    signal input epoch;
+    signal input nonce;
+    signal input hash_chain_result;
+    signal input epoch_tree_root;
+    signal input path_elements[epoch_tree_depth][1];
+
+    component epochKeyHasher = Hasher5();
+    epochKeyHasher.in[0] <== identity_nullifier;
+    epochKeyHasher.in[1] <== epoch;
+    epochKeyHasher.in[2] <== nonce;
+    epochKeyHasher.in[3] <== 0;
+    epochKeyHasher.in[4] <== 0;
+
+    signal quotient;
+    signal epkModed;
+    // 2.1.2 Mod epoch key
+    // circom's best practices state that we should avoid using <-- unless
+    // we know what we are doing. But this is the only way to perform the
+    // modulo operation.
+    quotient <-- epochKeyHasher.hash \ (2 ** epoch_tree_depth);
+    epkModed <-- epochKeyHasher.hash % (2 ** epoch_tree_depth);
+    // 2.1.3 Range check on moded epoch key
+    component epk_lt = LessEqThan(epoch_tree_depth);
+    epk_lt.in[0] <== epkModed;
+    epk_lt.in[1] <== 2 ** epoch_tree_depth - 1;
+    epk_lt.out === 1;
+    // 2.1.4 Range check on quotient
+    component quot_lt = LessEqThan(254 - epoch_tree_depth);
+    quot_lt.in[0] <== quotient;
+    quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
+    quot_lt.out === 1;
+    // 2.1.5 Check equality
+    epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epkModed;
+
+    // 2.1.6 Check if hash chain of the epoch key exists in epoch tree
+    component epk_exists = SMTLeafExists(epoch_tree_depth);
+    epk_exists.leaf_index <== epkModed;
+    epk_exists.leaf <== hash_chain_result;
+    epk_exists.root <== epoch_tree_root;
+    for (var i = 0; i < epoch_tree_depth; i++) {
+        epk_exists.path_elements[i][0] <== path_elements[i][0];
+    }
+}
+
 template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS) {
     signal input epoch;
     signal input max_nonce;  // max epoch key nonce
@@ -77,42 +123,15 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
 
     /* 2. Process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
-    // 2.1.1 Compute epoch key
-    component epochKeyHasher = Hasher5();
-    epochKeyHasher.in[0] <== identity_nullifier;
-    epochKeyHasher.in[1] <== epoch;
-    epochKeyHasher.in[2] <== nonce;
-    epochKeyHasher.in[3] <== 0;
-    epochKeyHasher.in[4] <== 0;
-
-    signal quotient;
-    signal epkModed;
-    // 2.1.2 Mod epoch key
-    // circom's best practices state that we should avoid using <-- unless
-    // we know what we are doing. But this is the only way to perform the
-    // modulo operation.
-    quotient <-- epochKeyHasher.hash \ (2 ** epoch_tree_depth);
-    epkModed <-- epochKeyHasher.hash % (2 ** epoch_tree_depth);
-    // 2.1.3 Range check on moded epoch key
-    component epk_lt = LessEqThan(epoch_tree_depth);
-    epk_lt.in[0] <== epkModed;
-    epk_lt.in[1] <== 2 ** epoch_tree_depth - 1;
-    epk_lt.out === 1;
-    // 2.1.4 Range check on quotient
-    component quot_lt = LessEqThan(254 - epoch_tree_depth);
-    quot_lt.in[0] <== quotient;
-    quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
-    quot_lt.out === 1;
-    // 2.1.5 Check equality
-    epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epkModed;
-
-    // 2.1.6 Check if hash chain of the epoch key exists in epoch tree
-    component epk_exists = SMTLeafExists(epoch_tree_depth);
-    epk_exists.leaf_index <== epkModed;
-    epk_exists.leaf <== hash_chain_result;
-    epk_exists.root <== epoch_tree_root;
+    // 2.1 Check if epoch key exists in epoch tree
+    component epkExist = epochKeyExist(epoch_tree_depth);
+    epkExist.identity_nullifier <== identity_nullifier;
+    epkExist.epoch <== epoch;
+    epkExist.nonce <== nonce;
+    epkExist.hash_chain_result <== hash_chain_result;
+    epkExist.epoch_tree_root <== epoch_tree_root;
     for (var i = 0; i < epoch_tree_depth; i++) {
-        epk_exists.path_elements[i][0] <== epk_path_elements[i][0];
+        epkExist.path_elements[i][0] <== epk_path_elements[i][0];
     }
 
     // 2.2 Begin processing attestations
