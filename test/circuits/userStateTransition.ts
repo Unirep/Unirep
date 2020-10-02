@@ -25,225 +25,270 @@ import { bigIntToBuf, bufToBigInt, computeAttestationHash, genEpochKey, computeN
 describe('User State Transition circuits', function () {
     this.timeout(400000)
 
-    let circuit
-
-    const MAX_NONCE = 2
-    const NUM_ATTESTATIONS = 10
-
     const epoch = 1
     const nonce = 2
     const user = genIdentity()
     const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
-    let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
-    let epochTree, epochTreeRoot, epochTreePathElements
-    let nullifierTree, nullifierTreeRoot, nullifierTreePathElements
-    let userStateTree
-    let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
-    let oldPosReps, oldNegReps, oldGraffities
+    describe('Epoch key exists', () => {
 
-    let attestationRecords = {}
-    let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
-    let selectors: number[] = []
-    let nullifiers: SnarkBigInt[]
-    let hashChainResult: SnarkBigInt
+        let circuit
 
-    before(async () => {
-        const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
-        const endCompileTime = Math.floor(new Date().getTime() / 1000)
-        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
+        let epochTree, epochTreeRoot, epochTreePathElements
 
-        // Epoch tree
-        epochTree = await genNewEpochTree("circuit")
+        let hashChainResult: SnarkBigInt
 
-        // Nullifier tree
-        nullifierTreePathElements = []
-        nullifierTree = await genNewNullifierTree("circuit")
-        nullifierTreeRoot = bufToBigInt(nullifierTree.getRootHash())
+        before(async () => {
+            const startCompileTime = Math.floor(new Date().getTime() / 1000)
+            circuit = await compileAndLoadCircuit('test/epochKeyExists_test.circom')
+            const endCompileTime = Math.floor(new Date().getTime() / 1000)
+            console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
-        // User state tree
-        userStateTree = await genNewUserStateTree("circuit")
-        intermediateUserStateTreeRoots = []
-        userStateTreePathElements = []
-        noAttestationUserStateTreePathElements = []
-        oldPosReps = []
-        oldNegReps = []
-        oldGraffities = []
+            // Epoch tree
+            epochTree = await genNewEpochTree("circuit")
 
-        // Bootstrap user state
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const  attesterId = i + 1
-            if (attestationRecords[attesterId] === undefined) {
-                attestationRecords[attesterId] = {
+            hashChainResult = genRandomSalt()
+
+            const result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
+            expect(result).to.be.true
+            
+            const epochTreeProof = await epochTree.getMerkleProof(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
+            epochTreePathElements = epochTreeProof.siblings.map((p) => bufToBigInt(p))
+            epochTreeRoot = bufToBigInt(epochTree.getRootHash())
+        })
+
+        it('Existed epoch key should pass check', async () => {
+            const circuitInputs = {
+                identity_nullifier: user['identityNullifier'],
+                epoch: epoch,
+                nonce: nonce,
+                hash_chain_result: hashChainResult,
+                epoch_tree_root: epochTreeRoot,
+                path_elements: epochTreePathElements
+            }
+
+            const witness = await executeCircuit(circuit, circuitInputs)
+        })
+    })
+
+    describe('User State Transition', () => {
+
+        let circuit
+
+        const MAX_NONCE = 2
+        const NUM_ATTESTATIONS = 10
+
+
+        let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
+        let epochTree, epochTreeRoot, epochTreePathElements
+        let nullifierTree, nullifierTreeRoot, nullifierTreePathElements
+        let userStateTree
+        let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
+        let oldPosReps, oldNegReps, oldGraffities
+
+        let attestationRecords = {}
+        let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+        let selectors: number[] = []
+        let nullifiers: SnarkBigInt[]
+        let hashChainResult: SnarkBigInt
+
+        before(async () => {
+            const startCompileTime = Math.floor(new Date().getTime() / 1000)
+            circuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
+            const endCompileTime = Math.floor(new Date().getTime() / 1000)
+            console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
+
+            // Epoch tree
+            epochTree = await genNewEpochTree("circuit")
+
+            // Nullifier tree
+            nullifierTreePathElements = []
+            nullifierTree = await genNewNullifierTree("circuit")
+            nullifierTreeRoot = bufToBigInt(nullifierTree.getRootHash())
+
+            // User state tree
+            userStateTree = await genNewUserStateTree("circuit")
+            intermediateUserStateTreeRoots = []
+            userStateTreePathElements = []
+            noAttestationUserStateTreePathElements = []
+            oldPosReps = []
+            oldNegReps = []
+            oldGraffities = []
+
+            // Bootstrap user state
+            for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                const  attesterId = i + 1
+                if (attestationRecords[attesterId] === undefined) {
+                    attestationRecords[attesterId] = {
+                        posRep: Math.floor(Math.random() * 100),
+                        negRep: Math.floor(Math.random() * 100),
+                        graffiti: genRandomSalt(),
+                    }
+                }
+                const newAttestationRecord = hash5([
+                    attestationRecords[attesterId]['posRep'],
+                    attestationRecords[attesterId]['negRep'],
+                    attestationRecords[attesterId]['graffiti'],
+                    BigInt(0),
+                    0
+                ])
+                const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
+                expect(result).to.be.true
+            }
+            intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
+            const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
+            const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
+            for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(USTLeafZeroPathElements)
+
+            // Global state tree
+            GSTree = new IncrementalQuinTree(globalStateTreeDepth, GSTZERO_VALUE, 2)
+            const commitment = genIdentityCommitment(user)
+            const hashedStateLeaf = hashLeftRight(commitment, bufToBigInt(userStateTree.getRootHash()))
+            GSTree.insert(hashedStateLeaf)
+            GSTreeProof = GSTree.genMerklePath(0)
+            GSTreeRoot = GSTree.root
+
+            attesterIds = []
+            posReps = []
+            negReps = []
+            graffities = []
+            overwriteGraffitis = []
+
+            // Ensure as least one of the selectors is true
+            const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS)
+            for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                if (i == selTrue) selectors.push(1)
+                else selectors.push(Math.floor(Math.random() * 2))
+            }
+
+            nullifiers = []
+            hashChainResult = BigInt(0)
+            for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                const attestation = {
+                    attesterId: i + 1,
                     posRep: Math.floor(Math.random() * 100),
                     negRep: Math.floor(Math.random() * 100),
                     graffiti: genRandomSalt(),
+                    overwriteGraffiti: true,
                 }
+                attesterIds.push(attestation['attesterId'])
+                posReps.push(attestation['posRep'])
+                negReps.push(attestation['negRep'])
+                graffities.push(attestation['graffiti'])
+                overwriteGraffitis.push(attestation['overwriteGraffiti'])
+
+                oldPosReps.push(attestationRecords[attestation['attesterId']]['posRep'])
+                oldNegReps.push(attestationRecords[attestation['attesterId']]['negRep'])
+                oldGraffities.push(attestationRecords[attestation['attesterId']]['graffiti'])
+
+                // If nullifier tree is too small, it's likely that nullifier would be zero.
+                // In this case, force selector to be zero.
+                const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
+                if ( nullifier == BigInt(0) ) {
+                    selectors[i] = 0
+                    // If unfortunately this is the selector forced to be true,
+                    // then we force next selector to be true instead.
+                    if (i == selTrue) selectors[i + 1] = 1
+                }
+
+                if ( selectors[i] == 1) {
+                    // Get old attestation record
+                    const oldAttestationRecord = hash5([
+                        attestationRecords[attestation['attesterId']]['posRep'],
+                        attestationRecords[attestation['attesterId']]['negRep'],
+                        attestationRecords[attestation['attesterId']]['graffiti'],
+                        BigInt(0),
+                        BigInt(0)
+                    ])
+                    const oldAttestationRecordProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldAttestationRecord), true)
+                    userStateTreePathElements.push(oldAttestationRecordProof.siblings.map((p) => bufToBigInt(p)))
+
+                    // Update attestation record
+                    attestationRecords[attestation['attesterId']]['posRep'] += attestation['posRep']
+                    attestationRecords[attestation['attesterId']]['negRep'] += attestation['negRep']
+                    if (attestation['overwriteGraffiti']) attestationRecords[attestation['attesterId']]['graffiti'] = attestation['graffiti']
+                    const newAttestationRecord = hash5([
+                        attestationRecords[attestation['attesterId']]['posRep'],
+                        attestationRecords[attestation['attesterId']]['negRep'],
+                        attestationRecords[attestation['attesterId']]['graffiti'],
+                        BigInt(0),
+                        BigInt(0)
+                    ])
+                    const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
+                    expect(result).to.be.true
+
+                    const attestation_hash = computeAttestationHash(attestation)
+                    hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+
+                    nullifiers.push(nullifier)
+                    const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), SMT_ZERO_LEAF, true)
+                    nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+                } else {
+                    const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
+                    const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
+                    userStateTreePathElements.push(USTLeafZeroPathElements)
+
+                    nullifiers.push(BigInt(0))
+                    const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), SMT_ONE_LEAF, true)
+                    nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+                }
+                intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
             }
-            const newAttestationRecord = hash5([
-                attestationRecords[attesterId]['posRep'],
-                attestationRecords[attesterId]['negRep'],
-                attestationRecords[attesterId]['graffiti'],
-                BigInt(0),
-                0
-            ])
-            const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
+            hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
+
+            newGSTLeaf = hashLeftRight(commitment, intermediateUserStateTreeRoots[NUM_ATTESTATIONS])
+
+            const result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
             expect(result).to.be.true
-        }
-        intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
-        const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
-        const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(USTLeafZeroPathElements)
+            
+            const epochTreeProof = await epochTree.getMerkleProof(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
+            epochTreePathElements = epochTreeProof.siblings.map((p) => bufToBigInt(p))
+            epochTreeRoot = bufToBigInt(epochTree.getRootHash())
+        })
 
-        // Global state tree
-        GSTree = new IncrementalQuinTree(globalStateTreeDepth, GSTZERO_VALUE, 2)
-        const commitment = genIdentityCommitment(user)
-        const hashedStateLeaf = hashLeftRight(commitment, bufToBigInt(userStateTree.getRootHash()))
-        GSTree.insert(hashedStateLeaf)
-        GSTreeProof = GSTree.genMerklePath(0)
-        GSTreeRoot = GSTree.root
-
-        attesterIds = []
-        posReps = []
-        negReps = []
-        graffities = []
-        overwriteGraffitis = []
-
-        // Ensure as least one of the selectors is true
-        const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            if (i == selTrue) selectors.push(1)
-            else selectors.push(Math.floor(Math.random() * 2))
-        }
-
-        nullifiers = []
-        hashChainResult = BigInt(0)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const attestation = {
-                attesterId: i + 1,
-                posRep: Math.floor(Math.random() * 100),
-                negRep: Math.floor(Math.random() * 100),
-                graffiti: genRandomSalt(),
-                overwriteGraffiti: true,
-            }
-            attesterIds.push(attestation['attesterId'])
-            posReps.push(attestation['posRep'])
-            negReps.push(attestation['negRep'])
-            graffities.push(attestation['graffiti'])
-            overwriteGraffitis.push(attestation['overwriteGraffiti'])
-
-            oldPosReps.push(attestationRecords[attestation['attesterId']]['posRep'])
-            oldNegReps.push(attestationRecords[attestation['attesterId']]['negRep'])
-            oldGraffities.push(attestationRecords[attestation['attesterId']]['graffiti'])
-
-            // If nullifier tree is too small, it's likely that nullifier would be zero.
-            // In this case, force selector to be zero.
-            const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
-            if ( nullifier == BigInt(0) ) {
-                selectors[i] = 0
-                // If unfortunately this is the selector forced to be true,
-                // then we force next selector to be true instead.
-                if (i == selTrue) selectors[i + 1] = 1
+        it('Valid user state update inputs should work', async () => {
+            const circuitInputs = {
+                epoch: epoch,
+                nonce: nonce,
+                max_nonce: MAX_NONCE,
+                intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                old_pos_reps: oldPosReps,
+                old_neg_reps: oldNegReps,
+                old_graffities: oldGraffities,
+                UST_path_elements: userStateTreePathElements,
+                identity_pk: user['keypair']['pubKey'],
+                identity_nullifier: user['identityNullifier'],
+                identity_trapdoor: user['identityTrapdoor'],
+                GST_path_elements: GSTreeProof.pathElements,
+                GST_path_index: GSTreeProof.indices,
+                GST_root: GSTreeRoot,
+                selectors: selectors,
+                attester_ids: attesterIds,
+                pos_reps: posReps,
+                neg_reps: negReps,
+                graffities: graffities,
+                overwrite_graffitis: overwriteGraffitis,
+                epk_path_elements: epochTreePathElements,
+                hash_chain_result: hashChainResult,
+                epoch_tree_root: epochTreeRoot,
+                nullifier_tree_root: nullifierTreeRoot,
+                nullifier_tree_path_elements: nullifierTreePathElements
             }
 
-            if ( selectors[i] == 1) {
-                // Get old attestation record
-                const oldAttestationRecord = hash5([
-                    attestationRecords[attestation['attesterId']]['posRep'],
-                    attestationRecords[attestation['attesterId']]['negRep'],
-                    attestationRecords[attestation['attesterId']]['graffiti'],
-                    BigInt(0),
-                    BigInt(0)
-                ])
-                const oldAttestationRecordProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldAttestationRecord), true)
-                userStateTreePathElements.push(oldAttestationRecordProof.siblings.map((p) => bufToBigInt(p)))
-
-                // Update attestation record
-                attestationRecords[attestation['attesterId']]['posRep'] += attestation['posRep']
-                attestationRecords[attestation['attesterId']]['negRep'] += attestation['negRep']
-                if (attestation['overwriteGraffiti']) attestationRecords[attestation['attesterId']]['graffiti'] = attestation['graffiti']
-                const newAttestationRecord = hash5([
-                    attestationRecords[attestation['attesterId']]['posRep'],
-                    attestationRecords[attestation['attesterId']]['negRep'],
-                    attestationRecords[attestation['attesterId']]['graffiti'],
-                    BigInt(0),
-                    BigInt(0)
-                ])
-                const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
-                expect(result).to.be.true
-
-                const attestation_hash = computeAttestationHash(attestation)
-                hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
-
-                nullifiers.push(nullifier)
-                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), SMT_ZERO_LEAF, true)
-                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
-            } else {
-                const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
-                const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
-                userStateTreePathElements.push(USTLeafZeroPathElements)
-
-                nullifiers.push(BigInt(0))
-                const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), SMT_ONE_LEAF, true)
-                nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+            const witness = await executeCircuit(circuit, circuitInputs)
+            for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+                expect(nullifier).to.equal(nullifiers[i])
             }
-            intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
-        }
-        hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
+            const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
+            expect(_newGSTLeaf).to.equal(newGSTLeaf)
 
-        newGSTLeaf = hashLeftRight(commitment, intermediateUserStateTreeRoots[NUM_ATTESTATIONS])
-
-        const result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
-        expect(result).to.be.true
-        
-        const epochTreeProof = await epochTree.getMerkleProof(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
-        epochTreePathElements = epochTreeProof.siblings.map((p) => bufToBigInt(p))
-        epochTreeRoot = bufToBigInt(epochTree.getRootHash())
-    })
-
-    it('Valid user state update inputs should work', async () => {
-        const circuitInputs = {
-            epoch: epoch,
-            nonce: nonce,
-            max_nonce: MAX_NONCE,
-            intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
-            old_pos_reps: oldPosReps,
-            old_neg_reps: oldNegReps,
-            old_graffities: oldGraffities,
-            UST_path_elements: userStateTreePathElements,
-            identity_pk: user['keypair']['pubKey'],
-            identity_nullifier: user['identityNullifier'],
-            identity_trapdoor: user['identityTrapdoor'],
-            GST_path_elements: GSTreeProof.pathElements,
-            GST_path_index: GSTreeProof.indices,
-            GST_root: GSTreeRoot,
-            selectors: selectors,
-            attester_ids: attesterIds,
-            pos_reps: posReps,
-            neg_reps: negReps,
-            graffities: graffities,
-            overwrite_graffitis: overwriteGraffitis,
-            epk_path_elements: epochTreePathElements,
-            hash_chain_result: hashChainResult,
-            epoch_tree_root: epochTreeRoot,
-            nullifier_tree_root: nullifierTreeRoot,
-            nullifier_tree_path_elements: nullifierTreePathElements
-        }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-            expect(nullifier).to.equal(nullifiers[i])
-        }
-        const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
-        expect(_newGSTLeaf).to.equal(newGSTLeaf)
-
-        const startTime = Math.floor(new Date().getTime() / 1000)
-        const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
-        const endTime = Math.floor(new Date().getTime() / 1000)
-        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-        expect(isValid).to.be.true
+            const startTime = Math.floor(new Date().getTime() / 1000)
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+            const endTime = Math.floor(new Date().getTime() / 1000)
+            console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+            const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
+            expect(isValid).to.be.true
+        })
     })
 })
