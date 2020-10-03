@@ -595,15 +595,15 @@ describe('Integration', function () {
                 let attestationsByEpochKeyFilter = unirepContract.filters.AttestationSubmitted(null, epkInHexStr)
                 let attestationsByEpochKeyEvent = await unirepContract.queryFilter(attestationsByEpochKeyFilter)
                 expect(attestationsByEpochKeyEvent.length).to.be.equal(epochKeyToAttestationsMap[epochKey].length)
-                let attestations_: any[] = attestationsByEpochKeyEvent.map((event: any) => event['args'])
+                let attestations_: any[] = attestationsByEpochKeyEvent.map((event: any) => event['args']['attestation'])
                 let attestations: any[] = Object.values(epochKeyToAttestationsMap[epochKey])
 
                 for (let i = 0; i < attestations_.length; i++) {
-                    expect(attestations[i]['attesterId']).to.be.equal(attestations_[i]['_attesterId'])
-                    expect(attestations[i]['posRep']).to.be.equal(attestations_[i]['_posRep'])
-                    expect(attestations[i]['negRep']).to.be.equal(attestations_[i]['_negRep'])
-                    expect(attestations[i]['graffiti']).to.be.equal(attestations_[i]['_graffiti'])
-                    expect(attestations[i]['overwriteGraffiti']).to.be.equal(attestations_[i]['_overwriteGraffiti'])
+                    expect(attestations[i]['attesterId']).to.be.equal(attestations_[i]['attesterId'])
+                    expect(attestations[i]['posRep']).to.be.equal(attestations_[i]['posRep'])
+                    expect(attestations[i]['negRep']).to.be.equal(attestations_[i]['negRep'])
+                    expect(attestations[i]['graffiti']).to.be.equal(attestations_[i]['graffiti'])
+                    expect(attestations[i]['overwriteGraffiti']).to.be.equal(attestations_[i]['overwriteGraffiti'])
                 }
             }
         })
