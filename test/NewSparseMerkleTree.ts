@@ -93,6 +93,46 @@ describe('OneTimeSparseMerkleTree', () => {
         })
     })
 
+    describe('SMT ', async () => {
+        it('verify merkle proof of adjacent indices', async () => {
+            const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
+            let leafIndices: BigNumber[] = []
+            let leafHashes: BigInt[] = []
+            let numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
+            let startIndex = BigNumber.from(crypto.randomBytes(numKeyBytes))
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                leafIndices[i] = startIndex.add(i)
+                leafHashes[i] = genRandomSalt()
+            }
+
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                await tree.update(leafIndices[i], leafHashes[i])
+                const proof = await tree.getMerkleProof(leafIndices[i])
+                const isProofValid = await  tree.verifyMerkleProof(leafIndices[i], proof)
+                expect(isProofValid).to.be.true
+            }
+        })
+
+        it('verify merkle proof of random indices', async () => {
+            const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
+            let leafIndices: BigNumber[] = []
+            let leafHashes: BigInt[] = []
+            let numKeyBytes: number
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1)
+                leafIndices[i] = BigNumber.from(crypto.randomBytes(numKeyBytes))
+                leafHashes[i] = genRandomSalt()
+            }
+
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                await tree.update(leafIndices[i], leafHashes[i])
+                const proof = await tree.getMerkleProof(leafIndices[i])
+                const isProofValid = await  tree.verifyMerkleProof(leafIndices[i], proof)
+                expect(isProofValid).to.be.true
+            }
+        })
+    })
+
     describe('genSMT() ', async () => {
         it('inserting leaves with adjacent indices should match', async () => {
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)

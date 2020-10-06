@@ -83,80 +83,52 @@ export class NewSparseMerkleTreeImpl {
         this.root = parentHash
     }
 
-    // public async getMerkleProof(
-    //     leafKey: BigNumber,
-    //     leafValue: Buffer,
-    //     unknownValue: boolean = false
-    // ): Promise<MerkleTreeInclusionProof> {
-    //     if (!this.root || !this.root.hash) {
-    //         return undefined!
-    //     }
+    public async getMerkleProof(
+        leafKey: BigNumber,
+    ): Promise<BigInt[]> {
+        assert(leafKey.lt(this.numLeaves), `leaf key ${leafKey.toString()} exceeds total number of leaves ${this.numLeaves.toString()}`)
 
-    //     let node: MerkleTreeNode = this.root
-    //     const siblings: Buffer[] = []
-    //     for (
-    //         let depth = 0;
-    //         depth < (this.height - 1) &&
-    //         !!node &&
-    //         !!node.value &&
-    //         node.value.length === 64;
-    //         depth++
-    //     ) {
-    //         siblings.push(this.getChildSiblingHash(node, depth, leafKey))
-    //         node = await this.getChild(node, depth, leafKey)
-    //     }
+        const siblingNodeHashes: BigInt[] = []
+        let nodeIndex = leafKey.add(this.numLeaves)
+        let isLeftNode = nodeIndex.and(1).eq(0) ? true : false
+        let sibNodeIndex = isLeftNode ? nodeIndex.add(1) : nodeIndex.sub(1)
+        let sibNodeHash
+        for (let i = 0; i < this.height; i++) {
+            const sibNodeHashString = await this.db.get(sibNodeIndex.toString())
+            if (!sibNodeHashString) sibNodeHash = this.zeroHashes[i]
+            else sibNodeHash = BigInt(sibNodeHashString)
+            siblingNodeHashes.push(sibNodeHash)
+            
+            nodeIndex = nodeIndex.div(2)
+            isLeftNode = nodeIndex.and(1).eq(0) ? true : false
+            sibNodeIndex = isLeftNode ? nodeIndex.add(1) : nodeIndex.sub(1)
+        }
+        assert(siblingNodeHashes.length == this.height, "Incorrect number of proof entries")
+        return siblingNodeHashes
+    }
 
-    //     const nodeHash = bufToHexString(node.hash)
-    //     const zHashes = this.zeroHashes.map((h) => bufToHexString(h))
-    //     const zeroHashIndex = zHashes.indexOf(nodeHash)
-    //     // Fill the rest siblings with zeroHashes if
-    //     // previous step is stopped because a node with zeroHash is reached
-    //     if ( (siblings.length !== this.height - 1) && zeroHashIndex >= 0) {
-    //         const numZHashesToFill = this.height - 1 - siblings.length
-    //         for ( let i = 0; i < numZHashesToFill; i++ ) {
-    //             siblings.push(this.zeroHashes[zeroHashIndex + 1 + i])
-    //         }
-    //     }
-    //     if (siblings.length !== this.height - 1) {
-    //         // TODO: A much better way of indicating this
-    //         return {
-    //             rootHash: undefined!,
-    //             key: undefined!,
-    //             value: undefined!,
-    //             siblings: undefined!,
-    //         }
-    //     }
+    public async verifyMerkleProof(
+        leafKey: BigNumber,
+        proof: BigInt[]
+    ): Promise<boolean> {
+        assert(leafKey.lt(this.numLeaves), `leaf key ${leafKey.toString()} exceeds total number of leaves ${this.numLeaves.toString()}`)
+        assert(proof.length == this.height, "Incorrect number of proof entries")
 
-    //     // Verify node hash against hash of leaf value if leaf value is known
-    //     if (!unknownValue) {
-    //         if (!node.hash.equals(newWrappedPoseidonT3Hash(leafValue))) {
-    //             // Provided leaf doesn't match stored leaf
-    //             return undefined!
-    //         }
-    //     }
-
-    //     const result: MerkleTreeInclusionProof = {
-    //         rootHash: this.root.hash,
-    //         key: leafKey,
-    //         value: leafValue,
-    //         siblings: siblings.reverse(),
-    //     }
-
-    //     if (!result || !!result.rootHash) {
-    //         return result
-    //     }
-
-    //     // If this is for an empty leaf, we can store it and create a MerkleProof
-    //     let defaultLeafValue: Buffer
-    //     if (this.hasDefaultLeafHash) defaultLeafValue = NewSparseMerkleTreeImpl.unknownLeafValueBuffer
-    //     else defaultLeafValue = NewSparseMerkleTreeImpl.emptyBuffer
-    //     if (leafValue.equals(defaultLeafValue)) {
-    //         if (await this.verifyAndStorePartiallyEmptyPath(leafKey)) {
-    //             return this.getMerkleProof(leafKey, leafValue)
-    //         }
-    //     }
-    //     return undefined!
-    // }
+        let nodeIndex = leafKey.add(this.numLeaves)
+        let nodeHash
+        const nodeHashString = await this.db.get(nodeIndex.toString())
+        if (!nodeHashString) nodeHash = this.zeroHashes[0]
+        else nodeHash = BigInt(nodeHashString)
+        let isLeftNode = nodeIndex.and(1).eq(0) ? true : false
+        for (let sibNodeHash of proof) {
+            nodeHash = isLeftNode ? newWrappedPoseidonT3Hash(nodeHash, sibNodeHash) : newWrappedPoseidonT3Hash(sibNodeHash, nodeHash)
+            
+            nodeIndex = nodeIndex.div(2)
+            isLeftNode = nodeIndex.and(1).eq(0) ? true : false
+        }
+        if (nodeHash === this.root) return true
+        else return false
+    }
 
     private async populateZeroHashesAndRoot(zeroHash: BigInt): Promise<void> {
         const hashes: BigInt[] = [
