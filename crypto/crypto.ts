@@ -7,6 +7,19 @@ import { SNARK_FIELD_SIZE, SnarkBigInt, genRandomSalt, hash5, hashOne, hashLeftR
 const NOTHING_UP_MY_SLEEVE =
     BigInt(ethers.utils.solidityKeccak256(['bytes'], [ethers.utils.toUtf8Bytes('Unirep')])) % SNARK_FIELD_SIZE
 
+const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
+    let result: SnarkBigInt
+    if ( elements.length == 1) {
+        result = hashOne(elements[0])
+    } else if ( elements.length == 2) {
+        result = hashLeftRight(elements[0], elements[1])
+    } else {
+        throw new Error(`elements length should not greater than 2, got ${elements.length}`)
+    }
+
+    return result
+}
+
 const wrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): string => {
     let result: SnarkBigInt
     if ( elements.length == 1) {
@@ -29,4 +42,5 @@ export {
     hashOne,
     hashLeftRight,
     wrappedPoseidonT3Hash,
+    newWrappedPoseidonT3Hash,
 }

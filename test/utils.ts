@@ -198,7 +198,7 @@ const SMT_ZERO_LEAF = bigIntToBuf(hashLeftRight(BigInt(0), BigInt(0)))
 const SMT_ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
 
 const getNewSMT = async (treeDepth: number, defaultLeafHash?: BigInt, rootHash?: Buffer): Promise<SparseMerkleTreeImpl> => {
-    const keyv = new Keyv();
+    const keyv = new Keyv()
     return SparseMerkleTreeImpl.create(
         keyv,
         // The current SparseMerkleTreeImpl has different tree depth implementation.
