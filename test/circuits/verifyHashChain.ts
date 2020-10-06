@@ -5,7 +5,6 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
-    getSignalByName,
 } from './utils'
 
 import {
@@ -20,8 +19,6 @@ describe('Hash chain circuit', () => {
     const NUM_ELEMENT = 10
     let elements: SnarkBigInt[] = []
     let cur: BigInt = BigInt(0), result, selectors: number[] = []
-
-    let resultNotMatchRegExp: RegExp
 
     before(async () => {
         circuit = await compileAndLoadCircuit('test/verifyHashChain_test.circom')
@@ -91,7 +88,6 @@ describe('Hash chain circuit', () => {
     })
 
     it('verify incorrect number of elements should fail', async () => {
-        const signalNotAssignedRegExp = RegExp('^Input Signal not assigned:.+')
         const circuitInputs = {
             hashes: elements.slice(1),
             selectors: selectors,

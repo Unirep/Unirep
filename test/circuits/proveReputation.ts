@@ -8,7 +8,7 @@ import {
     genVerifyReputationProofAndPublicSignals,
     verifyProveReputationProof,
 } from './utils'
-import { bufToBigInt, bigIntToBuf, genNewUserStateTree, smtBN } from '../utils'
+import { genNewUserStateTree } from '../utils'
 
 import {
     IncrementalQuinTree,
@@ -21,6 +21,7 @@ import {
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
+import { BigNumber } from "ethers"
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -63,11 +64,10 @@ describe('Prove reputation from attester circuit', function () {
                 BigInt(0)
             ])
             reputationRecords[attesterId]['recordHash'] = newReputationRecord
-            const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newReputationRecord), true)
-            expect(result).to.be.true
+            await userStateTree.update(BigNumber.from(attesterId), newReputationRecord)
         }
 
-        userStateRoot = bufToBigInt(userStateTree.getRootHash())
+        userStateRoot = userStateTree.getRootHash()
         // Global state tree
         GSTree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
         const commitment = genIdentityCommitment(user)
@@ -82,8 +82,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
-        const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
+        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
 
         const circuitInputs = {
             identity_pk: user['keypair']['pubKey'],
@@ -117,8 +116,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
-        const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
+        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
         const wrongAttesterId = attesterId < (NUM_ATTESTERS - 1) ? attesterId + 1 : attesterId - 1
 
         const circuitInputs = {
@@ -155,8 +153,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
-        const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
+        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
         const wrongUserStateRoot = genRandomSalt()
 
         const circuitInputs = {
@@ -193,8 +190,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
-        const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
+        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
         const wrongMinPosRep = posRep
 
         const circuitInputs1 = {
@@ -260,9 +256,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const attestationProof = await userStateTree.getMerkleProof(new smtBN(attesterId), bigIntToBuf(reputationRecords[attesterId]['recordHash']), true)
-        const pathElements = attestationProof.siblings.map((p) => bufToBigInt(p))
-        const graffiti = reputationRecords[attesterId]['graffiti']
+        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
         const wrongGraffitiPreImage = genRandomSalt()
 
         const circuitInputs = {

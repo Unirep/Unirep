@@ -20,7 +20,9 @@ import {
     getSignalByName,
 } from './utils'
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth } from "../../config/testLocal"
-import { bigIntToBuf, bufToBigInt, computeAttestationHash, genEpochKey, computeNullifier, SMT_ZERO_LEAF, SMT_ONE_LEAF, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, smtBN } from "../utils"
+import { computeAttestationHash, genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
+import { BigNumber } from "ethers"
+import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 
 describe('User State Transition circuits', function () {
     this.timeout(400000)
@@ -34,7 +36,7 @@ describe('User State Transition circuits', function () {
 
         let circuit
 
-        let epochTree, epochTreeRoot, epochTreePathElements
+        let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
 
         let hashChainResult: SnarkBigInt
 
@@ -49,12 +51,10 @@ describe('User State Transition circuits', function () {
 
             hashChainResult = genRandomSalt()
 
-            const result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
-            expect(result).to.be.true
+            await epochTree.update(BigNumber.from(epochKey), hashChainResult)
             
-            const epochTreeProof = await epochTree.getMerkleProof(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
-            epochTreePathElements = epochTreeProof.siblings.map((p) => bufToBigInt(p))
-            epochTreeRoot = bufToBigInt(epochTree.getRootHash())
+            epochTreePathElements = await epochTree.getMerkleProof(BigNumber.from(epochKey))
+            epochTreeRoot = epochTree.getRootHash()
         })
 
         it('Existed epoch key should pass check', async () => {
@@ -80,9 +80,9 @@ describe('User State Transition circuits', function () {
 
 
         let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
-        let epochTree, epochTreeRoot, epochTreePathElements
-        let nullifierTree, nullifierTreeRoot, nullifierTreePathElements
-        let userStateTree
+        let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
+        let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot, nullifierTreePathElements
+        let userStateTree: SparseMerkleTreeImpl
         let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
         let oldPosReps, oldNegReps, oldGraffities
 
@@ -104,7 +104,7 @@ describe('User State Transition circuits', function () {
             // Nullifier tree
             nullifierTreePathElements = []
             nullifierTree = await genNewNullifierTree("circuit")
-            nullifierTreeRoot = bufToBigInt(nullifierTree.getRootHash())
+            nullifierTreeRoot = nullifierTree.getRootHash()
 
             // User state tree
             userStateTree = await genNewUserStateTree("circuit")
@@ -125,25 +125,23 @@ describe('User State Transition circuits', function () {
                         graffiti: genRandomSalt(),
                     }
                 }
-                const newAttestationRecord = hash5([
+                const newAttestationRecordHash = hash5([
                     attestationRecords[attesterId]['posRep'],
                     attestationRecords[attesterId]['negRep'],
                     attestationRecords[attesterId]['graffiti'],
                     BigInt(0),
-                    0
+                    BigInt(0)
                 ])
-                const result = await userStateTree.update(new smtBN(attesterId), bigIntToBuf(newAttestationRecord), true)
-                expect(result).to.be.true
+                await userStateTree.update(BigNumber.from(attesterId), newAttestationRecordHash)
             }
-            intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
-            const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
-            const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
+            intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+            const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigNumber.from(0))
             for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(USTLeafZeroPathElements)
 
             // Global state tree
             GSTree = new IncrementalQuinTree(globalStateTreeDepth, GSTZERO_VALUE, 2)
             const commitment = genIdentityCommitment(user)
-            const hashedStateLeaf = hashLeftRight(commitment, bufToBigInt(userStateTree.getRootHash()))
+            const hashedStateLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
             GSTree.insert(hashedStateLeaf)
             GSTreeProof = GSTree.genMerklePath(0)
             GSTreeRoot = GSTree.root
@@ -200,50 +198,46 @@ describe('User State Transition circuits', function () {
                         BigInt(0),
                         BigInt(0)
                     ])
-                    const oldAttestationRecordProof = await userStateTree.getMerkleProof(new smtBN(attestation['attesterId']), bigIntToBuf(oldAttestationRecord), true)
-                    userStateTreePathElements.push(oldAttestationRecordProof.siblings.map((p) => bufToBigInt(p)))
+                    const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigNumber.from(attestation['attesterId']))
+                    userStateTreePathElements.push(oldAttestationRecordProof)
 
                     // Update attestation record
                     attestationRecords[attestation['attesterId']]['posRep'] += attestation['posRep']
                     attestationRecords[attestation['attesterId']]['negRep'] += attestation['negRep']
                     if (attestation['overwriteGraffiti']) attestationRecords[attestation['attesterId']]['graffiti'] = attestation['graffiti']
-                    const newAttestationRecord = hash5([
+                    const newAttestationRecordHash = hash5([
                         attestationRecords[attestation['attesterId']]['posRep'],
                         attestationRecords[attestation['attesterId']]['negRep'],
                         attestationRecords[attestation['attesterId']]['graffiti'],
                         BigInt(0),
                         BigInt(0)
                     ])
-                    const result = await userStateTree.update(new smtBN(attestation['attesterId']), bigIntToBuf(newAttestationRecord), true)
-                    expect(result).to.be.true
+                    await userStateTree.update(BigNumber.from(attestation['attesterId']), newAttestationRecordHash)
 
                     const attestation_hash = computeAttestationHash(attestation)
                     hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
                     nullifiers.push(nullifier)
-                    const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(nullifier.toString(16), 'hex'), SMT_ZERO_LEAF, true)
-                    nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+                    const nullifierTreeProof = await nullifierTree.getMerkleProof(BigNumber.from(nullifier))
+                    nullifierTreePathElements.push(nullifierTreeProof)
                 } else {
-                    const USTLeafZeroProof = await userStateTree.getMerkleProof(new smtBN(0), SMT_ZERO_LEAF, true)
-                    const USTLeafZeroPathElements = USTLeafZeroProof.siblings.map((p) => bufToBigInt(p))
+                    const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigNumber.from(0))
                     userStateTreePathElements.push(USTLeafZeroPathElements)
 
                     nullifiers.push(BigInt(0))
-                    const nullifierTreeProof = await nullifierTree.getMerkleProof(new smtBN(0), SMT_ONE_LEAF, true)
-                    nullifierTreePathElements.push(nullifierTreeProof.siblings.map((p) => bufToBigInt(p)))
+                    const nullifierTreeProof = await nullifierTree.getMerkleProof(BigNumber.from(0))
+                    nullifierTreePathElements.push(nullifierTreeProof)
                 }
-                intermediateUserStateTreeRoots.push(bufToBigInt(userStateTree.getRootHash()))
+                intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
             }
             hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
 
             newGSTLeaf = hashLeftRight(commitment, intermediateUserStateTreeRoots[NUM_ATTESTATIONS])
 
-            const result = await epochTree.update(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
-            expect(result).to.be.true
+            await epochTree.update(BigNumber.from(epochKey), hashChainResult)
             
-            const epochTreeProof = await epochTree.getMerkleProof(new smtBN(epochKey.toString(16), 'hex'), bigIntToBuf(hashChainResult), true)
-            epochTreePathElements = epochTreeProof.siblings.map((p) => bufToBigInt(p))
-            epochTreeRoot = bufToBigInt(epochTree.getRootHash())
+            epochTreePathElements = await epochTree.getMerkleProof(BigNumber.from(epochKey))
+            epochTreeRoot = epochTree.getRootHash()
         })
 
         it('Valid user state update inputs should work', async () => {

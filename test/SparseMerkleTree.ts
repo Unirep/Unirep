@@ -1,25 +1,15 @@
 import * as crypto from 'crypto'
 import chai from "chai"
+import Keyv from "keyv"
 import { ethers } from "@nomiclabs/buidler"
-import { ContractFactory, Signer, Wallet } from "ethers"
+import { BigNumber, ContractFactory, Signer, Wallet } from "ethers"
 import { deployContract, solidity } from "ethereum-waffle"
 
-import { epochTreeDepth } from '../config/testLocal'
 import {
-    SnarkBigInt,
-    hashOne,
     hashLeftRight,
+    genRandomSalt,
 } from '../crypto/crypto'
-import { genNewEpochTree, linkLibrary, toCompleteHexString } from './utils'
-
-import {
-    BigNumber,
-    ONE,
-    SparseMerkleTreeImpl,
-    TWO,
-    bufToHexString,
-    hexStrToBuf,
-} from '../crypto/SMT';
+import { genNewEpochTree, linkLibrary, SMT_ONE_LEAF } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -27,14 +17,17 @@ const { expect } = chai
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
-
-const numLeaves = TWO.pow(new BigNumber(epochTreeDepth))
-const sizeKeySpaceInBytes: number = Math.floor(epochTreeDepth / 8)
+import { SparseMerkleTreeImpl } from '../crypto/SMT'
+import { epochTreeDepth } from '../config/testLocal'
 
 /* Begin tests */
 describe('OneTimeSparseMerkleTree', () => {
     let accounts: Signer[]
 
+    const treeDepth = epochTreeDepth
+    const defaultOTSMTHash = SMT_ONE_LEAF
+    const numLeaves = BigNumber.from(1).shl(treeDepth)
+    const sizeKeySpaceInBytes: number = Math.floor(treeDepth / 8)
     let OTSMTFactory: ContractFactory
     let tree: SparseMerkleTreeImpl
 
@@ -67,18 +60,18 @@ describe('OneTimeSparseMerkleTree', () => {
 
         OTSMTFactory = new ContractFactory(OneTimeSparseMerkleTree.abi, OneTimeSparseMerkleTree.bytecode, accounts[0])
 
-        tree = await genNewEpochTree()
+        tree = await SparseMerkleTreeImpl.create(new Keyv(), treeDepth, defaultOTSMTHash)
     })
 
     describe('initialization ', async () => {
         it('default values should match', async () => {
             console.log('Deploying OneTimeSparseMerkleTree')
-            let leafIndices: BigNumber[] = [ONE]
-            let leafData: SnarkBigInt[] = [BigInt(1)]
+            let leafIndices: BigNumber[] = [BigNumber.from(1)]
+            let leafHashes: BigInt[] = [BigInt(1)]
             const OneTimeSMT = await OTSMTFactory.deploy(
-                epochTreeDepth,
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
+                treeDepth,
+                leafIndices,
+                leafHashes,
                 {
                     gasLimit: 9000000,
                 }
@@ -86,16 +79,56 @@ describe('OneTimeSparseMerkleTree', () => {
             let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
-            let numLeaves_ = (await OneTimeSMT.numLeaves()).toString()
-            expect(numLeaves_).to.be.equal(tree.numLeaves.toString(10))
-            expect(numLeaves_).to.be.equal(numLeaves.toString(10))
+            let numLeaves_ = (await OneTimeSMT.numLeaves())
+            expect(numLeaves_).to.be.equal(tree.numLeaves)
+            expect(numLeaves_).to.be.equal(numLeaves)
 
             let defaultHashes = await OneTimeSMT.getDefaultHashes()
-            expect(defaultHashes.length).to.be.equal(epochTreeDepth)
-            let count = defaultHashes.length
+            expect(defaultHashes.length).to.be.equal(treeDepth)
+            let count = 0
             for(var hash of defaultHashes) {
-                expect(hash).to.be.equal(bufToHexString(tree.getZeroHash(count)))
-                count = count - 1
+                expect(hash).to.be.equal(tree.getZeroHash(count))
+                count ++
+            }
+        })
+    })
+
+    describe('SMT ', async () => {
+        it('verify merkle proof of adjacent indices', async () => {
+            const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
+            let leafIndices: BigNumber[] = []
+            let leafHashes: BigInt[] = []
+            let numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
+            let startIndex = BigNumber.from(crypto.randomBytes(numKeyBytes))
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                leafIndices[i] = startIndex.add(i)
+                leafHashes[i] = genRandomSalt()
+            }
+
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                await tree.update(leafIndices[i], leafHashes[i])
+                const proof = await tree.getMerkleProof(leafIndices[i])
+                const isProofValid = await  tree.verifyMerkleProof(leafIndices[i], proof)
+                expect(isProofValid).to.be.true
+            }
+        })
+
+        it('verify merkle proof of random indices', async () => {
+            const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
+            let leafIndices: BigNumber[] = []
+            let leafHashes: BigInt[] = []
+            let numKeyBytes: number
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1)
+                leafIndices[i] = BigNumber.from(crypto.randomBytes(numKeyBytes))
+                leafHashes[i] = genRandomSalt()
+            }
+
+            for (let i = 0; i < numLeavesToInsert; i++) {
+                await tree.update(leafIndices[i], leafHashes[i])
+                const proof = await tree.getMerkleProof(leafIndices[i])
+                const isProofValid = await  tree.verifyMerkleProof(leafIndices[i], proof)
+                expect(isProofValid).to.be.true
             }
         })
     })
@@ -104,20 +137,19 @@ describe('OneTimeSparseMerkleTree', () => {
         it('inserting leaves with adjacent indices should match', async () => {
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
             let leafIndices: BigNumber[] = []
-            let dataBlocks: string[] = []
-            let leafData: SnarkBigInt[] = []
-            let startIndex: number = Math.floor(Math.random() * 10)
+            let leafHashes: BigInt[] = []
+            let numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
+            let startIndex = BigNumber.from(crypto.randomBytes(numKeyBytes))
             for (let i = 0; i < numLeavesToInsert; i++) {
-                leafIndices[i] = new BigNumber(i + startIndex, 10)
-                dataBlocks[i] = crypto.randomBytes(32).toString('hex')
-                leafData[i] = hashOne(BigInt('0x' + dataBlocks[i]))
+                leafIndices[i] = startIndex.add(i)
+                leafHashes[i] = genRandomSalt()
             }
 
             console.log('Deploying OneTimeSparseMerkleTree')
             const OneTimeSMT = await OTSMTFactory.deploy(
-                epochTreeDepth,
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
+                treeDepth,
+                leafIndices,
+                leafHashes,
                 {
                     gasLimit: 9000000,
                 }
@@ -125,38 +157,34 @@ describe('OneTimeSparseMerkleTree', () => {
             let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
-            let result
             for (let i = 0; i < numLeavesToInsert; i++) {
-                result = await tree.update(leafIndices[i], hexStrToBuf(dataBlocks[i]))
-                expect(result).to.be.true
+                await tree.update(leafIndices[i], leafHashes[i])
             }
-            let treeRoot = bufToHexString(tree.getRootHash())
+            let treeRoot = tree.getRootHash()
 
             const OTSMTRoot = await OneTimeSMT.genSMT()
 
             expect(OTSMTRoot).to.be.equal(treeRoot)
-            console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with adjacent " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
+            console.log("Gas cost of computing the " + treeDepth + " level SMT with adjacent " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
         }).timeout(100000)
 
         it('inserting leaves with random indices should match', async () => {
             const numLeavesToInsert = 1
             // const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
             let leafIndices: BigNumber[] = []
-            let dataBlocks: string[] = []
-            let leafData: SnarkBigInt[] = []
+            let leafHashes: BigInt[] = []
             let numKeyBytes: number
             for (let i = 0; i < numLeavesToInsert; i++) {
-                numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
-                leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
-                dataBlocks[i] = crypto.randomBytes(32).toString('hex')
-                leafData[i] = hashOne(BigInt('0x' + dataBlocks[i]))
+                numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1)
+                leafIndices[i] = BigNumber.from(crypto.randomBytes(numKeyBytes))
+                leafHashes[i] = genRandomSalt()
             }
 
             console.log('Deploying OneTimeSparseMerkleTree')
             const OneTimeSMT = await OTSMTFactory.deploy(
-                epochTreeDepth,
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
+                treeDepth,
+                leafIndices,
+                leafHashes,
                 {
                     gasLimit: 9000000,
                 }
@@ -164,68 +192,26 @@ describe('OneTimeSparseMerkleTree', () => {
             let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
-            let result
             for (let i = 0; i < numLeavesToInsert; i++) {
-                result = await tree.update(leafIndices[i], hexStrToBuf(dataBlocks[i]))
-                expect(result).to.be.true
+                await tree.update(leafIndices[i], leafHashes[i])
             }
-            let treeRoot = bufToHexString(tree.getRootHash())
+            let treeRoot = tree.getRootHash()
 
             const OTSMTRoot = await OneTimeSMT.genSMT()
 
             expect(OTSMTRoot).to.be.equal(treeRoot)
-            console.log("Gas cost of computing the " + epochTreeDepth + " level SMT with random " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
-        })
-
-        it('inserting leaf with unknown value should succeed', async () => {
-            const numLeavesToInsert = 1
-            let leafIndices: BigNumber[] = []
-            let leafData: SnarkBigInt[] = []
-            let leafDataBuffer: Buffer[] = []
-            let numKeyBytes: number
-            for (let i = 0; i < numLeavesToInsert; i++) {
-                numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
-                leafIndices[i] = new BigNumber(crypto.randomBytes(numKeyBytes).toString('hex'), 16)
-                leafData[i] = hashOne(BigInt('0x' + crypto.randomBytes(32).toString('hex')))
-                leafDataBuffer[i] = hexStrToBuf(
-                    toCompleteHexString(
-                        leafData[i].toString(16),
-                        32
-                    )
-                )
-            }
-
-            const OneTimeSMT = await OTSMTFactory.deploy(
-                epochTreeDepth,
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
-                {
-                    gasLimit: 9000000,
-                }
-            )
-
-            let result
-            for (let i = 0; i < numLeavesToInsert; i++) {
-                result = await tree.update(leafIndices[i], leafDataBuffer[i], true)
-                expect(result).to.be.true
-            }
-            let treeRoot = bufToHexString(tree.getRootHash())
-
-            const OTSMTRoot = await OneTimeSMT.genSMT()
-
-            expect(OTSMTRoot).to.be.equal(treeRoot)
+            console.log("Gas cost of computing the " + treeDepth + " level SMT with random " + numLeavesToInsert + " indices " + receipt.gasUsed.toString())
         })
 
         it('inserting leaf with out of bound index should fail', async () => {
-            let leafIndices = [numLeaves.add(ONE)]
-            let dataBlock = crypto.randomBytes(32).toString('hex')
-            let leafData = [hashOne(BigInt('0x' + dataBlock))]
+            let leafIndices = [numLeaves.add(1)]
+            let leafHashes = [genRandomSalt()]
 
             console.log('Deploying OneTimeSparseMerkleTree which is expected to fail')
             await expect(OTSMTFactory.deploy(
-                epochTreeDepth,
-                leafIndices.map((bn) => bn.toString(10)),
-                leafData,
+                treeDepth,
+                leafIndices,
+                leafHashes,
                 {
                     gasLimit: 9000000,
                 }
