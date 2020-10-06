@@ -39,8 +39,8 @@ export class NewSparseMerkleTreeImpl {
         return this.height
     }
 
-    public getRootHash(): BigInt|undefined {
-        return this.root
+    public getRootHash(): BigInt {
+        return this.root!
     }
 
     public getZeroHash(index: number): BigInt {
@@ -141,6 +141,6 @@ export class NewSparseMerkleTreeImpl {
 
         this.zeroHashes = hashes
 
-        this.root = hashes[this.height - 1]
+        this.root = newWrappedPoseidonT3Hash(hashes[this.height - 1], hashes[this.height - 1])
     }
 }
