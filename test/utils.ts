@@ -1,7 +1,7 @@
 import * as ethers from 'ethers'
 import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
-import { BigNumber as smtBN, SparseMerkleTreeImpl, add0x, bufToHexString, hexStrToBuf } from '../crypto/SMT'
+import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
@@ -175,38 +175,20 @@ const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: num
     return nullifierModed
 }
 
-const genNoAttestationNullifierValue = (): string => {
-    let value = hashLeftRight(BigInt(1), BigInt(0))
-    return toCompleteHexString(value.toString(16), 32)
-}
-
 const toCompleteHexString = (str: string, len?: number): string => {
     str = add0x(str)
     if (len) str = ethers.utils.hexZeroPad(str, len)
     return str
 }
 
-const bufToBigInt = (buf: Buffer): SnarkBigInt => {
-    return BigInt(bufToHexString(buf))
-}
+const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
+const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
-const bigIntToBuf = (bn: SnarkBigInt): Buffer => {
-    return hexStrToBuf(toCompleteHexString(bn.toString(16), 32))
-}
-
-const SMT_ZERO_LEAF = bigIntToBuf(hashLeftRight(BigInt(0), BigInt(0)))
-const SMT_ONE_LEAF = bigIntToBuf(hashLeftRight(BigInt(1), BigInt(0)))
-
-const getNewSMT = async (treeDepth: number, defaultLeafHash?: BigInt, rootHash?: Buffer): Promise<SparseMerkleTreeImpl> => {
-    const keyv = new Keyv()
+const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTreeImpl> => {
     return SparseMerkleTreeImpl.create(
-        keyv,
-        // The current SparseMerkleTreeImpl has different tree depth implementation.
-        // It has tree depth of 1 with a single root node while in this case tree depth is 0 in OneTimeSparseMerkleTree contract.
-        // So we increment the tree depth passed into SparseMerkleTreeImpl by 1.
-        treeDepth + 1,
+        new Keyv(),
+        treeDepth,
         defaultLeafHash,
-        rootHash
     )
 }
 
@@ -219,8 +201,8 @@ const genNewEpochTree = async (deployEnv: string = "contract"): Promise<SparseMe
     } else {
         throw new Error('Only contract and circuit testing env are supported')
     }
-    const defaultOTSMTHash = hashLeftRight(BigInt(1), BigInt(0))
-    return getNewSMT(_epochTreeDepth, defaultOTSMTHash)
+    const defaultOTSMTHash = SMT_ONE_LEAF
+    return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
 
 const genNewNullifierTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {
@@ -232,10 +214,9 @@ const genNewNullifierTree = async (deployEnv: string = "contract"): Promise<Spar
     } else {
         throw new Error('Only contract and circuit testing env are supported')
     }
-    const nullifierTree = await getNewSMT(_nullifierTreeDepth)
+    const nullifierTree = await genNewSMT(_nullifierTreeDepth, SMT_ZERO_LEAF)
     // Reserve leaf 0
-    const result = await nullifierTree.update(new smtBN(0), SMT_ONE_LEAF, true)
-    if (result != true) throw new Error('Reserve nullifier tree leaf 0 failed')
+    await nullifierTree.update(ethers.BigNumber.from(0), SMT_ONE_LEAF)
     return nullifierTree
 }
 
@@ -250,27 +231,23 @@ const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<Spar
     }
 
     const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
-    return getNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
+    return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
 }
 
 export {
+    SimpleContractJSON,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
-    SimpleContractJSON,
-    bigIntToBuf,
-    bufToBigInt,
     deployUnirep,
     computeAttestationHash,
     computeNullifier,
     computeReputationHash,
     genEpochKey,
     genNoAttestationNullifierKey,
-    genNoAttestationNullifierValue,
     genNewEpochTree,
     genNewNullifierTree,
     genNewUserStateTree,
-    getNewSMT,
+    genNewSMT,
     linkLibrary,
-    smtBN,
     toCompleteHexString,
 }
