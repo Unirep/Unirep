@@ -5,7 +5,6 @@ import "./SafeMath.sol";
 import "./Address.sol";
 import { DomainObjs } from './DomainObjs.sol';
 import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
-import { OneTimeSparseMerkleTree } from "./OneTimeSparseMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
@@ -77,6 +76,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     struct EpochKeyList {
         uint256 numKeys;
         mapping(uint256 => uint256) keys;
+        uint256 numSealedKeys;
     }
     // Mpapping of epoch to epoch key list
     mapping(uint256 => EpochKeyList) internal epochKeys;
@@ -100,7 +100,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         Attestation attestation
     );
 
-    event EpochEnded(uint256 indexed _epoch, address _epochTreeAddr);
+    event EpochEnded(uint256 indexed _epoch);
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
@@ -115,6 +115,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function getNumEpochKey(uint256 epoch) public view returns (uint256) {
         return epochKeys[epoch].numKeys;
+    }
+
+    function getNumSealedEpochKey(uint256 epoch) public view returns (uint256) {
+        return epochKeys[epoch].numSealedKeys;
     }
 
     function getEpochKey(uint256 epoch, uint256 index) public view returns (uint256) {
@@ -257,45 +261,35 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         );
     }
 
-    function beginEpochTransition() external {
+    function beginEpochTransition(uint256 numEpochKeysToSeal) external {
         require(block.timestamp - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
 
         uint256 initGas = gasleft();
 
-        address epochTreeAddr;
-        if(epochKeys[currentEpoch].numKeys > 0) {
-            epochTreeAddr = finalizeAllAttestations();
-        }
-
-        emit EpochEnded(currentEpoch, epochTreeAddr);
-
-        latestEpochTransitionTime = block.timestamp;
-        currentEpoch ++;
-
-        uint256 gasUsed = initGas.sub(gasleft());
-        epochTransitionCompensation[msg.sender] = epochTransitionCompensation[msg.sender].add(gasUsed.mul(tx.gasprice));
-    }
-
-    function finalizeAllAttestations() internal returns (address) {
-        OneTimeSparseMerkleTree epochTree;
         uint256 epochKey;
-        uint256[] memory epochKeyList = new uint256[](epochKeys[currentEpoch].numKeys);
-        uint256[] memory epochKeyHashChainList = new uint256[](epochKeys[currentEpoch].numKeys);
-        for( uint i = 0; i < epochKeys[currentEpoch].numKeys; i++) {
+        uint256 startKeyIndex = epochKeys[currentEpoch].numSealedKeys;
+        uint256 endKeyIndex = min(epochKeys[currentEpoch].numKeys, startKeyIndex.add(numEpochKeysToSeal));
+        for (uint i = startKeyIndex; i < endKeyIndex; i++) {
             // Seal the hash chain of this epoch key
             epochKey = epochKeys[currentEpoch].keys[i];
             epochKeyHashchain[epochKey] = hashLeftRight(
                 1,
                 epochKeyHashchain[epochKey]
             );
-
-            epochKeyList[i] = epochKey;
-            epochKeyHashChainList[i] = epochKeyHashchain[epochKey];
             isEpochKeyHashChainSealed[epochKey] = true;
         }
+        epochKeys[currentEpoch].numSealedKeys = endKeyIndex;
 
-        epochTree = new OneTimeSparseMerkleTree(treeDepths.epochTreeDepth, epochKeyList, epochKeyHashChainList);
-        return address(epochTree);
+        // Mark epoch transitioned as complete if hash chain of all epoch keys are sealed
+        if(endKeyIndex == epochKeys[currentEpoch].numKeys) {
+            emit EpochEnded(currentEpoch);
+
+            latestEpochTransitionTime = block.timestamp;
+            currentEpoch ++;
+        }
+
+        uint256 gasUsed = initGas.sub(gasleft());
+        epochTransitionCompensation[msg.sender] = epochTransitionCompensation[msg.sender].add(gasUsed.mul(tx.gasprice));
     }
 
     function updateUserStateRoot(
@@ -456,6 +450,14 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         return proof.isValid;
     }
 
+    function min(uint a, uint b) internal pure returns (uint) {
+        if (a > b) {
+            return b;
+        } else {
+            return a;
+        }
+    }
+
     /*
      * A helper function to convert an array of 8 uint256 values into the a, b,
      * and c array values that the zk-SNARK verifier's verifyProof accepts.
@@ -501,6 +503,18 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 h = hashedBlankStateLeaf();
 
         return computeEmptyRoot(_levels, h);
+    }
+
+    function getEpochTreeLeaves(uint256 epoch) external view returns (uint256[] memory epochKeyList, uint256[] memory epochKeyHashChainList) {
+        uint256 epochKey;
+        epochKeyList = new uint256[](epochKeys[epoch].numKeys);
+        epochKeyHashChainList = new uint256[](epochKeys[epoch].numKeys);
+        for (uint i = 0; i < epochKeys[epoch].numKeys; i++) {
+            // Seal the hash chain of this epoch key
+            epochKey = epochKeys[epoch].keys[i];
+            epochKeyList[i] = epochKey;
+            epochKeyHashChainList[i] = epochKeyHashchain[epochKey];
+        }
     }
 
     /*
