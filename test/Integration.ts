@@ -10,7 +10,6 @@ import { deployUnirep, genNoAttestationNullifierKey, genEpochKey, toCompleteHexS
 chai.use(solidity)
 const { expect } = chai
 
-import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
 import Unirep from "../artifacts/Unirep.json"
 import { SparseMerkleTreeImpl } from "../crypto/SMT"
 import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
@@ -119,24 +118,16 @@ describe('Integration', function () {
             // Fast-forward epochLength of seconds
             await ethers.provider.send("evm_increaseTime", [epochLength])
             // Begin epoch transition
-            let tx = await unirepContract.beginEpochTransition()
+            const numEpochKeysToSeal = await unirepContract.getNumEpochKey(currentEpoch)
+            let tx = await unirepContract.beginEpochTransition(numEpochKeysToSeal)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
-            console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
+            console.log(`Gas cost of epoch transition(sealing hash chain of ${numEpochKeysToSeal} epoch keys): ${receipt.gasUsed.toString()}`)
 
             epochTrees[prevEpoch.toString()] = await genNewEpochTree("circuit")
 
             currentEpoch = await unirepContract.currentEpoch()
             expect(currentEpoch).equal(2)
-        })
-
-        it('Epoch tree built from events should match', async () => {
-            const epochEndedFilter = unirepContract.filters.EpochEnded(prevEpoch)
-            const epochEndedEvent: any = (await unirepContract.queryFilter(epochEndedFilter))[0]
-            const epochTreeAddr = epochEndedEvent['args']['_epochTreeAddr']
-
-            // No attestations made in previoud epoch so epoch tree root should be 0
-            expect(epochTreeAddr).to.be.equal(ethers.utils.hexZeroPad("0x", 20))
         })
 
         it('First user transition from first epoch', async () => {
@@ -616,26 +607,19 @@ describe('Integration', function () {
             // Fast-forward epochLength of seconds
             await ethers.provider.send("evm_increaseTime", [epochLength])
             // Begin epoch transition
-            let tx = await unirepContract.beginEpochTransition()
+            const numEpochKeysToSeal = await unirepContract.getNumEpochKey(currentEpoch)
+            let tx = await unirepContract.beginEpochTransition(numEpochKeysToSeal)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
-            console.log("Gas cost of epoch transition:", receipt.gasUsed.toString())
+            console.log(`Gas cost of epoch transition(sealing hash chain of ${numEpochKeysToSeal} epoch keys): ${receipt.gasUsed.toString()}`)
 
             epochTrees[prevEpoch.toString()] = await genNewEpochTree("circuit")
 
             currentEpoch = await unirepContract.currentEpoch()
             expect(currentEpoch).equal(3)
-        })
 
-        it('Epoch tree built from events should match', async () => {
-            const epochEndedFilter = unirepContract.filters.EpochEnded(prevEpoch)
-            const epochEndedEvent: any = (await unirepContract.queryFilter(epochEndedFilter))[0]
-            const epochTreeAddr = epochEndedEvent['args']['_epochTreeAddr']
-
-            expect(epochTreeAddr).to.not.be.equal(ethers.utils.hexZeroPad("0x", 20))
-            
-            const epochTreeContract: Contract = await ethers.getContractAt(OneTimeSparseMerkleTree.abi, epochTreeAddr)
-            let [epochKeys_, epochKeyHashchains_] = await epochTreeContract.getLeavesToInsert()
+            // Update epoch tree
+            let [epochKeys_, epochKeyHashchains_] = await unirepContract.getEpochTreeLeaves(prevEpoch)
             expect(epochKeys_.length).to.be.equal(2)
 
             epochKeys_ = epochKeys_.map((epk) => epk.toString())
@@ -648,13 +632,7 @@ describe('Integration', function () {
             for (let i = 0; i < epochKeys_.length; i++) {
                 await epochTrees[prevEpoch.toString()].update(BigNumber.from(epochKeys_[i]), BigInt(epochKeyHashchains_[i]))
             }
-
-            const root_ = await epochTreeContract.genSMT({gasLimit: 12000000})
-            // Epoch tree root should not be 0x0
-            expect(root_).to.be.not.equal(ethers.utils.hexZeroPad("0x", 32))
-            // Epoch tree root should match
-            expect(root_).to.be.equal(epochTrees[prevEpoch.toString()].getRootHash())
-        }).timeout(100000)
+        })
 
         it('First user transition from second epoch', async () => {
             const fromEpoch = users[0]['latestTransitionedToEpoch']
