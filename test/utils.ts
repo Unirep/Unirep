@@ -216,7 +216,7 @@ const genNewNullifierTree = async (deployEnv: string = "contract"): Promise<Spar
     }
     const nullifierTree = await genNewSMT(_nullifierTreeDepth, SMT_ZERO_LEAF)
     // Reserve leaf 0
-    await nullifierTree.update(ethers.BigNumber.from(0), SMT_ONE_LEAF)
+    await nullifierTree.update(BigInt(0), SMT_ONE_LEAF)
     return nullifierTree
 }
 

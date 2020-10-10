@@ -1,5 +1,9 @@
 import * as ethers from 'ethers'
 
+export const bufToHexString = (buf: Buffer): string => {
+    return '0x' + buf.toString('hex')
+}
+
 /**
  * Removes "0x" from start of a string if it exists.
  * @param str String to modify.

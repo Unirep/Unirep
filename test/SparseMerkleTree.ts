@@ -2,7 +2,7 @@ import * as crypto from 'crypto'
 import chai from "chai"
 import Keyv from "keyv"
 import { ethers } from "@nomiclabs/buidler"
-import { BigNumber, ContractFactory, Signer, Wallet } from "ethers"
+import { ContractFactory, Signer, Wallet } from "ethers"
 import { deployContract, solidity } from "ethereum-waffle"
 
 import {
@@ -17,7 +17,7 @@ const { expect } = chai
 import PoseidonT3 from "../artifacts/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
-import { SparseMerkleTreeImpl } from '../crypto/SMT'
+import { SparseMerkleTreeImpl, bufToHexString } from '../crypto/SMT'
 import { epochTreeDepth } from '../config/testLocal'
 
 /* Begin tests */
@@ -26,7 +26,7 @@ describe('OneTimeSparseMerkleTree', () => {
 
     const treeDepth = epochTreeDepth
     const defaultOTSMTHash = SMT_ONE_LEAF
-    const numLeaves = BigNumber.from(1).shl(treeDepth)
+    const numLeaves = BigInt(2 ** treeDepth)
     const sizeKeySpaceInBytes: number = Math.floor(treeDepth / 8)
     let OTSMTFactory: ContractFactory
     let tree: SparseMerkleTreeImpl
@@ -66,7 +66,7 @@ describe('OneTimeSparseMerkleTree', () => {
     describe('initialization ', async () => {
         it('default values should match', async () => {
             console.log('Deploying OneTimeSparseMerkleTree')
-            let leafIndices: BigNumber[] = [BigNumber.from(1)]
+            let leafIndices: BigInt[] = [BigInt(1)]
             let leafHashes: BigInt[] = [BigInt(1)]
             const OneTimeSMT = await OTSMTFactory.deploy(
                 treeDepth,
@@ -96,12 +96,13 @@ describe('OneTimeSparseMerkleTree', () => {
     describe('SMT ', async () => {
         it('verify merkle proof of adjacent indices', async () => {
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
-            let leafIndices: BigNumber[] = []
+            let leafIndices: BigInt[] = []
             let leafHashes: BigInt[] = []
-            let numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
-            let startIndex = BigNumber.from(crypto.randomBytes(numKeyBytes))
+            let numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1)
+            let randomBytes = crypto.randomBytes(numKeyBytes)
+            let startIndex = BigInt(bufToHexString(randomBytes))
             for (let i = 0; i < numLeavesToInsert; i++) {
-                leafIndices[i] = startIndex.add(i)
+                leafIndices[i] = startIndex + BigInt(i)
                 leafHashes[i] = genRandomSalt()
             }
 
@@ -115,12 +116,14 @@ describe('OneTimeSparseMerkleTree', () => {
 
         it('verify merkle proof of random indices', async () => {
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
-            let leafIndices: BigNumber[] = []
+            let leafIndices: BigInt[] = []
             let leafHashes: BigInt[] = []
             let numKeyBytes: number
+            let randomBytes: Buffer
             for (let i = 0; i < numLeavesToInsert; i++) {
                 numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1)
-                leafIndices[i] = BigNumber.from(crypto.randomBytes(numKeyBytes))
+                randomBytes = crypto.randomBytes(numKeyBytes)
+                leafIndices[i] = BigInt(bufToHexString(randomBytes))
                 leafHashes[i] = genRandomSalt()
             }
 
@@ -136,12 +139,13 @@ describe('OneTimeSparseMerkleTree', () => {
     describe('genSMT() ', async () => {
         it('inserting leaves with adjacent indices should match', async () => {
             const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
-            let leafIndices: BigNumber[] = []
+            let leafIndices: BigInt[] = []
             let leafHashes: BigInt[] = []
             let numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1);
-            let startIndex = BigNumber.from(crypto.randomBytes(numKeyBytes))
+            let randomBytes = crypto.randomBytes(numKeyBytes)
+            let startIndex = BigInt(bufToHexString(randomBytes))
             for (let i = 0; i < numLeavesToInsert; i++) {
-                leafIndices[i] = startIndex.add(i)
+                leafIndices[i] = startIndex + BigInt(i)
                 leafHashes[i] = genRandomSalt()
             }
 
@@ -171,12 +175,14 @@ describe('OneTimeSparseMerkleTree', () => {
         it('inserting leaves with random indices should match', async () => {
             const numLeavesToInsert = 1
             // const numLeavesToInsert = Math.floor(Math.random() * 10 + 1)
-            let leafIndices: BigNumber[] = []
+            let leafIndices: BigInt[] = []
             let leafHashes: BigInt[] = []
             let numKeyBytes: number
+            let randomBytes: Buffer
             for (let i = 0; i < numLeavesToInsert; i++) {
                 numKeyBytes = Math.floor(Math.random() * sizeKeySpaceInBytes + 1)
-                leafIndices[i] = BigNumber.from(crypto.randomBytes(numKeyBytes))
+                randomBytes = crypto.randomBytes(numKeyBytes)
+                leafIndices[i] = BigInt(bufToHexString(randomBytes))
                 leafHashes[i] = genRandomSalt()
             }
 
@@ -204,7 +210,7 @@ describe('OneTimeSparseMerkleTree', () => {
         })
 
         it('inserting leaf with out of bound index should fail', async () => {
-            let leafIndices = [numLeaves.add(1)]
+            let leafIndices = [numLeaves + BigInt(1)]
             let leafHashes = [genRandomSalt()]
 
             console.log('Deploying OneTimeSparseMerkleTree which is expected to fail')

@@ -21,7 +21,6 @@ import {
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
-import { BigNumber } from "ethers"
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -64,7 +63,7 @@ describe('Prove reputation from attester circuit', function () {
                 BigInt(0)
             ])
             reputationRecords[attesterId]['recordHash'] = newReputationRecord
-            await userStateTree.update(BigNumber.from(attesterId), newReputationRecord)
+            await userStateTree.update(BigInt(attesterId), newReputationRecord)
         }
 
         userStateRoot = userStateTree.getRootHash()
@@ -82,7 +81,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
+        const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
         const circuitInputs = {
             identity_pk: user['keypair']['pubKey'],
@@ -116,7 +115,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
+        const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongAttesterId = attesterId < (NUM_ATTESTERS - 1) ? attesterId + 1 : attesterId - 1
 
         const circuitInputs = {
@@ -153,7 +152,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
+        const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongUserStateRoot = genRandomSalt()
 
         const circuitInputs = {
@@ -190,7 +189,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
+        const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongMinPosRep = posRep
 
         const circuitInputs1 = {
@@ -256,7 +255,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
-        const pathElements = await userStateTree.getMerkleProof(BigNumber.from(attesterId))
+        const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongGraffitiPreImage = genRandomSalt()
 
         const circuitInputs = {

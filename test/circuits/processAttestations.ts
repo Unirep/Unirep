@@ -18,7 +18,6 @@ import {
 import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
-import { BigNumber } from "ethers"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -78,10 +77,10 @@ describe('Process attestation circuit', function () {
                 BigInt(0),
                 BigInt(0)
             ])
-            await userStateTree.update(BigNumber.from(attesterId), newAttestationRecord)
+            await userStateTree.update(BigInt(attesterId), newAttestationRecord)
         }
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
-        const leafZeroPathElements = await userStateTree.getMerkleProof(BigNumber.from(0))
+        const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
         for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(leafZeroPathElements)
 
         // Ensure as least one of the selectors is true
@@ -120,7 +119,7 @@ describe('Process attestation circuit', function () {
                     BigInt(0),
                     BigInt(0)
                 ])
-                const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigNumber.from(attestation['attesterId']))
+                const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigInt(attestation['attesterId']))
                 userStateTreePathElements.push(oldAttestationRecordProof)
 
                 // Update attestation record
@@ -134,14 +133,14 @@ describe('Process attestation circuit', function () {
                     BigInt(0),
                     BigInt(0)
                 ])
-                await userStateTree.update(BigNumber.from(attestation['attesterId']), newAttestationRecord)
+                await userStateTree.update(BigInt(attestation['attesterId']), newAttestationRecord)
 
                 nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
 
                 const attestation_hash = computeAttestationHash(attestation)
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
-                const leafZeroPathElements = await userStateTree.getMerkleProof(BigNumber.from(0))
+                const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
                 userStateTreePathElements.push(leafZeroPathElements)
 
                 nullifiers.push(BigInt(0))
