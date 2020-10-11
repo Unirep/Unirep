@@ -20,8 +20,9 @@ import {
     getSignalByName,
 } from './utils'
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth } from "../../config/testLocal"
-import { computeAttestationHash, genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
+import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
+import { Attestation } from "../../core/UnirepState"
 
 describe('User State Transition circuits', function () {
     this.timeout(400000)
@@ -161,26 +162,27 @@ describe('User State Transition circuits', function () {
             nullifiers = []
             hashChainResult = BigInt(0)
             for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-                const attestation = {
-                    attesterId: i + 1,
-                    posRep: Math.floor(Math.random() * 100),
-                    negRep: Math.floor(Math.random() * 100),
-                    graffiti: genRandomSalt(),
-                    overwriteGraffiti: true,
-                }
-                attesterIds.push(attestation['attesterId'])
+                const attesterId = i + 1
+                const attestation: Attestation = new Attestation(
+                    attesterId,
+                    Math.floor(Math.random() * 100),
+                    Math.floor(Math.random() * 100),
+                    genRandomSalt(),
+                    true,
+                )
+                attesterIds.push(attesterId)
                 posReps.push(attestation['posRep'])
                 negReps.push(attestation['negRep'])
                 graffities.push(attestation['graffiti'])
                 overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-                oldPosReps.push(attestationRecords[attestation['attesterId']]['posRep'])
-                oldNegReps.push(attestationRecords[attestation['attesterId']]['negRep'])
-                oldGraffities.push(attestationRecords[attestation['attesterId']]['graffiti'])
+                oldPosReps.push(attestationRecords[attesterId]['posRep'])
+                oldNegReps.push(attestationRecords[attesterId]['negRep'])
+                oldGraffities.push(attestationRecords[attesterId]['graffiti'])
 
                 // If nullifier tree is too small, it's likely that nullifier would be zero.
                 // In this case, force selector to be zero.
-                const nullifier = computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth)
+                const nullifier = computeNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth)
                 if ( nullifier == BigInt(0) ) {
                     selectors[i] = 0
                     // If unfortunately this is the selector forced to be true,
@@ -191,29 +193,29 @@ describe('User State Transition circuits', function () {
                 if ( selectors[i] == 1) {
                     // Get old attestation record
                     const oldAttestationRecord = hash5([
-                        attestationRecords[attestation['attesterId']]['posRep'],
-                        attestationRecords[attestation['attesterId']]['negRep'],
-                        attestationRecords[attestation['attesterId']]['graffiti'],
+                        attestationRecords[attesterId]['posRep'],
+                        attestationRecords[attesterId]['negRep'],
+                        attestationRecords[attesterId]['graffiti'],
                         BigInt(0),
                         BigInt(0)
                     ])
-                    const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigInt(attestation['attesterId']))
+                    const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigInt(attesterId))
                     userStateTreePathElements.push(oldAttestationRecordProof)
 
                     // Update attestation record
-                    attestationRecords[attestation['attesterId']]['posRep'] += attestation['posRep']
-                    attestationRecords[attestation['attesterId']]['negRep'] += attestation['negRep']
-                    if (attestation['overwriteGraffiti']) attestationRecords[attestation['attesterId']]['graffiti'] = attestation['graffiti']
+                    attestationRecords[attesterId]['posRep'] += attestation['posRep']
+                    attestationRecords[attesterId]['negRep'] += attestation['negRep']
+                    if (attestation['overwriteGraffiti']) attestationRecords[attesterId]['graffiti'] = attestation['graffiti']
                     const newAttestationRecordHash = hash5([
-                        attestationRecords[attestation['attesterId']]['posRep'],
-                        attestationRecords[attestation['attesterId']]['negRep'],
-                        attestationRecords[attestation['attesterId']]['graffiti'],
+                        attestationRecords[attesterId]['posRep'],
+                        attestationRecords[attesterId]['negRep'],
+                        attestationRecords[attesterId]['graffiti'],
                         BigInt(0),
                         BigInt(0)
                     ])
-                    await userStateTree.update(BigInt(attestation['attesterId']), newAttestationRecordHash)
+                    await userStateTree.update(BigInt(attesterId), newAttestationRecordHash)
 
-                    const attestation_hash = computeAttestationHash(attestation)
+                    const attestation_hash = attestation.hash()
                     hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
                     nullifiers.push(nullifier)

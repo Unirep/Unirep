@@ -7,7 +7,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { computeAttestationHash, computeNullifier, genNoAttestationNullifierKey, genNewUserStateTree } from '../utils'
+import { computeNullifier, genNoAttestationNullifierKey, genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,
@@ -18,6 +18,7 @@ import {
 import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
+import { Attestation } from "../../core/UnirepState"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -70,14 +71,14 @@ describe('Process attestation circuit', function () {
                     graffiti: genRandomSalt(),
                 }
             }
-            const newAttestationRecord = hash5([
+            const newReputationRecord = hash5([
                 attestationRecords[attesterId]['posRep'],
                 attestationRecords[attesterId]['negRep'],
                 attestationRecords[attesterId]['graffiti'],
                 BigInt(0),
                 BigInt(0)
             ])
-            await userStateTree.update(BigInt(attesterId), newAttestationRecord)
+            await userStateTree.update(BigInt(attesterId), newReputationRecord)
         }
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
@@ -93,51 +94,52 @@ describe('Process attestation circuit', function () {
         nullifiers = []
         hashChainResult = BigInt(0)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const attestation = {
-                attesterId: i + 1,
-                posRep: Math.floor(Math.random() * 100),
-                negRep: Math.floor(Math.random() * 100),
-                graffiti: genRandomSalt(),
-                overwriteGraffiti: true,
-            }
-            attesterIds.push(attestation['attesterId'])
+            const attesterId = i + 1
+            const attestation: Attestation = new Attestation(
+                attesterId,
+                Math.floor(Math.random() * 100),
+                Math.floor(Math.random() * 100),
+                genRandomSalt(),
+                true,
+            )
+            attesterIds.push(attesterId)
             posReps.push(attestation['posRep'])
             negReps.push(attestation['negRep'])
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-            oldPosReps.push(attestationRecords[attestation['attesterId']]['posRep'])
-            oldNegReps.push(attestationRecords[attestation['attesterId']]['negRep'])
-            oldGraffities.push(attestationRecords[attestation['attesterId']]['graffiti'])
+            oldPosReps.push(attestationRecords[attesterId]['posRep'])
+            oldNegReps.push(attestationRecords[attesterId]['negRep'])
+            oldGraffities.push(attestationRecords[attesterId]['graffiti'])
 
             if (selectors[i] == 1) {
                 // Get old attestation record
                 const oldAttestationRecord = hash5([
-                    attestationRecords[attestation['attesterId']]['posRep'],
-                    attestationRecords[attestation['attesterId']]['negRep'],
-                    attestationRecords[attestation['attesterId']]['graffiti'],
+                    attestationRecords[attesterId]['posRep'],
+                    attestationRecords[attesterId]['negRep'],
+                    attestationRecords[attesterId]['graffiti'],
                     BigInt(0),
                     BigInt(0)
                 ])
-                const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigInt(attestation['attesterId']))
+                const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigInt(attesterId))
                 userStateTreePathElements.push(oldAttestationRecordProof)
 
                 // Update attestation record
-                attestationRecords[attestation['attesterId']]['posRep'] += attestation['posRep']
-                attestationRecords[attestation['attesterId']]['negRep'] += attestation['negRep']
-                if (attestation['overwriteGraffiti']) attestationRecords[attestation['attesterId']]['graffiti'] = attestation['graffiti']
-                const newAttestationRecord = hash5([
-                    attestationRecords[attestation['attesterId']]['posRep'],
-                    attestationRecords[attestation['attesterId']]['negRep'],
-                    attestationRecords[attestation['attesterId']]['graffiti'],
+                attestationRecords[attesterId]['posRep'] += attestation['posRep']
+                attestationRecords[attesterId]['negRep'] += attestation['negRep']
+                if (attestation['overwriteGraffiti']) attestationRecords[attesterId]['graffiti'] = attestation['graffiti']
+                const newReputationRecord = hash5([
+                    attestationRecords[attesterId]['posRep'],
+                    attestationRecords[attesterId]['negRep'],
+                    attestationRecords[attesterId]['graffiti'],
                     BigInt(0),
                     BigInt(0)
                 ])
-                await userStateTree.update(BigInt(attestation['attesterId']), newAttestationRecord)
+                await userStateTree.update(BigInt(attesterId), newReputationRecord)
 
-                nullifiers.push(computeNullifier(user['identityNullifier'], attestation['attesterId'], epoch, circuitNullifierTreeDepth))
+                nullifiers.push(computeNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth))
 
-                const attestation_hash = computeAttestationHash(attestation)
+                const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))

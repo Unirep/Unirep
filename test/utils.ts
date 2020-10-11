@@ -142,16 +142,6 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return epochKeyModed
 }
 
-const computeAttestationHash = (attestation: any): SnarkBigInt => {
-    return hash5([
-        attestation['attesterId'],
-        attestation['posRep'],
-        attestation['negRep'],
-        attestation['graffiti'],
-        attestation['overwriteGraffiti'],
-    ])
-}
-
 const computeReputationHash = (reputation: any): SnarkBigInt => {
     return hash5([
         reputation['posRep'],
@@ -239,7 +229,6 @@ export {
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
     deployUnirep,
-    computeAttestationHash,
     computeNullifier,
     computeReputationHash,
     genEpochKey,
