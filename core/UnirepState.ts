@@ -6,7 +6,7 @@ import {
     hash5,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from '../test/utils'
+import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from '../test/utils'
 
 interface IEpochTreeLeaf {
     epochKey: BigInt;
@@ -16,7 +16,7 @@ interface IEpochTreeLeaf {
 const DefaultHashchainResult = SMT_ONE_LEAF
 
 interface IAttestation {
-    attesterId: number;
+    attesterId: BigInt;
     posRep: number;
     negRep: number;
     graffiti: BigInt;
@@ -24,14 +24,14 @@ interface IAttestation {
 }
 
 class Attestation implements IAttestation {
-    public attesterId: number
+    public attesterId: BigInt
     public posRep: number
     public negRep: number
     public graffiti: BigInt
     public overwriteGraffiti: boolean
 
     constructor(
-        _attesterId: number,
+        _attesterId: BigInt,
         _posRep: number,
         _negRep: number,
         _graffiti: BigInt,
@@ -46,7 +46,7 @@ class Attestation implements IAttestation {
 
     public hash = (): BigInt => {
         return hash5([
-            BigInt(this.attesterId),
+            this.attesterId,
             BigInt(this.posRep),
             BigInt(this.negRep),
             this.graffiti,
@@ -57,7 +57,6 @@ class Attestation implements IAttestation {
 
 class UnirepState {
     public globalStateTreeDepth: number
-    public userStateTreeDepth: number
     public epochTreeDepth: number
     public nullifierTreeDepth: number
     
@@ -67,7 +66,7 @@ class UnirepState {
     public numAttestationsPerBatch: number
     
     public currentEpoch: number
-    public zeroGSTLeaf: BigInt
+    public defaultGSTLeaf: BigInt
     private GSTLeaves: {[key: number]: BigInt[]} = {}
     private epochTreeLeaves: {[key: number]: IEpochTreeLeaf[]} = {}
     private nullifiers: BigInt[] = []
@@ -87,7 +86,6 @@ class UnirepState {
     ) {
 
         this.globalStateTreeDepth = _globalStateTreeDepth
-        this.userStateTreeDepth = _userStateTreeDepth
         this.epochTreeDepth = _epochTreeDepth
         this.nullifierTreeDepth =_nullifierTreeDepth
         this.attestingFee = _attestingFee
@@ -97,15 +95,10 @@ class UnirepState {
 
         this.currentEpoch = 1
         this.GSTLeaves[this.currentEpoch] = []
-        const zeroUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
-        const emptyUserStateTree = new IncrementalQuinTree(
-            this.userStateTreeDepth,
-            zeroUserStateLeaf,
-            2,
-        )
-        this.zeroGSTLeaf = hashLeftRight(
+        const emptyUserStateRoot = computeEmptyUserStateRoot(_userStateTreeDepth)
+        this.defaultGSTLeaf = hashLeftRight(
             BigInt(0),  // zero identityCommitment
-            emptyUserStateTree.root,  // zero user state root
+            emptyUserStateRoot,  // zero user state root
         )
     }
 
@@ -133,7 +126,7 @@ class UnirepState {
     public genGSTree = (epoch: number): IncrementalQuinTree => {
         const GSTree = new IncrementalQuinTree(
             this.globalStateTreeDepth,
-            this.zeroGSTLeaf,
+            this.defaultGSTLeaf,
             2,
         )
 

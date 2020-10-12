@@ -11,6 +11,7 @@ import PoseidonT6 from "../artifacts/PoseidonT6.json"
 import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
 import UserStateTransitionVerifier from "../artifacts/UserStateTransitionVerifier.json"
 import ReputationVerifier from "../artifacts/ReputationVerifier.json"
+import { IncrementalQuinTree } from 'maci-crypto'
 
 // Copy contract json type from ethereum-waffle
 interface SimpleContractJSON {
@@ -152,8 +153,8 @@ const computeReputationHash = (reputation: any): SnarkBigInt => {
     ])
 }
 
-const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: number, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([identityNullifier, BigInt(attesterId), BigInt(epoch), BigInt(0), BigInt(0)])
+const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([identityNullifier, attesterId, BigInt(epoch), BigInt(0), BigInt(0)])
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
     return nullifierModed
 }
@@ -210,6 +211,17 @@ const genNewNullifierTree = async (deployEnv: string = "contract"): Promise<Spar
     return nullifierTree
 }
 
+const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
+
+const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
+    const t = new IncrementalQuinTree(
+        treeDepth,
+        defaultUserStateLeaf,
+        2,
+    )
+    return t.root
+}    
+
 const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {
     let _userStateTreeDepth
     if (deployEnv === 'contract') {
@@ -220,7 +232,6 @@ const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<Spar
         throw new Error('Only contract and circuit testing env are supported')
     }
 
-    const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
     return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
 }
 
@@ -228,9 +239,11 @@ export {
     SimpleContractJSON,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
-    deployUnirep,
+    computeEmptyUserStateRoot,
     computeNullifier,
     computeReputationHash,
+    defaultUserStateLeaf,
+    deployUnirep,
     genEpochKey,
     genNoAttestationNullifierKey,
     genNewEpochTree,
