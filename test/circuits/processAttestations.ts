@@ -34,7 +34,7 @@ describe('Process attestation circuit', function () {
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
     let oldPosReps, oldNegReps, oldGraffities
 
-    let attestationRecords = {}
+    let reputationRecords = {}
     let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
     let nullifiers: SnarkBigInt[]
@@ -64,17 +64,17 @@ describe('Process attestation circuit', function () {
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const  attesterId = i + 1
-            if (attestationRecords[attesterId] === undefined) {
-                attestationRecords[attesterId] = {
+            if (reputationRecords[attesterId] === undefined) {
+                reputationRecords[attesterId] = {
                     posRep: Math.floor(Math.random() * 100),
                     negRep: Math.floor(Math.random() * 100),
                     graffiti: genRandomSalt(),
                 }
             }
             const newReputationRecord = hash5([
-                attestationRecords[attesterId]['posRep'],
-                attestationRecords[attesterId]['negRep'],
-                attestationRecords[attesterId]['graffiti'],
+                reputationRecords[attesterId]['posRep'],
+                reputationRecords[attesterId]['negRep'],
+                reputationRecords[attesterId]['graffiti'],
                 BigInt(0),
                 BigInt(0)
             ])
@@ -108,30 +108,23 @@ describe('Process attestation circuit', function () {
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-            oldPosReps.push(attestationRecords[attesterId]['posRep'])
-            oldNegReps.push(attestationRecords[attesterId]['negRep'])
-            oldGraffities.push(attestationRecords[attesterId]['graffiti'])
+            oldPosReps.push(reputationRecords[attesterId]['posRep'])
+            oldNegReps.push(reputationRecords[attesterId]['negRep'])
+            oldGraffities.push(reputationRecords[attesterId]['graffiti'])
 
             if (selectors[i] == 1) {
-                // Get old attestation record
-                const oldAttestationRecord = hash5([
-                    attestationRecords[attesterId]['posRep'],
-                    attestationRecords[attesterId]['negRep'],
-                    attestationRecords[attesterId]['graffiti'],
-                    BigInt(0),
-                    BigInt(0)
-                ])
-                const oldAttestationRecordProof = await userStateTree.getMerkleProof(BigInt(attesterId))
-                userStateTreePathElements.push(oldAttestationRecordProof)
+                // Get old reputation record proof
+                const oldReputationRecordProof = await userStateTree.getMerkleProof(BigInt(attesterId))
+                userStateTreePathElements.push(oldReputationRecordProof)
 
                 // Update attestation record
-                attestationRecords[attesterId]['posRep'] += attestation['posRep']
-                attestationRecords[attesterId]['negRep'] += attestation['negRep']
-                if (attestation['overwriteGraffiti']) attestationRecords[attesterId]['graffiti'] = attestation['graffiti']
+                reputationRecords[attesterId]['posRep'] += attestation['posRep']
+                reputationRecords[attesterId]['negRep'] += attestation['negRep']
+                if (attestation['overwriteGraffiti']) reputationRecords[attesterId]['graffiti'] = attestation['graffiti']
                 const newReputationRecord = hash5([
-                    attestationRecords[attesterId]['posRep'],
-                    attestationRecords[attesterId]['negRep'],
-                    attestationRecords[attesterId]['graffiti'],
+                    reputationRecords[attesterId]['posRep'],
+                    reputationRecords[attesterId]['negRep'],
+                    reputationRecords[attesterId]['graffiti'],
                     BigInt(0),
                     BigInt(0)
                 ])
