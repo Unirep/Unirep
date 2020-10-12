@@ -55,15 +55,15 @@ describe('Prove reputation from attester circuit', function () {
                 graffitiPreImage: graffitiPreImage,
                 graffiti: hashOne(graffitiPreImage),
             }
-            const newReputationRecord = hash5([
+            const newReputationRecordHash = hash5([
                 reputationRecords[attesterId]['posRep'],
                 reputationRecords[attesterId]['negRep'],
                 reputationRecords[attesterId]['graffiti'],
                 BigInt(0),
                 BigInt(0)
             ])
-            reputationRecords[attesterId]['recordHash'] = newReputationRecord
-            await userStateTree.update(BigInt(attesterId), newReputationRecord)
+            reputationRecords[attesterId]['recordHash'] = newReputationRecordHash
+            await userStateTree.update(BigInt(attesterId), newReputationRecordHash)
         }
 
         userStateRoot = userStateTree.getRootHash()

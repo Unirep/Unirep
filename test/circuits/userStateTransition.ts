@@ -23,6 +23,7 @@ import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeD
 import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation } from "../../core/UnirepState"
+import { Reputation } from "../../core/UserState"
 
 describe('User State Transition circuits', function () {
     this.timeout(400000)
@@ -87,7 +88,7 @@ describe('User State Transition circuits', function () {
         let oldPosReps, oldNegReps, oldGraffities
 
         let reputationRecords = {}
-        let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+        let attesterIds: BigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
         let selectors: number[] = []
         let nullifiers: SnarkBigInt[]
         let hashChainResult: SnarkBigInt
@@ -117,22 +118,15 @@ describe('User State Transition circuits', function () {
 
             // Bootstrap user state
             for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-                const  attesterId = i + 1
-                if (reputationRecords[attesterId] === undefined) {
-                    reputationRecords[attesterId] = {
-                        posRep: Math.floor(Math.random() * 100),
-                        negRep: Math.floor(Math.random() * 100),
-                        graffiti: genRandomSalt(),
-                    }
+                const  attesterId = BigInt(i + 1)
+                if (reputationRecords[attesterId.toString()] === undefined) {
+                    reputationRecords[attesterId.toString()] = new Reputation(
+                        Math.floor(Math.random() * 100),
+                        Math.floor(Math.random() * 100),
+                        genRandomSalt(),
+                    )
                 }
-                const newReputationRecordHash = hash5([
-                    reputationRecords[attesterId]['posRep'],
-                    reputationRecords[attesterId]['negRep'],
-                    reputationRecords[attesterId]['graffiti'],
-                    BigInt(0),
-                    BigInt(0)
-                ])
-                await userStateTree.update(BigInt(attesterId), newReputationRecordHash)
+                await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
             }
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
             const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
@@ -162,7 +156,7 @@ describe('User State Transition circuits', function () {
             nullifiers = []
             hashChainResult = BigInt(0)
             for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-                const attesterId = i + 1
+                const attesterId = BigInt(i + 1)
                 const attestation: Attestation = new Attestation(
                     attesterId,
                     Math.floor(Math.random() * 100),
@@ -176,13 +170,13 @@ describe('User State Transition circuits', function () {
                 graffities.push(attestation['graffiti'])
                 overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-                oldPosReps.push(reputationRecords[attesterId]['posRep'])
-                oldNegReps.push(reputationRecords[attesterId]['negRep'])
-                oldGraffities.push(reputationRecords[attesterId]['graffiti'])
+                oldPosReps.push(reputationRecords[attesterId.toString()]['posRep'])
+                oldNegReps.push(reputationRecords[attesterId.toString()]['negRep'])
+                oldGraffities.push(reputationRecords[attesterId.toString()]['graffiti'])
 
                 // If nullifier tree is too small, it's likely that nullifier would be zero.
                 // In this case, force selector to be zero.
-                const nullifier = computeNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth)
+                const nullifier = computeNullifier(user['identityNullifier'], BigInt(attesterId), epoch, circuitNullifierTreeDepth)
                 if ( nullifier == BigInt(0) ) {
                     selectors[i] = 0
                     // If unfortunately this is the selector forced to be true,
@@ -196,17 +190,10 @@ describe('User State Transition circuits', function () {
                     userStateTreePathElements.push(oldReputationRecordProof)
 
                     // Update attestation record
-                    reputationRecords[attesterId]['posRep'] += attestation['posRep']
-                    reputationRecords[attesterId]['negRep'] += attestation['negRep']
-                    if (attestation['overwriteGraffiti']) reputationRecords[attesterId]['graffiti'] = attestation['graffiti']
-                    const newReputationRecordHash = hash5([
-                        reputationRecords[attesterId]['posRep'],
-                        reputationRecords[attesterId]['negRep'],
-                        reputationRecords[attesterId]['graffiti'],
-                        BigInt(0),
-                        BigInt(0)
-                    ])
-                    await userStateTree.update(BigInt(attesterId), newReputationRecordHash)
+                    reputationRecords[attesterId.toString()]['posRep'] += attestation['posRep']
+                    reputationRecords[attesterId.toString()]['negRep'] += attestation['negRep']
+                    if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
+                    await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
 
                     const attestation_hash = attestation.hash()
                     hashChainResult = hashLeftRight(attestation_hash, hashChainResult)

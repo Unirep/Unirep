@@ -11,7 +11,6 @@ import { computeNullifier, genNoAttestationNullifierKey, genNewUserStateTree } f
 
 import {
     genRandomSalt,
-    hash5,
     hashLeftRight,
     SnarkBigInt,
 } from 'maci-crypto'
@@ -19,6 +18,7 @@ import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 import { Attestation } from "../../core/UnirepState"
+import { Reputation } from "../../core/UserState"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -34,8 +34,8 @@ describe('Process attestation circuit', function () {
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
     let oldPosReps, oldNegReps, oldGraffities
 
-    let reputationRecords = {}
-    let attesterIds: number[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+    let reputationRecords: { [key: string]: Reputation } = {}
+    let attesterIds: BigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
     let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
@@ -63,22 +63,15 @@ describe('Process attestation circuit', function () {
 
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const  attesterId = i + 1
-            if (reputationRecords[attesterId] === undefined) {
-                reputationRecords[attesterId] = {
-                    posRep: Math.floor(Math.random() * 100),
-                    negRep: Math.floor(Math.random() * 100),
-                    graffiti: genRandomSalt(),
-                }
+            const  attesterId = BigInt(i + 1)
+            if (reputationRecords[attesterId.toString()] === undefined) {
+                reputationRecords[attesterId.toString()] = new Reputation(
+                    Math.floor(Math.random() * 100),
+                    Math.floor(Math.random() * 100),
+                    genRandomSalt(),
+                )
             }
-            const newReputationRecord = hash5([
-                reputationRecords[attesterId]['posRep'],
-                reputationRecords[attesterId]['negRep'],
-                reputationRecords[attesterId]['graffiti'],
-                BigInt(0),
-                BigInt(0)
-            ])
-            await userStateTree.update(BigInt(attesterId), newReputationRecord)
+            await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
         }
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
@@ -94,7 +87,7 @@ describe('Process attestation circuit', function () {
         nullifiers = []
         hashChainResult = BigInt(0)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const attesterId = i + 1
+            const attesterId = BigInt(i + 1)
             const attestation: Attestation = new Attestation(
                 attesterId,
                 Math.floor(Math.random() * 100),
@@ -108,27 +101,21 @@ describe('Process attestation circuit', function () {
             graffities.push(attestation['graffiti'])
             overwriteGraffitis.push(attestation['overwriteGraffiti'])
 
-            oldPosReps.push(reputationRecords[attesterId]['posRep'])
-            oldNegReps.push(reputationRecords[attesterId]['negRep'])
-            oldGraffities.push(reputationRecords[attesterId]['graffiti'])
+            oldPosReps.push(reputationRecords[attesterId.toString()]['posRep'])
+            oldNegReps.push(reputationRecords[attesterId.toString()]['negRep'])
+            oldGraffities.push(reputationRecords[attesterId.toString()]['graffiti'])
 
             if (selectors[i] == 1) {
                 // Get old reputation record proof
-                const oldReputationRecordProof = await userStateTree.getMerkleProof(BigInt(attesterId))
+                const oldReputationRecordProof = await userStateTree.getMerkleProof(attesterId)
                 userStateTreePathElements.push(oldReputationRecordProof)
 
                 // Update attestation record
-                reputationRecords[attesterId]['posRep'] += attestation['posRep']
-                reputationRecords[attesterId]['negRep'] += attestation['negRep']
-                if (attestation['overwriteGraffiti']) reputationRecords[attesterId]['graffiti'] = attestation['graffiti']
-                const newReputationRecord = hash5([
-                    reputationRecords[attesterId]['posRep'],
-                    reputationRecords[attesterId]['negRep'],
-                    reputationRecords[attesterId]['graffiti'],
-                    BigInt(0),
-                    BigInt(0)
-                ])
-                await userStateTree.update(BigInt(attesterId), newReputationRecord)
+                reputationRecords[attesterId.toString()]['posRep'] += attestation['posRep']
+                reputationRecords[attesterId.toString()]['negRep'] += attestation['negRep']
+                if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
+
+                await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
                 nullifiers.push(computeNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth))
 
@@ -375,7 +362,7 @@ describe('Process attestation circuit', function () {
     })
 
     it('process attestations with incorrect number of elements should fail', async () => {
-        const wrongAttesterIds = attesterIds.concat([4])
+        const wrongAttesterIds = attesterIds.concat([BigInt(4)])
         const circuitInputs = {
             epoch: epoch,
             nonce: nonce,
