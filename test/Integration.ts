@@ -1,41 +1,40 @@
 import { ethers } from "@nomiclabs/buidler"
 import { BigNumber, Contract, Signer, Wallet } from "ethers"
-import chai, { use } from "chai"
+import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, maxEpochKeyNonce, numAttestationsPerBatch} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { IncrementalQuinTree, SnarkBigInt, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
-import { deployUnirep, genNoAttestationNullifierKey, genEpochKey, toCompleteHexString, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, SMT_ONE_LEAF, computeReputationHash, defaultUserStateLeaf, computeEmptyUserStateRoot } from './utils'
+import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
+import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/Unirep.json"
 import { Attestation, IAttestation, IEpochTreeLeaf, UnirepState } from "../core/UnirepState"
-import { SparseMerkleTreeImpl } from "../crypto/SMT"
 import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
-import { IReputation, IUserStateLeaf, Reputation, UserState } from "../core/UserState"
+import { IUserStateLeaf, UserState } from "../core/UserState"
 
 describe('Integration', function () {
     this.timeout(500000)
 
     let unirepState: UnirepState
     let users: UserState[] = new Array(2)
-    let userStateLeaves: { [key: string]: IReputation }[] = new Array(2)
-
     let attesters = new Array(2)
-    let unirepContractCalledByFisrtAttester, unirepContractCalledBySecondAttester
+
+    // Data that are needed for verifying proof
+    let userStateLeavesAfterTransition: IUserStateLeaf[][] = new Array(2)
+    let graffitiPreImageMap = new Array(2)
 
     let unirepContract: Contract
+    let unirepContractCalledByFisrtAttester, unirepContractCalledBySecondAttester
+
     let prevEpoch: BigNumber
     let currentEpoch: BigNumber
     let emptyUserStateRoot
     let blankGSLeaf
-    let nullifierTree : SparseMerkleTreeImpl
 
     let accounts: Signer[]
-
-    let usersLocalStateTransitionData = {}
 
     let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
     before(async () => {
@@ -49,13 +48,10 @@ describe('Integration', function () {
         accounts = await ethers.getSigners()
 
         unirepContract = await deployUnirep(<Wallet>accounts[0], "circuit")
+        
         currentEpoch = await unirepContract.currentEpoch()
-
         emptyUserStateRoot = computeEmptyUserStateRoot(circuitUserStateTreeDepth)
-
-        blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
-
-        nullifierTree = await genNewNullifierTree("circuit")
+        blankGSLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
 
         unirepState = new UnirepState(
             circuitGlobalStateTreeDepth,
@@ -97,7 +93,6 @@ describe('Integration', function () {
                 latestTransitionedToEpoch,
                 GSTreeLeafIndex,
             )
-            userStateLeaves[0] = {}
         })
 
         it('First attester signs up', async () => {
@@ -148,94 +143,26 @@ describe('Integration', function () {
         })
 
         it('First user transition from first epoch', async () => {
-            const fromEpoch = users[0].latestTransitionedEpoch
-            let oldNullifierTreeRoot = nullifierTree.getRootHash()
-            // No attestations made in first epoch, so no nullifiers
-            const zeroNullifiers: number[] = []
-            for (let i = 0; i < numAttestationsPerBatch; i++) {
-                zeroNullifiers[i] = 0
-            }
-
-            const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
-            // TODO: allow copying SMT so there are different user state trees for different epochs
-            // Currently user state tree is the same so `intermediateUserStateTreeRoots` needs to be
-            // kept track of when applying attestations to user state
-            const fromEpochUserStateTree: SparseMerkleTreeImpl = await users[0].genUserStateTree()
-
             const epochKeyNonce = 0
-            const intermediateUserStateTreeRoots: BigInt[] = [fromEpochUserStateTree.getRootHash()]
-            const oldPosReps: number[] = [], oldNegReps: number[] = [], oldGraffities: BigInt[] = []
-            const userStateTreePathElements: any[] = []
-            const GSTreeProof = fromEpochGSTree.genMerklePath(users[0].latestGSTLeafIndex)
+            const fromEpoch = users[0].latestTransitionedEpoch
+            const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
             const GSTreeRoot = fromEpochGSTree.root
-            const selectors: number[] = [], attesterIds: BigInt[] = [], posReps: number[] = [], negReps: number[] = [], graffities: number[] = [], overwriteGraffitis: any[] = []
-            const hashChainResult = hashLeftRight(BigInt(1), BigInt(0))  // default hash chain result where no attestations are made to the epoch key
-            const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, fromEpoch, epochKeyNonce, circuitEpochTreeDepth)
             const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
-            const epochTreePathElements = await fromEpochTree.getMerkleProof(firstUserEpochKey)
             const epochTreeRoot = fromEpochTree.getRootHash()
-            const nullifierTreePathElements: any[] = []
-            // No attestations made in first epoch
-            for (let i = 0; i < numAttestationsPerBatch; i++) {
-                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
-                oldPosReps.push(0)
-                oldNegReps.push(0)
-                oldGraffities.push(BigInt(0))
-                selectors.push(0)
-                attesterIds.push(BigInt(0))
-                posReps.push(0)
-                negReps.push(0)
-                graffities.push(0)
-                overwriteGraffitis.push(false)
+            const oldNullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
+            const nullifiers = users[0].getNullifiers(fromEpoch, epochKeyNonce)
 
-                const USTLeafZeroPathElements = await fromEpochUserStateTree.getMerkleProof(BigInt(0))
-                userStateTreePathElements.push(USTLeafZeroPathElements)
-
-                const nullifierTreeProof = await nullifierTree.getMerkleProof(BigInt(0))
-                nullifierTreePathElements.push(nullifierTreeProof)    
-            }
-
-            const circuitInputs = {
-                epoch: fromEpoch,
-                nonce: epochKeyNonce,
-                max_nonce: maxEpochKeyNonce,
-                intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
-                old_pos_reps: oldPosReps,
-                old_neg_reps: oldNegReps,
-                old_graffities: oldGraffities,
-                UST_path_elements: userStateTreePathElements,
-                identity_pk: users[0].id.keypair.pubKey,
-                identity_nullifier: users[0].id.identityNullifier,
-                identity_trapdoor: users[0].id.identityTrapdoor,
-                GST_path_elements: GSTreeProof.pathElements,
-                GST_path_index: GSTreeProof.indices,
-                GST_root: GSTreeRoot,
-                selectors: selectors,
-                attester_ids: attesterIds,
-                pos_reps: posReps,
-                neg_reps: negReps,
-                graffities: graffities,
-                overwrite_graffitis: overwriteGraffitis,
-                epk_path_elements: epochTreePathElements,
-                hash_chain_result: hashChainResult,
-                epoch_tree_root: epochTreeRoot,
-                nullifier_tree_root: oldNullifierTreeRoot,
-                nullifier_tree_path_elements: nullifierTreePathElements
-            }
+            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs(epochKeyNonce)
             const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
-            const newHashedStateLeaf = await unirepContract.hashStateLeaf(
-                [
-                    users[0].commitment,
-                    fromEpochUserStateTree.getRootHash()
-                ]
-            )
-            const noAttestationNullifier = genNoAttestationNullifierKey(users[0].id.identityNullifier, prevEpoch.toNumber(), epochKeyNonce, circuitNullifierTreeDepth)
+            const newState = await users[0].genNewUserStateAfterTransition(epochKeyNonce)
+            userStateLeavesAfterTransition[0] = newState.newUSTLeaves
+            const noAttestationNullifier = users[0].getNoAttestationsNullifier(prevEpoch.toNumber(), epochKeyNonce)
             let tx = await unirepContract.updateUserStateRoot(
-                newHashedStateLeaf,
-                zeroNullifiers,
+                newState.newGSTLeaf,
+                nullifiers,
                 noAttestationNullifier,
                 fromEpoch,
                 GSTreeRoot,
@@ -272,27 +199,16 @@ describe('Integration', function () {
             )
             expect(isProofValid).to.be.true
 
-            // Update nullifier tree
             const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
             const allNullifiers: BigInt[] = nullifiers.slice()
-            for (const nullifier of nullifiers) {
-                if (nullifier > 0) {
-                    await nullifierTree.update(BigInt(nullifier), SMT_ONE_LEAF)
-                }
-            }
             const noAtteNullifier = BigInt(stateTransitionArgs['_noAttestationNullifier'])
-            if (noAtteNullifier > 0) {
-                await nullifierTree.update(BigInt(noAtteNullifier), SMT_ONE_LEAF)
-            }
             allNullifiers.push(noAtteNullifier)
 
-
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
-            expect(nullifierTree.getRootHash() === (await unirepState.genNullifierTree()).getRootHash()).to.be.true
 
-            const GSTreeLeafIndex = 0
             const latestTransitionedToEpoch = currentEpoch.toNumber()
-            const latestUserStateLeaves = []  // No reputations given yet
+            const GSTreeLeafIndex = 0
+            const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
             users[0].transition(
                 latestTransitionedToEpoch,
                 GSTreeLeafIndex,
@@ -327,7 +243,6 @@ describe('Integration', function () {
                 latestTransitionedToEpoch,
                 GSTreeLeafIndex,
             )
-            userStateLeaves[1] = {}
         })
 
         it('Second attester signs up', async () => {
@@ -389,6 +304,9 @@ describe('Integration', function () {
                 hashOne(graffitiPreImage),
                 true,
             )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[0] = new Object()
+            graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
             const tx = await unirepContractCalledByFisrtAttester.submitAttestation(
                 attestation,
                 firstUserEpochKey,
@@ -399,32 +317,6 @@ describe('Integration', function () {
 
             secondEpochEpochKeys.push(firstUserEpochKey.toString())
             unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
-
-            const userStateTree = await users[0].genUserStateTree()
-            const oldReps = {
-                posRep: 0,
-                negRep: 0,
-                graffiti: BigInt(0),
-                graffitiPreImage: graffitiPreImage
-            }
-            const newReps = {
-                posRep: 0 + attestation['posRep'],
-                negRep: 0 + attestation['negRep'],
-                graffiti: attestation['overwriteGraffiti'] ? attestation['graffiti'] : BigInt(0),
-                graffitiPreImage: attestation['overwriteGraffiti'] ? graffitiPreImage : BigInt(0),
-            }
-            const nullifier = computeNullifier(users[0].id.identityNullifier, attestation['attesterId'], currentEpoch.toNumber(), circuitNullifierTreeDepth)
-            const nullifierTreeProof = await nullifierTree.getMerkleProof(nullifier)
-            usersLocalStateTransitionData[0] = new Object()
-            const dataForApplyAttestation = {
-                attestation: attestation,
-                oldReps: oldReps,
-                newReps: newReps,
-                nullifier: nullifier,
-                nullifierTreeProof: nullifierTreeProof
-            }
-            usersLocalStateTransitionData[0][firstUserEpochKey.toString()] = [dataForApplyAttestation]
-            userStateLeaves[0][attestation['attesterId'].toString()] = newReps
 
             users[0].addEpochKey(firstUserEpochKey.toString())
         })
@@ -475,6 +367,9 @@ describe('Integration', function () {
                 hashOne(graffitiPreImage),
                 true,
             )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[1] = new Object()
+            graffitiPreImageMap[1][attestation.attesterId.toString()] = graffitiPreImage
             const tx = await unirepContractCalledByFisrtAttester.submitAttestation(
                 attestation,
                 secondUserEpochKey,
@@ -485,32 +380,6 @@ describe('Integration', function () {
 
             secondEpochEpochKeys.push(secondUserEpochKey.toString())
             unirepState.addAttestation(secondUserEpochKey.toString(), attestation)
-
-            const userStateTree = await users[1].genUserStateTree()
-            const oldReps = {
-                posRep: 0,
-                negRep: 0,
-                graffiti: BigInt(0),
-                graffitiPreImage: graffitiPreImage,
-            }
-            const newReps = {
-                posRep: 0 + attestation['posRep'],
-                negRep: 0 + attestation['negRep'],
-                graffiti: attestation['overwriteGraffiti'] ? attestation['graffiti'] : BigInt(0),
-                graffitiPreImage: attestation['overwriteGraffiti'] ? graffitiPreImage : BigInt(0),
-            }
-            const nullifier = computeNullifier(users[1].id.identityNullifier, attestation['attesterId'], currentEpoch.toNumber(), circuitNullifierTreeDepth)
-            const nullifierTreeProof = await nullifierTree.getMerkleProof(nullifier)
-            usersLocalStateTransitionData[1] = new Object()
-            const dataForApplyAttestation = {
-                attestation: attestation,
-                oldReps: oldReps,
-                newReps: newReps,
-                nullifier: nullifier,
-                nullifierTreeProof: nullifierTreeProof
-            }
-            usersLocalStateTransitionData[1][secondUserEpochKey.toString()] = [dataForApplyAttestation]
-            userStateLeaves[1][attestation['attesterId'].toString()] = newReps
 
             users[1].addEpochKey(secondUserEpochKey.toString())
         })
@@ -526,6 +395,8 @@ describe('Integration', function () {
                 hashOne(graffitiPreImage),
                 true,
             )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
             const tx = await unirepContractCalledBySecondAttester.submitAttestation(
                 attestation,
                 secondUserEpochKey,
@@ -535,29 +406,6 @@ describe('Integration', function () {
             expect(receipt.status).equal(1)
 
             unirepState.addAttestation(secondUserEpochKey.toString(), attestation)
-
-            const userStateTree = await users[1].genUserStateTree()
-            const oldReps = usersLocalStateTransitionData[1][secondUserEpochKey.toString()][0]['newReps']
-            const newReps = {
-                posRep: oldReps['posRep'] + attestation['posRep'],
-                negRep: oldReps['negRep'] + attestation['negRep'],
-                graffiti: attestation['overwriteGraffiti'] ? attestation['graffiti'] : oldReps['graffiti'],
-                graffitiPreImage: attestation['overwriteGraffiti'] ? graffitiPreImage : oldReps['graffitiPreImage'],
-            }
-            const USTLeafPathElements = await userStateTree.getMerkleProof(attestation['attesterId'])
-            const nullifier = computeNullifier(users[1].id.identityNullifier, attestation['attesterId'], currentEpoch.toNumber(), circuitNullifierTreeDepth)
-            const nullifierTreeProof = await nullifierTree.getMerkleProof(nullifier)
-            const dataForApplyAttestation = {
-                attestation: attestation,
-                oldReps: oldReps,
-                newReps: newReps,
-                preApplyUserStateRoot: userStateTree.getRootHash(),
-                preApplyUserTreeProof: USTLeafPathElements,
-                nullifier: nullifier,
-                nullifierTreeProof: nullifierTreeProof
-            }
-            usersLocalStateTransitionData[1][secondUserEpochKey.toString()].push(dataForApplyAttestation)
-            userStateLeaves[1][attestation['attesterId'].toString()] = newReps
 
             users[1].addEpochKey(secondUserEpochKey.toString())
         })
@@ -647,122 +495,34 @@ describe('Integration', function () {
         })
 
         it('First user transition from second epoch', async () => {
-            const fromEpoch = users[0].latestTransitionedEpoch
             const epochKeyNonce = 0
+            const fromEpoch = users[0].latestTransitionedEpoch
             const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, fromEpoch, epochKeyNonce, circuitEpochTreeDepth)
             expect(unirepState.getAttestations(firstUserEpochKey.toString()).length).to.be.equal(1)
 
-            const listDataToApplyForEpochKey = usersLocalStateTransitionData[0][firstUserEpochKey.toString()]
-            expect(listDataToApplyForEpochKey.length).to.be.equal(1)
-
-            const intermediateUserStateTreeRoots: BigInt[] = []
-            const oldPosReps: number[] = [], oldNegReps: number[] = [], oldGraffities: number[] = []
-            const selectors: number[] = [], attesterIds: BigInt[] = [], posReps: number[] = [], negReps: number[] = [], graffities: number[] = [], overwriteGraffitis: any[] = []
-            const fromEpochUserStateTree =  await users[0].genUserStateTree()
-            const userStateTreePathElements: any[] = []
-            const fromEpochGSTree = unirepState.genGSTree(Number(fromEpoch))
-            const GSTreeProof = fromEpochGSTree.genMerklePath(users[0].latestGSTLeafIndex)
+            const fromEpochGSTree = unirepState.genGSTree(fromEpoch)
             const GSTreeRoot = fromEpochGSTree.root
-            const hashChainResult = unirepState.getHashchain(firstUserEpochKey.toString())
-            const fromEpochTree = await unirepState.genEpochTree(Number(fromEpoch))
-            const epochTreePathElements = await fromEpochTree.getMerkleProof(firstUserEpochKey)
+            const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
             const epochTreeRoot = fromEpochTree.getRootHash()
-            let oldNullifierTreeRoot = nullifierTree.getRootHash()
-            const nullifiers: BigInt[] = []
-            const nullifierTreePathElements: any[] = []
+            const oldNullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
+            const nullifiers = users[0].getNullifiers(fromEpoch, epochKeyNonce)
 
-            // Fill in data for attestations made
-            for (let i = 0; i < listDataToApplyForEpochKey.length; i++) {
-                const dataToApply = listDataToApplyForEpochKey[i]
-                const attestation = dataToApply['attestation']
-                nullifiers.push(dataToApply['nullifier'])
-                oldPosReps.push(dataToApply['oldReps']['posRep'])
-                oldNegReps.push(dataToApply['oldReps']['negRep'])
-                oldGraffities.push(dataToApply['oldReps']['graffiti'])
-                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
-                const USTLeafPathElements = await fromEpochUserStateTree.getMerkleProof(attestation['attesterId'])
-                userStateTreePathElements.push(USTLeafPathElements)
-                const newRep = new Reputation(dataToApply['newReps'].posRep, dataToApply['newReps'].negRep, dataToApply['newReps'].graffiti)
-                await fromEpochUserStateTree.update(attestation['attesterId'], newRep.hash())
-                
-                selectors.push(1)
-                attesterIds.push(attestation['attesterId'])
-                posReps.push(attestation['posRep'])
-                negReps.push(attestation['negRep'])
-                graffities.push(attestation['graffiti'])
-                overwriteGraffitis.push(attestation['overwriteGraffiti'])
-                
-                nullifierTreePathElements.push(dataToApply['nullifierTreeProof'])
-            }
-            // Fill in blank data for non-exist attestation
-            for (let i = 0; i < (numAttestationsPerBatch - listDataToApplyForEpochKey.length); i++) {
-                nullifiers.push(BigInt(0))
-                oldPosReps.push(0)
-                oldNegReps.push(0)
-                oldGraffities.push(0)
-                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
-                selectors.push(0)
-                attesterIds.push(BigInt(0))
-                posReps.push(0)
-                negReps.push(0)
-                graffities.push(0)
-                overwriteGraffitis.push(false)
-
-                const USTLeafZeroPathElements = await fromEpochUserStateTree.getMerkleProof(BigInt(0))
-                userStateTreePathElements.push(USTLeafZeroPathElements)
-
-                const nullifierTreeProof = await nullifierTree.getMerkleProof(BigInt(0))
-                nullifierTreePathElements.push(nullifierTreeProof)    
-            }
-            // Push one extra intermediate user state root as this would be the latest user state root
-            intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
-
-            const circuitInputs = {
-                epoch: fromEpoch,
-                nonce: epochKeyNonce,
-                max_nonce: maxEpochKeyNonce,
-                intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
-                old_pos_reps: oldPosReps,
-                old_neg_reps: oldNegReps,
-                old_graffities: oldGraffities,
-                UST_path_elements: userStateTreePathElements,
-                identity_pk: users[0].id.keypair.pubKey,
-                identity_nullifier: users[0].id.identityNullifier,
-                identity_trapdoor: users[0].id.identityTrapdoor,
-                GST_path_elements: GSTreeProof.pathElements,
-                GST_path_index: GSTreeProof.indices,
-                GST_root: GSTreeRoot,
-                selectors: selectors,
-                attester_ids: attesterIds,
-                pos_reps: posReps,
-                neg_reps: negReps,
-                graffities: graffities,
-                overwrite_graffitis: overwriteGraffitis,
-                epk_path_elements: epochTreePathElements,
-                hash_chain_result: hashChainResult,
-                epoch_tree_root: epochTreeRoot,
-                nullifier_tree_root: oldNullifierTreeRoot,
-                nullifier_tree_path_elements: nullifierTreePathElements
-            }
+            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs(epochKeyNonce)
             const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
 
-            const newHashedStateLeaf = await unirepContract.hashStateLeaf(
-                [
-                    users[0].commitment,
-                    fromEpochUserStateTree.getRootHash()
-                ]
-            )
+            const newState = await users[0].genNewUserStateAfterTransition(epochKeyNonce)
+            userStateLeavesAfterTransition[0] = newState.newUSTLeaves
+            const noAttestationNullifier = users[0].getNoAttestationsNullifier(fromEpoch, epochKeyNonce)
 
-            const noAtteNullifier = 0
             let tx = await unirepContract.updateUserStateRoot(
-                newHashedStateLeaf,
+                newState.newGSTLeaf,
                 nullifiers,
-                noAtteNullifier,
+                noAttestationNullifier,
                 fromEpoch,
-                fromEpochGSTree.root,
-                fromEpochTree.getRootHash(),
+                GSTreeRoot,
+                epochTreeRoot,
                 oldNullifierTreeRoot,
                 formatProofForVerifierContract(results['proof']),
             )
@@ -795,33 +555,16 @@ describe('Integration', function () {
             )
             expect(isProofValid).to.be.true
 
-            // Update nullifier tree
             const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
             const allNullifiers: BigInt[] = nullifiers.slice()
-            for (const nullifier of nullifiers) {
-                if (nullifier > 0) {
-                    await nullifierTree.update(nullifier, SMT_ONE_LEAF)
-                }
-            }
             const noAtteNullifier = BigInt(stateTransitionArgs['_noAttestationNullifier'])
-            if (noAtteNullifier > 0) {
-                await nullifierTree.update(noAtteNullifier, SMT_ONE_LEAF)
-            }
             allNullifiers.push(noAtteNullifier)
 
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
-            expect(nullifierTree.getRootHash() === (await unirepState.genNullifierTree()).getRootHash()).to.be.true
 
-            const GSTreeLeafIndex = 0
             const latestTransitionedToEpoch = currentEpoch.toNumber()
-            const latestUserStateLeaves: IUserStateLeaf[] = []
-            for (const [attesterId, rep] of Object.entries(userStateLeaves[0])) {
-                const leaf: IUserStateLeaf = {
-                    attesterId: BigInt(attesterId),
-                    reputation: new Reputation(rep.posRep, rep.negRep, rep.graffiti)
-                }
-                latestUserStateLeaves.push(leaf)
-            }
+            const GSTreeLeafIndex = 0
+            const latestUserStateLeaves = userStateLeavesAfterTransition[0]
     
             users[0].transition(
                 latestTransitionedToEpoch,
@@ -832,11 +575,11 @@ describe('Integration', function () {
 
         it('First user prove his reputation', async () => {
             const attesterId = BigInt(1)  // Prove reputation received from first attester
-            const reputationRecord = userStateLeaves[0][attesterId.toString()]
-            const posRep = reputationRecord['posRep']
-            const negRep = reputationRecord['negRep']
-            const graffiti = reputationRecord['graffiti']
-            const graffitiPreImage = reputationRecord['graffitiPreImage']
+            const rep = users[0].getRepByAttester(attesterId)
+            const posRep = rep['posRep']
+            const negRep = rep['negRep']
+            const graffiti = rep['graffiti']
+            const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
             const userStateTree = await users[0].genUserStateTree()
             const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
             const GSTreeProof = GSTree.genMerklePath(users[0].latestGSTLeafIndex)

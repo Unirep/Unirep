@@ -111,7 +111,7 @@ describe('Attesting', () => {
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
-            999,
+            BigInt(999),
             1,
             0,
             genRandomSalt(),

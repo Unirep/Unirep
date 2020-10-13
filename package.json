@@ -6,9 +6,9 @@
     "scripts": {
         "build": "npm run installZkutil && npm run buildVerifyEpochKeySnark && npm run buildUserStateTransitionSnark && npm run buildProveReputationSnark",
         "installZkutil": "./scripts/installZkutil.sh",
-        "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh" ,
-        "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh" ,
-        "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh" ,
+        "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
+        "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
+        "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "test": "npx buidler compile && npx ts-node scripts/buildPoseidon.ts && npx buidler test"
     },
     "repository": {
