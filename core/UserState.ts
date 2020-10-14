@@ -146,6 +146,22 @@ class UserState {
         return genNoAttestationNullifierKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.nullifierTreeDepth)
     }
 
+    public getRepByAttester = (attesterId: BigInt): Reputation => {
+        const leaf = this.latestUserStateLeaves.find((leaf) => leaf.attesterId == attesterId)
+        if (leaf !== undefined) return leaf.reputation
+        else return Reputation.default()
+    }
+
+
+    /*
+     * Add a new epoch key to the list of epoch key of current epoch.
+     */
+    public addEpochKey = (epochKey: string) => {
+        if (this.currentEpochKeys.indexOf(epochKey) == -1) {
+            this.currentEpochKeys.push(epochKey)
+        }
+    }
+
     /*
      * Computes the user state tree with given state leaves
      */
@@ -166,41 +182,8 @@ class UserState {
         return (await this._genUserStateTreeFromLeaves(leaves))
     }
 
-    /*
-     * Add a new epoch key to the list of epoch key of current epoch.
-     */
-    public addEpochKey = (epochKey: string) => {
-        if (this.currentEpochKeys.indexOf(epochKey) == -1) {
-            this.currentEpochKeys.push(epochKey)
-        }
-    }
 
-    /*
-     * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
-     */
-    public transition = (
-        transitionToEpoch: number,
-        transitionToGSTIndex: number,
-        latestStateLeaves: IUserStateLeaf[],
-    ) => {
-        assert(transitionToEpoch <= this.unirepState.currentEpoch, `Epoch(${transitionToEpoch}) must be less than or equal to current epoch`)
-
-        this.latestTransitionedEpoch = transitionToEpoch
-        this.latestGSTLeafIndex = transitionToGSTIndex
-        // Clear all current epoch keys
-        while (this.currentEpochKeys.length > 0) this.currentEpochKeys.pop()
-        // Update user state leaves
-        this.latestUserStateLeaves = latestStateLeaves.slice()
-    }
-
-    public getRepByAttester = (attesterId: BigInt): Reputation => {
-        for (const leaf of this.latestUserStateLeaves) {
-            if (leaf.attesterId === attesterId) return leaf.reputation
-        }
-        return Reputation.default()
-    }
-
-    private updateUserStateLeaf = (attestation: IAttestation, stateLeaves: IUserStateLeaf[]): IUserStateLeaf[] => {
+    private _updateUserStateLeaf = (attestation: IAttestation, stateLeaves: IUserStateLeaf[]): IUserStateLeaf[] => {
         const attesterId = attestation.attesterId
         for (const leaf of stateLeaves) {
             if (leaf.attesterId === attesterId) {
@@ -235,7 +218,7 @@ class UserState {
         const attestations = this.unirepState.getAttestations(epochKey.toString())
         for (let i = 0; i < attestations.length; i++) {
             const attestation = attestations[i]
-            stateLeaves = this.updateUserStateLeaf(attestation, stateLeaves)
+            stateLeaves = this._updateUserStateLeaf(attestation, stateLeaves)
         }
 
         // Gen new user state tree
@@ -362,6 +345,24 @@ class UserState {
             nullifier_tree_root: oldNullifierTreeRoot,
             nullifier_tree_path_elements: nullifierTreePathElements
         })
+    }
+
+    /*
+     * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
+     */
+    public transition = (
+        transitionToEpoch: number,
+        transitionToGSTIndex: number,
+        latestStateLeaves: IUserStateLeaf[],
+    ) => {
+        assert(transitionToEpoch <= this.unirepState.currentEpoch, `Epoch(${transitionToEpoch}) must be less than or equal to current epoch`)
+
+        this.latestTransitionedEpoch = transitionToEpoch
+        this.latestGSTLeafIndex = transitionToGSTIndex
+        // Clear all current epoch keys
+        while (this.currentEpochKeys.length > 0) this.currentEpochKeys.pop()
+        // Update user state leaves
+        this.latestUserStateLeaves = latestStateLeaves.slice()
     }
 }
 

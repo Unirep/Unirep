@@ -120,6 +120,19 @@ class UnirepState {
         else return attestations
     }
 
+
+    /*
+     * Add a new attestation to the list of attestations to the epoch key.
+     */
+    public addAttestation = (
+        epochKey: string,
+        attestation: IAttestation,
+    ) => {
+        const attestations = this.epochKeyToAttestationsMap[epochKey]
+        if (!attestations) this.epochKeyToAttestationsMap[epochKey] = []
+        this.epochKeyToAttestationsMap[epochKey].push(attestation)
+    }
+
     /*
      * Computes the global state tree of given epoch
      */
@@ -174,17 +187,6 @@ class UnirepState {
         }
     }
 
-    /*
-     * Add a new attestation to the list of attestations to the epoch key.
-     */
-    public addAttestation = (
-        epochKey: string,
-        attestation: IAttestation,
-    ) => {
-        const attestations = this.epochKeyToAttestationsMap[epochKey]
-        if (!attestations) this.epochKeyToAttestationsMap[epochKey] = []
-        this.epochKeyToAttestationsMap[epochKey].push(attestation)
-    }
 
     /*
      * Add a new state leaf to the list of GST leaves of given epoch.
@@ -204,7 +206,7 @@ class UnirepState {
     }
 
     /*
-     * Add the leaves of epoch tree of given epoch
+     * Add the leaves of epoch tree of given epoch and increment current epoch number
      */
     public epochTransition = (
         epoch: number,
