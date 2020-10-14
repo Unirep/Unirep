@@ -83,14 +83,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     TreeDepths public treeDepths;
 
+
     // Events
+    event Sequencer(
+        string _event
+    );
+
     event NewGSTLeafInserted(
         uint256 indexed _epoch,
         uint256 _hashedLeaf
-    );
-    event UserSignUp(
-        uint256 indexed _epoch,
-        uint256 indexed _identityCommitment
     );
 
     event AttestationSubmitted(
@@ -113,6 +114,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[8] _proof
     );
 
+
     function getNumEpochKey(uint256 epoch) public view returns (uint256) {
         return epochKeys[epoch].numKeys;
     }
@@ -125,6 +127,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(index < epochKeys[epoch].numKeys, "Unirep: epoch key list access out of bound");
         return epochKeys[epoch].keys[index];
     }
+
 
     constructor(
         TreeDepths memory _treeDepths,
@@ -183,7 +186,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
 
-        emit UserSignUp(currentEpoch, _identityCommitment);
+        emit Sequencer("UserSignUp");
         emit NewGSTLeafInserted(currentEpoch, hashedLeaf);
     }
 
@@ -253,6 +256,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         attestationsMade[epochKey][msg.sender] = true;
 
+        emit Sequencer("AttestationSubmitted");
         emit AttestationSubmitted(
             currentEpoch,
             epochKey,
@@ -282,6 +286,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // Mark epoch transitioned as complete if hash chain of all epoch keys are sealed
         if(endKeyIndex == epochKeys[currentEpoch].numKeys) {
+            emit Sequencer("EpochEnded");
             emit EpochEnded(currentEpoch);
 
             latestEpochTransitionTime = block.timestamp;
@@ -303,6 +308,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
 
+        emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
             currentEpoch,
             _nullifiers,
