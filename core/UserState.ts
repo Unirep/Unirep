@@ -183,6 +183,31 @@ class UserState {
     }
 
 
+    public genVerifyEpochKeyCircuitInputs = async (
+        epochKeyNonce: number,
+    ) => {
+        assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
+        const epoch = this.latestTransitionedEpoch
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
+
+        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
+
+        return stringifyBigInts({
+            identity_pk: this.id.keypair.pubKey,
+            identity_nullifier: this.id.identityNullifier, 
+            identity_trapdoor: this.id.identityTrapdoor,
+            user_state_root: (await this.genUserStateTree()).getRootHash(),
+            path_elements: GSTProof.pathElements,
+            path_index: GSTProof.indices,
+            root: GSTree.root,
+            nonce: epochKeyNonce,
+            max_nonce: this.maxEpochKeyNonce,
+            epoch: epoch,
+            epoch_key: epochKey,
+        })
+    }
+
     private _updateUserStateLeaf = (attestation: IAttestation, stateLeaves: IUserStateLeaf[]): IUserStateLeaf[] => {
         const attesterId = attestation.attesterId
         for (const leaf of stateLeaves) {
