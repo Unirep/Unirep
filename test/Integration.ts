@@ -259,31 +259,15 @@ describe('Integration', function () {
         })
 
         it('Verify epoch key of first user', async () => {
-            // First user generates his epoch key
-            const nonce = 0
-            const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            // Then generate validity proof of this epoch key
-            const user_0_GST_index = users[0].latestGSTLeafIndex
-            const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
-            const GSTProof = GSTree.genMerklePath(user_0_GST_index)
-            const circuitInputs = {
-                identity_pk: users[0].id.keypair.pubKey,
-                identity_nullifier: users[0].id.identityNullifier, 
-                identity_trapdoor: users[0].id.identityTrapdoor,
-                user_state_root: (await users[0].genUserStateTree()).getRootHash(),
-                path_elements: GSTProof.pathElements,
-                path_index: GSTProof.indices,
-                root: GSTree.root,
-                nonce: nonce,
-                max_nonce: maxEpochKeyNonce,
-                epoch: currentEpoch.toString(),
-                epoch_key: firstUserEpochKey,
-            }
+            const epochKeyNonce = 0
+            const circuitInputs = await users[0].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
             const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyEpochKeyCircuit)
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
-
+            
             // Verify on-chain
+            const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
+            const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 GSTree.root,
                 currentEpoch,
@@ -322,31 +306,15 @@ describe('Integration', function () {
         })
 
         it('Verify epoch key of second user', async () => {
-            // Second user generates his epoch key
-            const nonce = 0
-            const secondUserEpochKey = genEpochKey(users[1].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            // Then generate validity proof of this epoch key
-            const user_1_GST_index = 1
-            const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
-            const GSTProof = GSTree.genMerklePath(user_1_GST_index)
-            const circuitInputs = {
-                identity_pk: users[1].id.keypair.pubKey,
-                identity_nullifier: users[1].id.identityNullifier, 
-                identity_trapdoor: users[1].id.identityTrapdoor,
-                user_state_root: (await users[1].genUserStateTree()).getRootHash(),
-                path_elements: GSTProof.pathElements,
-                path_index: GSTProof.indices,
-                root: GSTree.root,
-                nonce: nonce,
-                max_nonce: maxEpochKeyNonce,
-                epoch: currentEpoch.toString(),
-                epoch_key: secondUserEpochKey,
-            }
+            const epochKeyNonce = 0
+            const circuitInputs = await users[1].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
             const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyEpochKeyCircuit)
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
-
+            
             // Verify on-chain
+            const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
+            const secondUserEpochKey = genEpochKey(users[1].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 GSTree.root,
                 currentEpoch,
@@ -575,37 +543,10 @@ describe('Integration', function () {
 
         it('First user prove his reputation', async () => {
             const attesterId = BigInt(1)  // Prove reputation received from first attester
-            const rep = users[0].getRepByAttester(attesterId)
-            const posRep = rep['posRep']
-            const negRep = rep['negRep']
-            const graffiti = rep['graffiti']
-            const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
-            const userStateTree = await users[0].genUserStateTree()
-            const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
-            const GSTreeProof = GSTree.genMerklePath(users[0].latestGSTLeafIndex)
-            const GSTreeRoot = GSTree.root
-            const pathElements = await userStateTree.getMerkleProof(attesterId)
-
             const minPosRep = 1
             const maxNegRep = 10
-            const circuitInputs = {
-                identity_pk: users[0].id.keypair.pubKey,
-                identity_nullifier: users[0].id.identityNullifier, 
-                identity_trapdoor: users[0].id.identityTrapdoor,
-                user_state_root: userStateTree.getRootHash(),
-                GST_path_index: GSTreeProof.indices,
-                GST_path_elements: GSTreeProof.pathElements,
-                GST_root: GSTreeRoot,
-                attester_id: attesterId,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti: graffiti,
-                UST_path_elements: pathElements,
-                min_pos_rep: minPosRep,
-                max_neg_rep: maxNegRep,
-                graffiti_pre_image: graffitiPreImage
-            }
-
+            const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
+            const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
             const startTime = Math.floor(new Date().getTime() / 1000)
             const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyReputationCircuit)
             const endTime = Math.floor(new Date().getTime() / 1000)
@@ -614,6 +555,7 @@ describe('Integration', function () {
             expect(isValid).to.be.true
 
             // Verify on-chain
+            const GSTreeRoot = unirepState.genGSTree(currentEpoch.toNumber()).root
             const isProofValid = await unirepContract.verifyReputation(
                 GSTreeRoot,
                 attesterId,
