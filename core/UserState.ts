@@ -389,6 +389,43 @@ class UserState {
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
     }
+
+    public genProveReputationCircuitInputs = async (
+        attesterId: BigInt,
+        minPosRep: number,
+        maxNegRep: number,
+        graffitiPreImage: BigInt,
+    ) => {
+        assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
+        assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
+        const rep = this.getRepByAttester(attesterId)
+        const posRep = rep.posRep
+        const negRep = rep.negRep
+        const graffiti = rep.graffiti
+        const userStateTree = await this.genUserStateTree()
+        const GSTree = this.unirepState.genGSTree(this.latestTransitionedEpoch)
+        const GSTreeProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
+        const GSTreeRoot = GSTree.root
+        const pathElements = await userStateTree.getMerkleProof(attesterId)
+
+        return stringifyBigInts({
+            identity_pk: this.id.keypair.pubKey,
+            identity_nullifier: this.id.identityNullifier, 
+            identity_trapdoor: this.id.identityTrapdoor,
+            user_state_root: userStateTree.getRootHash(),
+            GST_path_index: GSTreeProof.indices,
+            GST_path_elements: GSTreeProof.pathElements,
+            GST_root: GSTreeRoot,
+            attester_id: attesterId,
+            pos_rep: posRep,
+            neg_rep: negRep,
+            graffiti: graffiti,
+            UST_path_elements: pathElements,
+            min_pos_rep: minPosRep,
+            max_neg_rep: maxNegRep,
+            graffiti_pre_image: graffitiPreImage
+        })
+    }
 }
 
 export {
