@@ -19,6 +19,7 @@ import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 const genUnirepStateFromContract = async (
     provider: ethers.providers.Provider,
     address: string,
+    startBlock: number,
 ) => {
 
     const unirepContract = new ethers.Contract(
@@ -48,19 +49,19 @@ const genUnirepStateFromContract = async (
     )
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
-    const newGSTLeafInsertedEvents =  await unirepContract.queryFilter(newGSTLeafInsertedFilter, 0)
+    const newGSTLeafInsertedEvents =  await unirepContract.queryFilter(newGSTLeafInsertedFilter, startBlock)
 
     const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
-    const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, 0)
+    const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, startBlock)
 
     const epochEndedFilter = unirepContract.filters.EpochEnded()
-    const epochEndedEvents =  await unirepContract.queryFilter(epochEndedFilter, 0)
+    const epochEndedEvents =  await unirepContract.queryFilter(epochEndedFilter, startBlock)
 
     const userStateTransitionedFilter = unirepContract.filters.UserStateTransitioned()
-    const userStateTransitionedEvents =  await unirepContract.queryFilter(userStateTransitionedFilter, 0)
+    const userStateTransitionedEvents =  await unirepContract.queryFilter(userStateTransitionedFilter, startBlock)
 
     const sequencerFilter = unirepContract.filters.Sequencer()
-    const sequencerEvents =  await unirepContract.queryFilter(sequencerFilter, 0)
+    const sequencerEvents =  await unirepContract.queryFilter(sequencerFilter, startBlock)
 
     // Reverse the events so pop() can start from the first event
     newGSTLeafInsertedEvents.reverse()
