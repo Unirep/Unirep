@@ -73,7 +73,6 @@ class Reputation implements IReputation {
 
 class UserState {
     public userStateTreeDepth: number
-    
     public maxEpochKeyNonce: number
     public numAttestationsPerBatch: number
 
@@ -84,28 +83,32 @@ class UserState {
 
     public latestTransitionedEpoch: number  // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number  // Leaf index of the latest GST where the user has a record in
-    private latestUserStateLeaves: IUserStateLeaf[] = []  // Latest non-default user state leaves
-    private currentEpochKeys: string[] = []
+    private latestUserStateLeaves: IUserStateLeaf[]  // Latest non-default user state leaves
+    private currentEpochKeys: string[]
 
     constructor(
-        _userStateTreeDepth: number,
-        _maxNonce: number,
-        _numAttestationsPerBatch: number,
         _unirepState: UnirepState,
         _id,
         _commitment,
         _latestTransitionedEpoch: number,
-        _latestGSTLeafIndex: number
+        _latestGSTLeafIndex: number,
+        _latestUserStateLeaves?: IUserStateLeaf[],
+        _currentEpochKeys?: string[]
     ) {
-
-        this.userStateTreeDepth = _userStateTreeDepth
-        this.maxEpochKeyNonce = _maxNonce
-        this.numAttestationsPerBatch = _numAttestationsPerBatch
+        assert(_unirepState !== undefined, "UnirepState is undefined")
         this.unirepState = _unirepState
+        this.userStateTreeDepth = this.unirepState.userStateTreeDepth
+        this.maxEpochKeyNonce = this.unirepState.maxEpochKeyNonce
+        this.numAttestationsPerBatch = this.unirepState.numAttestationsPerBatch
+
         this.id = _id
         this.commitment = _commitment
         this.latestTransitionedEpoch = _latestTransitionedEpoch
         this.latestGSTLeafIndex = _latestGSTLeafIndex
+        if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
+        else this.latestUserStateLeaves = []
+        if (_currentEpochKeys !== undefined) this.currentEpochKeys = _currentEpochKeys
+        else this.currentEpochKeys = []
     }
 
     /*

@@ -57,6 +57,7 @@ class Attestation implements IAttestation {
 
 class UnirepState {
     public globalStateTreeDepth: number
+    public userStateTreeDepth: number
     public epochTreeDepth: number
     public nullifierTreeDepth: number
     
@@ -86,6 +87,7 @@ class UnirepState {
     ) {
 
         this.globalStateTreeDepth = _globalStateTreeDepth
+        this.userStateTreeDepth = _userStateTreeDepth
         this.epochTreeDepth = _epochTreeDepth
         this.nullifierTreeDepth =_nullifierTreeDepth
         this.attestingFee = _attestingFee

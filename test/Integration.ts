@@ -84,9 +84,6 @@ describe('Integration', function () {
             const GSTreeLeafIndex = 0
             const latestTransitionedToEpoch = currentEpoch.toNumber()
             users[0] = new UserState(
-                circuitUserStateTreeDepth,
-                maxEpochKeyNonce,
-                numAttestationsPerBatch,
                 unirepState,
                 id,
                 commitment,
@@ -234,9 +231,6 @@ describe('Integration', function () {
             const GSTreeLeafIndex = 1
             const latestTransitionedToEpoch = currentEpoch.toNumber()
             users[1] = new UserState(
-                circuitUserStateTreeDepth,
-                maxEpochKeyNonce,
-                numAttestationsPerBatch,
                 unirepState,
                 id,
                 commitment,
