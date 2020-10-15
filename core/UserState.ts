@@ -80,6 +80,7 @@ class UserState {
 
     public id
     public commitment
+    private hasSignedUp: boolean = false
 
     public latestTransitionedEpoch: number  // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number  // Leaf index of the latest GST where the user has a record in
@@ -90,8 +91,9 @@ class UserState {
         _unirepState: UnirepState,
         _id,
         _commitment,
-        _latestTransitionedEpoch: number,
-        _latestGSTLeafIndex: number,
+        _hasSignedUp: boolean,
+        _latestTransitionedEpoch?: number,
+        _latestGSTLeafIndex?: number,
         _latestUserStateLeaves?: IUserStateLeaf[],
         _currentEpochKeys?: string[]
     ) {
@@ -103,12 +105,23 @@ class UserState {
 
         this.id = _id
         this.commitment = _commitment
-        this.latestTransitionedEpoch = _latestTransitionedEpoch
-        this.latestGSTLeafIndex = _latestGSTLeafIndex
-        if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
-        else this.latestUserStateLeaves = []
-        if (_currentEpochKeys !== undefined) this.currentEpochKeys = _currentEpochKeys
-        else this.currentEpochKeys = []
+        if (_hasSignedUp) {
+            assert(_latestTransitionedEpoch !== undefined, "User has signed up but missing latestTransitionedEpoch")
+            assert(_latestGSTLeafIndex !== undefined, "User has signed up but missing latestTransitionedEpoch")
+
+            this.latestTransitionedEpoch = _latestTransitionedEpoch
+            this.latestGSTLeafIndex = _latestGSTLeafIndex
+            if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
+            else this.latestUserStateLeaves = []
+            if (_currentEpochKeys !== undefined) this.currentEpochKeys = _currentEpochKeys
+            else this.currentEpochKeys = []
+            this.hasSignedUp = _hasSignedUp
+        } else {
+            this.latestTransitionedEpoch = 0
+            this.latestGSTLeafIndex = 0
+            this.latestUserStateLeaves = []
+            this.currentEpochKeys = []
+        }
     }
 
     /*
@@ -157,9 +170,20 @@ class UserState {
      * Add a new epoch key to the list of epoch key of current epoch.
      */
     public addEpochKey = (epochKey: string) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
         if (this.currentEpochKeys.indexOf(epochKey) == -1) {
             this.currentEpochKeys.push(epochKey)
         }
+    }
+
+    /*
+     * Add a new epoch key to the list of epoch key of current epoch.
+     */
+    public signUp = (_latestTransitionedEpoch: number, _latestGSTLeafIndex: number,) => {
+        assert(!this.hasSignedUp, "User has already signed up")
+        this.latestTransitionedEpoch = _latestTransitionedEpoch
+        this.latestGSTLeafIndex = _latestGSTLeafIndex
+        this.hasSignedUp = true
     }
 
     /*
@@ -186,6 +210,7 @@ class UserState {
     public genVerifyEpochKeyCircuitInputs = async (
         epochKeyNonce: number,
     ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
@@ -233,6 +258,7 @@ class UserState {
     public genNewUserStateAfterTransition = async (
         epochKeyNonce: number,
     ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
         const fromEpoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.epochTreeDepth)
@@ -260,6 +286,7 @@ class UserState {
     public genUserStateTransitionCircuitInputs = async (
         epochKeyNonce: number,
     ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
         const fromEpoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.epochTreeDepth)
@@ -380,6 +407,7 @@ class UserState {
         transitionToGSTIndex: number,
         latestStateLeaves: IUserStateLeaf[],
     ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
         assert(transitionToEpoch <= this.unirepState.currentEpoch, `Epoch(${transitionToEpoch}) must be less than or equal to current epoch`)
 
         this.latestTransitionedEpoch = transitionToEpoch
@@ -396,6 +424,7 @@ class UserState {
         maxNegRep: number,
         graffitiPreImage: BigInt,
     ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
         assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
         assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
         const rep = this.getRepByAttester(attesterId)

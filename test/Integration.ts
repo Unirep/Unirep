@@ -81,15 +81,15 @@ describe('Integration', function () {
                 ]
             )
             unirepState.signUp(currentEpoch.toNumber(), BigInt(hashedStateLeaf.toString()))
-            const GSTreeLeafIndex = 0
-            const latestTransitionedToEpoch = currentEpoch.toNumber()
             users[0] = new UserState(
                 unirepState,
                 id,
                 commitment,
-                latestTransitionedToEpoch,
-                GSTreeLeafIndex,
+                false,
             )
+            const latestTransitionedToEpoch = currentEpoch.toNumber()
+            const GSTreeLeafIndex = 0
+            users[0].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
         })
 
         it('First attester signs up', async () => {
@@ -228,15 +228,15 @@ describe('Integration', function () {
                 ]
             )
             unirepState.signUp(currentEpoch.toNumber(), BigInt(hashedStateLeaf.toString()))
-            const GSTreeLeafIndex = 1
-            const latestTransitionedToEpoch = currentEpoch.toNumber()
             users[1] = new UserState(
                 unirepState,
                 id,
                 commitment,
-                latestTransitionedToEpoch,
-                GSTreeLeafIndex,
+                false,
             )
+            const latestTransitionedToEpoch = currentEpoch.toNumber()
+            const GSTreeLeafIndex = 1
+            users[1].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
         })
 
         it('Second attester signs up', async () => {
