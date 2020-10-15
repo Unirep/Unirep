@@ -85,7 +85,7 @@ class UserState {
     public latestTransitionedEpoch: number  // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number  // Leaf index of the latest GST where the user has a record in
     private latestUserStateLeaves: IUserStateLeaf[]  // Latest non-default user state leaves
-    private currentEpochKeys: string[]
+    private latestEpochKeys: string[]
 
     constructor(
         _unirepState: UnirepState,
@@ -113,14 +113,14 @@ class UserState {
             this.latestGSTLeafIndex = _latestGSTLeafIndex
             if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
             else this.latestUserStateLeaves = []
-            if (_currentEpochKeys !== undefined) this.currentEpochKeys = _currentEpochKeys
-            else this.currentEpochKeys = []
+            if (_currentEpochKeys !== undefined) this.latestEpochKeys = _currentEpochKeys
+            else this.latestEpochKeys = []
             this.hasSignedUp = _hasSignedUp
         } else {
             this.latestTransitionedEpoch = 0
             this.latestGSTLeafIndex = 0
             this.latestUserStateLeaves = []
-            this.currentEpochKeys = []
+            this.latestEpochKeys = []
         }
     }
 
@@ -171,8 +171,8 @@ class UserState {
      */
     public addEpochKey = (epochKey: string) => {
         assert(this.hasSignedUp, "User has not signed up yet")
-        if (this.currentEpochKeys.indexOf(epochKey) == -1) {
-            this.currentEpochKeys.push(epochKey)
+        if (this.latestEpochKeys.indexOf(epochKey) == -1) {
+            this.latestEpochKeys.push(epochKey)
         }
     }
 
@@ -413,7 +413,7 @@ class UserState {
         this.latestTransitionedEpoch = transitionToEpoch
         this.latestGSTLeafIndex = transitionToGSTIndex
         // Clear all current epoch keys
-        while (this.currentEpochKeys.length > 0) this.currentEpochKeys.pop()
+        while (this.latestEpochKeys.length > 0) this.latestEpochKeys.pop()
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
     }

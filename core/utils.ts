@@ -9,12 +9,14 @@ const { expect } = chai
 import Unirep from "../artifacts/Unirep.json"
 import { numAttestationsPerBatch } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
+import { IUserStateLeaf, UserState } from './UserState'
 
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
  * @param address The address of the MACI contract
+ * @param startBlock The block number when Unirep contract is deployed
  */
 const genUnirepStateFromContract = async (
     provider: ethers.providers.Provider,
@@ -152,6 +154,51 @@ const genUnirepStateFromContract = async (
     return unirepState
 }
 
+/*
+ * Create UserState object from given user state and
+ * retrieves and parses on-chain Unirep contract data to create an off-chain
+ * representation as a UnirepState object.
+ * (This assumes user has already signed up in the Unirep contract)
+ * @param provider An Ethereum provider
+ * @param address The address of the MACI contract
+ * @param startBlock The block number when Unirep contract is deployed
+ * @param id The semaphore identity of the user
+ * @param commitment The identity commitment
+ * @param latestTransitionedEpoch Latest epoch user has transitioned to
+ * @param latestGSTLeafIndex Leaf index in the global state tree of the latest epoch user has transitioned to
+ * @param latestUserStateLeaves User state leaves (empty if no attestations received)
+ * @param latestEpochKeys Users's epoch keys of the epoch user has transitioned to
+ */
+const genUserStateFromParams = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    startBlock: number,
+    id: any,
+    commitment: any,
+    latestTransitionedEpoch: number,
+    latestGSTLeafIndex: number,
+    latestUserStateLeaves?: IUserStateLeaf[],
+    latestEpochKeys?: string[],
+) => {
+    const unirepState = await genUnirepStateFromContract(
+        provider,
+        address,
+        startBlock,
+    )
+    const userState = new UserState(
+        unirepState,
+        id,
+        commitment,
+        true,
+        latestTransitionedEpoch,
+        latestGSTLeafIndex,
+        latestUserStateLeaves,
+        latestEpochKeys,
+    )
+    return userState
+}
+
 export {
     genUnirepStateFromContract,
+    genUserStateFromParams,
 }
