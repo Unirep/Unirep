@@ -1,6 +1,4 @@
-import { string } from '@nomiclabs/buidler/internal/core/params/argumentTypes'
 import assert from 'assert'
-import { BigNumber } from 'ethers'
 import {
     hashLeftRight,
     IncrementalQuinTree,
@@ -8,9 +6,8 @@ import {
     stringifyBigInts,
     hashOne,
 } from 'maci-crypto'
-import { attestingFee } from '../config/testLocal'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { computeNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genNoAttestationNullifierKey, SMT_ONE_LEAF, SMT_ZERO_LEAF } from '../test/utils'
+import { computeNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genNoAttestationNullifierKey } from '../test/utils'
 import { IAttestation, UnirepState } from './UnirepState'
 
 interface IUserStateLeaf {
