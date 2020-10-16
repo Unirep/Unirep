@@ -307,6 +307,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _fromNullifierTreeRoot,
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
+        require(_transitionFromEpoch < currentEpoch, "Can not transition from epoch that's greater or equal to current epoch");
 
         emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
