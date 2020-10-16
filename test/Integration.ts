@@ -14,7 +14,7 @@ import Unirep from "../artifacts/Unirep.json"
 import { Attestation, IAttestation, IEpochTreeLeaf, UnirepState } from "../core/UnirepState"
 import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
 import { IUserStateLeaf, UserState } from "../core/UserState"
-import { genUnirepStateFromContract } from "../core/utils"
+import { genUserStateFromContract } from "../core/utils"
 
 describe('Integration', function () {
     this.timeout(500000)
@@ -562,25 +562,33 @@ describe('Integration', function () {
             expect(isProofValid).to.be.true
         })
 
-        it('genUnirepStateFromContract should return equivalent UnirepState', async () => {
-            const unirepStateFromContract = await genUnirepStateFromContract(
+        it('genUserStateFromContract should return equivalent UserState and UnirepState', async () => {
+            const userStateFromContract = await genUserStateFromContract(
                 ethers.provider,
                 unirepContract.address,
                 0,
+                users[0].id,
+                users[0].commitment,
             )
 
-            expect(unirepState.currentEpoch).equal(unirepStateFromContract.currentEpoch)
+            // Check user state matches
+            expect(users[0].latestTransitionedEpoch).equal(userStateFromContract.latestTransitionedEpoch)
+            expect(users[0].latestGSTLeafIndex).equal(userStateFromContract.latestGSTLeafIndex)
+            expect((await users[0].genUserStateTree()).getRootHash()).equal((await userStateFromContract.genUserStateTree()).getRootHash())
+
+            // Check unirep state matches
+            expect(unirepState.currentEpoch).equal(userStateFromContract.getUnirepStateCurrentEpoch())
             for (let epoch = 1; epoch <= unirepState.currentEpoch; epoch++) {
                 const GST = unirepState.genGSTree(epoch)
-                const _GST = unirepStateFromContract.genGSTree(epoch)
+                const _GST = userStateFromContract.getUnirepStateGSTree(epoch)
                 expect(GST.root).equal(_GST.root)
 
                 const epochTree = await unirepState.genEpochTree(epoch)
-                const _epochTree = await unirepStateFromContract.genEpochTree(epoch)
+                const _epochTree = await userStateFromContract.getUnirepStateEpochTree(epoch)
                 expect(await epochTree.getRootHash()).equal(await _epochTree.getRootHash())
 
                 const nullifierTree = await unirepState.genNullifierTree()
-                const _nullifierTree = await unirepStateFromContract.genNullifierTree()
+                const _nullifierTree = await userStateFromContract.getUnirepStateNullifierTree()
                 expect(await nullifierTree.getRootHash()).equal(await _nullifierTree.getRootHash())
             }
         })
