@@ -14,6 +14,7 @@ import Unirep from "../artifacts/Unirep.json"
 import { Attestation, IAttestation, IEpochTreeLeaf, UnirepState } from "../core/UnirepState"
 import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
 import { IUserStateLeaf, UserState } from "../core/UserState"
+import { genUnirepStateFromContract } from "../core/utils"
 
 describe('Integration', function () {
     this.timeout(500000)
@@ -559,6 +560,29 @@ describe('Integration', function () {
                 formatProofForVerifierContract(results['proof']),
             )
             expect(isProofValid).to.be.true
+        })
+
+        it('genUnirepStateFromContract should return equivalent UnirepState', async () => {
+            const unirepStateFromContract = await genUnirepStateFromContract(
+                ethers.provider,
+                unirepContract.address,
+                0,
+            )
+
+            expect(unirepState.currentEpoch).equal(unirepStateFromContract.currentEpoch)
+            for (let epoch = 1; epoch <= unirepState.currentEpoch; epoch++) {
+                const GST = unirepState.genGSTree(epoch)
+                const _GST = unirepStateFromContract.genGSTree(epoch)
+                expect(GST.root).equal(_GST.root)
+
+                const epochTree = await unirepState.genEpochTree(epoch)
+                const _epochTree = await unirepStateFromContract.genEpochTree(epoch)
+                expect(await epochTree.getRootHash()).equal(await _epochTree.getRootHash())
+
+                const nullifierTree = await unirepState.genNullifierTree()
+                const _nullifierTree = await unirepStateFromContract.genNullifierTree()
+                expect(await nullifierTree.getRootHash()).equal(await _nullifierTree.getRootHash())
+            }
         })
     })
 })
