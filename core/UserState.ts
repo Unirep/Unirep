@@ -125,6 +125,25 @@ class UserState {
     }
 
     /*
+     * Proxy methods to get underlying UnirepState data
+     */
+    public getUnirepStateCurrentEpoch = (): number => {
+        return this.unirepState.currentEpoch
+    }
+
+    public getUnirepStateGSTree = (epoch: number): IncrementalQuinTree => {
+        return this.unirepState.genGSTree(epoch)
+    }
+
+    public getUnirepStateEpochTree = async (epoch: number): Promise<SparseMerkleTreeImpl> => {
+        return this.unirepState.genEpochTree(epoch)
+    }
+
+    public getUnirepStateNullifierTree = async (): Promise<SparseMerkleTreeImpl> => {
+        return this.unirepState.genNullifierTree()
+    }
+
+    /*
      * Get the attestations of given epoch key
      */
     public getAttestations = (epochKey: string): IAttestation[] => {
@@ -413,7 +432,7 @@ class UserState {
         this.latestTransitionedEpoch = transitionToEpoch
         this.latestGSTLeafIndex = transitionToGSTIndex
         // Clear all current epoch keys
-        while (this.latestEpochKeys.length > 0) this.latestEpochKeys.pop()
+        this.latestEpochKeys = []
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
     }
