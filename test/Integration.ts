@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, maxEpochKeyNonce, numAttestationsPerBatch} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
-import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot } from './utils'
+import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot, getTreeDepthsForTesting } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -48,7 +48,8 @@ describe('Integration', function () {
 
         accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<Wallet>accounts[0], "circuit")
+        const _treeDepths = getTreeDepthsForTesting("circuit")
+        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
         
         currentEpoch = await unirepContract.currentEpoch()
         emptyUserStateRoot = computeEmptyUserStateRoot(circuitUserStateTreeDepth)

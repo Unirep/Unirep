@@ -11,7 +11,7 @@ import {
     genVerifyEpochKeyProofAndPublicSignals,
     verifyEPKProof,
 } from './utils'
-import { deployUnirep, genEpochKey } from '../utils'
+import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../utils'
 
 import {
     genRandomSalt,
@@ -38,7 +38,8 @@ describe('Verify Epoch Key circuits', function () {
     before(async () => {
         accounts = await ethers.getSigners()
     
-        unirepContract = await deployUnirep(<Wallet>accounts[0], "circuit")
+        const _treeDepths = getTreeDepthsForTesting("circuit")
+        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')

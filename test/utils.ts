@@ -31,24 +31,30 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
     contractJson.bytecode = linkableContract.evm.bytecode.object
 }
 
-const deployUnirep = async (
-    deployer: ethers.Wallet,
-    deployEnv: string = "contract"): Promise<ethers.Contract> => {
-    let _userStateTreeDepth, _globalStateTreeDepth, _epochTreeDepth, _nullifierTreeDepth
+const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
     if (deployEnv === 'contract') {
-        _userStateTreeDepth = userStateTreeDepth
-        _globalStateTreeDepth = globalStateTreeDepth
-        _epochTreeDepth = epochTreeDepth
-        _nullifierTreeDepth = nullifierTreeDepth
+        return {
+            "userStateTreeDepth": userStateTreeDepth,
+            "globalStateTreeDepth": globalStateTreeDepth,
+            "epochTreeDepth": epochTreeDepth,
+            "nullifierTreeDepth": nullifierTreeDepth,
+        }
     } else if (deployEnv === 'circuit') {
-        _userStateTreeDepth = circuitUserStateTreeDepth
-        _globalStateTreeDepth = circuitGlobalStateTreeDepth
-        _epochTreeDepth = circuitEpochTreeDepth
-        _nullifierTreeDepth = circuitNullifierTreeDepth
+        return {
+            "userStateTreeDepth": circuitUserStateTreeDepth,
+            "globalStateTreeDepth": circuitGlobalStateTreeDepth,
+            "epochTreeDepth": circuitEpochTreeDepth,
+            "nullifierTreeDepth": circuitNullifierTreeDepth,
+        }
     } else {
         throw new Error('Only contract and circuit testing env are supported')
     }
+}
 
+const deployUnirep = async (
+    deployer: ethers.Wallet,
+    _treeDepths: any,
+    _settings?: any): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
     let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
@@ -95,23 +101,35 @@ const deployUnirep = async (
         linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
     }
 
+    let _maxUsers, _maxEpochKeyNonce, _epochLength, _attestingFee
+    if (_settings) {
+        _maxUsers = _settings.maxUsers
+        _maxEpochKeyNonce = _settings.maxEpochKeyNonce
+        _epochLength = _settings.epochLength
+        _attestingFee = _settings.attestingFee
+    } else {
+        _maxUsers = maxUsers
+        _maxEpochKeyNonce = maxEpochKeyNonce
+        _epochLength = epochLength
+        _attestingFee = attestingFee
+    }
     const f = new ethers.ContractFactory(Unirep.abi, Unirep.bytecode, deployer)
     const c = await (f.deploy(
         {
-            globalStateTreeDepth: _globalStateTreeDepth,
-            userStateTreeDepth: _userStateTreeDepth,
-            nullifierTreeDepth: _nullifierTreeDepth,
-            epochTreeDepth: _epochTreeDepth
+            globalStateTreeDepth: _treeDepths.globalStateTreeDepth,
+            userStateTreeDepth: _treeDepths.userStateTreeDepth,
+            nullifierTreeDepth: _treeDepths.nullifierTreeDepth,
+            epochTreeDepth: _treeDepths.epochTreeDepth
         },
         {
-            maxUsers,
-            maxEpochKeyNonce
+            _maxUsers,
+            _maxEpochKeyNonce
         },
         EpochKeyValidityVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
-        epochLength,
-        attestingFee,
+        _epochLength,
+        _attestingFee,
         {
             gasLimit: 9000000,
         }
@@ -244,6 +262,7 @@ export {
     computeReputationHash,
     defaultUserStateLeaf,
     deployUnirep,
+    getTreeDepthsForTesting,
     genEpochKey,
     genNoAttestationNullifierKey,
     genNewEpochTree,

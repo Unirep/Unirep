@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee } from '../config/testLocal'
 import { genRandomSalt, hashLeftRight } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { deployUnirep, genEpochKey } from './utils'
+import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -26,7 +26,8 @@ describe('Attesting', () => {
     before(async () => {
         accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<Wallet>accounts[0])
+        const _treeDepths = getTreeDepthsForTesting()
+        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
 
         console.log('User sign up')
         userId = genIdentity()

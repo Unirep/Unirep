@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
-import { deployUnirep, genNewUserStateTree } from './utils'
+import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from './utils'
 
 chai.use(solidity)
 const { expect } = chai
@@ -24,7 +24,8 @@ describe('Signup', () => {
     before(async () => {
         accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<Wallet>accounts[0])
+        const _treeDepths = getTreeDepthsForTesting()
+        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
         GSTree = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)
