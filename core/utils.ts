@@ -1,10 +1,5 @@
 import assert from 'assert'
-import * as ethers from 'ethers'
-
-import chai from "chai"
-import { solidity } from "ethereum-waffle"
-chai.use(solidity)
-const { expect } = chai
+import { Contract, providers } from 'ethers'
 
 import Unirep from "../artifacts/Unirep.json"
 import { numAttestationsPerBatch } from '../config/testLocal'
@@ -17,16 +12,16 @@ import { computeEmptyUserStateRoot } from '../test/utils'
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
- * @param address The address of the MACI contract
+ * @param address The address of the Unirep contract
  * @param startBlock The block number when Unirep contract is deployed
  */
 const genUnirepStateFromContract = async (
-    provider: ethers.providers.Provider,
+    provider: providers.Provider,
     address: string,
     startBlock: number,
 ) => {
 
-    const unirepContract = new ethers.Contract(
+    const unirepContract = new Contract(
         address,
         Unirep.abi,
         provider,
@@ -80,15 +75,14 @@ const genUnirepStateFromContract = async (
             assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
 
             const newLeaf = newLeafEvent.args?._hashedLeaf
-            expect(newLeaf).equal(BigInt(newLeaf))
             unirepState.signUp(unirepState.currentEpoch, BigInt(newLeaf))
         } else if (occurredEvent === "AttestationSubmitted") {
             const attestationEvent = attestationSubmittedEvents.pop()
             assert(attestationEvent !== undefined, `Event sequence mismatch: missing attestationSubmittedEvent`)
-            const epoch = attestationEvent.args?._epoch
+            const epoch = attestationEvent.args?._epoch.toNumber()
             assert(
-                epoch.toNumber() === unirepState.currentEpoch,
-                `Attestation epoch (${epoch.toNumber()}) does not match current epoch (${unirepState.currentEpoch})`
+                epoch === unirepState.currentEpoch,
+                `Attestation epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
             )
 
             const _attestation = attestationEvent.args?.attestation
@@ -103,10 +97,10 @@ const genUnirepStateFromContract = async (
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
-            const epoch = epochEndedEvent.args?._epoch
+            const epoch = epochEndedEvent.args?._epoch.toNumber()
             assert(
-                epoch.toNumber() === unirepState.currentEpoch,
-                `Ended epoch (${epoch.toNumber()}) does not match current epoch (${unirepState.currentEpoch})`
+                epoch === unirepState.currentEpoch,
+                `Ended epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
             )
 
             // Get epoch tree leaves of the ending epoch
@@ -122,7 +116,7 @@ const genUnirepStateFromContract = async (
                 epochTreeLeaves.push(epochTreeLeaf)
             }
 
-            unirepState.epochTransition(epoch.toNumber(), epochTreeLeaves)
+            unirepState.epochTransition(epoch, epochTreeLeaves)
         } else if (occurredEvent === "UserStateTransitioned") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop()
             assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
@@ -130,7 +124,6 @@ const genUnirepStateFromContract = async (
             assert(userStateTransitionedEvent !== undefined, `Event sequence mismatch: missing userStateTransitionedEvent`)
 
             const newLeaf = newLeafEvent.args?._hashedLeaf
-            expect(newLeaf).equal(BigInt(newLeaf))
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
@@ -163,20 +156,20 @@ const genUnirepStateFromContract = async (
 /*
  * Create UserState object from given user state and
  * retrieves and parses on-chain Unirep contract data to create an off-chain
- * representation as a UnirepState object.
+ * representation as a UserState object (including UnirepState object).
  * (This assumes user has already signed up in the Unirep contract)
  * @param provider An Ethereum provider
- * @param address The address of the MACI contract
+ * @param address The address of the Unirep contract
  * @param startBlock The block number when Unirep contract is deployed
  * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment The identity userIdentityCommitment
+ * @param userIdentityCommitment Commitment of the userIdentity
  * @param latestTransitionedEpoch Latest epoch user has transitioned to
  * @param latestGSTLeafIndex Leaf index in the global state tree of the latest epoch user has transitioned to
  * @param latestUserStateLeaves User state leaves (empty if no attestations received)
- * @param latestEpochKeys Users's epoch keys of the epoch user has transitioned to
+ * @param latestEpochKeys User's epoch keys of the epoch user has transitioned to
  */
 const genUserStateFromParams = async (
-    provider: ethers.providers.Provider,
+    provider: providers.Provider,
     address: string,
     startBlock: number,
     userIdentity: any,
@@ -206,20 +199,22 @@ const genUserStateFromParams = async (
 
 /*
  * This function works mostly the same as genUnirepStateFromContract,
- * except that it also updates the user's state during processing events.
+ * except that it also updates the user's state during events processing.
  * @param provider An Ethereum provider
- * @param address The address of the MACI contract
+ * @param address The address of the Unirep contract
  * @param startBlock The block number when Unirep contract is deployed
+ * @param userIdentity The semaphore identity of the user
+ * @param userIdentityCommitment Commitment of the userIdentity
  */
 const _genUserStateFromContract = async (
-    provider: ethers.providers.Provider,
+    provider: providers.Provider,
     address: string,
     startBlock: number,
     userIdentity: any,
     userIdentityCommitment: any,
 ) => {
 
-    const unirepContract = new ethers.Contract(
+    const unirepContract = new Contract(
         address,
         Unirep.abi,
         provider,
@@ -277,6 +272,7 @@ const _genUserStateFromContract = async (
     attestationSubmittedEvents.reverse()
     epochEndedEvents.reverse()
     userStateTransitionedEvents.reverse()
+    // Variables used to keep track of data required for user to transition
     let userHasSignedUp = false
     let currentEpochGSTLeafIndexToInsert = 0
     const epochKeyNonce = 0
@@ -289,9 +285,8 @@ const _genUserStateFromContract = async (
             assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
 
             const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
-            expect(newLeaf).equal(newLeaf)
             unirepState.signUp(unirepState.currentEpoch, newLeaf)
-            // New leaf matches default leaf means user signed up.
+            // New leaf matches user's default leaf means user signed up.
             if (userDefaultGSTLeaf === newLeaf) {
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert)
                 userHasSignedUp = true
@@ -302,10 +297,10 @@ const _genUserStateFromContract = async (
         } else if (occurredEvent === "AttestationSubmitted") {
             const attestationEvent = attestationSubmittedEvents.pop()
             assert(attestationEvent !== undefined, `Event sequence mismatch: missing attestationSubmittedEvent`)
-            const epoch = attestationEvent.args?._epoch
+            const epoch = attestationEvent.args?._epoch.toNumber()
             assert(
-                epoch.toNumber() === unirepState.currentEpoch,
-                `Attestation epoch (${epoch.toNumber()}) does not match current epoch (${unirepState.currentEpoch})`
+                epoch === unirepState.currentEpoch,
+                `Attestation epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
             )
 
             const _attestation = attestationEvent.args?.attestation
@@ -320,10 +315,10 @@ const _genUserStateFromContract = async (
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
-            const epoch = epochEndedEvent.args?._epoch
+            const epoch = epochEndedEvent.args?._epoch.toNumber()
             assert(
-                epoch.toNumber() === unirepState.currentEpoch,
-                `Ended epoch (${epoch.toNumber()}) does not match current epoch (${unirepState.currentEpoch})`
+                epoch === unirepState.currentEpoch,
+                `Ended epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
             )
 
             // Get epoch tree leaves of the ending epoch
@@ -339,9 +334,9 @@ const _genUserStateFromContract = async (
                 epochTreeLeaves.push(epochTreeLeaf)
             }
 
-            unirepState.epochTransition(epoch.toNumber(), epochTreeLeaves)
+            unirepState.epochTransition(epoch, epochTreeLeaves)
             if (userHasSignedUp) {
-                if (epoch.toNumber() === userState.latestTransitionedEpoch) {
+                if (epoch === userState.latestTransitionedEpoch) {
                     // Latest epoch user transitioned to ends, keep a record of user state
                     // at this moment in order to identify `UserStateTransitioned` event
                     latestUserState = await userState.genNewUserStateAfterTransition(epochKeyNonce)
@@ -357,7 +352,6 @@ const _genUserStateFromContract = async (
             assert(userStateTransitionedEvent !== undefined, `Event sequence mismatch: missing userStateTransitionedEvent`)
 
             const newLeaf = newLeafEvent.args?._hashedLeaf
-            expect(newLeaf).equal(BigInt(newLeaf))
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
@@ -369,7 +363,7 @@ const _genUserStateFromContract = async (
                 userStateTransitionedEvent.args?._fromNullifierTreeRoot,
                 userStateTransitionedEvent.args?._proof,
             )
-            // Proof is invalid, skip this step
+            // Proof is invalid, skip this event
             if (!isProofValid) {
                 console.log("Invalid UserStateTransitioned proof")
                 continue
@@ -399,17 +393,17 @@ const _genUserStateFromContract = async (
 }
 
 /*
- * Given user identiy and userIdentityCommitment, retrieves and parses on-chain
+ * Given user identity and userIdentityCommitment, retrieves and parses on-chain
  * Unirep contract data to create an off-chain representation as a
  * UserState object (including UnirepState object).
  * @param provider An Ethereum provider
- * @param address The address of the MACI contract
+ * @param address The address of the Unirep contract
  * @param startBlock The block number when Unirep contract is deployed
  * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment The identity userIdentityCommitment
+ * @param userIdentityCommitment Commitment of the userIdentity
  */
 const genUserStateFromContract = async (
-    provider: ethers.providers.Provider,
+    provider: providers.Provider,
     address: string,
     startBlock: number,
     userIdentity: any,
