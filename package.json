@@ -32,6 +32,7 @@
         "circom": "^0.5.27",
         "ethereum-waffle": "^3.0.1",
         "ethers": "^5.0.5",
+        "prompt-async": "^0.9.9",
         "ts-node": "^8.10.2",
         "typescript": "^3.9.6"
     },
