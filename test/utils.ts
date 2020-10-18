@@ -115,15 +115,10 @@ const deployUnirep = async (
     }
     const f = new ethers.ContractFactory(Unirep.abi, Unirep.bytecode, deployer)
     const c = await (f.deploy(
+        _treeDepths,
         {
-            globalStateTreeDepth: _treeDepths.globalStateTreeDepth,
-            userStateTreeDepth: _treeDepths.userStateTreeDepth,
-            nullifierTreeDepth: _treeDepths.nullifierTreeDepth,
-            epochTreeDepth: _treeDepths.epochTreeDepth
-        },
-        {
-            _maxUsers,
-            _maxEpochKeyNonce
+            "maxUsers": _maxUsers,
+            "maxEpochKeyNonce": _maxEpochKeyNonce
         },
         EpochKeyValidityVerifierContract.address,
         UserStateTransitionVerifierContract.address,
