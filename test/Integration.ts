@@ -11,10 +11,8 @@ chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/Unirep.json"
-import { Attestation, IAttestation, IEpochTreeLeaf, UnirepState } from "../core/UnirepState"
+import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../core"
 import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
-import { IUserStateLeaf, UserState } from "../core/UserState"
-import { genUserStateFromContract } from "../core/utils"
 
 describe('Integration', function () {
     this.timeout(500000)

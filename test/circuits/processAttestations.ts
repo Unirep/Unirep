@@ -17,8 +17,7 @@ import {
 import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
-import { Attestation } from "../../core/UnirepState"
-import { Reputation } from "../../core/UserState"
+import { Attestation, Reputation } from "../../core"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)

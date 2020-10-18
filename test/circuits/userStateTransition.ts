@@ -22,8 +22,7 @@ import {
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth } from "../../config/testLocal"
 import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
-import { Attestation } from "../../core/UnirepState"
-import { Reputation } from "../../core/UserState"
+import { Attestation, Reputation } from "../../core"
 
 describe('User State Transition circuits', function () {
     this.timeout(400000)

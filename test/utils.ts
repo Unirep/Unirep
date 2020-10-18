@@ -52,7 +52,7 @@ const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
 }
 
 const deployUnirep = async (
-    deployer: ethers.Wallet,
+    deployer: ethers.Signer,
     _treeDepths: any,
     _settings?: any): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract

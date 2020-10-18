@@ -11,7 +11,7 @@ chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/Unirep.json"
-import { Attestation } from "../core/UnirepState"
+import { Attestation } from "../core"
 
 
 describe('Attesting', () => {
