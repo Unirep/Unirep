@@ -33,7 +33,7 @@ const configureSubparser = (subparsers: any) => {
         {
             required: true,
             type: 'string',
-            help: 'The user\'s identity commitment. ',
+            help: 'The user\'s identity commitment (in hex representation). ',
         }
     )
 

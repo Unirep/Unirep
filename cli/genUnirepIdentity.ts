@@ -13,7 +13,7 @@ const genUnirepIdentity = async (args: any) => { // eslint-disable-line @typescr
 
     const serializedIdentity = serialiseIdentity(id)
     const serializedIdentityCommitment = commitment.toString(16)
-    console.log('Identity:', serializedIdentity)
+    console.log('Identity:', JSON.stringify(serializedIdentity))
     console.log('Identity Commitment:', serializedIdentityCommitment)
 }
 
