@@ -11,7 +11,7 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import Unirep from "../artifacts/Unirep.json"
 import { genEpochKey } from '../test/utils'
 import { genUserStateFromContract } from '../core'
-import { genVerifyEpochKeyProofAndPublicSignals } from '../test/circuits/utils'
+import { genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 
 const configureSubparser = (subparsers: any) => {
@@ -34,7 +34,7 @@ const configureSubparser = (subparsers: any) => {
         {
             required: true,
             type: 'string',
-            help: 'The (serialized) user\'s identity. ',
+            help: 'The (serialized) user\'s identity',
         }
     )
 
@@ -43,7 +43,7 @@ const configureSubparser = (subparsers: any) => {
         {
             required: true,
             type: 'int',
-            help: 'The epoch key nonce. ',
+            help: 'The epoch key nonce',
         }
     )
 
@@ -97,7 +97,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const epkNonce = args.epoch_key_nonce
     const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
     if (epkNonce > maxEpochKeyNonce) {
-        console.error('Epoch key nonce exceeds max epoch key nonce')
+        console.error('Error: epoch key nonce exceeds max epoch key nonce')
         return
     }
 
@@ -119,8 +119,14 @@ const genEpochKeyAndProof = async (args: any) => {
     )
     const circuitInputs = await userState.genVerifyEpochKeyCircuitInputs(epkNonce)
     const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
-    const proof = results["proof"]
 
+    // TODO: Not sure if this validation is necessary
+    const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
+    if(!isValid) {
+        console.error('Error: epoch key proof generated is not valid!')
+    }
+    
+    const proof = results["proof"]
     console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
     console.log('Epoch key proof:', JSON.stringify(JSON.stringify(proof)))  // stringify twice to escape double quote
 }
