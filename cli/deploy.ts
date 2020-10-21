@@ -118,7 +118,7 @@ const deploy = async (args: any) => {
     const _treeDepthsConfig = args.tree_depths_config ? args.tree_depths_config : DEFAULT_TREE_DEPTHS_CONFIG
 
     if (_treeDepthsConfig !== 'circuit' && _treeDepthsConfig !== 'contract') {
-        console.error('Error: this codebase only supports circuit or contract configurations for tree depths.')
+        console.error('Error: this codebase only supports circuit or contract configurations for tree depths')
         return
     }
 

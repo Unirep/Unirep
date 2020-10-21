@@ -14,7 +14,7 @@ import { formatProofForVerifierContract } from '../test/circuits/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
-        'verifyEpochKeyProof',
+        'verifyReputationProof',
         { addHelp: true },
     )
 
@@ -28,11 +28,38 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.addArgument(
-        ['-epk', '--epoch-key'],
+        ['-a', '--attester-id'],
         {
             required: true,
             type: 'string',
-            help: 'The user\'s epoch key (in hex representation)',
+            help: 'The attester id (in hex representation)',
+        }
+    )
+    
+    parser.addArgument(
+        ['-mp', '--min-pos-rep'],
+        {
+            required: true,
+            type: 'int',
+            help: 'The minimum positive score the attester given to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-mn', '--max-neg-rep'],
+        {
+            required: true,
+            type: 'int',
+            help: 'The maximum negative score the attester given to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-gp', '--graffiti-preimage'],
+        {
+            required: true,
+            type: 'string',
+            help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
         }
     )
 
@@ -64,7 +91,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const verifyEpochKeyProof = async (args: any) => {
+const verifyReputationProof = async (args: any) => {
 
     // Unirep contract
     if (!validateEthAddress(args.contract)) {
@@ -83,7 +110,13 @@ const verifyEpochKeyProof = async (args: any) => {
         console.error('Error: there is no contract deployed at the specified address')
         return
     }
-    
+
+    const unirepContract = new Contract(
+        unirepAddress,
+        Unirep.abi,
+        provider,
+    )
+
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(
         provider,
@@ -92,29 +125,31 @@ const verifyEpochKeyProof = async (args: any) => {
     )
 
     const currentEpoch = unirepState.currentEpoch
-    const GSTRoot = unirepState.genGSTree(currentEpoch).root
-    const epk = BigInt(add0x(args.epoch_key))
+    const attesterId = BigInt(add0x(args.attester_id))
+    const minPosRep = args.min_pos_rep
+    const maxNegRep = args.max_neg_rep
+    const graffitiPreImage = BigInt(add0x(args.graffiti_preimage))
     const proof = JSON.parse(args.proof)
 
-    const unirepContract = new Contract(
-        unirepAddress,
-        Unirep.abi,
-        provider,
-    )
-    const isProofValid = await unirepContract.verifyEpochKeyValidity(
-        GSTRoot,
-        currentEpoch,
-        epk,
+    // Verify on-chain
+    const GSTreeRoot = unirepState.genGSTree(currentEpoch).root
+    const isProofValid = await unirepContract.verifyReputation(
+        GSTreeRoot,
+        attesterId,
+        minPosRep,
+        maxNegRep,
+        graffitiPreImage,
         formatProofForVerifierContract(proof),
     )
     if (!isProofValid) {
-        console.error('Error: invalid epoch key proof')
+        console.error('Error: invalid reputation proof')
         return
     }
-    console.log(`Verify epoch key proof with epoch key ${args.epoch_key} succeed`)
+
+    console.log(`Verify reputation proof from attester ${attesterId} with min pos rep ${minPosRep}, max neg rep ${maxNegRep} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
 }
 
 export {
-    verifyEpochKeyProof,
+    verifyReputationProof,
     configureSubparser,
 }
