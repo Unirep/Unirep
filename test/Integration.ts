@@ -156,7 +156,7 @@ describe('Integration', function () {
 
             const newState = await users[0].genNewUserStateAfterTransition(epochKeyNonce)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const noAttestationNullifier = users[0].getNoAttestationsNullifier(prevEpoch.toNumber(), epochKeyNonce)
+            const noAttestationNullifier = users[0].getNoAttestationsNullifier(fromEpoch, epochKeyNonce)
             let tx = await unirepContract.updateUserStateRoot(
                 newState.newGSTLeaf,
                 nullifiers,

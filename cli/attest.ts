@@ -1,4 +1,4 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { Contract, Wallet, providers, utils } from 'ethers'
 
 import {
     promptPwd,
@@ -12,10 +12,11 @@ import { DEFAULT_ETH_PROVIDER } from './defaults'
 
 import Unirep from "../artifacts/Unirep.json"
 import { add0x } from '../crypto/SMT'
+import { Attestation } from '../core'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
-        'userSignup',
+        'attest',
         { addHelp: true },
     )
 
@@ -29,11 +30,38 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.addArgument(
-        ['-c', '--identity-commitment'],
+        ['-epk', '--epoch-key'],
         {
             required: true,
             type: 'string',
-            help: 'The user\'s identity commitment (in hex representation)',
+            help: 'The user\'s epoch key to attest to (in hex representation)',
+        }
+    )
+
+    parser.addArgument(
+        ['-pr', '--pos-rep'],
+        {
+            required: true,
+            type: 'int',
+            help: 'Score of positive reputation to give to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-nr', '--neg-rep'],
+        {
+            required: true,
+            type: 'int',
+            help: 'Score of negative reputation to give to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-gf', '--graffiti'],
+        {
+            action: 'store',
+            type: 'string',
+            help: 'Graffiti for the reputation given to the user (in hex representation)',
         }
     )
 
@@ -66,7 +94,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const userSignup = async (args: any) => {
+const attest = async (args: any) => {
 
     // Unirep contract
     if (!validateEthAddress(args.contract)) {
@@ -112,16 +140,32 @@ const userSignup = async (args: any) => {
         Unirep.abi,
         wallet,
     )
+    const attestingFee = await unirepContract.attestingFee()
+    const ethAddr = utils.computeAddress(args.eth_privkey)
+    const attesterId = await unirepContract.attesters(ethAddr)
+    if (attesterId.toNumber() == 0) {
+        console.error('Error: attester has not registered yet')
+        return
+    }
 
-    let commitment = add0x(args.identity_commitment)
-
+    const epk = BigInt(add0x(args.epoch_key))
+    const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
+    const overwriteGraffiti = args.graffiti ? true : false
+    const attestation = new Attestation(
+        BigInt(attesterId),
+        args.pos_rep,
+        args.neg_rep,
+        graffiti,
+        overwriteGraffiti,
+    )
+    console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${args.pos_rep}, neg rep ${args.neg_rep} and graffiti ${graffiti} (overwrite graffit: ${overwriteGraffiti})`)
     let tx
     try {
-        tx = await unirepContract.userSignUp(
-            commitment,
-            { gasLimit: 1000000 }
+        tx = await unirepContract.submitAttestation(
+            attestation,
+            epk,
+            { value: attestingFee, gasLimit: 1000000 }
         )
-
     } catch(e) {
         console.error('Error: the transaction failed')
         if (e.message) {
@@ -130,13 +174,10 @@ const userSignup = async (args: any) => {
         return
     }
 
-    const receipt = await tx.wait()
-    const epoch = unirepContract.interface.parseLog(receipt.logs[1]).args._epoch
     console.log('Transaction hash:', tx.hash)
-    console.log('Sign up epoch:', epoch.toString())
 }
 
 export {
-    userSignup,
+    attest,
     configureSubparser,
 }

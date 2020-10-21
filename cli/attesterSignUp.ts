@@ -1,4 +1,4 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { Contract, Wallet, providers, utils } from 'ethers'
 
 import {
     promptPwd,
@@ -114,7 +114,13 @@ const attesterSignup = async (args: any) => {
         return
     }
 
+    const ethAddr = utils.computeAddress(ethSk)
+    const attesterId = await unirepContract.attesters(ethAddr)
+    if (attesterId.toNumber() == 0) {
+        console.error('Error: sign up succeeded but has no attester id!')
+    }
     console.log('Transaction hash:', tx.hash)
+    console.log('Attester sign up with attester id:', attesterId.toNumber())
 }
 
 export {
