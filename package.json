@@ -9,7 +9,8 @@
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
-        "test": "npx buidler compile && npx ts-node scripts/buildPoseidon.ts && npx buidler test"
+        "test-cli": "./scripts/testCLI.sh",
+        "test": "npx buidler compile && npx ts-node scripts/buildPoseidon.ts && npx buidler test && npx run test-cli"
     },
     "repository": {
         "type": "git",
