@@ -99,13 +99,13 @@ const deploy = async (args: any) => {
     }
 
     // Max epoch key nonce
-    const _maxEpochKeyNonce = (args.max_epoch_key_nonce !== undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
+    const _maxEpochKeyNonce = (args.max_epoch_key_nonce != undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
 
     // Epoch length
-    const _epochLength = (args.epoch_length !== undefined) ? args.epoch_length : DEFAULT_EPOCH_LENGTH
+    const _epochLength = (args.epoch_length != undefined) ? args.epoch_length : DEFAULT_EPOCH_LENGTH
 
     // Attesting fee
-    const _attestingFee = (args.attesting_fee !== undefined) ? BigNumber.from(args.attesting_fee) : DEFAULT_ATTESTING_FEE
+    const _attestingFee = (args.attesting_fee != undefined) ? BigNumber.from(args.attesting_fee) : DEFAULT_ATTESTING_FEE
 
     const settings = {
         'maxUsers': maxUsers,
