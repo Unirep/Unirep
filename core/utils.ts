@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Contract, providers } from 'ethers'
+import { BigNumber, Contract, providers } from 'ethers'
 
 import Unirep from "../artifacts/Unirep.json"
 import { numAttestationsPerBatch } from '../config/testLocal'
@@ -33,17 +33,17 @@ const genUnirepStateFromContract = async (
     const epochTreeDepth = treeDepths_.epochTreeDepth
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
     const attestingFee = await unirepContract.attestingFee()
-    const epochLength = (await unirepContract.epochLength()).toNumber()
+    const epochLength = await unirepContract.epochLength()
     const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
 
     const unirepState = new UnirepState(
-        globalStateTreeDepth,
-        userStateTreeDepth,
-        epochTreeDepth,
-        nullifierTreeDepth,
+        BigNumber.from(globalStateTreeDepth).toNumber(),
+        BigNumber.from(userStateTreeDepth).toNumber(),
+        BigNumber.from(epochTreeDepth).toNumber(),
+        BigNumber.from(nullifierTreeDepth).toNumber(),
         attestingFee,
-        epochLength,
-        maxEpochKeyNonce,
+        BigNumber.from(epochLength).toNumber(),
+        BigNumber.from(maxEpochKeyNonce).toNumber(),
         numAttestationsPerBatch,
     )
 
@@ -226,17 +226,17 @@ const _genUserStateFromContract = async (
     const epochTreeDepth = treeDepths_.epochTreeDepth
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
     const attestingFee = await unirepContract.attestingFee()
-    const epochLength = (await unirepContract.epochLength()).toNumber()
+    const epochLength = await unirepContract.epochLength()
     const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
 
     const unirepState = new UnirepState(
-        globalStateTreeDepth,
-        userStateTreeDepth,
-        epochTreeDepth,
-        nullifierTreeDepth,
+        BigNumber.from(globalStateTreeDepth).toNumber(),
+        BigNumber.from(userStateTreeDepth).toNumber(),
+        BigNumber.from(epochTreeDepth).toNumber(),
+        BigNumber.from(nullifierTreeDepth).toNumber(),
         attestingFee,
-        epochLength,
-        maxEpochKeyNonce,
+        BigNumber.from(epochLength).toNumber(),
+        BigNumber.from(maxEpochKeyNonce).toNumber(),
         numAttestationsPerBatch,
     )
 
