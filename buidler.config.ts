@@ -17,7 +17,10 @@ const config: BuidlerConfig = {
   networks: {
     buidlerevm: {
       blockGasLimit: 12000000
-    }
+    },
+    local: {
+      url: "http://localhost:8545"
+    },
   },
   solc: {
     version: "0.6.8",
