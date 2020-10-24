@@ -64,7 +64,7 @@ class UnirepState {
     public attestingFee: BigNumber
     public epochLength: number
     public maxEpochKeyNonce: number
-    public numAttestationsPerBatch: number
+    public maxAttestationsPerEpochKey: number
     
     public currentEpoch: number
     public defaultGSTLeaf: BigInt
@@ -83,7 +83,7 @@ class UnirepState {
         _attestingFee: BigNumber,
         _epochLength: number,
         _maxNonce: number,
-        _numAttestationsPerBatch: number,
+        _maxAttestationsPerEpochKey: number,
     ) {
 
         this.globalStateTreeDepth = _globalStateTreeDepth
@@ -93,7 +93,7 @@ class UnirepState {
         this.attestingFee = _attestingFee
         this.epochLength = _epochLength
         this.maxEpochKeyNonce = _maxNonce
-        this.numAttestationsPerBatch = _numAttestationsPerBatch
+        this.maxAttestationsPerEpochKey = _maxAttestationsPerEpochKey
 
         this.currentEpoch = 1
         this.GSTLeaves[this.currentEpoch] = []

@@ -2,7 +2,7 @@ import assert from 'assert'
 import { BigNumber, Contract, providers } from 'ethers'
 
 import Unirep from "../artifacts/Unirep.json"
-import { numAttestationsPerBatch } from '../config/testLocal'
+import { maxAttestationsPerEpochKey } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
 import { hashLeftRight } from 'maci-crypto'
@@ -44,7 +44,7 @@ const genUnirepStateFromContract = async (
         attestingFee,
         BigNumber.from(epochLength).toNumber(),
         BigNumber.from(maxEpochKeyNonce).toNumber(),
-        numAttestationsPerBatch,
+        maxAttestationsPerEpochKey,
     )
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
@@ -237,7 +237,7 @@ const _genUserStateFromContract = async (
         attestingFee,
         BigNumber.from(epochLength).toNumber(),
         BigNumber.from(maxEpochKeyNonce).toNumber(),
-        numAttestationsPerBatch,
+        maxAttestationsPerEpochKey,
     )
 
     const userState = new UserState(

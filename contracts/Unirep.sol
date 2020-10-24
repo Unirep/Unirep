@@ -19,7 +19,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 
-    uint256 constant NUM_ATTESTATIONS_PER_BATCH = 10;
+    uint256 constant MAX_ATTESTATIONS_PER_EPOCH_KEY = 10;
 
      // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
@@ -103,7 +103,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
-        uint256[NUM_ATTESTATIONS_PER_BATCH] _nullifiers,
+        uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] _nullifiers,
         uint256 _noAttestationNullifier,
         uint256 _fromEpoch,
         uint256 _fromGlobalStateTree,
@@ -297,7 +297,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function updateUserStateRoot(
         uint256 _newGlobalStateTreeLeaf,
-        uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
+        uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] calldata _nullifiers,
         uint256 _noAttestationNullifier,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
@@ -364,7 +364,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function verifyUserStateTransition(
         uint256 _newGlobalStateTreeLeaf,
-        uint256[NUM_ATTESTATIONS_PER_BATCH] calldata _nullifiers,
+        uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] calldata _nullifiers,
         uint256 _noAttestationNullifier,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
@@ -378,17 +378,17 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 4. Nullifiers of all processed attestations match
         // 5. Nullifiers of all processed attestations have not been seen before
 
-        uint256[] memory publicSignals = new uint256[](7 + NUM_ATTESTATIONS_PER_BATCH);
+        uint256[] memory publicSignals = new uint256[](7 + MAX_ATTESTATIONS_PER_EPOCH_KEY);
         publicSignals[0] = _newGlobalStateTreeLeaf;
         for (uint8 i = 0; i < _nullifiers.length; i++) {
             publicSignals[i + 1] = _nullifiers[i];
         }
-        publicSignals[2 + NUM_ATTESTATIONS_PER_BATCH - 1] = _noAttestationNullifier;
-        publicSignals[3 + NUM_ATTESTATIONS_PER_BATCH - 1] = _transitionFromEpoch;
-        publicSignals[4 + NUM_ATTESTATIONS_PER_BATCH - 1] = maxEpochKeyNonce;
-        publicSignals[5 + NUM_ATTESTATIONS_PER_BATCH - 1] = _fromGlobalStateTree;
-        publicSignals[6 + NUM_ATTESTATIONS_PER_BATCH - 1] = _fromEpochTree;
-        publicSignals[7 + NUM_ATTESTATIONS_PER_BATCH - 1] = _fromNullifierTreeRoot;
+        publicSignals[2 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _noAttestationNullifier;
+        publicSignals[3 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _transitionFromEpoch;
+        publicSignals[4 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = maxEpochKeyNonce;
+        publicSignals[5 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromGlobalStateTree;
+        publicSignals[6 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromEpochTree;
+        publicSignals[7 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromNullifierTreeRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

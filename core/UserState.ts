@@ -74,7 +74,7 @@ class Reputation implements IReputation {
 class UserState {
     public userStateTreeDepth: number
     public maxEpochKeyNonce: number
-    public numAttestationsPerBatch: number
+    public maxAttestationsPerEpochKey: number
 
     private unirepState: UnirepState
 
@@ -101,7 +101,7 @@ class UserState {
         this.unirepState = _unirepState
         this.userStateTreeDepth = this.unirepState.userStateTreeDepth
         this.maxEpochKeyNonce = this.unirepState.maxEpochKeyNonce
-        this.numAttestationsPerBatch = this.unirepState.numAttestationsPerBatch
+        this.maxAttestationsPerEpochKey = this.unirepState.maxAttestationsPerEpochKey
 
         this.id = _id
         this.commitment = _commitment
@@ -162,7 +162,7 @@ class UserState {
                 computeNullifier(this.id.identityNullifier, attestation.attesterId, epoch, this.unirepState.nullifierTreeDepth)
             )
         }
-        for (let i = 0; i < (this.numAttestationsPerBatch - attestations.length); i++) {
+        for (let i = 0; i < (this.maxAttestationsPerEpochKey - attestations.length); i++) {
             nullifiers.push(BigInt(0))
         }
         return nullifiers
@@ -368,7 +368,7 @@ class UserState {
             nullifierTreePathElements.push(nullifierTreeProof)
         }
         // Fill in blank data for non-exist attestation
-        for (let i = 0; i < (this.numAttestationsPerBatch - attestations.length); i++) {
+        for (let i = 0; i < (this.maxAttestationsPerEpochKey - attestations.length); i++) {
             oldPosReps.push(0)
             oldNegReps.push(0)
             oldGraffities.push(BigInt(0))

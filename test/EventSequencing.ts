@@ -2,7 +2,7 @@ import { ethers } from "@nomiclabs/buidler"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
-import { attestingFee, epochLength, numAttestationsPerBatch } from '../config/testLocal'
+import { attestingFee, epochLength, maxAttestationsPerEpochKey } from '../config/testLocal'
 import { genRandomSalt } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from './utils'
@@ -94,7 +94,7 @@ describe('Attesting', () => {
         // 5. Second user transition
         let transitionFromEpoch = 1
         const nullifiers: BigInt[] = []
-        for (let i = 0; i < numAttestationsPerBatch; i++) {
+        for (let i = 0; i < maxAttestationsPerEpochKey; i++) {
             nullifiers.push(genRandomSalt())
         }
         const proof: BigInt[] = []
