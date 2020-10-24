@@ -158,7 +158,7 @@ const attest = async (args: any) => {
         graffiti,
         overwriteGraffiti,
     )
-    console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${args.pos_rep}, neg rep ${args.neg_rep} and graffiti ${graffiti} (overwrite graffit: ${overwriteGraffiti})`)
+    console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${args.pos_rep}, neg rep ${args.neg_rep} and graffiti ${graffiti.toString(16)} (overwrite graffit: ${overwriteGraffiti})`)
     let tx
     try {
         tx = await unirepContract.submitAttestation(

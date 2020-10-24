@@ -19,8 +19,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 
-    uint256 constant MAX_EPOCH_KEY_NONCE = 2;
-
     uint256 constant NUM_ATTESTATIONS_PER_BATCH = 10;
 
      // Verifier Contracts
@@ -387,7 +385,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         }
         publicSignals[2 + NUM_ATTESTATIONS_PER_BATCH - 1] = _noAttestationNullifier;
         publicSignals[3 + NUM_ATTESTATIONS_PER_BATCH - 1] = _transitionFromEpoch;
-        publicSignals[4 + NUM_ATTESTATIONS_PER_BATCH - 1] = MAX_EPOCH_KEY_NONCE;
+        publicSignals[4 + NUM_ATTESTATIONS_PER_BATCH - 1] = maxEpochKeyNonce;
         publicSignals[5 + NUM_ATTESTATIONS_PER_BATCH - 1] = _fromGlobalStateTree;
         publicSignals[6 + NUM_ATTESTATIONS_PER_BATCH - 1] = _fromEpochTree;
         publicSignals[7 + NUM_ATTESTATIONS_PER_BATCH - 1] = _fromNullifierTreeRoot;

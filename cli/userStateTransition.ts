@@ -143,11 +143,9 @@ const userStateTransition = async (args: any) => {
         return
     }
 
-    // Gen epoch key
     const id = unSerialiseIdentity(args.identity)
     const commitment = genIdentityCommitment(id)
 
-    // Gen epoch key proof
     const userState = await genUserStateFromContract(
         provider,
         unirepAddress,
@@ -189,7 +187,7 @@ const userStateTransition = async (args: any) => {
         }
         return
     }
-    
+
     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
     console.log('Transaction hash:', tx.hash)
     console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)

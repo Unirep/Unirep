@@ -121,7 +121,6 @@ const epochTransition = async (args: any) => {
     let tx
     try {
         const numEpochKeysToSeal = await unirepContract.getNumEpochKey(currentEpoch)
-        console.log(currentEpoch, numEpochKeysToSeal)
         tx = await unirepContract.beginEpochTransition(
             numEpochKeysToSeal,
             { gasLimit: 9000000 }

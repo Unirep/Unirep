@@ -131,7 +131,6 @@ const genReputationProof = async (args: any) => {
     const graffitiPreImage = BigInt(add0x(args.graffiti_preimage))
     const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
-    console.log("ok")
 
     // TODO: Not sure if this validation is necessary
     const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
