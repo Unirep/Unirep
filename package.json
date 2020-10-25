@@ -23,7 +23,7 @@
     },
     "homepage": "https://github.com/NIC619/UniRep#readme",
     "devDependencies": {
-        "@nomiclabs/buidler": "^1.3.8",
+        "@nomiclabs/buidler": "^1.4.8",
         "@nomiclabs/buidler-ethers": "^2.0.0",
         "@nomiclabs/buidler-waffle": "^2.0.0",
         "@types/chai": "^4.2.11",
