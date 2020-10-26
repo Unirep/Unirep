@@ -1,5 +1,5 @@
-import { waffle } from 'hardhat'
-import * as ethers from 'ethers'
+import { ethers, waffle } from 'hardhat'
+import { Contract, Signer, utils } from 'ethers'
 import Keyv from "keyv"
 import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
@@ -9,27 +9,6 @@ import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circu
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
-import EpochKeyValidityVerifier from "../artifacts/contracts/EpochKeyValidityVerifier.sol/EpochKeyValidityVerifier.json"
-import UserStateTransitionVerifier from "../artifacts/contracts/UserStateTransitionVerifier.sol/UserStateTransitionVerifier.json"
-import ReputationVerifier from "../artifacts/contracts/ReputationVerifier.sol/ReputationVerifier.json"
-
-// Copy contract json type from ethereum-waffle
-interface SimpleContractJSON {
-    abi: any[];
-    bytecode: string;
-}
-
-const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libraryAddress: string) => {
-    let linkableContract = {
-        evm: {
-            bytecode: {
-                object: contractJson.bytecode,
-            }
-        }
-    }
-    waffle.link(linkableContract, libraryName, libraryAddress)
-    contractJson.bytecode = linkableContract.evm.bytecode.object
-}
 
 const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
     if (deployEnv === 'contract') {
@@ -52,54 +31,46 @@ const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
 }
 
 const deployUnirep = async (
-    deployer: ethers.Signer,
+    deployer: Signer,
     _treeDepths: any,
-    _settings?: any): Promise<ethers.Contract> => {
+    _settings?: any): Promise<Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
     let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
     console.log('Deploying PoseidonT3')
-    PoseidonT3Contract = (await waffle.deployContract(
+    PoseidonT3Contract = await waffle.deployContract(
         deployer,
         PoseidonT3
-    ))
+    )
     console.log('Deploying PoseidonT6')
-    PoseidonT6Contract = (await waffle.deployContract(
+    PoseidonT6Contract = await waffle.deployContract(
         deployer,
         PoseidonT6,
         [],
         {
             gasLimit: 9000000,
         }
-    ))
+    )
 
     console.log('Deploying EpochKeyValidityVerifier')
-    EpochKeyValidityVerifierContract = (await waffle.deployContract(
-        deployer,
-        EpochKeyValidityVerifier
-    ))
+    EpochKeyValidityVerifierContract = await (await ethers.getContractFactory(
+        "EpochKeyValidityVerifier",
+        deployer
+    )).deploy()
 
     console.log('Deploying UserStateTransitionVerifier')
-    UserStateTransitionVerifierContract = (await waffle.deployContract(
-        deployer,
-        UserStateTransitionVerifier
-    ))
+    UserStateTransitionVerifierContract = await (await ethers.getContractFactory(
+        "UserStateTransitionVerifier",
+        deployer
+    )).deploy()
 
     console.log('Deploying ReputationVerifier')
-    ReputationVerifierContract = (await waffle.deployContract(
-        deployer,
-        ReputationVerifier
-    ))
+    ReputationVerifierContract = await (await ethers.getContractFactory(
+        "ReputationVerifier",
+        deployer
+    )).deploy()
 
     console.log('Deploying Unirep')
-    // Link the library code if it has not been linked yet
-    const notLinkedYet = Unirep.bytecode.indexOf("$") > 0
-    if (notLinkedYet) {
-        // Link the Unirep contract to PoseidonT3 contract
-        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
-        // Link the Unirep contract to PoseidonT6 contract
-        linkLibrary(Unirep, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
-    }
 
     let _maxUsers, _maxEpochKeyNonce, _epochLength, _attestingFee
     if (_settings) {
@@ -113,7 +84,16 @@ const deployUnirep = async (
         _epochLength = epochLength
         _attestingFee = attestingFee
     }
-    const f = new ethers.ContractFactory(Unirep.abi, Unirep.bytecode, deployer)
+    const f = await ethers.getContractFactory(
+        "Unirep",
+        {
+            signer: deployer,
+            libraries: {
+                "PoseidonT3": PoseidonT3Contract.address,
+                "PoseidonT6": PoseidonT6Contract.address
+            }
+        }
+    )
     const c = await (f.deploy(
         _treeDepths,
         {
@@ -130,14 +110,12 @@ const deployUnirep = async (
         }
     ))
 
-    // Print out deployment info if the contract is been deployed the first time
-    if (notLinkedYet) {
-        console.log("-----------------------------------------------------------------")
-        console.log("Bytecode size of Unirep:", Math.floor(Unirep.bytecode.length / 2), "bytes")
-        let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
-        console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
-        console.log("-----------------------------------------------------------------")
-    }
+    // Print out deployment info
+    console.log("-----------------------------------------------------------------")
+    console.log("Bytecode size of Unirep:", Math.floor(Unirep.bytecode.length / 2), "bytes")
+    let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
+    console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
+    console.log("-----------------------------------------------------------------")
 
     return c
 }
@@ -181,7 +159,7 @@ const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: num
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = add0x(str)
-    if (len) str = ethers.utils.hexZeroPad(str, len)
+    if (len) str = utils.hexZeroPad(str, len)
     return str
 }
 
@@ -249,7 +227,6 @@ const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<Spar
 }
 
 export {
-    SimpleContractJSON,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
@@ -264,6 +241,5 @@ export {
     genNewNullifierTree,
     genNewUserStateTree,
     genNewSMT,
-    linkLibrary,
     toCompleteHexString,
 }

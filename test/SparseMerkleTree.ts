@@ -6,15 +6,11 @@ import { ContractFactory, Signer, Wallet } from "ethers"
 
 const { expect } = chai
 
-import {
-    hashLeftRight,
-    genRandomSalt,
-} from '../crypto/crypto'
-import { genNewEpochTree, linkLibrary, SMT_ONE_LEAF } from './utils'
+import { genRandomSalt } from '../crypto/crypto'
+import { SMT_ONE_LEAF } from './utils'
 
 import PoseidonT3 from '../artifacts/contracts/Poseidon.sol/PoseidonT3.json'
 import PoseidonT6 from '../artifacts/contracts/Poseidon.sol/PoseidonT6.json'
-import OneTimeSparseMerkleTree from '../artifacts/contracts/OneTimeSparseMerkleTree.sol/OneTimeSparseMerkleTree.json'
 import { SparseMerkleTreeImpl, bufToHexString } from '../crypto/SMT'
 import { epochTreeDepth } from '../config/testLocal'
 
@@ -34,29 +30,30 @@ describe('OneTimeSparseMerkleTree', () => {
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3')
-        PoseidonT3Contract = (await waffle.deployContract(
+        PoseidonT3Contract = await waffle.deployContract(
             <Wallet>accounts[0],
             PoseidonT3
-        ))
+        )
         console.log('Deploying PoseidonT6')
-        PoseidonT6Contract = (await waffle.deployContract(
+        PoseidonT6Contract = await waffle.deployContract(
             <Wallet>accounts[0],
             PoseidonT6,
             [],
             {
                 gasLimit: 9000000,
             }
-        ))
+        )
 
-        // Link the library code if it has not been linked yet
-        if(OneTimeSparseMerkleTree.bytecode.indexOf("$") > 0) {
-            // Link the Unirep contract to PoseidonT3 contract
-            linkLibrary(OneTimeSparseMerkleTree, 'contracts/Poseidon.sol:PoseidonT3', PoseidonT3Contract.address)
-            // Link the Unirep contract to PoseidonT6 contract
-            linkLibrary(OneTimeSparseMerkleTree, 'contracts/Poseidon.sol:PoseidonT6', PoseidonT6Contract.address)
-        }
-
-        OTSMTFactory = new ContractFactory(OneTimeSparseMerkleTree.abi, OneTimeSparseMerkleTree.bytecode, accounts[0])
+        OTSMTFactory = await ethers.getContractFactory(
+            "OneTimeSparseMerkleTree",
+            {
+                signer: accounts[0],
+                libraries: {
+                    "PoseidonT3": PoseidonT3Contract.address,
+                    "PoseidonT6": PoseidonT6Contract.address
+                }
+            }
+        )
 
         tree = await SparseMerkleTreeImpl.create(new Keyv(), treeDepth, defaultOTSMTHash)
     })

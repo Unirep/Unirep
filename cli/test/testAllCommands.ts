@@ -9,7 +9,7 @@ import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
 import { genUnirepStateFromContract, UnirepState } from '../../core'
 import { exec } from './utils'
 
-import Unirep from '../../artifacts/contracts/Unirep.sol/Unirep.json"'
+import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
 import { hashOne } from "maci-crypto"
 
 describe('test all CLI subcommands', function() {
