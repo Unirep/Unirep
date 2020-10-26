@@ -10,7 +10,7 @@
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npx hardhat test --deploy-fixture"
+        "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npx hardhat test"
     },
     "repository": {
         "type": "git",

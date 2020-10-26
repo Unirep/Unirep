@@ -26,6 +26,7 @@ const buildPoseidonT6 = async () => {
 }
 
 if (require.main === module) {
+  console.log('Building Poseidon T3 & T6...')
   buildPoseidonT3()
   buildPoseidonT6()
 }
