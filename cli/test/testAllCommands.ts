@@ -2,8 +2,7 @@ import { ethers } from "hardhat"
 import { Contract, Signer, providers, utils, BigNumber } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import chai from "chai"
-import { solidity } from "ethereum-waffle"
-chai.use(solidity)
+
 const { expect } = chai
 
 import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'

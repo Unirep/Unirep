@@ -1,13 +1,11 @@
 import { ethers } from "hardhat"
 import { BigNumber, Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
-import { solidity } from "ethereum-waffle"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, maxEpochKeyNonce, maxAttestationsPerEpochKey} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
 import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot, getTreeDepthsForTesting } from './utils'
 
-chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"

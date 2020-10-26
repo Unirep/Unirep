@@ -1,6 +1,6 @@
+import { waffle } from 'hardhat'
 import * as ethers from 'ethers'
 import Keyv from "keyv"
-import { deployContract, link } from "ethereum-waffle"
 import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
@@ -27,7 +27,7 @@ const linkLibrary = (contractJson: SimpleContractJSON, libraryName: string, libr
             }
         }
     }
-    link(linkableContract, libraryName, libraryAddress)
+    waffle.link(linkableContract, libraryName, libraryAddress)
     contractJson.bytecode = linkableContract.evm.bytecode.object
 }
 
@@ -59,12 +59,12 @@ const deployUnirep = async (
     let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
     console.log('Deploying PoseidonT3')
-    PoseidonT3Contract = (await deployContract(
+    PoseidonT3Contract = (await waffle.deployContract(
         deployer,
         PoseidonT3
     ))
     console.log('Deploying PoseidonT6')
-    PoseidonT6Contract = (await deployContract(
+    PoseidonT6Contract = (await waffle.deployContract(
         deployer,
         PoseidonT6,
         [],
@@ -74,19 +74,19 @@ const deployUnirep = async (
     ))
 
     console.log('Deploying EpochKeyValidityVerifier')
-    EpochKeyValidityVerifierContract = (await deployContract(
+    EpochKeyValidityVerifierContract = (await waffle.deployContract(
         deployer,
         EpochKeyValidityVerifier
     ))
 
     console.log('Deploying UserStateTransitionVerifier')
-    UserStateTransitionVerifierContract = (await deployContract(
+    UserStateTransitionVerifierContract = (await waffle.deployContract(
         deployer,
         UserStateTransitionVerifier
     ))
 
     console.log('Deploying ReputationVerifier')
-    ReputationVerifierContract = (await deployContract(
+    ReputationVerifierContract = (await waffle.deployContract(
         deployer,
         ReputationVerifier
     ))

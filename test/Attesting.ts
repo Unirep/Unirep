@@ -1,13 +1,11 @@
 import { ethers } from "hardhat"
 import { Signer, Wallet } from "ethers"
 import chai from "chai"
-import { solidity } from "ethereum-waffle"
 import { attestingFee } from '../config/testLocal'
 import { genRandomSalt, hashLeftRight } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from './utils'
 
-chai.use(solidity)
 const { expect } = chai
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"

@@ -1,18 +1,16 @@
 import * as crypto from 'crypto'
 import chai from "chai"
 import Keyv from "keyv"
-import { ethers } from "hardhat"
+import { ethers, waffle } from "hardhat"
 import { ContractFactory, Signer, Wallet } from "ethers"
-import { deployContract, solidity } from "ethereum-waffle"
+
+const { expect } = chai
 
 import {
     hashLeftRight,
     genRandomSalt,
 } from '../crypto/crypto'
 import { genNewEpochTree, linkLibrary, SMT_ONE_LEAF } from './utils'
-
-chai.use(solidity)
-const { expect } = chai
 
 import PoseidonT3 from '../artifacts/contracts/Poseidon.sol/PoseidonT3.json'
 import PoseidonT6 from '../artifacts/contracts/Poseidon.sol/PoseidonT6.json'
@@ -36,12 +34,12 @@ describe('OneTimeSparseMerkleTree', () => {
         accounts = await ethers.getSigners()
 
         console.log('Deploying PoseidonT3')
-        PoseidonT3Contract = (await deployContract(
+        PoseidonT3Contract = (await waffle.deployContract(
             <Wallet>accounts[0],
             PoseidonT3
         ))
         console.log('Deploying PoseidonT6')
-        PoseidonT6Contract = (await deployContract(
+        PoseidonT6Contract = (await waffle.deployContract(
             <Wallet>accounts[0],
             PoseidonT6,
             [],
