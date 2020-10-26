@@ -18,6 +18,7 @@ import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 import { Attestation, Reputation } from "../../core"
+import { BigNumber } from "ethers"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -34,7 +35,7 @@ describe('Process attestation circuit', function () {
     let oldPosReps, oldNegReps, oldGraffities
 
     let reputationRecords: { [key: string]: Reputation } = {}
-    let attesterIds: BigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+    let attesterIds: BigInt[], posReps: BigInt[], negReps: BigInt[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
     let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
@@ -65,8 +66,8 @@ describe('Process attestation circuit', function () {
             const  attesterId = BigInt(i + 1)
             if (reputationRecords[attesterId.toString()] === undefined) {
                 reputationRecords[attesterId.toString()] = new Reputation(
-                    Math.floor(Math.random() * 100),
-                    Math.floor(Math.random() * 100),
+                    BigInt(Math.floor(Math.random() * 100)),
+                    BigInt(Math.floor(Math.random() * 100)),
                     genRandomSalt(),
                 )
             }
@@ -89,8 +90,8 @@ describe('Process attestation circuit', function () {
             const attesterId = BigInt(i + 1)
             const attestation: Attestation = new Attestation(
                 attesterId,
-                Math.floor(Math.random() * 100),
-                Math.floor(Math.random() * 100),
+                BigInt(Math.floor(Math.random() * 100)),
+                BigInt(Math.floor(Math.random() * 100)),
                 genRandomSalt(),
                 true,
             )
@@ -110,8 +111,15 @@ describe('Process attestation circuit', function () {
                 userStateTreePathElements.push(oldReputationRecordProof)
 
                 // Update attestation record
-                reputationRecords[attesterId.toString()]['posRep'] += attestation['posRep']
-                reputationRecords[attesterId.toString()]['negRep'] += attestation['negRep']
+                // Can not add two BigInt together so use BigNumber for addition instead
+                // Add pos rep
+                let rep = BigNumber.from(reputationRecords[attesterId.toString()]['posRep'])
+                let newRep = rep.add(BigNumber.from(attestation['posRep']))
+                reputationRecords[attesterId.toString()]['posRep'] = BigInt(newRep)
+                // Add neg rep
+                rep = BigNumber.from(reputationRecords[attesterId.toString()]['negRep'])
+                newRep = rep.add(BigNumber.from(attestation['negRep']))
+                reputationRecords[attesterId.toString()]['negRep'] = BigInt(newRep)
                 if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
@@ -193,9 +201,9 @@ describe('Process attestation circuit', function () {
         let indexWrongAttestationRecord = Math.floor(Math.random() * NUM_ATTESTATIONS)
         while (selectors[indexWrongAttestationRecord] == 0) indexWrongAttestationRecord = (indexWrongAttestationRecord + 1) % NUM_ATTESTATIONS
         const wrongOldPosReps = oldPosReps.slice()
-        wrongOldPosReps[indexWrongAttestationRecord] += Math.floor(Math.random() * 100)
+        wrongOldPosReps[indexWrongAttestationRecord] = BigInt(Math.floor(Math.random() * 100))
         const wrongOldNegReps = oldNegReps.slice()
-        wrongOldNegReps[indexWrongAttestationRecord] += Math.floor(Math.random() * 100)
+        wrongOldNegReps[indexWrongAttestationRecord] = BigInt(Math.floor(Math.random() * 100))
         const wrongOldGraffities = oldGraffities.slice()
         wrongOldGraffities[indexWrongAttestationRecord] = genRandomSalt()
         const circuitInputs = {

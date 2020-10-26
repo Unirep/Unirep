@@ -126,8 +126,8 @@ const genReputationProof = async (args: any) => {
         commitment,
     )
     const attesterId = BigInt(add0x(args.attester_id))
-    const minPosRep = args.min_pos_rep
-    const maxNegRep = args.max_neg_rep
+    const minPosRep = BigInt(args.min_pos_rep)
+    const maxNegRep = BigInt(args.max_neg_rep)
     const graffitiPreImage = BigInt(add0x(args.graffiti_preimage))
     const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))

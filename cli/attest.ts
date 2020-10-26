@@ -153,8 +153,8 @@ const attest = async (args: any) => {
     const overwriteGraffiti = args.graffiti ? true : false
     const attestation = new Attestation(
         BigInt(attesterId),
-        args.pos_rep,
-        args.neg_rep,
+        BigInt(args.pos_rep),
+        BigInt(args.neg_rep),
         graffiti,
         overwriteGraffiti,
     )

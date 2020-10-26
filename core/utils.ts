@@ -88,8 +88,8 @@ const genUnirepStateFromContract = async (
             const _attestation = attestationEvent.args?.attestation
             const attestation = new Attestation(
                 BigInt(_attestation.attesterId),
-                _attestation.posRep.toNumber(),
-                _attestation.negRep.toNumber(),
+                BigInt(_attestation.posRep),
+                BigInt(_attestation.negRep),
                 BigInt(_attestation.graffiti),
                 _attestation.overwriteGraffiti
             )
@@ -306,8 +306,8 @@ const _genUserStateFromContract = async (
             const _attestation = attestationEvent.args?.attestation
             const attestation = new Attestation(
                 BigInt(_attestation.attesterId),
-                _attestation.posRep.toNumber(),
-                _attestation.negRep.toNumber(),
+                BigInt(_attestation.posRep),
+                BigInt(_attestation.negRep),
                 BigInt(_attestation.graffiti),
                 _attestation.overwriteGraffiti
             )

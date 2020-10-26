@@ -17,23 +17,23 @@ const DefaultHashchainResult = SMT_ONE_LEAF
 
 interface IAttestation {
     attesterId: BigInt;
-    posRep: number;
-    negRep: number;
+    posRep: BigInt;
+    negRep: BigInt;
     graffiti: BigInt;
     overwriteGraffiti: boolean;
 }
 
 class Attestation implements IAttestation {
     public attesterId: BigInt
-    public posRep: number
-    public negRep: number
+    public posRep: BigInt
+    public negRep: BigInt
     public graffiti: BigInt
     public overwriteGraffiti: boolean
 
     constructor(
         _attesterId: BigInt,
-        _posRep: number,
-        _negRep: number,
+        _posRep: BigInt,
+        _negRep: BigInt,
         _graffiti: BigInt,
         _overwriteGraffiti: boolean,
     ) {

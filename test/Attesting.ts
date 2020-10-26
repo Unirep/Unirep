@@ -52,9 +52,9 @@ describe('Attesting', () => {
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
-            attesterId.toNumber(),
-            1,
-            0,
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
             genRandomSalt(),
             true,
         )
@@ -93,9 +93,9 @@ describe('Attesting', () => {
         // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
-            attesterId.toNumber(),
-            0,
-            1000,
+            BigInt(attesterId),
+            BigInt(0),
+            BigInt(1000),
             genRandomSalt(),
             true,
         )
@@ -113,8 +113,8 @@ describe('Attesting', () => {
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(999),
-            1,
-            0,
+            BigInt(1),
+            BigInt(0),
             genRandomSalt(),
             true,
         )
@@ -131,9 +131,9 @@ describe('Attesting', () => {
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
-            attesterId.toNumber(),
-            1,
-            0,
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
             genRandomSalt(),
             true,
         )
@@ -162,9 +162,9 @@ describe('Attesting', () => {
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
-            nonAttesterId.toNumber(),
-            0,
-            1,
+            BigInt(nonAttesterId),
+            BigInt(0),
+            BigInt(1),
             genRandomSalt(),
             true,
         )
@@ -194,9 +194,9 @@ describe('Attesting', () => {
 
         let attester2Id = await unirepContract.attesters(attester2Address)
         let attestation: Attestation = new Attestation(
-            attester2Id.toNumber(),
-            0,
-            1,
+            BigInt(attester2Id),
+            BigInt(0),
+            BigInt(1),
             genRandomSalt(),
             true,
         )

@@ -87,7 +87,7 @@ describe('User State Transition circuits', function () {
         let oldPosReps, oldNegReps, oldGraffities
 
         let reputationRecords = {}
-        let attesterIds: BigInt[], posReps: number[], negReps: number[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
+        let attesterIds: BigInt[], posReps: BigInt[], negReps: BigInt[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
         let selectors: number[] = []
         let nullifiers: SnarkBigInt[]
         let hashChainResult: SnarkBigInt
@@ -120,8 +120,8 @@ describe('User State Transition circuits', function () {
                 const  attesterId = BigInt(i + 1)
                 if (reputationRecords[attesterId.toString()] === undefined) {
                     reputationRecords[attesterId.toString()] = new Reputation(
-                        Math.floor(Math.random() * 100),
-                        Math.floor(Math.random() * 100),
+                        BigInt(Math.floor(Math.random() * 100)),
+                        BigInt(Math.floor(Math.random() * 100)),
                         genRandomSalt(),
                     )
                 }
@@ -158,8 +158,8 @@ describe('User State Transition circuits', function () {
                 const attesterId = BigInt(i + 1)
                 const attestation: Attestation = new Attestation(
                     attesterId,
-                    Math.floor(Math.random() * 100),
-                    Math.floor(Math.random() * 100),
+                    BigInt(Math.floor(Math.random() * 100)),
+                    BigInt(Math.floor(Math.random() * 100)),
                     genRandomSalt(),
                     true,
                 )

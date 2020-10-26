@@ -56,9 +56,9 @@ describe('Attesting', () => {
         let epochKeyNonce = 0
         let epochKey = genEpochKey(userIds[0].identityNullifier, currentEpoch.toNumber(), epochKeyNonce)
         let attestation: Attestation = new Attestation(
-            attesterId.toNumber(),
-            1,
-            0,
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
             genRandomSalt(),
             true,
         )
@@ -119,9 +119,9 @@ describe('Attesting', () => {
         epochKeyNonce = 0
         epochKey = genEpochKey(userIds[1].identityNullifier, currentEpoch.toNumber(), epochKeyNonce)
         attestation = new Attestation(
-            attesterId.toNumber(),
-            2,
-            1,
+            BigInt(attesterId),
+            BigInt(2),
+            BigInt(1),
             genRandomSalt(),
             true,
         )

@@ -16,20 +16,20 @@ interface IUserStateLeaf {
 }
 
 interface IReputation {
-    posRep: number;
-    negRep: number;
+    posRep: BigInt;
+    negRep: BigInt;
     graffiti: BigInt;
 }
 
 class Reputation implements IReputation {
-    public posRep: number
-    public negRep: number
+    public posRep: BigInt
+    public negRep: BigInt
     public graffiti: BigInt
     public graffitiPreImage: BigInt = BigInt(0)
 
     constructor(
-        _posRep: number,
-        _negRep: number,
+        _posRep: BigInt,
+        _negRep: BigInt,
         _graffiti: BigInt,
     ) {
         this.posRep = _posRep
@@ -38,12 +38,12 @@ class Reputation implements IReputation {
     }
 
     public static default(): Reputation {
-        return new Reputation(0, 0, BigInt(0))
+        return new Reputation(BigInt(0), BigInt(0), BigInt(0))
     }
 
     public update = (
-        _posRep: number,
-        _negRep: number,
+        _posRep: BigInt,
+        _negRep: BigInt,
         _graffiti: BigInt,
         _overwriteGraffiti: boolean,
     ): Reputation => {
@@ -333,8 +333,8 @@ class UserState {
 
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
-        const oldPosReps: number[] = [], oldNegReps: number[] = [], oldGraffities: BigInt[] = []
-        const posReps: number[] = [], negReps: number[] = [], graffities: BigInt[] = [], overwriteGraffitis: any[] = []
+        const oldPosReps: BigInt[] = [], oldNegReps: BigInt[] = [], oldGraffities: BigInt[] = []
+        const posReps: BigInt[] = [], negReps: BigInt[] = [], graffities: BigInt[] = [], overwriteGraffitis: any[] = []
 
         // Attestations
         const attestations = this.unirepState.getAttestations(epochKey.toString())
@@ -369,8 +369,8 @@ class UserState {
         }
         // Fill in blank data for non-exist attestation
         for (let i = 0; i < (this.maxAttestationsPerEpochKey - attestations.length); i++) {
-            oldPosReps.push(0)
-            oldNegReps.push(0)
+            oldPosReps.push(BigInt(0))
+            oldNegReps.push(BigInt(0))
             oldGraffities.push(BigInt(0))
             
             const USTLeafZeroPathElements = await fromEpochUserStateTree.getMerkleProof(BigInt(0))
@@ -379,8 +379,8 @@ class UserState {
 
             selectors.push(0)
             attesterIds.push(BigInt(0))
-            posReps.push(0)
-            negReps.push(0)
+            posReps.push(BigInt(0))
+            negReps.push(BigInt(0))
             graffities.push(BigInt(0))
             overwriteGraffitis.push(false)
             
@@ -439,8 +439,8 @@ class UserState {
 
     public genProveReputationCircuitInputs = async (
         attesterId: BigInt,
-        minPosRep: number,
-        maxNegRep: number,
+        minPosRep: BigInt,
+        maxNegRep: BigInt,
         graffitiPreImage: BigInt,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")

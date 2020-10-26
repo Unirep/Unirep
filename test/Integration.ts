@@ -277,8 +277,8 @@ describe('Integration', function () {
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 BigInt(attesters[0].id),
-                3,
-                1,
+                BigInt(3),
+                BigInt(1),
                 hashOne(graffitiPreImage),
                 true,
             )
@@ -324,8 +324,8 @@ describe('Integration', function () {
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 BigInt(attesters[0].id),
-                2,
-                6,
+                BigInt(2),
+                BigInt(6),
                 hashOne(graffitiPreImage),
                 true,
             )
@@ -352,8 +352,8 @@ describe('Integration', function () {
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 BigInt(attesters[1].id),
-                0,
-                3,
+                BigInt(0),
+                BigInt(3),
                 hashOne(graffitiPreImage),
                 true,
             )
@@ -537,8 +537,8 @@ describe('Integration', function () {
 
         it('First user prove his reputation', async () => {
             const attesterId = BigInt(1)  // Prove reputation received from first attester
-            const minPosRep = 1
-            const maxNegRep = 10
+            const minPosRep = BigInt(1)
+            const maxNegRep = BigInt(10)
             const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
             const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
             const startTime = Math.floor(new Date().getTime() / 1000)
