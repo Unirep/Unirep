@@ -1,5 +1,7 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
+import { stringifyBigInts } from 'maci-crypto'
 
 import {
     validateEthAddress,
@@ -8,11 +10,11 @@ import {
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genEpochKey } from '../test/utils'
 import { genUserStateFromContract } from '../core'
 import { genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'
-import { stringifyBigInts } from 'maci-crypto'
+
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -79,14 +81,14 @@ const genEpochKeyAndProof = async (args: any) => {
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
 
-    const provider = new providers.JsonRpcProvider(ethProvider)
+    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
 
     if (! await contractExists(provider, unirepAddress)) {
         console.error('Error: there is no contract deployed at the specified address')
         return
     }
 
-    const unirepContract = new Contract(
+    const unirepContract = new ethers.Contract(
         unirepAddress,
         Unirep.abi,
         provider,

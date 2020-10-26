@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { BigNumber, Contract, providers } from 'ethers'
+import { ethers } from 'ethers'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { maxAttestationsPerEpochKey } from '../config/testLocal'
@@ -16,12 +16,12 @@ import { computeEmptyUserStateRoot } from '../test/utils'
  * @param startBlock The block number when Unirep contract is deployed
  */
 const genUnirepStateFromContract = async (
-    provider: providers.Provider,
+    provider: ethers.providers.Provider,
     address: string,
     startBlock: number,
 ) => {
 
-    const unirepContract = new Contract(
+    const unirepContract = new ethers.Contract(
         address,
         Unirep.abi,
         provider,
@@ -37,13 +37,13 @@ const genUnirepStateFromContract = async (
     const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
 
     const unirepState = new UnirepState(
-        BigNumber.from(globalStateTreeDepth).toNumber(),
-        BigNumber.from(userStateTreeDepth).toNumber(),
-        BigNumber.from(epochTreeDepth).toNumber(),
-        BigNumber.from(nullifierTreeDepth).toNumber(),
+        ethers.BigNumber.from(globalStateTreeDepth).toNumber(),
+        ethers.BigNumber.from(userStateTreeDepth).toNumber(),
+        ethers.BigNumber.from(epochTreeDepth).toNumber(),
+        ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
         attestingFee,
-        BigNumber.from(epochLength).toNumber(),
-        BigNumber.from(maxEpochKeyNonce).toNumber(),
+        ethers.BigNumber.from(epochLength).toNumber(),
+        ethers.BigNumber.from(maxEpochKeyNonce).toNumber(),
         maxAttestationsPerEpochKey,
     )
 
@@ -169,7 +169,7 @@ const genUnirepStateFromContract = async (
  * @param latestEpochKeys User's epoch keys of the epoch user has transitioned to
  */
 const genUserStateFromParams = async (
-    provider: providers.Provider,
+    provider: ethers.providers.Provider,
     address: string,
     startBlock: number,
     userIdentity: any,
@@ -207,14 +207,14 @@ const genUserStateFromParams = async (
  * @param userIdentityCommitment Commitment of the userIdentity
  */
 const _genUserStateFromContract = async (
-    provider: providers.Provider,
+    provider: ethers.providers.Provider,
     address: string,
     startBlock: number,
     userIdentity: any,
     userIdentityCommitment: any,
 ) => {
 
-    const unirepContract = new Contract(
+    const unirepContract = new ethers.Contract(
         address,
         Unirep.abi,
         provider,
@@ -230,13 +230,13 @@ const _genUserStateFromContract = async (
     const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
 
     const unirepState = new UnirepState(
-        BigNumber.from(globalStateTreeDepth).toNumber(),
-        BigNumber.from(userStateTreeDepth).toNumber(),
-        BigNumber.from(epochTreeDepth).toNumber(),
-        BigNumber.from(nullifierTreeDepth).toNumber(),
+        ethers.BigNumber.from(globalStateTreeDepth).toNumber(),
+        ethers.BigNumber.from(userStateTreeDepth).toNumber(),
+        ethers.BigNumber.from(epochTreeDepth).toNumber(),
+        ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
         attestingFee,
-        BigNumber.from(epochLength).toNumber(),
-        BigNumber.from(maxEpochKeyNonce).toNumber(),
+        ethers.BigNumber.from(epochLength).toNumber(),
+        ethers.BigNumber.from(maxEpochKeyNonce).toNumber(),
         maxAttestationsPerEpochKey,
     )
 
@@ -403,7 +403,7 @@ const _genUserStateFromContract = async (
  * @param userIdentityCommitment Commitment of the userIdentity
  */
 const genUserStateFromContract = async (
-    provider: providers.Provider,
+    provider: ethers.providers.Provider,
     address: string,
     startBlock: number,
     userIdentity: any,

@@ -1,5 +1,5 @@
-import { ethers } from "hardhat"
-import { Signer, Wallet } from "ethers"
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
@@ -17,13 +17,13 @@ describe('Signup', () => {
     let GSTree
     let emptyUserStateRoot
     
-    let accounts: Signer[]
+    let accounts: ethers.Signer[]
     
     before(async () => {
-        accounts = await ethers.getSigners()
+        accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
         GSTree = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)
@@ -106,7 +106,7 @@ describe('Signup', () => {
         it('sign up should succeed', async () => {
             attester = accounts[1]
             attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attester)
+            unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
             const tx = await unirepContractCalledByAttester.attesterSignUp()
             const receipt = await tx.wait()
 

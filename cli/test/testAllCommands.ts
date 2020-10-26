@@ -1,5 +1,5 @@
-import { ethers } from "hardhat"
-import { Contract, Signer, providers, utils, BigNumber } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import chai from "chai"
 
@@ -23,11 +23,11 @@ describe('test all CLI subcommands', function() {
     let userAddr
     
     const startBlock = 0
-    const attestingFee = BigNumber.from(10).pow(18)
+    const attestingFee = ethers.BigNumber.from(10).pow(18)
     const maxEpochKeyNonce = 0
     const epochKeyNonce = 0
     const epochLength = 5
-    let unirepContract: Contract
+    let unirepContract: ethers.Contract
     let unirepState: UnirepState
     
     let serializedIdentity, serializedIdentityCommitment
@@ -39,18 +39,18 @@ describe('test all CLI subcommands', function() {
     let userRepProof
 
     before(async() => {
-        deployerPrivKey = utils.solidityKeccak256(['uint'], [0])
-        deployerAddr = utils.computeAddress(deployerPrivKey)
-        userPrivKey = utils.solidityKeccak256(['uint'], [1])
-        userAddr = utils.computeAddress(userPrivKey)
-        attesterPrivKey = utils.solidityKeccak256(['uint'], [2])
-        attesterAddr = utils.computeAddress(attesterPrivKey)
+        deployerPrivKey = ethers.utils.solidityKeccak256(['uint'], [0])
+        deployerAddr = ethers.utils.computeAddress(deployerPrivKey)
+        userPrivKey = ethers.utils.solidityKeccak256(['uint'], [1])
+        userAddr = ethers.utils.computeAddress(userPrivKey)
+        attesterPrivKey = ethers.utils.solidityKeccak256(['uint'], [2])
+        attesterAddr = ethers.utils.computeAddress(attesterPrivKey)
 
         // Transfer ether so they can execute transactions
-        const defaultAccount: Signer = (await ethers.getSigners())[0]
-        await defaultAccount.sendTransaction({to: deployerAddr, value: utils.parseEther('10'), gasLimit: 21000})
-        await defaultAccount.sendTransaction({to: userAddr, value: utils.parseEther('10'), gasLimit: 21000})
-        await defaultAccount.sendTransaction({to: attesterAddr, value: utils.parseEther('10'), gasLimit: 21000})
+        const defaultAccount: ethers.Signer = (await hardhatEthers.getSigners())[0]
+        await defaultAccount.sendTransaction({to: deployerAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
+        await defaultAccount.sendTransaction({to: userAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
+        await defaultAccount.sendTransaction({to: attesterAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
     })
 
     describe('deploy CLI subcommand', () => {
@@ -69,8 +69,8 @@ describe('test all CLI subcommands', function() {
             const regMatch = output.match(/Unirep: (0x[a-fA-F0-9]{40})$/)
             const unirepAddress = regMatch[1]
 
-            const provider = new providers.JsonRpcProvider(DEFAULT_ETH_PROVIDER)
-            unirepContract = new Contract(
+            const provider = new hardhatEthers.providers.JsonRpcProvider(DEFAULT_ETH_PROVIDER)
+            unirepContract = new ethers.Contract(
                 unirepAddress,
                 Unirep.abi,
                 provider,

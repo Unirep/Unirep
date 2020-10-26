@@ -1,5 +1,5 @@
-import { ethers, waffle } from 'hardhat'
-import { Contract, Signer, utils } from 'ethers'
+import { ethers as hardhatEthers, waffle } from 'hardhat'
+import { ethers } from 'ethers'
 import Keyv from "keyv"
 import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
@@ -31,9 +31,9 @@ const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
 }
 
 const deployUnirep = async (
-    deployer: Signer,
+    deployer: ethers.Signer,
     _treeDepths: any,
-    _settings?: any): Promise<Contract> => {
+    _settings?: any): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
     let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
@@ -53,19 +53,19 @@ const deployUnirep = async (
     )
 
     console.log('Deploying EpochKeyValidityVerifier')
-    EpochKeyValidityVerifierContract = await (await ethers.getContractFactory(
+    EpochKeyValidityVerifierContract = await (await hardhatEthers.getContractFactory(
         "EpochKeyValidityVerifier",
         deployer
     )).deploy()
 
     console.log('Deploying UserStateTransitionVerifier')
-    UserStateTransitionVerifierContract = await (await ethers.getContractFactory(
+    UserStateTransitionVerifierContract = await (await hardhatEthers.getContractFactory(
         "UserStateTransitionVerifier",
         deployer
     )).deploy()
 
     console.log('Deploying ReputationVerifier')
-    ReputationVerifierContract = await (await ethers.getContractFactory(
+    ReputationVerifierContract = await (await hardhatEthers.getContractFactory(
         "ReputationVerifier",
         deployer
     )).deploy()
@@ -84,7 +84,7 @@ const deployUnirep = async (
         _epochLength = epochLength
         _attestingFee = attestingFee
     }
-    const f = await ethers.getContractFactory(
+    const f = await hardhatEthers.getContractFactory(
         "Unirep",
         {
             signer: deployer,
@@ -159,7 +159,7 @@ const genNoAttestationNullifierKey = (identityNullifier: SnarkBigInt, epoch: num
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = add0x(str)
-    if (len) str = utils.hexZeroPad(str, len)
+    if (len) str = ethers.utils.hexZeroPad(str, len)
     return str
 }
 

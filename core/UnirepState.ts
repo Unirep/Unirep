@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { BigNumber } from 'ethers'
+import { ethers } from 'ethers'
 import {
     hashLeftRight,
     IncrementalQuinTree,
@@ -61,7 +61,7 @@ class UnirepState {
     public epochTreeDepth: number
     public nullifierTreeDepth: number
     
-    public attestingFee: BigNumber
+    public attestingFee: ethers.BigNumber
     public epochLength: number
     public maxEpochKeyNonce: number
     public maxAttestationsPerEpochKey: number
@@ -80,7 +80,7 @@ class UnirepState {
         _userStateTreeDepth: number,
         _epochTreeDepth: number,
         _nullifierTreeDepth: number,
-        _attestingFee: BigNumber,
+        _attestingFee: ethers.BigNumber,
         _epochLength: number,
         _maxNonce: number,
         _maxAttestationsPerEpochKey: number,

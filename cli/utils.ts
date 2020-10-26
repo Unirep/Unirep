@@ -1,23 +1,24 @@
 import prompt from 'prompt-async'
-import { Contract, ContractFactory, Signer, Wallet, providers } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 
 prompt.colors = false
 prompt.message = ''
 
 class JSONRPCDeployer {
 
-    provider: providers.Provider
-    signer: Signer
+    provider: ethers.providers.Provider
+    signer: ethers.Signer
     options: any
 
     constructor(privateKey: string, providerUrl: string, options?: any) {
-        this.provider = new providers.JsonRpcProvider(providerUrl)
-        this.signer = new Wallet(privateKey, this.provider)
+        this.provider = new ethers.providers.JsonRpcProvider(providerUrl)
+        this.signer = new ethers.Wallet(privateKey, this.provider)
         this.options = options
     }
 
-    async deploy(abi: any, bytecode: any, ...args): Promise<Contract> {
-        const factory = new ContractFactory(abi, bytecode, this.signer)
+    async deploy(abi: any, bytecode: any, ...args): Promise<ethers.Contract> {
+        const factory = await hardhatEthers.getContractFactory(abi, bytecode, this.signer)
         return await factory.deploy(...args)
     }
 }
@@ -62,7 +63,7 @@ const checkDeployerProviderConnection = async (
 
 const validateEthSk = (sk: string): boolean => {
     try {
-        new Wallet(sk)
+        new ethers.Wallet(sk)
     } catch {
         return false
     }
@@ -74,7 +75,7 @@ const validateEthAddress = (address: string) => {
 }
 
 const contractExists = async (
-    provider: providers.Provider,
+    provider: ethers.providers.Provider,
     address: string,
 ) => {
     const code = await provider.getCode(address)

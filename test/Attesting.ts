@@ -1,5 +1,5 @@
-import { ethers } from "hardhat"
-import { Signer, Wallet } from "ethers"
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee } from '../config/testLocal'
 import { genRandomSalt, hashLeftRight } from '../crypto/crypto'
@@ -15,17 +15,17 @@ import { Attestation } from "../core"
 describe('Attesting', () => {
     let unirepContract
 
-    let accounts: Signer[]
+    let accounts: ethers.Signer[]
 
     let userId, userCommitment
 
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
     before(async () => {
-        accounts = await ethers.getSigners()
+        accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
 
         console.log('User sign up')
         userId = genIdentity()
@@ -37,7 +37,7 @@ describe('Attesting', () => {
         console.log('Attester sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attester)
+        unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -155,7 +155,7 @@ describe('Attesting', () => {
         let nonAttesterId = await unirepContract.attesters(nonAttesterAddress)
         expect((0).toString()).equal(nonAttesterId.toString())
 
-        let unirepContractCalledByNonAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, nonAttester)
+        let unirepContractCalledByNonAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, nonAttester)
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -177,7 +177,7 @@ describe('Attesting', () => {
         // Sign up another attester
         let attester2 = accounts[2]
         let attester2Address = await attester2.getAddress()
-        let unirepContractCalledByAttester2 = await ethers.getContractAt(Unirep.abi, unirepContract.address, attester2)
+        let unirepContractCalledByAttester2 = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester2)
         let tx = await unirepContractCalledByAttester2.attesterSignUp()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -223,6 +223,6 @@ describe('Attesting', () => {
         expect(await unirepContract.collectedAttestingFee()).to.be.equal(attestingFee.mul(2))
         await unirepContractCalledByAttester.burnAttestingFee()
         expect(await unirepContract.collectedAttestingFee()).to.be.equal(0)
-        expect(await ethers.provider.getBalance(unirepContract.address)).to.equal(0)
+        expect(await hardhatEthers.provider.getBalance(unirepContract.address)).to.equal(0)
     })
 })

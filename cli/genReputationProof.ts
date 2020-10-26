@@ -1,4 +1,4 @@
-import { providers } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 
 import {
@@ -105,7 +105,7 @@ const genReputationProof = async (args: any) => {
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
 
-    const provider = new providers.JsonRpcProvider(ethProvider)
+    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
 
     if (! await contractExists(provider, unirepAddress)) {
         console.error('Error: there is no contract deployed at the specified address')

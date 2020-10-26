@@ -1,6 +1,6 @@
 import chai from "chai"
-import { ethers } from "hardhat"
-import { Contract, Signer, Wallet } from "ethers"
+import { ethers as hardhatEthers } from "hardhat"
+import { ethers } from 'ethers'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 
 const { expect } = chai
@@ -25,8 +25,8 @@ describe('Verify Epoch Key circuits', function () {
 
     let circuit
 
-    let accounts: Signer[]
-    let unirepContract: Contract
+    let accounts: ethers.Signer[]
+    let unirepContract: ethers.Contract
     let ZERO_VALUE
 
     const maxEPK = BigInt(2 ** circuitEpochTreeDepth)
@@ -36,10 +36,10 @@ describe('Verify Epoch Key circuits', function () {
     let nonce, currentEpoch, epochKey
 
     before(async () => {
-        accounts = await ethers.getSigners()
+        accounts = await hardhatEthers.getSigners()
     
         const _treeDepths = getTreeDepthsForTesting("circuit")
-        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
         ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')

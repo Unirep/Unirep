@@ -1,3 +1,4 @@
+import { ethers } from 'ethers'
 import chai from "chai"
 
 const { expect } = chai
@@ -16,9 +17,8 @@ import {
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
-import { circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
+import { circuitNullifierTreeDepth } from "../../config/testLocal"
 import { Attestation, Reputation } from "../../core"
-import { BigNumber } from "ethers"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -113,12 +113,12 @@ describe('Process attestation circuit', function () {
                 // Update attestation record
                 // Can not add two BigInt together so use BigNumber for addition instead
                 // Add pos rep
-                let rep = BigNumber.from(reputationRecords[attesterId.toString()]['posRep'])
-                let newRep = rep.add(BigNumber.from(attestation['posRep']))
+                let rep = ethers.BigNumber.from(reputationRecords[attesterId.toString()]['posRep'])
+                let newRep = rep.add(ethers.BigNumber.from(attestation['posRep']))
                 reputationRecords[attesterId.toString()]['posRep'] = BigInt(newRep)
                 // Add neg rep
-                rep = BigNumber.from(reputationRecords[attesterId.toString()]['negRep'])
-                newRep = rep.add(BigNumber.from(attestation['negRep']))
+                rep = ethers.BigNumber.from(reputationRecords[attesterId.toString()]['negRep'])
+                newRep = rep.add(ethers.BigNumber.from(attestation['negRep']))
                 reputationRecords[attesterId.toString()]['negRep'] = BigInt(newRep)
                 if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
 

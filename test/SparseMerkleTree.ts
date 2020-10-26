@@ -1,8 +1,8 @@
 import * as crypto from 'crypto'
 import chai from "chai"
 import Keyv from "keyv"
-import { ethers, waffle } from "hardhat"
-import { ContractFactory, Signer, Wallet } from "ethers"
+import { ethers as hardhatEthers, waffle } from "hardhat"
+import { ethers } from 'ethers'
 
 const { expect } = chai
 
@@ -16,27 +16,27 @@ import { epochTreeDepth } from '../config/testLocal'
 
 /* Begin tests */
 describe('OneTimeSparseMerkleTree', () => {
-    let accounts: Signer[]
+    let accounts: ethers.Signer[]
 
     const treeDepth = epochTreeDepth
     const defaultOTSMTHash = SMT_ONE_LEAF
     const numLeaves = BigInt(2 ** treeDepth)
     const sizeKeySpaceInBytes: number = Math.floor(treeDepth / 8)
-    let OTSMTFactory: ContractFactory
+    let OTSMTFactory: ethers.ContractFactory
     let tree: SparseMerkleTreeImpl
 
     beforeEach(async () => {
         let PoseidonT3Contract, PoseidonT6Contract
-        accounts = await ethers.getSigners()
+        accounts = await hardhatEthers.getSigners()
 
         console.log('Deploying PoseidonT3')
         PoseidonT3Contract = await waffle.deployContract(
-            <Wallet>accounts[0],
+            <ethers.Wallet>accounts[0],
             PoseidonT3
         )
         console.log('Deploying PoseidonT6')
         PoseidonT6Contract = await waffle.deployContract(
-            <Wallet>accounts[0],
+            <ethers.Wallet>accounts[0],
             PoseidonT6,
             [],
             {
@@ -44,7 +44,7 @@ describe('OneTimeSparseMerkleTree', () => {
             }
         )
 
-        OTSMTFactory = await ethers.getContractFactory(
+        OTSMTFactory = await hardhatEthers.getContractFactory(
             "OneTimeSparseMerkleTree",
             {
                 signer: accounts[0],
@@ -71,7 +71,7 @@ describe('OneTimeSparseMerkleTree', () => {
                     gasLimit: 9000000,
                 }
             )
-            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+            let receipt = await hardhatEthers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
             let numLeaves_ = (await OneTimeSMT.numLeaves())
@@ -153,7 +153,7 @@ describe('OneTimeSparseMerkleTree', () => {
                     gasLimit: 9000000,
                 }
             )
-            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+            let receipt = await hardhatEthers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
             for (let i = 0; i < numLeavesToInsert; i++) {
@@ -190,7 +190,7 @@ describe('OneTimeSparseMerkleTree', () => {
                     gasLimit: 9000000,
                 }
             )
-            let receipt = await ethers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
+            let receipt = await hardhatEthers.provider.getTransactionReceipt(OneTimeSMT.deployTransaction.hash)
             console.log("Gas cost of deploying OneTimeSparseMerkleTree with " + leafIndices.length + " leaves: " + receipt.gasUsed.toString())
 
             for (let i = 0; i < numLeavesToInsert; i++) {

@@ -1,5 +1,5 @@
-import { ethers } from "hardhat"
-import { Signer, Wallet } from "ethers"
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, epochLength, maxAttestationsPerEpochKey } from '../config/testLocal'
 import { genRandomSalt } from '../crypto/crypto'
@@ -18,17 +18,17 @@ describe('Attesting', () => {
 
     let unirepContract
 
-    let accounts: Signer[]
+    let accounts: ethers.Signer[]
 
     let userIds: any[] = [], userCommitments: any[] = []
 
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
     before(async () => {
-        accounts = await ethers.getSigners()
+        accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
 
         // 1. Fisrt user sign up
         let userId = genIdentity()
@@ -43,7 +43,7 @@ describe('Attesting', () => {
         // Attester sign up, no events emitted
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attester)
+        unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -82,7 +82,7 @@ describe('Attesting', () => {
         // 4. First epoch end
         let numEpochKey = await unirepContract.getNumEpochKey(currentEpoch)
         expect(numEpochKey).equal(1)
-        await ethers.provider.send("evm_increaseTime", [epochLength])  // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send("evm_increaseTime", [epochLength])  // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition(numEpochKey)
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -135,7 +135,7 @@ describe('Attesting', () => {
         // 7. Second epoch end
         numEpochKey = await unirepContract.getNumEpochKey(currentEpoch)
         expect(numEpochKey).equal(1)
-        await ethers.provider.send("evm_increaseTime", [epochLength])  // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send("evm_increaseTime", [epochLength])  // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition(numEpochKey)
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -145,7 +145,7 @@ describe('Attesting', () => {
         // 8. Third epoch end
         numEpochKey = await unirepContract.getNumEpochKey(currentEpoch)
         expect(numEpochKey).equal(0)
-        await ethers.provider.send("evm_increaseTime", [epochLength])  // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send("evm_increaseTime", [epochLength])  // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition(numEpochKey)
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

@@ -1,5 +1,5 @@
-import { ethers } from "hardhat"
-import { BigNumber, Contract, Signer, Wallet } from "ethers"
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, maxEpochKeyNonce, maxAttestationsPerEpochKey} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
@@ -23,15 +23,15 @@ describe('Integration', function () {
     let userStateLeavesAfterTransition: IUserStateLeaf[][] = new Array(2)
     let graffitiPreImageMap = new Array(2)
 
-    let unirepContract: Contract
+    let unirepContract: ethers.Contract
     let unirepContractCalledByFisrtAttester, unirepContractCalledBySecondAttester
 
-    let prevEpoch: BigNumber
-    let currentEpoch: BigNumber
+    let prevEpoch: ethers.BigNumber
+    let currentEpoch: ethers.BigNumber
     let emptyUserStateRoot
     let blankGSLeaf
 
-    let accounts: Signer[]
+    let accounts: ethers.Signer[]
 
     let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
     before(async () => {
@@ -42,10 +42,10 @@ describe('Integration', function () {
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(`Total compile time for three circuits: ${endCompileTime - startCompileTime} seconds`)
 
-        accounts = await ethers.getSigners()
+        accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting("circuit")
-        unirepContract = await deployUnirep(<Wallet>accounts[0], _treeDepths)
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
         
         currentEpoch = await unirepContract.currentEpoch()
         emptyUserStateRoot = computeEmptyUserStateRoot(circuitUserStateTreeDepth)
@@ -94,7 +94,7 @@ describe('Integration', function () {
             attesters[0] = new Object()
             attesters[0]['acct'] = accounts[1]
             attesters[0]['addr'] = await attesters[0]['acct'].getAddress()
-            unirepContractCalledByFisrtAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attesters[0]['acct'])
+            unirepContractCalledByFisrtAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attesters[0]['acct'])
 
             const tx = await unirepContractCalledByFisrtAttester.attesterSignUp()
             const receipt = await tx.wait()
@@ -123,7 +123,7 @@ describe('Integration', function () {
         it('begin first epoch epoch transition', async () => {
             prevEpoch = currentEpoch
             // Fast-forward epochLength of seconds
-            await ethers.provider.send("evm_increaseTime", [epochLength])
+            await hardhatEthers.provider.send("evm_increaseTime", [epochLength])
             // Begin epoch transition
             const numEpochKeysToSeal = await unirepContract.getNumEpochKey(currentEpoch)
             let tx = await unirepContract.beginEpochTransition(numEpochKeysToSeal)
@@ -241,7 +241,7 @@ describe('Integration', function () {
             attesters[1] = new Object()
             attesters[1]['acct'] = accounts[2]
             attesters[1]['addr'] = await attesters[1]['acct'].getAddress()
-            unirepContractCalledBySecondAttester = await ethers.getContractAt(Unirep.abi, unirepContract.address, attesters[1]['acct'])
+            unirepContractCalledBySecondAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attesters[1]['acct'])
             
             const tx = await unirepContractCalledBySecondAttester.attesterSignUp()
             const receipt = await tx.wait()
@@ -425,7 +425,7 @@ describe('Integration', function () {
         it('begin second epoch epoch transition', async () => {
             prevEpoch = currentEpoch
             // Fast-forward epochLength of seconds
-            await ethers.provider.send("evm_increaseTime", [epochLength])
+            await hardhatEthers.provider.send("evm_increaseTime", [epochLength])
             // Begin epoch transition
             const numEpochKeysToSeal = await unirepContract.getNumEpochKey(currentEpoch)
             let tx = await unirepContract.beginEpochTransition(numEpochKeysToSeal)
@@ -561,7 +561,7 @@ describe('Integration', function () {
 
         it('genUserStateFromContract should return equivalent UserState and UnirepState', async () => {
             const userStateFromContract = await genUserStateFromContract(
-                ethers.provider,
+                hardhatEthers.provider,
                 unirepContract.address,
                 0,
                 users[0].id,

@@ -1,4 +1,5 @@
-import { Contract, Wallet, providers } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 
 import {
@@ -120,15 +121,15 @@ const userStateTransition = async (args: any) => {
         return
     }
 
-    const provider = new providers.JsonRpcProvider(ethProvider)
-    const wallet = new Wallet(ethSk, provider)
+    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
+    const wallet = new ethers.Wallet(ethSk, provider)
 
     if (! await contractExists(provider, unirepAddress)) {
         console.error('Error: there is no contract deployed at the specified address')
         return
     }
 
-    const unirepContract = new Contract(
+    const unirepContract = new ethers.Contract(
         unirepAddress,
         Unirep.abi,
         wallet,

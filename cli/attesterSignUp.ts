@@ -1,4 +1,5 @@
-import { Contract, Wallet, providers, utils } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 
 import {
     promptPwd,
@@ -89,15 +90,15 @@ const attesterSignup = async (args: any) => {
         return
     }
 
-    const provider = new providers.JsonRpcProvider(ethProvider)
-    const wallet = new Wallet(ethSk, provider)
+    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
+    const wallet = new ethers.Wallet(ethSk, provider)
 
     if (! await contractExists(provider, unirepAddress)) {
         console.error('Error: there is no contract deployed at the specified address')
         return
     }
 
-    const unirepContract = new Contract(
+    const unirepContract = new ethers.Contract(
         unirepAddress,
         Unirep.abi,
         wallet,
@@ -114,7 +115,7 @@ const attesterSignup = async (args: any) => {
         return
     }
 
-    const ethAddr = utils.computeAddress(ethSk)
+    const ethAddr = ethers.utils.computeAddress(ethSk)
     const attesterId = await unirepContract.attesters(ethAddr)
     if (attesterId.toNumber() == 0) {
         console.error('Error: sign up succeeded but has no attester id!')

@@ -1,4 +1,5 @@
-import { Contract, Wallet, providers, utils } from 'ethers'
+import { ethers as hardhatEthers } from 'hardhat'
+import { ethers } from 'ethers'
 
 import {
     promptPwd,
@@ -10,9 +11,10 @@ import {
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { add0x } from '../crypto/SMT'
 import { Attestation } from '../core'
+
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -127,21 +129,21 @@ const attest = async (args: any) => {
         return
     }
 
-    const provider = new providers.JsonRpcProvider(ethProvider)
-    const wallet = new Wallet(ethSk, provider)
+    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
+    const wallet = new ethers.Wallet(ethSk, provider)
 
     if (! await contractExists(provider, unirepAddress)) {
         console.error('Error: there is no contract deployed at the specified address')
         return
     }
 
-    const unirepContract = new Contract(
+    const unirepContract = new ethers.Contract(
         unirepAddress,
         Unirep.abi,
         wallet,
     )
     const attestingFee = await unirepContract.attestingFee()
-    const ethAddr = utils.computeAddress(args.eth_privkey)
+    const ethAddr = ethers.utils.computeAddress(args.eth_privkey)
     const attesterId = await unirepContract.attesters(ethAddr)
     if (attesterId.toNumber() == 0) {
         console.error('Error: attester has not registered yet')

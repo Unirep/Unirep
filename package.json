@@ -46,7 +46,6 @@
         "maci-config": "^0.2.1",
         "maci-crypto": "^0.2.1",
         "shelljs": "^0.8.3",
-        "snarkjs": "^0.3.23",
-        "truffle-artifactor": "^4.0.30"
+        "snarkjs": "^0.3.23"
     }
 }

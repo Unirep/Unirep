@@ -1,4 +1,4 @@
-import * as ethers from 'ethers'
+import { ethers } from 'ethers'
 
 export const bufToHexString = (buf: Buffer): string => {
     return '0x' + buf.toString('hex')
