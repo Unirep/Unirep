@@ -10,7 +10,7 @@ import {
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(

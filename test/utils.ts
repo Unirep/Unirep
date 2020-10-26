@@ -1,17 +1,17 @@
 import * as ethers from 'ethers'
 import Keyv from "keyv"
 import { deployContract, link } from "ethereum-waffle"
+import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
-import Unirep from "../artifacts/Unirep.json"
-import PoseidonT3 from "../artifacts/PoseidonT3.json"
-import PoseidonT6 from "../artifacts/PoseidonT6.json"
-import EpochKeyValidityVerifier from "../artifacts/EpochKeyValidityVerifier.json"
-import UserStateTransitionVerifier from "../artifacts/UserStateTransitionVerifier.json"
-import ReputationVerifier from "../artifacts/ReputationVerifier.json"
-import { IncrementalQuinTree } from 'maci-crypto'
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
+import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
+import EpochKeyValidityVerifier from "../artifacts/contracts/EpochKeyValidityVerifier.sol/EpochKeyValidityVerifier.json"
+import UserStateTransitionVerifier from "../artifacts/contracts/UserStateTransitionVerifier.sol/UserStateTransitionVerifier.json"
+import ReputationVerifier from "../artifacts/contracts/ReputationVerifier.sol/ReputationVerifier.json"
 
 // Copy contract json type from ethereum-waffle
 interface SimpleContractJSON {

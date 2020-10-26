@@ -1,4 +1,4 @@
-import { ethers } from "@nomiclabs/buidler"
+import { ethers } from "hardhat"
 import { BigNumber, Contract, Signer, Wallet } from "ethers"
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
@@ -10,7 +10,7 @@ import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRo
 chai.use(solidity)
 const { expect } = chai
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../core"
 import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
 

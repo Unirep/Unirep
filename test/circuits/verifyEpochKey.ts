@@ -1,5 +1,5 @@
 import chai from "chai"
-import { ethers } from "@nomiclabs/buidler"
+import { ethers } from "hardhat"
 import { Contract, Signer, Wallet } from "ethers"
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 

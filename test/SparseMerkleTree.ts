@@ -1,7 +1,7 @@
 import * as crypto from 'crypto'
 import chai from "chai"
 import Keyv from "keyv"
-import { ethers } from "@nomiclabs/buidler"
+import { ethers } from "hardhat"
 import { ContractFactory, Signer, Wallet } from "ethers"
 import { deployContract, solidity } from "ethereum-waffle"
 
@@ -14,9 +14,9 @@ import { genNewEpochTree, linkLibrary, SMT_ONE_LEAF } from './utils'
 chai.use(solidity)
 const { expect } = chai
 
-import PoseidonT3 from "../artifacts/PoseidonT3.json"
-import PoseidonT6 from "../artifacts/PoseidonT6.json"
-import OneTimeSparseMerkleTree from '../artifacts/OneTimeSparseMerkleTree.json'
+import PoseidonT3 from '../artifacts/contracts/Poseidon.sol/PoseidonT3.json'
+import PoseidonT6 from '../artifacts/contracts/Poseidon.sol/PoseidonT6.json'
+import OneTimeSparseMerkleTree from '../artifacts/contracts/OneTimeSparseMerkleTree.sol/OneTimeSparseMerkleTree.json'
 import { SparseMerkleTreeImpl, bufToHexString } from '../crypto/SMT'
 import { epochTreeDepth } from '../config/testLocal'
 

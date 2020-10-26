@@ -11,7 +11,7 @@ import {
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyUserStateTransitionProofAndPublicSignals, verifyUserStateTransitionProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'

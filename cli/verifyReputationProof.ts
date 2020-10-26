@@ -7,7 +7,7 @@ import {
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
 import { add0x } from '../crypto/SMT'
 import { formatProofForVerifierContract } from '../test/circuits/utils'

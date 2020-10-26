@@ -8,7 +8,7 @@ import {
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genEpochKey } from '../test/utils'
 import { genUserStateFromContract } from '../core'
 import { genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'

@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { BigNumber, Contract, providers } from 'ethers'
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { maxAttestationsPerEpochKey } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'

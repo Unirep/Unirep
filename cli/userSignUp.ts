@@ -10,7 +10,7 @@ import {
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 
-import Unirep from "../artifacts/Unirep.json"
+import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { add0x } from '../crypto/SMT'
 
 const configureSubparser = (subparsers: any) => {

@@ -1,4 +1,4 @@
-import { ethers } from "@nomiclabs/buidler"
+import { ethers } from "hardhat"
 import { Contract, Signer, providers, utils, BigNumber } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import chai from "chai"
@@ -10,7 +10,7 @@ import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
 import { genUnirepStateFromContract, UnirepState } from '../../core'
 import { exec } from './utils'
 
-import Unirep from '../../artifacts/Unirep.json'
+import Unirep from '../../artifacts/contracts/Unirep.sol/Unirep.json"'
 import { hashOne } from "maci-crypto"
 
 describe('test all CLI subcommands', function() {
