@@ -47,8 +47,8 @@ class Attestation implements IAttestation {
     public hash = (): BigInt => {
         return hash5([
             this.attesterId,
-            BigInt(this.posRep),
-            BigInt(this.negRep),
+            this.posRep,
+            this.negRep,
             this.graffiti,
             BigInt(this.overwriteGraffiti),
         ])

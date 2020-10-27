@@ -15,14 +15,14 @@ const buildPoseidonT3 = () => {
   const PoseidonT3 = JSON.parse(fs.readFileSync(pathT3).toString())
   PoseidonT3['abi'] = poseidonGenContract.abi
   PoseidonT3['bytecode'] = poseidonGenContract.createCode(2)
-  fs.writeFileSync(pathT3, JSON.stringify(PoseidonT3))
+  fs.writeFileSync(pathT3, JSON.stringify(PoseidonT3, null, 4))
 }
 
 const buildPoseidonT6 = async () => {
   const PoseidonT6 = JSON.parse(fs.readFileSync(pathT6).toString())
   PoseidonT6['abi'] = poseidonGenContract.abi
   PoseidonT6['bytecode'] = poseidonGenContract.createCode(5)
-  fs.writeFileSync(pathT6, JSON.stringify(PoseidonT6))
+  fs.writeFileSync(pathT6, JSON.stringify(PoseidonT6, null, 4))
 }
 
 if (require.main === module) {

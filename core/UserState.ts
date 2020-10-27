@@ -62,8 +62,8 @@ class Reputation implements IReputation {
 
     public hash = (): BigInt => {
         return hash5([
-            BigInt(this.posRep),
-            BigInt(this.negRep),
+            this.posRep,
+            this.negRep,
             this.graffiti,
             BigInt(0),
             BigInt(0),
