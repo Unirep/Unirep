@@ -45,7 +45,7 @@ describe('Integration', function () {
 
         const _treeDepths = getTreeDepthsForTesting("circuit")
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
-        
+
         currentEpoch = await unirepContract.currentEpoch()
         emptyUserStateRoot = computeEmptyUserStateRoot(circuitUserStateTreeDepth)
         blankGSLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)

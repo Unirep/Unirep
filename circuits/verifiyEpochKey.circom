@@ -3,7 +3,7 @@ include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
 
-template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
+template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, MAX_NONCE) {
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
@@ -15,7 +15,6 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
     signal input root;
 
     signal private input nonce;
-    signal input max_nonce;
     signal input epoch;
     signal input epoch_key;
 
@@ -45,7 +44,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth) {
 
     component nonce_lt = LessEqThan(maxNonceInBits);
     nonce_lt.in[0] <== nonce;
-    nonce_lt.in[1] <== max_nonce;
+    nonce_lt.in[1] <== MAX_NONCE;
     nonce_lt.out === 1;
     /* End of check 2*/
 

@@ -24,7 +24,7 @@ describe('test all CLI subcommands', function() {
     
     const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
-    const maxEpochKeyNonce = 0
+    const maxEpochKeyNonce = 0  // Only allow one epoch key per epoch
     const epochKeyNonce = 0
     const epochLength = 5
     let unirepContract: ethers.Contract

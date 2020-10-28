@@ -51,9 +51,8 @@ template epochKeyExist(epoch_tree_depth) {
     }
 }
 
-template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS) {
+template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS, MAX_NONCE) {
     signal input epoch;
-    signal input max_nonce;  // max epoch key nonce
     signal private input nonce;  // epoch key nonce
 
     // User state tree
@@ -101,11 +100,11 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     // signal output completedUserStateTransition;
 
     /* 0. Check upper bound on input values */
-    // 0.1 Check nonce <= max_nonce
+    // 0.1 Check nonce <= MAX_NONCE
     var maxNonceInBits = 8;
     component nonce_lt = LessEqThan(maxNonceInBits);
     nonce_lt.in[0] <== nonce;
-    nonce_lt.in[1] <== max_nonce;
+    nonce_lt.in[1] <== MAX_NONCE;
     nonce_lt.out === 1;
     /* End of check 0 */
 
