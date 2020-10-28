@@ -1,3 +1,4 @@
+include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
@@ -49,6 +50,98 @@ template epochKeyExist(epoch_tree_depth) {
     for (var i = 0; i < epoch_tree_depth; i++) {
         epk_exists.path_elements[i][0] <== path_elements[i][0];
     }
+}
+
+template allEpochKeyProcessed(nullifier_tree_depth, MAX_NONCE) {
+    signal input epoch;
+    signal input nonce;  // epoch key nonce
+    signal input identity_nullifier;
+    signal input nullifier_tree_root;
+    signal input epk_nullifier_path_elements[MAX_NONCE + 1][nullifier_tree_depth][1];
+    signal input is_epk_processed[MAX_NONCE + 1];  // NOTE: selector of the current epoch key must be zero since it's not processed yet
+
+    signal output is_all_epoch_key_processed;
+
+    signal zero_leaf;
+    component zero_leaf_hasher = HashLeftRight();
+    zero_leaf_hasher.left <== 0;
+    zero_leaf_hasher.right <== 0;
+    zero_leaf <== zero_leaf_hasher.hash;
+    // Leaf of an seen nullifier has value hashLeftRight(1, 0)
+    signal one_leaf;
+    component one_leaf_hasher = HashLeftRight();
+    one_leaf_hasher.left <== 1;
+    one_leaf_hasher.right <== 0;
+    one_leaf <== one_leaf_hasher.hash;
+
+    component epoch_key_nullifier_hasher[MAX_NONCE + 1];
+    signal epk_quotient[MAX_NONCE + 1];
+    component epk_quot_lt[MAX_NONCE + 1];
+    signal epk_nullifier_hash_moded[MAX_NONCE + 1];
+    component epk_nul_lt[MAX_NONCE + 1];
+    component which_leaf_value_to_check[MAX_NONCE + 1];
+    component nullifier_membership_check[MAX_NONCE + 1]; 
+
+    /* 1. Compute epoch key nullifier and check its membership in nullifier tree  */
+    for (var i = 0; i <= MAX_NONCE; i++) {
+        // 1.2.1 Compute nullifier
+        epoch_key_nullifier_hasher[i] = Hasher5();
+        epoch_key_nullifier_hasher[i].in[0] <== identity_nullifier;
+        epoch_key_nullifier_hasher[i].in[1] <== epoch;
+        epoch_key_nullifier_hasher[i].in[2] <== i;
+        epoch_key_nullifier_hasher[i].in[3] <== 0;
+        epoch_key_nullifier_hasher[i].in[4] <== 0;
+        // 1.2.2 Mod nullifier hash
+        // circom's best practices state that we should avoid using <-- unless
+        // we know what we are doing. But this is the only way to perform the
+        // modulo operation.
+        epk_quotient[i] <-- epoch_key_nullifier_hasher[i].hash \ (2 ** nullifier_tree_depth);
+        epk_nullifier_hash_moded[i] <-- epoch_key_nullifier_hasher[i].hash % (2 ** nullifier_tree_depth);
+        // 1.2.3 Range check on moded nullifier
+        epk_nul_lt[i] = LessEqThan(nullifier_tree_depth);
+        epk_nul_lt[i].in[0] <== epk_nullifier_hash_moded[i];
+        epk_nul_lt[i].in[1] <== 2 ** nullifier_tree_depth - 1;
+        epk_nul_lt[i].out === 1;
+        // 1.2.4 Range check on epk_quotient
+        epk_quot_lt[i] = LessEqThan(254 - nullifier_tree_depth);
+        epk_quot_lt[i].in[0] <== epk_quotient[i];
+        epk_quot_lt[i].in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
+        epk_quot_lt[i].out === 1;
+        // 1.2.5 Check equality
+        epoch_key_nullifier_hasher[i].hash === epk_quotient[i] * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded[i];
+
+        // Verify merkle proof against nullifier tree root
+        // Processed epoch key nullifier to be checked should have leaf value hashLeftRight(1, 0)
+        // Otherwise hashLeftRight(0, 0)
+        which_leaf_value_to_check[i] = Mux1();
+        which_leaf_value_to_check[i].c[0] <== zero_leaf;
+        which_leaf_value_to_check[i].c[1] <== one_leaf;
+        which_leaf_value_to_check[i].s <== is_epk_processed[i];
+        nullifier_membership_check[i] = SMTLeafExists(nullifier_tree_depth);
+        nullifier_membership_check[i].leaf_index <== epk_nullifier_hash_moded[i];
+        nullifier_membership_check[i].leaf <== which_leaf_value_to_check[i].out;
+        for (var j = 0; j < nullifier_tree_depth; j++) {
+            nullifier_membership_check[i].path_elements[j][0] <== epk_nullifier_path_elements[i][j][0];
+        }
+        nullifier_membership_check[i].root <== nullifier_tree_root;
+    }
+    /* End of check 1 */
+
+    /* 2. Check if all epoch keys are processed */
+    // If all epoch keys are processed, all the `is_epk_processed` seletor of each epoch key
+    // should equal to 1 (except the epoch key that is being processed).
+    // So the sum of these selectors should equal to `MAX_NONCE`
+    // (not `MAX_NONCE - 1` as there are a total of `MAX_NONCE + 1` nonces).
+    component check_sum_of_selectors = IsEqual();
+    signal sum_of_selectors[MAX_NONCE + 1];
+    sum_of_selectors[0] <== is_epk_processed[0];
+    for (var i = 1; i <= MAX_NONCE; i++) {
+        sum_of_selectors[i] <== sum_of_selectors[i - 1] + is_epk_processed[i];
+    }
+    check_sum_of_selectors.in[0] <== MAX_NONCE;
+    check_sum_of_selectors.in[1] <== sum_of_selectors[MAX_NONCE];
+    is_all_epoch_key_processed <== check_sum_of_selectors.out;
+    /* End of check 2 */
 }
 
 template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS, MAX_NONCE) {
