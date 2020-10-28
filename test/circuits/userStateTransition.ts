@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers"
 import chai from "chai"
 
 const { expect } = chai
@@ -7,7 +8,6 @@ import {
     IncrementalQuinTree,
     SnarkBigInt,
     genRandomSalt,
-    hash5,
     hashLeftRight,
     stringifyBigInts,
 } from 'maci-crypto'
@@ -20,7 +20,7 @@ import {
     getSignalByName,
 } from './utils'
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, maxEpochKeyNonce } from "../../config/testLocal"
-import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
+import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
 
@@ -28,7 +28,7 @@ describe('User State Transition circuits', function () {
     this.timeout(400000)
 
     const epoch = 1
-    const nonce = 2
+    const nonce = maxEpochKeyNonce
     const user = genIdentity()
     const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
@@ -68,6 +68,133 @@ describe('User State Transition circuits', function () {
             }
 
             const witness = await executeCircuit(circuit, circuitInputs)
+        })
+    })
+
+    describe('Check epoch keys processed', () => {
+        const maxEpochKeyNonce = 5
+        let circuit
+
+        let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot
+        let epkPathElements: any[]
+        let isEPKProcessed: number[]
+
+        before(async () => {
+            const startCompileTime = Math.floor(new Date().getTime() / 1000)
+            circuit = await compileAndLoadCircuit('test/allEpochKeyProcessed_test.circom')
+            const endCompileTime = Math.floor(new Date().getTime() / 1000)
+            console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
+        })
+
+        it('all epoch keys processed should return true', async () => {
+            epkPathElements = []
+            isEPKProcessed = []
+            nullifierTree = await genNewNullifierTree("circuit")
+            
+            for (let n = 0; n <= maxEpochKeyNonce; n++) {
+                if (n == nonce) {
+                    // Do not update epoch key that is to be processed
+                    isEPKProcessed.push(0)
+                    continue
+                }
+                isEPKProcessed.push(1)
+                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                await nullifierTree.update(epk, SMT_ONE_LEAF)
+            }
+
+            for (let n = 0; n <= maxEpochKeyNonce; n++) {
+                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                epkPathElements.push(await nullifierTree.getMerkleProof(epk))
+            }
+            nullifierTreeRoot = nullifierTree.getRootHash()
+
+            const circuitInputs = {
+                epoch: epoch,
+                nonce: nonce,
+                identity_nullifier: user['identityNullifier'],
+                nullifier_tree_root: nullifierTreeRoot,
+                epk_nullifier_path_elements: epkPathElements,
+                is_epk_processed: isEPKProcessed
+            }
+
+            const witness = await executeCircuit(circuit, circuitInputs)
+            const isAllEpochKeyProcessed = getSignalByName(circuit, witness, 'main.is_all_epoch_key_processed')
+            expect(BigNumber.from(isAllEpochKeyProcessed)).to.equal(1)
+        })
+
+        it('not all epoch keys processed should return false', async () => {
+            epkPathElements = []
+            isEPKProcessed = []
+            nullifierTree = await genNewNullifierTree("circuit")
+
+            // Pick another nonce to be to unprocessed epoch key so
+            // it does not satisfy the all-epoch-key-processed condition.
+            let anotherZero = Math.floor(Math.random() * (maxEpochKeyNonce + 1))
+            while (anotherZero == nonce) anotherZero = Math.floor(Math.random() * (maxEpochKeyNonce + 1))
+
+            for (let n = 0; n <= maxEpochKeyNonce; n++) {
+                let shouldBeProcessed
+                if (n == nonce || n == anotherZero) shouldBeProcessed = 0
+                else shouldBeProcessed = Math.floor(Math.random() * 2)
+                isEPKProcessed.push(shouldBeProcessed)
+
+                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                if (shouldBeProcessed == 1) await nullifierTree.update(epk, SMT_ONE_LEAF)
+            }
+
+            for (let n = 0; n <= maxEpochKeyNonce; n++) {
+                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                epkPathElements.push(await nullifierTree.getMerkleProof(epk))
+            }
+            nullifierTreeRoot = nullifierTree.getRootHash()
+
+            const circuitInputs = {
+                epoch: epoch,
+                nonce: nonce,
+                identity_nullifier: user['identityNullifier'],
+                nullifier_tree_root: nullifierTreeRoot,
+                epk_nullifier_path_elements: epkPathElements,
+                is_epk_processed: isEPKProcessed
+            }
+
+            const witness = await executeCircuit(circuit, circuitInputs)
+            const isAllEpochKeyProcessed = getSignalByName(circuit, witness, 'main.is_all_epoch_key_processed')
+            expect(BigNumber.from(isAllEpochKeyProcessed)).to.equal(0)
+        })
+
+        it('wrong isEPKProcessed selectors should not work', async () => {
+            epkPathElements = []
+            nullifierTree = await genNewNullifierTree("circuit")
+            
+            const wrongIsEPKProcessed: number[] = []
+            for (let n = 0; n <= maxEpochKeyNonce; n++) {
+                // Set all selectors to 1. This should not happen as the
+                // epoch key that is being processed should not be counted as
+                // one of the processed epoch keys.
+                wrongIsEPKProcessed.push(1)
+                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                epkPathElements.push(await nullifierTree.getMerkleProof(epk))
+            }
+            nullifierTreeRoot = nullifierTree.getRootHash()
+
+            const circuitInputs = {
+                epoch: epoch,
+                nonce: nonce,
+                identity_nullifier: user['identityNullifier'],
+                nullifier_tree_root: nullifierTreeRoot,
+                epk_nullifier_path_elements: epkPathElements,
+                is_epk_processed: wrongIsEPKProcessed
+            }
+
+            let error
+            try {
+                await executeCircuit(circuit, circuitInputs)
+            } catch (e) {
+                error = e
+                expect(true).to.be.true
+            } finally {
+                if (!error) throw Error("Invalid nonce should throw error")
+            }
         })
     })
 

@@ -8,7 +8,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { computeNullifier, genEpochKeyNullifierKey, genNewUserStateTree } from '../utils'
+import { computeNullifier, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,
@@ -165,7 +165,7 @@ describe('Process attestation circuit', function () {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
             expect(nullifier).to.equal(nullifiers[i])
         }
-        const epkNullifier = genEpochKeyNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
+        const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
         expect(epkNullifier).to.equal(_epkNullifier)
     })
@@ -193,7 +193,7 @@ describe('Process attestation circuit', function () {
             hash_chain_result: noAttestationHashChainResult
         }
 
-        const epkNullifier = genEpochKeyNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
+        const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const witness = await executeCircuit(circuit, circuitInputs)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
         expect(epkNullifier).to.equal(_epkNullifier)
