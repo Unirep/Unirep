@@ -170,7 +170,7 @@ describe('Integration', function () {
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
-            console.log(`First user submit transition proof with new GST leaf ${newState.newGSTLeaf} and new UST leaves ${newState.newUSTLeaves.map((l) => JSON.stringify(l, null, 4))}`)
+            console.log(`First user submit transition proof with new GST leaf ${newState.newGSTLeaf} and new UST leaves [${newState.newUSTLeaves}]`)
         })
 
         it('Verify state transition of first user', async () => {
@@ -292,7 +292,7 @@ describe('Integration', function () {
             // Add graffiti pre-image to graffitiPreImageMap
             graffitiPreImageMap[0] = new Object()
             graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
-            console.log(`Attester attest to epk ${firstUserEpochKey} with ${JSON.stringify(attestation, null, 4)}`)
+            console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
                 attestation,
                 firstUserEpochKey,
@@ -341,7 +341,7 @@ describe('Integration', function () {
             // Add graffiti pre-image to graffitiPreImageMap
             graffitiPreImageMap[1] = new Object()
             graffitiPreImageMap[1][attestation.attesterId.toString()] = graffitiPreImage
-            console.log(`Attester attest to epk ${secondUserEpochKey} with ${JSON.stringify(attestation, null, 4)}`)
+            console.log(`Attester attest to epk ${secondUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
                 attestation,
                 secondUserEpochKey,
@@ -369,7 +369,7 @@ describe('Integration', function () {
             )
             // Add graffiti pre-image to graffitiPreImageMap
             graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
-            console.log(`Attester attest to epk ${secondUserEpochKey} with ${JSON.stringify(attestation, null, 4)}`)
+            console.log(`Attester attest to epk ${secondUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledBySecondAttester.submitAttestation(
                 attestation,
                 secondUserEpochKey,
@@ -466,7 +466,7 @@ describe('Integration', function () {
             }
 
             unirepState.epochTransition(prevEpoch.toNumber(), epochTreeLeaves)
-            console.log(`Updating epoch tree leaves off-chain: ${epochTreeLeaves.map((l) => JSON.stringify(l, null, 4))}`)
+            console.log(`Updating epoch tree leaves off-chain: [${epochTreeLeaves}]`)
         })
 
         it('First user transition from second epoch', async () => {
@@ -505,7 +505,7 @@ describe('Integration', function () {
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
-            console.log(`First user submit transition proof with new GST leaf ${newState.newGSTLeaf} and new UST leaves ${newState.newUSTLeaves.map((l) => JSON.stringify(l, null, 4))}`)
+            console.log(`First user submit transition proof with new GST leaf ${newState.newGSTLeaf} and new UST leaves [${newState.newUSTLeaves}]`)
         })
 
         it('Verify state transition of first user', async () => {

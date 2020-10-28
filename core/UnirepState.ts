@@ -53,6 +53,20 @@ class Attestation implements IAttestation {
             BigInt(this.overwriteGraffiti),
         ])
     }
+
+    public toJSON = (space = 0): string => {
+        return JSON.stringify(
+            {
+                attesterId: this.attesterId.toString(),
+                posRep: this.posRep.toString(),
+                negRep: this.negRep.toString(),
+                graffiti: this.graffiti.toString(),
+                overwriteGraffiti: this.overwriteGraffiti
+            },
+            null,
+            space
+        )
+    }
 }
 
 class UnirepState {
