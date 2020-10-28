@@ -29,7 +29,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
 
     // Nullifiers of the attestations
     signal output nullifiers[NUM_ATTESTATIONS];
-    signal output no_attestation_nullifier;
+    signal output epoch_key_nullifier;
 
 
     component attestation_hashers[NUM_ATTESTATIONS];
@@ -100,48 +100,38 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         nullifiers[i] <== nullifier_muxer[i].out;
     }
 
-    // 1.2 Compute no attestation nullifier
-    // If there's no attestation, hash chain result should be the same as hashLeftRight(1, 0)
-    // and so `has_no_attestation.out` should be 1.
+    // 1.2 Compute epoch key nullifier
     // 1.2.1 Compute nullifier
-    component no_attestation_nullifier_hasher = Hasher5();
-    no_attestation_nullifier_hasher.in[0] <== identity_nullifier;
-    no_attestation_nullifier_hasher.in[1] <== epoch;
-    no_attestation_nullifier_hasher.in[2] <== nonce;
-    no_attestation_nullifier_hasher.in[3] <== 0;
-    no_attestation_nullifier_hasher.in[4] <== 0;
+    component epoch_key_nullifier_hasher = Hasher5();
+    epoch_key_nullifier_hasher.in[0] <== identity_nullifier;
+    epoch_key_nullifier_hasher.in[1] <== epoch;
+    epoch_key_nullifier_hasher.in[2] <== nonce;
+    epoch_key_nullifier_hasher.in[3] <== 0;
+    epoch_key_nullifier_hasher.in[4] <== 0;
     // 1.2.2 Mod nullifier hash
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
-    signal no_atte_quotient;
-    component no_atte_quot_lt;
-    signal no_atte_nullifier_hash_moded;
-    component no_atte_nul_lt;
-    no_atte_quotient <-- no_attestation_nullifier_hasher.hash \ (2 ** nullifier_tree_depth);
-    no_atte_nullifier_hash_moded <-- no_attestation_nullifier_hasher.hash % (2 ** nullifier_tree_depth);
+    signal epk_quotient;
+    component epk_quot_lt;
+    signal epk_nullifier_hash_moded;
+    component epk_nul_lt;
+    epk_quotient <-- epoch_key_nullifier_hasher.hash \ (2 ** nullifier_tree_depth);
+    epk_nullifier_hash_moded <-- epoch_key_nullifier_hasher.hash % (2 ** nullifier_tree_depth);
     // 1.2.3 Range check on moded nullifier
-    no_atte_nul_lt = LessEqThan(nullifier_tree_depth);
-    no_atte_nul_lt.in[0] <== no_atte_nullifier_hash_moded;
-    no_atte_nul_lt.in[1] <== 2 ** nullifier_tree_depth - 1;
-    no_atte_nul_lt.out === 1;
-    // 1.2.4 Range check on no_atte_quotient
-    no_atte_quot_lt = LessEqThan(254 - nullifier_tree_depth);
-    no_atte_quot_lt.in[0] <== no_atte_quotient;
-    no_atte_quot_lt.in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
-    no_atte_quot_lt.out === 1;
+    epk_nul_lt = LessEqThan(nullifier_tree_depth);
+    epk_nul_lt.in[0] <== epk_nullifier_hash_moded;
+    epk_nul_lt.in[1] <== 2 ** nullifier_tree_depth - 1;
+    epk_nul_lt.out === 1;
+    // 1.2.4 Range check on epk_quotient
+    epk_quot_lt = LessEqThan(254 - nullifier_tree_depth);
+    epk_quot_lt.in[0] <== epk_quotient;
+    epk_quot_lt.in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
+    epk_quot_lt.out === 1;
     // 1.2.5 Check equality
-    no_attestation_nullifier_hasher.hash === no_atte_quotient * (2 ** nullifier_tree_depth) + no_atte_nullifier_hash_moded;
-    // 1.2.6 Output no_attestation_nullifier
-    component has_no_attestation = IsEqual();
-    has_no_attestation.in[0] <== one_leaf;
-    has_no_attestation.in[1] <== hash_chain_result;
-    // Output `no_attestation_nullifier`, it's either 0 or the nullifier computed above.
-    component no_attestation_nullifier_muxer = Mux1();
-    no_attestation_nullifier_muxer.c[0] <== 0;
-    no_attestation_nullifier_muxer.c[1] <== no_atte_nullifier_hash_moded;
-    no_attestation_nullifier_muxer.s <== has_no_attestation.out;
-    no_attestation_nullifier <== no_attestation_nullifier_muxer.out;
+    epoch_key_nullifier_hasher.hash === epk_quotient * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded;
+    // Output `epoch_key_nullifier`, it's either 0 or the nullifier computed above.
+    epoch_key_nullifier <== epk_nullifier_hash_moded;
     /* End of 1. verify attestation hash chain and compute nullifiers */
 
 

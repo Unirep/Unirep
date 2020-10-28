@@ -7,7 +7,7 @@ import {
     hashOne,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { computeNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genNoAttestationNullifierKey } from '../test/utils'
+import { computeNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifierKey } from '../test/utils'
 import { IAttestation, UnirepState } from './UnirepState'
 
 interface IUserStateLeaf {
@@ -171,11 +171,11 @@ class UserState {
     /*
      * Get the nullifier of the attestations of given epoch key
      */
-    public getNoAttestationsNullifier = (epoch: number, epochKeyNonce: number): BigInt => {
+    public getEpochKeyNullifier = (epoch: number, epochKeyNonce: number): BigInt => {
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
         const attestations = this.unirepState.getAttestations(epochKey.toString())
         if (attestations.length > 0) return BigInt(0)  // Nullifier should be zero if there are at least one attestation
-        return genNoAttestationNullifierKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.nullifierTreeDepth)
+        return genEpochKeyNullifierKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.nullifierTreeDepth)
     }
 
     public getRepByAttester = (attesterId: BigInt): Reputation => {

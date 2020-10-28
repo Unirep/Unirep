@@ -104,7 +104,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
         uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] _nullifiers,
-        uint256 _noAttestationNullifier,
+        uint256 _epkNullifier,
         uint256 _fromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
@@ -298,7 +298,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function updateUserStateRoot(
         uint256 _newGlobalStateTreeLeaf,
         uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] calldata _nullifiers,
-        uint256 _noAttestationNullifier,
+        uint256 _epkNullifier,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
@@ -311,7 +311,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         emit UserStateTransitioned(
             currentEpoch,
             _nullifiers,
-            _noAttestationNullifier,
+            _epkNullifier,
             _transitionFromEpoch,
             _fromGlobalStateTree,
             _fromEpochTree,
@@ -365,7 +365,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function verifyUserStateTransition(
         uint256 _newGlobalStateTreeLeaf,
         uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] calldata _nullifiers,
-        uint256 _noAttestationNullifier,
+        uint256 _epkNullifier,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
@@ -383,7 +383,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         for (uint8 i = 0; i < _nullifiers.length; i++) {
             publicSignals[i + 1] = _nullifiers[i];
         }
-        publicSignals[2 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _noAttestationNullifier;
+        publicSignals[2 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _epkNullifier;
         publicSignals[3 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _transitionFromEpoch;
         publicSignals[4 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = maxEpochKeyNonce;
         publicSignals[5 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromGlobalStateTree;

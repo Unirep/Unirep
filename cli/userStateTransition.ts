@@ -167,14 +167,14 @@ const userStateTransition = async (args: any) => {
     const epochTreeRoot = (await userState.getUnirepStateEpochTree(fromEpoch)).getRootHash()
     const oldNullifierTreeRoot = (await userState.getUnirepStateNullifierTree()).getRootHash()
     const nullifiers = userState.getNullifiers(fromEpoch, epkNonce)
-    const noAttestationNullifier = userState.getNoAttestationsNullifier(fromEpoch, epkNonce)
+    const epkNullifier = userState.getEpochKeyNullifier(fromEpoch, epkNonce)
     const newGSTLeaf = (await userState.genNewUserStateAfterTransition(epkNonce)).newGSTLeaf
     let tx
     try {
         tx = await unirepContract.updateUserStateRoot(
             newGSTLeaf,
             nullifiers,
-            noAttestationNullifier,
+            epkNullifier,
             fromEpoch,
             GSTreeRoot,
             epochTreeRoot,

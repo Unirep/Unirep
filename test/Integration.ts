@@ -157,11 +157,11 @@ describe('Integration', function () {
 
             const newState = await users[0].genNewUserStateAfterTransition(epochKeyNonce)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const noAttestationNullifier = users[0].getNoAttestationsNullifier(fromEpoch, epochKeyNonce)
+            const epkNullifier = users[0].getEpochKeyNullifier(fromEpoch, epochKeyNonce)
             let tx = await unirepContract.updateUserStateRoot(
                 newState.newGSTLeaf,
                 nullifiers,
-                noAttestationNullifier,
+                epkNullifier,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
@@ -189,7 +189,7 @@ describe('Integration', function () {
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newGSTLeafArgs['_hashedLeaf'],
                 stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_noAttestationNullifier'],
+                stateTransitionArgs['_epkNullifier'],
                 stateTransitionArgs['_fromEpoch'],
                 stateTransitionArgs['_fromGlobalStateTree'],
                 stateTransitionArgs['_fromEpochTree'],
@@ -200,8 +200,8 @@ describe('Integration', function () {
 
             const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
             const allNullifiers: BigInt[] = nullifiers.slice()
-            const noAtteNullifier = BigInt(stateTransitionArgs['_noAttestationNullifier'])
-            allNullifiers.push(noAtteNullifier)
+            const epkNullifier = BigInt(stateTransitionArgs['_epkNullifier'])
+            allNullifiers.push(epkNullifier)
 
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log(`Update nullifiers off-chain: ${allNullifiers}`)
@@ -491,12 +491,12 @@ describe('Integration', function () {
 
             const newState = await users[0].genNewUserStateAfterTransition(epochKeyNonce)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const noAttestationNullifier = users[0].getNoAttestationsNullifier(fromEpoch, epochKeyNonce)
+            const epkNullifier = users[0].getEpochKeyNullifier(fromEpoch, epochKeyNonce)
 
             let tx = await unirepContract.updateUserStateRoot(
                 newState.newGSTLeaf,
                 nullifiers,
-                noAttestationNullifier,
+                epkNullifier,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
@@ -524,7 +524,7 @@ describe('Integration', function () {
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newGSTLeafArgs['_hashedLeaf'],
                 stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_noAttestationNullifier'],
+                stateTransitionArgs['_epkNullifier'],
                 stateTransitionArgs['_fromEpoch'],
                 stateTransitionArgs['_fromGlobalStateTree'],
                 stateTransitionArgs['_fromEpochTree'],
@@ -535,8 +535,8 @@ describe('Integration', function () {
 
             const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
             const allNullifiers: BigInt[] = nullifiers.slice()
-            const noAtteNullifier = BigInt(stateTransitionArgs['_noAttestationNullifier'])
-            allNullifiers.push(noAtteNullifier)
+            const epkNullifier = BigInt(stateTransitionArgs['_epkNullifier'])
+            allNullifiers.push(epkNullifier)
             
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log(`Update nullifiers off-chain: ${allNullifiers}`)

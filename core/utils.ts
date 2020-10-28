@@ -128,7 +128,7 @@ const genUnirepStateFromContract = async (
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
                 userStateTransitionedEvent.args?._nullifiers,
-                userStateTransitionedEvent.args?._noAttestationNullifier,
+                userStateTransitionedEvent.args?._epkNullifier,
                 userStateTransitionedEvent.args?._fromEpoch,
                 userStateTransitionedEvent.args?._fromGlobalStateTree,
                 userStateTransitionedEvent.args?._fromEpochTree,
@@ -142,8 +142,8 @@ const genUnirepStateFromContract = async (
             }
 
             const allNullifiers = userStateTransitionedEvent.args?._nullifiers.map((n) => BigInt(n))
-            const noAtteNullifier = BigInt(userStateTransitionedEvent.args?._noAttestationNullifier)
-            allNullifiers.push(noAtteNullifier)
+            const epkNullifier = BigInt(userStateTransitionedEvent.args?._epkNullifier)
+            allNullifiers.push(epkNullifier)
 
             unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
         } else {
@@ -356,7 +356,7 @@ const _genUserStateFromContract = async (
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
                 userStateTransitionedEvent.args?._nullifiers,
-                userStateTransitionedEvent.args?._noAttestationNullifier,
+                userStateTransitionedEvent.args?._epkNullifier,
                 userStateTransitionedEvent.args?._fromEpoch,
                 userStateTransitionedEvent.args?._fromGlobalStateTree,
                 userStateTransitionedEvent.args?._fromEpochTree,
@@ -370,8 +370,8 @@ const _genUserStateFromContract = async (
             }
 
             const allNullifiers = userStateTransitionedEvent.args?._nullifiers.map((n) => BigInt(n))
-            const noAtteNullifier = BigInt(userStateTransitionedEvent.args?._noAttestationNullifier)
-            allNullifiers.push(noAtteNullifier)
+            const epkNullifier = BigInt(userStateTransitionedEvent.args?._epkNullifier)
+            allNullifiers.push(epkNullifier)
 
             unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
             if (userHasSignedUp && userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch) {

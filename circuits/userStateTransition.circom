@@ -97,7 +97,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     // Nullifiers of the attestations
     signal output nullifiers[NUM_ATTESTATIONS];
     // Nullifier if there's no attestations to this epoch key
-    signal output no_attestation_nullifier;
+    signal output epoch_key_nullifier;
     // signal output completedUserStateTransition;
 
     /* 0. Check upper bound on input values */
@@ -205,10 +205,11 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         }
         nullifier_membership_check[i].root <== nullifier_tree_root;
 
-        // Output nullifer
+        // Output attestations nullifers
         nullifiers[i] <== process_attestations.nullifiers[i];
     }
-    no_attestation_nullifier <== process_attestations.no_attestation_nullifier;
+    // Output epoch key nullifiers
+    epoch_key_nullifier <== process_attestations.epoch_key_nullifier;
     /* End of 2. process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
 
 

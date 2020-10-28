@@ -8,7 +8,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { computeNullifier, genNoAttestationNullifierKey, genNewUserStateTree } from '../utils'
+import { computeNullifier, genEpochKeyNullifierKey, genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,
@@ -56,7 +56,7 @@ describe('Process attestation circuit', function () {
         userStateTree = await genNewUserStateTree("circuit")
         intermediateUserStateTreeRoots = []
         userStateTreePathElements = []
-        noAttestationUserStateTreePathElements = []
+        noAttestationUserStateTreePathElements = []  // User merkle proof of leaf 0 if no attestation to process
         oldPosReps = []
         oldNegReps = []
         oldGraffities = []
@@ -138,6 +138,7 @@ describe('Process attestation circuit', function () {
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         }
         hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
+        console.log("done")
     })
 
     it('successfully process attestations', async () => {
@@ -164,8 +165,9 @@ describe('Process attestation circuit', function () {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
             expect(nullifier).to.equal(nullifiers[i])
         }
-        const noAtteNullifier = getSignalByName(circuit, witness, 'main.no_attestation_nullifier')
-        expect(noAtteNullifier).to.equal(BigInt(0))
+        const epkNullifier = genEpochKeyNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
+        const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
+        expect(epkNullifier).to.equal(_epkNullifier)
     })
 
     it('successfully process zero attestations', async () => {
@@ -191,10 +193,10 @@ describe('Process attestation circuit', function () {
             hash_chain_result: noAttestationHashChainResult
         }
 
-        const noAttestationNullifier = genNoAttestationNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
+        const epkNullifier = genEpochKeyNullifierKey(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const witness = await executeCircuit(circuit, circuitInputs)
-        const noAtteNullifier = getSignalByName(circuit, witness, 'main.no_attestation_nullifier')
-        expect(noAtteNullifier).to.equal(noAttestationNullifier)
+        const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
+        expect(epkNullifier).to.equal(_epkNullifier)
     })
 
     it('process attestations with wrong attestation record should not work', async () => {
