@@ -19,7 +19,7 @@ import {
     verifyUserStateTransitionProof,
     getSignalByName,
 } from './utils'
-import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth } from "../../config/testLocal"
+import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, maxEpochKeyNonce } from "../../config/testLocal"
 import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
@@ -75,7 +75,7 @@ describe('User State Transition circuits', function () {
 
         let circuit
 
-        const MAX_NONCE = 2
+        const MAX_NONCE = maxEpochKeyNonce
         const NUM_ATTESTATIONS = 10
 
 
@@ -263,6 +263,47 @@ describe('User State Transition circuits', function () {
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
+        })
+
+        it('User state update with invalid nonce should not work', async () => {
+            const invalidNonce = MAX_NONCE + 1
+            const circuitInputs = {
+                epoch: epoch,
+                nonce: invalidNonce,
+                max_nonce: MAX_NONCE,
+                intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                old_pos_reps: oldPosReps,
+                old_neg_reps: oldNegReps,
+                old_graffities: oldGraffities,
+                UST_path_elements: userStateTreePathElements,
+                identity_pk: user['keypair']['pubKey'],
+                identity_nullifier: user['identityNullifier'],
+                identity_trapdoor: user['identityTrapdoor'],
+                GST_path_elements: GSTreeProof.pathElements,
+                GST_path_index: GSTreeProof.indices,
+                GST_root: GSTreeRoot,
+                selectors: selectors,
+                attester_ids: attesterIds,
+                pos_reps: posReps,
+                neg_reps: negReps,
+                graffities: graffities,
+                overwrite_graffitis: overwriteGraffitis,
+                epk_path_elements: epochTreePathElements,
+                hash_chain_result: hashChainResult,
+                epoch_tree_root: epochTreeRoot,
+                nullifier_tree_root: nullifierTreeRoot,
+                nullifier_tree_path_elements: nullifierTreePathElements
+            }
+
+            let error
+            try {
+                await executeCircuit(circuit, circuitInputs)
+            } catch (e) {
+                error = e
+                expect(true).to.be.true
+            } finally {
+                if (!error) throw Error("Invalid nonce should throw error")
+            }
         })
     })
 })

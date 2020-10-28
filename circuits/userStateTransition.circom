@@ -100,6 +100,15 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal output no_attestation_nullifier;
     // signal output completedUserStateTransition;
 
+    /* 0. Check upper bound on input values */
+    // 0.1 Check nonce <= max_nonce
+    var maxNonceInBits = 8;
+    component nonce_lt = LessEqThan(maxNonceInBits);
+    nonce_lt.in[0] <== nonce;
+    nonce_lt.in[1] <== max_nonce;
+    nonce_lt.out === 1;
+    /* End of check 0 */
+
 
     /* 1. Check if user exists in the Global State Tree */
     component identity_commitment = IdentityCommitment();
@@ -119,7 +128,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
         GST_leaf_exists.path_elements[i][0] <== GST_path_elements[i][0];
     }
     GST_leaf_exists.root <== GST_root;
-    /* End of check 1*/
+    /* End of check 1 */
 
 
     /* 2. Process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
