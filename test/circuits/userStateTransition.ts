@@ -20,7 +20,7 @@ import {
     getSignalByName,
 } from './utils'
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, maxAttestationsPerEpochKey, maxEpochKeyNonce } from "../../config/testLocal"
-import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
+import { genEpochKey, genAttestationNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
 
@@ -28,13 +28,14 @@ describe('User State Transition circuits', function () {
     this.timeout(400000)
 
     const epoch = 1
-    const nonce = maxEpochKeyNonce
     const user = genIdentity()
-    const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
     describe('Epoch key exists', () => {
 
         let circuit
+
+        const nonce = maxEpochKeyNonce
+        const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
         let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
 
@@ -75,6 +76,7 @@ describe('User State Transition circuits', function () {
         const maxEpochKeyNonce = 5
         let circuit
 
+        const nonce = Math.floor(Math.random() * (maxEpochKeyNonce + 1))
         let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot
         let epkPathElements: any[]
         let isEPKProcessed: number[]
@@ -98,13 +100,13 @@ describe('User State Transition circuits', function () {
                     continue
                 }
                 isEPKProcessed.push(1)
-                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
-                await nullifierTree.update(epk, SMT_ONE_LEAF)
+                const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                await nullifierTree.update(epkNullifier, SMT_ONE_LEAF)
             }
 
             for (let n = 0; n <= maxEpochKeyNonce; n++) {
-                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
-                epkPathElements.push(await nullifierTree.getMerkleProof(epk))
+                const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                epkPathElements.push(await nullifierTree.getMerkleProof(epkNullifier))
             }
             nullifierTreeRoot = nullifierTree.getRootHash()
 
@@ -138,13 +140,13 @@ describe('User State Transition circuits', function () {
                 else shouldBeProcessed = Math.floor(Math.random() * 2)
                 isEPKProcessed.push(shouldBeProcessed)
 
-                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
-                if (shouldBeProcessed == 1) await nullifierTree.update(epk, SMT_ONE_LEAF)
+                const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                if (shouldBeProcessed == 1) await nullifierTree.update(epkNullifier, SMT_ONE_LEAF)
             }
 
             for (let n = 0; n <= maxEpochKeyNonce; n++) {
-                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
-                epkPathElements.push(await nullifierTree.getMerkleProof(epk))
+                const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                epkPathElements.push(await nullifierTree.getMerkleProof(epkNullifier))
             }
             nullifierTreeRoot = nullifierTree.getRootHash()
 
@@ -172,8 +174,8 @@ describe('User State Transition circuits', function () {
                 // epoch key that is being processed should not be counted as
                 // one of the processed epoch keys.
                 wrongIsEPKProcessed.push(1)
-                const epk = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
-                epkPathElements.push(await nullifierTree.getMerkleProof(epk))
+                const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                epkPathElements.push(await nullifierTree.getMerkleProof(epkNullifier))
             }
             nullifierTreeRoot = nullifierTree.getRootHash()
 
@@ -205,10 +207,12 @@ describe('User State Transition circuits', function () {
         const MAX_NONCE = maxEpochKeyNonce
         const NUM_ATTESTATIONS = maxAttestationsPerEpochKey
 
+        let nonce, epochKey
 
-        let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
+        let GSTZERO_VALUE = 0, GSTree: IncrementalQuinTree, GSTreeRoot, GSTreeProof, newGSTLeaf
         let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
         let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot, nullifierTreePathElements
+        let epkNullifierPathElements, isEPKProcessedSelectors
         let userStateTree: SparseMerkleTreeImpl
         let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
         let oldPosReps, oldNegReps, oldGraffities
@@ -225,6 +229,10 @@ describe('User State Transition circuits', function () {
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
+            // Process first epoch key
+            nonce = 0
+            epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
+
             // Epoch tree
             epochTree = await genNewEpochTree("circuit")
 
@@ -232,6 +240,9 @@ describe('User State Transition circuits', function () {
             nullifierTreePathElements = []
             nullifierTree = await genNewNullifierTree("circuit")
             nullifierTreeRoot = nullifierTree.getRootHash()
+            // Epoch key nullifiers
+            epkNullifierPathElements = []
+            isEPKProcessedSelectors = []
 
             // User state tree
             userStateTree = await genNewUserStateTree("circuit")
@@ -302,7 +313,7 @@ describe('User State Transition circuits', function () {
 
                 // If nullifier tree is too small, it's likely that nullifier would be zero.
                 // In this case, force selector to be zero.
-                const nullifier = computeNullifier(user['identityNullifier'], BigInt(attesterId), epoch, circuitNullifierTreeDepth)
+                const nullifier = genAttestationNullifier(user['identityNullifier'], BigInt(attesterId), epoch, circuitNullifierTreeDepth)
                 if ( nullifier == BigInt(0) ) {
                     selectors[i] = 0
                     // If unfortunately this is the selector forced to be true,
@@ -337,98 +348,259 @@ describe('User State Transition circuits', function () {
                 }
                 intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
             }
+            // Seal hash chain of this epoch key
             hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
 
-            newGSTLeaf = hashLeftRight(commitment, intermediateUserStateTreeRoots[NUM_ATTESTATIONS])
-
+            // Update epoch tree
             await epochTree.update(epochKey, hashChainResult)
-            
+            // Get epoch tree root and merkle proof for this epoch key
             epochTreePathElements = await epochTree.getMerkleProof(epochKey)
             epochTreeRoot = epochTree.getRootHash()
+
+            // Compute merkle proof of nullifier of every epoch key in nullifier tree
+            for (let n = 0; n <= MAX_NONCE; n++) {
+                if (n == nonce) isEPKProcessedSelectors.push(0)  // Epoch key to be processed should not be counted as processed
+                else isEPKProcessedSelectors.push(0)  // No epoch keys have been processed yet so all selectors should be 0
+                const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                console.log(`Nullifier of epoch key with nonce ${n}: ${epkNullifier}`)
+                const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
+                epkNullifierPathElements.push(epkNullifierProof)
+            }
         })
 
-        it('Valid user state update inputs should work', async () => {
-            const circuitInputs = {
-                epoch: epoch,
-                nonce: nonce,
-                intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
-                old_pos_reps: oldPosReps,
-                old_neg_reps: oldNegReps,
-                old_graffities: oldGraffities,
-                UST_path_elements: userStateTreePathElements,
-                identity_pk: user['keypair']['pubKey'],
-                identity_nullifier: user['identityNullifier'],
-                identity_trapdoor: user['identityTrapdoor'],
-                GST_path_elements: GSTreeProof.pathElements,
-                GST_path_index: GSTreeProof.indices,
-                GST_root: GSTreeRoot,
-                selectors: selectors,
-                attester_ids: attesterIds,
-                pos_reps: posReps,
-                neg_reps: negReps,
-                graffities: graffities,
-                overwrite_graffitis: overwriteGraffitis,
-                epk_path_elements: epochTreePathElements,
-                hash_chain_result: hashChainResult,
-                epoch_tree_root: epochTreeRoot,
-                nullifier_tree_root: nullifierTreeRoot,
-                nullifier_tree_path_elements: nullifierTreePathElements
-            }
+        describe('Process first epoch key', () => {
+            it('Valid user state update inputs should work', async () => {
+                const circuitInputs = {
+                    epoch: epoch,
+                    nonce: nonce,
+                    intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                    old_pos_reps: oldPosReps,
+                    old_neg_reps: oldNegReps,
+                    old_graffities: oldGraffities,
+                    UST_path_elements: userStateTreePathElements,
+                    identity_pk: user['keypair']['pubKey'],
+                    identity_nullifier: user['identityNullifier'],
+                    identity_trapdoor: user['identityTrapdoor'],
+                    GST_path_elements: GSTreeProof.pathElements,
+                    GST_path_index: GSTreeProof.indices,
+                    GST_root: GSTreeRoot,
+                    selectors: selectors,
+                    attester_ids: attesterIds,
+                    pos_reps: posReps,
+                    neg_reps: negReps,
+                    graffities: graffities,
+                    overwrite_graffitis: overwriteGraffitis,
+                    epk_path_elements: epochTreePathElements,
+                    hash_chain_result: hashChainResult,
+                    epoch_tree_root: epochTreeRoot,
+                    nullifier_tree_root: nullifierTreeRoot,
+                    nullifier_tree_path_elements: nullifierTreePathElements,
+                    epk_nullifier_path_elements: epkNullifierPathElements,
+                    is_epk_processed_selectors: isEPKProcessedSelectors
+                }
 
-            const witness = await executeCircuit(circuit, circuitInputs)
-            for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-                const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-                expect(nullifier).to.equal(nullifiers[i])
-            }
-            const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
-            expect(_newGSTLeaf).to.equal(newGSTLeaf)
+                const witness = await executeCircuit(circuit, circuitInputs)
+                for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                    const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+                    expect(nullifier).to.equal(nullifiers[i])
+                }
+                const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
+                expect(BigNumber.from(_newGSTLeaf)).to.equal(0)
 
-            const startTime = Math.floor(new Date().getTime() / 1000)
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
-            const endTime = Math.floor(new Date().getTime() / 1000)
-            console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-            const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-            expect(isValid).to.be.true
+                const startTime = Math.floor(new Date().getTime() / 1000)
+                const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+                const endTime = Math.floor(new Date().getTime() / 1000)
+                console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+                const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
+                expect(isValid).to.be.true
+            })
+
+            it('User state update with invalid nonce should not work', async () => {
+                const invalidNonce = MAX_NONCE + 1
+                const circuitInputs = {
+                    epoch: epoch,
+                    nonce: invalidNonce,
+                    intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                    old_pos_reps: oldPosReps,
+                    old_neg_reps: oldNegReps,
+                    old_graffities: oldGraffities,
+                    UST_path_elements: userStateTreePathElements,
+                    identity_pk: user['keypair']['pubKey'],
+                    identity_nullifier: user['identityNullifier'],
+                    identity_trapdoor: user['identityTrapdoor'],
+                    GST_path_elements: GSTreeProof.pathElements,
+                    GST_path_index: GSTreeProof.indices,
+                    GST_root: GSTreeRoot,
+                    selectors: selectors,
+                    attester_ids: attesterIds,
+                    pos_reps: posReps,
+                    neg_reps: negReps,
+                    graffities: graffities,
+                    overwrite_graffitis: overwriteGraffitis,
+                    epk_path_elements: epochTreePathElements,
+                    hash_chain_result: hashChainResult,
+                    epoch_tree_root: epochTreeRoot,
+                    nullifier_tree_root: nullifierTreeRoot,
+                    nullifier_tree_path_elements: nullifierTreePathElements
+                }
+
+                let error
+                try {
+                    await executeCircuit(circuit, circuitInputs)
+                } catch (e) {
+                    error = e
+                    expect(true).to.be.true
+                } finally {
+                    if (!error) throw Error("Invalid nonce should throw error")
+                }
+            })
         })
 
-        it('User state update with invalid nonce should not work', async () => {
-            const invalidNonce = MAX_NONCE + 1
-            const circuitInputs = {
-                epoch: epoch,
-                nonce: invalidNonce,
-                intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
-                old_pos_reps: oldPosReps,
-                old_neg_reps: oldNegReps,
-                old_graffities: oldGraffities,
-                UST_path_elements: userStateTreePathElements,
-                identity_pk: user['keypair']['pubKey'],
-                identity_nullifier: user['identityNullifier'],
-                identity_trapdoor: user['identityTrapdoor'],
-                GST_path_elements: GSTreeProof.pathElements,
-                GST_path_index: GSTreeProof.indices,
-                GST_root: GSTreeRoot,
-                selectors: selectors,
-                attester_ids: attesterIds,
-                pos_reps: posReps,
-                neg_reps: negReps,
-                graffities: graffities,
-                overwrite_graffitis: overwriteGraffitis,
-                epk_path_elements: epochTreePathElements,
-                hash_chain_result: hashChainResult,
-                epoch_tree_root: epochTreeRoot,
-                nullifier_tree_root: nullifierTreeRoot,
-                nullifier_tree_path_elements: nullifierTreePathElements
-            }
+        describe('Process second epoch key which receives no attestations', () => {
+            before(async () => {
+                const prevNonce = 0
+                // Update attestation nullifiers after processing first epoch key
+                console.log("Previous attestation nullifiers", nullifiers)
+                for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                    await nullifierTree.update(nullifiers[i], SMT_ONE_LEAF)
+                }
+                // Update epoch key nullifier of first epoch key
+                const firstEpochKeyNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, prevNonce, circuitNullifierTreeDepth)
+                await nullifierTree.update(firstEpochKeyNullifier, SMT_ONE_LEAF)
 
-            let error
-            try {
-                await executeCircuit(circuit, circuitInputs)
-            } catch (e) {
-                error = e
-                expect(true).to.be.true
-            } finally {
-                if (!error) throw Error("Invalid nonce should throw error")
-            }
+                // Process second epoch key
+                nonce = 1
+                epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
+    
+                // Nullifier tree
+                nullifierTreePathElements = []
+                nullifierTreeRoot = nullifierTree.getRootHash()
+                // Epoch key nullifiers
+                epkNullifierPathElements = []
+                isEPKProcessedSelectors = []
+    
+                // User state tree
+                intermediateUserStateTreeRoots = []
+                userStateTreePathElements = []
+                noAttestationUserStateTreePathElements = []
+                oldPosReps = []
+                oldNegReps = []
+                oldGraffities = []
+    
+                intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+                const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
+                for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(USTLeafZeroPathElements)
+    
+                // Global state tree
+                const commitment = genIdentityCommitment(user)
+                // NOTE: GST should be updated only before processing any epoch keys.
+                // Here for ease of testing we update the GST separately.
+                const hashedStateLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
+                GSTree.update(0, hashedStateLeaf)
+                GSTreeProof = GSTree.genMerklePath(0)
+                GSTreeRoot = GSTree.root
+    
+                selectors = []
+                attesterIds = []
+                posReps = []
+                negReps = []
+                graffities = []
+                overwriteGraffitis = []
+    
+                nullifiers = []
+                hashChainResult = BigInt(0)
+                // No attestations made to this epoch key
+                for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                    selectors.push(0)
+                    attesterIds.push(BigInt(0))
+                    posReps.push(BigInt(0))
+                    negReps.push(BigInt(0))
+                    graffities.push(BigInt(0))
+                    overwriteGraffitis.push(false)
+    
+                    oldPosReps.push(BigInt(0))
+                    oldNegReps.push(BigInt(0))
+                    oldGraffities.push(BigInt(0))
+    
+                    const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
+                    userStateTreePathElements.push(USTLeafZeroPathElements)
+
+                    nullifiers.push(BigInt(0))
+                    const nullifierTreeProof = await nullifierTree.getMerkleProof(BigInt(0))
+                    nullifierTreePathElements.push(nullifierTreeProof)
+                    intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+                }
+                // Seal hash chain of this epoch key
+                hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
+    
+                // Compute new GST Leaf
+                const latestUSTRoot = intermediateUserStateTreeRoots[NUM_ATTESTATIONS]
+                newGSTLeaf = hashLeftRight(commitment, latestUSTRoot)
+    
+                // Update epoch tree
+                // NOTE: epoch tree should be updated only once, before processing any epoch keys.
+                // Here for ease of testing we update the epoch tree separately.
+                await epochTree.update(epochKey, hashChainResult)
+                // Get epoch tree root and merkle proof for this epoch key
+                epochTreePathElements = await epochTree.getMerkleProof(epochKey)
+                epochTreeRoot = epochTree.getRootHash()
+    
+                // Compute merkle proof of nullifier of every epoch key in nullifier tree
+                for (let n = 0; n <= MAX_NONCE; n++) {
+                    if (n == nonce) isEPKProcessedSelectors.push(0)  // Epoch key to be processed should not be counted as processed
+                    else if (n == prevNonce) isEPKProcessedSelectors.push(1)
+                    else isEPKProcessedSelectors.push(0)
+                    const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, n, circuitNullifierTreeDepth)
+                    const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
+                    epkNullifierPathElements.push(epkNullifierProof)
+                }
+            })
+
+            it('Valid user state update inputs should work', async () => {
+                const circuitInputs = {
+                    epoch: epoch,
+                    nonce: nonce,
+                    intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                    old_pos_reps: oldPosReps,
+                    old_neg_reps: oldNegReps,
+                    old_graffities: oldGraffities,
+                    UST_path_elements: userStateTreePathElements,
+                    identity_pk: user['keypair']['pubKey'],
+                    identity_nullifier: user['identityNullifier'],
+                    identity_trapdoor: user['identityTrapdoor'],
+                    GST_path_elements: GSTreeProof.pathElements,
+                    GST_path_index: GSTreeProof.indices,
+                    GST_root: GSTreeRoot,
+                    selectors: selectors,
+                    attester_ids: attesterIds,
+                    pos_reps: posReps,
+                    neg_reps: negReps,
+                    graffities: graffities,
+                    overwrite_graffitis: overwriteGraffitis,
+                    epk_path_elements: epochTreePathElements,
+                    hash_chain_result: hashChainResult,
+                    epoch_tree_root: epochTreeRoot,
+                    nullifier_tree_root: nullifierTreeRoot,
+                    nullifier_tree_path_elements: nullifierTreePathElements,
+                    epk_nullifier_path_elements: epkNullifierPathElements,
+                    is_epk_processed_selectors: isEPKProcessedSelectors
+                }
+
+                const witness = await executeCircuit(circuit, circuitInputs)
+                for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+                    const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+                    expect(nullifier).to.equal(nullifiers[i])
+                }
+                const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
+                expect(BigNumber.from(_newGSTLeaf)).to.equal(newGSTLeaf)
+
+                const startTime = Math.floor(new Date().getTime() / 1000)
+                const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+                const endTime = Math.floor(new Date().getTime() / 1000)
+                console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+                const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
+                expect(isValid).to.be.true
+            })
         })
     })
 })

@@ -86,10 +86,10 @@ template allEpochKeyProcessed(nullifier_tree_depth, MAX_NONCE) {
     for (var i = 0; i <= MAX_NONCE; i++) {
         // 1.2.1 Compute nullifier
         epoch_key_nullifier_hasher[i] = Hasher5();
-        epoch_key_nullifier_hasher[i].in[0] <== identity_nullifier;
-        epoch_key_nullifier_hasher[i].in[1] <== epoch;
-        epoch_key_nullifier_hasher[i].in[2] <== i;
-        epoch_key_nullifier_hasher[i].in[3] <== 0;
+        epoch_key_nullifier_hasher[i].in[0] <== 2;  // 2 is the domain separator for epoch key nullifier
+        epoch_key_nullifier_hasher[i].in[1] <== identity_nullifier;
+        epoch_key_nullifier_hasher[i].in[2] <== epoch;
+        epoch_key_nullifier_hasher[i].in[3] <== i;
         epoch_key_nullifier_hasher[i].in[4] <== 0;
         // 1.2.2 Mod nullifier hash
         // circom's best practices state that we should avoid using <-- unless
@@ -185,6 +185,8 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal input nullifier_tree_root;
     signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth][1];
 
+    signal private input epk_nullifier_path_elements[MAX_NONCE + 1][nullifier_tree_depth][1];
+    signal private input is_epk_processed_selectors[MAX_NONCE + 1];
     signal output new_GST_leaf;
     // Nullifiers of the attestations
     signal output nullifiers[NUM_ATTESTATIONS];
@@ -305,12 +307,31 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     /* End of 2. process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
 
 
-    /* 3. Compute new GST leaf */
+    /* 3. Compute new GST leaf and output new GST leaf*/
+    // 3.1 Compute new GST leaf
     component new_leaf = HashLeftRight();
     new_leaf.left <== identity_commitment.out;
     // Last intermediate root is the new user state tree root
     new_leaf.right <== intermediate_user_state_tree_roots[NUM_ATTESTATIONS];
 
-    new_GST_leaf <== new_leaf.hash;
+    // Output new GST leaf if all epoch keys are processed,
+    // otherwise output 0.
+    component should_output_new_GST_leaf = allEpochKeyProcessed(nullifier_tree_depth, MAX_NONCE);
+    should_output_new_GST_leaf.epoch <== epoch;
+    should_output_new_GST_leaf.nonce <== nonce;
+    should_output_new_GST_leaf.identity_nullifier <== identity_nullifier;
+    should_output_new_GST_leaf.nullifier_tree_root <== nullifier_tree_root;
+    for (var i = 0; i <= MAX_NONCE; i++) {
+        for (var j = 0; j < nullifier_tree_depth; j++) {
+            should_output_new_GST_leaf.epk_nullifier_path_elements[i][j][0] <== epk_nullifier_path_elements[i][j][0];
+        }
+        should_output_new_GST_leaf.is_epk_processed[i] <== is_epk_processed_selectors[i];
+    }
+
+    component should_output_new_GST_leaf_muxer = Mux1();
+    should_output_new_GST_leaf_muxer.c[0] <== 0;
+    should_output_new_GST_leaf_muxer.c[1] <== new_leaf.hash;
+    should_output_new_GST_leaf_muxer.s <== should_output_new_GST_leaf.is_all_epoch_key_processed;
+    new_GST_leaf <== should_output_new_GST_leaf_muxer.out;
     /* End of 3. compute new GST leaf matches */
 }
