@@ -201,6 +201,14 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     nonce_lt.in[0] <== nonce;
     nonce_lt.in[1] <== MAX_NONCE;
     nonce_lt.out === 1;
+
+    // 0.2 Check selectors are all binary
+    for (var i = 0; i < NUM_ATTESTATIONS; i++) {
+        selectors[i] * (selectors[i] - 1) === 0
+    }
+    for (var i = 0; i <= MAX_NONCE; i++) {
+        is_epk_processed_selectors[i] * (is_epk_processed_selectors[i] - 1) === 0
+    }
     /* End of check 0 */
 
 

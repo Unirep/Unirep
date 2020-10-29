@@ -449,9 +449,53 @@ describe('User State Transition circuits', function () {
                     await executeCircuit(circuit, circuitInputs)
                 } catch (e) {
                     error = e
+                    console.log(`Expected error: ${error}`)
                     expect(true).to.be.true
                 } finally {
                     if (!error) throw Error("Invalid nonce should throw error")
+                }
+            })
+
+            it('User state update with invalid selector value should not work', async () => {
+                const invalidSelectors = selectors.slice()
+                const indexToCorrupt = Math.floor(Math.random() * (NUM_ATTESTATIONS))
+                invalidSelectors[indexToCorrupt] = 99  // selector value should be binary
+                const circuitInputs = {
+                    epoch: epoch,
+                    nonce: nonce,
+                    intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                    old_pos_reps: oldPosReps,
+                    old_neg_reps: oldNegReps,
+                    old_graffities: oldGraffities,
+                    UST_path_elements: userStateTreePathElements,
+                    identity_pk: user['keypair']['pubKey'],
+                    identity_nullifier: user['identityNullifier'],
+                    identity_trapdoor: user['identityTrapdoor'],
+                    GST_path_elements: GSTreeProof.pathElements,
+                    GST_path_index: GSTreeProof.indices,
+                    GST_root: GSTreeRoot,
+                    selectors: invalidSelectors,
+                    attester_ids: attesterIds,
+                    pos_reps: posReps,
+                    neg_reps: negReps,
+                    graffities: graffities,
+                    overwrite_graffitis: overwriteGraffitis,
+                    epk_path_elements: epochTreePathElements,
+                    hash_chain_result: hashChainResult,
+                    epoch_tree_root: epochTreeRoot,
+                    nullifier_tree_root: nullifierTreeRoot,
+                    nullifier_tree_path_elements: nullifierTreePathElements
+                }
+
+                let error
+                try {
+                    await executeCircuit(circuit, circuitInputs)
+                } catch (e) {
+                    error = e
+                    console.log(`Expected error: ${error}`)
+                    expect(true).to.be.true
+                } finally {
+                    if (!error) throw Error("Invalid selector value should throw error")
                 }
             })
         })
