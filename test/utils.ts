@@ -5,6 +5,7 @@ import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
@@ -144,14 +145,14 @@ const computeReputationHash = (reputation: any): SnarkBigInt => {
     ])
 }
 
-const computeNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([identityNullifier, attesterId, BigInt(epoch), BigInt(0), BigInt(0)])
+const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), BigInt(0)])
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
     return nullifierModed
 }
 
 const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0), BigInt(0)])
+    let nullifier = hash5([EPOCH_KEY_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
     // Adjust epoch key size according to epoch tree depth
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
     return nullifierModed
@@ -230,7 +231,7 @@ export {
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
-    computeNullifier,
+    genAttestationNullifier,
     computeReputationHash,
     defaultUserStateLeaf,
     deployUnirep,

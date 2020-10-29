@@ -65,10 +65,10 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
 
         // 1.2 Compute nullifier of the attestation
         nullifier_hashers[i] = Hasher5();
-        nullifier_hashers[i].in[0] <== identity_nullifier;
-        nullifier_hashers[i].in[1] <== attester_ids[i];
-        nullifier_hashers[i].in[2] <== epoch;
-        nullifier_hashers[i].in[3] <== 0;
+        nullifier_hashers[i].in[0] <== 1;  // 1 is the domain separator for attestation nullifier
+        nullifier_hashers[i].in[1] <== identity_nullifier;
+        nullifier_hashers[i].in[2] <== attester_ids[i];
+        nullifier_hashers[i].in[3] <== epoch;
         nullifier_hashers[i].in[4] <== 0;
 
         // 1.2.2 Mod nullifier hash
@@ -103,10 +103,10 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     // 1.2 Compute epoch key nullifier
     // 1.2.1 Compute nullifier
     component epoch_key_nullifier_hasher = Hasher5();
-    epoch_key_nullifier_hasher.in[0] <== identity_nullifier;
-    epoch_key_nullifier_hasher.in[1] <== epoch;
-    epoch_key_nullifier_hasher.in[2] <== nonce;
-    epoch_key_nullifier_hasher.in[3] <== 0;
+    epoch_key_nullifier_hasher.in[0] <== 2;  // 2 is the domain separator for epoch key nullifier
+    epoch_key_nullifier_hasher.in[1] <== identity_nullifier;
+    epoch_key_nullifier_hasher.in[2] <== epoch;
+    epoch_key_nullifier_hasher.in[3] <== nonce;
     epoch_key_nullifier_hasher.in[4] <== 0;
     // 1.2.2 Mod nullifier hash
     // circom's best practices state that we should avoid using <-- unless

@@ -8,7 +8,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { computeNullifier, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
+import { genAttestationNullifier, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,
@@ -124,7 +124,7 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                nullifiers.push(computeNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth))
+                nullifiers.push(genAttestationNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth))
 
                 const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)

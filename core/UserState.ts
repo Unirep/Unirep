@@ -7,7 +7,7 @@ import {
     hashOne,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { computeNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier } from '../test/utils'
+import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier } from '../test/utils'
 import { IAttestation, UnirepState } from './UnirepState'
 
 interface IUserStateLeaf {
@@ -159,7 +159,7 @@ class UserState {
         const nullifiers: BigInt[] = []
         for (const attestation of attestations) {
             nullifiers.push(
-                computeNullifier(this.id.identityNullifier, attestation.attesterId, epoch, this.unirepState.nullifierTreeDepth)
+                genAttestationNullifier(this.id.identityNullifier, attestation.attesterId, epoch, this.unirepState.nullifierTreeDepth)
             )
         }
         for (let i = 0; i < (this.maxAttestationsPerEpochKey - attestations.length); i++) {
@@ -361,7 +361,7 @@ class UserState {
             graffities.push(newRep.graffiti)
             overwriteGraffitis.push(attestation.overwriteGraffiti)
 
-            const nullifier = computeNullifier(this.id.identityNullifier, attesterId, fromEpoch, this.unirepState.nullifierTreeDepth)
+            const nullifier = genAttestationNullifier(this.id.identityNullifier, attesterId, fromEpoch, this.unirepState.nullifierTreeDepth)
             nullifiers.push(nullifier)
             const nullifierTreeProof = await nullifierTree.getMerkleProof(nullifier)
             nullifierTreePathElements.push(nullifierTreeProof)
