@@ -19,7 +19,7 @@ import {
     verifyUserStateTransitionProof,
     getSignalByName,
 } from './utils'
-import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, maxEpochKeyNonce } from "../../config/testLocal"
+import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, maxAttestationsPerEpochKey, maxEpochKeyNonce } from "../../config/testLocal"
 import { genEpochKey, computeNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
@@ -203,7 +203,7 @@ describe('User State Transition circuits', function () {
         let circuit
 
         const MAX_NONCE = maxEpochKeyNonce
-        const NUM_ATTESTATIONS = 10
+        const NUM_ATTESTATIONS = maxAttestationsPerEpochKey
 
 
         let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof, newGSTLeaf
@@ -351,7 +351,6 @@ describe('User State Transition circuits', function () {
             const circuitInputs = {
                 epoch: epoch,
                 nonce: nonce,
-                max_nonce: MAX_NONCE,
                 intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
                 old_pos_reps: oldPosReps,
                 old_neg_reps: oldNegReps,
@@ -397,7 +396,6 @@ describe('User State Transition circuits', function () {
             const circuitInputs = {
                 epoch: epoch,
                 nonce: invalidNonce,
-                max_nonce: MAX_NONCE,
                 intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
                 old_pos_reps: oldPosReps,
                 old_neg_reps: oldNegReps,

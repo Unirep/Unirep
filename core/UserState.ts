@@ -246,7 +246,6 @@ class UserState {
             path_index: GSTProof.indices,
             root: GSTree.root,
             nonce: epochKeyNonce,
-            max_nonce: this.maxEpochKeyNonce,
             epoch: epoch,
             epoch_key: epochKey,
         })
@@ -392,7 +391,6 @@ class UserState {
         return stringifyBigInts({
             epoch: fromEpoch,
             nonce: epochKeyNonce,
-            max_nonce: this.maxEpochKeyNonce,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
