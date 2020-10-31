@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { maxAttestationsPerEpochKey } from '../config/testLocal'
@@ -275,8 +275,7 @@ const _genUserStateFromContract = async (
     // Variables used to keep track of data required for user to transition
     let userHasSignedUp = false
     let currentEpochGSTLeafIndexToInsert = 0
-    const epochKeyNonce = 0
-    let latestUserState
+    let epkNullifiersMap: {[key: string]: number} = {}  // Mapping of epoch key nullifier to epoch key nonce
     for (let i = 0; i < sequencerEvents.length; i++) {
         const sequencerEvent = sequencerEvents[i]
         const occurredEvent = sequencerEvent.args?._event
@@ -337,9 +336,13 @@ const _genUserStateFromContract = async (
             unirepState.epochTransition(epoch, epochTreeLeaves)
             if (userHasSignedUp) {
                 if (epoch === userState.latestTransitionedEpoch) {
-                    // Latest epoch user transitioned to ends, keep a record of user state
-                    // at this moment in order to identify `UserStateTransitioned` event
-                    latestUserState = await userState.genNewUserStateAfterTransition(epochKeyNonce)
+                    // Latest epoch user transitioned to ends. Generate mapping of nullifiers of all epoch key
+                    // in this epoch so we can identify which epoch key is processed later.
+                    const nullifiersMap = userState.getEpochKeyNullifiersOfEpoch(epoch)
+                    // Reverse the mapping so later we can use nullifier to identify epoch key nonce.
+                    for (const [nonce, nullifier] of Object.entries(nullifiersMap)) {
+                        epkNullifiersMap[nullifier.toString()] = Number(nonce)
+                    }
                 }
             }
 
@@ -373,17 +376,23 @@ const _genUserStateFromContract = async (
             const epkNullifier = BigInt(userStateTransitionedEvent.args?._epkNullifier)
             allNullifiers.push(epkNullifier)
 
-            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
-            if (userHasSignedUp && userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch) {
-                assert(latestUserState !== undefined, "latestUserState can not be undefined since user's latest transitioned epoch has ended")
-                if (latestUserState.newGSTLeaf === BigInt(newLeaf)) {
-                    userState.transition(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, latestUserState.newUSTLeaves)
+            if (
+                userHasSignedUp &&
+                (userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch) &&
+                (epkNullifiersMap[epkNullifier.toString()] !== undefined)
+            ) {
+                const epochKeyNonce = epkNullifiersMap[epkNullifier.toString()]
+                const newState = await userState.genNewUserStateAfterProcessEPK(epochKeyNonce)
+                userState.epochKeyProcessed(epochKeyNonce, newState.newUSTLeaves)
+                if (newLeaf.gt(0)) {
+                    // User processed all epoch keys so non-zero GST leaf is generated.
+                    assert(BigNumber.from(newState.newGSTLeaf).eq(newLeaf), 'New GST leaf mismatch')
+                    // User transition to this epoch, increment (next) GST leaf index
+                    currentEpochGSTLeafIndexToInsert ++
                 }
-                latestUserState = undefined  // Set to undefined to prevent latest state from being mistakenly reused
             }
 
-            // A user transition to this epoch, increment (next) GST leaf index
-            currentEpochGSTLeafIndexToInsert ++
+            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
         } else {
             throw  new Error(`Unexpected event: ${occurredEvent}`)
         }
