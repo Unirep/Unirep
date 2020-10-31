@@ -333,11 +333,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 
-        uint256[] memory publicSignals = new uint256[](4);
+        uint256[] memory publicSignals = new uint256[](3);
         publicSignals[0] = _globalStateTree;
-        publicSignals[1] = maxEpochKeyNonce;
-        publicSignals[2] = _epoch;
-        publicSignals[3] = _epochKey;
+        publicSignals[1] = _epoch;
+        publicSignals[2] = _epochKey;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
@@ -378,17 +377,16 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 4. Nullifiers of all processed attestations match
         // 5. Nullifiers of all processed attestations have not been seen before
 
-        uint256[] memory publicSignals = new uint256[](7 + MAX_ATTESTATIONS_PER_EPOCH_KEY);
+        uint256[] memory publicSignals = new uint256[](6 + MAX_ATTESTATIONS_PER_EPOCH_KEY);
         publicSignals[0] = _newGlobalStateTreeLeaf;
         for (uint8 i = 0; i < _nullifiers.length; i++) {
             publicSignals[i + 1] = _nullifiers[i];
         }
         publicSignals[2 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _epkNullifier;
         publicSignals[3 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _transitionFromEpoch;
-        publicSignals[4 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = maxEpochKeyNonce;
-        publicSignals[5 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromGlobalStateTree;
-        publicSignals[6 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromEpochTree;
-        publicSignals[7 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromNullifierTreeRoot;
+        publicSignals[4 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromGlobalStateTree;
+        publicSignals[5 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromEpochTree;
+        publicSignals[6 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromNullifierTreeRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
