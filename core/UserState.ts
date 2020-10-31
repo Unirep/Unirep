@@ -85,7 +85,11 @@ class UserState {
     public latestTransitionedEpoch: number  // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number  // Leaf index of the latest GST where the user has a record in
     private latestUserStateLeaves: IUserStateLeaf[]  // Latest non-default user state leaves
-    private latestEpochKeys: string[]
+
+    // In process epoch keys and user state leaves
+    // These data will remain until all epoch keys are processed
+    private processedEpochKeys: string[]
+    private pendingLatestUserStateLeaves: IUserStateLeaf[]
 
     constructor(
         _unirepState: UnirepState,
@@ -95,7 +99,8 @@ class UserState {
         _latestTransitionedEpoch?: number,
         _latestGSTLeafIndex?: number,
         _latestUserStateLeaves?: IUserStateLeaf[],
-        _currentEpochKeys?: string[]
+        _processedEpochKeys?: string[],
+        _pendingLatestUserStateLeaves?: IUserStateLeaf[]
     ) {
         assert(_unirepState !== undefined, "UnirepState is undefined")
         this.unirepState = _unirepState
@@ -113,14 +118,17 @@ class UserState {
             this.latestGSTLeafIndex = _latestGSTLeafIndex
             if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
             else this.latestUserStateLeaves = []
-            if (_currentEpochKeys !== undefined) this.latestEpochKeys = _currentEpochKeys
-            else this.latestEpochKeys = []
+            if (_processedEpochKeys !== undefined) this.processedEpochKeys = _processedEpochKeys
+            else this.processedEpochKeys = []
+            if (_pendingLatestUserStateLeaves !== undefined) this.pendingLatestUserStateLeaves = _pendingLatestUserStateLeaves
+            else this.pendingLatestUserStateLeaves = []
             this.hasSignedUp = _hasSignedUp
         } else {
             this.latestTransitionedEpoch = 0
             this.latestGSTLeafIndex = 0
             this.latestUserStateLeaves = []
-            this.latestEpochKeys = []
+            this.processedEpochKeys = []
+            this.pendingLatestUserStateLeaves = []
         }
     }
 
@@ -169,30 +177,27 @@ class UserState {
     }
 
     /*
-     * Get the nullifier of the attestations of given epoch key
+     * Get the nullifier of given epoch key
      */
     public getEpochKeyNullifier = (epoch: number, epochKeyNonce: number): BigInt => {
-        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
-        const attestations = this.unirepState.getAttestations(epochKey.toString())
-        if (attestations.length > 0) return BigInt(0)  // Nullifier should be zero if there are at least one attestation
         return genEpochKeyNullifier(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.nullifierTreeDepth)
+    }
+
+    /*
+     * Get all epoch key nullifiers of given epoch
+     */
+    public getEpochKeyNullifiersOfEpoch = (epoch: number): {[key: number]: BigInt} => {
+        const nullifierMap: {[key: number]: BigInt} = {}
+        for (let i = 0; i <= this.maxEpochKeyNonce; i++) {
+            nullifierMap[i] = genEpochKeyNullifier(this.id.identityNullifier, epoch, i, this.unirepState.nullifierTreeDepth)
+        }
+        return nullifierMap
     }
 
     public getRepByAttester = (attesterId: BigInt): Reputation => {
         const leaf = this.latestUserStateLeaves.find((leaf) => leaf.attesterId == attesterId)
         if (leaf !== undefined) return leaf.reputation
         else return Reputation.default()
-    }
-
-
-    /*
-     * Add a new epoch key to the list of epoch key of current epoch.
-     */
-    public addEpochKey = (epochKey: string) => {
-        assert(this.hasSignedUp, "User has not signed up yet")
-        if (this.latestEpochKeys.indexOf(epochKey) == -1) {
-            this.latestEpochKeys.push(epochKey)
-        }
     }
 
     /*
@@ -273,16 +278,21 @@ class UserState {
         return stateLeaves
     }
 
-    public genNewUserStateAfterTransition = async (
+    public genNewUserStateAfterProcessEPK = async (
         epochKeyNonce: number,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
         const fromEpoch = this.latestTransitionedEpoch
+        const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.nullifierTreeDepth)
+        assert(! this.unirepState.nullifierExist(epkNullifier), `Epoch key with nonce ${epochKeyNonce} is already processed, it's nullifier: ${epkNullifier}`)
+
         const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.epochTreeDepth)
 
-        // Old user state leaves
-        let stateLeaves = this.latestUserStateLeaves.slice()
+        let stateLeaves: IUserStateLeaf[]
+        // If no pending UST leaves , get leaves from latest user state leaves
+        if (this.pendingLatestUserStateLeaves.length == 0) stateLeaves = this.latestUserStateLeaves.slice()
+        else stateLeaves = this.pendingLatestUserStateLeaves.slice()
         // Attestations
         const attestations = this.unirepState.getAttestations(epochKey.toString())
         for (let i = 0; i < attestations.length; i++) {
@@ -387,6 +397,20 @@ class UserState {
             const nullifierTreeProof = await nullifierTree.getMerkleProof(BigInt(0))
             nullifierTreePathElements.push(nullifierTreeProof)    
         }
+        // Compute merkle proof of nullifier of every epoch key in nullifier tree
+        const isEPKProcessedSelectors: number[] = []
+        const epkNullifierPathElements: any[] = []
+        for (let n = 0; n <= this.maxEpochKeyNonce; n++) {
+            const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, n, this.unirepState.nullifierTreeDepth)
+            if (n == epochKeyNonce) {
+                isEPKProcessedSelectors.push(0)  // Epoch key to be processed should not be counted as processed
+            } else {
+                if (this.unirepState.nullifierExist(epkNullifier)) isEPKProcessedSelectors.push(1)
+                else isEPKProcessedSelectors.push(0)
+            }
+            const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
+            epkNullifierPathElements.push(epkNullifierProof)
+        }
 
         return stringifyBigInts({
             epoch: fromEpoch,
@@ -412,14 +436,16 @@ class UserState {
             hash_chain_result: hashChainResult,
             epoch_tree_root: epochTreeRoot,
             nullifier_tree_root: oldNullifierTreeRoot,
-            nullifier_tree_path_elements: nullifierTreePathElements
+            nullifier_tree_path_elements: nullifierTreePathElements,
+            epk_nullifier_path_elements: epkNullifierPathElements,
+            is_epk_processed_selectors: isEPKProcessedSelectors
         })
     }
 
     /*
      * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
      */
-    public transition = (
+    private _transition = (
         transitionToEpoch: number,
         transitionToGSTIndex: number,
         latestStateLeaves: IUserStateLeaf[],
@@ -429,10 +455,41 @@ class UserState {
 
         this.latestTransitionedEpoch = transitionToEpoch
         this.latestGSTLeafIndex = transitionToGSTIndex
-        // Clear all current epoch keys
-        this.latestEpochKeys = []
+
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
+        // Clear pending processed epoch keys and state leaves
+        this.processedEpochKeys = []
+        this.pendingLatestUserStateLeaves = []
+    }
+
+    /*
+     * Update user state tree leaves after given epoch key is processed.
+     */
+    public epochKeyProcessed = (
+        epochKeyNonce: number,
+        latestStateLeaves: IUserStateLeaf[],
+    ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
+        const fromEpoch = this.latestTransitionedEpoch
+        const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.epochTreeDepth)
+        if (this.processedEpochKeys.indexOf(epochKey.toString()) !== -1) {
+            console.log(`Epoch key ${epochKey} already in processed epk list [${this.processedEpochKeys}]`)
+            return
+        }
+        
+        const transitionToEpoch = this.unirepState.currentEpoch
+        const transitionToGSTIndex = this.unirepState.getNumGSTLeaves(transitionToEpoch)
+        // Add to processed epoch keys
+        this.processedEpochKeys.push(epochKey.toString())
+        // If all epoch keys processed, transition user state
+        if (this.processedEpochKeys.length === (this.maxEpochKeyNonce + 1)) {
+            this._transition(transitionToEpoch, transitionToGSTIndex, latestStateLeaves)
+            return
+        } else {
+            // Update user state leaves
+            this.pendingLatestUserStateLeaves = latestStateLeaves.slice()
+        }
     }
 
     public genProveReputationCircuitInputs = async (

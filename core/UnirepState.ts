@@ -119,6 +119,14 @@ class UnirepState {
     }
 
     /*
+     * Get the number of GST leaves of given epoch
+     */
+    public getNumGSTLeaves = (epoch: number): number => {
+        if (epoch > this.currentEpoch) return 0
+        return this.GSTLeaves[epoch].length
+    }
+
+    /*
      * Get the hash chain result of given epoch key
      */
     public getHashchain = (epochKey: string): BigInt => {
@@ -134,6 +142,17 @@ class UnirepState {
         const attestations = this.epochKeyToAttestationsMap[epochKey]
         if (!attestations) return []
         else return attestations
+    }
+
+    /*
+     * Check if given nullifier exists in nullifier tree
+     */
+    public nullifierExist = (nullifier: BigInt): boolean => {
+        if (nullifier === BigInt(0)) {
+            console.log("Nullifier 0 exists because it is reserved")
+            return true
+        }
+        return (this.nullifiers.indexOf(nullifier) !== -1)
     }
 
 
@@ -160,13 +179,10 @@ class UnirepState {
         )
 
         const leaves = this.GSTLeaves[epoch]
-        if (!leaves) return GSTree
-        else {
-            for (const leaf of leaves) {
-                GSTree.insert(leaf)
-            }
-            return GSTree
+        for (const leaf of leaves) {
+            GSTree.insert(leaf)
         }
+        return GSTree
     }
 
     /*
@@ -232,7 +248,7 @@ class UnirepState {
 
         // Add to epoch key hash chain map
         for (let leaf of epochTreeLeaves) {
-            if (this.epochKeyToHashchainMap[leaf.epochKey.toString()] !== undefined) console.log(`This epoch key(${leaf.epochKey}) seen before`)
+            if (this.epochKeyToHashchainMap[leaf.epochKey.toString()] !== undefined) console.log(`The epoch key(${leaf.epochKey}) is seen before`)
             else this.epochKeyToHashchainMap[leaf.epochKey.toString()] = leaf.hashchainResult
         }
         this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
@@ -251,10 +267,14 @@ class UnirepState {
         // assert(epoch >= 1, `Epoch(${epoch}) must be greater or equal to one`)
         assert(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`)
 
-        this.GSTLeaves[epoch].push(GSTLeaf)
+        // Only insert non-zero GST leaf (zero GST leaf means the user has epoch keys left to process)
+        if (GSTLeaf > BigInt(0)) this.GSTLeaves[epoch].push(GSTLeaf)
+
         for (let nullifier of nullifiers) {
-            if (nullifier > BigInt(0)) assert(this.nullifiers.indexOf(nullifier) == -1, `Nullifier(${nullifier}) seen before`)
-            this.nullifiers.push(nullifier)
+            if (nullifier > BigInt(0)) {
+                assert(this.nullifiers.indexOf(nullifier) == -1, `Nullifier(${nullifier}) seen before`)
+                this.nullifiers.push(nullifier)
+            }
         }
     }
 }
