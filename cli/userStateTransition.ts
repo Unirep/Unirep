@@ -14,7 +14,7 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, genVerifyUserStateTransitionProofAndPublicSignals, verifyUserStateTransitionProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, verifyUserStateTransitionProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 
 const configureSubparser = (subparsers: any) => {
@@ -157,6 +157,7 @@ const userStateTransition = async (args: any) => {
 
     const circuitInputs = await userState.genUserStateTransitionCircuitInputs(epkNonce)
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
     const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: user state transition proof generated is not valid!')
@@ -168,7 +169,6 @@ const userStateTransition = async (args: any) => {
     const oldNullifierTreeRoot = (await userState.getUnirepStateNullifierTree()).getRootHash()
     const nullifiers = userState.getNullifiers(fromEpoch, epkNonce)
     const epkNullifier = userState.getEpochKeyNullifier(fromEpoch, epkNonce)
-    const newGSTLeaf = (await userState.genNewUserStateAfterProcessEPK(epkNonce)).newGSTLeaf
     let tx
     try {
         tx = await unirepContract.updateUserStateRoot(
@@ -189,9 +189,12 @@ const userStateTransition = async (args: any) => {
         return
     }
 
-    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
     console.log('Transaction hash:', tx.hash)
-    console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
+    console.log(`Processed epoch key with nonce ${epkNonce}`)
+    if (newGSTLeaf !== BigInt(0)) {
+        const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+        console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)        
+    }
 }
 
 export {
