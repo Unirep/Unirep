@@ -69,6 +69,19 @@ class Reputation implements IReputation {
             BigInt(0),
         ])
     }
+
+    public toJSON = (space = 0): string => {
+        return JSON.stringify(
+            {
+                posRep: this.posRep.toString(),
+                negRep: this.negRep.toString(),
+                graffiti: this.graffiti.toString(),
+                graffitiPreImage: this.graffitiPreImage.toString()
+            },
+            null,
+            space
+        )
+    }
 }
 
 class UserState {
@@ -132,6 +145,24 @@ class UserState {
         }
     }
 
+    public toJSON = (space = 0): string => {
+        return JSON.stringify(
+            {
+                idNullifier: this.id.identityNullifier.toString(),
+                idCommitment: this.commitment.toString(),
+                hasSignedUp: this.hasSignedUp,
+                latestTransitionedEpoch: this.latestTransitionedEpoch,
+                latestGSTLeafIndex: this.latestGSTLeafIndex,
+                latestUserStateLeaves: this.latestUserStateLeaves.map((l) => `${l.attesterId.toString()}: ${l.reputation.toJSON()}`),
+                processedEpochKeys: this.processedEpochKeys,
+                pendingLatestUserStateLeaves: this.pendingLatestUserStateLeaves.map((l) => `${l.attesterId.toString()}: ${l.reputation.toJSON()}`),
+                unirepState: this.unirepState.toJSON()
+            },
+            null,
+            space
+        )
+    }
+    
     /*
      * Proxy methods to get underlying UnirepState data
      */
@@ -291,6 +322,7 @@ class UserState {
 
         let stateLeaves: IUserStateLeaf[]
         // If no pending UST leaves , get leaves from latest user state leaves
+        console.log('genNewUserStateAfterProcessEPK', this.pendingLatestUserStateLeaves.length)
         if (this.pendingLatestUserStateLeaves.length == 0) stateLeaves = this.latestUserStateLeaves.slice()
         else stateLeaves = this.pendingLatestUserStateLeaves.slice()
         // Attestations
@@ -304,6 +336,8 @@ class UserState {
         const newUserStateTree = await this._genUserStateTreeFromLeaves(stateLeaves)
         // Gen new GST leaf
         const newGSTLeaf = hashLeftRight(this.commitment, newUserStateTree.getRootHash())
+
+        console.log("u process epk ---", epochKeyNonce, attestations.length, this.commitment, newUserStateTree.getRootHash(), newGSTLeaf)
 
         return {
             'newGSTLeaf': newGSTLeaf,
@@ -461,6 +495,7 @@ class UserState {
         // Clear pending processed epoch keys and state leaves
         this.processedEpochKeys = []
         this.pendingLatestUserStateLeaves = []
+        console.log('user transitioned')
     }
 
     /*

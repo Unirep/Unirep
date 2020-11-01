@@ -88,6 +88,9 @@ describe('Integration', function () {
             const GSTreeLeafIndex = 0
             users[0].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
             console.log(`First user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
+            console.log('----------------------User State----------------------')
+            console.log(users[0].toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('First attester signs up', async () => {
@@ -136,6 +139,9 @@ describe('Integration', function () {
             expect(currentEpoch, 'Current epoch should be 2').to.equal(2)
 
             unirepState.epochTransition(prevEpoch.toNumber(), [])
+            console.log('----------------------Unirep State----------------------')
+            console.log(unirepState.toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('First user transition from first epoch: process first epoch key', async () => {
@@ -235,6 +241,9 @@ describe('Integration', function () {
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log('User state transition off-chain: ')
             console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
+            console.log('----------------------User State----------------------')
+            console.log(users[0].toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('First user transition from first epoch: process second epoch key', async () => {
@@ -316,6 +325,9 @@ describe('Integration', function () {
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log('User state transition off-chain: ')
             console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
+            console.log('----------------------User State----------------------')
+            console.log(users[0].toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('Second user signs up', async () => {
@@ -343,6 +355,9 @@ describe('Integration', function () {
             const GSTreeLeafIndex = 1
             users[1].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
             console.log(`Second user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
+            console.log('----------------------User State----------------------')
+            console.log(users[1].toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('Second attester signs up', async () => {
@@ -563,6 +578,9 @@ describe('Integration', function () {
 
             unirepState.epochTransition(prevEpoch.toNumber(), epochTreeLeaves)
             console.log(`Updating epoch tree leaves off-chain with list of epoch keys: [${epochTreeLeaves.map((l) => l.epochKey.toString())}]`)
+            console.log('----------------------Unirep State----------------------')
+            console.log(unirepState.toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('First user transition from second epoch: process second epoch key', async () => {
@@ -644,6 +662,9 @@ describe('Integration', function () {
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log('User state transition off-chain: ')
             console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
+            console.log('----------------------User State----------------------')
+            console.log(users[0].toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('First user try to prove his reputation before processing all epoch keys', async () => {
@@ -742,6 +763,9 @@ describe('Integration', function () {
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log('User state transition off-chain: ')
             console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
+            console.log('----------------------User State----------------------')
+            console.log(users[0].toJSON(4))
+            console.log('------------------------------------------------------')
         })
 
         it('First user prove his reputation', async () => {

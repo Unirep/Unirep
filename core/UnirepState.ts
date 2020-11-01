@@ -118,6 +118,33 @@ class UnirepState {
         )
     }
 
+    public toJSON = (space = 0): string => {
+        let latestEpochTreeLeaves
+        if (this.currentEpoch == 1) latestEpochTreeLeaves = []
+        else latestEpochTreeLeaves = this.epochTreeLeaves[this.currentEpoch - 1].map((l) => `${l.epochKey.toString()}: ${l.hashchainResult.toString()}`)
+        return JSON.stringify(
+            {
+                settings: {
+                    globalStateTreeDepth: this.globalStateTreeDepth,
+                    userStateTreeDepth: this.userStateTreeDepth,
+                    epochTreeDepth: this.epochTreeDepth,
+                    nullifierTreeDepth: this.nullifierTreeDepth,
+                    attestingFee: this.attestingFee.toString(),
+                    epochLength: this.epochLength,
+                    maxEpochKeyNonce: this.maxEpochKeyNonce,
+                    maxAttestationsPerEpochKey: this.maxAttestationsPerEpochKey,
+                    defaultGSTLeaf: this.defaultGSTLeaf.toString(),
+                },
+                currentEpoch: this.currentEpoch,
+                latestEpochGSTLeaves: this.GSTLeaves[this.currentEpoch].map((l) => l.toString()),
+                latestEpochTreeLeaves: latestEpochTreeLeaves,
+                nullifiers: this.nullifiers.map((n) => n.toString())
+            },
+            null,
+            space
+        )
+    }
+
     /*
      * Get the number of GST leaves of given epoch
      */
