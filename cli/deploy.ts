@@ -43,14 +43,14 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    deployParser.addArgument(
-        ['-kn', '--max-epoch-key-nonce'],
-        {
-            action: 'store',
-            type: 'int',
-            help: 'The maximum supported epoch key nonce. Default: 2',
-        }
-    )
+    // deployParser.addArgument(
+    //     ['-kn', '--max-epoch-key-nonce'],
+    //     {
+    //         action: 'store',
+    //         type: 'int',
+    //         help: 'The maximum supported epoch key nonce. Default: 2',
+    //     }
+    // )
 
     deployParser.addArgument(
         ['-l', '--epoch-length'],
@@ -99,7 +99,8 @@ const deploy = async (args: any) => {
     }
 
     // Max epoch key nonce
-    const _maxEpochKeyNonce = (args.max_epoch_key_nonce != undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
+    // const _maxEpochKeyNonce = (args.max_epoch_key_nonce != undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
+    const _maxEpochKeyNonce = DEFAULT_MAX_EPOCH_KEY_NONCE
 
     // Epoch length
     const _epochLength = (args.epoch_length != undefined) ? args.epoch_length : DEFAULT_EPOCH_LENGTH

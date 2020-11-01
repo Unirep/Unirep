@@ -24,7 +24,6 @@ describe('test all CLI subcommands', function() {
     
     const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
-    const maxEpochKeyNonce = 0  // Only allow one epoch key per epoch
     const epochKeyNonce = 0
     const epochLength = 5
     let unirepContract: ethers.Contract
@@ -57,7 +56,6 @@ describe('test all CLI subcommands', function() {
         it('should deploy a Unirep contract', async () => {
             const command = `npx ts-node cli/index.ts deploy` +
                 ` -d ${deployerPrivKey} ` + 
-                ` -kn ${maxEpochKeyNonce} ` +
                 ` -l ${epochLength} ` +
                 ` -f ${attestingFee.toString()} `
 
@@ -82,7 +80,6 @@ describe('test all CLI subcommands', function() {
                 startBlock,
             )
 
-            expect(unirepState.maxEpochKeyNonce).equal(maxEpochKeyNonce)
             expect(unirepState.epochLength).equal(epochLength)
             expect(unirepState.attestingFee).equal(attestingFee)
         })
@@ -214,7 +211,7 @@ describe('test all CLI subcommands', function() {
     })
 
     describe('userStateTransition CLI subcommand', () => {
-        it('should transition user state', async () => {
+        it('should process epoch key', async () => {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
@@ -225,6 +222,28 @@ describe('test all CLI subcommands', function() {
 
             console.log(command)
             console.log(output)
+
+            const processEPKRegMatch = output.match(/Processed epoch key with nonce 0/)
+            expect(processEPKRegMatch).not.equal(null)
+        })
+    })
+
+    describe('userStateTransition CLI subcommand', () => {
+        it('should transition user state', async () => {
+            const theOtherEpochKeyNonce = 1
+            const command = `npx ts-node cli/index.ts userStateTransition` +
+                ` -x ${unirepContract.address} ` +
+                ` -d ${userPrivKey} ` +
+                ` -id ${serializedIdentity} ` +
+                ` -n ${theOtherEpochKeyNonce} `
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const processEPKRegMatch = output.match(/Processed epoch key with nonce 1/)
+            expect(processEPKRegMatch).not.equal(null)
 
             const userTransitionRegMatch = output.match(/User transitioned from epoch 1 to epoch 2/)
             expect(userTransitionRegMatch).not.equal(null)
