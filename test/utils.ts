@@ -135,16 +135,6 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return epochKeyModed
 }
 
-const computeReputationHash = (reputation: any): SnarkBigInt => {
-    return hash5([
-        reputation['posRep'],
-        reputation['negRep'],
-        reputation['graffiti'],
-        BigInt(0),
-        BigInt(0),
-    ])
-}
-
 const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
     let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), BigInt(0)])
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
@@ -232,7 +222,6 @@ export {
     SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
     genAttestationNullifier,
-    computeReputationHash,
     defaultUserStateLeaf,
     deployUnirep,
     getTreeDepthsForTesting,
