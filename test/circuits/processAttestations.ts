@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
 
 const { expect } = chai
@@ -8,7 +8,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { genAttestationNullifier, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
+import { genAttestationNullifier, genEpochKey, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,
@@ -17,7 +17,7 @@ import {
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
-import { circuitNullifierTreeDepth } from "../../config/testLocal"
+import { circuitEpochTreeDepth, circuitNullifierTreeDepth } from "../../config/testLocal"
 import { Attestation, Reputation } from "../../core"
 
 describe('Process attestation circuit', function () {
@@ -28,6 +28,7 @@ describe('Process attestation circuit', function () {
     const epoch = 1
     const nonce = 0
     const user = genIdentity()
+    const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
     const NUM_ATTESTATIONS = 10
 
     let userStateTree: SparseMerkleTreeImpl
@@ -124,7 +125,7 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                nullifiers.push(genAttestationNullifier(user['identityNullifier'], attesterId, epoch, circuitNullifierTreeDepth))
+                nullifiers.push(genAttestationNullifier(user['identityNullifier'], attesterId, epoch, epochKey, circuitNullifierTreeDepth))
 
                 const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
@@ -138,7 +139,6 @@ describe('Process attestation circuit', function () {
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         }
         hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
-        console.log("done")
     })
 
     it('successfully process attestations', async () => {
@@ -146,6 +146,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -163,11 +164,11 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-            expect(nullifier).to.equal(nullifiers[i])
+            expect(BigNumber.from(nullifier)).to.equal(BigNumber.from(nullifiers[i]))
         }
         const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
-        expect(epkNullifier).to.equal(_epkNullifier)
+        expect(BigNumber.from(epkNullifier)).to.equal(BigNumber.from(_epkNullifier))
     })
 
     it('successfully process zero attestations', async () => {
@@ -179,6 +180,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: noAttestationIntermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -196,7 +198,7 @@ describe('Process attestation circuit', function () {
         const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const witness = await executeCircuit(circuit, circuitInputs)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
-        expect(epkNullifier).to.equal(_epkNullifier)
+        expect(BigNumber.from(epkNullifier)).to.equal(BigNumber.from(_epkNullifier))
     })
 
     it('process attestations with wrong attestation record should not work', async () => {
@@ -212,6 +214,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: wrongOldPosReps,
             old_neg_reps: wrongOldNegReps,
@@ -245,6 +248,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: wrongIntermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -277,6 +281,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -310,6 +315,7 @@ describe('Process attestation circuit', function () {
             epoch: wrongEpoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -329,10 +335,10 @@ describe('Process attestation circuit', function () {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
             if (selectors[i] == 0) {
                 // If selector is false, nullifier should be zero
-                expect(nullifier).to.equal(BigInt(0))
+                expect(BigNumber.from(nullifier)).to.equal(0)
             } else {
                 // Otherwise nullifier should not be the same as the correct nullifier
-                expect(nullifier).to.not.equal(nullifiers[i])
+                expect(BigNumber.from(nullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
             }
         }
     })
@@ -343,6 +349,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: otherUser['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -362,10 +369,10 @@ describe('Process attestation circuit', function () {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
             if (selectors[i] == 0) {
                 // If selector is false, nullifier should be zero
-                expect(nullifier).to.equal(BigInt(0))
+                expect(BigNumber.from(nullifier)).to.equal(0)
             } else {
                 // Otherwise nullifier should not be the same as the correct nullifier
-                expect(nullifier).to.not.equal(nullifiers[i])
+                expect(BigNumber.from(nullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
             }
         }
     })
@@ -376,6 +383,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,
@@ -407,6 +415,7 @@ describe('Process attestation circuit', function () {
             epoch: epoch,
             nonce: nonce,
             identity_nullifier: user['identityNullifier'],
+            epoch_key: epochKey,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
             old_pos_reps: oldPosReps,
             old_neg_reps: oldNegReps,

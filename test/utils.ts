@@ -135,8 +135,8 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return epochKeyModed
 }
 
-const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), BigInt(0)])
+const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, epochKey: BigInt, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), epochKey])
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
     return nullifierModed
 }

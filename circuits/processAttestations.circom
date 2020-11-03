@@ -8,9 +8,10 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     signal input epoch;
     signal input nonce;
     signal input identity_nullifier;
+    signal input epoch_key;
 
     signal input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
-    // Inputs of old atttestation records
+    // Inputs of old reputation records
     signal input old_pos_reps[NUM_ATTESTATIONS];
     signal input old_neg_reps[NUM_ATTESTATIONS];
     signal input old_graffities[NUM_ATTESTATIONS];
@@ -23,7 +24,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     signal input graffities[NUM_ATTESTATIONS];
     signal input overwrite_graffitis[NUM_ATTESTATIONS];
 
-    // Selector is used to determined if the nullifier should be processed
+    // Selector is used to determined if the attestation should be processed
     signal input selectors[NUM_ATTESTATIONS];
     signal input hash_chain_result;
 
@@ -69,7 +70,9 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         nullifier_hashers[i].in[1] <== identity_nullifier;
         nullifier_hashers[i].in[2] <== attester_ids[i];
         nullifier_hashers[i].in[3] <== epoch;
-        nullifier_hashers[i].in[4] <== 0;
+        // Add epoch key into nullifier computation in case attester attests more than one epoch key
+        // in same epoch and results in duplicated nullifiers.
+        nullifier_hashers[i].in[4] <== epoch_key;
 
         // 1.2.2 Mod nullifier hash
         // circom's best practices state that we should avoid using <-- unless

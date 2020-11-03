@@ -198,7 +198,7 @@ class UserState {
         const nullifiers: BigInt[] = []
         for (const attestation of attestations) {
             nullifiers.push(
-                genAttestationNullifier(this.id.identityNullifier, attestation.attesterId, epoch, this.unirepState.nullifierTreeDepth)
+                genAttestationNullifier(this.id.identityNullifier, attestation.attesterId, epoch, epochKey, this.unirepState.nullifierTreeDepth)
             )
         }
         for (let i = 0; i < (this.maxAttestationsPerEpochKey - attestations.length); i++) {
@@ -405,7 +405,7 @@ class UserState {
             graffities.push(newRep.graffiti)
             overwriteGraffitis.push(attestation.overwriteGraffiti)
 
-            const nullifier = genAttestationNullifier(this.id.identityNullifier, attesterId, fromEpoch, this.unirepState.nullifierTreeDepth)
+            const nullifier = genAttestationNullifier(this.id.identityNullifier, attesterId, fromEpoch, epochKey, this.unirepState.nullifierTreeDepth)
             nullifiers.push(nullifier)
             const nullifierTreeProof = await nullifierTree.getMerkleProof(nullifier)
             nullifierTreePathElements.push(nullifierTreeProof)
