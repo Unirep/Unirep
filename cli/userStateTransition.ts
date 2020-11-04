@@ -139,8 +139,8 @@ const userStateTransition = async (args: any) => {
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
     const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
-    if (epkNonce > maxEpochKeyNonce) {
-        console.error('Epoch key nonce exceeds max epoch key nonce')
+    if (epkNonce >= maxEpochKeyNonce) {
+        console.error('Error: epoch key nonce must be less than max epoch key nonce')
         return
     }
 

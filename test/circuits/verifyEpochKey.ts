@@ -68,7 +68,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('Valid epoch key should pass check', async () => {
         // Check if every valid nonce works
-        for (let i = 0; i <= maxEpochKeyNonce; i++) {
+        for (let i = 0; i < maxEpochKeyNonce; i++) {
             const n = i
             const epk = genEpochKey(id['identityNullifier'], currentEpoch, n, circuitEpochTreeDepth)
             const circuitInputs = {
@@ -170,7 +170,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Invalid nonce should not pass check', async () => {
-        const invalidNonce = maxEpochKeyNonce + 1
+        const invalidNonce = maxEpochKeyNonce
         const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 

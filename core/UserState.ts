@@ -219,7 +219,7 @@ class UserState {
      */
     public getEpochKeyNullifiersOfEpoch = (epoch: number): {[key: number]: BigInt} => {
         const nullifierMap: {[key: number]: BigInt} = {}
-        for (let i = 0; i <= this.maxEpochKeyNonce; i++) {
+        for (let i = 0; i < this.maxEpochKeyNonce; i++) {
             nullifierMap[i] = genEpochKeyNullifier(this.id.identityNullifier, epoch, i, this.unirepState.nullifierTreeDepth)
         }
         return nullifierMap
@@ -266,7 +266,7 @@ class UserState {
         epochKeyNonce: number,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
-        assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
+        assert(epochKeyNonce < this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
 
@@ -313,7 +313,7 @@ class UserState {
         epochKeyNonce: number,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
-        assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
+        assert(epochKeyNonce < this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
         const fromEpoch = this.latestTransitionedEpoch
         const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.nullifierTreeDepth)
         assert(! this.unirepState.nullifierExist(epkNullifier), `Epoch key with nonce ${epochKeyNonce} is already processed, it's nullifier: ${epkNullifier}`)
@@ -322,7 +322,6 @@ class UserState {
 
         let stateLeaves: IUserStateLeaf[]
         // If no pending UST leaves , get leaves from latest user state leaves
-        console.log('genNewUserStateAfterProcessEPK', this.pendingLatestUserStateLeaves.length)
         if (this.pendingLatestUserStateLeaves.length == 0) stateLeaves = this.latestUserStateLeaves.slice()
         else stateLeaves = this.pendingLatestUserStateLeaves.slice()
         // Attestations
@@ -337,8 +336,6 @@ class UserState {
         // Gen new GST leaf
         const newGSTLeaf = hashLeftRight(this.commitment, newUserStateTree.getRootHash())
 
-        console.log("u process epk ---", epochKeyNonce, attestations.length, this.commitment, newUserStateTree.getRootHash(), newGSTLeaf)
-
         return {
             'newGSTLeaf': newGSTLeaf,
             'newUSTLeaves': stateLeaves
@@ -349,7 +346,7 @@ class UserState {
         epochKeyNonce: number,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
-        assert(epochKeyNonce <= this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) exceeds max epoch nonce`)
+        assert(epochKeyNonce < this.maxEpochKeyNonce, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
         const fromEpoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, epochKeyNonce, this.unirepState.epochTreeDepth)
 
@@ -434,7 +431,7 @@ class UserState {
         // Compute merkle proof of nullifier of every epoch key in nullifier tree
         const isEPKProcessedSelectors: number[] = []
         const epkNullifierPathElements: any[] = []
-        for (let n = 0; n <= this.maxEpochKeyNonce; n++) {
+        for (let n = 0; n < this.maxEpochKeyNonce; n++) {
             const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, n, this.unirepState.nullifierTreeDepth)
             if (n == epochKeyNonce) {
                 isEPKProcessedSelectors.push(0)  // Epoch key to be processed should not be counted as processed
@@ -518,7 +515,7 @@ class UserState {
         // Add to processed epoch keys
         this.processedEpochKeys.push(epochKey.toString())
         // If all epoch keys processed, transition user state
-        if (this.processedEpochKeys.length === (this.maxEpochKeyNonce + 1)) {
+        if (this.processedEpochKeys.length === this.maxEpochKeyNonce) {
             this._transition(transitionToEpoch, transitionToGSTIndex, latestStateLeaves)
             return
         } else {

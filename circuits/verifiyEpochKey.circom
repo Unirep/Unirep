@@ -42,7 +42,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, MAX_NONCE) {
     /* 2. Check nonce validity */
     var maxNonceInBits = 8;
 
-    component nonce_lt = LessEqThan(maxNonceInBits);
+    component nonce_lt = LessThan(maxNonceInBits);
     nonce_lt.in[0] <== nonce;
     nonce_lt.in[1] <== MAX_NONCE;
     nonce_lt.out === 1;

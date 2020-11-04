@@ -12,7 +12,7 @@ const maxUsers = 2 ** globalStateTreeDepth - 1;
 
 const attestingFee = ethers.utils.parseEther("0.01")
 
-const maxEpochKeyNonce = 1;
+const maxEpochKeyNonce = 2;
 
 // NOTE: this constant must be the same as `MAX_ATTESTATIONS_PER_EPOCH_KEY` in Unirep contract
 const maxAttestationsPerEpochKey = 10;

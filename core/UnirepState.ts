@@ -96,7 +96,7 @@ class UnirepState {
         _nullifierTreeDepth: number,
         _attestingFee: ethers.BigNumber,
         _epochLength: number,
-        _maxNonce: number,
+        _maxEpochKeyNonce: number,
         _maxAttestationsPerEpochKey: number,
     ) {
 
@@ -106,7 +106,7 @@ class UnirepState {
         this.nullifierTreeDepth =_nullifierTreeDepth
         this.attestingFee = _attestingFee
         this.epochLength = _epochLength
-        this.maxEpochKeyNonce = _maxNonce
+        this.maxEpochKeyNonce = _maxEpochKeyNonce
         this.maxAttestationsPerEpochKey = _maxAttestationsPerEpochKey
 
         this.currentEpoch = 1
