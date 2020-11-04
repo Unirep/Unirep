@@ -78,7 +78,7 @@ class UnirepState {
     public attestingFee: ethers.BigNumber
     public epochLength: number
     public maxEpochKeyNonce: number
-    public maxAttestationsPerEpochKey: number
+    public numAttestationsPerEpochKey: number
     
     public currentEpoch: number
     public defaultGSTLeaf: BigInt
@@ -97,7 +97,7 @@ class UnirepState {
         _attestingFee: ethers.BigNumber,
         _epochLength: number,
         _maxEpochKeyNonce: number,
-        _maxAttestationsPerEpochKey: number,
+        _numAttestationsPerEpochKey: number,
     ) {
 
         this.globalStateTreeDepth = _globalStateTreeDepth
@@ -107,7 +107,7 @@ class UnirepState {
         this.attestingFee = _attestingFee
         this.epochLength = _epochLength
         this.maxEpochKeyNonce = _maxEpochKeyNonce
-        this.maxAttestationsPerEpochKey = _maxAttestationsPerEpochKey
+        this.numAttestationsPerEpochKey = _numAttestationsPerEpochKey
 
         this.currentEpoch = 1
         this.GSTLeaves[this.currentEpoch] = []
@@ -132,7 +132,7 @@ class UnirepState {
                     attestingFee: this.attestingFee.toString(),
                     epochLength: this.epochLength,
                     maxEpochKeyNonce: this.maxEpochKeyNonce,
-                    maxAttestationsPerEpochKey: this.maxAttestationsPerEpochKey,
+                    numAttestationsPerEpochKey: this.numAttestationsPerEpochKey,
                     defaultGSTLeaf: this.defaultGSTLeaf.toString(),
                 },
                 currentEpoch: this.currentEpoch,

@@ -19,7 +19,7 @@ import {
     verifyUserStateTransitionProof,
     getSignalByName,
 } from './utils'
-import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, maxAttestationsPerEpochKey, maxEpochKeyNonce } from "../../config/testLocal"
+import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, maxEpochKeyNonce } from "../../config/testLocal"
 import { genEpochKey, genAttestationNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
@@ -78,7 +78,7 @@ describe('User State Transition circuits', function () {
         let circuit
 
         // const MAX_NONCE = maxEpochKeyNonce
-        // const ATTESTATIONS_PER_EPOCH_KEY = maxAttestationsPerEpochKey
+        // const ATTESTATIONS_PER_EPOCH_KEY = numAttestationsPerEpochKey
         const MAX_NONCE = 2
         const ATTESTATIONS_PER_EPOCH_KEY = 6
         const TOTAL_NUM_ATTESTATIONS = MAX_NONCE * ATTESTATIONS_PER_EPOCH_KEY

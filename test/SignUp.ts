@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
 import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from './utils'
@@ -31,28 +31,30 @@ describe('Signup', () => {
 
     it('should have the correct config value', async () => {
         const attestingFee_ = await unirepContract.attestingFee()
-        expect(attestingFee.toString()).equal(attestingFee_.toString())
+        expect(attestingFee).equal(attestingFee_)
         const epochLength_ = await unirepContract.epochLength()
-        expect(epochLength.toString()).equal(epochLength_.toString())
+        expect(epochLength).equal(epochLength_)
+        const numAttestationsPerEpochKey_ = await unirepContract.numAttestationsPerEpochKey()
+        expect(numAttestationsPerEpochKey).equal(numAttestationsPerEpochKey_)
         const maxEpochKeyNonce_ = await unirepContract.maxEpochKeyNonce()
-        expect(maxEpochKeyNonce.toString()).equal(maxEpochKeyNonce_.toString())
+        expect(maxEpochKeyNonce).equal(maxEpochKeyNonce_)
         const maxUsers_ = await unirepContract.maxUsers()
-        expect(maxUsers.toString()).equal(maxUsers_.toString())
+        expect(maxUsers).equal(maxUsers_)
 
         const treeDepths_ = await unirepContract.treeDepths()
-        expect(epochTreeDepth.toString()).equal(treeDepths_.epochTreeDepth.toString())
-        expect(globalStateTreeDepth.toString()).equal(treeDepths_.globalStateTreeDepth.toString())
-        expect(nullifierTreeDepth.toString()).equal(treeDepths_.nullifierTreeDepth.toString())
-        expect(userStateTreeDepth.toString()).equal(treeDepths_.userStateTreeDepth.toString())
+        expect(epochTreeDepth).equal(treeDepths_.epochTreeDepth)
+        expect(globalStateTreeDepth).equal(treeDepths_.globalStateTreeDepth)
+        expect(nullifierTreeDepth).equal(treeDepths_.nullifierTreeDepth)
+        expect(userStateTreeDepth).equal(treeDepths_.userStateTreeDepth)
     })
 
     it('should have the correct default value', async () => {
         const emptyUSTree = await genNewUserStateTree()
         emptyUserStateRoot = await unirepContract.emptyUserStateRoot()
-        expect(emptyUSTree.getRootHash().toString()).equal(emptyUserStateRoot.toString())
+        expect(BigNumber.from(emptyUSTree.getRootHash())).equal(emptyUserStateRoot)
 
         const emptyGlobalStateTreeRoot = await unirepContract.emptyGlobalStateTreeRoot()
-        expect(GSTree.root.toString()).equal(emptyGlobalStateTreeRoot.toString())
+        expect(BigNumber.from(GSTree.root)).equal(emptyGlobalStateTreeRoot)
     })
 
     describe('User sign-ups', () => {
@@ -66,12 +68,12 @@ describe('Signup', () => {
             expect(receipt.status).equal(1)
 
             const numUserSignUps_ = await unirepContract.numUserSignUps()
-            expect((1).toString()).equal(numUserSignUps_.toString())
+            expect(1).equal(numUserSignUps_)
 
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
-                    commitment.toString(),
-                    emptyUserStateRoot.toString()
+                    commitment,
+                    emptyUserStateRoot
                 ]
             )
             GSTree.insert(hashedStateLeaf)
@@ -113,10 +115,10 @@ describe('Signup', () => {
             expect(receipt.status).equal(1)
 
             const attesterId = await unirepContract.attesters(attesterAddress)
-            expect((1).toString()).equal(attesterId.toString())
+            expect(1).equal(attesterId)
             const nextAttesterId_ = await unirepContract.nextAttesterId()
             // nextAttesterId starts with 1 so now it should be 2
-            expect((2).toString()).equal(nextAttesterId_.toString())
+            expect(2).equal(nextAttesterId_)
         })
 
         it('sign up via relayer should succeed', async () => {
@@ -133,9 +135,9 @@ describe('Signup', () => {
             expect(receipt.status).equal(1)
 
             const attesterId = await unirepContract.attesters(attester2Address)
-            expect((2).toString()).equal(attesterId.toString())
+            expect(2).equal(attesterId)
             const nextAttesterId_ = await unirepContract.nextAttesterId()
-            expect((3).toString()).equal(nextAttesterId_.toString())
+            expect(3).equal(nextAttesterId_)
         })
 
         it('sign up with invalid signature should fail', async () => {

@@ -4,7 +4,7 @@ import Keyv from "keyv"
 import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
@@ -73,15 +73,17 @@ const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    let _maxUsers, _maxEpochKeyNonce, _epochLength, _attestingFee
+    let _maxUsers, _maxEpochKeyNonce, _numAttestationsPerEpochKey, _epochLength, _attestingFee
     if (_settings) {
         _maxUsers = _settings.maxUsers
         _maxEpochKeyNonce = _settings.maxEpochKeyNonce
+        _numAttestationsPerEpochKey = _settings.numAttestationsPerEpochKey
         _epochLength = _settings.epochLength
         _attestingFee = _settings.attestingFee
     } else {
         _maxUsers = maxUsers
         _maxEpochKeyNonce = maxEpochKeyNonce
+        _numAttestationsPerEpochKey = numAttestationsPerEpochKey
         _epochLength = epochLength
         _attestingFee = attestingFee
     }
@@ -104,6 +106,7 @@ const deployUnirep = async (
         EpochKeyValidityVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
+        _numAttestationsPerEpochKey,
         _epochLength,
         _attestingFee,
         {

@@ -15,7 +15,7 @@ const attestingFee = ethers.utils.parseEther("0.01")
 const maxEpochKeyNonce = 2;
 
 // NOTE: this constant must be the same as `MAX_ATTESTATIONS_PER_EPOCH_KEY` in Unirep contract
-const maxAttestationsPerEpochKey = 10;
+const numAttestationsPerEpochKey = 10;
 
 const epochLength = 30;  // 30 seconds
 
@@ -40,6 +40,6 @@ export {
     maxEpochKeyNonce,
     maxUsers,
     nullifierTreeDepth,
-    maxAttestationsPerEpochKey,
+    numAttestationsPerEpochKey,
     userStateTreeDepth
 }

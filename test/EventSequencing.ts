@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, maxAttestationsPerEpochKey } from '../config/testLocal'
+import { attestingFee, epochLength, numAttestationsPerEpochKey } from '../config/testLocal'
 import { genRandomSalt } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from './utils'
@@ -92,7 +92,7 @@ describe('Attesting', () => {
         // 5. Second user transition
         let transitionFromEpoch = 1
         const nullifiers: BigInt[] = []
-        for (let i = 0; i < maxAttestationsPerEpochKey; i++) {
+        for (let i = 0; i < numAttestationsPerEpochKey; i++) {
             nullifiers.push(genRandomSalt())
         }
         const proof: BigInt[] = []

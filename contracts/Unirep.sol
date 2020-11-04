@@ -19,9 +19,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
     uint256 ZERO_VALUE = uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 
-    uint256 constant MAX_ATTESTATIONS_PER_EPOCH_KEY = 10;
-
-     // Verifier Contracts
+    // Verifier Contracts
     EpochKeyValidityVerifier internal epkValidityVerifier;
     UserStateTransitionVerifier internal userStateTransitionVerifier;
     ReputationVerifier internal reputationVerifier;
@@ -40,6 +38,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     // Maximum number of epoch keys allowed for an user to generate in one epoch
     uint8 public maxEpochKeyNonce;
+
+    uint8 public numAttestationsPerEpochKey;
 
     // The maximum number of signups allowed
     uint256 public maxUsers;
@@ -103,7 +103,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
-        uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] _nullifiers,
+        uint256[] _nullifiers,
         uint256 _epkNullifier,
         uint256 _fromEpoch,
         uint256 _fromGlobalStateTree,
@@ -133,6 +133,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         EpochKeyValidityVerifier _epkValidityVerifier,
         UserStateTransitionVerifier _userStateTransitionVerifier,
         ReputationVerifier _reputationVerifier,
+        uint8 _numAttestationsPerEpochKey,
         uint256 _epochLength,
         uint256 _attestingFee
     ) public {
@@ -144,6 +145,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
 
+        numAttestationsPerEpochKey = _numAttestationsPerEpochKey;
         epochLength = _epochLength;
         latestEpochTransitionTime = block.timestamp;
 
@@ -297,7 +299,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function updateUserStateRoot(
         uint256 _newGlobalStateTreeLeaf,
-        uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] calldata _nullifiers,
+        uint256[] calldata _nullifiers,
         uint256 _epkNullifier,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
@@ -306,6 +308,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
         require(_transitionFromEpoch < currentEpoch, "Can not transition from epoch that's greater or equal to current epoch");
+        require(_nullifiers.length == numAttestationsPerEpochKey, "Unirep: invalid number of nullifiers");
 
         emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
@@ -363,7 +366,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function verifyUserStateTransition(
         uint256 _newGlobalStateTreeLeaf,
-        uint256[MAX_ATTESTATIONS_PER_EPOCH_KEY] calldata _nullifiers,
+        uint256[] calldata _nullifiers,
         uint256 _epkNullifier,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
@@ -376,17 +379,18 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 3. Attestations to each epoch key are processed and processed correctly
         // 4. Nullifiers of all processed attestations match
         // 5. Nullifiers of all processed attestations have not been seen before
+        require(_nullifiers.length == numAttestationsPerEpochKey, "Unirep: invalid number of nullifiers");
 
-        uint256[] memory publicSignals = new uint256[](6 + MAX_ATTESTATIONS_PER_EPOCH_KEY);
+        uint256[] memory publicSignals = new uint256[](6 + numAttestationsPerEpochKey);
         publicSignals[0] = _newGlobalStateTreeLeaf;
         for (uint8 i = 0; i < _nullifiers.length; i++) {
             publicSignals[i + 1] = _nullifiers[i];
         }
-        publicSignals[2 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _epkNullifier;
-        publicSignals[3 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _transitionFromEpoch;
-        publicSignals[4 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromGlobalStateTree;
-        publicSignals[5 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromEpochTree;
-        publicSignals[6 + MAX_ATTESTATIONS_PER_EPOCH_KEY - 1] = _fromNullifierTreeRoot;
+        publicSignals[2 + numAttestationsPerEpochKey - 1] = _epkNullifier;
+        publicSignals[3 + numAttestationsPerEpochKey - 1] = _transitionFromEpoch;
+        publicSignals[4 + numAttestationsPerEpochKey - 1] = _fromGlobalStateTree;
+        publicSignals[5 + numAttestationsPerEpochKey - 1] = _fromEpochTree;
+        publicSignals[6 + numAttestationsPerEpochKey - 1] = _fromNullifierTreeRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
