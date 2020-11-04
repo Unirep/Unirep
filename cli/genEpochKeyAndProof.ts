@@ -97,8 +97,8 @@ const genEpochKeyAndProof = async (args: any) => {
 
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
-    const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
-    if (epkNonce >= maxEpochKeyNonce) {
+    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
+    if (epkNonce >= numEpochKeyNoncePerEpoch) {
         console.error('Error: epoch key nonce must be less than max epoch key nonce')
         return
     }

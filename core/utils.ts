@@ -34,7 +34,7 @@ const genUnirepStateFromContract = async (
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
-    const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
+    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
 
     const unirepState = new UnirepState(
         ethers.BigNumber.from(globalStateTreeDepth).toNumber(),
@@ -43,7 +43,7 @@ const genUnirepStateFromContract = async (
         ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
-        ethers.BigNumber.from(maxEpochKeyNonce).toNumber(),
+        ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
         numAttestationsPerEpochKey,
     )
 
@@ -231,7 +231,7 @@ const _genUserStateFromContract = async (
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
-    const maxEpochKeyNonce = await unirepContract.maxEpochKeyNonce()
+    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
 
     const unirepState = new UnirepState(
         ethers.BigNumber.from(globalStateTreeDepth).toNumber(),
@@ -240,7 +240,7 @@ const _genUserStateFromContract = async (
         ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
-        ethers.BigNumber.from(maxEpochKeyNonce).toNumber(),
+        ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
         numAttestationsPerEpochKey,
     )
 

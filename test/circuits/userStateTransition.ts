@@ -19,7 +19,7 @@ import {
     verifyUserStateTransitionProof,
     getSignalByName,
 } from './utils'
-import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, maxEpochKeyNonce } from "../../config/testLocal"
+import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
 import { genEpochKey, genAttestationNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
@@ -34,7 +34,7 @@ describe('User State Transition circuits', function () {
 
         let circuit
 
-        const nonce = maxEpochKeyNonce - 1
+        const nonce = numEpochKeyNoncePerEpoch - 1
         const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
 
         let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
@@ -77,7 +77,7 @@ describe('User State Transition circuits', function () {
 
         let circuit
 
-        // const MAX_NONCE = maxEpochKeyNonce
+        // const MAX_NONCE = numEpochKeyNoncePerEpoch
         // const ATTESTATIONS_PER_EPOCH_KEY = numAttestationsPerEpochKey
         const MAX_NONCE = 2
         const ATTESTATIONS_PER_EPOCH_KEY = 6

@@ -37,7 +37,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     uint256 public emptyGlobalStateTreeRoot;
 
     // Maximum number of epoch keys allowed for an user to generate in one epoch
-    uint8 public maxEpochKeyNonce;
+    uint8 public numEpochKeyNoncePerEpoch;
 
     uint8 public numAttestationsPerEpochKey;
 
@@ -133,6 +133,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         EpochKeyValidityVerifier _epkValidityVerifier,
         UserStateTransitionVerifier _userStateTransitionVerifier,
         ReputationVerifier _reputationVerifier,
+        uint8 _numEpochKeyNoncePerEpoch,
         uint8 _numAttestationsPerEpochKey,
         uint256 _epochLength,
         uint256 _attestingFee
@@ -155,7 +156,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 stateTreeMaxLeafIndex = uint256(2) ** _treeDepths.globalStateTreeDepth - 1;
         require(_maxValues.maxUsers <= stateTreeMaxLeafIndex, "Unirep: invalid maxUsers value");
         maxUsers = _maxValues.maxUsers;
-        maxEpochKeyNonce = _maxValues.maxEpochKeyNonce;
+        numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
 
         // Calculate and store the empty user state tree root. This value must
         // be set before we compute empty global state tree root later
@@ -332,7 +333,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[8] calldata _proof) external view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. user has signed up
-        // 2. nonce is no greater than maxEpochKeyNonce
+        // 2. nonce is no greater than numEpochKeyNoncePerEpoch
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 

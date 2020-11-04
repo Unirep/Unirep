@@ -18,7 +18,7 @@ import {
     IncrementalQuinTree,
     stringifyBigInts,
 } from 'maci-crypto'
-import { maxEpochKeyNonce, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
+import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
@@ -68,7 +68,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('Valid epoch key should pass check', async () => {
         // Check if every valid nonce works
-        for (let i = 0; i < maxEpochKeyNonce; i++) {
+        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
             const n = i
             const epk = genEpochKey(id['identityNullifier'], currentEpoch, n, circuitEpochTreeDepth)
             const circuitInputs = {
@@ -170,7 +170,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Invalid nonce should not pass check', async () => {
-        const invalidNonce = maxEpochKeyNonce
+        const invalidNonce = numEpochKeyNoncePerEpoch
         const circuitInputs = {
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 

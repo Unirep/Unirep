@@ -12,9 +12,8 @@ const maxUsers = 2 ** globalStateTreeDepth - 1;
 
 const attestingFee = ethers.utils.parseEther("0.01")
 
-const maxEpochKeyNonce = 2;
+const numEpochKeyNoncePerEpoch = 2;
 
-// NOTE: this constant must be the same as `MAX_ATTESTATIONS_PER_EPOCH_KEY` in Unirep contract
 const numAttestationsPerEpochKey = 10;
 
 const epochLength = 30;  // 30 seconds
@@ -37,7 +36,7 @@ export {
     epochLength,
     epochTreeDepth,
     globalStateTreeDepth,
-    maxEpochKeyNonce,
+    numEpochKeyNoncePerEpoch,
     maxUsers,
     nullifierTreeDepth,
     numAttestationsPerEpochKey,

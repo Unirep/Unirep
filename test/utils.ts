@@ -4,7 +4,7 @@ import Keyv from "keyv"
 import { IncrementalQuinTree } from 'maci-crypto'
 import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
 import { SnarkBigInt, hash5, hashLeftRight } from '../crypto/crypto'
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch, maxUsers, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
@@ -73,16 +73,16 @@ const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    let _maxUsers, _maxEpochKeyNonce, _numAttestationsPerEpochKey, _epochLength, _attestingFee
+    let _maxUsers, _numEpochKeyNoncePerEpoch, _numAttestationsPerEpochKey, _epochLength, _attestingFee
     if (_settings) {
         _maxUsers = _settings.maxUsers
-        _maxEpochKeyNonce = _settings.maxEpochKeyNonce
+        _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
         _numAttestationsPerEpochKey = _settings.numAttestationsPerEpochKey
         _epochLength = _settings.epochLength
         _attestingFee = _settings.attestingFee
     } else {
         _maxUsers = maxUsers
-        _maxEpochKeyNonce = maxEpochKeyNonce
+        _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
         _numAttestationsPerEpochKey = numAttestationsPerEpochKey
         _epochLength = epochLength
         _attestingFee = attestingFee
@@ -100,12 +100,12 @@ const deployUnirep = async (
     const c = await (f.deploy(
         _treeDepths,
         {
-            "maxUsers": _maxUsers,
-            "maxEpochKeyNonce": _maxEpochKeyNonce
+            "maxUsers": _maxUsers
         },
         EpochKeyValidityVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
+        _numEpochKeyNoncePerEpoch,
         _numAttestationsPerEpochKey,
         _epochLength,
         _attestingFee,

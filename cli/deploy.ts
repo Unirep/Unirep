@@ -99,8 +99,8 @@ const deploy = async (args: any) => {
     }
 
     // Max epoch key nonce
-    // const _maxEpochKeyNonce = (args.max_epoch_key_nonce != undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
-    const _maxEpochKeyNonce = DEFAULT_MAX_EPOCH_KEY_NONCE
+    // const _numEpochKeyNoncePerEpoch = (args.max_epoch_key_nonce != undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
+    const _numEpochKeyNoncePerEpoch = DEFAULT_MAX_EPOCH_KEY_NONCE
 
     const _numAttestationsPerEpochKey = DEFAULT_NUM_ATTESTATIONS_PER_EPOCH_KEY
 
@@ -112,7 +112,7 @@ const deploy = async (args: any) => {
 
     const settings = {
         'maxUsers': maxUsers,
-        'maxEpochKeyNonce': _maxEpochKeyNonce,
+        'numEpochKeyNoncePerEpoch': _numEpochKeyNoncePerEpoch,
         'numAttestationsPerEpochKey': _numAttestationsPerEpochKey,
         'epochLength': _epochLength,
         'attestingFee': _attestingFee,

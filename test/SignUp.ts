@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, maxEpochKeyNonce, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth} from '../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
 import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from './utils'
@@ -36,8 +36,8 @@ describe('Signup', () => {
         expect(epochLength).equal(epochLength_)
         const numAttestationsPerEpochKey_ = await unirepContract.numAttestationsPerEpochKey()
         expect(numAttestationsPerEpochKey).equal(numAttestationsPerEpochKey_)
-        const maxEpochKeyNonce_ = await unirepContract.maxEpochKeyNonce()
-        expect(maxEpochKeyNonce).equal(maxEpochKeyNonce_)
+        const numEpochKeyNoncePerEpoch_ = await unirepContract.numEpochKeyNoncePerEpoch()
+        expect(numEpochKeyNoncePerEpoch).equal(numEpochKeyNoncePerEpoch_)
         const maxUsers_ = await unirepContract.maxUsers()
         expect(maxUsers).equal(maxUsers_)
 
