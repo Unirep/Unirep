@@ -13,6 +13,7 @@ template epochKeyExist(epoch_tree_depth) {
     signal input hash_chain_result;
     signal input epoch_tree_root;
     signal input path_elements[epoch_tree_depth][1];
+    signal output epoch_key;
 
     component epochKeyHasher = Hasher5();
     epochKeyHasher.in[0] <== identity_nullifier;
@@ -50,113 +51,21 @@ template epochKeyExist(epoch_tree_depth) {
     for (var i = 0; i < epoch_tree_depth; i++) {
         epk_exists.path_elements[i][0] <== path_elements[i][0];
     }
+    epoch_key <== epkModed;
 }
 
-template allEpochKeyProcessed(nullifier_tree_depth, MAX_NONCE) {
+template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY, MAX_NONCE, TOTAL_NUM_ATTESTATIONS) {
     signal input epoch;
-    signal input nonce;  // epoch key nonce
-    signal input identity_nullifier;
-    signal input nullifier_tree_root;
-    signal input epk_nullifier_path_elements[MAX_NONCE + 1][nullifier_tree_depth][1];
-    signal input is_epk_processed[MAX_NONCE + 1];  // NOTE: selector of the current epoch key must be zero since it's not processed yet
-
-    signal output is_all_epoch_key_processed;
-
-    signal zero_leaf;
-    component zero_leaf_hasher = HashLeftRight();
-    zero_leaf_hasher.left <== 0;
-    zero_leaf_hasher.right <== 0;
-    zero_leaf <== zero_leaf_hasher.hash;
-    // Leaf of an seen nullifier has value hashLeftRight(1, 0)
-    signal one_leaf;
-    component one_leaf_hasher = HashLeftRight();
-    one_leaf_hasher.left <== 1;
-    one_leaf_hasher.right <== 0;
-    one_leaf <== one_leaf_hasher.hash;
-
-    component epoch_key_nullifier_hasher[MAX_NONCE + 1];
-    signal epk_quotient[MAX_NONCE + 1];
-    component epk_quot_lt[MAX_NONCE + 1];
-    signal epk_nullifier_hash_moded[MAX_NONCE + 1];
-    component epk_nul_lt[MAX_NONCE + 1];
-    component which_leaf_value_to_check[MAX_NONCE + 1];
-    component nullifier_membership_check[MAX_NONCE + 1]; 
-
-    /* 1. Compute epoch key nullifier and check its membership in nullifier tree  */
-    for (var i = 0; i <= MAX_NONCE; i++) {
-        // 1.2.1 Compute nullifier
-        epoch_key_nullifier_hasher[i] = Hasher5();
-        epoch_key_nullifier_hasher[i].in[0] <== 2;  // 2 is the domain separator for epoch key nullifier
-        epoch_key_nullifier_hasher[i].in[1] <== identity_nullifier;
-        epoch_key_nullifier_hasher[i].in[2] <== epoch;
-        epoch_key_nullifier_hasher[i].in[3] <== i;
-        epoch_key_nullifier_hasher[i].in[4] <== 0;
-        // 1.2.2 Mod nullifier hash
-        // circom's best practices state that we should avoid using <-- unless
-        // we know what we are doing. But this is the only way to perform the
-        // modulo operation.
-        epk_quotient[i] <-- epoch_key_nullifier_hasher[i].hash \ (2 ** nullifier_tree_depth);
-        epk_nullifier_hash_moded[i] <-- epoch_key_nullifier_hasher[i].hash % (2 ** nullifier_tree_depth);
-        // 1.2.3 Range check on moded nullifier
-        epk_nul_lt[i] = LessEqThan(nullifier_tree_depth);
-        epk_nul_lt[i].in[0] <== epk_nullifier_hash_moded[i];
-        epk_nul_lt[i].in[1] <== 2 ** nullifier_tree_depth - 1;
-        epk_nul_lt[i].out === 1;
-        // 1.2.4 Range check on epk_quotient
-        epk_quot_lt[i] = LessEqThan(254 - nullifier_tree_depth);
-        epk_quot_lt[i].in[0] <== epk_quotient[i];
-        epk_quot_lt[i].in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
-        epk_quot_lt[i].out === 1;
-        // 1.2.5 Check equality
-        epoch_key_nullifier_hasher[i].hash === epk_quotient[i] * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded[i];
-
-        // Verify merkle proof against nullifier tree root
-        // Processed epoch key nullifier to be checked should have leaf value hashLeftRight(1, 0)
-        // Otherwise hashLeftRight(0, 0)
-        which_leaf_value_to_check[i] = Mux1();
-        which_leaf_value_to_check[i].c[0] <== zero_leaf;
-        which_leaf_value_to_check[i].c[1] <== one_leaf;
-        which_leaf_value_to_check[i].s <== is_epk_processed[i];
-        nullifier_membership_check[i] = SMTLeafExists(nullifier_tree_depth);
-        nullifier_membership_check[i].leaf_index <== epk_nullifier_hash_moded[i];
-        nullifier_membership_check[i].leaf <== which_leaf_value_to_check[i].out;
-        for (var j = 0; j < nullifier_tree_depth; j++) {
-            nullifier_membership_check[i].path_elements[j][0] <== epk_nullifier_path_elements[i][j][0];
-        }
-        nullifier_membership_check[i].root <== nullifier_tree_root;
-    }
-    /* End of check 1 */
-
-    /* 2. Check if all epoch keys are processed */
-    // If all epoch keys are processed, all the `is_epk_processed` seletor of each epoch key
-    // should equal to 1 (except the epoch key that is being processed).
-    // So the sum of these selectors should equal to `MAX_NONCE`
-    // (not `MAX_NONCE - 1` as there are a total of `MAX_NONCE + 1` nonces).
-    component check_sum_of_selectors = IsEqual();
-    signal sum_of_selectors[MAX_NONCE + 1];
-    sum_of_selectors[0] <== is_epk_processed[0];
-    for (var i = 1; i <= MAX_NONCE; i++) {
-        sum_of_selectors[i] <== sum_of_selectors[i - 1] + is_epk_processed[i];
-    }
-    check_sum_of_selectors.in[0] <== MAX_NONCE;
-    check_sum_of_selectors.in[1] <== sum_of_selectors[MAX_NONCE];
-    is_all_epoch_key_processed <== check_sum_of_selectors.out;
-    /* End of check 2 */
-}
-
-template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS, MAX_NONCE) {
-    signal input epoch;
-    signal private input nonce;  // epoch key nonce
 
     // User state tree
-    // First intermediate root is the user state tree root before processing attestations
-    // Last intermediate root is the new user state tree root
-    signal private input intermediate_user_state_tree_roots[NUM_ATTESTATIONS + 1];
+    // First intermediate root is the user state tree root before processing
+    // Last intermediate root is the new user state tree root after processing
+    signal private input intermediate_user_state_tree_roots[TOTAL_NUM_ATTESTATIONS + 1];
     // Inputs of old atttestation records
-    signal private input old_pos_reps[NUM_ATTESTATIONS];
-    signal private input old_neg_reps[NUM_ATTESTATIONS];
-    signal private input old_graffities[NUM_ATTESTATIONS];
-    signal private input UST_path_elements[NUM_ATTESTATIONS][user_state_tree_depth][1];
+    signal private input old_pos_reps[TOTAL_NUM_ATTESTATIONS];
+    signal private input old_neg_reps[TOTAL_NUM_ATTESTATIONS];
+    signal private input old_graffities[TOTAL_NUM_ATTESTATIONS];
+    signal private input UST_path_elements[TOTAL_NUM_ATTESTATIONS][user_state_tree_depth][1];
 
     // Global state tree leaf: Identity & user state root
     signal private input identity_pk[2];
@@ -168,46 +77,34 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal input GST_root;
 
     // Selector is used to determined if the attestation should be processed
-    signal private input selectors[NUM_ATTESTATIONS];
+    signal private input selectors[TOTAL_NUM_ATTESTATIONS];
     // Inputs of the atttestations
-    signal private input attester_ids[NUM_ATTESTATIONS];
-    signal private input pos_reps[NUM_ATTESTATIONS];
-    signal private input neg_reps[NUM_ATTESTATIONS];
-    signal private input graffities[NUM_ATTESTATIONS];
-    signal private input overwrite_graffitis[NUM_ATTESTATIONS];
+    signal private input attester_ids[TOTAL_NUM_ATTESTATIONS];
+    signal private input pos_reps[TOTAL_NUM_ATTESTATIONS];
+    signal private input neg_reps[TOTAL_NUM_ATTESTATIONS];
+    signal private input graffities[TOTAL_NUM_ATTESTATIONS];
+    signal private input overwrite_graffitis[TOTAL_NUM_ATTESTATIONS];
 
     // Epoch key & epoch tree
-    signal private input epk_path_elements[epoch_tree_depth][1];
-    signal private input hash_chain_result;
+    signal private input epk_path_elements[MAX_NONCE][epoch_tree_depth][1];
+    signal private input hash_chain_results[MAX_NONCE];
     signal input epoch_tree_root;
 
     // Nullifier tree
     signal input nullifier_tree_root;
-    signal private input nullifier_tree_path_elements[NUM_ATTESTATIONS][nullifier_tree_depth][1];
+    signal private input attestation_nullifier_path_elements[TOTAL_NUM_ATTESTATIONS][nullifier_tree_depth][1];
 
-    signal private input epk_nullifier_path_elements[MAX_NONCE + 1][nullifier_tree_depth][1];
-    signal private input is_epk_processed_selectors[MAX_NONCE + 1];
     signal output new_GST_leaf;
-    // Nullifiers of the attestations
-    signal output nullifiers[NUM_ATTESTATIONS];
-    // Nullifier if there's no attestations to this epoch key
-    signal output epoch_key_nullifier;
-    // signal output completedUserStateTransition;
+    // Nullifier of the attestations
+    signal output nullifiers[TOTAL_NUM_ATTESTATIONS];
+    // Nullifier of epoch keys
+    signal output epoch_key_nullifier[MAX_NONCE];
 
-    /* 0. Check upper bound on input values */
-    // 0.1 Check nonce <= MAX_NONCE
-    var maxNonceInBits = 8;
-    component nonce_lt = LessEqThan(maxNonceInBits);
-    nonce_lt.in[0] <== nonce;
-    nonce_lt.in[1] <== MAX_NONCE;
-    nonce_lt.out === 1;
-
-    // 0.2 Check selectors are all binary
-    for (var i = 0; i < NUM_ATTESTATIONS; i++) {
+    // Validate config params
+    ATTESTATIONS_PER_EPOCH_KEY * MAX_NONCE === TOTAL_NUM_ATTESTATIONS;
+    /* 0. Validate inputs */
+    for (var i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
         selectors[i] * (selectors[i] - 1) === 0
-    }
-    for (var i = 0; i <= MAX_NONCE; i++) {
-        is_epk_processed_selectors[i] * (is_epk_processed_selectors[i] - 1) === 0
     }
     /* End of check 0 */
 
@@ -221,6 +118,7 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
     component leaf = HashLeftRight();
     leaf.left <== identity_commitment.out;
+    // First intermediate root is the user state tree root before processing
     leaf.right <== intermediate_user_state_tree_roots[0];
 
     component GST_leaf_exists = LeafExists(GST_tree_depth);
@@ -232,114 +130,100 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     GST_leaf_exists.root <== GST_root;
     /* End of check 1 */
 
-
-    /* 2. Process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
-    // 2.1 Check if epoch key exists in epoch tree
-    component epkExist = epochKeyExist(epoch_tree_depth);
-    epkExist.identity_nullifier <== identity_nullifier;
-    epkExist.epoch <== epoch;
-    epkExist.nonce <== nonce;
-    epkExist.hash_chain_result <== hash_chain_result;
-    epkExist.epoch_tree_root <== epoch_tree_root;
-    for (var i = 0; i < epoch_tree_depth; i++) {
-        epkExist.path_elements[i][0] <== epk_path_elements[i][0];
-    }
-
-    // 2.2 Begin processing attestations
-    component process_attestations = ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS);
-    process_attestations.epoch <== epoch;
-    process_attestations.identity_nullifier <== identity_nullifier;
-    process_attestations.hash_chain_result <== hash_chain_result;
-    process_attestations.intermediate_user_state_tree_roots[0] <== intermediate_user_state_tree_roots[0];
-    for (var i = 0; i < NUM_ATTESTATIONS; i++) {
-        process_attestations.intermediate_user_state_tree_roots[i + 1] <== intermediate_user_state_tree_roots[i + 1];
-        process_attestations.old_pos_reps[i] <== old_pos_reps[i];
-        process_attestations.old_neg_reps[i] <== old_neg_reps[i];
-        process_attestations.old_graffities[i] <== old_graffities[i];
-        for (var j = 0; j < user_state_tree_depth; j++) {
-            process_attestations.path_elements[i][j][0] <== UST_path_elements[i][j][0];
-        }
-        process_attestations.attester_ids[i] <== attester_ids[i];
-        process_attestations.pos_reps[i] <== pos_reps[i];
-        process_attestations.neg_reps[i] <== neg_reps[i];
-        process_attestations.graffities[i] <== graffities[i];
-        process_attestations.overwrite_graffitis[i] <== overwrite_graffitis[i];
-        process_attestations.selectors[i] <== selectors[i];
-    }
-
-    // 2.3 Check if nullifier has not been seen before
-    // If the nullifier is not to be processed, we check and verify leaf 0 instead.
-    // Leaf 0 is reserved and has value hashLeftRight(1, 0)
-    // Leaf of an unseen nullifier has value hashLeftRight(0, 0)
+    /* 2. Process the attestations of the epoch key specified by nonce `n` and verify attestation nullifiers */
     signal zero_leaf;
     component zero_leaf_hasher = HashLeftRight();
     zero_leaf_hasher.left <== 0;
     zero_leaf_hasher.right <== 0;
     zero_leaf <== zero_leaf_hasher.hash;
-    // Leaf of an seen nullifier has value hashLeftRight(1, 0)
+    // Leaf of a seen nullifier should have value hashLeftRight(1, 0)
     signal one_leaf;
     component one_leaf_hasher = HashLeftRight();
     one_leaf_hasher.left <== 1;
     one_leaf_hasher.right <== 0;
     one_leaf <== one_leaf_hasher.hash;
 
-    component which_leaf_value_to_check[NUM_ATTESTATIONS];
-    component nullifier_membership_check[NUM_ATTESTATIONS]; 
-
-    process_attestations.nonce <== nonce;
-    for (var i = 0; i < NUM_ATTESTATIONS; i++) {
-        which_leaf_value_to_check[i] = Mux1();
-        // Nullifier to be checked should have value hashLeftRight(0, 0)
-        // while leaf 0 should have value hashLeftRight(1, 0)
-        which_leaf_value_to_check[i].c[0] <== one_leaf;
-        which_leaf_value_to_check[i].c[1] <== zero_leaf;
-        which_leaf_value_to_check[i].s <== selectors[i];
-
-        // Verify merkle proof against nullifier tree root
-        nullifier_membership_check[i] = SMTLeafExists(nullifier_tree_depth);
-        // If selector is false, `process_attestations.nullifiers[i]` should be zero
-        // and in this case we verify the membership of leaf 0 instead.
-        // If selector is true, we verify the non-membership of the nullifier.
-        nullifier_membership_check[i].leaf_index <== process_attestations.nullifiers[i];
-        nullifier_membership_check[i].leaf <== which_leaf_value_to_check[i].out;
-        for (var j = 0; j < nullifier_tree_depth; j++) {
-            nullifier_membership_check[i].path_elements[j][0] <== nullifier_tree_path_elements[i][j][0];
+    var start_index;
+    component epkExist[MAX_NONCE];
+    component process_attestations[MAX_NONCE];
+    component which_leaf_value_to_check[TOTAL_NUM_ATTESTATIONS];
+    component nullifier_membership_check[TOTAL_NUM_ATTESTATIONS]; 
+    for (var n = 0; n < MAX_NONCE; n++) {
+        start_index = n * ATTESTATIONS_PER_EPOCH_KEY;
+        epkExist[n] = epochKeyExist(epoch_tree_depth);
+        // 2.1 Check if epoch key exists in epoch tree
+        epkExist[n].identity_nullifier <== identity_nullifier;
+        epkExist[n].epoch <== epoch;
+        epkExist[n].nonce <== n;
+        epkExist[n].hash_chain_result <== hash_chain_results[n];
+        epkExist[n].epoch_tree_root <== epoch_tree_root;
+        for (var i = 0; i < epoch_tree_depth; i++) {
+            epkExist[n].path_elements[i][0] <== epk_path_elements[n][i][0];
         }
-        nullifier_membership_check[i].root <== nullifier_tree_root;
 
-        // Output attestations nullifers
-        nullifiers[i] <== process_attestations.nullifiers[i];
+        // 2.2 Begin processing attestations
+        process_attestations[n] = ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY);
+        process_attestations[n].epoch <== epoch;
+        process_attestations[n].nonce <== n;
+        process_attestations[n].identity_nullifier <== identity_nullifier;
+        process_attestations[n].epoch_key <== epkExist[n].epoch_key;
+        process_attestations[n].hash_chain_result <== hash_chain_results[n];
+        process_attestations[n].intermediate_user_state_tree_roots[0] <== intermediate_user_state_tree_roots[start_index + 0];
+        for (var i = 0; i < ATTESTATIONS_PER_EPOCH_KEY; i++) {
+            process_attestations[n].intermediate_user_state_tree_roots[i + 1] <== intermediate_user_state_tree_roots[start_index + i + 1];
+            process_attestations[n].old_pos_reps[i] <== old_pos_reps[start_index + i];
+            process_attestations[n].old_neg_reps[i] <== old_neg_reps[start_index + i];
+            process_attestations[n].old_graffities[i] <== old_graffities[start_index + i];
+            for (var j = 0; j < user_state_tree_depth; j++) {
+                process_attestations[n].path_elements[i][j][0] <== UST_path_elements[start_index + i][j][0];
+            }
+            process_attestations[n].attester_ids[i] <== attester_ids[start_index + i];
+            process_attestations[n].pos_reps[i] <== pos_reps[start_index + i];
+            process_attestations[n].neg_reps[i] <== neg_reps[start_index + i];
+            process_attestations[n].graffities[i] <== graffities[start_index + i];
+            process_attestations[n].overwrite_graffitis[i] <== overwrite_graffitis[start_index + i];
+            process_attestations[n].selectors[i] <== selectors[start_index + i];
+        }
+
+        // 2.3 Check if attestation nullifier has been seen before (ideally not)
+        // If it is a blank attestation, we check and verify leaf 0 of nullifier tree.
+        // Leaf 0 is reserved and has value hashLeftRight(1, 0)
+        // Leaf of an unseen nullifier should have value hashLeftRight(0, 0)
+        for (var i = 0; i < ATTESTATIONS_PER_EPOCH_KEY; i++) {
+            which_leaf_value_to_check[start_index + i] = Mux1();
+            // Nullifier to be checked should have value hashLeftRight(0, 0)
+            // while leaf 0 should have value hashLeftRight(1, 0)
+            which_leaf_value_to_check[start_index + i].c[0] <== one_leaf;
+            which_leaf_value_to_check[start_index + i].c[1] <== zero_leaf;
+            which_leaf_value_to_check[start_index + i].s <== selectors[start_index + i];
+
+            // Verify merkle proof against nullifier tree root
+            nullifier_membership_check[start_index + i] = SMTLeafExists(nullifier_tree_depth);
+            // If selector is false, `process_attestations[n].nullifiers[i]` should be zero
+            // and in this case we verify the membership of leaf 0 instead.
+            // If selector is true, we verify the non-membership of the nullifier.
+            nullifier_membership_check[start_index + i].leaf_index <== process_attestations[n].nullifiers[i];
+            nullifier_membership_check[start_index + i].leaf <== which_leaf_value_to_check[start_index + i].out;
+            for (var j = 0; j < nullifier_tree_depth; j++) {
+                nullifier_membership_check[start_index + i].path_elements[j][0] <== attestation_nullifier_path_elements[start_index + i][j][0];
+            }
+            nullifier_membership_check[start_index + i].root <== nullifier_tree_root;
+
+            // Output attestations nullifers
+            nullifiers[start_index + i] <== process_attestations[n].nullifiers[i];
+        }
+        // Output epoch key nullifiers
+        epoch_key_nullifier[n] <== process_attestations[n].epoch_key_nullifier;
     }
-    // Output epoch key nullifiers
-    epoch_key_nullifier <== process_attestations.epoch_key_nullifier;
-    /* End of 2. process the attestations of the epoch key specified by`nonce` and verify attestation nullifiers */
+    /* End of 2. process the attestations of the epoch key specified by nonce `n` and verify attestation nullifiers */
 
 
-    /* 3. Compute new GST leaf and output new GST leaf*/
+    /* 3. Compute and output new GST leaf */
     // 3.1 Compute new GST leaf
     component new_leaf = HashLeftRight();
     new_leaf.left <== identity_commitment.out;
     // Last intermediate root is the new user state tree root
-    new_leaf.right <== intermediate_user_state_tree_roots[NUM_ATTESTATIONS];
-
-    // Output new GST leaf if all epoch keys are processed,
-    // otherwise output 0.
-    component should_output_new_GST_leaf = allEpochKeyProcessed(nullifier_tree_depth, MAX_NONCE);
-    should_output_new_GST_leaf.epoch <== epoch;
-    should_output_new_GST_leaf.nonce <== nonce;
-    should_output_new_GST_leaf.identity_nullifier <== identity_nullifier;
-    should_output_new_GST_leaf.nullifier_tree_root <== nullifier_tree_root;
-    for (var i = 0; i <= MAX_NONCE; i++) {
-        for (var j = 0; j < nullifier_tree_depth; j++) {
-            should_output_new_GST_leaf.epk_nullifier_path_elements[i][j][0] <== epk_nullifier_path_elements[i][j][0];
-        }
-        should_output_new_GST_leaf.is_epk_processed[i] <== is_epk_processed_selectors[i];
-    }
-
-    component should_output_new_GST_leaf_muxer = Mux1();
-    should_output_new_GST_leaf_muxer.c[0] <== 0;
-    should_output_new_GST_leaf_muxer.c[1] <== new_leaf.hash;
-    should_output_new_GST_leaf_muxer.s <== should_output_new_GST_leaf.is_all_epoch_key_processed;
-    new_GST_leaf <== should_output_new_GST_leaf_muxer.out;
-    /* End of 3. compute new GST leaf matches */
+    new_leaf.right <== intermediate_user_state_tree_roots[TOTAL_NUM_ATTESTATIONS];
+    new_GST_leaf <== new_leaf.hash;
+    /* End of 3. compute and output new GST leaf */
 }
