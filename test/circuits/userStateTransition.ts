@@ -44,7 +44,6 @@ describe('User State Transition circuits', function () {
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
             circuit = await compileAndLoadCircuit('test/epochKeyExists_test.circom')
-            console.log(circuit)
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 

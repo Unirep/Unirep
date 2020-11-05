@@ -592,7 +592,6 @@ describe('Integration', function () {
                 users[0].id,
                 users[0].commitment,
             )
-            console.log("ok")
 
             // Check user state matches
             expect(users[0].latestTransitionedEpoch, 'First user latest transitioned epoch mismatch').to.equal(userStateFromContract.latestTransitionedEpoch)
