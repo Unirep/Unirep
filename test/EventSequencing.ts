@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, numAttestationsPerEpochKey } from '../config/testLocal'
+import { attestingFee, epochLength, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch } from '../config/testLocal'
 import { genRandomSalt } from '../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from './utils'
@@ -12,7 +12,7 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { Attestation } from "../core"
 
 
-describe('Attesting', () => {
+describe('EventSequencing', () => {
     const events = ["UserSignUp", "AttestationSubmitted", "EpochEnded", "UserStateTransitioned"]
     let expectedEventsInOrder: string[] = []
 
@@ -91,18 +91,23 @@ describe('Attesting', () => {
 
         // 5. Second user transition
         let transitionFromEpoch = 1
-        const nullifiers: BigInt[] = []
-        for (let i = 0; i < numAttestationsPerEpochKey; i++) {
-            nullifiers.push(genRandomSalt())
+        const numAttestationsPerEpoch = numEpochKeyNoncePerEpoch * numAttestationsPerEpochKey
+        const attestationNullifiers: BigInt[] = []
+        for (let i = 0; i < numAttestationsPerEpoch; i++) {
+            attestationNullifiers.push(BigInt(16 + i))
+        }
+        const epkNullifiers: BigInt[] = []
+        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            epkNullifiers.push(BigInt(255))
         }
         const proof: BigInt[] = []
         for (let i = 0; i < 8; i++) {
-            proof.push(genRandomSalt())
+            proof.push(BigInt(0))
         }
         tx = await unirepContract.updateUserStateRoot(
             genRandomSalt(),
-            nullifiers,
-            genRandomSalt(),
+            attestationNullifiers,
+            epkNullifiers,
             transitionFromEpoch,
             genRandomSalt(),
             genRandomSalt(),
@@ -156,8 +161,8 @@ describe('Attesting', () => {
         transitionFromEpoch = 1
         tx = await unirepContract.updateUserStateRoot(
             genRandomSalt(),
-            nullifiers,
-            genRandomSalt(),
+            attestationNullifiers,
+            epkNullifiers,
             transitionFromEpoch,
             genRandomSalt(),
             genRandomSalt(),
@@ -172,8 +177,8 @@ describe('Attesting', () => {
         transitionFromEpoch = 2
         tx = await unirepContract.updateUserStateRoot(
             genRandomSalt(),
-            nullifiers,
-            genRandomSalt(),
+            attestationNullifiers,
+            epkNullifiers,
             transitionFromEpoch,
             genRandomSalt(),
             genRandomSalt(),
@@ -192,7 +197,6 @@ describe('Attesting', () => {
 
         for (let i = 0; i < sequencerEvents.length; i++) {
             const event = sequencerEvents[i]
-            console.log(event.args)
             expect(event.args._event).equal(expectedEventsInOrder[i])
         }
 
