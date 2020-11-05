@@ -41,6 +41,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     uint8 public numAttestationsPerEpochKey;
 
+    uint8 public numAttestationsPerEpoch;
+
     // The maximum number of signups allowed
     uint256 public maxUsers;
 
@@ -103,13 +105,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
-        uint256[] _nullifiers,
-        uint256 _epkNullifier,
         uint256 _fromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
         uint256 _fromNullifierTreeRoot,
-        uint256[8] _proof
+        uint256[8] _proof,
+        uint256[] _attestationNullifiers,
+        uint256[] _epkNullifiers
     );
 
 
@@ -146,7 +148,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
 
+        numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
         numAttestationsPerEpochKey = _numAttestationsPerEpochKey;
+        numAttestationsPerEpoch = _numEpochKeyNoncePerEpoch * _numAttestationsPerEpochKey;
         epochLength = _epochLength;
         latestEpochTransitionTime = block.timestamp;
 
@@ -156,7 +160,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 stateTreeMaxLeafIndex = uint256(2) ** _treeDepths.globalStateTreeDepth - 1;
         require(_maxValues.maxUsers <= stateTreeMaxLeafIndex, "Unirep: invalid maxUsers value");
         maxUsers = _maxValues.maxUsers;
-        numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
 
         // Calculate and store the empty user state tree root. This value must
         // be set before we compute empty global state tree root later
@@ -300,8 +303,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function updateUserStateRoot(
         uint256 _newGlobalStateTreeLeaf,
-        uint256[] calldata _nullifiers,
-        uint256 _epkNullifier,
+        uint256[] calldata _attestationNullifiers,
+        uint256[] calldata _epkNullifiers,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
@@ -309,18 +312,19 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[8] calldata _proof) external {
         // NOTE: this impl assumes all attestations are processed in a single snark.
         require(_transitionFromEpoch < currentEpoch, "Can not transition from epoch that's greater or equal to current epoch");
-        require(_nullifiers.length == numAttestationsPerEpochKey, "Unirep: invalid number of nullifiers");
+        require(_attestationNullifiers.length == numAttestationsPerEpoch, "Unirep: invalid number of nullifiers");
+        require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
         emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
             currentEpoch,
-            _nullifiers,
-            _epkNullifier,
             _transitionFromEpoch,
             _fromGlobalStateTree,
             _fromEpochTree,
             _fromNullifierTreeRoot,
-            _proof
+            _proof,
+            _attestationNullifiers,
+            _epkNullifiers
         );
         emit NewGSTLeafInserted(currentEpoch, _newGlobalStateTreeLeaf);
 
@@ -367,8 +371,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function verifyUserStateTransition(
         uint256 _newGlobalStateTreeLeaf,
-        uint256[] calldata _nullifiers,
-        uint256 _epkNullifier,
+        uint256[] calldata _attestationNullifiers,
+        uint256[] calldata _epkNullifiers,
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
@@ -380,18 +384,21 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // 3. Attestations to each epoch key are processed and processed correctly
         // 4. Nullifiers of all processed attestations match
         // 5. Nullifiers of all processed attestations have not been seen before
-        require(_nullifiers.length == numAttestationsPerEpochKey, "Unirep: invalid number of nullifiers");
+        require(_attestationNullifiers.length == numAttestationsPerEpoch, "Unirep: invalid number of nullifiers");
+        require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
-        uint256[] memory publicSignals = new uint256[](6 + numAttestationsPerEpochKey);
+        uint256[] memory publicSignals = new uint256[](5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch);
         publicSignals[0] = _newGlobalStateTreeLeaf;
-        for (uint8 i = 0; i < _nullifiers.length; i++) {
-            publicSignals[i + 1] = _nullifiers[i];
+        for (uint8 i = 0; i < numAttestationsPerEpoch; i++) {
+            publicSignals[i + 1] = _attestationNullifiers[i];
         }
-        publicSignals[2 + numAttestationsPerEpochKey - 1] = _epkNullifier;
-        publicSignals[3 + numAttestationsPerEpochKey - 1] = _transitionFromEpoch;
-        publicSignals[4 + numAttestationsPerEpochKey - 1] = _fromGlobalStateTree;
-        publicSignals[5 + numAttestationsPerEpochKey - 1] = _fromEpochTree;
-        publicSignals[6 + numAttestationsPerEpochKey - 1] = _fromNullifierTreeRoot;
+        for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            publicSignals[i + 1 + numAttestationsPerEpoch] = _epkNullifiers[i];
+        }
+        publicSignals[2 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _transitionFromEpoch;
+        publicSignals[3 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromGlobalStateTree;
+        publicSignals[4 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromEpochTree;
+        publicSignals[5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromNullifierTreeRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

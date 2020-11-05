@@ -14,7 +14,7 @@ const attestingFee = ethers.utils.parseEther("0.01")
 
 const numEpochKeyNoncePerEpoch = 2;
 
-const numAttestationsPerEpochKey = 10;
+const numAttestationsPerEpochKey = 6;
 
 const epochLength = 30;  // 30 seconds
 

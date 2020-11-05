@@ -38,6 +38,8 @@ describe('Signup', () => {
         expect(numAttestationsPerEpochKey).equal(numAttestationsPerEpochKey_)
         const numEpochKeyNoncePerEpoch_ = await unirepContract.numEpochKeyNoncePerEpoch()
         expect(numEpochKeyNoncePerEpoch).equal(numEpochKeyNoncePerEpoch_)
+        const numAttestationsPerEpoch_ = await unirepContract.numAttestationsPerEpoch()
+        expect(numEpochKeyNoncePerEpoch * numAttestationsPerEpochKey).equal(numAttestationsPerEpoch_)
         const maxUsers_ = await unirepContract.maxUsers()
         expect(maxUsers).equal(maxUsers_)
 
