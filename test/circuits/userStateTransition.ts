@@ -77,19 +77,17 @@ describe('User State Transition circuits', function () {
 
         let circuit
 
-        // const MAX_NONCE = numEpochKeyNoncePerEpoch
-        // const ATTESTATIONS_PER_EPOCH_KEY = numAttestationsPerEpochKey
-        const MAX_NONCE = 2
-        const ATTESTATIONS_PER_EPOCH_KEY = 6
-        const TOTAL_NUM_ATTESTATIONS = MAX_NONCE * ATTESTATIONS_PER_EPOCH_KEY
+        const EPK_NONCE_PER_EPOCH = numEpochKeyNoncePerEpoch
+        const ATTESTATIONS_PER_EPOCH_KEY = numAttestationsPerEpochKey
+        const TOTAL_NUM_ATTESTATIONS = EPK_NONCE_PER_EPOCH * ATTESTATIONS_PER_EPOCH_KEY
         const maxNumAttesters = 2 ** circuitUserStateTreeDepth
         const expectedNumAttestationsMade = Math.floor(maxNumAttesters / 2)
 
         let GSTZERO_VALUE = 0, GSTree: IncrementalQuinTree, GSTreeRoot, GSTreeProof, newGSTLeaf
         let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements: any[]
-        let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot, nullifierTreePathElements
+        let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot, attestationNullifierPathElements
         let userStateTree: SparseMerkleTreeImpl
-        let intermediateUserStateTreeRoots, userStateTreePathElements
+        let intermediateUserStateTreeRoots, userStateLeafPathElements
         let oldPosReps, oldNegReps, oldGraffities
 
         let reputationRecords = {}
@@ -108,14 +106,14 @@ describe('User State Transition circuits', function () {
             epochTree = await genNewEpochTree("circuit")
 
             // Nullifier tree
-            nullifierTreePathElements = []
+            attestationNullifierPathElements = []
             nullifierTree = await genNewNullifierTree("circuit")
             nullifierTreeRoot = nullifierTree.getRootHash()
 
             // User state tree
             userStateTree = await genNewUserStateTree("circuit")
             intermediateUserStateTreeRoots = []
-            userStateTreePathElements = []
+            userStateLeafPathElements = []
             oldPosReps = []
             oldNegReps = []
             oldGraffities = []
@@ -165,7 +163,7 @@ describe('User State Transition circuits', function () {
             let hashChainResult: BigInt
             const attesterToNonceMap = {}
             let startIndex
-            for (let nonce = 0; nonce < MAX_NONCE; nonce++) {
+            for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
                 startIndex = nonce * ATTESTATIONS_PER_EPOCH_KEY
                 attesterToNonceMap[nonce] = []
                 hashChainResult = BigInt(0)
@@ -207,7 +205,7 @@ describe('User State Transition circuits', function () {
 
                         // Get old attestation record proof
                         const oldReputationRecordProof = await userStateTree.getMerkleProof(BigInt(attesterId))
-                        userStateTreePathElements.push(oldReputationRecordProof)
+                        userStateLeafPathElements.push(oldReputationRecordProof)
 
                         // Update attestation record
                         reputationRecords[attesterId.toString()]['posRep'] += attestation['posRep']
@@ -219,8 +217,8 @@ describe('User State Transition circuits', function () {
                         hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
 
                         nullifiers.push(nullifier)
-                        const nullifierTreeProof = await nullifierTree.getMerkleProof(nullifier)
-                        nullifierTreePathElements.push(nullifierTreeProof)
+                        const attestationNullifierProof = await nullifierTree.getMerkleProof(nullifier)
+                        attestationNullifierPathElements.push(attestationNullifierProof)
                     } else {
                         attesterIds.push(BigInt(0))
                         posReps.push(BigInt(0))
@@ -233,11 +231,11 @@ describe('User State Transition circuits', function () {
                         oldGraffities.push(BigInt(0))
 
                         const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
-                        userStateTreePathElements.push(USTLeafZeroPathElements)
+                        userStateLeafPathElements.push(USTLeafZeroPathElements)
 
                         nullifiers.push(BigInt(0))
-                        const nullifierTreeProof = await nullifierTree.getMerkleProof(BigInt(0))
-                        nullifierTreePathElements.push(nullifierTreeProof)
+                        const attestationNullifierProof = await nullifierTree.getMerkleProof(BigInt(0))
+                        attestationNullifierPathElements.push(attestationNullifierProof)
                     }
                     intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
                 }
@@ -252,7 +250,7 @@ describe('User State Transition circuits', function () {
             const latestUSTRoot = intermediateUserStateTreeRoots[TOTAL_NUM_ATTESTATIONS]
             newGSTLeaf = hashLeftRight(commitment, latestUSTRoot)
 
-            for (let nonce = 0; nonce < MAX_NONCE; nonce++) {
+            for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
                 const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
                 // Get epoch tree root and merkle proof for this epoch key
                 epochTreePathElements.push(await epochTree.getMerkleProof(epochKey))
@@ -261,9 +259,6 @@ describe('User State Transition circuits', function () {
         })
 
         describe('Process epoch keys', () => {
-            // it.only('compile', async () => {
-            //     expect(true).to.be.true
-            // })
             it('Valid user state update inputs should work', async () => {
                 const circuitInputs = {
                     epoch: epoch,
@@ -271,7 +266,7 @@ describe('User State Transition circuits', function () {
                     old_pos_reps: oldPosReps,
                     old_neg_reps: oldNegReps,
                     old_graffities: oldGraffities,
-                    UST_path_elements: userStateTreePathElements,
+                    UST_path_elements: userStateLeafPathElements,
                     identity_pk: user['keypair']['pubKey'],
                     identity_nullifier: user['identityNullifier'],
                     identity_trapdoor: user['identityTrapdoor'],
@@ -288,7 +283,7 @@ describe('User State Transition circuits', function () {
                     hash_chain_results: hashChainResults,
                     epoch_tree_root: epochTreeRoot,
                     nullifier_tree_root: nullifierTreeRoot,
-                    attestation_nullifier_path_elements: nullifierTreePathElements
+                    attestation_nullifier_path_elements: attestationNullifierPathElements
                 }
 
                 const witness = await executeCircuit(circuit, circuitInputs)
@@ -317,7 +312,7 @@ describe('User State Transition circuits', function () {
                     old_pos_reps: oldPosReps,
                     old_neg_reps: oldNegReps,
                     old_graffities: oldGraffities,
-                    UST_path_elements: userStateTreePathElements,
+                    UST_path_elements: userStateLeafPathElements,
                     identity_pk: user['keypair']['pubKey'],
                     identity_nullifier: user['identityNullifier'],
                     identity_trapdoor: user['identityTrapdoor'],
@@ -334,7 +329,7 @@ describe('User State Transition circuits', function () {
                     hash_chain_results: hashChainResults,
                     epoch_tree_root: epochTreeRoot,
                     nullifier_tree_root: nullifierTreeRoot,
-                    attestation_nullifier_path_elements: nullifierTreePathElements
+                    attestation_nullifier_path_elements: attestationNullifierPathElements
                 }
 
                 let error

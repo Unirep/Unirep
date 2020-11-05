@@ -35,9 +35,9 @@ describe('Integration', function () {
     let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        verifyEpochKeyCircuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
+        // verifyEpochKeyCircuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
         verifyUserStateTransitionCircuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
-        verifyReputationCircuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
+        // verifyReputationCircuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(`Total compile time for three circuits: ${endCompileTime - startCompileTime} seconds`)
 
@@ -144,44 +144,44 @@ describe('Integration', function () {
             console.log('------------------------------------------------------')
         })
 
-        it('First user transition from first epoch: process first epoch key', async () => {
-            const epochKeyNonce = 0
+        it('First user transition from first epoch', async () => {
             const fromEpoch = users[0].latestTransitionedEpoch
             const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
             const GSTreeRoot = fromEpochGSTree.root
             const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
             const epochTreeRoot = fromEpochTree.getRootHash()
-            const oldNullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
-            const nullifiers = users[0].getNullifiers(fromEpoch, epochKeyNonce)
-            console.log('Processing first user\'s first epk: ')
-            console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${oldNullifierTreeRoot}`)
-            console.log(`and nullifiers [${nullifiers}]`)
+            const nullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
+            const attestationNullifiers = users[0].getAttestationNullifiers(fromEpoch)
+            const epkNullifiers = users[0].getEpochKeyNullifiers(fromEpoch)
+            console.log('Processing first user\'s transition: ')
+            console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${nullifierTreeRoot}`)
+            console.log(`and attestationNullifiers [${attestationNullifiers}]`)
+            console.log(`and epkNullifiers [${epkNullifiers}]`)
 
-            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs(epochKeyNonce)
+            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs()
             const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
             const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
-            expect(BigNumber.from(newGSTLeaf), 'New GST leaf should be zero as there are epoch keys left to process').to.equal(0)
-
-            const newState = await users[0].genNewUserStateAfterProcessEPK(epochKeyNonce)
+            
+            const newState = await users[0].genNewUserStateAfterTransition()
+            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const epkNullifier = users[0].getEpochKeyNullifier(fromEpoch, epochKeyNonce)
             let tx = await unirepContract.updateUserStateRoot(
                 newGSTLeaf,
-                nullifiers,
-                epkNullifier,
+                attestationNullifiers,
+                epkNullifiers,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
-                oldNullifierTreeRoot,
+                nullifierTreeRoot,
                 formatProofForVerifierContract(results['proof']),
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
         })
 
-        it('Verify state transition of first user\'s first epoch key', async () => {
+        it('Verify state transition of first user\'s epoch transition', async () => {
             const stateTransitionByEpochFilter = unirepContract.filters.UserStateTransitioned(currentEpoch)
             const stateTransitionByEpochEvent = await unirepContract.queryFilter(stateTransitionByEpochFilter)
             expect(stateTransitionByEpochEvent.length, 'Number of state transition events current epoch should be 1').to.equal(1)
@@ -194,112 +194,10 @@ describe('Integration', function () {
             const newGSTLeafArgs: any = newGSTLeafByEpochEvent[0]['args']
 
             // Verify on-chain
-            // First try verify with incorrect new GST leaf
-            // (to insert new GST leaf while not supposed to because there are epoch keys left to process)
-            const invalidNewGSTLeaf = genRandomSalt()
-            let isProofValid = await unirepContract.verifyUserStateTransition(
-                invalidNewGSTLeaf,
-                stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_epkNullifier'],
-                stateTransitionArgs['_fromEpoch'],
-                stateTransitionArgs['_fromGlobalStateTree'],
-                stateTransitionArgs['_fromEpochTree'],
-                stateTransitionArgs['_fromNullifierTreeRoot'],
-                stateTransitionArgs['_proof'],
-            )
-            expect(isProofValid, 'Verify invalid user state transition on-chain should fail').to.be.false
-            // Next verify with correct user transition data
-            isProofValid = await unirepContract.verifyUserStateTransition(
-                newGSTLeafArgs['_hashedLeaf'],
-                stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_epkNullifier'],
-                stateTransitionArgs['_fromEpoch'],
-                stateTransitionArgs['_fromGlobalStateTree'],
-                stateTransitionArgs['_fromEpochTree'],
-                stateTransitionArgs['_fromNullifierTreeRoot'],
-                stateTransitionArgs['_proof'],
-            )
-            expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
-
-            const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
-            const allNullifiers: BigInt[] = nullifiers.slice()
-            const epkNullifier = BigInt(stateTransitionArgs['_epkNullifier'])
-            allNullifiers.push(epkNullifier)
-
-            const epochKeyNonce = 0
-            const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
-            users[0].epochKeyProcessed(
-                epochKeyNonce,
-                latestUserStateLeaves,
-            )
-
-            // NOTE: unirep.userStateTransition should be called after user.epochKeyProcessed because
-            // user._transition depends on unirep state's current number of GST leaves.
-            // If unirep state update it's GST leaves before user state does, user state
-            // would get wrong GST leaf index.
-            console.log(`First user finish processing first epoch key. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
-            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
-            console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
-            console.log('----------------------User State----------------------')
-            console.log(users[0].toJSON(4))
-            console.log('------------------------------------------------------')
-        })
-
-        it('First user transition from first epoch: process second epoch key', async () => {
-            const epochKeyNonce = 1
-            const fromEpoch = users[0].latestTransitionedEpoch
-            const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
-            const GSTreeRoot = fromEpochGSTree.root
-            const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
-            const epochTreeRoot = fromEpochTree.getRootHash()
-            const oldNullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
-            const nullifiers = users[0].getNullifiers(fromEpoch, epochKeyNonce)
-            console.log('Processing first user\'s second epk: ')
-            console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${oldNullifierTreeRoot}`)
-            console.log(`and nullifiers [${nullifiers}]`)
-
-            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs(epochKeyNonce)
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
-            const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-            expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
-            const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
-            
-            const newState = await users[0].genNewUserStateAfterProcessEPK(epochKeyNonce)
-            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
-            userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const epkNullifier = users[0].getEpochKeyNullifier(fromEpoch, epochKeyNonce)
-            let tx = await unirepContract.updateUserStateRoot(
-                newGSTLeaf,
-                nullifiers,
-                epkNullifier,
-                fromEpoch,
-                GSTreeRoot,
-                epochTreeRoot,
-                oldNullifierTreeRoot,
-                formatProofForVerifierContract(results['proof']),
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
-        })
-
-        it('Verify state transition of first user\'s second epoch key', async () => {
-            const stateTransitionByEpochFilter = unirepContract.filters.UserStateTransitioned(currentEpoch)
-            const stateTransitionByEpochEvent = await unirepContract.queryFilter(stateTransitionByEpochFilter)
-            expect(stateTransitionByEpochEvent.length, 'Number of state transition events current epoch should be 2').to.equal(2)
-
-            const newGSTLeafByEpochFilter = unirepContract.filters.NewGSTLeafInserted(currentEpoch)
-            const newGSTLeafByEpochEvent = await unirepContract.queryFilter(newGSTLeafByEpochFilter)
-            expect(newGSTLeafByEpochEvent.length, 'Number of new GST leaves should be 2').to.equal(2)
-
-            const stateTransitionArgs: any = stateTransitionByEpochEvent[1]['args']
-            const newGSTLeafArgs: any = newGSTLeafByEpochEvent[1]['args']
-
-            // Verify on-chain
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newGSTLeafArgs['_hashedLeaf'],
-                stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_epkNullifier'],
+                stateTransitionArgs['_attestationNullifiers'],
+                stateTransitionArgs['_epkNullifiers'],
                 stateTransitionArgs['_fromEpoch'],
                 stateTransitionArgs['_fromGlobalStateTree'],
                 stateTransitionArgs['_fromEpochTree'],
@@ -308,23 +206,19 @@ describe('Integration', function () {
             )
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
 
-            const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
-            const allNullifiers: BigInt[] = nullifiers.slice()
-            const epkNullifier = BigInt(stateTransitionArgs['_epkNullifier'])
-            allNullifiers.push(epkNullifier)
+            const attestationNullifiers = stateTransitionArgs['_attestationNullifiers'].map((n) => BigInt(n))
+            const allNullifiers: BigInt[] = attestationNullifiers.slice()
+            const epkNullifiers = stateTransitionArgs['_epkNullifiers'].map((n) => BigInt(n))
+            allNullifiers.push(epkNullifiers)
 
-            const epochKeyNonce = 1
             const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
-            users[0].epochKeyProcessed(
-                epochKeyNonce,
-                latestUserStateLeaves,
-            )
-            console.log(`First user finish processing second epoch key. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
+            users[0].transition(latestUserStateLeaves)
+            console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             expect(users[0].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
 
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
+            console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation attestationNullifiers [${attestationNullifiers}] and epk nullifier ${epkNullifiers}`)
             console.log('----------------------User State----------------------')
             console.log(users[0].toJSON(4))
             console.log('------------------------------------------------------')
@@ -583,45 +477,44 @@ describe('Integration', function () {
             console.log('------------------------------------------------------')
         })
 
-        it('First user transition from second epoch: process second epoch key', async () => {
-            const epochKeyNonce = 1
+        it('First user transition from first epoch', async () => {
             const fromEpoch = users[0].latestTransitionedEpoch
-            const fromEpochGSTree = unirepState.genGSTree(fromEpoch)
+            const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
             const GSTreeRoot = fromEpochGSTree.root
             const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
             const epochTreeRoot = fromEpochTree.getRootHash()
-            const oldNullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
-            const nullifiers = users[0].getNullifiers(fromEpoch, epochKeyNonce)
-            console.log('Processing first user\'s second epk: ')
-            console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${oldNullifierTreeRoot}`)
-            console.log(`and nullifiers [${nullifiers}]`)
+            const nullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
+            const attestationNullifiers = users[0].getAttestationNullifiers(fromEpoch)
+            const epkNullifiers = users[0].getEpochKeyNullifiers(fromEpoch)
+            console.log('Processing first user\'s transition: ')
+            console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${nullifierTreeRoot}`)
+            console.log(`and attestationNullifiers [${attestationNullifiers}]`)
+            console.log(`and epkNullifiers [${epkNullifiers}]`)
 
-            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs(epochKeyNonce)
+            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs()
             const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
             const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
-            expect(BigNumber.from(newGSTLeaf), 'New GST leaf should be zero as there are epoch keys left to process').to.equal(0)
-
-
-            const newState = await users[0].genNewUserStateAfterProcessEPK(epochKeyNonce)
+            
+            const newState = await users[0].genNewUserStateAfterTransition()
+            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const epkNullifier = users[0].getEpochKeyNullifier(fromEpoch, epochKeyNonce)
             let tx = await unirepContract.updateUserStateRoot(
                 newGSTLeaf,
-                nullifiers,
-                epkNullifier,
+                attestationNullifiers,
+                epkNullifiers,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
-                oldNullifierTreeRoot,
+                nullifierTreeRoot,
                 formatProofForVerifierContract(results['proof']),
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
         })
 
-        it('Verify state transition of first user\'s second epoch key', async () => {
+        it('Verify state transition of first user\'s epoch transition', async () => {
             const stateTransitionByEpochFilter = unirepContract.filters.UserStateTransitioned(currentEpoch)
             const stateTransitionByEpochEvent = await unirepContract.queryFilter(stateTransitionByEpochFilter)
             expect(stateTransitionByEpochEvent.length, 'Number of state transition events current epoch should be 1').to.equal(1)
@@ -636,8 +529,8 @@ describe('Integration', function () {
             // Verify on-chain
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newGSTLeafArgs['_hashedLeaf'],
-                stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_epkNullifier'],
+                stateTransitionArgs['_attestationNullifiers'],
+                stateTransitionArgs['_epkNullifiers'],
                 stateTransitionArgs['_fromEpoch'],
                 stateTransitionArgs['_fromGlobalStateTree'],
                 stateTransitionArgs['_fromEpochTree'],
@@ -646,123 +539,19 @@ describe('Integration', function () {
             )
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
 
-            const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
-            const allNullifiers: BigInt[] = nullifiers.slice()
-            const epkNullifier = BigInt(stateTransitionArgs['_epkNullifier'])
-            allNullifiers.push(epkNullifier)
+            const attestationNullifiers = stateTransitionArgs['_attestationNullifiers'].map((n) => BigInt(n))
+            const allNullifiers: BigInt[] = attestationNullifiers.slice()
+            const epkNullifiers = stateTransitionArgs['_epkNullifiers'].map((n) => BigInt(n))
+            allNullifiers.push(epkNullifiers)
 
-            const epochKeyNonce = 1
-            const latestUserStateLeaves = userStateLeavesAfterTransition[0]
-            users[0].epochKeyProcessed(
-                epochKeyNonce,
-                latestUserStateLeaves,
-            )
-            console.log(`First user finish processing second epoch key. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
-
-            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
-            console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
-            console.log('----------------------User State----------------------')
-            console.log(users[0].toJSON(4))
-            console.log('------------------------------------------------------')
-        })
-
-        it('First user try to prove his reputation before processing all epoch keys', async () => {
-            const attesterId = attesters[0].id  // Prove reputation received from first attester
-            const minPosRep = BigInt(0)
-            const maxNegRep = BigInt(10)
-            const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
-            let error
-            try {
-                const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
-                const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyReputationCircuit)
-            } catch (e) {
-                error = e
-                expect(true).to.be.true
-            } finally {
-                if (!error) throw Error("Proving reputation before processing all epoch keys should throw error")
-            }
-        })
-
-        it('First user transition from second epoch: process first epoch key', async () => {
-            const epochKeyNonce = 0
-            const fromEpoch = users[0].latestTransitionedEpoch
-            const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
-            const GSTreeRoot = fromEpochGSTree.root
-            const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
-            const epochTreeRoot = fromEpochTree.getRootHash()
-            const oldNullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
-            const nullifiers = users[0].getNullifiers(fromEpoch, epochKeyNonce)
-            console.log('Processing first user\'s first epk: ')
-            console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${oldNullifierTreeRoot}`)
-            console.log(`and nullifiers [${nullifiers}]`)
-
-            const circuitInputs = await users[0].genUserStateTransitionCircuitInputs(epochKeyNonce)
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
-            const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-            expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
-            const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
-
-            const newState = await users[0].genNewUserStateAfterProcessEPK(epochKeyNonce)
-            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
-            userStateLeavesAfterTransition[0] = newState.newUSTLeaves
-            const epkNullifier = users[0].getEpochKeyNullifier(fromEpoch, epochKeyNonce)
-            let tx = await unirepContract.updateUserStateRoot(
-                newGSTLeaf,
-                nullifiers,
-                epkNullifier,
-                fromEpoch,
-                GSTreeRoot,
-                epochTreeRoot,
-                oldNullifierTreeRoot,
-                formatProofForVerifierContract(results['proof']),
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
-        })
-
-        it('Verify state transition of first user\'s first epoch key', async () => {
-            const stateTransitionByEpochFilter = unirepContract.filters.UserStateTransitioned(currentEpoch)
-            const stateTransitionByEpochEvent = await unirepContract.queryFilter(stateTransitionByEpochFilter)
-            expect(stateTransitionByEpochEvent.length, 'Number of state transition events current epoch should be 2').to.equal(2)
-
-            const newGSTLeafByEpochFilter = unirepContract.filters.NewGSTLeafInserted(currentEpoch)
-            const newGSTLeafByEpochEvent = await unirepContract.queryFilter(newGSTLeafByEpochFilter)
-            expect(newGSTLeafByEpochEvent.length, 'Number of new GST leaves should be 2').to.equal(2)
-
-            const stateTransitionArgs: any = stateTransitionByEpochEvent[1]['args']
-            const newGSTLeafArgs: any = newGSTLeafByEpochEvent[1]['args']
-
-            // Verify on-chain
-            const isProofValid = await unirepContract.verifyUserStateTransition(
-                newGSTLeafArgs['_hashedLeaf'],
-                stateTransitionArgs['_nullifiers'],
-                stateTransitionArgs['_epkNullifier'],
-                stateTransitionArgs['_fromEpoch'],
-                stateTransitionArgs['_fromGlobalStateTree'],
-                stateTransitionArgs['_fromEpochTree'],
-                stateTransitionArgs['_fromNullifierTreeRoot'],
-                stateTransitionArgs['_proof'],
-            )
-            expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
-
-            const nullifiers = stateTransitionArgs['_nullifiers'].map((n) => BigInt(n))
-            const allNullifiers: BigInt[] = nullifiers.slice()
-            const epkNullifier = BigInt(stateTransitionArgs['_epkNullifier'])
-            allNullifiers.push(epkNullifier)
-
-            const epochKeyNonce = 0
             const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
-            users[0].epochKeyProcessed(
-                epochKeyNonce,
-                latestUserStateLeaves,
-            )
+            users[0].transition(latestUserStateLeaves)
+            console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             expect(users[0].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
 
-            console.log(`First user finish processing first epoch key. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeafArgs['_hashedLeaf']), allNullifiers)
             console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation nullifiers [${nullifiers}] and epk nullifier ${epkNullifier}`)
+            console.log(`newGSTLeaf ${BigInt(newGSTLeafArgs['_hashedLeaf'])}, attestation attestationNullifiers [${attestationNullifiers}] and epk nullifier ${epkNullifiers}`)
             console.log('----------------------User State----------------------')
             console.log(users[0].toJSON(4))
             console.log('------------------------------------------------------')
@@ -803,6 +592,7 @@ describe('Integration', function () {
                 users[0].id,
                 users[0].commitment,
             )
+            console.log("ok")
 
             // Check user state matches
             expect(users[0].latestTransitionedEpoch, 'First user latest transitioned epoch mismatch').to.equal(userStateFromContract.latestTransitionedEpoch)
