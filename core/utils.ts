@@ -127,8 +127,8 @@ const genUnirepStateFromContract = async (
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                userStateTransitionedEvent.args?._nullifiers,
-                userStateTransitionedEvent.args?._epkNullifier,
+                userStateTransitionedEvent.args?._attestationNullifiers,
+                userStateTransitionedEvent.args?._epkNullifiers,
                 userStateTransitionedEvent.args?._fromEpoch,
                 userStateTransitionedEvent.args?._fromGlobalStateTree,
                 userStateTransitionedEvent.args?._fromEpochTree,
@@ -141,13 +141,13 @@ const genUnirepStateFromContract = async (
                 continue
             }
 
-            const allNullifiers = userStateTransitionedEvent.args?._nullifiers.map((n) => BigInt(n))
-            const epkNullifier = BigInt(userStateTransitionedEvent.args?._epkNullifier)
-            allNullifiers.push(epkNullifier)
+            const allNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
+            const epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            allNullifiers.push(epkNullifiers)
 
             unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
         } else {
-            throw  new Error(`Unexpected event: ${occurredEvent}`)
+            throw new Error(`Unexpected event: ${occurredEvent}`)
         }
     }
     assert(newGSTLeafInsertedEvents.length == 0, `${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
@@ -181,7 +181,6 @@ const genUserStateFromParams = async (
     latestTransitionedEpoch: number,
     latestGSTLeafIndex: number,
     latestUserStateLeaves?: IUserStateLeaf[],
-    latestEpochKeys?: string[],
 ) => {
     const unirepState = await genUnirepStateFromContract(
         provider,
@@ -196,7 +195,6 @@ const genUserStateFromParams = async (
         latestTransitionedEpoch,
         latestGSTLeafIndex,
         latestUserStateLeaves,
-        latestEpochKeys,
     )
     return userState
 }
@@ -232,6 +230,7 @@ const _genUserStateFromContract = async (
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
+    const numAttestationsPerEpochKey = await unirepContract.numAttestationsPerEpochKey()
 
     const unirepState = new UnirepState(
         ethers.BigNumber.from(globalStateTreeDepth).toNumber(),
@@ -241,7 +240,7 @@ const _genUserStateFromContract = async (
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
         ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
-        numAttestationsPerEpochKey,
+        ethers.BigNumber.from(numAttestationsPerEpochKey).toNumber(),
     )
 
     const userState = new UserState(
@@ -279,7 +278,7 @@ const _genUserStateFromContract = async (
     // Variables used to keep track of data required for user to transition
     let userHasSignedUp = false
     let currentEpochGSTLeafIndexToInsert = 0
-    let epkNullifiersMap: {[key: string]: number} = {}  // Mapping of epoch key nullifier to epoch key nonce
+    let epkNullifiers: BigInt[] = []
     for (let i = 0; i < sequencerEvents.length; i++) {
         const sequencerEvent = sequencerEvents[i]
         const occurredEvent = sequencerEvent.args?._event
@@ -340,13 +339,9 @@ const _genUserStateFromContract = async (
             unirepState.epochTransition(epoch, epochTreeLeaves)
             if (userHasSignedUp) {
                 if (epoch === userState.latestTransitionedEpoch) {
-                    // Latest epoch user transitioned to ends. Generate mapping of nullifiers of all epoch key
-                    // in this epoch so we can identify which epoch key is processed later.
-                    const nullifiersMap = userState.getEpochKeyNullifiersOfEpoch(epoch)
-                    // Reverse the mapping so later we can use nullifier to identify epoch key nonce.
-                    for (const [nonce, nullifier] of Object.entries(nullifiersMap)) {
-                        epkNullifiersMap[nullifier.toString()] = Number(nonce)
-                    }
+                    // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
+                    // so we can identify when user process the epoch keys.
+                    epkNullifiers = userState.getEpochKeyNullifiers(epoch)
                 }
             }
 
@@ -362,8 +357,8 @@ const _genUserStateFromContract = async (
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                userStateTransitionedEvent.args?._nullifiers,
-                userStateTransitionedEvent.args?._epkNullifier,
+                userStateTransitionedEvent.args?._attestationNullifiers,
+                userStateTransitionedEvent.args?._epkNullifiers,
                 userStateTransitionedEvent.args?._fromEpoch,
                 userStateTransitionedEvent.args?._fromGlobalStateTree,
                 userStateTransitionedEvent.args?._fromEpochTree,
@@ -376,29 +371,33 @@ const _genUserStateFromContract = async (
                 continue
             }
 
-            const allNullifiers = userStateTransitionedEvent.args?._nullifiers.map((n) => BigInt(n))
-            const epkNullifier = BigInt(userStateTransitionedEvent.args?._epkNullifier)
-            allNullifiers.push(epkNullifier)
+            const allNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
+            const _epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            allNullifiers.push(_epkNullifiers)
 
             if (
                 userHasSignedUp &&
-                (userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch) &&
-                (epkNullifiersMap[epkNullifier.toString()] !== undefined)
+                (userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch)
             ) {
-                const epochKeyNonce = epkNullifiersMap[epkNullifier.toString()]
-                const newState = await userState.genNewUserStateAfterProcessEPK(epochKeyNonce)
-                userState.epochKeyProcessed(epochKeyNonce, newState.newUSTLeaves)
-                if (newLeaf.gt(0)) {
+                let epkNullifiersMatched = 0
+                for (const nullifier of epkNullifiers) {
+                    if (_epkNullifiers.indexOf(nullifier) !== -1) epkNullifiersMatched++
+                }
+                if (epkNullifiersMatched == userState.numEpochKeyNoncePerEpoch) {
+                    const newState = await userState.genNewUserStateAfterTransition()
+                    userState.transition(newState.newUSTLeaves)
                     // User processed all epoch keys so non-zero GST leaf is generated.
                     assert(BigNumber.from(newState.newGSTLeaf).eq(newLeaf), 'New GST leaf mismatch')
                     // User transition to this epoch, increment (next) GST leaf index
                     currentEpochGSTLeafIndexToInsert ++
+                } else if (epkNullifiersMatched > 0) {
+                    throw new Error(`Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${numEpochKeyNoncePerEpoch}`)
                 }
             }
 
             unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
         } else {
-            throw  new Error(`Unexpected event: ${occurredEvent}`)
+            throw new Error(`Unexpected event: ${occurredEvent}`)
         }
     }
     assert(userHasSignedUp, "User did not sign up")
