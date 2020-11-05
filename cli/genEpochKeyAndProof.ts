@@ -126,6 +126,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
+        return
     }
     
     const proof = results["proof"]

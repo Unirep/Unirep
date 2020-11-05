@@ -136,6 +136,7 @@ const genReputationProof = async (args: any) => {
     const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: reputation proof generated is not valid!')
+        return
     }
     
     const proof = results["proof"]

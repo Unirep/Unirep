@@ -42,15 +42,6 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.addArgument(
-        ['-n', '--epoch-key-nonce'],
-        {
-            required: true,
-            type: 'int',
-            help: 'The epoch key nonce',
-        }
-    )
-
-    parser.addArgument(
         ['-b', '--start-block'],
         {
             action: 'store',
@@ -136,14 +127,6 @@ const userStateTransition = async (args: any) => {
     )
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
-    // Validate epoch key nonce
-    const epkNonce = args.epoch_key_nonce
-    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
-    if (epkNonce >= numEpochKeyNoncePerEpoch) {
-        console.error('Error: epoch key nonce must be less than max epoch key nonce')
-        return
-    }
-
     const id = unSerialiseIdentity(args.identity)
     const commitment = genIdentityCommitment(id)
 
@@ -155,30 +138,36 @@ const userStateTransition = async (args: any) => {
         commitment,
     )
 
-    const circuitInputs = await userState.genUserStateTransitionCircuitInputs(epkNonce)
+    const circuitInputs = await userState.genUserStateTransitionCircuitInputs()
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
+    const newState = await userState.genNewUserStateAfterTransition()
+    if(newGSTLeaf != newState.newGSTLeaf) {
+        console.error('Error: Computed new GST leaf should match')
+        return
+    }
     const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: user state transition proof generated is not valid!')
+        return
     }
 
     const fromEpoch = userState.latestTransitionedEpoch
     const GSTreeRoot = userState.getUnirepStateGSTree(fromEpoch).root
     const epochTreeRoot = (await userState.getUnirepStateEpochTree(fromEpoch)).getRootHash()
-    const oldNullifierTreeRoot = (await userState.getUnirepStateNullifierTree()).getRootHash()
-    const nullifiers = userState.getNullifiers(fromEpoch, epkNonce)
-    const epkNullifier = userState.getEpochKeyNullifier(fromEpoch, epkNonce)
+    const nullifierTreeRoot = (await userState.getUnirepStateNullifierTree()).getRootHash()
+    const attestationNullifiers = userState.getAttestationNullifiers(fromEpoch)
+    const epkNullifier = userState.getEpochKeyNullifiers(fromEpoch)
     let tx
     try {
         tx = await unirepContract.updateUserStateRoot(
             newGSTLeaf,
-            nullifiers,
+            attestationNullifiers,
             epkNullifier,
             fromEpoch,
             GSTreeRoot,
             epochTreeRoot,
-            oldNullifierTreeRoot,
+            nullifierTreeRoot,
             formatProofForVerifierContract(results['proof']),
         )
     } catch(e) {
@@ -190,11 +179,8 @@ const userStateTransition = async (args: any) => {
     }
 
     console.log('Transaction hash:', tx.hash)
-    console.log(`Processed epoch key with nonce ${epkNonce}`)
-    if (newGSTLeaf !== BigInt(0)) {
-        const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
-        console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)        
-    }
+    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+    console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)        
 }
 
 export {
