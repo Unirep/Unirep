@@ -467,17 +467,25 @@ class UserState {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
         assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
+        const epoch = this.latestTransitionedEpoch
+        const nonce = 0
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const userStateTree = await this.genUserStateTree()
-        const GSTree = this.unirepState.genGSTree(this.latestTransitionedEpoch)
+        const GSTree = this.unirepState.genGSTree(epoch)
         const GSTreeProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
-        const pathElements = await userStateTree.getMerkleProof(attesterId)
+        const nullifierTree = await this.unirepState.genNullifierTree()
+        const nullifierTreeRoot = nullifierTree.getRootHash()
+        const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, epoch, nonce, this.unirepState.nullifierTreeDepth)
+        const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
+        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
 
         return stringifyBigInts({
+            epoch: epoch,
+            nonce: nonce,
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier, 
             identity_trapdoor: this.id.identityTrapdoor,
@@ -485,11 +493,13 @@ class UserState {
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
+            nullifier_tree_root: nullifierTreeRoot,
+            nullifier_path_elements: epkNullifierProof,
             attester_id: attesterId,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti: graffiti,
-            UST_path_elements: pathElements,
+            UST_path_elements: USTPathElements,
             min_pos_rep: minPosRep,
             max_neg_rep: maxNegRep,
             graffiti_pre_image: graffitiPreImage

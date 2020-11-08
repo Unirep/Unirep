@@ -115,24 +115,24 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
-    signal epk_quotient;
-    component epk_quot_lt;
+    signal epk_nul_quotient;
+    component epk_nul_quot_lt;
     signal epk_nullifier_hash_moded;
     component epk_nul_lt;
-    epk_quotient <-- epoch_key_nullifier_hasher.hash \ (2 ** nullifier_tree_depth);
+    epk_nul_quotient <-- epoch_key_nullifier_hasher.hash \ (2 ** nullifier_tree_depth);
     epk_nullifier_hash_moded <-- epoch_key_nullifier_hasher.hash % (2 ** nullifier_tree_depth);
     // 1.2.3 Range check on moded nullifier
     epk_nul_lt = LessEqThan(nullifier_tree_depth);
     epk_nul_lt.in[0] <== epk_nullifier_hash_moded;
     epk_nul_lt.in[1] <== 2 ** nullifier_tree_depth - 1;
     epk_nul_lt.out === 1;
-    // 1.2.4 Range check on epk_quotient
-    epk_quot_lt = LessEqThan(254 - nullifier_tree_depth);
-    epk_quot_lt.in[0] <== epk_quotient;
-    epk_quot_lt.in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
-    epk_quot_lt.out === 1;
+    // 1.2.4 Range check on epk_nul_quotient
+    epk_nul_quot_lt = LessEqThan(254 - nullifier_tree_depth);
+    epk_nul_quot_lt.in[0] <== epk_nul_quotient;
+    epk_nul_quot_lt.in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
+    epk_nul_quot_lt.out === 1;
     // 1.2.5 Check equality
-    epoch_key_nullifier_hasher.hash === epk_quotient * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded;
+    epoch_key_nullifier_hasher.hash === epk_nul_quotient * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded;
     // Output `epoch_key_nullifier`, it's either 0 or the nullifier computed above.
     epoch_key_nullifier <== epk_nullifier_hash_moded;
     /* End of 1. verify attestation hash chain and compute nullifiers */
