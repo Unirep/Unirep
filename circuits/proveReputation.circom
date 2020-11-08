@@ -14,7 +14,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     signal private input GST_path_index[GST_tree_depth];
     signal private input GST_path_elements[GST_tree_depth][1];
     signal input GST_root;
-    // Attester to prove attestation from
+    // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
     signal private input pos_rep;
@@ -27,7 +27,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     // Graffiti
     signal input graffiti_pre_image;
 
-    var MAX_REPUTATION_SCORE_BITS = 32;
+    var MAX_REPUTATION_SCORE_BITS = 253;
 
 
     /* 1. Check if user exists in the Global State Tree */
@@ -51,29 +51,29 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     /* End of check 1*/
 
 
-    /* 2. Check if the attestation by the attester is in the user state tree */
-    component attestation_hasher = Hasher5();
-    attestation_hasher.in[0] <== pos_rep;
-    attestation_hasher.in[1] <== neg_rep;
-    attestation_hasher.in[2] <== graffiti;
-    attestation_hasher.in[3] <== 0;
-    attestation_hasher.in[4] <== 0;
+    /* 2. Check if the reputation given by the attester is in the user state tree */
+    component reputation_hasher = Hasher5();
+    reputation_hasher.in[0] <== pos_rep;
+    reputation_hasher.in[1] <== neg_rep;
+    reputation_hasher.in[2] <== graffiti;
+    reputation_hasher.in[3] <== 0;
+    reputation_hasher.in[4] <== 0;
 
-    component attestation_membership_check = SMTLeafExists(user_state_tree_depth);
-    attestation_membership_check.leaf_index <== attester_id;
-    attestation_membership_check.leaf <== attestation_hasher.hash;
+    component reputation_membership_check = SMTLeafExists(user_state_tree_depth);
+    reputation_membership_check.leaf_index <== attester_id;
+    reputation_membership_check.leaf <== reputation_hasher.hash;
     for (var i = 0; i < user_state_tree_depth; i++) {
-        attestation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
+        reputation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
     }
-    attestation_membership_check.root <== user_state_root;
+    reputation_membership_check.root <== user_state_root;
     /* End of check 2 */
 
 
     /* 3. Check conditions on reputations */
-    component pos_rep_get = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-    pos_rep_get.in[0] <== pos_rep;
-    pos_rep_get.in[1] <== min_pos_rep;
-    pos_rep_get.out === 1;
+    component pos_rep_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    pos_rep_gt.in[0] <== pos_rep;
+    pos_rep_gt.in[1] <== min_pos_rep;
+    pos_rep_gt.out === 1;
 
     component neg_rep_lt = LessThan(MAX_REPUTATION_SCORE_BITS);
     neg_rep_lt.in[0] <== neg_rep;

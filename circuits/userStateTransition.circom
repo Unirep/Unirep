@@ -54,7 +54,7 @@ template epochKeyExist(epoch_tree_depth) {
     epoch_key <== epkModed;
 }
 
-template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY, MAX_NONCE, TOTAL_NUM_ATTESTATIONS) {
+template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY, EPOCH_KEY_NONCE_PER_EPOCH, TOTAL_NUM_ATTESTATIONS) {
     signal input epoch;
 
     // User state tree
@@ -86,8 +86,8 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input overwrite_graffitis[TOTAL_NUM_ATTESTATIONS];
 
     // Epoch key & epoch tree
-    signal private input epk_path_elements[MAX_NONCE][epoch_tree_depth][1];
-    signal private input hash_chain_results[MAX_NONCE];
+    signal private input epk_path_elements[EPOCH_KEY_NONCE_PER_EPOCH][epoch_tree_depth][1];
+    signal private input hash_chain_results[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input epoch_tree_root;
 
     // Nullifier tree
@@ -98,10 +98,10 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     // Nullifier of the attestations
     signal output nullifiers[TOTAL_NUM_ATTESTATIONS];
     // Nullifier of epoch keys
-    signal output epoch_key_nullifier[MAX_NONCE];
+    signal output epoch_key_nullifier[EPOCH_KEY_NONCE_PER_EPOCH];
 
     // Validate config params
-    ATTESTATIONS_PER_EPOCH_KEY * MAX_NONCE === TOTAL_NUM_ATTESTATIONS;
+    ATTESTATIONS_PER_EPOCH_KEY * EPOCH_KEY_NONCE_PER_EPOCH === TOTAL_NUM_ATTESTATIONS;
     /* 0. Validate inputs */
     for (var i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
         selectors[i] * (selectors[i] - 1) === 0
@@ -144,11 +144,11 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     one_leaf <== one_leaf_hasher.hash;
 
     var start_index;
-    component epkExist[MAX_NONCE];
-    component process_attestations[MAX_NONCE];
+    component epkExist[EPOCH_KEY_NONCE_PER_EPOCH];
+    component process_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
     component which_leaf_value_to_check[TOTAL_NUM_ATTESTATIONS];
     component nullifier_membership_check[TOTAL_NUM_ATTESTATIONS]; 
-    for (var n = 0; n < MAX_NONCE; n++) {
+    for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
         start_index = n * ATTESTATIONS_PER_EPOCH_KEY;
         epkExist[n] = epochKeyExist(epoch_tree_depth);
         // 2.1 Check if epoch key exists in epoch tree
