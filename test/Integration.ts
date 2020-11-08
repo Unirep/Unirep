@@ -573,8 +573,12 @@ describe('Integration', function () {
 
             // Verify on-chain
             const GSTreeRoot = unirepState.genGSTree(currentEpoch.toNumber()).root
+            const nullifierTree = await unirepState.genNullifierTree()
+            const nullifierTreeRoot = nullifierTree.getRootHash()
             const isProofValid = await unirepContract.verifyReputation(
+                users[0].latestTransitionedEpoch,
                 GSTreeRoot,
+                nullifierTreeRoot,
                 attesterId,
                 minPosRep,
                 maxNegRep,

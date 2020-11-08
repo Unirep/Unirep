@@ -455,7 +455,6 @@ class UserState {
 
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
-        console.log('user transitioned')
     }
 
     public genProveReputationCircuitInputs = async (
