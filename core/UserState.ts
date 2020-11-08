@@ -56,7 +56,7 @@ class Reputation implements IReputation {
     }
 
     public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
-        assert(hashOne(this.graffitiPreImage) === this.graffiti, 'Graffiti pre-image does not match')
+        assert(hashOne(_graffitiPreImage) === this.graffiti, 'Graffiti pre-image does not match')
         this.graffitiPreImage = _graffitiPreImage
     }
 

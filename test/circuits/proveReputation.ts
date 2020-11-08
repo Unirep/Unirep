@@ -21,6 +21,7 @@ import {
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
+import { Reputation } from "../../core"
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -34,6 +35,8 @@ describe('Prove reputation from attester circuit', function () {
     let userStateTree: SparseMerkleTreeImpl, userStateRoot
 
     let reputationRecords = {}
+    const MIN_POS_REP = 10
+    const MAX_NEG_REP = 10
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -49,21 +52,13 @@ describe('Prove reputation from attester circuit', function () {
             let attesterId = Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))
             while (reputationRecords[attesterId] !== undefined) attesterId = Math.floor(Math.random() * (2 ** circuitUserStateTreeDepth))
             const graffitiPreImage = genRandomSalt()
-            reputationRecords[attesterId] = {
-                posRep: Math.floor(Math.random() * 100),
-                negRep: Math.floor(Math.random() * 100),
-                graffitiPreImage: graffitiPreImage,
-                graffiti: hashOne(graffitiPreImage),
-            }
-            const newReputationRecordHash = hash5([
-                reputationRecords[attesterId]['posRep'],
-                reputationRecords[attesterId]['negRep'],
-                reputationRecords[attesterId]['graffiti'],
-                BigInt(0),
-                BigInt(0)
-            ])
-            reputationRecords[attesterId]['recordHash'] = newReputationRecordHash
-            await userStateTree.update(BigInt(attesterId), newReputationRecordHash)
+            reputationRecords[attesterId] = new Reputation(
+                BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
+                BigInt(Math.floor(Math.random() * MAX_NEG_REP)),
+                hashOne(graffitiPreImage),
+            )
+            reputationRecords[attesterId].addGraffitiPreImage(graffitiPreImage)
+            await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId].hash())
         }
 
         userStateRoot = userStateTree.getRootHash()
@@ -79,8 +74,6 @@ describe('Prove reputation from attester circuit', function () {
     it('successfully prove reputation', async () => {
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
-        const posRep = reputationRecords[attesterId]['posRep']
-        const negRep = reputationRecords[attesterId]['negRep']
         const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
         const circuitInputs = {
@@ -96,8 +89,8 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
-            min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10,
+            min_pos_rep: MIN_POS_REP,
+            max_neg_rep: MAX_NEG_REP,
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
@@ -113,8 +106,6 @@ describe('Prove reputation from attester circuit', function () {
     it('prove reputation with wrong attester Id should fail', async () => {
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = reputationRecords[attesterId]['posRep']
-        const negRep = reputationRecords[attesterId]['negRep']
         const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongAttesterId = attesterId < (NUM_ATTESTERS - 1) ? attesterId + 1 : attesterId - 1
 
@@ -131,8 +122,8 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
-            min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10,
+            min_pos_rep: MIN_POS_REP,
+            max_neg_rep: MAX_NEG_REP,
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
@@ -150,8 +141,6 @@ describe('Prove reputation from attester circuit', function () {
     it('prove reputation with not exist user state should fail', async () => {
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = reputationRecords[attesterId]['posRep']
-        const negRep = reputationRecords[attesterId]['negRep']
         const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongUserStateRoot = genRandomSalt()
 
@@ -168,8 +157,8 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
-            min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10,
+            min_pos_rep: MIN_POS_REP,
+            max_neg_rep: MAX_NEG_REP,
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
@@ -206,7 +195,7 @@ describe('Prove reputation from attester circuit', function () {
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
             min_pos_rep: wrongMinPosRep,
-            max_neg_rep: negRep + 10,
+            max_neg_rep: MAX_NEG_REP,
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
@@ -235,7 +224,7 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
-            min_pos_rep: posRep - 10,
+            min_pos_rep: MIN_POS_REP,
             max_neg_rep: wrongMaxNegRep,
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
@@ -253,8 +242,6 @@ describe('Prove reputation from attester circuit', function () {
     it('prove reputation with wrong graffiti pre image should fail', async () => {
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const posRep = reputationRecords[attesterId]['posRep']
-        const negRep = reputationRecords[attesterId]['negRep']
         const pathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
         const wrongGraffitiPreImage = genRandomSalt()
 
@@ -271,8 +258,8 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: pathElements,
-            min_pos_rep: posRep - 10,
-            max_neg_rep: negRep + 10,
+            min_pos_rep: MIN_POS_REP,
+            max_neg_rep: MAX_NEG_REP,
             graffiti_pre_image: wrongGraffitiPreImage
         }
 

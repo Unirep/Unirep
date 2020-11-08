@@ -27,7 +27,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth) {
     // Graffiti
     signal input graffiti_pre_image;
 
-    var MAX_REPUTATION_SCORE_BITS = 253;
+    var MAX_REPUTATION_SCORE_BITS = 252;
 
 
     /* 1. Check if user exists in the Global State Tree */

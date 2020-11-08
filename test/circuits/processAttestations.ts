@@ -111,16 +111,9 @@ describe('Process attestation circuit', function () {
                 const oldReputationRecordProof = await userStateTree.getMerkleProof(attesterId)
                 userStateTreePathElements.push(oldReputationRecordProof)
 
-                // Update attestation record
-                // Can not add two BigInt together so use BigNumber for addition instead
-                // Add pos rep
-                let rep = ethers.BigNumber.from(reputationRecords[attesterId.toString()]['posRep'])
-                let newRep = rep.add(ethers.BigNumber.from(attestation['posRep']))
-                reputationRecords[attesterId.toString()]['posRep'] = BigInt(newRep)
-                // Add neg rep
-                rep = ethers.BigNumber.from(reputationRecords[attesterId.toString()]['negRep'])
-                newRep = rep.add(ethers.BigNumber.from(attestation['negRep']))
-                reputationRecords[attesterId.toString()]['negRep'] = BigInt(newRep)
+                // Update reputation record
+                reputationRecords[attesterId.toString()]['posRep'] = attestation['posRep']
+                reputationRecords[attesterId.toString()]['negRep'] = attestation['negRep']
                 if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
