@@ -30,6 +30,15 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.addArgument(
+        ['-ep', '--epoch'],
+        {
+            action: 'store',
+            type: 'int',
+            help: 'The latest epoch user transitioned to. Default: current epoch',
+        }
+    )
+
+    parser.addArgument(
         ['-a', '--attester-id'],
         {
             required: true,
@@ -127,6 +136,7 @@ const verifyReputationProof = async (args: any) => {
     )
 
     const currentEpoch = unirepState.currentEpoch
+    const epoch = args.epoch ? Number(args.epoch) : currentEpoch
     const attesterId = BigInt(add0x(args.attester_id))
     const minPosRep = args.min_pos_rep
     const maxNegRep = args.max_neg_rep
@@ -134,9 +144,13 @@ const verifyReputationProof = async (args: any) => {
     const proof = JSON.parse(args.proof)
 
     // Verify on-chain
-    const GSTreeRoot = unirepState.genGSTree(currentEpoch).root
+    const GSTreeRoot = unirepState.genGSTree(epoch).root
+    const nullifierTree = await unirepState.genNullifierTree()
+    const nullifierTreeRoot = nullifierTree.getRootHash()
     const isProofValid = await unirepContract.verifyReputation(
+        epoch,
         GSTreeRoot,
+        nullifierTreeRoot,
         attesterId,
         minPosRep,
         maxNegRep,
