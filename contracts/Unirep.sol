@@ -424,23 +424,29 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function verifyReputation(
+        uint256 _epoch,
         uint256 _globalStateTree,
+        uint256 _nullifierTreeRoot,
         uint256 _attesterId,
         uint256 _min_pos_rep,
         uint256 _max_neg_rep,
         uint256 _graffiti_pre_image,
         uint256[8] calldata _proof) external view returns (bool) {
         // User prove his reputation by an attester:
-        // 1. positive reputation is greater than `_min_pos_rep`
-        // 2. negative reputation is less than `_max_neg_rep`
-        // 3. hash of graffiti pre-image matches
+        // 1. User exists in GST
+        // 2. It is the latest state user transition to
+        // 3. positive reputation is greater than `_min_pos_rep`
+        // 4. negative reputation is less than `_max_neg_rep`
+        // 5. hash of graffiti pre-image matches
 
-        uint256[] memory publicSignals = new uint256[](5);
-        publicSignals[0] = _globalStateTree;
-        publicSignals[1] = _attesterId;
-        publicSignals[2] = _min_pos_rep;
-        publicSignals[3] = _max_neg_rep;
-        publicSignals[4] = _graffiti_pre_image;
+        uint256[] memory publicSignals = new uint256[](7);
+        publicSignals[0] = _epoch;
+        publicSignals[1] = _globalStateTree;
+        publicSignals[2] = _nullifierTreeRoot;
+        publicSignals[3] = _attesterId;
+        publicSignals[4] = _min_pos_rep;
+        publicSignals[5] = _max_neg_rep;
+        publicSignals[6] = _graffiti_pre_image;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
