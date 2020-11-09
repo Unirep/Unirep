@@ -244,6 +244,11 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             epochKeys[currentEpoch].numKeys ++;
         }
 
+        // Validate attestation data
+        require(attestation.posRep < SNARK_SCALAR_FIELD, "Unirep: invalid attestation posRep");
+        require(attestation.negRep < SNARK_SCALAR_FIELD, "Unirep: invalid attestation negRep");
+        require(attestation.graffiti < SNARK_SCALAR_FIELD, "Unirep: invalid attestation graffiti");
+
         // Initialize the hash chain if it's nonexistent
         uint256 overwriteGraffiti = attestation.overwriteGraffiti ? 1 : 0;
         uint256[] memory attestationData = new uint256[](5);
