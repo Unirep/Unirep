@@ -72,6 +72,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     // Mapping between epoch key and hashchain of attestations which attest to the epoch key
     mapping(uint256 => uint256) public epochKeyHashchain;
+    // Mapping of epoch key and the number of attestations to the epoch key
+    // This is used to limit number of attestations per epoch key
+    mapping(uint256 => uint8) public numAttestationsToEpochKey;
 
     struct EpochKeyList {
         uint256 numKeys;
@@ -227,6 +230,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
         require(isEpochKeyHashChainSealed[epochKey] == false, "Unirep: hash chain of this epoch key has been sealed");
         require(attestationsMade[epochKey][msg.sender] == false, "Unirep: attester has already attested to this epoch key");
+        require(numAttestationsToEpochKey[epochKey] < numAttestationsPerEpochKey, "Unirep: no more attestations to the epoch key is allowed");
         require(msg.value == attestingFee, "Unirep: no attesting fee or incorrect amount");
 
         // Before attesting to a given epoch key, an attester must
@@ -262,6 +266,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             hash5(attestationData),
             epochKeyHashchain[epochKey]
         );
+        numAttestationsToEpochKey[epochKey] += 1;
 
         attestationsMade[epochKey][msg.sender] = true;
 
