@@ -120,6 +120,13 @@ const genEpochKeyAndProof = async (args: any) => {
         commitment,
     )
     const circuitInputs = await userState.genVerifyEpochKeyCircuitInputs(epkNonce)
+    console.log('Proving epoch key...')
+    console.log('----------------------User State----------------------')
+    console.log(userState.toJSON(4))
+    console.log('------------------------------------------------------')
+    console.log('----------------------Circuit inputs----------------------')
+    console.log(circuitInputs)
+    console.log('----------------------------------------------------------')
     const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
 
     // TODO: Not sure if this validation is necessary

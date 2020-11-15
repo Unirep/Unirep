@@ -139,6 +139,13 @@ const userStateTransition = async (args: any) => {
     )
 
     const circuitInputs = await userState.genUserStateTransitionCircuitInputs()
+    console.log('Proving user state transition...')
+    console.log('----------------------User State----------------------')
+    console.log(userState.toJSON(4))
+    console.log('------------------------------------------------------')
+    console.log('----------------------Circuit inputs----------------------')
+    console.log(circuitInputs)
+    console.log('----------------------------------------------------------')
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
     const newState = await userState.genNewUserStateAfterTransition()
