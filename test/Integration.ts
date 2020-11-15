@@ -34,10 +34,11 @@ describe('Integration', function () {
 
     let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
     before(async () => {
+        console.log("Compiling circuits...")
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        // verifyEpochKeyCircuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
+        verifyEpochKeyCircuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
         verifyUserStateTransitionCircuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
-        // verifyReputationCircuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
+        verifyReputationCircuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(`Total compile time for three circuits: ${endCompileTime - startCompileTime} seconds`)
 
