@@ -48,7 +48,7 @@ npm run test
 ### Can an user choose not to process certain attestations that are bad for his reputation?
 - No. The attestations to an `epochKey` would be chained together. A hashchain would be formed by the hashes of the attestations.
     - So user can not omit any attestation because the circuit requires each attestation in the hashchain to be processed.
-        - if user omits an attestation, then computed hashchain would not match the one in the Unirep contract
+        - if user omits an attestation, then the computed hashchain would not match the one in the Unirep contract
 ```
 hashChainResult = hash(attestation_3, hash(attestation_2, hash(attestation_1, 0)))
 ```
@@ -60,12 +60,12 @@ hashChainResult = hash(attestation_3, hash(attestation_2, hash(attestation_1, 0)
     - a user state tree leaf = hash of the reputation
 ```
                                     user state tree root
-                        /                                       \
+                                    /                  \
         hash(DEFAULT_REP_HASH, 0xabc...)              hash(0xbcd..., 0xcde...)
                /        \                                      /         \
 [No rep for leaf 0] [leaf 1: 0xabc...]              [leaf 2: 0xbcd...] [leaf 3: 0xcde...]
 ```
-NOTE: `[leaf 1: 0xabc...]` represents the reputation received from attester with `attesterId = 1` and `0xabc...` is the hash of the reputation
+- NOTE: `[leaf 1: 0xabc...]` represents the reputation received from attester with `attesterId = 1` and `0xabc...` is the hash of the reputation
 
 
 #### Global state tree
@@ -79,28 +79,30 @@ NOTE: `[leaf 1: 0xabc...]` represents the reputation received from attester with
                /        \                          /         \
 [leaf_0: 0xabc...] [leaf_1: 0xcde...] [leaf_2: 0xdef...] [DEFAULT_EMPTY_HASH]
 ```
+- NOTE: this is an incremental merkle tree so leaves are inserted from left (leaf index 0) to right, one by one, instead of inserted directly into the specified leaf index.
 
 #### Epoch tree
 - an epoch tree is a sparse merkle tree with it's leaves storing hashchain results of each epoch key, e.g.,
 ```
                                 epoch tree root
                                /               \
-      hash(0x123..., DEFAULT_EMPTY_HASH)   hash(0x456, DEFAULT_EMPTY_HASH)
-            /             \                      /           \
-[epk_0: 0x123...] [DEFAULT_EMPTY_HASH]       [epk_2: 0x456...] [DEFAULT_EMPTY_HASH]
+      hash(DEFAULT_EMPTY_HASH, 0x123...)   hash(DEFAULT_EMPTY_HASH, 0x456...)
+            /             \                      /                  \
+[DEFAULT_EMPTY_HASH]  [epk_1: 0x123...]    [DEFAULT_EMPTY_HASH]  [epk_3: 0x456...]
 ```
 
 #### Nullifier tree
-- an nullifier tree is a sparse merkle tree with it's leaves storing nullifier of already processed attestation or epoch key, e.g.,
+- an nullifier tree is a sparse merkle tree with it's leaves storing nullifier of already processed attestations or epoch keys, e.g.,
 ```
-                          nullifier tree root
-                        /                     \
-                hash(1, 0)                      hash(0, 1)
-               /          \                    /         \
-[leaf 0 is reserved: 1]  [leaf 1: 0]       [leaf_2: 0] [leaf_3: 1]
+                nullifier tree root
+              /                     \
+      hash(1, 0)                     hash(0, 1)
+     /          \                    /         \
+[leaf 0: 1]  [leaf 1: 0]       [leaf_2: 0] [leaf_3: 1]
 ```
-NOTE: leaf 0 of nullifier tree is reserved, it has value `1`
-NOTE: leaf value `1` means the nullifier represented by the leaf index is processed. In the example above, a nullifier of value `3` is stored in nullifier tree, this nullifier could be a nullifier of an attestation or an epoch key, and it means that the attestation or the epoch key is processed.
+- NOTE: leaf 0 of nullifier tree is reserved, it always has value `1`
+- NOTE: leaf value `1` means the nullifier represented by the leaf index is processed. In the example above, nullifier `3` is stored in nullifier tree, this nullifier could be a nullifier of an attestation or an epoch key, and it means that the attestation or the epoch key is processed.
+- NOTE: nullifiers are used to prevent user from processing an aleady processed attestation or epoch key.
 
 - an attestation includes the following data:
 ```solidity
@@ -122,24 +124,24 @@ struct Attestation {
 - nullifier of an epoch key is computed by `hash5(EPOCH_KEY_NULLIFIER_DOMAIN, identityNullifier, epoch, nonce, 0)`
     - `EPOCH_KEY_NULLIFIER_DOMAIN` is used to prevent mixed-up of attestation nullifier and epoch key nullifier
 - a reputation includes the following data: `posRep, negRep, graffiti`
-    - it does not include `attesterId` like an attestation does because reputation is already stored in the user state tree with `attesterId` as leaf index
+    - it does not include `attesterId` like an attestation does because reputation is already stored in user state tree with `attesterId` as leaf index
 
 ### Epoch, epoch transition and user state transition
-- There is the idea of epoch in Unirep. Every `epochLength` seconds, one epoch ends and next epoch begins.
-    - Epoch transition happens when someone call `beginEpochTransition`
+- There is the notion of epoch in Unirep. Every `epochLength` seconds, one epoch ends and next epoch begins.
+    - Epoch transition happens when someone calls `beginEpochTransition`
         - in `beginEpochTransition`, all epoch keys attested during this epoch will have their hash chain sealed
-            - sealed means the hash chain is hashed with `1`, e.g., `hash(1, latestHashChain)`
-            - if an epoch key received no attestation, it's hash chain result would be `hash(1, 0)`
+            - by 'sealed' it means that the hash chain is hashed again with `1`, e.g., `hash(1, originalHashChain)`
+            - if an epoch key received no attestation, it's hash chain would be `hash(1, 0)`
         - After hash chain of the epoch keys are sealed, these epoch keys and their hash chain will be inserted into the epoch tree of this epoch
             - there's one epoch tree for every epoch
         - caller will be compensated for executing the epoch transition
-    - There will be a new global state tree for next epoch
-        - and user needs to perform user state transition to transition his state into the latest epoch
+    - There will be a new global state tree for each epoch
+        - and user needs to perform user state transition to transition his user state into the latest epoch
             - user performs user state transition by calling `updateUserStateRoot`
-            - once the user performed user state transition, his user state will be inserted into th global state tree of that epoch
+            - once the user performed user state transition, his user state will be inserted into the global state tree of the latest epoch
             - so if a user does not perform user state transition during an epoch, his user state will not be in the global state tree of that epoch
 - User should perform user state transition before he can prove the latest attestations he received.
-- Also, user should perform user state transition before he can receive any attestations further. Attester can still attest to an user's epoch key in the past but the user will not be able to process the attestation.
+    - Also, user should perform user state transition before he can receive any attestations further. Attester can still attest to an user's epoch key in the past epoch but the user will not be able to process the attestation.
 
 ### Example flow using CLI commands
 
@@ -219,7 +221,3 @@ NOTE: proof will be printed and it should be handed to the receiver of this proo
 ```
 npx ts-node cli/index.ts verifyReputationProof -x 0xb3dD32d090f05Afd6225e6b611bb25C1E87a650B -a 1 -mp 0 -mn 10 -gp 0 -pf "{\"protocol\":\"groth\",\"proof\":\"2fa0dc4339cd7a3aae8315b081ade256e9f61098f7925e2893992a0158114a19138c4420f55419271cb2ccfc6bd78168decf8288346a33841b74e341e5d3d327160d7923815a69696a4504929eba5ce3007f3c6a7c2584d1b3f74b12372a08c32c4e30f0cdc4be402ea14ed3724fbec8d89c43eb581d8c6b9297a7db1ac1209714920b9205f5fb04258c8f1b1db2184c6340eb752ce9c5933afddfe3683078d3074e6908298c9e85c08613e4d53c37c0f906e6dd5be2fc3f31a8a69bf47f041d0976f70033d35e7d14697d14d5662ce676648c226e418c10a9f55834e827290519b4ccacf3b59fb04b2708d24a34c2e4291f555cdc95929d0ed8b386c90358da\",\"pi_a\":[\"21542919610378111517868459726729146554487771022668041096937979468677081287193\",\"8841772919457017765854853618748931093962298038004245215713907996830630925095\",\"1\"],\"pi_b\":[[\"20039917184598236365818357430581303244936505768503061777162456686918870573207\",\"9974687749202553416968043475250586972797576402450240111112346564614249121987\"],[\"3304728914557216396426844320951515301779122501585436981345179214870516532253\",\"9304296499112751959737642432745561476146578786982452586231253231516832004307\"],[\"1\",\"0\"]],\"pi_c\":[\"4281008327698783193315732713800559318156084569777913424867653523343378163973\",\"11627266305272943480020635883736388264942729210935508132777949434576738932954\",\"1\"]}"
 ```
-
-### What do the circuits do
-
-#### 1. `verifiyEpochKey` circuit
