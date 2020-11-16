@@ -1,8 +1,9 @@
 pragma experimental ABIEncoderV2;
 pragma solidity ^0.6.0;
 
-import "./SafeMath.sol";
-import "./Address.sol";
+import "@openzeppelin/contracts/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import { DomainObjs } from './DomainObjs.sol';
 import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
@@ -26,7 +27,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     uint256 public currentEpoch = 1;
 
-    uint256 public epochLength;
+    uint256 immutable public epochLength;
 
     uint256 public latestEpochTransitionTime;
 
@@ -34,24 +35,24 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // treeDepths.userStateTreeDepth leaves of value 0
     uint256 public emptyUserStateRoot;
 
-    uint256 public emptyGlobalStateTreeRoot;
+    uint256 immutable public emptyGlobalStateTreeRoot;
 
     // Maximum number of epoch keys allowed for an user to generate in one epoch
-    uint8 public numEpochKeyNoncePerEpoch;
+    uint8 immutable public numEpochKeyNoncePerEpoch;
 
-    uint8 public numAttestationsPerEpochKey;
+    uint8 immutable public numAttestationsPerEpochKey;
 
-    uint8 public numAttestationsPerEpoch;
+    uint8 immutable public numAttestationsPerEpoch;
 
     // The maximum number of signups allowed
-    uint256 public maxUsers;
+    uint256 immutable public maxUsers;
 
     uint256 public numUserSignUps = 0;
 
     mapping(uint256 => bool) public hasUserSignedUp;
 
     // Fee required for submitting an attestation
-    uint256 public attestingFee;
+    uint256 immutable public attestingFee;
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
     // Mapping of voluteers that execute epoch transition to compensation they earned
@@ -204,7 +205,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
-    function attesterSignUpViaRelayer(address attester, uint8 v, bytes32 r, bytes32 s) external {
+    function attesterSignUpViaRelayer(address attester, bytes calldata signature) external {
         require(attesters[attester] == 0, "Unirep: attester has already signed up");
 
         // Attester signs over it's own address concatenated with this contract address
@@ -217,7 +218,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             )
         );
         require(
-            ecrecover(messageHash, v, r, s) == attester,
+            ECDSA.recover(messageHash, signature) == attester,
             "Unirep: invalid attester sign up signature"
         );
 
@@ -252,18 +253,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(attestation.posRep < SNARK_SCALAR_FIELD, "Unirep: invalid attestation posRep");
         require(attestation.negRep < SNARK_SCALAR_FIELD, "Unirep: invalid attestation negRep");
         require(attestation.graffiti < SNARK_SCALAR_FIELD, "Unirep: invalid attestation graffiti");
-
-        // Initialize the hash chain if it's nonexistent
-        uint256 overwriteGraffiti = attestation.overwriteGraffiti ? 1 : 0;
-        uint256[] memory attestationData = new uint256[](5);
-        attestationData[0] = attestation.attesterId;
-        attestationData[1] = attestation.posRep;
-        attestationData[2] = attestation.negRep;
-        attestationData[3] = attestation.graffiti;
-        attestationData[4] = overwriteGraffiti;
         
         epochKeyHashchain[epochKey] = hashLeftRight(
-            hash5(attestationData),
+            hashAttestation(attestation),
             epochKeyHashchain[epochKey]
         );
         numAttestationsToEpochKey[epochKey] += 1;
@@ -280,9 +272,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function beginEpochTransition(uint256 numEpochKeysToSeal) external {
-        require(block.timestamp - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
-
         uint256 initGas = gasleft();
+
+        require(block.timestamp - latestEpochTransitionTime >= epochLength, "Unirep: epoch not yet ended");
 
         uint256 epochKey;
         uint256 startKeyIndex = epochKeys[currentEpoch].numSealedKeys;
