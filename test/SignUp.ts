@@ -9,7 +9,6 @@ import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from './ut
 const { expect } = chai
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { splitSignature } from "ethers/lib/utils"
 
 
 describe('Signup', () => {
@@ -129,9 +128,8 @@ describe('Signup', () => {
             attester2Address = await attester2.getAddress()
 
             let message = ethers.utils.solidityKeccak256(["address", "address"], [attester2Address, unirepContract.address])
-            let sigHex = await attester2.signMessage(ethers.utils.arrayify(message))
-            attester2Sig = splitSignature(sigHex)
-            const tx = await unirepContract.attesterSignUpViaRelayer(attester2Address, attester2Sig.v, attester2Sig.r, attester2Sig.s)
+            attester2Sig = await attester2.signMessage(ethers.utils.arrayify(message))
+            const tx = await unirepContract.attesterSignUpViaRelayer(attester2Address, attester2Sig)
             const receipt = await tx.wait()
             
             expect(receipt.status).equal(1)
@@ -145,7 +143,7 @@ describe('Signup', () => {
         it('sign up with invalid signature should fail', async () => {
             let attester3 = accounts[3]
             let attester3Address = await attester3.getAddress()
-            await expect(unirepContract.attesterSignUpViaRelayer(attester3Address, attester2Sig.v, attester2Sig.r, attester2Sig.s))
+            await expect(unirepContract.attesterSignUpViaRelayer(attester3Address, attester2Sig))
                 .to.be.revertedWith('Unirep: invalid attester sign up signature')
         })
 
@@ -153,7 +151,7 @@ describe('Signup', () => {
             await expect(unirepContractCalledByAttester.attesterSignUp())
                 .to.be.revertedWith('Unirep: attester has already signed up')
 
-            await expect(unirepContract.attesterSignUpViaRelayer(attester2Address, attester2Sig.v, attester2Sig.r, attester2Sig.s))
+            await expect(unirepContract.attesterSignUpViaRelayer(attester2Address, attester2Sig))
                 .to.be.revertedWith('Unirep: attester has already signed up')
         })
     })
