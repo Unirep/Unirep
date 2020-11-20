@@ -3,6 +3,7 @@ include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
+include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 include "./processAttestations.circom";
 
@@ -25,23 +26,9 @@ template epochKeyExist(epoch_tree_depth) {
     signal quotient;
     signal epkModed;
     // 2.1.2 Mod epoch key
-    // circom's best practices state that we should avoid using <-- unless
-    // we know what we are doing. But this is the only way to perform the
-    // modulo operation.
-    quotient <-- epochKeyHasher.hash \ (2 ** epoch_tree_depth);
-    epkModed <-- epochKeyHasher.hash % (2 ** epoch_tree_depth);
-    // 2.1.3 Range check on moded epoch key
-    component epk_lt = LessEqThan(epoch_tree_depth);
-    epk_lt.in[0] <== epkModed;
-    epk_lt.in[1] <== 2 ** epoch_tree_depth - 1;
-    epk_lt.out === 1;
-    // 2.1.4 Range check on quotient
-    component quot_lt = LessEqThan(254 - epoch_tree_depth);
-    quot_lt.in[0] <== quotient;
-    quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
-    quot_lt.out === 1;
-    // 2.1.5 Check equality
-    epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epkModed;
+    component modEPK = ModuloTreeDepth(epoch_tree_depth);
+    modEPK.dividend <== epochKeyHasher.hash;
+    epkModed <== modEPK.remainder;
 
     // 2.1.6 Check if hash chain of the epoch key exists in epoch tree
     component epk_exists = SMTLeafExists(epoch_tree_depth);

@@ -293,12 +293,12 @@ describe('User State Transition circuits', function () {
                 const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
                 expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))
 
-                // const startTime = Math.floor(new Date().getTime() / 1000)
-                // const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
-                // const endTime = Math.floor(new Date().getTime() / 1000)
-                // console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-                // const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-                // expect(isValid).to.be.true
+                const startTime = Math.floor(new Date().getTime() / 1000)
+                const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+                const endTime = Math.floor(new Date().getTime() / 1000)
+                console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+                const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
+                expect(isValid).to.be.true
             })
 
             it('User state update with invalid selector value should not work', async () => {

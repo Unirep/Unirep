@@ -2,6 +2,7 @@ include "../node_modules/circomlib/circuits/comparators.circom";
 include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
+include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 
 template ProveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
@@ -97,24 +98,10 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
-    signal epk_nul_quotient;
-    component epk_nul_quot_lt;
     signal epk_nullifier_hash_moded;
-    component epk_nul_lt;
-    epk_nul_quotient <-- epoch_key_nullifier_hasher.hash \ (2 ** nullifier_tree_depth);
-    epk_nullifier_hash_moded <-- epoch_key_nullifier_hasher.hash % (2 ** nullifier_tree_depth);
-    // 4.1.3 Range check on moded nullifier
-    epk_nul_lt = LessEqThan(nullifier_tree_depth);
-    epk_nul_lt.in[0] <== epk_nullifier_hash_moded;
-    epk_nul_lt.in[1] <== 2 ** nullifier_tree_depth - 1;
-    epk_nul_lt.out === 1;
-    // 4.1.4 Range check on epk_nul_quotient
-    epk_nul_quot_lt = LessEqThan(254 - nullifier_tree_depth);
-    epk_nul_quot_lt.in[0] <== epk_nul_quotient;
-    epk_nul_quot_lt.in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
-    epk_nul_quot_lt.out === 1;
-    // 4.1.5 Check equality
-    epoch_key_nullifier_hasher.hash === epk_nul_quotient * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded;
+    component modEPKNullifier = ModuloTreeDepth(nullifier_tree_depth);
+    modEPKNullifier.dividend <== epoch_key_nullifier_hasher.hash;
+    epk_nullifier_hash_moded <== modEPKNullifier.remainder;
 
     // 4.2 Verify non-membership of the nullifier in nullifier tree
     // Unseen nullifier leaf should have value hashLeftRight(0, 0)

@@ -1,6 +1,7 @@
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
+include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 include "./verifyHashChain.circom";
 
@@ -40,10 +41,8 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     component hash_chain_verifier = VerifyHashChain(NUM_ATTESTATIONS);
     hash_chain_verifier.result <== hash_chain_result;
 
-    signal quotient[NUM_ATTESTATIONS];
-    component quot_lt[NUM_ATTESTATIONS];
+    component modAtteNullifier[NUM_ATTESTATIONS];
     signal nullifier_hash_moded[NUM_ATTESTATIONS];
-    component nul_lt[NUM_ATTESTATIONS];
     component nullifier_muxer[NUM_ATTESTATIONS];
 
     signal one_leaf;
@@ -75,23 +74,9 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         nullifier_hashers[i].in[4] <== epoch_key;
 
         // 1.2.2 Mod nullifier hash
-        // circom's best practices state that we should avoid using <-- unless
-        // we know what we are doing. But this is the only way to perform the
-        // modulo operation.
-        quotient[i] <-- nullifier_hashers[i].hash \ (2 ** nullifier_tree_depth);
-        nullifier_hash_moded[i] <-- nullifier_hashers[i].hash % (2 ** nullifier_tree_depth);
-        // 1.2.3 Range check on moded nullifier
-        nul_lt[i] = LessEqThan(nullifier_tree_depth);
-        nul_lt[i].in[0] <== nullifier_hash_moded[i];
-        nul_lt[i].in[1] <== 2 ** nullifier_tree_depth - 1;
-        nul_lt[i].out === 1;
-        // 1.2.4 Range check on quotient[i]
-        quot_lt[i] = LessEqThan(254 - nullifier_tree_depth);
-        quot_lt[i].in[0] <== quotient[i];
-        quot_lt[i].in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
-        quot_lt[i].out === 1;
-        // 1.2.5 Check equality
-        nullifier_hashers[i].hash === quotient[i] * (2 ** nullifier_tree_depth) + nullifier_hash_moded[i];
+        modAtteNullifier[i] = ModuloTreeDepth(nullifier_tree_depth);
+        modAtteNullifier[i].dividend <== nullifier_hashers[i].hash;
+        nullifier_hash_moded[i] <== modAtteNullifier[i].remainder;
 
         // Ouput nullifiers
         // Filter by selectors, if selector is true, output actual nullifier,
@@ -111,30 +96,12 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     epoch_key_nullifier_hasher.in[2] <== epoch;
     epoch_key_nullifier_hasher.in[3] <== nonce;
     epoch_key_nullifier_hasher.in[4] <== 0;
+
     // 1.2.2 Mod nullifier hash
-    // circom's best practices state that we should avoid using <-- unless
-    // we know what we are doing. But this is the only way to perform the
-    // modulo operation.
-    signal epk_nul_quotient;
-    component epk_nul_quot_lt;
-    signal epk_nullifier_hash_moded;
-    component epk_nul_lt;
-    epk_nul_quotient <-- epoch_key_nullifier_hasher.hash \ (2 ** nullifier_tree_depth);
-    epk_nullifier_hash_moded <-- epoch_key_nullifier_hasher.hash % (2 ** nullifier_tree_depth);
-    // 1.2.3 Range check on moded nullifier
-    epk_nul_lt = LessEqThan(nullifier_tree_depth);
-    epk_nul_lt.in[0] <== epk_nullifier_hash_moded;
-    epk_nul_lt.in[1] <== 2 ** nullifier_tree_depth - 1;
-    epk_nul_lt.out === 1;
-    // 1.2.4 Range check on epk_nul_quotient
-    epk_nul_quot_lt = LessEqThan(254 - nullifier_tree_depth);
-    epk_nul_quot_lt.in[0] <== epk_nul_quotient;
-    epk_nul_quot_lt.in[1] <== 2 ** (254 - nullifier_tree_depth) - 1;
-    epk_nul_quot_lt.out === 1;
-    // 1.2.5 Check equality
-    epoch_key_nullifier_hasher.hash === epk_nul_quotient * (2 ** nullifier_tree_depth) + epk_nullifier_hash_moded;
-    // Output `epoch_key_nullifier`, it's either 0 or the nullifier computed above.
-    epoch_key_nullifier <== epk_nullifier_hash_moded;
+    component modEPKNullifier = ModuloTreeDepth(nullifier_tree_depth);
+    modEPKNullifier.dividend <== epoch_key_nullifier_hasher.hash;
+
+    epoch_key_nullifier <== modEPKNullifier.remainder;
     /* End of 1. verify attestation hash chain and compute nullifiers */
 
 
