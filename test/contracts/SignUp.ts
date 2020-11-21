@@ -1,14 +1,14 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth} from '../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth} from '../../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
-import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from './utils'
+import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from '../utils'
 
 const { expect } = chai
 
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
 
 
 describe('Signup', () => {

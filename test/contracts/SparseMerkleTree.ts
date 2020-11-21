@@ -6,13 +6,13 @@ import { ethers } from 'ethers'
 
 const { expect } = chai
 
-import { genRandomSalt } from '../crypto/crypto'
-import { SMT_ONE_LEAF } from './utils'
+import { genRandomSalt } from '../../crypto/crypto'
+import { SMT_ONE_LEAF } from '../utils'
 
-import PoseidonT3 from '../artifacts/contracts/Poseidon.sol/PoseidonT3.json'
-import PoseidonT6 from '../artifacts/contracts/Poseidon.sol/PoseidonT6.json'
-import { SparseMerkleTreeImpl, bufToHexString } from '../crypto/SMT'
-import { epochTreeDepth } from '../config/testLocal'
+import PoseidonT3 from '../../artifacts/contracts/Poseidon.sol/PoseidonT3.json'
+import PoseidonT6 from '../../artifacts/contracts/Poseidon.sol/PoseidonT6.json'
+import { SparseMerkleTreeImpl, bufToHexString } from '../../crypto/SMT'
+import { epochTreeDepth } from '../../config/testLocal'
 
 /* Begin tests */
 describe('OneTimeSparseMerkleTree', () => {

@@ -1,15 +1,15 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch, numAttestationsPerEpochKey} from '../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch, numAttestationsPerEpochKey} from '../../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
-import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot, getTreeDepthsForTesting } from './utils'
+import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../utils'
 
 const { expect } = chai
 
-import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../core"
-import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "./circuits/utils"
+import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
+import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "../circuits/utils"
 
 describe('Integration', function () {
     this.timeout(500000)

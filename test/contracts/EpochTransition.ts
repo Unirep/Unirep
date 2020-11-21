@@ -1,14 +1,14 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength } from '../config/testLocal'
-import { genRandomSalt, hashLeftRight } from '../crypto/crypto'
+import { attestingFee, epochLength } from '../../config/testLocal'
+import { genRandomSalt, hashLeftRight } from '../../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from './utils'
+import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../utils'
 
 const { expect } = chai
 
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
 
 
 describe('Epoch Transition', () => {
