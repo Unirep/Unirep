@@ -4,7 +4,7 @@ include "../node_modules/circomlib/circuits/pedersen.circom";
 
 template CalculateIdentityCommitment(IDENTITY_PK_SIZE_IN_BITS, NULLIFIER_TRAPDOOR_SIZE_IN_BITS) {
 
-    signal input identity_pk[IDENTITY_PK_SIZE_IN_BITS];
+    signal input identity_pk_bits[IDENTITY_PK_SIZE_IN_BITS];
     signal input identity_nullifier[NULLIFIER_TRAPDOOR_SIZE_IN_BITS];
     signal input identity_trapdoor[NULLIFIER_TRAPDOOR_SIZE_IN_BITS];
 
@@ -14,7 +14,7 @@ template CalculateIdentityCommitment(IDENTITY_PK_SIZE_IN_BITS, NULLIFIER_TRAPDOO
     component identity_commitment = Pedersen(3*256);
     for (var i = 0; i < 256; i++) {
         if (i < IDENTITY_PK_SIZE_IN_BITS) {
-            identity_commitment.in[i] <== identity_pk[i];
+            identity_commitment.in[i] <== identity_pk_bits[i];
         } else {
             identity_commitment.in[i] <== 0;
         }
@@ -66,7 +66,7 @@ template IdentityCommitment() {
     // BEGIN identity commitment
     component identity_commitment = CalculateIdentityCommitment(IDENTITY_PK_SIZE_IN_BITS, NULLIFIER_TRAPDOOR_SIZE_IN_BITS);
     for (var i = 0; i < IDENTITY_PK_SIZE_IN_BITS; i++) {
-        identity_commitment.identity_pk[i] <== identity_pk_0_bits.out[i];
+        identity_commitment.identity_pk_bits[i] <== identity_pk_0_bits.out[i];
     }
     for (var i = 0; i < NULLIFIER_TRAPDOOR_SIZE_IN_BITS; i++) {
         identity_commitment.identity_nullifier[i] <== identity_nullifier_bits.out[i];
