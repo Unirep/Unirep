@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import { DomainObjs } from './DomainObjs.sol';
-import { IncrementalMerkleTree } from "./IncrementalMerkleTree.sol";
 import { SnarkConstants } from './SnarkConstants.sol';
 import { ComputeRoot } from './ComputeRoot.sol';
 import { UnirepParameters } from './UnirepParameters.sol';
