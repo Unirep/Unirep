@@ -23,7 +23,6 @@ template epochKeyExist(epoch_tree_depth) {
     epochKeyHasher.in[3] <== 0;
     epochKeyHasher.in[4] <== 0;
 
-    signal quotient;
     signal epkModed;
     // 2.1.2 Mod epoch key
     component modEPK = ModuloTreeDepth(epoch_tree_depth);
