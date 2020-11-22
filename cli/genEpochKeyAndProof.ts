@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
@@ -12,9 +13,10 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genEpochKey } from '../test/utils'
 import { genUserStateFromContract } from '../core'
-import { genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import { epkProofPrefix, identityPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -104,7 +106,9 @@ const genEpochKeyAndProof = async (args: any) => {
     }
 
     // Gen epoch key
-    const id = unSerialiseIdentity(args.identity)
+    const encodedIdentity = args.identity.slice(identityPrefix.length)
+    const decodedIdentity = base64url.decode(encodedIdentity)
+    const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
     const treeDepths = await unirepContract.treeDepths()
@@ -135,10 +139,11 @@ const genEpochKeyAndProof = async (args: any) => {
         console.error('Error: epoch key proof generated is not valid!')
         return
     }
-    
-    const proof = results["proof"]
+
+    const formattedProof = formatProofForVerifierContract(results["proof"])
+    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
-    console.log('Epoch key proof:', JSON.stringify(JSON.stringify(proof)))  // stringify twice to escape double quote
+    console.log(epkProofPrefix + encodedProof)
 }
 
 export {

@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 
@@ -10,9 +11,9 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genUnirepStateFromContract } from '../core'
 import { add0x } from '../crypto/SMT'
-import { formatProofForVerifierContract } from '../test/circuits/utils'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import { epkProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -96,7 +97,8 @@ const verifyEpochKeyProof = async (args: any) => {
     const currentEpoch = unirepState.currentEpoch
     const GSTRoot = unirepState.genGSTree(currentEpoch).root
     const epk = BigInt(add0x(args.epoch_key))
-    const proof = JSON.parse(args.proof)
+    const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
+    const proof = JSON.parse(decodedProof)
 
     const unirepContract = new ethers.Contract(
         unirepAddress,
@@ -107,7 +109,7 @@ const verifyEpochKeyProof = async (args: any) => {
         GSTRoot,
         currentEpoch,
         epk,
-        formatProofForVerifierContract(proof),
+        proof,
     )
     if (!isProofValid) {
         console.error('Error: invalid epoch key proof')

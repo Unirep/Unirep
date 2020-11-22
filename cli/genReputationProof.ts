@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 
@@ -9,9 +10,10 @@ import {
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genUserStateFromContract } from '../core'
-import { genVerifyReputationProofAndPublicSignals, verifyProveReputationProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, verifyProveReputationProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { add0x } from '../crypto/SMT'
+import { identityPrefix, reputationProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -114,7 +116,9 @@ const genReputationProof = async (args: any) => {
 
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
-    const id = unSerialiseIdentity(args.identity)
+    const encodedIdentity = args.identity.slice(identityPrefix.length)
+    const decodedIdentity = base64url.decode(encodedIdentity)
+    const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
 
     // Gen reputation proof
@@ -146,8 +150,10 @@ const genReputationProof = async (args: any) => {
         return
     }
     
-    const proof = results["proof"]
-    console.log(`Proof of reputation from attester ${attesterId}: ${JSON.stringify(JSON.stringify(proof))}`)  // stringify twice to escape double quote
+    const formattedProof = formatProofForVerifierContract(results["proof"])
+    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    console.log(`Proof of reputation from attester ${attesterId}:`)
+    console.log(reputationProofPrefix + encodedProof)
 }
 
 export {

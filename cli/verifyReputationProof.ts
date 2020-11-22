@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 
@@ -10,9 +11,9 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genUnirepStateFromContract } from '../core'
 import { add0x } from '../crypto/SMT'
-import { formatProofForVerifierContract } from '../test/circuits/utils'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import { reputationProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -141,7 +142,8 @@ const verifyReputationProof = async (args: any) => {
     const minPosRep = args.min_pos_rep
     const maxNegRep = args.max_neg_rep
     const graffitiPreImage = BigInt(add0x(args.graffiti_preimage))
-    const proof = JSON.parse(args.proof)
+    const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
+    const proof = JSON.parse(decodedProof)
 
     // Verify on-chain
     const GSTreeRoot = unirepState.genGSTree(epoch).root
@@ -155,7 +157,7 @@ const verifyReputationProof = async (args: any) => {
         minPosRep,
         maxNegRep,
         graffitiPreImage,
-        formatProofForVerifierContract(proof),
+        proof,
     )
     if (!isProofValid) {
         console.error('Error: invalid reputation proof')

@@ -1,4 +1,7 @@
+import base64url from 'base64url'
 import { genIdentity, genIdentityCommitment, serialiseIdentity } from 'libsemaphore'
+
+import { identityPrefix, identityCommitmentPrefix } from "./prefix"
 
 const configureSubparser = (subparsers: any) => {
     subparsers.addParser(
@@ -12,9 +15,12 @@ const genUnirepIdentity = async (args: any) => { // eslint-disable-line @typescr
     const commitment = genIdentityCommitment(id)
 
     const serializedIdentity = serialiseIdentity(id)
+    const encodedIdentity = base64url.encode(serializedIdentity)
+    console.log(identityPrefix + encodedIdentity)
+
     const serializedIdentityCommitment = commitment.toString(16)
-    console.log('Identity:', JSON.stringify(serializedIdentity))
-    console.log('Identity Commitment:', serializedIdentityCommitment)
+    const encodedIdentityCommitment = base64url.encode(serializedIdentityCommitment)
+    console.log(identityCommitmentPrefix + encodedIdentityCommitment)
 }
 
 export {

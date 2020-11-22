@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
@@ -16,6 +17,7 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, verifyUserStateTransitionProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
+import { identityPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -127,7 +129,9 @@ const userStateTransition = async (args: any) => {
     )
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
-    const id = unSerialiseIdentity(args.identity)
+    const encodedIdentity = args.identity.slice(identityPrefix.length)
+    const decodedIdentity = base64url.decode(encodedIdentity)
+    const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
 
     const userState = await genUserStateFromContract(

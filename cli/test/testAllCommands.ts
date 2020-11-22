@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
@@ -11,6 +12,7 @@ import { exec } from './utils'
 
 import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
 import { hashOne } from "maci-crypto"
+import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 
 describe('test all CLI subcommands', function() {
     this.timeout(500000)
@@ -29,7 +31,6 @@ describe('test all CLI subcommands', function() {
     let unirepContract: ethers.Contract
     let unirepState: UnirepState
     
-    let serializedIdentity, serializedIdentityCommitment
     let userIdentity, userIdentityCommitment
     const attesterId = 1
     let epk, epkProof
@@ -94,13 +95,19 @@ describe('test all CLI subcommands', function() {
             console.log(command)
             console.log(output)
 
-            const idRegMatch = output.match(/^Identity: (\"\[[a-fA-F0-9,"\\]+\]\")\n/)
-            serializedIdentity = idRegMatch[1]
-            userIdentity = unSerialiseIdentity(JSON.parse(serializedIdentity))
-            const commitmentRegMatch = output.match(/Identity Commitment: ([a-fA-F0-9]+)$/)
-            serializedIdentityCommitment = commitmentRegMatch[1]
-            userIdentityCommitment = genIdentityCommitment(userIdentity)
-            expect(serializedIdentityCommitment).equal(userIdentityCommitment.toString(16))
+            const idRegMatch = output.match(/^(Unirep.identity.[a-zA-Z0-9\-\_]+)\n/)
+            const encodedIdentity = idRegMatch[1]
+            const serializedIdentity = base64url.decode(encodedIdentity.slice(identityPrefix.length))
+            const _userIdentity = unSerialiseIdentity(serializedIdentity)
+
+            const commitmentRegMatch = output.match(/(Unirep.identityCommitment.[a-zA-Z0-9\-\_]+)$/)
+            const encodedIdentityCommitment = commitmentRegMatch[1]
+            const serializedIdentityCommitment = base64url.decode(encodedIdentityCommitment.slice(identityCommitmentPrefix.length))
+            const _userIdentityCommitment = genIdentityCommitment(_userIdentity)
+            expect(serializedIdentityCommitment).equal(_userIdentityCommitment.toString(16))
+
+            userIdentity = encodedIdentity
+            userIdentityCommitment = encodedIdentityCommitment
         })
     })
 
@@ -108,7 +115,7 @@ describe('test all CLI subcommands', function() {
         it('should sign user up', async () => {
             const command = `npx ts-node cli/index.ts userSignup` +
                 ` -x ${unirepContract.address} ` +
-                ` -c ${serializedIdentityCommitment} ` +
+                ` -c ${userIdentityCommitment} ` +
                 ` -d ${userPrivKey} `
 
             const output = exec(command).stdout.trim()
@@ -141,7 +148,7 @@ describe('test all CLI subcommands', function() {
         it('should generate epoch key proof', async () => {
             const command = `npx ts-node cli/index.ts genEpochKeyAndProof` +
                 ` -x ${unirepContract.address} ` +
-                ` -id ${serializedIdentity} ` +
+                ` -id ${userIdentity} ` +
                 ` -n ${epochKeyNonce} `
 
             const output = exec(command).stdout.trim()
@@ -151,7 +158,7 @@ describe('test all CLI subcommands', function() {
 
             const epkRegMatch = output.match(/Epoch key of epoch 1 and nonce 0: ([a-fA-F0-9]+)/)
             epk = epkRegMatch[1]
-            const epkProofRegMatch = output.match(/Epoch key proof: (\"\{[a-zA-F0-9_:,"\\\[\]]+\}\")/)
+            const epkProofRegMatch = output.match(/(Unirep.epkProof.[a-zA-Z0-9\-\_]+)$/)
             epkProof = epkProofRegMatch[1]
         })
     })
@@ -215,7 +222,7 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
-                ` -id ${serializedIdentity} `
+                ` -id ${userIdentity} `
 
             const output = exec(command).stdout.trim()
 
@@ -231,7 +238,7 @@ describe('test all CLI subcommands', function() {
         it('should generate user reputation proof', async () => {
             const command = `npx ts-node cli/index.ts genReputationProof` +
                 ` -x ${unirepContract.address} ` +
-                ` -id ${serializedIdentity} ` +
+                ` -id ${userIdentity} ` +
                 ` -a ${attesterId} ` +
                 ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
@@ -242,7 +249,7 @@ describe('test all CLI subcommands', function() {
             console.log(command)
             console.log(output)
 
-            const userRepProofRegMatch = output.match(/Proof of reputation from attester 1: (\"\{[a-zA-F0-9_:,"\\\[\]]+\}\")/)
+            const userRepProofRegMatch = output.match(/(Unirep.reputationProof.[a-zA-Z0-9\-\_]+)$/)
             userRepProof = userRepProofRegMatch[1]
         })
     })

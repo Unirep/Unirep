@@ -1,3 +1,4 @@
+import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 
@@ -14,6 +15,7 @@ import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { add0x } from '../crypto/SMT'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import { identityCommitmentPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -115,7 +117,9 @@ const userSignup = async (args: any) => {
         wallet,
     )
 
-    let commitment = add0x(args.identity_commitment)
+    const encodedCommitment = args.identity_commitment.slice(identityCommitmentPrefix.length)
+    const decodedCommitment = base64url.decode(encodedCommitment)
+    const commitment = add0x(decodedCommitment)
 
     let tx
     try {
