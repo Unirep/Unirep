@@ -339,11 +339,6 @@ class UserState {
         const epochTreeRoot = fromEpochTree.getRootHash()
         const epochKeyPathElements: any[] = []
         const hashChainResults: BigInt[] = []
-        // Nullifier
-        const nullifierTree = await this.unirepState.genNullifierTree()
-        const nullifierTreeRoot = nullifierTree.getRootHash()
-        const attestationNullifierPathElements: any[] = []
-        const nullifiers: BigInt[] = []
 
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
@@ -378,11 +373,6 @@ class UserState {
                 negReps.push(newRep.negRep)
                 graffities.push(newRep.graffiti)
                 overwriteGraffitis.push(attestation.overwriteGraffiti)
-
-                const nullifier = genAttestationNullifier(this.id.identityNullifier, attesterId, fromEpoch, epochKey, this.unirepState.nullifierTreeDepth)
-                nullifiers.push(nullifier)
-                const attestationNullifierProof = await nullifierTree.getMerkleProof(nullifier)
-                attestationNullifierPathElements.push(attestationNullifierProof)
             }
             // Fill in blank data for non-exist attestation
             for (let i = 0; i < (this.numAttestationsPerEpochKey - attestations.length); i++) {
@@ -400,10 +390,6 @@ class UserState {
                 negReps.push(BigInt(0))
                 graffities.push(BigInt(0))
                 overwriteGraffitis.push(false)
-                
-                nullifiers.push(BigInt(0))
-                const attestationNullifierProof = await nullifierTree.getMerkleProof(BigInt(0))
-                attestationNullifierPathElements.push(attestationNullifierProof)    
             }
             epochKeyPathElements.push(await fromEpochTree.getMerkleProof(epochKey))
             hashChainResults.push(this.unirepState.getHashchain(epochKey.toString()))
@@ -431,9 +417,7 @@ class UserState {
             overwrite_graffitis: overwriteGraffitis,
             epk_path_elements: epochKeyPathElements,
             hash_chain_results: hashChainResults,
-            epoch_tree_root: epochTreeRoot,
-            nullifier_tree_root: nullifierTreeRoot,
-            attestation_nullifier_path_elements: attestationNullifierPathElements
+            epoch_tree_root: epochTreeRoot
         })
     }
 
