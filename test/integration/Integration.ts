@@ -33,6 +33,9 @@ describe('Integration', function () {
     let accounts: ethers.Signer[]
 
     let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
+
+    let duplicatedProofInputs
+
     before(async () => {
         console.log("Compiling circuits...")
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -513,6 +516,18 @@ describe('Integration', function () {
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+
+            // Record state transition proof inputs to be used to submit duplicated proof
+            duplicatedProofInputs = {
+                "newGSTLeaf": newGSTLeaf,
+                "attestationNullifiers": attestationNullifiers,
+                "epkNullifiers": epkNullifiers,
+                "fromEpoch": fromEpoch,
+                "GSTreeRoot": GSTreeRoot,
+                "epochTreeRoot": epochTreeRoot,
+                "nullifierTreeRoot": nullifierTreeRoot,
+                "proof": formatProofForVerifierContract(results['proof']),
+            }
         })
 
         it('Verify state transition of first user\'s epoch transition', async () => {
@@ -587,6 +602,21 @@ describe('Integration', function () {
                 formatProofForVerifierContract(results['proof']),
             )
             expect(isProofValid, 'Verify reputation on-chain failed').to.be.true
+        })
+
+        it('First user submits duplicated state transition proof', async () => {
+            let tx = await unirepContract.updateUserStateRoot(
+                duplicatedProofInputs["newGSTLeaf"],
+                duplicatedProofInputs["attestationNullifiers"],
+                duplicatedProofInputs["epkNullifiers"],
+                duplicatedProofInputs["fromEpoch"],
+                duplicatedProofInputs["GSTreeRoot"],
+                duplicatedProofInputs["epochTreeRoot"],
+                duplicatedProofInputs["nullifierTreeRoot"],
+                duplicatedProofInputs["proof"],
+            )
+            let receipt = await tx.wait()
+            expect(receipt.status, 'Submit duplicated user state transition proof failed').to.equal(1)
         })
 
         it('genUserStateFromContract should return equivalent UserState and UnirepState', async () => {

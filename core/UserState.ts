@@ -213,6 +213,13 @@ class UserState {
     }
 
     /*
+     * Check if given nullifier exists in nullifier tree
+     */
+    public nullifierExist = (nullifier: BigInt): boolean => {
+        return this.unirepState.nullifierExist(nullifier)
+    }
+
+    /*
      * Add a new epoch key to the list of epoch key of current epoch.
      */
     public signUp = (_latestTransitionedEpoch: number, _latestGSTLeafIndex: number,) => {

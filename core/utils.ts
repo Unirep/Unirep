@@ -375,6 +375,21 @@ const _genUserStateFromContract = async (
             const _epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
             allNullifiers.push(_epkNullifiers)
 
+            let isNullifierSeen = false
+            // Verify nullifiers are not seen before
+            for (const nullifier of allNullifiers) {
+                if (nullifier === BigInt(0)) continue
+                else {
+                    if (userState.nullifierExist(nullifier)) {
+                        isNullifierSeen = true
+                        // If nullifier exists, the proof is considered invalid
+                        console.log(`Invalid UserStateTransitioned proof: seen nullifier ${nullifier.toString()}`)
+                        break
+                    }
+                }
+            }
+            if (isNullifierSeen) continue
+
             if (
                 userHasSignedUp &&
                 (userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch)
