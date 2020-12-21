@@ -1,7 +1,6 @@
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
-include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 include "./verifyHashChain.circom";
 
@@ -41,8 +40,6 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     component hash_chain_verifier = VerifyHashChain(NUM_ATTESTATIONS);
     hash_chain_verifier.result <== hash_chain_result;
 
-    component modAtteNullifier[NUM_ATTESTATIONS];
-    signal nullifier_hash_moded[NUM_ATTESTATIONS];
     component nullifier_muxer[NUM_ATTESTATIONS];
 
     signal one_leaf;
@@ -73,17 +70,12 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         // in same epoch and results in duplicated nullifiers.
         nullifier_hashers[i].in[4] <== epoch_key;
 
-        // 1.2.2 Mod nullifier hash
-        modAtteNullifier[i] = ModuloTreeDepth(nullifier_tree_depth);
-        modAtteNullifier[i].dividend <== nullifier_hashers[i].hash;
-        nullifier_hash_moded[i] <== modAtteNullifier[i].remainder;
-
         // Ouput nullifiers
         // Filter by selectors, if selector is true, output actual nullifier,
         // output 0 otherwise since leaf 0 of nullifier tree is reserved.
         nullifier_muxer[i] = Mux1();
         nullifier_muxer[i].c[0] <== 0;
-        nullifier_muxer[i].c[1] <== nullifier_hash_moded[i];
+        nullifier_muxer[i].c[1] <== nullifier_hashers[i].hash;
         nullifier_muxer[i].s <== selectors[i];
         nullifiers[i] <== nullifier_muxer[i].out;
     }
@@ -97,11 +89,7 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     epoch_key_nullifier_hasher.in[3] <== nonce;
     epoch_key_nullifier_hasher.in[4] <== 0;
 
-    // 1.2.2 Mod nullifier hash
-    component modEPKNullifier = ModuloTreeDepth(nullifier_tree_depth);
-    modEPKNullifier.dividend <== epoch_key_nullifier_hasher.hash;
-
-    epoch_key_nullifier <== modEPKNullifier.remainder;
+    epoch_key_nullifier <== epoch_key_nullifier_hasher.hash;
     /* End of 1. verify attestation hash chain and compute nullifiers */
 
 
