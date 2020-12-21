@@ -141,9 +141,10 @@ const genUnirepStateFromContract = async (
                 continue
             }
 
-            const allNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
+            const attestationNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
             const epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
-            allNullifiers.push(epkNullifiers)
+            // Combine nullifiers and mod them
+            const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
             unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
         } else {
@@ -371,9 +372,10 @@ const _genUserStateFromContract = async (
                 continue
             }
 
-            const allNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
-            const _epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
-            allNullifiers.push(_epkNullifiers)
+            const attestationNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
+            const epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            // Combine nullifiers and mod them
+            const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
             let isNullifierSeen = false
             // Verify nullifiers are not seen before
@@ -396,7 +398,7 @@ const _genUserStateFromContract = async (
             ) {
                 let epkNullifiersMatched = 0
                 for (const nullifier of epkNullifiers) {
-                    if (_epkNullifiers.indexOf(nullifier) !== -1) epkNullifiersMatched++
+                    if (epkNullifiers.indexOf(nullifier) !== -1) epkNullifiersMatched++
                 }
                 if (epkNullifiersMatched == userState.numEpochKeyNoncePerEpoch) {
                     const newState = await userState.genNewUserStateAfterTransition()

@@ -254,7 +254,6 @@ class UnirepState {
         epoch: number,
         GSTLeaf: BigInt,
     ) => {
-        // assert(epoch >= 1, `Epoch(${epoch}) must be greater or equal to one`)
         assert(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`)
 
         // Note that we do not insert a state leaf to any state tree here. This
@@ -275,6 +274,7 @@ class UnirepState {
 
         // Add to epoch key hash chain map
         for (let leaf of epochTreeLeaves) {
+            assert(leaf.epochKey < BigInt(2 ** this.epochTreeDepth), `Epoch key(${leaf.epochKey}) greater than max leaf value(2**epochTreeDepth)`)
             if (this.epochKeyToHashchainMap[leaf.epochKey.toString()] !== undefined) console.log(`The epoch key(${leaf.epochKey}) is seen before`)
             else this.epochKeyToHashchainMap[leaf.epochKey.toString()] = leaf.hashchainResult
         }
@@ -291,7 +291,6 @@ class UnirepState {
         GSTLeaf: BigInt,
         nullifiers: BigInt[],
     ) => {
-        // assert(epoch >= 1, `Epoch(${epoch}) must be greater or equal to one`)
         assert(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`)
 
         // Only insert non-zero GST leaf (zero GST leaf means the user has epoch keys left to process)
@@ -299,6 +298,7 @@ class UnirepState {
 
         for (let nullifier of nullifiers) {
             if (nullifier > BigInt(0)) {
+                assert(nullifier < BigInt(2 ** this.nullifierTreeDepth), `Nullifier(${nullifier}) larger than max leaf value(2**nullifierTreeDepth)`)
                 assert(this.nullifiers.indexOf(nullifier) == -1, `Nullifier(${nullifier}) seen before`)
                 this.nullifiers.push(nullifier)
             }
