@@ -1,6 +1,6 @@
 import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 
 import {
@@ -129,6 +129,8 @@ const userStateTransition = async (args: any) => {
     )
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
+    const nullifierTreeDepth = BigNumber.from((await unirepContract.treeDepths())["nullifierTreeDepth"]).toNumber()
+
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
@@ -153,12 +155,12 @@ const userStateTransition = async (args: any) => {
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
     const newState = await userState.genNewUserStateAfterTransition()
-    if(newGSTLeaf != newState.newGSTLeaf) {
+    if (newGSTLeaf != newState.newGSTLeaf) {
         console.error('Error: Computed new GST leaf should match')
         return
     }
     const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-    if(!isValid) {
+    if (!isValid) {
         console.error('Error: user state transition proof generated is not valid!')
         return
     }
@@ -168,13 +170,35 @@ const userStateTransition = async (args: any) => {
     const epochTreeRoot = (await userState.getUnirepStateEpochTree(fromEpoch)).getRootHash()
     const nullifierTreeRoot = (await userState.getUnirepStateNullifierTree()).getRootHash()
     const attestationNullifiers = userState.getAttestationNullifiers(fromEpoch)
-    const epkNullifier = userState.getEpochKeyNullifiers(fromEpoch)
+    const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
+    // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
+    const outputAttestationNullifiers: BigInt[] = []
+    for (let i = 0; i < attestationNullifiers.length; i++) {
+        const outputNullifier = getSignalByName(results['circuit'], results['witness'], 'main.nullifiers[' + i + ']')
+        const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** nullifierTreeDepth)
+        if (modedOutputNullifier != attestationNullifiers[i]) {
+            console.error(`Error: nullifier outputted by circuit(${modedOutputNullifier}) does not match the ${i}-th computed attestation nullifier(${attestationNullifiers[i]})`)
+            return
+        }
+        outputAttestationNullifiers.push(outputNullifier)
+    }
+    const outputEPKNullifiers: BigInt[] = []
+    for (let i = 0; i < epkNullifiers.length; i++) {
+        const outputNullifier = getSignalByName(results['circuit'], results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+        const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** nullifierTreeDepth)
+        if (modedOutputNullifier != epkNullifiers[i]) {
+            console.error(`Error: nullifier outputted by circuit(${modedOutputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`)
+            return
+        }
+        outputEPKNullifiers.push(outputNullifier)
+    }
+
     let tx
     try {
         tx = await unirepContract.updateUserStateRoot(
             newGSTLeaf,
-            attestationNullifiers,
-            epkNullifier,
+            outputAttestationNullifiers,
+            outputEPKNullifiers,
             fromEpoch,
             GSTreeRoot,
             epochTreeRoot,

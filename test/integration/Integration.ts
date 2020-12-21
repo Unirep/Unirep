@@ -167,14 +167,30 @@ describe('Integration', function () {
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
             const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
-            
+
+            // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
+            const outputAttestationNullifiers: BigInt[] = []
+            for (let i = 0; i < attestationNullifiers.length; i++) {
+                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.nullifiers[' + i + ']')
+                const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+                expect(BigNumber.from(attestationNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
+                outputAttestationNullifiers.push(outputNullifier)
+            }
+            const outputEPKNullifiers: BigInt[] = []
+            for (let i = 0; i < epkNullifiers.length; i++) {
+                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+                const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+                expect(BigNumber.from(epkNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
+                outputEPKNullifiers.push(outputNullifier)
+            }
+            // Verify new state state outputted by circuit is the same as the one computed off-chain
             const newState = await users[0].genNewUserStateAfterTransition()
             expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
             let tx = await unirepContract.updateUserStateRoot(
                 newGSTLeaf,
-                attestationNullifiers,
-                epkNullifiers,
+                outputAttestationNullifiers,
+                outputEPKNullifiers,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
@@ -211,9 +227,9 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
 
             const attestationNullifiers = stateTransitionArgs['_attestationNullifiers'].map((n) => BigInt(n))
-            let allNullifiers: BigInt[] = attestationNullifiers.slice()
             const epkNullifiers = stateTransitionArgs['_epkNullifiers'].map((n) => BigInt(n))
-            allNullifiers = allNullifiers.concat(epkNullifiers)
+            // Combine nullifiers and mod them
+            const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth))
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
             users[0].transition(latestUserStateLeaves)
@@ -500,14 +516,30 @@ describe('Integration', function () {
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
             const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
-            
+
+            // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
+            const outputAttestationNullifiers: BigInt[] = []
+            for (let i = 0; i < attestationNullifiers.length; i++) {
+                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.nullifiers[' + i + ']')
+                const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+                expect(BigNumber.from(attestationNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
+                outputAttestationNullifiers.push(outputNullifier)
+            }
+            const outputEPKNullifiers: BigInt[] = []
+            for (let i = 0; i < epkNullifiers.length; i++) {
+                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+                const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+                expect(BigNumber.from(epkNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
+                outputEPKNullifiers.push(outputNullifier)
+            }
+            // Verify new state state outputted by circuit is the same as the one computed off-chain
             const newState = await users[0].genNewUserStateAfterTransition()
             expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
             userStateLeavesAfterTransition[0] = newState.newUSTLeaves
             let tx = await unirepContract.updateUserStateRoot(
                 newGSTLeaf,
-                attestationNullifiers,
-                epkNullifiers,
+                outputAttestationNullifiers,
+                outputEPKNullifiers,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
@@ -556,9 +588,9 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
 
             const attestationNullifiers = stateTransitionArgs['_attestationNullifiers'].map((n) => BigInt(n))
-            let allNullifiers: BigInt[] = attestationNullifiers.slice()
             const epkNullifiers = stateTransitionArgs['_epkNullifiers'].map((n) => BigInt(n))
-            allNullifiers = allNullifiers.concat(epkNullifiers)
+            // Combine nullifiers and mod them
+            const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth))
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
             users[0].transition(latestUserStateLeaves)

@@ -276,7 +276,8 @@ describe('User State Transition circuits', function () {
                 const witness = await executeCircuit(circuit, circuitInputs)
                 for (let i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
                     const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-                    expect(nullifier).to.equal(nullifiers[i])
+                    const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+                    expect(modedNullifier).to.equal(nullifiers[i])
                 }
                 const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
                 expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))

@@ -157,11 +157,13 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-            expect(BigNumber.from(nullifier)).to.equal(BigNumber.from(nullifiers[i]))
+            const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+            expect(BigNumber.from(modedNullifier)).to.equal(BigNumber.from(nullifiers[i]))
         }
         const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
-        expect(BigNumber.from(epkNullifier)).to.equal(BigNumber.from(_epkNullifier))
+        const _modedEPKNullifier = BigInt(_epkNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+        expect(BigNumber.from(epkNullifier)).to.equal(BigNumber.from(_modedEPKNullifier))
     })
 
     it('successfully process zero attestations', async () => {
@@ -191,7 +193,8 @@ describe('Process attestation circuit', function () {
         const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const witness = await executeCircuit(circuit, circuitInputs)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
-        expect(BigNumber.from(epkNullifier)).to.equal(BigNumber.from(_epkNullifier))
+        const _modedEPKNullifier = BigInt(_epkNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+        expect(BigNumber.from(epkNullifier)).to.equal(BigNumber.from(_modedEPKNullifier))
     })
 
     it('process attestations with wrong attestation record should not work', async () => {
@@ -326,12 +329,13 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+            const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
             if (selectors[i] == 0) {
                 // If selector is false, nullifier should be zero
-                expect(BigNumber.from(nullifier)).to.equal(0)
+                expect(BigNumber.from(modedNullifier)).to.equal(0)
             } else {
                 // Otherwise nullifier should not be the same as the correct nullifier
-                expect(BigNumber.from(nullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
+                expect(BigNumber.from(modedNullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
             }
         }
     })
@@ -360,12 +364,13 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+            const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
             if (selectors[i] == 0) {
                 // If selector is false, nullifier should be zero
-                expect(BigNumber.from(nullifier)).to.equal(0)
+                expect(BigNumber.from(modedNullifier)).to.equal(0)
             } else {
                 // Otherwise nullifier should not be the same as the correct nullifier
-                expect(BigNumber.from(nullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
+                expect(BigNumber.from(modedNullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
             }
         }
     })
