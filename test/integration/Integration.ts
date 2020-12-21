@@ -211,9 +211,9 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
 
             const attestationNullifiers = stateTransitionArgs['_attestationNullifiers'].map((n) => BigInt(n))
-            const allNullifiers: BigInt[] = attestationNullifiers.slice()
+            let allNullifiers: BigInt[] = attestationNullifiers.slice()
             const epkNullifiers = stateTransitionArgs['_epkNullifiers'].map((n) => BigInt(n))
-            allNullifiers.push(epkNullifiers)
+            allNullifiers = allNullifiers.concat(epkNullifiers)
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
             users[0].transition(latestUserStateLeaves)
@@ -556,9 +556,9 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
 
             const attestationNullifiers = stateTransitionArgs['_attestationNullifiers'].map((n) => BigInt(n))
-            const allNullifiers: BigInt[] = attestationNullifiers.slice()
+            let allNullifiers: BigInt[] = attestationNullifiers.slice()
             const epkNullifiers = stateTransitionArgs['_epkNullifiers'].map((n) => BigInt(n))
-            allNullifiers.push(epkNullifiers)
+            allNullifiers = allNullifiers.concat(epkNullifiers)
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
             users[0].transition(latestUserStateLeaves)
