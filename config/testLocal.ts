@@ -25,7 +25,7 @@ const circuitUserStateTreeDepth = 4;
 
 const circuitEpochTreeDepth = 8;
 
-const circuitNullifierTreeDepth = 8;
+const circuitNullifierTreeDepth = 128;
 
 export {
     attestingFee,
