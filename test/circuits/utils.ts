@@ -1,4 +1,6 @@
 import * as fs from 'fs'
+import assert from 'assert'
+import lineByLine from 'n-readlines'
 import * as path from 'path'
 import { SnarkProof } from 'libsemaphore'
 const circom = require('circom')
@@ -50,9 +52,36 @@ const getSignalByName = (
     return witness[circuit.symbols[signal].varIdx]
 }
 
+const getSignalByNameViaSym = (
+    circuitName: any,
+    witness: any,
+    signal: string,
+) => {
+    const symPath = path.join(__dirname, '../../build/', `${circuitName}.sym`)
+    const liner = new lineByLine(symPath)
+    let line
+    let index
+    let found = false
+
+    while (true) {
+        line = liner.next()
+        debugger
+        if (!line) { break }
+        const s = line.toString().split(',')
+        if (signal === s[3]) {
+            index = s[1]
+            found = true
+            break
+        }
+    }
+
+    assert(found)
+
+    return witness[index]
+}
+
 const genVerifyEpochKeyProofAndPublicSignals = (
     inputs: any,
-    circuit?: any
 ) => {
     return genProofAndPublicSignals(
         inputs,
@@ -60,13 +89,12 @@ const genVerifyEpochKeyProofAndPublicSignals = (
         'verifyEpochKeyCircuit.r1cs',
         'verifyEpochKey.wasm',
         'verifyEpochKey.params',
-        circuit,
+        false,
     )
 }
 
 const genVerifyUserStateTransitionProofAndPublicSignals = (
     inputs: any,
-    circuit?: any
 ) => {
     return genProofAndPublicSignals(
         inputs,
@@ -74,13 +102,12 @@ const genVerifyUserStateTransitionProofAndPublicSignals = (
         'userStateTransitionCircuit.r1cs',
         'userStateTransition.wasm',
         'userStateTransition.params',
-        circuit,
+        false,
     )
 }
 
 const genVerifyReputationProofAndPublicSignals = (
     inputs: any,
-    circuit?: any
 ) => {
     return genProofAndPublicSignals(
         inputs,
@@ -88,7 +115,7 @@ const genVerifyReputationProofAndPublicSignals = (
         'proveReputationCircuit.r1cs',
         'proveReputation.wasm',
         'proveReputation.params',
-        circuit,
+        false,
     )
 }
 
@@ -98,7 +125,7 @@ const genProofAndPublicSignals = async (
     circuitR1csFilename: string,
     circuitWasmFilename: string,
     paramsFilename: string,
-    circuit?: any,
+    compileCircuit = true,
 ) => {
     const date = Date.now()
     const paramsPath = path.join(__dirname, '../../build/', paramsFilename)
@@ -112,9 +139,10 @@ const genProofAndPublicSignals = async (
 
     fs.writeFileSync(inputJsonPath, JSON.stringify(stringifyBigInts(inputs)))
 
-    if (!circuit) {
-        circuit = await compileAndLoadCircuit(circuitFilename)
-    }
+    let circuit
+     if (compileCircuit) {	
+         circuit = await compileAndLoadCircuit(circuitFilename)	
+     }
 
     const snarkjsCmd = 'node ' + path.join(__dirname, '../../node_modules/snarkjs/build/cli.cjs')
     const witnessCmd = `${snarkjsCmd} wc ${circuitWasmPath} ${inputJsonPath} ${witnessPath}`
@@ -132,15 +160,13 @@ const genProofAndPublicSignals = async (
     const publicSignals = unstringifyBigInts(JSON.parse(fs.readFileSync(publicJsonPath).toString()))
     const proof = JSON.parse(fs.readFileSync(proofPath).toString())
 
-    await circuit.checkConstraints(witness)
-
     shell.rm('-f', witnessPath)
     shell.rm('-f', witnessJsonPath)
     shell.rm('-f', proofPath)
     shell.rm('-f', publicJsonPath)
     shell.rm('-f', inputJsonPath)
 
-    return { proof, publicSignals, witness, circuit }
+    return { circuit, proof, publicSignals, witness }
 }
 
 const verifyProof = async (
@@ -257,6 +283,7 @@ export {
     executeCircuit,
     formatProofForVerifierContract,
     getSignalByName,
+    getSignalByNameViaSym,
     genVerifyEpochKeyProofAndPublicSignals,
     genVerifyReputationProofAndPublicSignals,
     genVerifyUserStateTransitionProofAndPublicSignals,

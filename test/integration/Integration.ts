@@ -9,7 +9,7 @@ import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRo
 const { expect } = chai
 
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
-import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "../circuits/utils"
+import { compileAndLoadCircuit, formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof, verifyUserStateTransitionProof } from "../circuits/utils"
 
 describe('Integration', function () {
     this.timeout(500000)
@@ -32,19 +32,9 @@ describe('Integration', function () {
 
     let accounts: ethers.Signer[]
 
-    let verifyEpochKeyCircuit, verifyUserStateTransitionCircuit, verifyReputationCircuit
-
     let duplicatedProofInputs
 
     before(async () => {
-        console.log("Compiling circuits...")
-        const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        verifyEpochKeyCircuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
-        verifyUserStateTransitionCircuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
-        verifyReputationCircuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
-        const endCompileTime = Math.floor(new Date().getTime() / 1000)
-        console.log(`Total compile time for three circuits: ${endCompileTime - startCompileTime} seconds`)
-
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting("circuit")
@@ -163,22 +153,22 @@ describe('Integration', function () {
             console.log(`and epkNullifiers [${epkNullifiers}]`)
 
             const circuitInputs = await users[0].genUserStateTransitionCircuitInputs()
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
-            const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
+            const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
 
             // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
             const outputAttestationNullifiers: BigInt[] = []
             for (let i = 0; i < attestationNullifiers.length; i++) {
-                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.nullifiers[' + i + ']')
+                const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.nullifiers[' + i + ']')
                 const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
                 expect(BigNumber.from(attestationNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
                 outputAttestationNullifiers.push(outputNullifier)
             }
             const outputEPKNullifiers: BigInt[] = []
             for (let i = 0; i < epkNullifiers.length; i++) {
-                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+                const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
                 const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
                 expect(BigNumber.from(epkNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
                 outputEPKNullifiers.push(outputNullifier)
@@ -291,7 +281,7 @@ describe('Integration', function () {
         it('Verify epoch key of first user', async () => {
             const epochKeyNonce = 0
             const circuitInputs = await users[0].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
-            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyEpochKeyCircuit)
+            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
             
@@ -338,7 +328,7 @@ describe('Integration', function () {
         it('Verify epoch key of second user', async () => {
             const epochKeyNonce = 0
             const circuitInputs = await users[1].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
-            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyEpochKeyCircuit)
+            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
             
@@ -497,7 +487,7 @@ describe('Integration', function () {
             console.log('------------------------------------------------------')
         })
 
-        it('First user transition from first epoch', async () => {
+        it('First user transition from second epoch', async () => {
             const fromEpoch = users[0].latestTransitionedEpoch
             const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
             const GSTreeRoot = fromEpochGSTree.root
@@ -512,22 +502,22 @@ describe('Integration', function () {
             console.log(`and epkNullifiers [${epkNullifiers}]`)
 
             const circuitInputs = await users[0].genUserStateTransitionCircuitInputs()
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyUserStateTransitionCircuit)
+            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
-            const newGSTLeaf = getSignalByName(results['circuit'], results['witness'], 'main.new_GST_leaf')
+            const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
 
             // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
             const outputAttestationNullifiers: BigInt[] = []
             for (let i = 0; i < attestationNullifiers.length; i++) {
-                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.nullifiers[' + i + ']')
+                const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.nullifiers[' + i + ']')
                 const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
                 expect(BigNumber.from(attestationNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
                 outputAttestationNullifiers.push(outputNullifier)
             }
             const outputEPKNullifiers: BigInt[] = []
             for (let i = 0; i < epkNullifiers.length; i++) {
-                const outputNullifier = getSignalByName(verifyUserStateTransitionCircuit, results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+                const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
                 const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
                 expect(BigNumber.from(epkNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
                 outputEPKNullifiers.push(outputNullifier)
@@ -613,7 +603,7 @@ describe('Integration', function () {
             console.log(`Proving reputation from attester ${attesterId} with minPosRep ${minPosRep}, maxNegRep ${maxNegRep} and graffitiPreimage ${graffitiPreImage}`)
             const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
             const startTime = Math.floor(new Date().getTime() / 1000)
-            const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs), verifyReputationCircuit)
+            const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const endTime = Math.floor(new Date().getTime() / 1000)
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
             const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])

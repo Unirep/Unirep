@@ -166,7 +166,10 @@ describe('User State Transition circuits', function () {
                 for (let i = 0; i < ATTESTATIONS_PER_EPOCH_KEY; i++) {
                     // attesterId ranges from 1 to (maxNumAttesters - 1)
                     let attesterId = BigInt(1 + Math.floor(Math.random() * (maxNumAttesters - 1)))
-                    while (attesterToNonceMap[nonce].indexOf(attesterId) >= 0) attesterId = BigInt(Math.floor(Math.random() * maxNumAttesters))
+                    // re-sample attesterId if it is already in the list
+                    while (attesterToNonceMap[nonce].indexOf(attesterId) >= 0) {
+                        attesterId = BigInt(1 + Math.floor(Math.random() * (maxNumAttesters - 1)))
+                    }
                     const attestation: Attestation = new Attestation(
                         attesterId,
                         BigInt(Math.floor(Math.random() * 100)),
@@ -283,7 +286,7 @@ describe('User State Transition circuits', function () {
                 expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))
 
                 const startTime = Math.floor(new Date().getTime() / 1000)
-                const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs), circuit)
+                const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
                 const endTime = Math.floor(new Date().getTime() / 1000)
                 console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
                 const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
