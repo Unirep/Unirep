@@ -110,9 +110,9 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const witness = await executeCircuit(circuit, circuitInputs)
-        const startTime = Math.floor(new Date().getTime() / 1000)
+        const startTime = new Date().getTime()
         const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
-        const endTime = Math.floor(new Date().getTime() / 1000)
+        const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
         const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
         expect(isValid).to.be.true

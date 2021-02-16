@@ -84,9 +84,9 @@ describe('Verify Epoch Key circuits', function () {
                 epoch_key: epk,
             }
             const witness = await executeCircuit(circuit, circuitInputs)
-            const startTime = Math.floor(new Date().getTime() / 1000)
+            const startTime = new Date().getTime()
             const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
-            const endTime = Math.floor(new Date().getTime() / 1000)
+            const endTime = new Date().getTime()
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
             const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
