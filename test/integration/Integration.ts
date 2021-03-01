@@ -602,9 +602,9 @@ describe('Integration', function () {
             const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
             console.log(`Proving reputation from attester ${attesterId} with minPosRep ${minPosRep}, maxNegRep ${maxNegRep} and graffitiPreimage ${graffitiPreImage}`)
             const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
-            const startTime = Math.floor(new Date().getTime() / 1000)
+            const startTime = new Date().getTime()
             const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
-            const endTime = Math.floor(new Date().getTime() / 1000)
+            const endTime = new Date().getTime()
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
             const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
             expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
