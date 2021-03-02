@@ -5,7 +5,11 @@ include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 
-template ProveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
+function Not(in) {
+    return 1 + in - (2 * in);
+}
+
+template ProveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input epoch;
     signal private input nonce;
 
@@ -28,13 +32,18 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
     signal private input neg_rep;
     signal private input graffiti;
     signal private input UST_path_elements[user_state_tree_depth][1];
+    // Adding flexibility to prove mp, mn or graffiti
+    signal input prove_pos_rep;
+    signal input prove_neg_rep;
+    signal input prove_rep_diff;
+    signal input prove_graffiti;
+    // Adding flexibility to prove differece of reputations
+    signal input min_rep_diff;
     // Condition on repuations to prove
     signal input min_pos_rep;
     signal input max_neg_rep;
     // Graffiti
     signal input graffiti_pre_image;
-
-    var MAX_REPUTATION_SCORE_BITS = 252;
 
 
     /* 1. Check nonce validity */
@@ -122,21 +131,39 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
 
 
     /* 5. Check conditions on reputations */
+    // if prove_pos_rep == TRUE then check GT
+    // else return TRUE
     component pos_rep_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     pos_rep_gt.in[0] <== pos_rep;
     pos_rep_gt.in[1] <== min_pos_rep;
-    pos_rep_gt.out === 1;
+    pos_rep_gt.out * prove_pos_rep + Not(prove_pos_rep) === 1;
 
+    
     component neg_rep_lt = LessThan(MAX_REPUTATION_SCORE_BITS);
     neg_rep_lt.in[0] <== neg_rep;
     neg_rep_lt.in[1] <== max_neg_rep;
-    neg_rep_lt.out === 1;
+    neg_rep_lt.out * prove_neg_rep + Not(prove_neg_rep) === 1;
+
+    // only valid if pos_rep >= neg_rep
+    component rep_diff_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
+    rep_diff_get.in[0] <== pos_rep;
+    rep_diff_get.in[1] <== neg_rep;
+    // // check if (pos_rep - neg_rep) > min_rep_diff
+    component rep_diff_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    rep_diff_gt.in[0] <== pos_rep - neg_rep;
+    rep_diff_gt.in[1] <== min_rep_diff;
+    rep_diff_get.out * prove_rep_diff + Not(prove_rep_diff) === 1;
+    rep_diff_gt.out * prove_rep_diff + Not(prove_rep_diff) === 1;
     /* End of check 5 */
 
     /* 6. Check pre-image of graffiti */
     component graffiti_hasher = HashLeftRight();
     graffiti_hasher.left <== graffiti_pre_image;
     graffiti_hasher.right <== 0;
-    graffiti_hasher.hash === graffiti;
+    component graffiti_eq = IsEqual();
+    graffiti_eq.in[0] <== graffiti_hasher.hash;
+    graffiti_eq.in[1] <== graffiti;
+    graffiti_eq.out * prove_graffiti + Not(prove_graffiti) === 1;
+
     /* End of check 6 */
  }

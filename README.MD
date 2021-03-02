@@ -220,7 +220,7 @@ npx ts-node cli/index.ts userStateTransition -x 0xb3dD32d090f05Afd6225e6b611bb25
 ```
 npx ts-node cli/index.ts genReputationProof -x 0xb3dD32d090f05Afd6225e6b611bb25C1E87a650B -id Unirep.identity.WyJlOGQ2NGU5OThhM2VmNjAxZThjZTNkNDQwOWQyZjc3MjEwOGJkMGI1NTgwODAzYjY2MDk0YTllZWExMzYxZjA2IiwiODZiYjk5ZGQ4MzA2ZGVkZDgxYTE4MzBiNmVjYmRlZjk5ZmVjYTU3M2RiNjIxMjk5NGMyMmJlMWEwMWZmMTEiLCIzMGE3M2MxMjE4ODQwNjE0MWQwYmI4NWRjZDY5ZjdhMjEzMWM1NWRkNDQzYWNmMGVhZTEwNjI2NzBjNDhmYSJd -a 1 -mp 0 -mn 10 -gp 0
 ```
-- NOTE: `-a` is attester's id, `-mp` is the minimum positive reputation score, i.e, user wants to prove that the attester gave the user a positive reputation score that's larger than the minimum positive reputation score, `-mn` is the maximum negative reputation score, i.e, user wants to prove that the attester gave the user a negative reputation score that's less than the maximum negative reputation score and `-gp` is the pre-image of the graffiti for the reputation
+- NOTE: `-a` is attester's id, `-mp` is the minimum positive reputation score, i.e, user wants to prove that the attester gave the user a positive reputation score that's larger than the minimum positive reputation score, `-mn` is the maximum negative reputation score, i.e, user wants to prove that the attester gave the user a negative reputation score that's less than the maximum negative reputation score, `-md` is the minimum difference between positive and negative reputation scores, and `-gp` is the pre-image of the graffiti for the reputation
 - NOTE: `gp` in this case, `0` being the hash pre-image of `176ff05d9c7c4528b04553217098a71cd076d52623dab894a7f7ee34116ca170`
 - NOTE: proof will be printed and it should be handed to the receiver of this proof, for example,
 ```

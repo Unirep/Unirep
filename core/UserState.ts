@@ -450,8 +450,13 @@ class UserState {
 
     public genProveReputationCircuitInputs = async (
         attesterId: BigInt,
+        provePosRep: BigInt,
+        proveNegRep: BigInt,
+        proveRepDiff: BigInt,
+        proveGraffiti: BigInt,
         minPosRep: BigInt,
         maxNegRep: BigInt,
+        minRepDiff: BigInt,
         graffitiPreImage: BigInt,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
@@ -490,6 +495,11 @@ class UserState {
             neg_rep: negRep,
             graffiti: graffiti,
             UST_path_elements: USTPathElements,
+            prove_pos_rep: provePosRep,
+            prove_neg_rep: proveNegRep,
+            prove_rep_diff: proveRepDiff,
+            prove_graffiti: proveGraffiti,
+            min_rep_diff: minRepDiff,
             min_pos_rep: minPosRep,
             max_neg_rep: maxNegRep,
             graffiti_pre_image: graffitiPreImage
