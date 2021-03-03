@@ -146,9 +146,9 @@ const genReputationProof = async (args: any) => {
     const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
     const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
+    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
     const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
     const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
-    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
 
     const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)

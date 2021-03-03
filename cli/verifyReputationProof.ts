@@ -51,7 +51,6 @@ const configureSubparser = (subparsers: any) => {
     parser.addArgument(
         ['-mp', '--min-pos-rep'],
         {
-            required: true,
             type: 'int',
             help: 'The minimum positive score the attester given to the user',
         }
@@ -60,16 +59,22 @@ const configureSubparser = (subparsers: any) => {
     parser.addArgument(
         ['-mn', '--max-neg-rep'],
         {
-            required: true,
             type: 'int',
             help: 'The maximum negative score the attester given to the user',
         }
     )
 
     parser.addArgument(
+        ['-md', '--min-rep-diff'],
+        {
+            type: 'int',
+            help: 'The difference between positive and negative scores the attester given to the user',
+        }
+    )
+
+    parser.addArgument(
         ['-gp', '--graffiti-preimage'],
         {
-            required: true,
             type: 'string',
             help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
         }
@@ -139,9 +144,14 @@ const verifyReputationProof = async (args: any) => {
     const currentEpoch = unirepState.currentEpoch
     const epoch = args.epoch ? Number(args.epoch) : currentEpoch
     const attesterId = BigInt(add0x(args.attester_id))
-    const minPosRep = args.min_pos_rep
-    const maxNegRep = args.max_neg_rep
-    const graffitiPreImage = BigInt(add0x(args.graffiti_preimage))
+    const provePosRep = args.min_pos_rep != null ? BigInt(1) : BigInt(0)
+    const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
+    const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
+    const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
+    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
+    const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
+    const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
+    const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
     const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
     const proof = JSON.parse(decodedProof)
 
@@ -149,15 +159,21 @@ const verifyReputationProof = async (args: any) => {
     const GSTreeRoot = unirepState.genGSTree(epoch).root
     const nullifierTree = await unirepState.genNullifierTree()
     const nullifierTreeRoot = nullifierTree.getRootHash()
-    const isProofValid = await unirepContract.verifyReputation(
-        epoch,
+    const publicInput = [epoch,
         GSTreeRoot,
         nullifierTreeRoot,
         attesterId,
+        provePosRep,
+        proveNegRep,
+        proveRepDiff,
+        proveGraffiti,
+        minRepDiff,
         minPosRep,
         maxNegRep,
-        graffitiPreImage,
-        proof,
+        graffitiPreImage]
+    const isProofValid = await unirepContract.verifyReputation(
+        publicInput,
+        proof
     )
     if (!isProofValid) {
         console.error('Error: invalid reputation proof')

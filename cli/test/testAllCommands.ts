@@ -35,7 +35,7 @@ describe('test all CLI subcommands', function() {
     const attesterId = 1
     let epk, epkProof
     const posRep = 10, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
-    const minPosRep = 0, maxNegRep = 10
+    const minPosRep = 0, maxNegRep = 10, minRepDiff = 1
     let userRepProof
 
     before(async() => {
@@ -242,6 +242,7 @@ describe('test all CLI subcommands', function() {
                 ` -a ${attesterId} ` +
                 ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
+                ` -md ${minRepDiff}` +
                 ` -gp ${graffitiPreimage} `
 
             const output = exec(command).stdout.trim()
@@ -261,6 +262,7 @@ describe('test all CLI subcommands', function() {
                 ` -a ${attesterId} ` +
                 ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
+                ` -md ${minRepDiff}` +
                 ` -gp ${graffitiPreimage} ` +
                 ` -pf ${userRepProof} `
 
