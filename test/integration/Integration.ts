@@ -325,6 +325,31 @@ describe('Integration', function () {
             unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
         })
 
+        it('Second attester attest to first user', async () => {
+            const nonce = 0
+            const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
+            const attestation: Attestation = new Attestation(
+                attesters[1].id,
+                BigInt(3),
+                BigInt(1),
+                hashOne(graffitiPreImage),
+                true,
+            )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
+            console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
+            const tx = await unirepContractCalledBySecondAttester.submitAttestation(
+                attestation,
+                firstUserEpochKey,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status, 'Submit attestation failed').to.equal(1)
+
+            unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
+        })
+
         it('Verify epoch key of second user', async () => {
             const epochKeyNonce = 0
             const circuitInputs = await users[1].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
@@ -401,7 +426,7 @@ describe('Integration', function () {
             // First filter by epoch
             const attestationsByEpochFilter = unirepContract.filters.AttestationSubmitted(currentEpoch)
             const attestationsByEpochEvent = await unirepContract.queryFilter(attestationsByEpochFilter)
-            expect(attestationsByEpochEvent.length, 'Number of attestations submitted should be 3').to.equal(3)
+            expect(attestationsByEpochEvent.length, 'Number of attestations submitted should be 4').to.equal(4)
 
             // Second filter by attester
             for (let attester of attesters) {
@@ -410,7 +435,7 @@ describe('Integration', function () {
                 if (attester.id == 1) {
                     expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 2').to.equal(2)
                 } else if (attester.id == 2) {
-                    expect(attestationsByAttesterEvent.length, 'Number of attestations from second attester should be 1').to.equal(1)
+                    expect(attestationsByAttesterEvent.length, 'Number of attestations from second attester should be 2').to.equal(2)
                 } else {
                     throw new Error(`Invalid attester id ${attester.id}`)
                 }
@@ -582,7 +607,7 @@ describe('Integration', function () {
             // Combine nullifiers and mod them
             const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth))
 
-            const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
+            const latestUserStateLeaves = userStateLeavesAfterTransition[0]
             users[0].transition(latestUserStateLeaves)
             console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             expect(users[0].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
