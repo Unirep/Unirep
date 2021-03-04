@@ -285,8 +285,8 @@ class UserState {
                     attestation.graffiti,
                     attestation.overwriteGraffiti
                 )
+                return stateLeaves
             }
-            return stateLeaves
         }
         // If no matching state leaf, insert new one
         const newLeaf: IUserStateLeaf = {
