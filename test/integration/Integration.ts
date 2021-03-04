@@ -597,11 +597,16 @@ describe('Integration', function () {
 
         it('First user prove his reputation', async () => {
             const attesterId = attesters[0].id  // Prove reputation received from first attester
+            const provePosRep = BigInt(1)
+            const proveNegRep = BigInt(1)
+            const proveRepDiff = BigInt(1)
+            const proveGraffiti = BigInt(1)
             const minPosRep = BigInt(1)
             const maxNegRep = BigInt(10)
+            const minRepDiff = BigInt(1)
             const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
             console.log(`Proving reputation from attester ${attesterId} with minPosRep ${minPosRep}, maxNegRep ${maxNegRep} and graffitiPreimage ${graffitiPreImage}`)
-            const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
+            const circuitInputs = await users[0].genProveReputationCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
             const startTime = new Date().getTime()
             const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
             const endTime = new Date().getTime()
@@ -613,14 +618,22 @@ describe('Integration', function () {
             const GSTreeRoot = unirepState.genGSTree(currentEpoch.toNumber()).root
             const nullifierTree = await unirepState.genNullifierTree()
             const nullifierTreeRoot = nullifierTree.getRootHash()
-            const isProofValid = await unirepContract.verifyReputation(
+            const publicInput = [
                 users[0].latestTransitionedEpoch,
                 GSTreeRoot,
                 nullifierTreeRoot,
                 attesterId,
+                provePosRep,
+                proveNegRep,
+                proveRepDiff,
+                proveGraffiti,
+                minRepDiff,
                 minPosRep,
                 maxNegRep,
-                graffitiPreImage,
+                graffitiPreImage
+            ]
+            const isProofValid = await unirepContract.verifyReputation(
+                publicInput,
                 formatProofForVerifierContract(results['proof']),
             )
             expect(isProofValid, 'Verify reputation on-chain failed').to.be.true

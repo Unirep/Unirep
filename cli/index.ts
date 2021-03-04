@@ -38,6 +38,11 @@ import {
 } from './attest'
 
 import {
+    vote,
+    configureSubparser as configureSubparserForvote,
+} from './vote'
+
+import {
     epochTransition,
     configureSubparser as configureSubparserForEpochTransition,
 } from './epochTransition'
@@ -89,6 +94,9 @@ const main = async () => {
     // Subcommand: attest
     configureSubparserForAttest(subparsers)
 
+    // Subcommand: upvote
+    configureSubparserForvote(subparsers)
+
     // Subcommand: epochTransition
     configureSubparserForEpochTransition(subparsers)
 
@@ -118,6 +126,8 @@ const main = async () => {
         await verifyEpochKeyProof(args)
     } else if (args.subcommand === 'attest') {
         await attest(args)
+    } else if (args.subcommand === 'vote') {
+        await vote(args)
     } else if (args.subcommand === 'epochTransition') {
         await epochTransition(args)
     } else if (args.subcommand === 'userStateTransition') {

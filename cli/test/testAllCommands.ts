@@ -31,7 +31,7 @@ describe('test all CLI subcommands', function() {
     let unirepContract: ethers.Contract
     let unirepState: UnirepState
     
-    let userIdentity, userIdentityCommitment
+    let userIdentity1, userIdentityCommitment1, userIdentity2, userIdentityCommitment2
     const attesterId = 1
     let epk, epkProof
     const posRep = 10, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
@@ -87,7 +87,7 @@ describe('test all CLI subcommands', function() {
     })
 
     describe('genUserIdentity CLI subcommand', () => {
-        it('should generate an identity for user', async () => {
+        it('should generate an identity for user 1', async () => {
             const command = `npx ts-node cli/index.ts genUnirepIdentity`
 
             const output = exec(command).stdout.trim()
@@ -106,16 +106,53 @@ describe('test all CLI subcommands', function() {
             const _userIdentityCommitment = genIdentityCommitment(_userIdentity)
             expect(serializedIdentityCommitment).equal(_userIdentityCommitment.toString(16))
 
-            userIdentity = encodedIdentity
-            userIdentityCommitment = encodedIdentityCommitment
+            userIdentity1 = encodedIdentity
+            userIdentityCommitment1 = encodedIdentityCommitment
+        })
+        it('should generate an identity for user 2', async () => {
+            const command = `npx ts-node cli/index.ts genUnirepIdentity`
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const idRegMatch = output.match(/^(Unirep.identity.[a-zA-Z0-9\-\_]+)\n/)
+            const encodedIdentity = idRegMatch[1]
+            const serializedIdentity = base64url.decode(encodedIdentity.slice(identityPrefix.length))
+            const _userIdentity = unSerialiseIdentity(serializedIdentity)
+
+            const commitmentRegMatch = output.match(/(Unirep.identityCommitment.[a-zA-Z0-9\-\_]+)$/)
+            const encodedIdentityCommitment = commitmentRegMatch[1]
+            const serializedIdentityCommitment = base64url.decode(encodedIdentityCommitment.slice(identityCommitmentPrefix.length))
+            const _userIdentityCommitment = genIdentityCommitment(_userIdentity)
+            expect(serializedIdentityCommitment).equal(_userIdentityCommitment.toString(16))
+
+            userIdentity2 = encodedIdentity
+            userIdentityCommitment2 = encodedIdentityCommitment
         })
     })
 
     describe('userSignup CLI subcommand', () => {
-        it('should sign user up', async () => {
+        it('should sign user 1 up', async () => {
             const command = `npx ts-node cli/index.ts userSignup` +
                 ` -x ${unirepContract.address} ` +
-                ` -c ${userIdentityCommitment} ` +
+                ` -c ${userIdentityCommitment1} ` +
+                ` -d ${userPrivKey} `
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const signUpRegMatch = output.match(/Sign up epoch: 1/)
+            expect(signUpRegMatch).not.equal(null)
+        })
+
+        it('should sign user 2 up', async () => {
+            const command = `npx ts-node cli/index.ts userSignup` +
+                ` -x ${unirepContract.address} ` +
+                ` -c ${userIdentityCommitment2} ` +
                 ` -d ${userPrivKey} `
 
             const output = exec(command).stdout.trim()
@@ -148,7 +185,7 @@ describe('test all CLI subcommands', function() {
         it('should generate epoch key proof', async () => {
             const command = `npx ts-node cli/index.ts genEpochKeyAndProof` +
                 ` -x ${unirepContract.address} ` +
-                ` -id ${userIdentity} ` +
+                ` -id ${userIdentity1} ` +
                 ` -n ${epochKeyNonce} `
 
             const output = exec(command).stdout.trim()
@@ -180,14 +217,15 @@ describe('test all CLI subcommands', function() {
         })
     })
 
-    describe('attest CLI subcommand', () => {
-        it('should attest to user', async () => {
-            const command = `npx ts-node cli/index.ts attest` +
+    describe('upvote CLI subcommand', () => {
+        it('should upvote to user', async () => {
+            const command = `npx ts-node cli/index.ts vote` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
-                ` -pr ${posRep} ` +
-                ` -nr ${negRep} ` +
+                ` -id ${userIdentity2}` +
+                ` -n ${epochKeyNonce}` +
+                ` -uv ${posRep} ` +
                 ` -gf ${graffiti.toString(16)} `
 
             const output = exec(command).stdout.trim()
@@ -222,7 +260,7 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
-                ` -id ${userIdentity} `
+                ` -id ${userIdentity1} `
 
             const output = exec(command).stdout.trim()
 
@@ -238,11 +276,11 @@ describe('test all CLI subcommands', function() {
         it('should generate user reputation proof', async () => {
             const command = `npx ts-node cli/index.ts genReputationProof` +
                 ` -x ${unirepContract.address} ` +
-                ` -id ${userIdentity} ` +
+                ` -id ${userIdentity1} ` +
                 ` -a ${attesterId} ` +
-                ` -mp ${minPosRep} ` +
+                // ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
-                ` -md ${minRepDiff}` +
+                // ` -md ${minRepDiff}` +
                 ` -gp ${graffitiPreimage} `
 
             const output = exec(command).stdout.trim()
@@ -260,9 +298,9 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts verifyReputationProof` +
                 ` -x ${unirepContract.address} ` +
                 ` -a ${attesterId} ` +
-                ` -mp ${minPosRep} ` +
+                // ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
-                ` -md ${minRepDiff}` +
+                // ` -md ${minRepDiff}` +
                 ` -gp ${graffitiPreimage} ` +
                 ` -pf ${userRepProof} `
 
