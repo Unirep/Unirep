@@ -97,6 +97,18 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _hashedLeaf
     );
 
+    event PostSubmitted(
+        uint256 indexed _postId,
+        uint256 indexed _epochKey,
+        string _content,
+        ProofsRelated proof
+    );
+
+    event CommentSubmitted(
+        uint256 indexed _postId,
+        string _content
+    );
+
     event AttestationSubmitted(
         uint256 indexed _epoch,
         uint256 indexed _epochKey,
@@ -225,6 +237,35 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
+    function publishPost(uint256 postId, uint256 epochKey, string calldata content, uint256[] calldata _publicSignals, uint256[8] calldata _proof) external {
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (   
+            proof.publicSignals,
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_publicSignals, _proof);
+
+        // Verify the proof
+        proof.isValid = epkValidityVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
+        require(proof.isValid);
+
+        emit PostSubmitted(
+            postId,
+            epochKey,
+            content,
+            proof
+        );
+    }
+
+    function publishComment(uint256 postId, string calldata content) external {
+        emit CommentSubmitted(
+            postId,
+            content
+        );
+    }
+
     function submitAttestation(Attestation calldata attestation, uint256 epochKey) external payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
@@ -332,41 +373,43 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function verifyEpochKeyValidity(
-        uint256 _globalStateTree,
-        uint256 _epoch,
-        uint256 _epochKey,
-        uint256[8] calldata _proof) external view returns (bool) {
+        // uint256 _globalStateTree,
+        // uint256 _epoch,
+        // uint256 _epochKey,
+        uint256[] memory _publicSignals,
+        uint256[8] memory _proof) public view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. user has signed up
         // 2. nonce is no greater than numEpochKeyNoncePerEpoch
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 
-        uint256[] memory publicSignals = new uint256[](3);
-        publicSignals[0] = _globalStateTree;
-        publicSignals[1] = _epoch;
-        publicSignals[2] = _epochKey;
+        // uint256[] memory _publicSignals = new uint256[](3);
+        // _publicSignals[0] = _globalStateTree;
+        // _publicSignals[1] = _epoch;
+        // _publicSignals[2] = _epochKey;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < publicSignals.length; i++) {
+        for (uint8 i = 0; i < _publicSignals.length; i++) {
             require(
-                publicSignals[i] < SNARK_SCALAR_FIELD,
+                _publicSignals[i] < SNARK_SCALAR_FIELD,
                 "Unirep: each public signal must be lt the snark scalar field"
             );
         }
 
         ProofsRelated memory proof;
         // Unpack the snark proof
-        (
+        (   
+            proof.publicSignals,
             proof.a,
             proof.b,
             proof.c
-        ) = unpackProof(_proof);
+        ) = unpackProof(_publicSignals, _proof);
 
         // Verify the proof
-        proof.isValid = epkValidityVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        proof.isValid = epkValidityVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
         return proof.isValid;
     }
 
@@ -388,25 +431,25 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(_attestationNullifiers.length == numAttestationsPerEpoch, "Unirep: invalid number of nullifiers");
         require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
-        uint256[] memory publicSignals = new uint256[](5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch);
-        publicSignals[0] = _newGlobalStateTreeLeaf;
+        uint256[] memory _publicSignals = new uint256[](5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch);
+        _publicSignals[0] = _newGlobalStateTreeLeaf;
         for (uint8 i = 0; i < numAttestationsPerEpoch; i++) {
-            publicSignals[i + 1] = _attestationNullifiers[i];
+            _publicSignals[i + 1] = _attestationNullifiers[i];
         }
         for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-            publicSignals[i + 1 + numAttestationsPerEpoch] = _epkNullifiers[i];
+            _publicSignals[i + 1 + numAttestationsPerEpoch] = _epkNullifiers[i];
         }
-        publicSignals[2 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _transitionFromEpoch;
-        publicSignals[3 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromGlobalStateTree;
-        publicSignals[4 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromEpochTree;
-        publicSignals[5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromNullifierTreeRoot;
+        _publicSignals[2 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _transitionFromEpoch;
+        _publicSignals[3 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromGlobalStateTree;
+        _publicSignals[4 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromEpochTree;
+        _publicSignals[5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromNullifierTreeRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < publicSignals.length; i++) {
+        for (uint8 i = 0; i < _publicSignals.length; i++) {
             require(
-                publicSignals[i] < SNARK_SCALAR_FIELD,
+                _publicSignals[i] < SNARK_SCALAR_FIELD,
                 "Unirep: each public signal must be lt the snark scalar field"
             );
         }
@@ -414,19 +457,20 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         ProofsRelated memory proof;
         // Unpack the snark proof
         (
+            proof.publicSignals,
             proof.a,
             proof.b,
             proof.c
-        ) = unpackProof(_proof);
+        ) = unpackProof(_publicSignals, _proof);
 
         // Verify the proof
-        proof.isValid = userStateTransitionVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        proof.isValid = userStateTransitionVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
         return proof.isValid;
     }
 
     function verifyReputation(
-        uint256[] memory publicSignals,
-        uint256[8] memory _proof) public view returns (bool) {
+        uint256[] calldata _publicSignals,
+        uint256[8] calldata _proof) external view returns (bool) {
         // User prove his reputation by an attester:
         // 1. User exists in GST
         // 2. It is the latest state user transition to
@@ -437,9 +481,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < publicSignals.length; i++) {
+        for (uint8 i = 0; i < _publicSignals.length; i++) {
             require(
-                publicSignals[i] < SNARK_SCALAR_FIELD,
+                _publicSignals[i] < SNARK_SCALAR_FIELD,
                 "Unirep: each public signal must be lt the snark scalar field"
             );
         }
@@ -447,13 +491,14 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         ProofsRelated memory proof;
         // Unpack the snark proof
         (
+            proof.publicSignals,
             proof.a,
             proof.b,
             proof.c
-        ) = unpackProof(_proof);
+        ) = unpackProof(_publicSignals, _proof);
 
         // Verify the proof
-        proof.isValid = reputationVerifier.verifyProof(proof.a, proof.b, proof.c, publicSignals);
+        proof.isValid = reputationVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
         return proof.isValid;
     }
 
@@ -470,14 +515,17 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
      * and c array values that the zk-SNARK verifier's verifyProof accepts.
      */
     function unpackProof(
+        uint256[] memory _publicSignals,
         uint256[8] memory _proof
     ) public pure returns (
+        uint256[] memory,
         uint256[2] memory,
         uint256[2][2] memory,
         uint256[2] memory
     ) {
 
         return (
+            _publicSignals,
             [_proof[0], _proof[1]],
             [
                 [_proof[2], _proof[3]],

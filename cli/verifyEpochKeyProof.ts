@@ -99,6 +99,9 @@ const verifyEpochKeyProof = async (args: any) => {
     const epk = BigInt(add0x(args.epoch_key))
     const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
     const proof = JSON.parse(decodedProof)
+    const publicSignals = [GSTRoot, currentEpoch, epk]
+    console.log(publicSignals)
+    console.log(proof)
 
     const unirepContract = new ethers.Contract(
         unirepAddress,
@@ -106,10 +109,8 @@ const verifyEpochKeyProof = async (args: any) => {
         provider,
     )
     const isProofValid = await unirepContract.verifyEpochKeyValidity(
-        GSTRoot,
-        currentEpoch,
-        epk,
-        proof,
+        publicSignals,
+        proof
     )
     if (!isProofValid) {
         console.error('Error: invalid epoch key proof')

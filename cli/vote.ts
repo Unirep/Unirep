@@ -263,7 +263,7 @@ const vote = async (args: any) => {
     try {
         tx1 = await unirepContract.submitAttestation(
             attestation,
-            epk,
+            BigInt(add0x(epk)),
             { value: attestingFee, gasLimit: 1000000 }
         )
         tx2 = await unirepContract.submitAttestation(

@@ -16,6 +16,7 @@ contract UnirepParameters {
     }
 
     struct ProofsRelated {
+        uint256[] publicSignals;
         uint256[2] a;
         uint256[2][2] b;
         uint256[2] c;
