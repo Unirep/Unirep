@@ -259,7 +259,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         );
     }
 
-    function publishComment(uint256 postId, string calldata content) external {
+    function leaveComment(uint256 postId, string calldata content) external {
         emit CommentSubmitted(
             postId,
             content

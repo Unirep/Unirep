@@ -23,6 +23,7 @@ describe('test all CLI subcommands', function() {
     let attesterAddr
     let userPrivKey
     let userAddr
+    let postID
     
     const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
@@ -34,6 +35,8 @@ describe('test all CLI subcommands', function() {
     let userIdentity1, userIdentityCommitment1, userIdentity2, userIdentityCommitment2
     const attesterId = 1
     let epk, epkProof
+    const text = "postText"
+    const text2 = "commentText"
     const posRep = 10, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
     const minPosRep = 0, maxNegRep = 10, minRepDiff = 1
     let userRepProof
@@ -214,6 +217,61 @@ describe('test all CLI subcommands', function() {
 
             const verifyRegMatch = output.match(/Verify epoch key proof with epoch key [a-fA-F0-9]+ succeed/)
             expect(verifyRegMatch).not.equal(null)
+        })
+    })
+
+    describe('publishPost CLI subcommand', () => {
+        it('should publish a post', async () => {
+            const command = `npx ts-node cli/index.ts publishPost` +
+                ` -x ${unirepContract.address} ` +
+                ` -epk ${epk} ` +
+                ` -pf ${epkProof} ` +
+                ` -tx ${text}` +
+                ` -d ${userPrivKey}`
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const idRegMatch = output.match(/Post ID: ([0-9]+)/)
+            postID = idRegMatch[1]
+            console.log('regmatch', postID)
+            const postRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)
+            expect(postRegMatch).not.equal(null)
+        })
+    })
+
+    describe('listAllPosts CLI subcommand', () => {
+        it('should list all posts', async () => {
+            const command = `npx ts-node cli/index.ts listAllPosts` +
+                ` -x ${unirepContract.address} ` 
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const postRegMatch = output.match(/Post/)
+            expect(postRegMatch).not.equal(null)
+        })
+    })
+
+    describe('leaveComment CLI subcommand', () => {
+        it('should leave a comment', async () => {
+            const command = `npx ts-node cli/index.ts leaveComment` +
+                ` -x ${unirepContract.address} ` +
+                ` -pid ${postID} ` +
+                ` -tx ${text2}` +
+                ` -d ${userPrivKey}`
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const commentRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)
+            expect(commentRegMatch).not.equal(null)
         })
     })
 

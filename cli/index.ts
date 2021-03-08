@@ -33,6 +33,21 @@ import {
 } from './verifyEpochKeyProof'
 
 import {
+    publishPost,
+    configureSubparser as configureSubparserForPublishPost,
+} from './publishPost'
+
+import {
+    listAllPosts,
+    configureSubparser as configureSubparserForListAllPosts,
+} from './listAllPosts'
+
+import {
+    leaveComment,
+    configureSubparser as configureSubparserForleaveComment,
+} from './leaveComment'
+
+import {
     attest,
     configureSubparser as configureSubparserForAttest,
 } from './attest'
@@ -91,10 +106,19 @@ const main = async () => {
     // Subcommand: verifyEpochKeyProof
     configureSubparserForVerifyEpochKeyProof(subparsers)
 
+    // Subcommand: publishPost
+    configureSubparserForPublishPost(subparsers)
+
+    // Subcommand: listAllPosts
+    configureSubparserForListAllPosts(subparsers)
+
+    // Subcommand: leaveComment
+    configureSubparserForleaveComment(subparsers)
+
     // Subcommand: attest
     configureSubparserForAttest(subparsers)
 
-    // Subcommand: upvote
+    // Subcommand: vote
     configureSubparserForvote(subparsers)
 
     // Subcommand: epochTransition
@@ -124,6 +148,12 @@ const main = async () => {
         await genEpochKeyAndProof(args)
     } else if (args.subcommand === 'verifyEpochKeyProof') {
         await verifyEpochKeyProof(args)
+    } else if (args.subcommand === 'publishPost') {
+        await publishPost(args)
+    } else if (args.subcommand === 'listAllPosts') {
+        await listAllPosts(args)
+    } else if (args.subcommand === 'leaveComment') {
+        await leaveComment(args)
     } else if (args.subcommand === 'attest') {
         await attest(args)
     } else if (args.subcommand === 'vote') {
