@@ -11,12 +11,16 @@ import {
 } from './utils'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK, DEFAULT_MAX_POST_ID } from './defaults'
+import { dbUri } from '../config/database';
 
 import { add0x } from '../crypto/SMT'
 import { genUnirepStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix } from './prefix'
+
+import Post, { IPost } from "../database/models/post";
+import mongoose from 'mongoose'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -154,6 +158,14 @@ const publishPost = async (args: any) => {
     const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
     const proof = JSON.parse(decodedProof)
     const publicSignals = [GSTRoot, currentEpoch, epk]
+    
+    const db = await mongoose.connect(dbUri)
+
+    const newpost: IPost = new Post({
+        content: args.text,
+        epochKey: args.epoch_key,
+        epkProof: args.proof
+    });
 
     const unirepContract = new ethers.Contract(
         unirepAddress,
@@ -164,13 +176,14 @@ const publishPost = async (args: any) => {
     let tx
     try {
         tx = await unirepContract.publishPost(
-            postId, 
+            BigInt(add0x(newpost._id.toString())), 
             epk, 
             args.text, 
             publicSignals, 
             proof,
             { gasLimit: 1000000 }
         )
+        const res: IPost = await newpost.save()
 
     } catch(e) {
         console.error('Error: the transaction failed')
@@ -179,7 +192,8 @@ const publishPost = async (args: any) => {
         }
         return
     }
-
+    
+    db.disconnect();
     console.log('Post ID:', postId.toString())
     console.log('Transaction hash:', tx.hash)
 }
