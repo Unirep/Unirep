@@ -159,12 +159,19 @@ const publishPost = async (args: any) => {
     const proof = JSON.parse(decodedProof)
     const publicSignals = [GSTRoot, currentEpoch, epk]
     
-    const db = await mongoose.connect(dbUri)
+    const db = await mongoose.connect(
+        dbUri, 
+         { useNewUrlParser: true, 
+           useFindAndModify: false, 
+           useUnifiedTopology: true
+         }
+     )
 
     const newpost: IPost = new Post({
         content: args.text,
         epochKey: args.epoch_key,
-        epkProof: args.proof
+        epkProof: args.proof,
+        comments: []
     });
 
     const unirepContract = new ethers.Contract(

@@ -11,12 +11,17 @@ import {
 } from './utils'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK, DEFAULT_MAX_POST_ID } from './defaults'
+import { dbUri } from '../config/database';
 
 import { add0x } from '../crypto/SMT'
 import { genUnirepStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix } from './prefix'
+
+import Comment, { IComment } from "../database/models/comment";
+import Post, { IPost } from "../database/models/post";
+import mongoose from 'mongoose'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -138,6 +143,18 @@ const leaveComment = async (args: any) => {
         startBlock,
    )
 
+   const db = await mongoose.connect(
+       dbUri, 
+        { useNewUrlParser: true, 
+          useFindAndModify: false, 
+          useUnifiedTopology: true
+        }
+    )
+
+    const newComment: IComment = new Comment({
+        content: args.text,
+    });
+
     const unirepContract = new ethers.Contract(
         unirepAddress,
         Unirep.abi,
@@ -147,9 +164,14 @@ const leaveComment = async (args: any) => {
     let tx
     try {
         tx = await unirepContract.leaveComment(
-            BigInt(args.post_id),
+            BigInt(add0x(args.post_id)),
             args.text,
             { gasLimit: 1000000 }
+        )
+
+        const postRes = await Post.findByIdAndUpdate(
+            {_id: mongoose.Types.ObjectId(args.post_id) }, 
+            { $push: {comments: newComment }}
         )
 
     } catch(e) {
@@ -160,6 +182,7 @@ const leaveComment = async (args: any) => {
         return
     }
 
+    db.disconnect();
     const receipt = await tx.wait()
     console.log('Transaction hash:', tx.hash)
 }
