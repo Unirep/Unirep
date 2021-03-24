@@ -234,7 +234,7 @@ describe('test all CLI subcommands', function() {
             console.log(command)
             console.log(output)
 
-            const idRegMatch = output.match(/Post ID: ([0-9]+)/)
+            const idRegMatch = output.match(/Post ID: ([a-fA-F0-9]+)/)
             postID = idRegMatch[1]
             console.log('regmatch', postID)
             const postRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)

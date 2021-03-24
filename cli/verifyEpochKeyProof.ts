@@ -100,8 +100,6 @@ const verifyEpochKeyProof = async (args: any) => {
     const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
     const proof = JSON.parse(decodedProof)
     const publicSignals = [GSTRoot, currentEpoch, epk]
-    console.log(publicSignals)
-    console.log(proof)
 
     const unirepContract = new ethers.Contract(
         unirepAddress,

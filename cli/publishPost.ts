@@ -151,7 +151,6 @@ const publishPost = async (args: any) => {
         startBlock,
    )
 
-    const postId = BigInt(Math.floor(Math.random() * (DEFAULT_MAX_POST_ID) ))
     const currentEpoch = unirepState.currentEpoch
     const GSTRoot = unirepState.genGSTree(currentEpoch).root
     const epk = BigInt(add0x(args.epoch_key))
@@ -201,7 +200,7 @@ const publishPost = async (args: any) => {
     }
     
     db.disconnect();
-    console.log('Post ID:', postId.toString())
+    console.log('Post ID:', newpost._id.toString())
     console.log('Transaction hash:', tx.hash)
 }
 

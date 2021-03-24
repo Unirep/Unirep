@@ -13,6 +13,11 @@ import {
 } from './deploy'
 
 import {
+    eventListeners,
+    configureSubparser as configureSubparserForEventListeners,
+} from './eventListeners'
+
+import {
     userSignup,
     configureSubparser as configureSubparserForUserSignup,
 } from './userSignUp'
@@ -94,6 +99,9 @@ const main = async () => {
     // Subcommand: deploy
     configureSubparserForDeploy(subparsers)
 
+    // Subcommand: eventListners
+    configureSubparserForEventListeners(subparsers)
+
     // Subcommand: userSignup
     configureSubparserForUserSignup(subparsers)
 
@@ -140,6 +148,8 @@ const main = async () => {
         await genUnirepIdentity(args)
     } else if (args.subcommand === 'deploy') {
         await deploy(args)
+    } else if (args.subcommand === 'eventListeners') {
+        await eventListeners(args)
     } else if (args.subcommand === 'userSignup') {
         await userSignup(args)
     } else if (args.subcommand === 'attesterSignup') {
