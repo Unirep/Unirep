@@ -141,8 +141,8 @@ const genUnirepStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiersInEvent = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
-            const epkNullifiersInEvent = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            const attestationNullifiersInEvent = userStateTransitionedEvent.args?._attestationNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const epkNullifiersInEvent = userStateTransitionedEvent.args?._epkNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
             // Combine nullifiers and mod them
             const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
@@ -372,10 +372,10 @@ const _genUserStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiersInEvent = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
-            const epkNullifiersInEvent = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            const attestationNullifiersInEvent = userStateTransitionedEvent.args?._attestationNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const epkNullifiersInEvent = userStateTransitionedEvent.args?._epkNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
             // Combine nullifiers and mod them
-            const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent)
 
             let isNullifierSeen = false
             // Verify nullifiers are not seen before
