@@ -7,6 +7,9 @@ import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
 import { hashLeftRight } from 'maci-crypto'
 import { computeEmptyUserStateRoot } from '../test/utils'
+import { id } from 'ethers/lib/utils'
+import comment from '../database/models/comment'
+import { DEFAULT_START_KARMA } from '../config/socialMedia'
 
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
@@ -53,6 +56,15 @@ const genUnirepStateFromContract = async (
     const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
     const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, startBlock)
 
+    const postSubmittedFilter = unirepContract.filters.PostSubmitted()
+    const postSubmittedEvents =  await unirepContract.queryFilter(postSubmittedFilter, startBlock)
+
+    const commentSubmittedFilter = unirepContract.filters.CommentSubmitted()
+    const commentSubmittedEvents =  await unirepContract.queryFilter(commentSubmittedFilter, startBlock)
+
+    const reputationSubmittedFilter = unirepContract.filters.ReputationNullifierSubmitted()
+    const reputationSubmittedEvents =  await unirepContract.queryFilter(reputationSubmittedFilter, startBlock)
+
     const epochEndedFilter = unirepContract.filters.EpochEnded()
     const epochEndedEvents =  await unirepContract.queryFilter(epochEndedFilter, startBlock)
 
@@ -65,6 +77,9 @@ const genUnirepStateFromContract = async (
     // Reverse the events so pop() can start from the first event
     newGSTLeafInsertedEvents.reverse()
     attestationSubmittedEvents.reverse()
+    postSubmittedEvents.reverse()
+    commentSubmittedEvents.reverse()
+    reputationSubmittedEvents.reverse()
     epochEndedEvents.reverse()
     userStateTransitionedEvents.reverse()
     for (let i = 0; i < sequencerEvents.length; i++) {
@@ -94,6 +109,26 @@ const genUnirepStateFromContract = async (
                 _attestation.overwriteGraffiti
             )
             unirepState.addAttestation(attestationEvent.args?._epochKey.toString(), attestation)
+        } else if (occurredEvent === "PostSubmitted") {
+            const postEvent = postSubmittedEvents.pop()
+            assert(postEvent !== undefined, `Event sequence mismatch: missing postSubmittedEvent`)
+            const epoch = postEvent.args?._epoch.toNumber()
+            assert(
+                epoch === unirepState.currentEpoch,
+                `Post epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+            )
+        } else if (occurredEvent === "CommentSubmitted") {
+            const commentEvent = commentSubmittedEvents.pop()
+            assert(commentEvent !== undefined, `Event sequence mismatch: missing commentSubmittedEvent`)
+            const epoch = commentEvent.args?._epoch.toNumber()
+            assert(
+                epoch === unirepState.currentEpoch,
+                `Comment epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+            )
+        } else if (occurredEvent === "ReputationNullifierSubmitted") {
+            const reputationEvent = reputationSubmittedEvents.pop()
+            assert(reputationEvent !== undefined, `Event sequence mismatch: missing ReputationNullifierSubmitted`)
+            unirepState.addKarmaNullifiers(reputationEvent.args?.karmaNullifiers.map((n) => BigInt(n)))
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
@@ -118,22 +153,22 @@ const genUnirepStateFromContract = async (
 
             unirepState.epochTransition(epoch, epochTreeLeaves)
         } else if (occurredEvent === "UserStateTransitioned") {
-            const newLeafEvent = newGSTLeafInsertedEvents.pop()
-            assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
+            // const newLeafEvent = newGSTLeafInsertedEvents.pop()
+            // assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
             const userStateTransitionedEvent = userStateTransitionedEvents.pop()
             assert(userStateTransitionedEvent !== undefined, `Event sequence mismatch: missing userStateTransitionedEvent`)
 
-            const newLeaf = newLeafEvent.args?._hashedLeaf
+            const newLeaf = userStateTransitionedEvent.args?.userTransitionedData.newGlobalStateTreeLeaf
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                userStateTransitionedEvent.args?._attestationNullifiers,
-                userStateTransitionedEvent.args?._epkNullifiers,
-                userStateTransitionedEvent.args?._fromEpoch,
-                userStateTransitionedEvent.args?._fromGlobalStateTree,
-                userStateTransitionedEvent.args?._fromEpochTree,
-                userStateTransitionedEvent.args?._fromNullifierTreeRoot,
-                userStateTransitionedEvent.args?._proof,
+                userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
+                userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
+                userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
+                userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
+                userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
+                userStateTransitionedEvent.args?.userTransitionedData.fromNullifierTreeRoot,
+                userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
             // Proof is invalid, skip this step
             if (!isProofValid) {
@@ -141,8 +176,8 @@ const genUnirepStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
-            const epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            const attestationNullifiers = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((n) => BigInt(n))
+            const epkNullifiers = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((n) => BigInt(n))
             // Combine nullifiers and mod them
             const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
@@ -179,6 +214,10 @@ const genUserStateFromParams = async (
     startBlock: number,
     userIdentity: any,
     userIdentityCommitment: any,
+    transitionedPosRep: number,
+    transitionedNegRep: number,
+    currentEpochPosRep: number,
+    currentEpochNegRep: number,
     latestTransitionedEpoch: number,
     latestGSTLeafIndex: number,
     latestUserStateLeaves?: IUserStateLeaf[],
@@ -193,6 +232,10 @@ const genUserStateFromParams = async (
         userIdentity,
         userIdentityCommitment,
         true,
+        transitionedPosRep,
+        transitionedNegRep,
+        currentEpochPosRep,
+        currentEpochNegRep,
         latestTransitionedEpoch,
         latestGSTLeafIndex,
         latestUserStateLeaves,
@@ -251,9 +294,17 @@ const _genUserStateFromContract = async (
         false,
     )
     const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth)
-    const userDefaultGSTLeaf = hashLeftRight(
+    const userDefaultStateLeaf = hashLeftRight(
         userIdentityCommitment,
         emptyUserStateRoot
+    )
+    const userDefaultKarmaLeaf = hashLeftRight(
+        BigInt(DEFAULT_START_KARMA),
+        BigInt(0)
+    )
+    const userDefaultGSTLeaf = hashLeftRight(
+        userDefaultStateLeaf,
+        userDefaultKarmaLeaf
     )
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
@@ -261,6 +312,15 @@ const _genUserStateFromContract = async (
 
     const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
     const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, startBlock)
+
+    const postSubmittedFilter = unirepContract.filters.PostSubmitted()
+    const postSubmittedEvents =  await unirepContract.queryFilter(postSubmittedFilter, startBlock)
+
+    const commentSubmittedFilter = unirepContract.filters.CommentSubmitted()
+    const commentSubmittedEvents =  await unirepContract.queryFilter(commentSubmittedFilter, startBlock)
+
+    const reputationSubmittedFilter = unirepContract.filters.ReputationNullifierSubmitted()
+    const reputationSubmittedEvents =  await unirepContract.queryFilter(reputationSubmittedFilter, startBlock)
 
     const epochEndedFilter = unirepContract.filters.EpochEnded()
     const epochEndedEvents =  await unirepContract.queryFilter(epochEndedFilter, startBlock)
@@ -274,6 +334,9 @@ const _genUserStateFromContract = async (
     // Reverse the events so pop() can start from the first event
     newGSTLeafInsertedEvents.reverse()
     attestationSubmittedEvents.reverse()
+    postSubmittedEvents.reverse()
+    commentSubmittedEvents.reverse()
+    reputationSubmittedEvents.reverse()
     epochEndedEvents.reverse()
     userStateTransitionedEvents.reverse()
     // Variables used to keep track of data required for user to transition
@@ -315,6 +378,27 @@ const _genUserStateFromContract = async (
                 _attestation.overwriteGraffiti
             )
             unirepState.addAttestation(attestationEvent.args?._epochKey.toString(), attestation)
+            // userState.computeMatchedKarmaNullifiers(attestationEvent.args?.karmaNullifiers.map((n) => BigInt(n)))
+        } else if (occurredEvent === "PostSubmitted") {
+            const postEvent = postSubmittedEvents.pop()
+            assert(postEvent !== undefined, `Event sequence mismatch: missing postSubmittedEvent`)
+            const epoch = postEvent.args?._epoch.toNumber()
+            assert(
+                epoch === unirepState.currentEpoch,
+                `Post epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+            )
+        } else if (occurredEvent === "CommentSubmitted") {
+            const commentEvent = commentSubmittedEvents.pop()
+            assert(commentEvent !== undefined, `Event sequence mismatch: missing commentSubmittedEvent`)
+            const epoch = commentEvent.args?._epoch.toNumber()
+            assert(
+                epoch === unirepState.currentEpoch,
+                `Comment epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+            )
+        } else if (occurredEvent === "ReputationNullifierSubmitted") {
+            const reputationEvent = reputationSubmittedEvents.pop()
+            assert(reputationEvent !== undefined, `Event sequence mismatch: missing ReputationNullifierSubmitted`)
+            unirepState.addKarmaNullifiers(reputationEvent.args?.karmaNullifiers.map((n) => BigInt(n)))
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
@@ -349,22 +433,22 @@ const _genUserStateFromContract = async (
             // Epoch ends, reset (next) GST leaf index
             currentEpochGSTLeafIndexToInsert = 0
         } else if (occurredEvent === "UserStateTransitioned") {
-            const newLeafEvent = newGSTLeafInsertedEvents.pop()
-            assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
+            // const newLeafEvent = newGSTLeafInsertedEvents.pop()
+            // assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
             const userStateTransitionedEvent = userStateTransitionedEvents.pop()
             assert(userStateTransitionedEvent !== undefined, `Event sequence mismatch: missing userStateTransitionedEvent`)
 
-            const newLeaf = newLeafEvent.args?._hashedLeaf
+            const newLeaf = userStateTransitionedEvent.args?.userTransitionedData.newGlobalStateTreeLeaf
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                userStateTransitionedEvent.args?._attestationNullifiers,
-                userStateTransitionedEvent.args?._epkNullifiers,
-                userStateTransitionedEvent.args?._fromEpoch,
-                userStateTransitionedEvent.args?._fromGlobalStateTree,
-                userStateTransitionedEvent.args?._fromEpochTree,
-                userStateTransitionedEvent.args?._fromNullifierTreeRoot,
-                userStateTransitionedEvent.args?._proof,
+                userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
+                userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
+                userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
+                userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
+                userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
+                userStateTransitionedEvent.args?.userTransitionedData.fromNullifierTreeRoot,
+                userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
             // Proof is invalid, skip this event
             if (!isProofValid) {
@@ -372,10 +456,10 @@ const _genUserStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiers = userStateTransitionedEvent.args?._attestationNullifiers.map((n) => BigInt(n))
-            const epkNullifiers = userStateTransitionedEvent.args?._epkNullifiers.map((n) => BigInt(n))
+            const attestationNullifiers = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((n) => BigInt(n))
+            const epkNullifiers_ = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((n) => BigInt(n))
             // Combine nullifiers and mod them
-            const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const allNullifiers = attestationNullifiers.concat(epkNullifiers_).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
             let isNullifierSeen = false
             // Verify nullifiers are not seen before
@@ -394,11 +478,11 @@ const _genUserStateFromContract = async (
 
             if (
                 userHasSignedUp &&
-                (userStateTransitionedEvent.args?._fromEpoch.toNumber() === userState.latestTransitionedEpoch)
+                (userStateTransitionedEvent.args?.userTransitionedData.fromEpoch.toNumber() === userState.latestTransitionedEpoch)
             ) {
                 let epkNullifiersMatched = 0
-                for (const nullifier of epkNullifiers) {
-                    if (epkNullifiers.indexOf(nullifier) !== -1) epkNullifiersMatched++
+                for (const nullifier of epkNullifiers_) {
+                    if (epkNullifiers.indexOf(nullifier % BigInt(2 ** unirepState.nullifierTreeDepth)) !== -1) epkNullifiersMatched++
                 }
                 if (epkNullifiersMatched == userState.numEpochKeyNoncePerEpoch) {
                     const newState = await userState.genNewUserStateAfterTransition()

@@ -1,11 +1,11 @@
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
-include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 include "./processAttestations.circom";
+include "./userExists.circom";
 
 template epochKeyExist(epoch_tree_depth) {
     signal input identity_nullifier;
@@ -40,7 +40,14 @@ template epochKeyExist(epoch_tree_depth) {
     epoch_key <== epkModed;
 }
 
-template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_depth, user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY, EPOCH_KEY_NONCE_PER_EPOCH, TOTAL_NUM_ATTESTATIONS) {
+template UserStateTransition(
+    GST_tree_depth, 
+    epoch_tree_depth, 
+    nullifier_tree_depth, 
+    user_state_tree_depth, 
+    ATTESTATIONS_PER_EPOCH_KEY, 
+    EPOCH_KEY_NONCE_PER_EPOCH, 
+    TOTAL_NUM_ATTESTATIONS) {
     signal input epoch;
 
     // User state tree
@@ -57,6 +64,12 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
+    signal private input user_tree_root;
+    signal private input user_state_hash;
+    // Sum of positive and negative karma
+    signal private input old_positive_karma;
+    signal private input old_negative_karma;
+
     // Global state tree
     signal private input GST_path_elements[GST_tree_depth][1];
     signal private input GST_path_index[GST_tree_depth];
@@ -70,6 +83,10 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
     signal private input neg_reps[TOTAL_NUM_ATTESTATIONS];
     signal private input graffities[TOTAL_NUM_ATTESTATIONS];
     signal private input overwrite_graffitis[TOTAL_NUM_ATTESTATIONS];
+    // Sum of positive and negative karma
+    signal private input positive_karma;
+    signal private input negative_karma;
+    signal input airdropped_karma;
 
     // Epoch key & epoch tree
     signal private input epk_path_elements[EPOCH_KEY_NONCE_PER_EPOCH][epoch_tree_depth][1];
@@ -92,24 +109,20 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
 
     /* 1. Check if user exists in the Global State Tree */
-    component identity_commitment = IdentityCommitment();
-    identity_commitment.identity_pk[0] <== identity_pk[0];
-    identity_commitment.identity_pk[1] <== identity_pk[1];
-    identity_commitment.identity_nullifier <== identity_nullifier;
-    identity_commitment.identity_trapdoor <== identity_trapdoor;
-
-    component leaf = HashLeftRight();
-    leaf.left <== identity_commitment.out;
-    // First intermediate root is the user state tree root before processing
-    leaf.right <== intermediate_user_state_tree_roots[0];
-
-    component GST_leaf_exists = LeafExists(GST_tree_depth);
-    GST_leaf_exists.leaf <== leaf.hash;
-    for (var i = 0; i < GST_tree_depth; i++) {
-        GST_leaf_exists.path_index[i] <== GST_path_index[i];
-        GST_leaf_exists.path_elements[i][0] <== GST_path_elements[i][0];
+    component user_exist = userExists(GST_tree_depth);
+    for (var i = 0; i< GST_tree_depth; i++) {
+        user_exist.GST_path_index[i] <== GST_path_index[i];
+        user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
     }
-    GST_leaf_exists.root <== GST_root;
+    user_exist.GST_root <== GST_root;
+    user_exist.identity_pk[0] <== identity_pk[0];
+    user_exist.identity_pk[1] <== identity_pk[1];
+    user_exist.identity_nullifier <== identity_nullifier;
+    user_exist.identity_trapdoor <== identity_trapdoor;
+    user_exist.user_tree_root <== user_tree_root;
+    user_exist.user_state_hash <== user_state_hash;
+    user_exist.positive_karma <== old_positive_karma;
+    user_exist.negative_karma <== old_negative_karma;
     /* End of check 1 */
 
     /* 2. Process the attestations of the epoch key specified by nonce `n` and verify attestation nullifiers */
@@ -176,11 +189,34 @@ template UserStateTransition(GST_tree_depth, epoch_tree_depth, nullifier_tree_de
 
 
     /* 3. Compute and output new GST leaf */
-    // 3.1 Compute new GST leaf
-    component new_leaf = HashLeftRight();
-    new_leaf.left <== identity_commitment.out;
+    // 3.1 Comput total positive and negative reputation
+    // if positive and negative are verified by provess_attestations
+    // then we sum all pos_reps and neg_reps
+    var pos_rep_sum = old_positive_karma + airdropped_karma;
+    var neg_rep_sum = old_negative_karma;
+    for (var i = 0; i < TOTAL_NUM_ATTESTATIONS; i++){
+        pos_rep_sum += pos_reps[i];
+        neg_rep_sum += neg_reps[i];
+    }
+    pos_rep_sum === positive_karma;
+    neg_rep_sum === negative_karma;
+
+    // 3.2 Compute new GST leaf
+    // 3.2.1 Compute user state tree root
+    component new_state = HashLeftRight();
+    new_state.left <== user_exist.out;
     // Last intermediate root is the new user state tree root
-    new_leaf.right <== intermediate_user_state_tree_roots[TOTAL_NUM_ATTESTATIONS];
+    new_state.right <== intermediate_user_state_tree_roots[TOTAL_NUM_ATTESTATIONS];
+
+    // 3.2.2 Compute hashed karma
+    component new_karma = HashLeftRight();
+    new_karma.left <== positive_karma;
+    new_karma.right <== negative_karma;
+
+    // 3.2.3 Compute hashed leaf
+    component new_leaf = HashLeftRight();
+    new_leaf.left <== new_state.hash;
+    new_leaf.right <== new_karma.hash;
     new_GST_leaf <== new_leaf.hash;
     /* End of 3. compute and output new GST leaf */
 }

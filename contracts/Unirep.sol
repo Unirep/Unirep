@@ -46,6 +46,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // The maximum number of signups allowed
     uint256 immutable public maxUsers;
 
+    // The default given karma when users sign up
+    uint256 immutable public defaultKarma;
+
+    // The amount of karma required to publish a post
+    uint256 immutable public postKarma = 10;
+
+    // The amount of karma required to submit a comment 
+    uint256 immutable public commentKarma = 5;
+
     uint256 public numUserSignUps = 0;
 
     mapping(uint256 => bool) public hasUserSignedUp;
@@ -76,6 +85,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // This is used to limit number of attestations per epoch key
     mapping(uint256 => uint8) public numAttestationsToEpochKey;
 
+    // Indicate if the karma nullifiers is submitted
+    mapping(uint256 => bool) public isKarmaNullifierSubmitted;
+
     struct EpochKeyList {
         uint256 numKeys;
         mapping(uint256 => uint256) keys;
@@ -98,15 +110,23 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     );
 
     event PostSubmitted(
+        uint256 indexed _epoch,
         uint256 indexed _postId,
         uint256 indexed _epochKey,
-        string _content,
+        string _hahsedContent,
         ProofsRelated proof
     );
 
     event CommentSubmitted(
+        uint256 indexed _epoch,
         uint256 indexed _postId,
-        string _content
+        uint256 indexed _epochKey,
+        string _hahsedContent,
+        ProofsRelated proof
+    );
+
+    event ReputationNullifierSubmitted(
+        uint256[] karmaNullifiers
     );
 
     event AttestationSubmitted(
@@ -120,13 +140,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
-        uint256 _fromEpoch,
-        uint256 _fromGlobalStateTree,
-        uint256 _fromEpochTree,
-        uint256 _fromNullifierTreeRoot,
-        uint256[8] _proof,
-        uint256[] _attestationNullifiers,
-        uint256[] _epkNullifiers
+        UserTransitionedRelated userTransitionedData
     );
 
 
@@ -152,6 +166,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         ReputationVerifier _reputationVerifier,
         uint8 _numEpochKeyNoncePerEpoch,
         uint8 _numAttestationsPerEpochKey,
+        uint256 _defaultKarma,
         uint256 _epochLength,
         uint256 _attestingFee
     ) public {
@@ -167,6 +182,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         numAttestationsPerEpochKey = _numAttestationsPerEpochKey;
         numAttestationsPerEpoch = _numEpochKeyNoncePerEpoch * _numAttestationsPerEpochKey;
         epochLength = _epochLength;
+        defaultKarma = _defaultKarma;
         latestEpochTransitionTime = block.timestamp;
 
         // Check and store the maximum number of signups
@@ -194,13 +210,20 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(hasUserSignedUp[_identityCommitment] == false, "Unirep: the user has already signed up");
         require(numUserSignUps < maxUsers, "Unirep: maximum number of signups reached");
 
+        // When a user signs up, give defaultKarma
+        Karma memory karma;
+        karma.positiveKaram = defaultKarma;
+        karma.negativeKarma = 0;
+        uint256 hashedKarma = hashLeftRight(karma.positiveKaram, karma.negativeKarma);
+
         // Create, hash, and insert a fresh state leaf
         StateLeaf memory stateLeaf = StateLeaf({
             identityCommitment: _identityCommitment,
             userStateRoot: emptyUserStateRoot
         });
 
-        uint256 hashedLeaf = hashStateLeaf(stateLeaf);
+        uint256 hashedState = hashStateLeaf(stateLeaf);
+        uint256 hashedLeaf = hashLeftRight(hashedState, hashedKarma);
 
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
@@ -237,7 +260,47 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         nextAttesterId ++;
     }
 
-    function publishPost(uint256 postId, uint256 epochKey, string calldata content, uint256[] calldata _publicSignals, uint256[8] calldata _proof) external {
+    function spendReputation(
+        uint256 epochKey,
+        ProofsRelated memory proof,
+        uint256[] memory karmaNullifiers,
+        uint256 spendReputationAmount
+    ) internal {
+        require(karmaNullifiers.length == spendReputationAmount, "Unirep: should submit the exact amount of karma to execute action");
+        // Determine if karma nullifiers are submitted before
+        for (uint i = 0; i < karmaNullifiers.length; i++) {
+            require(isKarmaNullifierSubmitted[karmaNullifiers[i]] == false, "Unirep: the nullifier has been submitted");
+            isKarmaNullifierSubmitted[karmaNullifiers[i]] = true;
+        }
+
+        // Verify the proof
+        proof.isValid = reputationVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
+        require(proof.isValid);
+
+        // Verify epoch key and its proof
+        // Then submit negative attestation to this epoch key
+        Attestation memory attestation;
+        attestation.attesterId = attesters[msg.sender];
+        attestation.posRep = 0;
+        attestation.negRep = spendReputationAmount;
+        attestation.graffiti = 0;
+        attestation.overwriteGraffiti = false;
+        submitAttestation(attestation, epochKey);
+
+        emit Sequencer("ReputationNullifierSubmitted");
+        emit ReputationNullifierSubmitted(
+            karmaNullifiers
+        );
+    }
+
+    function publishPost(
+        uint256 postId, 
+        uint256 epochKey, 
+        string calldata hashedContent, 
+        uint256[] calldata _publicSignals, 
+        uint256[8] calldata _proof,
+        uint256[] calldata karmaNullifiers) external payable {
+
         ProofsRelated memory proof;
         // Unpack the snark proof
         (   
@@ -247,26 +310,73 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             proof.c
         ) = unpackProof(_publicSignals, _proof);
 
-        // Verify the proof
-        proof.isValid = epkValidityVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
-        require(proof.isValid);
-
+        spendReputation(epochKey, proof, karmaNullifiers, postKarma);
+        
+        emit Sequencer("PostSubmitted");
         emit PostSubmitted(
+            currentEpoch,
             postId,
             epochKey,
-            content,
+            hashedContent,
             proof
         );
     }
 
-    function leaveComment(uint256 postId, string calldata content) external {
+    function leaveComment(
+        uint256 postId, 
+        uint256 epochKey, 
+        string calldata hashedContent, 
+        uint256[] calldata _publicSignals, 
+        uint256[8] calldata _proof,
+        uint256[] calldata karmaNullifiers) external payable {
+
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (   
+            proof.publicSignals,
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_publicSignals, _proof);
+
+        spendReputation(epochKey, proof, karmaNullifiers, commentKarma);
+    
+        emit Sequencer("CommentSubmitted");
         emit CommentSubmitted(
+            currentEpoch,
             postId,
-            content
+            epochKey,
+            hashedContent,
+            proof
         );
     }
 
-    function submitAttestation(Attestation calldata attestation, uint256 epochKey) external payable {
+    function vote(
+        Attestation calldata attestation,
+        uint256 toEpochKey,
+        uint256 fromEpochKey,
+        uint256[] calldata _publicSignals, 
+        uint256[8] calldata _proof,
+        uint256[] calldata karmaNullifiers) external payable {
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (   
+            proof.publicSignals,
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_publicSignals, _proof);
+
+        // Spend attester's reputation
+        spendReputation(fromEpochKey, proof, karmaNullifiers, attestation.posRep + attestation.negRep);
+
+        // Send Reputation to others
+        submitAttestation(attestation, toEpochKey);
+    }
+
+    function submitAttestation(
+        Attestation memory attestation,
+        uint256 epochKey ) public payable {
         require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
         require(attesters[msg.sender] == attestation.attesterId, "Unirep: mismatched attesterId");
         require(isEpochKeyHashChainSealed[epochKey] == false, "Unirep: hash chain of this epoch key has been sealed");
@@ -357,18 +467,22 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(_attestationNullifiers.length == numAttestationsPerEpoch, "Unirep: invalid number of nullifiers");
         require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
+        UserTransitionedRelated memory userTransitionedData;
+        userTransitionedData.fromEpoch = _transitionFromEpoch;
+        userTransitionedData.fromGlobalStateTree = _fromGlobalStateTree;
+        userTransitionedData.fromEpochTree = _fromEpochTree;
+        userTransitionedData.fromNullifierTreeRoot = _fromNullifierTreeRoot;
+        userTransitionedData.newGlobalStateTreeLeaf = _newGlobalStateTreeLeaf;
+        userTransitionedData.proof = _proof;
+        userTransitionedData.attestationNullifiers = _attestationNullifiers;
+        userTransitionedData.epkNullifiers = _epkNullifiers;
+
         emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
             currentEpoch,
-            _transitionFromEpoch,
-            _fromGlobalStateTree,
-            _fromEpochTree,
-            _fromNullifierTreeRoot,
-            _proof,
-            _attestationNullifiers,
-            _epkNullifiers
+            userTransitionedData
         );
-        emit NewGSTLeafInserted(currentEpoch, _newGlobalStateTreeLeaf);
+        // emit NewGSTLeafInserted(currentEpoch, _newGlobalStateTreeLeaf);
 
     }
 

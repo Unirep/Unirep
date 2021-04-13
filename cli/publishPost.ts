@@ -1,6 +1,8 @@
 import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
+import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
+import { stringifyBigInts } from 'maci-crypto'
 
 import {
     promptPwd,
@@ -10,17 +12,22 @@ import {
     contractExists,
 } from './utils'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK, DEFAULT_MAX_POST_ID } from './defaults'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { dbUri } from '../config/database';
 
 import { add0x } from '../crypto/SMT'
-import { genUnirepStateFromContract } from '../core'
+import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { epkProofPrefix } from './prefix'
+import { identityPrefix, identityCommitmentPrefix, epkProofPrefix } from './prefix'
 
 import Post, { IPost } from "../database/models/post";
 import mongoose from 'mongoose'
+import { DEFAULT_POST_KARMA } from '../config/socialMedia'
+import { assert } from 'console'
+import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
+import { genEpochKey, genKarmaNullifier } from '../test/utils'
+import { nullifierTreeDepth } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -47,32 +54,39 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.addArgument(
-        ['-epk', '--epoch-key'],
+        ['-id', '--identity'],
         {
             required: true,
             type: 'string',
-            help: 'The user\'s epoch key to attest to (in hex representation)',
+            help: 'The (serialized) user\'s identity',
         }
     )
 
     parser.addArgument(
-        ['-pf', '--proof'],
+        ['-n', '--epoch-key-nonce'],
         {
             required: true,
-            type: 'string',
-            help: 'The snark proof of the user\'s epoch key ',
+            type: 'int',
+            help: 'The epoch key nonce',
         }
     )
 
-    // verify identity
-    // parser.addArgument(
-    //     ['-c', '--identity-commitment'],
-    //     {
-    //         required: true,
-    //         type: 'string',
-    //         help: 'The user\'s identity commitment (in hex representation)',
-    //     }
-    // )
+    parser.addArgument(
+        ['-kn', '--karma-nonce'],
+        {
+            required: true,
+            type: 'int',
+            help: `The first nonce to generate karma nullifiers. It will generate ${DEFAULT_POST_KARMA} nullifiers`,
+        }
+    )
+
+    parser.addArgument(
+        ['-mr', '--min-rep'],
+        {
+            type: 'int',
+            help: 'The minimum reputation score the user has',
+        }
+    )
 
     parser.addArgument(
         ['-x', '--contract'],
@@ -145,18 +159,95 @@ const publishPost = async (args: any) => {
     }
 
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
+    const unirepContract = new ethers.Contract(
+        unirepAddress,
+        Unirep.abi,
+        wallet,
+    )
+    const attestingFee = await unirepContract.attestingFee()
+
     const unirepState = await genUnirepStateFromContract(
         provider,
         unirepAddress,
         startBlock,
-   )
+    )
+    
+    // Validate epoch key nonce
+    const epkNonce = args.epoch_key_nonce
+    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
+    if (epkNonce >= numEpochKeyNoncePerEpoch) {
+        console.error('Error: epoch key nonce must be less than max epoch key nonce')
+        return
+    }
+    const encodedIdentity = args.identity.slice(identityPrefix.length)
+    const decodedIdentity = base64url.decode(encodedIdentity)
+    const id = unSerialiseIdentity(decodedIdentity)
+    const commitment = genIdentityCommitment(id)
+    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+    const treeDepths = await unirepContract.treeDepths()
+    const epochTreeDepth = treeDepths.epochTreeDepth
+    const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
 
-    const currentEpoch = unirepState.currentEpoch
-    const GSTRoot = unirepState.genGSTree(currentEpoch).root
-    const epk = BigInt(add0x(args.epoch_key))
-    const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
-    const proof = JSON.parse(decodedProof)
-    const publicSignals = [GSTRoot, currentEpoch, epk]
+    // Gen epoch key proof and reputation proof
+    const userState = await genUserStateFromContract(
+        provider,
+        unirepAddress,
+        startBlock,
+        id,
+        commitment,
+    )
+
+    // gen nullifier nonce list
+    const proveKarmaNullifiers = BigInt(1)
+    const proveKarmaAmount = BigInt(DEFAULT_POST_KARMA)
+    const nonceStarter: number = args.karma_nonce
+    const nonceList: BigInt[] = []
+    for (let i = 0; i < DEFAULT_POST_KARMA; i++) {
+        nonceList.push( BigInt(nonceStarter + i) )
+    }
+
+    // gen minRep proof
+    const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
+    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    
+    const circuitInputs = await userState.genProveReputationCircuitInputs(
+        epkNonce,                       // generate epoch key from epoch nonce
+        proveKarmaNullifiers,                      // indicate to prove karma nullifiers
+        proveKarmaAmount,     // the amount of output karma nullifiers
+        nonceList,                      // nonce to generate karma nullifiers
+        proveMinRep,                    // indicate to prove minimum reputation the user has
+        minRep                          // the amount of minimum reputation the user wants to prove
+    )
+    
+    const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    const nullifiers: BigInt[] = [] 
+    
+    for (let i = 0; i < DEFAULT_POST_KARMA; i++) {
+        const variableName = 'main.karma_nullifiers['+i+']'
+        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
+    }
+    
+    // TODO: Not sure if this validation is necessary
+    const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+    if(!isValid) {
+        console.error('Error: reputation proof generated is not valid!')
+        return
+    }
+
+    const proof = formatProofForVerifierContract(results['proof'])
+    const epochKey = BigInt(add0x(epk))
+    console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
+    const publicSignals = results['publicSignals']
+    
+
+    const isProofValid = await unirepContract.verifyReputation(
+        publicSignals,
+        proof
+    )
+    if (!isProofValid) {
+        console.error('Error: invalid reputation proof')
+        return
+    }
     
     const db = await mongoose.connect(
         dbUri, 
@@ -168,26 +259,21 @@ const publishPost = async (args: any) => {
 
     const newpost: IPost = new Post({
         content: args.text,
-        epochKey: args.epoch_key,
-        epkProof: args.proof,
+        epochKey: epk,
+        epkProof: base64url.encode(JSON.stringify(proof)),
         comments: []
     });
-
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        wallet,
-    )
 
     let tx
     try {
         tx = await unirepContract.publishPost(
             BigInt(add0x(newpost._id.toString())), 
-            epk, 
+            epochKey,
             args.text, 
             publicSignals, 
             proof,
-            { gasLimit: 1000000 }
+            nullifiers,
+            { value: attestingFee, gasLimit: 1000000 }
         )
         const res: IPost = await newpost.save()
 
@@ -196,6 +282,7 @@ const publishPost = async (args: any) => {
         if (e.message) {
             console.error(e.message)
         }
+        db.disconnect();
         return
     }
     

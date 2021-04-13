@@ -26,6 +26,13 @@ contract DomainObjs is Hasher {
         bool overwriteGraffiti;
     }
 
+    struct Karma {
+        // Total positive karma
+        uint256 positiveKaram;
+        // Total negative karma
+        uint256 negativeKarma;
+    }
+
     function hashAttestation(Attestation memory attestation) internal returns (uint256) {
         uint256 overwriteGraffiti = attestation.overwriteGraffiti ? 1 : 0;
         uint256[] memory attestationData = new uint256[](5);

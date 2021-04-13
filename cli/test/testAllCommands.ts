@@ -28,6 +28,10 @@ describe('test all CLI subcommands', function() {
     const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
     const epochKeyNonce = 0
+    const epochKeyNonce2 = 1
+    const postNonce = 0
+    const commentNonce = 10
+    const attestNonce = 15
     const epochLength = 5
     let unirepContract: ethers.Contract
     let unirepState: UnirepState
@@ -37,7 +41,7 @@ describe('test all CLI subcommands', function() {
     let epk, epkProof
     const text = "postText"
     const text2 = "commentText"
-    const posRep = 10, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
+    const posRep = 3, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
     const minPosRep = 0, maxNegRep = 10, minRepDiff = 1
     let userRepProof
 
@@ -182,14 +186,67 @@ describe('test all CLI subcommands', function() {
             const signUpRegMatch = output.match(/Attester sign up with attester id: 1/)
             expect(signUpRegMatch).not.equal(null)
         })
+
+        it('should sign user up', async () => {
+            const command = `npx ts-node cli/index.ts attesterSignup` +
+                ` -x ${unirepContract.address} ` +
+                ` -d ${userPrivKey} `
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const signUpRegMatch = output.match(/Attester sign up with attester id: 2/)
+            expect(signUpRegMatch).not.equal(null)
+        })
     })
 
-    describe('genEpochKeyAndProof CLI subcommand', () => {
-        it('should generate epoch key proof', async () => {
-            const command = `npx ts-node cli/index.ts genEpochKeyAndProof` +
+    // describe('genEpochKeyAndProof CLI subcommand', () => {
+    //     it('should generate epoch key proof', async () => {
+    //         const command = `npx ts-node cli/index.ts genEpochKeyAndProof` +
+    //             ` -x ${unirepContract.address} ` +
+    //             ` -id ${userIdentity1} ` +
+    //             ` -n ${epochKeyNonce} `
+
+    //         const output = exec(command).stdout.trim()
+
+    //         console.log(command)
+    //         console.log(output)
+
+    //         const epkRegMatch = output.match(/Epoch key of epoch 1 and nonce 0: ([a-fA-F0-9]+)/)
+    //         epk = epkRegMatch[1]
+    //         const epkProofRegMatch = output.match(/(Unirep.epkProof.[a-zA-Z0-9\-\_]+)$/)
+    //         epkProof = epkProofRegMatch[1]
+    //     })
+    // })
+
+    // describe('verifyEpochKeyProof CLI subcommand', () => {
+    //     it('should verify epoch key proof', async () => {
+    //         const command = `npx ts-node cli/index.ts verifyEpochKeyProof` +
+    //             ` -x ${unirepContract.address} ` +
+    //             ` -epk ${epk} ` +
+    //             ` -pf ${epkProof} `
+
+    //         const output = exec(command).stdout.trim()
+
+    //         console.log(command)
+    //         console.log(output)
+
+    //         const verifyRegMatch = output.match(/Verify epoch key proof with epoch key [a-fA-F0-9]+ succeed/)
+    //         expect(verifyRegMatch).not.equal(null)
+    //     })
+    // })
+
+    describe('publishPost CLI subcommand', () => {
+        it('should publish a post', async () => {
+            const command = `npx ts-node cli/index.ts publishPost` +
                 ` -x ${unirepContract.address} ` +
-                ` -id ${userIdentity1} ` +
-                ` -n ${epochKeyNonce} `
+                ` -tx ${text}` +
+                ` -d ${userPrivKey}` +
+                ` -id ${userIdentity1}` +
+                ` -n ${epochKeyNonce}` + 
+                ` -kn ${postNonce}`
 
             const output = exec(command).stdout.trim()
 
@@ -198,41 +255,6 @@ describe('test all CLI subcommands', function() {
 
             const epkRegMatch = output.match(/Epoch key of epoch 1 and nonce 0: ([a-fA-F0-9]+)/)
             epk = epkRegMatch[1]
-            const epkProofRegMatch = output.match(/(Unirep.epkProof.[a-zA-Z0-9\-\_]+)$/)
-            epkProof = epkProofRegMatch[1]
-        })
-    })
-
-    describe('verifyEpochKeyProof CLI subcommand', () => {
-        it('should verify epoch key proof', async () => {
-            const command = `npx ts-node cli/index.ts verifyEpochKeyProof` +
-                ` -x ${unirepContract.address} ` +
-                ` -epk ${epk} ` +
-                ` -pf ${epkProof} `
-
-            const output = exec(command).stdout.trim()
-
-            console.log(command)
-            console.log(output)
-
-            const verifyRegMatch = output.match(/Verify epoch key proof with epoch key [a-fA-F0-9]+ succeed/)
-            expect(verifyRegMatch).not.equal(null)
-        })
-    })
-
-    describe('publishPost CLI subcommand', () => {
-        it('should publish a post', async () => {
-            const command = `npx ts-node cli/index.ts publishPost` +
-                ` -x ${unirepContract.address} ` +
-                ` -epk ${epk} ` +
-                ` -pf ${epkProof} ` +
-                ` -tx ${text}` +
-                ` -d ${userPrivKey}`
-
-            const output = exec(command).stdout.trim()
-
-            console.log(command)
-            console.log(output)
 
             const idRegMatch = output.match(/Post ID: ([a-fA-F0-9]+)/)
             postID = idRegMatch[1]
@@ -257,23 +279,26 @@ describe('test all CLI subcommands', function() {
         })
     })
 
-    describe('leaveComment CLI subcommand', () => {
-        it('should leave a comment', async () => {
-            const command = `npx ts-node cli/index.ts leaveComment` +
-                ` -x ${unirepContract.address} ` +
-                ` -pid ${postID} ` +
-                ` -tx ${text2}` +
-                ` -d ${userPrivKey}`
+    // describe('leaveComment CLI subcommand', () => {
+    //     it('should leave a comment', async () => {
+    //         const command = `npx ts-node cli/index.ts leaveComment` +
+    //             ` -x ${unirepContract.address} ` +
+    //             ` -pid ${postID} ` +
+    //             ` -tx ${text2}` +
+    //             ` -d ${userPrivKey}` +
+    //             ` -id ${userIdentity1}` +
+    //             ` -n ${epochKeyNonce2}` +
+    //             ` -kn ${commentNonce}`
 
-            const output = exec(command).stdout.trim()
+    //         const output = exec(command).stdout.trim()
 
-            console.log(command)
-            console.log(output)
+    //         console.log(command)
+    //         console.log(output)
 
-            const commentRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)
-            expect(commentRegMatch).not.equal(null)
-        })
-    })
+    //         const commentRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)
+    //         expect(commentRegMatch).not.equal(null)
+    //     })
+    // })
 
     describe('upvote CLI subcommand', () => {
         it('should upvote to user', async () => {
@@ -283,6 +308,7 @@ describe('test all CLI subcommands', function() {
                 ` -epk ${epk} ` +
                 ` -id ${userIdentity2}` +
                 ` -n ${epochKeyNonce}` +
+                ` -kn ${attestNonce}` +
                 ` -uv ${posRep} ` +
                 ` -gf ${graffiti.toString(16)} `
 
@@ -314,11 +340,26 @@ describe('test all CLI subcommands', function() {
     })
 
     describe('userStateTransition CLI subcommand', () => {
-        it('should transition user state', async () => {
+        it('should transition user 1 state', async () => {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
                 ` -id ${userIdentity1} `
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const userTransitionRegMatch = output.match(/User transitioned from epoch 1 to epoch 2/)
+            expect(userTransitionRegMatch).not.equal(null)
+        })
+
+        it('should transition user 2 state', async () => {
+            const command = `npx ts-node cli/index.ts userStateTransition` +
+                ` -x ${unirepContract.address} ` +
+                ` -d ${userPrivKey} ` +
+                ` -id ${userIdentity2} `
 
             const output = exec(command).stdout.trim()
 

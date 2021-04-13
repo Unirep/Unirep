@@ -15,14 +15,15 @@ import {
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genEpochKey } from '../test/utils'
-import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'
+import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
+import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
 
 import { add0x } from '../crypto/SMT'
 import { Attestation } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix, identityPrefix } from './prefix'
+import { nullifierTreeDepth } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -63,6 +64,23 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'int',
             help: 'The epoch key nonce',
+        }
+    )
+
+    parser.addArgument(
+        ['-kn', '--karma-nonce'],
+        {
+            required: true,
+            type: 'int',
+            help: `The first nonce to generate karma nullifiers. It will generate number of nullifiers which equals to the number of upvote/downvote`,
+        }
+    )
+
+    parser.addArgument(
+        ['-mr', '--min-rep'],
+        {
+            type: 'int',
+            help: 'The minimum reputation score the attester has',
         }
     )
 
@@ -186,6 +204,20 @@ const vote = async (args: any) => {
         return
     }
 
+    const unirepState = await genUnirepStateFromContract(
+        provider,
+        unirepAddress,
+        startBlock,
+    )
+
+    // upvote / downvote user 
+    const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
+    const overwriteGraffiti = args.graffiti ? true : false
+    const upvoteValue = args.upvote_value != null ? args.upvote_value : 0
+    const downvoteValue = args.downvote_value != null ? args.downvote_value : 0
+    const voteValue = upvoteValue + downvoteValue
+
+
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
@@ -193,8 +225,6 @@ const vote = async (args: any) => {
         console.error('Error: epoch key nonce must be less than max epoch key nonce')
         return
     }
-
-    // Gen epoch key
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
@@ -204,71 +234,74 @@ const vote = async (args: any) => {
     const epochTreeDepth = treeDepths.epochTreeDepth
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
 
-    // Gen epoch key proof
+    // Gen epoch key proof and reputation proof
     const userState = await genUserStateFromContract(
-        provider,
-        unirepAddress,
-        startBlock,
-        id,
-        commitment,
+       provider,
+       unirepAddress,
+       startBlock,
+       id,
+       commitment,
     )
-    const circuitInputs = await userState.genVerifyEpochKeyCircuitInputs(epkNonce)
-    console.log('Proving epoch key...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
-    const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    // gen nullifier nonce list
+    const proveKarmaNullifiers = BigInt(1)
+    const proveKarmaAmount = BigInt(voteValue)
+    const nonceStarter: number = args.karma_nonce
+    const nonceList: BigInt[] = []
+    for (let i = 0; i < voteValue; i++) {
+        nonceList.push( BigInt(nonceStarter + i) )
+    }
+   
+    // gen minRep proof
+    const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
+    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+
+    const circuitInputs = await userState.genProveReputationCircuitInputs(
+        epkNonce,                       // generate epoch key from epoch nonce
+        BigInt(1),                      // indicate to prove karma nullifiers
+        BigInt(voteValue),              // the amount of output karma nullifiers
+        nonceList,                      // nonce to generate karma nullifiers
+        proveMinRep,                    // indicate to prove minimum reputation the user has
+        minRep                          // the amount of minimum reputation the user wants to prove
+    )
+    
+    const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    const nullifiers: BigInt[] = [] 
+    
+    for (let i = 0; i < voteValue; i++) {
+        const variableName = 'main.karma_nullifiers['+i+']'
+        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
+    }
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
+    const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
     if(!isValid) {
-        console.error('Error: epoch key proof generated is not valid!')
+        console.error('Error: reputation proof generated is not valid!')
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results["proof"])
-    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
-    console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
-    console.log(epkProofPrefix + encodedProof)
-
-    // downvote user 
-    const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
-    const overwriteGraffiti = args.graffiti ? true : false
-    const upvoteValue = args.upvote_value != null ? BigInt(args.upvote_value) : BigInt(0)
-    const downvoteValue = args.downvote_value != null ? BigInt(args.downvote_value) : BigInt(0)
-    const attestation = new Attestation(
-        BigInt(attesterId),
-        BigInt(0),
-        upvoteValue + downvoteValue,
-        graffiti,
-        overwriteGraffiti,
-    )
+    const proof = formatProofForVerifierContract(results['proof'])
+    const fromEpochKey = BigInt(add0x(epk))
+    const publicSignals = results['publicSignals']
 
     // upvote or downvote to epoch key
     const attestationToEpochKey = new Attestation(
         BigInt(attesterId),
-        upvoteValue,
-        downvoteValue,
+        BigInt(upvoteValue),
+        BigInt(downvoteValue),
         graffiti,
         overwriteGraffiti,
     )
 
-    console.log(`Attesting to epoch key ${epk} with pos rep ${BigInt(0)}, neg rep ${upvoteValue + downvoteValue} and graffiti ${graffiti.toString(16)} (overwrite graffit: ${overwriteGraffiti})`)
     console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${upvoteValue}, neg rep ${downvoteValue} and graffiti ${graffiti.toString(16)} (overwrite graffit: ${overwriteGraffiti})`)
-    let tx1
-    let tx2
+    let tx
     try {
-        tx1 = await unirepContract.submitAttestation(
-            attestation,
-            BigInt(add0x(epk)),
-            { value: attestingFee, gasLimit: 1000000 }
-        )
-        tx2 = await unirepContract.submitAttestation(
+        tx = await unirepContract.vote(
             attestationToEpochKey,
             BigInt(add0x(args.epoch_key)),
+            fromEpochKey,
+            publicSignals,
+            proof,
+            nullifiers,
             { value: attestingFee, gasLimit: 1000000 }
         )
     } catch(e) {
@@ -279,8 +312,7 @@ const vote = async (args: any) => {
         return
     }
 
-    console.log('Transaction hash:', tx1.hash)
-    console.log('Transaction hash:', tx2.hash)
+    console.log('Transaction hash:', tx.hash)
 }
 
 export {
