@@ -4,19 +4,13 @@ include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 include "./sparseMerkleTree.circom";
+include "./userExists.circom";
 
 function Not(in) {
     return 1 + in - (2 * in);
 }
 
-template ProveReputation(
-        GST_tree_depth, 
-        user_state_tree_depth, 
-        nullifier_tree_depth, 
-        EPOCH_KEY_NONCE_PER_EPOCH, 
-        MAX_REPUTATION_SCORE_BITS, 
-        NUM_ATTESTATIONS,
-        MAX_KARMA_BUDGET) {
+template proveReputationFromAttester(GST_tree_depth, user_state_tree_depth, nullifier_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input epoch;
     signal private input nonce;
 
@@ -43,14 +37,19 @@ template ProveReputation(
     // Sum of positive and negative karma
     signal private input positive_karma;
     signal private input negative_karma;
-    // Karma nullifier
-    signal input prove_karma_nullifiers;
-    signal input prove_karma_amount;
-    signal private input karma_nonce[MAX_KARMA_BUDGET];
-    signal output karma_nullifiers[MAX_KARMA_BUDGET];
-    // Prove the minimum reputation
-    signal input prove_min_rep;
-    signal input min_rep;
+    // Adding flexibility to prove mp, mn or graffiti
+    signal input prove_pos_rep;
+    signal input prove_neg_rep;
+    signal input prove_rep_diff;
+    signal input prove_graffiti;
+    // Adding flexibility to prove differece of reputations
+    signal input min_rep_diff;
+    // Condition on repuations to prove
+    signal input min_pos_rep;
+    signal input max_neg_rep;
+    // Graffiti
+    signal input graffiti_pre_image;
+
 
     /* 1. Check nonce validity */
     var bitsPerNonce = 8;
@@ -61,8 +60,25 @@ template ProveReputation(
     nonce_lt.out === 1;
     /* End of check 1 */
 
-    
-    /* 2. Check if the reputation given by the attester is in the user state tree */
+    /* 2. Check if user exists in the Global State Tree */
+    component user_exist = userExists(GST_tree_depth);
+    for (var i = 0; i< GST_tree_depth; i++) {
+        user_exist.GST_path_index[i] <== GST_path_index[i];
+        user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
+    }
+    user_exist.GST_root <== GST_root;
+    user_exist.identity_pk[0] <== identity_pk[0];
+    user_exist.identity_pk[1] <== identity_pk[1];
+    user_exist.identity_nullifier <== identity_nullifier;
+    user_exist.identity_trapdoor <== identity_trapdoor;
+    user_exist.user_tree_root <== user_tree_root;
+    user_exist.user_state_hash <== user_state_hash;
+    user_exist.positive_karma <== positive_karma;
+    user_exist.negative_karma <== negative_karma;
+    /* End of check 2 */
+
+
+    /* 3. Check if the reputation given by the attester is in the user state tree */
     component reputation_hasher = Hasher5();
     reputation_hasher.in[0] <== pos_rep;
     reputation_hasher.in[1] <== neg_rep;
@@ -76,44 +92,7 @@ template ProveReputation(
     for (var i = 0; i < user_state_tree_depth; i++) {
         reputation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
     }
-
     reputation_membership_check.root <== user_tree_root;
-    /* End of check 2 */
-
-
-    /* 3. Check if user exists in the Global State Tree */
-    component identity_commitment = IdentityCommitment();
-    identity_commitment.identity_pk[0] <== identity_pk[0];
-    identity_commitment.identity_pk[1] <== identity_pk[1];
-    identity_commitment.identity_nullifier <== identity_nullifier;
-    identity_commitment.identity_trapdoor <== identity_trapdoor;
-
-    // 3.1 Compute user state tree root
-    component state = HashLeftRight();
-    state.left <== identity_commitment.out;
-    state.right <== user_tree_root;
-
-    // 3.2 Compute hashed karma
-    component karma = HashLeftRight();
-    karma.left <== positive_karma;
-    karma.right <== negative_karma;
-
-    // 3.3 Compute hashed leaf
-    component leaf = HashLeftRight();
-    leaf.left <== state.hash;
-    leaf.right <== karma.hash;
-
-    // 3.4 Check computed hash == user state tree leaf
-    leaf.hash === user_state_hash;
-
-    // 3.6 Check if user state hash is in GST
-    component GST_leaf_exists = LeafExists(GST_tree_depth);
-    GST_leaf_exists.leaf <== leaf.hash;
-    for (var i = 0; i < GST_tree_depth; i++) {
-        GST_leaf_exists.path_index[i] <== GST_path_index[i];
-        GST_leaf_exists.path_elements[i][0] <== GST_path_elements[i][0];
-    }
-    GST_leaf_exists.root <== GST_root;
     /* End of check 3 */
 
 
@@ -153,79 +132,40 @@ template ProveReputation(
     /* End of check 4 */
 
 
-    /* 5. Check total reputation is greater than 0 */
-    // if user wants to spend karma and prove total_reputation, it requires reputation to be positive
-    // total_reputation = positive_karma - negative_karma >= 0
-    component pos_rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
-    pos_rep_get.in[0] <== positive_karma;
-    pos_rep_get.in[1] <== negative_karma;
-    pos_rep_get.out === 1;
-    /* End of check 5*/
-
-
-    /* 6. Check nullifiers are valid */
-    component karma_nullifier_hasher[MAX_KARMA_BUDGET];
-    component nonce_gt[MAX_KARMA_BUDGET];
-    for(var i = 0; i< MAX_KARMA_BUDGET; i++) {
-        // 6.1 verify is nonce is valid
-        // If user wants to generate karma nullifiers, check if positive_karma - negative_karma > karma_nonce
-        // Eg. if we have 10 karma, we have 0-9 valid nonce
-        nonce_gt[i] = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-        nonce_gt[i].in[0] <== positive_karma - negative_karma;
-        nonce_gt[i].in[1] <== karma_nonce[i];
-        nonce_gt[i].out * prove_karma_nullifiers + Not(prove_karma_nullifiers) === 1;
-        
-        // 6.2 Use karma_nonce to compute all karma nullifiers
-        karma_nullifier_hasher[i] = Hasher5();
-        karma_nullifier_hasher[i].in[0] <== 3; // 3 is the domain separator for karma nullifier
-        karma_nullifier_hasher[i].in[1] <== identity_nullifier;
-        karma_nullifier_hasher[i].in[2] <== epoch;
-        karma_nullifier_hasher[i].in[3] <== karma_nonce[i];
-        karma_nullifier_hasher[i].in[4] <== 0;
-        karma_nullifiers[i] <== karma_nullifier_hasher[i].hash;
-    }
-    /* End of check 6 */
-
-
-    /* 7. Check if user has reputation greater than min_rep */
-    component rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
-    rep_get.in[0] <== positive_karma - negative_karma;
-    rep_get.in[1] <== min_rep;
-    rep_get.out * prove_min_rep + Not(prove_min_rep) === 1;
-    /* End of check 7 */
-
+    /* 5. Check conditions on reputations */
     // if prove_pos_rep == TRUE then check GT
     // else return TRUE
-    // component pos_rep_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-    // pos_rep_gt.in[0] <== pos_rep;
-    // pos_rep_gt.in[1] <== min_pos_rep;
-    // pos_rep_gt.out * prove_pos_rep + Not(prove_pos_rep) === 1;
+    component pos_rep_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    pos_rep_gt.in[0] <== pos_rep;
+    pos_rep_gt.in[1] <== min_pos_rep;
+    pos_rep_gt.out * prove_pos_rep + Not(prove_pos_rep) === 1;
 
     
-    // component neg_rep_lt = LessThan(MAX_REPUTATION_SCORE_BITS);
-    // neg_rep_lt.in[0] <== neg_rep;
-    // neg_rep_lt.in[1] <== max_neg_rep;
-    // neg_rep_lt.out * prove_neg_rep + Not(prove_neg_rep) === 1;
+    component neg_rep_lt = LessThan(MAX_REPUTATION_SCORE_BITS);
+    neg_rep_lt.in[0] <== neg_rep;
+    neg_rep_lt.in[1] <== max_neg_rep;
+    neg_rep_lt.out * prove_neg_rep + Not(prove_neg_rep) === 1;
 
     // only valid if pos_rep >= neg_rep
-    // component rep_diff_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
-    // rep_diff_get.in[0] <== pos_rep;
-    // rep_diff_get.in[1] <== neg_rep;
+    component rep_diff_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
+    rep_diff_get.in[0] <== pos_rep;
+    rep_diff_get.in[1] <== neg_rep;
     // // check if (pos_rep - neg_rep) > min_rep_diff
-    // component rep_diff_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-    // rep_diff_gt.in[0] <== pos_rep - neg_rep;
-    // rep_diff_gt.in[1] <== min_rep_diff;
-    // rep_diff_get.out * prove_rep_diff + Not(prove_rep_diff) === 1;
-    // rep_diff_gt.out * prove_rep_diff + Not(prove_rep_diff) === 1;
-    
-    /* 7. Check pre-image of graffiti */
-    // component graffiti_hasher = HashLeftRight();
-    // graffiti_hasher.left <== graffiti_pre_image;
-    // graffiti_hasher.right <== 0;
-    // component graffiti_eq = IsEqual();
-    // graffiti_eq.in[0] <== graffiti_hasher.hash;
-    // graffiti_eq.in[1] <== graffiti;
-    // graffiti_eq.out * prove_graffiti + Not(prove_graffiti) === 1;
+    component rep_diff_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    rep_diff_gt.in[0] <== pos_rep - neg_rep;
+    rep_diff_gt.in[1] <== min_rep_diff;
+    rep_diff_get.out * prove_rep_diff + Not(prove_rep_diff) === 1;
+    rep_diff_gt.out * prove_rep_diff + Not(prove_rep_diff) === 1;
+    /* End of check 5 */
 
-    /* End of check 7 */
+    /* 6. Check pre-image of graffiti */
+    component graffiti_hasher = HashLeftRight();
+    graffiti_hasher.left <== graffiti_pre_image;
+    graffiti_hasher.right <== 0;
+    component graffiti_eq = IsEqual();
+    graffiti_eq.in[0] <== graffiti_hasher.hash;
+    graffiti_eq.in[1] <== graffiti;
+    graffiti_eq.out * prove_graffiti + Not(prove_graffiti) === 1;
+
+    /* End of check 6 */
  }
