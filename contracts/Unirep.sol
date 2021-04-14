@@ -57,6 +57,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // The amount of karma required to submit a comment 
     uint256 immutable public commentKarma = 5;
 
+    // The amount of karma airdropped to user after user state transition
+    uint256 immutable public airdroppedKarma = 20;
+
     uint256 public numUserSignUps = 0;
 
     mapping(uint256 => bool) public hasUserSignedUp;
@@ -166,6 +169,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         EpochKeyValidityVerifier _epkValidityVerifier,
         UserStateTransitionVerifier _userStateTransitionVerifier,
         ReputationVerifier _reputationVerifier,
+        ReputationFromAttesterVerifier _reputationFromAttesterVerifier,
         uint8 _numEpochKeyNoncePerEpoch,
         uint8 _numAttestationsPerEpochKey,
         uint256 _defaultKarma,
@@ -179,6 +183,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         epkValidityVerifier = _epkValidityVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
+        reputationFromAttesterVerifier = _reputationFromAttesterVerifier;
 
         numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
         numAttestationsPerEpochKey = _numAttestationsPerEpochKey;
@@ -225,7 +230,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         hashElements[3] = karma.negativeKarma;
         hashElements[4] = 0;
         uint256 hashedLeaf = hash5(hashElements);
-        
+
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
 
@@ -535,7 +540,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _transitionFromEpoch,
         uint256 _fromGlobalStateTree,
         uint256 _fromEpochTree,
-        uint256 _fromNullifierTreeRoot,
         uint256[8] calldata _proof) external view returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state exist in the provided global state tree
@@ -556,8 +560,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         }
         _publicSignals[2 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _transitionFromEpoch;
         _publicSignals[3 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromGlobalStateTree;
-        _publicSignals[4 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromEpochTree;
-        _publicSignals[5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromNullifierTreeRoot;
+        _publicSignals[4 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = airdroppedKarma;
+        _publicSignals[5 + numAttestationsPerEpoch + numEpochKeyNoncePerEpoch - 1] = _fromEpochTree;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

@@ -171,7 +171,7 @@ const verifyReputationProof = async (args: any) => {
         minPosRep,
         maxNegRep,
         graffitiPreImage]
-    const isProofValid = await unirepContract.verifyReputation(
+    const isProofValid = await unirepContract.verifyReputationFromAttester(
         publicInput,
         proof
     )

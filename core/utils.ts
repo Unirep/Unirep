@@ -167,7 +167,6 @@ const genUnirepStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
-                userStateTransitionedEvent.args?.userTransitionedData.fromNullifierTreeRoot,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
             // Proof is invalid, skip this step
@@ -372,8 +371,11 @@ const _genUserStateFromContract = async (
                 BigInt(_attestation.graffiti),
                 _attestation.overwriteGraffiti
             )
-            unirepState.addAttestation(attestationEvent.args?._epochKey.toString(), attestation)
-            // userState.computeMatchedKarmaNullifiers(attestationEvent.args?.karmaNullifiers.map((n) => BigInt(n)))
+            const epochKey = attestationEvent.args?._epochKey
+            unirepState.addAttestation(epochKey.toString(), attestation)
+            if(userHasSignedUp){
+                userState.updateAttestation(epochKey, attestation.posRep, attestation.negRep)
+            }
         } else if (occurredEvent === "PostSubmitted") {
             const postEvent = postSubmittedEvents.pop()
             assert(postEvent !== undefined, `Event sequence mismatch: missing postSubmittedEvent`)
@@ -442,7 +444,6 @@ const _genUserStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
-                userStateTransitionedEvent.args?.userTransitionedData.fromNullifierTreeRoot,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
             // Proof is invalid, skip this event

@@ -10,7 +10,7 @@ import {
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, verifyProveReputationProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract, genVerifyReputationFromAttesterProofAndPublicSignals, verifyProveReputationFromAttesterProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { add0x } from '../crypto/SMT'
 import { identityPrefix, reputationProofPrefix } from './prefix'
@@ -151,18 +151,18 @@ const genReputationProof = async (args: any) => {
     const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
 
-    const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
-    console.log('Proving reputation...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
-    const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    const circuitInputs = await userState.genProveReputationFromAttesterCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+    // console.log('Proving reputation...')
+    // console.log('----------------------User State----------------------')
+    // console.log(userState.toJSON(4))
+    // console.log('------------------------------------------------------')
+    // console.log('----------------------Circuit inputs----------------------')
+    // console.log(circuitInputs)
+    // console.log('----------------------------------------------------------')
+    const results = await genVerifyReputationFromAttesterProofAndPublicSignals(stringifyBigInts(circuitInputs))
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+    const isValid = await verifyProveReputationFromAttesterProof(results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: reputation proof generated is not valid!')
         return

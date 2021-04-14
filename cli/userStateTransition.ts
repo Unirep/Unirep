@@ -145,13 +145,6 @@ const userStateTransition = async (args: any) => {
     )
 
     const circuitInputs = await userState.genUserStateTransitionCircuitInputs()
-    console.log('Proving user state transition...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
     const newState = await userState.genNewUserStateAfterTransition()
@@ -159,6 +152,7 @@ const userStateTransition = async (args: any) => {
         console.error('Error: Computed new GST leaf should match')
         return
     }
+    
     const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
     if (!isValid) {
         console.error('Error: user state transition proof generated is not valid!')
@@ -192,6 +186,7 @@ const userStateTransition = async (args: any) => {
         }
         outputEPKNullifiers.push(outputNullifier)
     }
+
 
     let tx
     try {

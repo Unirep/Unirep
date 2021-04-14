@@ -77,7 +77,7 @@ const listAllPosts = async (args: any) => {
     for (let i = 0; i < postEvents.length; i++) {
         console.log('Post ', postEvents[i].args._postId.toString())
         console.log('Epoch key ', postEvents[i].args._epochKey.toString())
-        console.log('Content ', postEvents[i].args._content)
+        console.log('Content ', postEvents[i].args._hahsedContent)
     }
 }
 

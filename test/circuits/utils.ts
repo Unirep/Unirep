@@ -119,6 +119,19 @@ const genVerifyReputationProofAndPublicSignals = (
     )
 }
 
+const genVerifyReputationFromAttesterProofAndPublicSignals = (
+    inputs: any,
+) => {
+    return genProofAndPublicSignals(
+        inputs,
+        '/test/proveReputationFromAttester_test.circom',
+        'proveReputationFromAttesterCircuit.r1cs',
+        'proveReputationFromAttester.wasm',
+        'proveReputationFromAttester.params',
+        false,
+    )
+}
+
 const genProofAndPublicSignals = async (
     inputs: any,
     circuitFilename: string,
@@ -262,6 +275,31 @@ const verifyProveReputationProof = (
     return verifyProof('proveReputation.params', proofFilename, publicSignalsFilename)
 }
 
+const verifyProveReputationFromAttesterProof = (
+    proof: any,
+    publicSignals: any,
+) => {
+    const date = Date.now().toString()
+    const proofFilename = `${date}.proveReputationFromAttester.proof.json`
+    const publicSignalsFilename = `${date}.proveReputationFromAttester.publicSignals.json`
+
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', proofFilename),
+        JSON.stringify(
+            stringifyBigInts(proof)
+        )
+    )
+
+    fs.writeFileSync(
+        path.join(__dirname, '../../build/', publicSignalsFilename),
+        JSON.stringify(
+            stringifyBigInts(publicSignals)
+        )
+    )
+
+    return verifyProof('proveReputationFromAttester.params', proofFilename, publicSignalsFilename)
+}
+
 const formatProofForVerifierContract = (
     _proof: SnarkProof,
 ) => {
@@ -286,9 +324,11 @@ export {
     getSignalByNameViaSym,
     genVerifyEpochKeyProofAndPublicSignals,
     genVerifyReputationProofAndPublicSignals,
+    genVerifyReputationFromAttesterProofAndPublicSignals,
     genVerifyUserStateTransitionProofAndPublicSignals,
     verifyEPKProof,
     verifyProveReputationProof,
+    verifyProveReputationFromAttesterProof,
     verifyUserStateTransitionProof,
     genProofAndPublicSignals,
     verifyProof,

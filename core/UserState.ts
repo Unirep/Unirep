@@ -341,6 +341,17 @@ class UserState {
         return stateLeaves
     }
 
+    public updateAttestation = async (epochKey: BigInt, posRep: BigInt, negRep: BigInt) => {
+        const fromEpoch = this.latestTransitionedEpoch
+        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
+            if(epochKey == genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.epochTreeDepth)){
+                this.currentEpochPosRep += Number(posRep)
+                this.currentEpochNegRep += Number(negRep)
+                return
+            }
+        }
+    }
+
     public genNewUserStateAfterTransition = async () => {
         assert(this.hasSignedUp, "User has not signed up yet")
         const fromEpoch = this.latestTransitionedEpoch
@@ -440,8 +451,6 @@ class UserState {
                 negReps.push(newRep.negRep)
                 graffities.push(newRep.graffiti)
                 overwriteGraffitis.push(attestation.overwriteGraffiti)
-                this.currentEpochPosRep += Number(newRep.posRep)
-                this.currentEpochNegRep += Number(newRep.negRep)
             }
             // Fill in blank data for non-exist attestation
             for (let i = 0; i < (this.numAttestationsPerEpochKey - attestations.length); i++) {
@@ -515,7 +524,8 @@ class UserState {
 
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
-        this.transitionedPosRep += DEFAULT_STATE_TRANSITION_KARMA
+        this.transitionedPosRep = this.transitionedPosRep + this.currentEpochPosRep + DEFAULT_AIRDROPPED_KARMA
+        this.transitionedNegRep = this.transitionedNegRep + this.currentEpochNegRep
         this.currentEpochPosRep = 0
         this.currentEpochNegRep = 0
     }
@@ -575,6 +585,74 @@ class UserState {
             karma_nonce: karmaNonceList,
             prove_min_rep: proveMinRep,
             min_rep: minRep
+        })
+    }
+
+    public genProveReputationFromAttesterCircuitInputs = async (
+        attesterId: BigInt,
+        provePosRep: BigInt,
+        proveNegRep: BigInt,
+        proveRepDiff: BigInt,
+        proveGraffiti: BigInt,
+        minPosRep: BigInt,
+        maxNegRep: BigInt,
+        minRepDiff: BigInt,
+        graffitiPreImage: BigInt,
+    ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
+        assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
+        assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
+        const epoch = this.latestTransitionedEpoch
+        const nonce = 0
+        const rep = this.getRepByAttester(attesterId)
+        const posRep = rep.posRep
+        const negRep = rep.negRep
+        const graffiti = rep.graffiti
+        const userStateTree = await this.genUserStateTree()
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
+        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTreeProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
+        const GSTreeRoot = GSTree.root
+        const nullifierTree = await this.unirepState.genNullifierTree()
+        const nullifierTreeRoot = nullifierTree.getRootHash()
+        const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, epoch, nonce, this.unirepState.nullifierTreeDepth)
+        const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
+        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
+
+        return stringifyBigInts({
+            epoch: epoch,
+            nonce: nonce,
+            identity_pk: this.id.keypair.pubKey,
+            identity_nullifier: this.id.identityNullifier, 
+            identity_trapdoor: this.id.identityTrapdoor,
+            user_tree_root: userStateTree.getRootHash(),
+            user_state_hash: hashedLeaf,
+            GST_path_index: GSTreeProof.indices,
+            GST_path_elements: GSTreeProof.pathElements,
+            GST_root: GSTreeRoot,
+            nullifier_tree_root: nullifierTreeRoot,
+            nullifier_path_elements: epkNullifierProof,
+            attester_id: attesterId,
+            pos_rep: posRep,
+            neg_rep: negRep,
+            graffiti: graffiti,
+            UST_path_elements: USTPathElements,
+            positive_karma: BigInt(this.transitionedPosRep),
+            negative_karma: BigInt(this.transitionedNegRep),
+            prove_pos_rep: provePosRep,
+            prove_neg_rep: proveNegRep,
+            prove_rep_diff: proveRepDiff,
+            prove_graffiti: proveGraffiti,
+            min_rep_diff: minRepDiff,
+            min_pos_rep: minPosRep,
+            max_neg_rep: maxNegRep,
+            graffiti_pre_image: graffitiPreImage
         })
     }
 }
