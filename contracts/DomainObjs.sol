@@ -28,7 +28,7 @@ contract DomainObjs is Hasher {
 
     struct Karma {
         // Total positive karma
-        uint256 positiveKaram;
+        uint256 positiveKarma;
         // Total negative karma
         uint256 negativeKarma;
     }

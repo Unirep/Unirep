@@ -202,21 +202,14 @@ template UserStateTransition(
     neg_rep_sum === negative_karma;
 
     // 3.2 Compute new GST leaf
-    // 3.2.1 Compute user state tree root
-    component new_state = HashLeftRight();
-    new_state.left <== user_exist.out;
+    component new_leaf_hasher = Hasher5();
+    new_leaf_hasher.in[0] <== user_exist.out;
     // Last intermediate root is the new user state tree root
-    new_state.right <== intermediate_user_state_tree_roots[TOTAL_NUM_ATTESTATIONS];
+    new_leaf_hasher.in[1] <== intermediate_user_state_tree_roots[TOTAL_NUM_ATTESTATIONS];
+    new_leaf_hasher.in[2] <== positive_karma;
+    new_leaf_hasher.in[3] <== negative_karma;
+    new_leaf_hasher.in[4] <== 0;
 
-    // 3.2.2 Compute hashed karma
-    component new_karma = HashLeftRight();
-    new_karma.left <== positive_karma;
-    new_karma.right <== negative_karma;
-
-    // 3.2.3 Compute hashed leaf
-    component new_leaf = HashLeftRight();
-    new_leaf.left <== new_state.hash;
-    new_leaf.right <== new_karma.hash;
-    new_GST_leaf <== new_leaf.hash;
+    new_GST_leaf <== new_leaf_hasher.hash;
     /* End of 3. compute and output new GST leaf */
 }

@@ -362,16 +362,15 @@ class UserState {
 
         // Gen new user state tree
         const newUserStateTree = await this._genUserStateTreeFromLeaves(stateLeaves)
-        // Gen new state hash
-        const newHashedState = hashLeftRight(this.commitment, newUserStateTree.getRootHash())
-        // Gen karma hash
-        const newHashedKarma = hashLeftRight(
-            BigInt(this.transitionedPosRep + this.currentEpochPosRep + DEFAULT_AIRDROPPED_KARMA),
-            BigInt(this.transitionedNegRep + this.currentEpochNegRep)
-        )
+    
         // Gen new GST leaf
-        const newGSTLeaf = hashLeftRight(newHashedState, newHashedKarma)
-
+        const newGSTLeaf = hash5([
+            this.commitment,
+            newUserStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep + this.currentEpochPosRep + DEFAULT_AIRDROPPED_KARMA),
+            BigInt(this.transitionedNegRep + this.currentEpochNegRep),
+            BigInt(0)
+        ])
         return {
             'newGSTLeaf': newGSTLeaf,
             'newUSTLeaves': stateLeaves
@@ -399,9 +398,14 @@ class UserState {
         const hashChainResults: BigInt[] = []
         // User state tree
         const userStateTree = await this.genUserStateTree()
-        const hashedState = hashLeftRight(this.commitment, userStateTree.getRootHash())
-        const hashedKarma = hashLeftRight(BigInt(this.transitionedPosRep), BigInt(this.transitionedNegRep))
-        const hashedLeaf = hashLeftRight(hashedState,hashedKarma)
+    
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
 
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
@@ -538,15 +542,13 @@ class UserState {
         const nullifierTreeRoot = nullifierTree.getRootHash()
         const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, epoch, nonce, this.unirepState.nullifierTreeDepth)
         const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
-        // const attesterId = BigInt(1)
-        // const rep = this.getRepByAttester(attesterId)
-        // const posRep = rep.posRep
-        // const negRep = rep.negRep
-        // const graffiti = rep.graffiti
-        // const USTPathElements = await userStateTree.getMerkleProof(attesterId)
-        const hashedState = hashLeftRight(this.commitment, userStateTree.getRootHash())
-        const hashedKarma = hashLeftRight(BigInt(this.transitionedPosRep), BigInt(this.transitionedNegRep))
-        const hashedLeaf = hashLeftRight(hashedState,hashedKarma)
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
         for (let i = karmaNonceList.length ; i < MAX_KARMA_BUDGET; i++) {
             karmaNonceList.push(BigInt(0))
         }
@@ -566,11 +568,6 @@ class UserState {
             GST_root: GSTreeRoot,
             nullifier_tree_root: nullifierTreeRoot,
             nullifier_path_elements: epkNullifierProof,
-            // attester_id: attesterId,
-            // pos_rep: posRep,
-            // neg_rep: negRep,
-            // graffiti: graffiti,
-            // UST_path_elements: USTPathElements,
             positive_karma: BigInt(this.transitionedPosRep),
             negative_karma: BigInt(this.transitionedNegRep),
             prove_karma_nullifiers: proveKarmaNullifiers,

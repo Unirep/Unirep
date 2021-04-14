@@ -5,7 +5,7 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { numAttestationsPerEpochKey } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
-import { hashLeftRight } from 'maci-crypto'
+import { hash5, hashLeftRight } from 'maci-crypto'
 import { computeEmptyUserStateRoot } from '../test/utils'
 import { id } from 'ethers/lib/utils'
 import comment from '../database/models/comment'
@@ -294,18 +294,13 @@ const _genUserStateFromContract = async (
         false,
     )
     const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth)
-    const userDefaultStateLeaf = hashLeftRight(
+    const userDefaultGSTLeaf = hash5([
         userIdentityCommitment,
-        emptyUserStateRoot
-    )
-    const userDefaultKarmaLeaf = hashLeftRight(
+        emptyUserStateRoot,
         BigInt(DEFAULT_START_KARMA),
+        BigInt(0),
         BigInt(0)
-    )
-    const userDefaultGSTLeaf = hashLeftRight(
-        userDefaultStateLeaf,
-        userDefaultKarmaLeaf
-    )
+    ])
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
     const newGSTLeafInsertedEvents =  await unirepContract.queryFilter(newGSTLeafInsertedFilter, startBlock)

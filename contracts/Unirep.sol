@@ -11,6 +11,7 @@ import { UnirepParameters } from './UnirepParameters.sol';
 import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
 import { UserStateTransitionVerifier } from './UserStateTransitionVerifier.sol';
 import { ReputationVerifier } from './ReputationVerifier.sol';
+import { ReputationFromAttesterVerifier } from './ReputationFromAttesterVerifier.sol';
 
 contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     using SafeMath for uint256;
@@ -23,6 +24,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     EpochKeyValidityVerifier internal epkValidityVerifier;
     UserStateTransitionVerifier internal userStateTransitionVerifier;
     ReputationVerifier internal reputationVerifier;
+    ReputationFromAttesterVerifier internal reputationFromAttesterVerifier;
 
     uint256 public currentEpoch = 1;
 
@@ -212,19 +214,18 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // When a user signs up, give defaultKarma
         Karma memory karma;
-        karma.positiveKaram = defaultKarma;
+        karma.positiveKarma = defaultKarma;
         karma.negativeKarma = 0;
-        uint256 hashedKarma = hashLeftRight(karma.positiveKaram, karma.negativeKarma);
-
-        // Create, hash, and insert a fresh state leaf
-        StateLeaf memory stateLeaf = StateLeaf({
-            identityCommitment: _identityCommitment,
-            userStateRoot: emptyUserStateRoot
-        });
-
-        uint256 hashedState = hashStateLeaf(stateLeaf);
-        uint256 hashedLeaf = hashLeftRight(hashedState, hashedKarma);
-
+        
+        // Compute hashed leaf
+        uint256[] memory hashElements = new uint256[](5);
+        hashElements[0] = _identityCommitment;
+        hashElements[1] = emptyUserStateRoot;
+        hashElements[2] = karma.positiveKarma;
+        hashElements[3] = karma.negativeKarma;
+        hashElements[4] = 0;
+        uint256 hashedLeaf = hash5(hashElements);
+        
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
 
@@ -613,6 +614,40 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // Verify the proof
         proof.isValid = reputationVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
+        return proof.isValid;
+    }
+
+    function verifyReputationFromAttester(
+        uint256[] calldata _publicSignals,
+        uint256[8] calldata _proof) external view returns (bool) {
+        // User prove his reputation by an attester:
+        // 1. User exists in GST
+        // 2. It is the latest state user transition to
+        // 3. positive reputation is greater than `_min_pos_rep`
+        // 4. negative reputation is less than `_max_neg_rep`
+        // 5. hash of graffiti pre-image matches
+
+        // Ensure that each public input is within range of the snark scalar
+        // field.
+        // TODO: consider having more granular revert reasons
+        for (uint8 i = 0; i < _publicSignals.length; i++) {
+            require(
+                _publicSignals[i] < SNARK_SCALAR_FIELD,
+                "Unirep: each public signal must be lt the snark scalar field"
+            );
+        }
+
+        ProofsRelated memory proof;
+        // Unpack the snark proof
+        (
+            proof.publicSignals,
+            proof.a,
+            proof.b,
+            proof.c
+        ) = unpackProof(_publicSignals, _proof);
+
+        // Verify the proof
+        proof.isValid = reputationFromAttesterVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
         return proof.isValid;
     }
 

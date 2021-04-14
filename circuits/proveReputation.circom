@@ -39,13 +39,6 @@ template ProveReputation(
     // Nullifier tree
     signal input nullifier_tree_root
     signal private input nullifier_path_elements[nullifier_tree_depth][1];
-    // Attester to prove reputation from
-    // signal input attester_id;
-    // // Attestation by the attester
-    // signal private input pos_rep;
-    // signal private input neg_rep;
-    // signal private input graffiti;
-    // signal private input UST_path_elements[user_state_tree_depth][1];
     // Sum of positive and negative karma
     signal private input positive_karma;
     signal private input negative_karma;
@@ -67,27 +60,8 @@ template ProveReputation(
     nonce_lt.out === 1;
     /* End of check 1 */
 
-    
-    /* 2. Check if the reputation given by the attester is in the user state tree */
-    // component reputation_hasher = Hasher5();
-    // reputation_hasher.in[0] <== pos_rep;
-    // reputation_hasher.in[1] <== neg_rep;
-    // reputation_hasher.in[2] <== graffiti;
-    // reputation_hasher.in[3] <== 0;
-    // reputation_hasher.in[4] <== 0;
 
-    // component reputation_membership_check = SMTLeafExists(user_state_tree_depth);
-    // reputation_membership_check.leaf_index <== attester_id;
-    // reputation_membership_check.leaf <== reputation_hasher.hash;
-    // for (var i = 0; i < user_state_tree_depth; i++) {
-    //     reputation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
-    // }
-
-    // reputation_membership_check.root <== user_tree_root;
-    /* End of check 2 */
-
-
-    /* 3. Check if user exists in the Global State Tree */
+    /* 2. Check if user exists in the Global State Tree */
     component user_exist = userExists(GST_tree_depth);
     for (var i = 0; i< GST_tree_depth; i++) {
         user_exist.GST_path_index[i] <== GST_path_index[i];
@@ -102,28 +76,28 @@ template ProveReputation(
     user_exist.user_state_hash <== user_state_hash;
     user_exist.positive_karma <== positive_karma;
     user_exist.negative_karma <== negative_karma;
-    /* End of check 3 */
+    /* End of check 2 */
 
 
-    /* 4. Check epoch key is computed correctly*/
+    /* 3. Check epoch key is computed correctly*/
     component epoch_key_check = verifyEpochKey(epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH);
     epoch_key_check.identity_nullifier <== identity_nullifier;
     epoch_key_check.nonce <== epoch_key_nonce;
     epoch_key_check.epoch <== epoch;
     epoch_key_check.epoch_key <== epoch_key;
-    /* End of check 4 */
+    /* End of check 3 */
 
 
-    /* 5. Check it's latest epoch the user transition to */
+    /* 4. Check it's latest epoch the user transition to */
     // We check that nullifier of the epoch key is not seen before.
-    // 5.1.1 Compute nullifier of the epoch key
+    // 4.1.1 Compute nullifier of the epoch key
     component epoch_key_nullifier_hasher = Hasher5();
     epoch_key_nullifier_hasher.in[0] <== 2;  // 2 is the domain separator for epoch key nullifier
     epoch_key_nullifier_hasher.in[1] <== identity_nullifier;
     epoch_key_nullifier_hasher.in[2] <== epoch;
     epoch_key_nullifier_hasher.in[3] <== nonce;
     epoch_key_nullifier_hasher.in[4] <== 0;
-    // 5.1.2 Mod nullifier hash
+    // 4.1.2 Mod nullifier hash
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
@@ -132,7 +106,7 @@ template ProveReputation(
     modEPKNullifier.dividend <== epoch_key_nullifier_hasher.hash;
     epk_nullifier_hash_moded <== modEPKNullifier.remainder;
 
-    // 5.2 Verify non-membership of the nullifier in nullifier tree
+    // 4.2 Verify non-membership of the nullifier in nullifier tree
     // Unseen nullifier leaf should have value hashLeftRight(0, 0)
     signal zero_leaf;
     component zero_leaf_hasher = HashLeftRight();
@@ -147,20 +121,20 @@ template ProveReputation(
     for (var i = 0; i < nullifier_tree_depth; i++) {
         epk_exists.path_elements[i][0] <== nullifier_path_elements[i][0];
     }
-    /* End of check 5 */
+    /* End of check 4 */
 
 
-    /* 6. Check total reputation is greater than 0 */
+    /* 5. Check total reputation is greater than 0 */
     // if user wants to spend karma and prove total_reputation, it requires reputation to be positive
     // total_reputation = positive_karma - negative_karma >= 0
     component pos_rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
     pos_rep_get.in[0] <== positive_karma;
     pos_rep_get.in[1] <== negative_karma;
     pos_rep_get.out === 1;
-    /* End of check 6*/
+    /* End of check 5*/
 
 
-    /* 7. Check nullifiers are valid */
+    /* 6. Check nullifiers are valid */
     component karma_nullifier_hasher[MAX_KARMA_BUDGET];
     component nonce_gt[MAX_KARMA_BUDGET];
     for(var i = 0; i< MAX_KARMA_BUDGET; i++) {
@@ -181,13 +155,13 @@ template ProveReputation(
         karma_nullifier_hasher[i].in[4] <== 0;
         karma_nullifiers[i] <== karma_nullifier_hasher[i].hash;
     }
-    /* End of check 7 */
+    /* End of check 6 */
 
 
-    /* 8. Check if user has reputation greater than min_rep */
+    /* 7. Check if user has reputation greater than min_rep */
     component rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
     rep_get.in[0] <== positive_karma - negative_karma;
     rep_get.in[1] <== min_rep;
     rep_get.out * prove_min_rep + Not(prove_min_rep) === 1;
-    /* End of check 8 */
+    /* End of check 7 */
  }
