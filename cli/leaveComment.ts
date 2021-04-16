@@ -257,12 +257,20 @@ const leaveComment = async (args: any) => {
 
     const newComment: IComment = new Comment({
         content: args.text,
+        // TODO: hashedContent
+        epochKey: epk,
+        epkProof: base64url.encode(JSON.stringify(proof)),
+        proveMinRep: Boolean(proveMinRep),
+        minRep: Number(minRep),
+        comments: [],
+        status: 0
     });
 
     let tx
     try {
         tx = await unirepContract.leaveComment(
             BigInt(add0x(args.post_id)),
+            BigInt(add0x(newComment._id.toString())), 
             epochKey,
             args.text,
             publicSignals,
@@ -271,7 +279,7 @@ const leaveComment = async (args: any) => {
             { value: attestingFee, gasLimit: 1000000 }
         )
 
-        const postRes = await Post.findByIdAndUpdate(
+        const commentRes = await Post.findByIdAndUpdate(
             {_id: mongoose.Types.ObjectId(args.post_id) }, 
             { $push: {comments: newComment }}
         )

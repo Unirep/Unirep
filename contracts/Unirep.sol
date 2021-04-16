@@ -48,6 +48,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // The maximum number of signups allowed
     uint256 immutable public maxUsers;
 
+    enum actionChoices { UpVote, DownVote, Post, Comment }
+
     // The default given karma when users sign up
     uint256 immutable public defaultKarma;
 
@@ -124,13 +126,16 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event CommentSubmitted(
         uint256 indexed _epoch,
-        uint256 indexed _postId,
+        uint256 indexed _commentId,
         uint256 indexed _epochKey,
+        uint256 _postId,
         string _hahsedContent,
         ProofsRelated proof
     );
 
     event ReputationNullifierSubmitted(
+        uint256 indexed _epoch,
+        actionChoices actionChoice,
         uint256[] karmaNullifiers
     );
 
@@ -270,7 +275,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 epochKey,
         ProofsRelated memory proof,
         uint256[] memory karmaNullifiers,
-        uint256 spendReputationAmount
+        uint256 spendReputationAmount,
+        actionChoices actionChoice
     ) internal {
         require(karmaNullifiers.length == spendReputationAmount, "Unirep: should submit the exact amount of karma to execute action");
         // Determine if karma nullifiers are submitted before
@@ -295,6 +301,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         emit Sequencer("ReputationNullifierSubmitted");
         emit ReputationNullifierSubmitted(
+            currentEpoch,
+            actionChoice,
             karmaNullifiers
         );
     }
@@ -316,7 +324,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             proof.c
         ) = unpackProof(_publicSignals, _proof);
 
-        spendReputation(epochKey, proof, karmaNullifiers, postKarma);
+        spendReputation(epochKey, proof, karmaNullifiers, postKarma, actionChoices.Post);
         
         emit Sequencer("PostSubmitted");
         emit PostSubmitted(
@@ -330,6 +338,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     function leaveComment(
         uint256 postId, 
+        uint256 commentId,
         uint256 epochKey, 
         string calldata hashedContent, 
         uint256[] calldata _publicSignals, 
@@ -345,13 +354,14 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             proof.c
         ) = unpackProof(_publicSignals, _proof);
 
-        spendReputation(epochKey, proof, karmaNullifiers, commentKarma);
+        spendReputation(epochKey, proof, karmaNullifiers, commentKarma, actionChoices.Comment);
     
         emit Sequencer("CommentSubmitted");
         emit CommentSubmitted(
             currentEpoch,
-            postId,
+            commentId,
             epochKey,
+            postId,
             hashedContent,
             proof
         );
@@ -364,6 +374,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[] calldata _publicSignals, 
         uint256[8] calldata _proof,
         uint256[] calldata karmaNullifiers) external payable {
+        require((attestation.posRep + attestation.negRep) > 0, "Unirep: should submit a positive vote value");
+        require(attestation.posRep * attestation.negRep == 0, "Unirep: should only choose to upvote or to downvote");
+
         ProofsRelated memory proof;
         // Unpack the snark proof
         (   
@@ -373,8 +386,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
             proof.c
         ) = unpackProof(_publicSignals, _proof);
 
+        actionChoices action;
+        if(attestation.posRep > 0){
+            action = actionChoices.UpVote;
+        } else{
+            action = actionChoices.DownVote;
+        }
+
         // Spend attester's reputation
-        spendReputation(fromEpochKey, proof, karmaNullifiers, attestation.posRep + attestation.negRep);
+        spendReputation(fromEpochKey, proof, karmaNullifiers, attestation.posRep + attestation.negRep, action);
 
         // Send Reputation to others
         submitAttestation(attestation, toEpochKey);

@@ -2,7 +2,7 @@ import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
-import { stringifyBigInts } from 'maci-crypto'
+import { hashLeftRight, hashOne, stringifyBigInts } from 'maci-crypto'
 
 import {
     promptPwd,
@@ -218,7 +218,6 @@ const publishPost = async (args: any) => {
         proveMinRep,                    // indicate to prove minimum reputation the user has
         minRep                          // the amount of minimum reputation the user wants to prove
     )
-    
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
     
@@ -249,6 +248,10 @@ const publishPost = async (args: any) => {
         return
     }
     
+    if(proveMinRep){
+        console.log(`Prove minimum reputation: ${minRep}`)
+    }
+    
     const db = await mongoose.connect(
         dbUri, 
          { useNewUrlParser: true, 
@@ -256,12 +259,16 @@ const publishPost = async (args: any) => {
            useUnifiedTopology: true
          }
      )
-
+    
     const newpost: IPost = new Post({
         content: args.text,
+        // TODO: hashedContent
         epochKey: epk,
         epkProof: base64url.encode(JSON.stringify(proof)),
-        comments: []
+        proveMinRep: Boolean(proveMinRep),
+        minRep: Number(minRep),
+        comments: [],
+        status: 0
     });
 
     let tx

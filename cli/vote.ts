@@ -257,8 +257,8 @@ const vote = async (args: any) => {
 
     const circuitInputs = await userState.genProveReputationCircuitInputs(
         epkNonce,                       // generate epoch key from epoch nonce
-        BigInt(1),                      // indicate to prove karma nullifiers
-        BigInt(voteValue),              // the amount of output karma nullifiers
+        proveKarmaNullifiers,                      // indicate to prove karma nullifiers
+        proveKarmaAmount,              // the amount of output karma nullifiers
         nonceList,                      // nonce to generate karma nullifiers
         proveMinRep,                    // indicate to prove minimum reputation the user has
         minRep                          // the amount of minimum reputation the user wants to prove
@@ -271,6 +271,8 @@ const vote = async (args: any) => {
         const variableName = 'main.karma_nullifiers['+i+']'
         nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
     }
+
+    console.log(nullifiers)
 
     // TODO: Not sure if this validation is necessary
     const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])

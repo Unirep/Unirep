@@ -40,7 +40,7 @@ const deployUnirep = async (
     _treeDepths: any,
     _settings?: any): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
-    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
+    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract, ReputationFromAttesterVerifierContract
 
     console.log('Deploying PoseidonT3')
     PoseidonT3Contract = await waffle.deployContract(
@@ -72,6 +72,12 @@ const deployUnirep = async (
     console.log('Deploying ReputationVerifier')
     ReputationVerifierContract = await (await hardhatEthers.getContractFactory(
         "ReputationVerifier",
+        deployer
+    )).deploy()
+
+    console.log('Deploying ReputationFromAttesterVerifier')
+    ReputationFromAttesterVerifierContract = await (await hardhatEthers.getContractFactory(
+        "ReputationFromAttesterVerifier",
         deployer
     )).deploy()
 
@@ -111,6 +117,7 @@ const deployUnirep = async (
         EpochKeyValidityVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
+        ReputationFromAttesterVerifierContract.address,
         _numEpochKeyNoncePerEpoch,
         _numAttestationsPerEpochKey,
         _defaultKarma,
