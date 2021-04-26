@@ -13,7 +13,7 @@ import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN, KARMA_NULLIFI
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
-import { DEFAULT_START_KARMA } from '../config/socialMedia'
+import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
 
 const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
     if (deployEnv === 'contract') {
@@ -95,7 +95,7 @@ const deployUnirep = async (
         _maxUsers = maxUsers
         _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
         _numAttestationsPerEpochKey = numAttestationsPerEpochKey
-        _defaultKarma = DEFAULT_START_KARMA
+        _defaultKarma = DEFAULT_AIRDROPPED_KARMA
         _epochLength = epochLength
         _attestingFee = attestingFee
     }

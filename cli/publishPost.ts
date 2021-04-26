@@ -3,6 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import { hashLeftRight, hashOne, stringifyBigInts } from 'maci-crypto'
+import mongoose from 'mongoose'
 
 import {
     promptPwd,
@@ -16,18 +17,18 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { dbUri } from '../config/database';
 
 import { add0x } from '../crypto/SMT'
-import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
+import { genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { identityPrefix, identityCommitmentPrefix, epkProofPrefix } from './prefix'
 
 import Post, { IPost } from "../database/models/post";
-import mongoose from 'mongoose'
 import { DEFAULT_POST_KARMA } from '../config/socialMedia'
 import { assert } from 'console'
 import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
 import { genEpochKey, genKarmaNullifier } from '../test/utils'
 import { nullifierTreeDepth } from '../config/testLocal'
+import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -94,6 +95,14 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'string',
             help: 'The Unirep contract address',
+        }
+    )
+
+    parser.addArgument(
+        ['-db', '--from-database'],
+        {
+            action: 'storeTrue',
+            help: 'Indicate if to generate proving circuit from database',
         }
     )
 
@@ -165,13 +174,6 @@ const publishPost = async (args: any) => {
         wallet,
     )
     const attestingFee = await unirepContract.attestingFee()
-
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        unirepAddress,
-        startBlock,
-    )
-    
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
@@ -188,15 +190,6 @@ const publishPost = async (args: any) => {
     const epochTreeDepth = treeDepths.epochTreeDepth
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
 
-    // Gen epoch key proof and reputation proof
-    const userState = await genUserStateFromContract(
-        provider,
-        unirepAddress,
-        startBlock,
-        id,
-        commitment,
-    )
-
     // gen nullifier nonce list
     const proveKarmaNullifiers = BigInt(1)
     const proveKarmaAmount = BigInt(DEFAULT_POST_KARMA)
@@ -209,15 +202,48 @@ const publishPost = async (args: any) => {
     // gen minRep proof
     const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
     const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
-    
-    const circuitInputs = await userState.genProveReputationCircuitInputs(
-        epkNonce,                       // generate epoch key from epoch nonce
-        proveKarmaNullifiers,                      // indicate to prove karma nullifiers
-        proveKarmaAmount,     // the amount of output karma nullifiers
-        nonceList,                      // nonce to generate karma nullifiers
-        proveMinRep,                    // indicate to prove minimum reputation the user has
-        minRep                          // the amount of minimum reputation the user wants to prove
-    )
+
+    let circuitInputs: any
+
+    if(args.from_database){
+
+        console.log('generating proving circuit from database...')
+        
+         // Gen epoch key proof and reputation proof from database
+        circuitInputs = await genProveReputationCircuitInputsFromDB(
+            currentEpoch,
+            id,
+            epkNonce,                       // generate epoch key from epoch nonce
+            proveKarmaNullifiers,           // indicate to prove karma nullifiers
+            proveKarmaAmount,               // the amount of output karma nullifiers
+            nonceList,                      // nonce to generate karma nullifiers
+            proveMinRep,                    // indicate to prove minimum reputation the user has
+            minRep                          // the amount of minimum reputation the user wants to prove
+        )
+
+    } else {
+
+        console.log('generating proving circuit from contract...')
+
+        // Gen epoch key proof and reputation proof from Unirep contract
+        const userState = await genUserStateFromContract(
+            provider,
+            unirepAddress,
+            startBlock,
+            id,
+            commitment,
+        )
+
+        circuitInputs = await userState.genProveReputationCircuitInputs(
+            epkNonce,                       // generate epoch key from epoch nonce
+            proveKarmaNullifiers,           // indicate to prove karma nullifiers
+            proveKarmaAmount,               // the amount of output karma nullifiers
+            nonceList,                      // nonce to generate karma nullifiers
+            proveMinRep,                    // indicate to prove minimum reputation the user has
+            minRep                          // the amount of minimum reputation the user wants to prove
+        )
+    }
+
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
     
@@ -252,14 +278,6 @@ const publishPost = async (args: any) => {
         console.log(`Prove minimum reputation: ${minRep}`)
     }
     
-    const db = await mongoose.connect(
-        dbUri, 
-         { useNewUrlParser: true, 
-           useFindAndModify: false, 
-           useUnifiedTopology: true
-         }
-     )
-    
     const newpost: IPost = new Post({
         content: args.text,
         // TODO: hashedContent
@@ -282,18 +300,24 @@ const publishPost = async (args: any) => {
             nullifiers,
             { value: attestingFee, gasLimit: 1000000 }
         )
+        const db = await mongoose.connect(
+            dbUri, 
+             { useNewUrlParser: true, 
+               useFindAndModify: false, 
+               useUnifiedTopology: true
+             }
+        )
         const res: IPost = await newpost.save()
+        db.disconnect();
 
     } catch(e) {
         console.error('Error: the transaction failed')
         if (e.message) {
             console.error(e.message)
         }
-        db.disconnect();
         return
     }
     
-    db.disconnect();
     console.log('Post ID:', newpost._id.toString())
     console.log('Transaction hash:', tx.hash)
 }

@@ -2,6 +2,7 @@ import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
+import mongoose from 'mongoose'
 
 import {
     promptPwd,
@@ -15,19 +16,19 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { dbUri } from '../config/database';
 
 import { add0x } from '../crypto/SMT'
-import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
+import { genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix, identityPrefix } from './prefix'
 
 import Comment, { IComment } from "../database/models/comment";
 import Post, { IPost } from "../database/models/post";
-import mongoose from 'mongoose'
 import { DEFAULT_COMMENT_KARMA } from '../config/socialMedia'
 import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { nullifierTreeDepth } from '../config/testLocal'
 import { genEpochKey } from '../test/utils'
+import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -106,6 +107,14 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
+    parser.addArgument(
+        ['-db', '--from-database'],
+        {
+            action: 'storeTrue',
+            help: 'Indicate if to generate proving circuit from database',
+        }
+    )
+
     const privkeyGroup = parser.addMutuallyExclusiveGroup({ required: true })
 
     privkeyGroup.addArgument(
@@ -175,12 +184,6 @@ const leaveComment = async (args: any) => {
     )
     const attestingFee = await unirepContract.attestingFee()
 
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        unirepAddress,
-        startBlock,
-    )
-
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
@@ -196,15 +199,6 @@ const leaveComment = async (args: any) => {
     const treeDepths = await unirepContract.treeDepths()
     const epochTreeDepth = treeDepths.epochTreeDepth
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
-
-    // Gen epoch key proof and reputation proof
-    const userState = await genUserStateFromContract(
-       provider,
-       unirepAddress,
-       startBlock,
-       id,
-       commitment,
-    )
     
     // gen nullifier nonce list
     const proveKarmaNullifiers = BigInt(1)
@@ -218,15 +212,47 @@ const leaveComment = async (args: any) => {
     // gen minRep proof
     const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
     const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    
+    let circuitInputs: any
 
-    const circuitInputs = await userState.genProveReputationCircuitInputs(
-        epkNonce,                       // generate epoch key from epoch nonce
-        proveKarmaNullifiers,                      // indicate to prove karma nullifiers
-        proveKarmaAmount,     // the amount of output karma nullifiers
-        nonceList,                      // nonce to generate karma nullifiers
-        proveMinRep,                    // indicate to prove minimum reputation the user has
-        minRep                          // the amount of minimum reputation the user wants to prove
-    )
+    if(args.from_database){
+
+        console.log('generating proving circuit from database...')
+        
+         // Gen epoch key proof and reputation proof from database
+        circuitInputs = await genProveReputationCircuitInputsFromDB(
+            currentEpoch,
+            id,
+            epkNonce,                       // generate epoch key from epoch nonce
+            proveKarmaNullifiers,           // indicate to prove karma nullifiers
+            proveKarmaAmount,               // the amount of output karma nullifiers
+            nonceList,                      // nonce to generate karma nullifiers
+            proveMinRep,                    // indicate to prove minimum reputation the user has
+            minRep                          // the amount of minimum reputation the user wants to prove
+        )
+
+    } else {
+
+        console.log('generating proving circuit from contract...')
+
+        // Gen epoch key proof and reputation proof from Unirep contract
+        const userState = await genUserStateFromContract(
+            provider,
+            unirepAddress,
+            startBlock,
+            id,
+            commitment,
+        )
+
+        circuitInputs = await userState.genProveReputationCircuitInputs(
+            epkNonce,                       // generate epoch key from epoch nonce
+            proveKarmaNullifiers,           // indicate to prove karma nullifiers
+            proveKarmaAmount,               // the amount of output karma nullifiers
+            nonceList,                      // nonce to generate karma nullifiers
+            proveMinRep,                    // indicate to prove minimum reputation the user has
+            minRep                          // the amount of minimum reputation the user wants to prove
+        )
+    }
 
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
@@ -246,14 +272,6 @@ const leaveComment = async (args: any) => {
     const proof = formatProofForVerifierContract(results['proof'])
     const epochKey = BigInt(add0x(epk))
     const publicSignals = results['publicSignals']
-
-    const db = await mongoose.connect(
-        dbUri, 
-        { useNewUrlParser: true, 
-          useFindAndModify: false, 
-          useUnifiedTopology: true
-        }
-    )
 
     const newComment: IComment = new Comment({
         content: args.text,
@@ -278,21 +296,27 @@ const leaveComment = async (args: any) => {
             nullifiers,
             { value: attestingFee, gasLimit: 1000000 }
         )
-
+        const db = await mongoose.connect(
+            dbUri, 
+            { useNewUrlParser: true, 
+              useFindAndModify: false, 
+              useUnifiedTopology: true
+            }
+        )
         const commentRes = await Post.findByIdAndUpdate(
             {_id: mongoose.Types.ObjectId(args.post_id) }, 
             { $push: {comments: newComment }}
         )
-
+        db.disconnect();
     } catch(e) {
         console.error('Error: the transaction failed')
         if (e.message) {
             console.error(e.message)
         }
+        
         return
     }
 
-    db.disconnect();
     const receipt = await tx.wait()
     console.log('Transaction hash:', tx.hash)
 }

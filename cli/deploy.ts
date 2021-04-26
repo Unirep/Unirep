@@ -1,5 +1,5 @@
 import { ethers } from 'ethers'
-import { DEFAULT_START_KARMA } from '../config/socialMedia'
+import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
 import { maxUsers } from '../config/testLocal'
 import { deployUnirep, getTreeDepthsForTesting } from '../test/utils'
 import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_NUM_ATTESTATIONS_PER_EPOCH_KEY, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
@@ -106,7 +106,7 @@ const deploy = async (args: any) => {
     const _numAttestationsPerEpochKey = DEFAULT_NUM_ATTESTATIONS_PER_EPOCH_KEY
 
     // Default given karma
-    const _deaultKarma = DEFAULT_START_KARMA
+    const _deaultKarma = DEFAULT_AIRDROPPED_KARMA
 
     // Epoch length
     const _epochLength = (args.epoch_length != undefined) ? args.epoch_length : DEFAULT_EPOCH_LENGTH

@@ -42,7 +42,7 @@ describe('test all CLI subcommands', function() {
     const text = "postText"
     const text2 = "commentText"
     const posRep = 3, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
-    const minPosRep = 0, maxNegRep = 10, minRepDiff = 1
+    const minPosRep = 0, maxNegRep = 10, minRepDiff = 15
     let userRepProof
 
     before(async() => {
@@ -246,7 +246,8 @@ describe('test all CLI subcommands', function() {
                 ` -d ${userPrivKey}` +
                 ` -id ${userIdentity1}` +
                 ` -n ${epochKeyNonce}` + 
-                ` -kn ${postNonce}`
+                ` -kn ${postNonce}` +
+                ` -db`
 
             const output = exec(command).stdout.trim()
 
@@ -286,9 +287,11 @@ describe('test all CLI subcommands', function() {
     //             ` -pid ${postID} ` +
     //             ` -tx ${text2}` +
     //             ` -d ${userPrivKey}` +
-    //             ` -id ${userIdentity1}` +
-    //             ` -n ${epochKeyNonce2}` +
-    //             ` -kn ${commentNonce}`
+    //             ` -id ${userIdentity2}` +
+    //             ` -n ${epochKeyNonce}` +
+    //             ` -kn ${commentNonce}` +
+    //             ` -mr ${minRepDiff}` +
+    //             ` -db`
 
     //         const output = exec(command).stdout.trim()
 
@@ -300,6 +303,7 @@ describe('test all CLI subcommands', function() {
     //     })
     // })
 
+
     describe('upvote CLI subcommand', () => {
         it('should upvote to user', async () => {
             const command = `npx ts-node cli/index.ts vote` +
@@ -310,7 +314,8 @@ describe('test all CLI subcommands', function() {
                 ` -n ${epochKeyNonce}` +
                 ` -kn ${attestNonce}` +
                 ` -uv ${posRep} ` +
-                ` -gf ${graffiti.toString(16)} `
+                ` -gf ${graffiti.toString(16)} `  +
+                ` -db`
 
             const output = exec(command).stdout.trim()
 
@@ -344,7 +349,8 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
-                ` -id ${userIdentity1} `
+                ` -id ${userIdentity1} ` +
+                ` -db`
 
             const output = exec(command).stdout.trim()
 
@@ -359,7 +365,8 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
-                ` -id ${userIdentity2} `
+                ` -id ${userIdentity2} ` + 
+                ` -db`
 
             const output = exec(command).stdout.trim()
 
@@ -380,7 +387,8 @@ describe('test all CLI subcommands', function() {
                 // ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
                 // ` -md ${minRepDiff}` +
-                ` -gp ${graffitiPreimage} `
+                ` -gp ${graffitiPreimage} ` +
+                ` -db`
 
             const output = exec(command).stdout.trim()
 

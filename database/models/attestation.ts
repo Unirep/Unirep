@@ -1,26 +1,26 @@
 import * as mongoose from 'mongoose';
 import { Schema, Document } from 'mongoose';
 
-export interface IAttestation extends Document {
-    epoch: number
-    epochKey: string
-    attester: string
-    attesterId: number
-    posRep: number
-    negRep: number
-    graffiti: string
-    overwriteGraffiti: boolean
-  }
+export interface IAttestation {
+  transactionHash: string;
+  epoch: number
+  attester: string
+  attesterId: string
+  posRep: string
+  negRep: string
+  graffiti: string
+  overwriteGraffiti: boolean
+}
+
+export interface IAttestations extends Document {
+  epochKey: string
+  attestations: Array<IAttestation>
+}
   
-  const AttestationSchema: Schema = new Schema({
-    epoch: { type: Number },
-    epochKey: { type: String, required: true },
-    attester: { type: String, required: true },
-    attesterId: { type: Number, required: true },
-    posRep: { type: Number },
-    negRep: { type: Number },
-    graffiti: { type: {} },
-    overwriteGraffiti: { type: String },
-  }, { collection: 'Attestations' });
-  
-  export default mongoose.model<IAttestation>('Attestation', AttestationSchema);
+const AttestationsSchema: Schema = new Schema({
+  epochKey: { type: String },
+  attestations: { type: Array },
+}, { collection: 'Attestations' });
+
+
+export default mongoose.model<IAttestations>('Attestations', AttestationsSchema);

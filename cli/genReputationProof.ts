@@ -14,6 +14,7 @@ import { formatProofForVerifierContract, genVerifyReputationFromAttesterProofAnd
 import { stringifyBigInts } from 'maci-crypto'
 import { add0x } from '../crypto/SMT'
 import { identityPrefix, reputationProofPrefix } from './prefix'
+import { genProveReputationFromAttesterCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -97,6 +98,14 @@ const configureSubparser = (subparsers: any) => {
             help: 'The Unirep contract address',
         }
     )
+
+    parser.addArgument(
+        ['-db', '--from-database'],
+        {
+            action: 'storeTrue',
+            help: 'Indicate if to generate proving circuit from database',
+        }
+    )
 }
 
 const genReputationProof = async (args: any) => {
@@ -151,7 +160,23 @@ const genReputationProof = async (args: any) => {
     const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
 
-    const circuitInputs = await userState.genProveReputationFromAttesterCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+
+    let circuitInputs: any
+
+    if(args.from_database){
+
+        console.log('generating proving circuit from database...')
+
+        circuitInputs = await genProveReputationFromAttesterCircuitInputsFromDB(
+            userState.getUnirepStateCurrentEpoch(), id,attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+
+    } else {
+
+        console.log('generating proving circuit from contract...')
+
+        circuitInputs = await userState.genProveReputationFromAttesterCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+    }
+    
     // console.log('Proving reputation...')
     // console.log('----------------------User State----------------------')
     // console.log(userState.toJSON(4))

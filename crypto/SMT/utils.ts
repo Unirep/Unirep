@@ -19,6 +19,7 @@ export const remove0x = (str: string): string => {
  * @returns the string with "0x".
  */
 export const add0x = (str: string): string => {
+    str = str.padStart(64,"0")
     return str.startsWith('0x') ? str : '0x' + str
 }
 

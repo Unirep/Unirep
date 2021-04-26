@@ -9,7 +9,7 @@ import {
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
 import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genKarmaNullifier } from '../test/utils'
 import { IAttestation, UnirepState } from './UnirepState'
-import { DEFAULT_AIRDROPPED_KARMA, DEFAULT_START_KARMA, DEFAULT_STATE_TRANSITION_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
+import { DEFAULT_AIRDROPPED_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 
 interface IUserStateLeaf {
     attesterId: BigInt;
@@ -268,7 +268,7 @@ class UserState {
         this.latestTransitionedEpoch = _latestTransitionedEpoch
         this.latestGSTLeafIndex = _latestGSTLeafIndex
         this.hasSignedUp = true
-        this.transitionedPosRep = DEFAULT_START_KARMA
+        this.transitionedPosRep = DEFAULT_AIRDROPPED_KARMA
     }
 
     /*

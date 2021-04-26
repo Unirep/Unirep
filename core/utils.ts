@@ -9,7 +9,7 @@ import { hash5, hashLeftRight } from 'maci-crypto'
 import { computeEmptyUserStateRoot } from '../test/utils'
 import { id } from 'ethers/lib/utils'
 import comment from '../database/models/comment'
-import { DEFAULT_START_KARMA } from '../config/socialMedia'
+import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
 
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
@@ -296,7 +296,7 @@ const _genUserStateFromContract = async (
     const userDefaultGSTLeaf = hash5([
         userIdentityCommitment,
         emptyUserStateRoot,
-        BigInt(DEFAULT_START_KARMA),
+        BigInt(DEFAULT_AIRDROPPED_KARMA),
         BigInt(0),
         BigInt(0)
     ])

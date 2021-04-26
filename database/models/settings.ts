@@ -9,7 +9,7 @@ export interface ISettings extends Document {
 	userStateTreeDepth: number
 	epochTreeDepth: number
 	nullifierTreeDepth: number
-	attestingFee: number
+	attestingFee: ethers.BigNumber
     epochLength: number
 	numEpochKeyNoncePerEpoch: number
 	numAttestationsPerEpochKey: number
@@ -21,7 +21,7 @@ const SettingSchema: Schema = new Schema({
 	userStateTreeDepth:  { type: Number },
 	epochTreeDepth:  { type: Number },
 	nullifierTreeDepth:  { type: Number },
-	attestingFee:  { type: Number },
+	attestingFee:  { type: {} },
     epochLength:  { type: Number },
 	numEpochKeyNoncePerEpoch:  { type: Number },
 	numAttestationsPerEpochKey:  { type: Number },

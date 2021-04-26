@@ -3,6 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import { stringifyBigInts } from 'maci-crypto'
+import mongoose from 'mongoose'
 
 import {
     promptPwd,
@@ -15,7 +16,7 @@ import {
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genEpochKey } from '../test/utils'
-import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
+import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
 
 import { add0x } from '../crypto/SMT'
@@ -24,6 +25,7 @@ import { Attestation } from '../core'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix, identityPrefix } from './prefix'
 import { nullifierTreeDepth } from '../config/testLocal'
+import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -118,6 +120,14 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
+    parser.addArgument(
+        ['-db', '--from-database'],
+        {
+            action: 'storeTrue',
+            help: 'Indicate if to generate proving circuit from database',
+        }
+    )
+
     const privkeyGroup = parser.addMutuallyExclusiveGroup({ required: true })
 
     privkeyGroup.addArgument(
@@ -204,12 +214,6 @@ const vote = async (args: any) => {
         return
     }
 
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        unirepAddress,
-        startBlock,
-    )
-
     // upvote / downvote user 
     const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
     const overwriteGraffiti = args.graffiti ? true : false
@@ -234,14 +238,6 @@ const vote = async (args: any) => {
     const epochTreeDepth = treeDepths.epochTreeDepth
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
 
-    // Gen epoch key proof and reputation proof
-    const userState = await genUserStateFromContract(
-       provider,
-       unirepAddress,
-       startBlock,
-       id,
-       commitment,
-    )
     // gen nullifier nonce list
     const proveKarmaNullifiers = BigInt(1)
     const proveKarmaAmount = BigInt(voteValue)
@@ -254,15 +250,47 @@ const vote = async (args: any) => {
     // gen minRep proof
     const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
     const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    
+    let circuitInputs: any
 
-    const circuitInputs = await userState.genProveReputationCircuitInputs(
-        epkNonce,                       // generate epoch key from epoch nonce
-        proveKarmaNullifiers,                      // indicate to prove karma nullifiers
-        proveKarmaAmount,              // the amount of output karma nullifiers
-        nonceList,                      // nonce to generate karma nullifiers
-        proveMinRep,                    // indicate to prove minimum reputation the user has
-        minRep                          // the amount of minimum reputation the user wants to prove
-    )
+    if(args.from_database){
+
+        console.log('generating proving circuit from database...')
+        
+         // Gen epoch key proof and reputation proof from database
+        circuitInputs = await genProveReputationCircuitInputsFromDB(
+            currentEpoch,
+            id,
+            epkNonce,                       // generate epoch key from epoch nonce
+            proveKarmaNullifiers,           // indicate to prove karma nullifiers
+            proveKarmaAmount,               // the amount of output karma nullifiers
+            nonceList,                      // nonce to generate karma nullifiers
+            proveMinRep,                    // indicate to prove minimum reputation the user has
+            minRep                          // the amount of minimum reputation the user wants to prove
+        )
+
+    } else {
+
+        console.log('generating proving circuit from contract...')
+
+        // Gen epoch key proof and reputation proof from Unirep contract
+        const userState = await genUserStateFromContract(
+            provider,
+            unirepAddress,
+            startBlock,
+            id,
+            commitment,
+        )
+
+        circuitInputs = await userState.genProveReputationCircuitInputs(
+            epkNonce,                       // generate epoch key from epoch nonce
+            proveKarmaNullifiers,           // indicate to prove karma nullifiers
+            proveKarmaAmount,               // the amount of output karma nullifiers
+            nonceList,                      // nonce to generate karma nullifiers
+            proveMinRep,                    // indicate to prove minimum reputation the user has
+            minRep                          // the amount of minimum reputation the user wants to prove
+        )
+    }
     
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
@@ -271,8 +299,6 @@ const vote = async (args: any) => {
         const variableName = 'main.karma_nullifiers['+i+']'
         nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
     }
-
-    console.log(nullifiers)
 
     // TODO: Not sure if this validation is necessary
     const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])

@@ -18,6 +18,7 @@ import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByName, getSignalByNameViaSym, verifyUserStateTransitionProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { identityPrefix } from './prefix'
+import { genUserStateTransitionCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -58,6 +59,14 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'string',
             help: 'The Unirep contract address',
+        }
+    )
+
+    parser.addArgument(
+        ['-db', '--from-database'],
+        {
+            action: 'storeTrue',
+            help: 'Indicate if to generate proving circuit from database',
         }
     )
 
@@ -135,6 +144,7 @@ const userStateTransition = async (args: any) => {
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
+    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
 
     const userState = await genUserStateFromContract(
         provider,
@@ -144,7 +154,22 @@ const userStateTransition = async (args: any) => {
         commitment,
     )
 
-    const circuitInputs = await userState.genUserStateTransitionCircuitInputs()
+    let circuitInputs: any
+
+    if(args.from_database){
+        console.log('generating proving circuit from database...')
+
+        circuitInputs = await genUserStateTransitionCircuitInputsFromDB(
+            currentEpoch,
+            id
+        )
+    } else {
+
+        console.log('generating proving circuit from contract...')
+
+        circuitInputs = await userState.genUserStateTransitionCircuitInputs()
+
+    }
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
     const newState = await userState.genNewUserStateAfterTransition()
@@ -187,7 +212,6 @@ const userStateTransition = async (args: any) => {
         outputEPKNullifiers.push(outputNullifier)
     }
 
-
     let tx
     try {
         tx = await unirepContract.updateUserStateRoot(
@@ -209,7 +233,6 @@ const userStateTransition = async (args: any) => {
     }
 
     console.log('Transaction hash:', tx.hash)
-    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
     console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)        
 }
 
