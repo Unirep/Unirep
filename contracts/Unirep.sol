@@ -51,7 +51,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     enum actionChoices { UpVote, DownVote, Post, Comment }
 
     // The default given karma when users sign up
-    uint256 immutable public defaultKarma;
+    uint256 immutable public defaultKarma = 20;
 
     // The amount of karma required to publish a post
     uint256 immutable public postKarma = 10;
@@ -63,6 +63,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     uint256 immutable public airdroppedKarma = 20;
 
     uint256 public numUserSignUps = 0;
+
+    uint256 public nextGSTLeafIndex = 0;
 
     mapping(uint256 => bool) public hasUserSignedUp;
 
@@ -113,6 +115,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event NewGSTLeafInserted(
         uint256 indexed _epoch,
+        uint256 _leafIndex,
         uint256 _hashedLeaf
     );
 
@@ -150,6 +153,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
+        uint256 _leafIndex,
         UserTransitionedRelated userTransitionedData
     );
 
@@ -177,7 +181,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         ReputationFromAttesterVerifier _reputationFromAttesterVerifier,
         uint8 _numEpochKeyNoncePerEpoch,
         uint8 _numAttestationsPerEpochKey,
-        uint256 _defaultKarma,
         uint256 _epochLength,
         uint256 _attestingFee
     ) public {
@@ -194,7 +197,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         numAttestationsPerEpochKey = _numAttestationsPerEpochKey;
         numAttestationsPerEpoch = _numEpochKeyNoncePerEpoch * _numAttestationsPerEpochKey;
         epochLength = _epochLength;
-        defaultKarma = _defaultKarma;
         latestEpochTransitionTime = block.timestamp;
 
         // Check and store the maximum number of signups
@@ -221,26 +223,22 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function userSignUp(uint256 _identityCommitment) external {
         require(hasUserSignedUp[_identityCommitment] == false, "Unirep: the user has already signed up");
         require(numUserSignUps < maxUsers, "Unirep: maximum number of signups reached");
-
-        // When a user signs up, give defaultKarma
-        Karma memory karma;
-        karma.positiveKarma = defaultKarma;
-        karma.negativeKarma = 0;
         
         // Compute hashed leaf
-        uint256[] memory hashElements = new uint256[](5);
-        hashElements[0] = _identityCommitment;
-        hashElements[1] = emptyUserStateRoot;
-        hashElements[2] = karma.positiveKarma;
-        hashElements[3] = karma.negativeKarma;
-        hashElements[4] = 0;
-        uint256 hashedLeaf = hash5(hashElements);
+        StateLeaf memory stateLeaf;
+        stateLeaf.identityCommitment = _identityCommitment;
+        stateLeaf.userStateRoot = emptyUserStateRoot;
+        stateLeaf.positiveKarma = defaultKarma;
+        stateLeaf.negativeKarma = 0;
+        uint256 hashedLeaf = hashStateLeaf(stateLeaf);
 
         hasUserSignedUp[_identityCommitment] = true;
         numUserSignUps ++;
 
         emit Sequencer("UserSignUp");
-        emit NewGSTLeafInserted(currentEpoch, hashedLeaf);
+        emit NewGSTLeafInserted(currentEpoch, nextGSTLeafIndex ,hashedLeaf);
+
+        nextGSTLeafIndex ++;
     }
 
     function attesterSignUp() external {
@@ -473,6 +471,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
             latestEpochTransitionTime = block.timestamp;
             currentEpoch ++;
+            nextGSTLeafIndex = 0;
         }
 
         uint256 gasUsed = initGas.sub(gasleft());
@@ -506,8 +505,11 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
             currentEpoch,
+            nextGSTLeafIndex,
             userTransitionedData
         );
+
+        nextGSTLeafIndex ++;
         // emit NewGSTLeafInserted(currentEpoch, _newGlobalStateTreeLeaf);
 
     }
@@ -711,7 +713,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function hashedBlankStateLeaf() public view returns (uint256) {
         StateLeaf memory stateLeaf = StateLeaf({
             identityCommitment: 0,
-            userStateRoot: emptyUserStateRoot
+            userStateRoot: emptyUserStateRoot,
+            // DefaultKarma
+            positiveKarma: 20,
+            negativeKarma: 0
         });
 
         return hashStateLeaf(stateLeaf);

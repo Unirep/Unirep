@@ -15,7 +15,7 @@
         "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npm run contractUintTests && npm run circuitUintTests && npm run integrationTest",
         "contractUintTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
         "circuitUintTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",
-        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')"
+        "integrationTest": "npx ts-node scripts/buildPoseidon.ts && NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')"
     },
     "repository": {
         "type": "git",

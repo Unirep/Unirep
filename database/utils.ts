@@ -137,10 +137,13 @@ const genGSTreeFromDB = async (epoch: number): Promise<IncrementalQuinTree> => {
     const globalStateTreeDepth = _settings.globalStateTreeDepth
     const userStateTreeDepth = _settings.userStateTreeDepth
     const emptyUserStateRoot = computeEmptyUserStateRoot(userStateTreeDepth)
-    const defaultGSTLeaf = hashLeftRight(
-        BigInt(0),
-        emptyUserStateRoot
-    )
+    const defaultGSTLeaf = hash5([
+        BigInt(0),  // zero identityCommitment
+        emptyUserStateRoot,  // zero user state root
+        BigInt(DEFAULT_AIRDROPPED_KARMA), // default airdropped karma
+        BigInt(0), // default negative karma
+        BigInt(0)
+    ])
 
     const GSTree = new IncrementalQuinTree(
         globalStateTreeDepth,

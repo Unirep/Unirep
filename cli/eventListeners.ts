@@ -94,15 +94,15 @@ const eventListeners = async (args: any) => {
     postSubmittedFilter, (event) => updateDBFromPostSubmittedEvent(event)
   )
 
-    // CommentSubmitted listeners
-    provider.on(
-      commentSubmittedFilter, (event) => updateDBFromCommentSubmittedEvent(event)
-    )
+  // CommentSubmitted listeners
+  provider.on(
+    commentSubmittedFilter, (event) => updateDBFromCommentSubmittedEvent(event)
+  )
 
-    // ReputationSubmitted listeners
-    provider.on(
-      reputationSubmittedFilter, (event) => updateDBFromReputationNullifierSubmittedEvent(event)
-    )
+  // ReputationSubmitted listeners
+  provider.on(
+    reputationSubmittedFilter, (event) => updateDBFromReputationNullifierSubmittedEvent(event)
+  )
 
   // Attestation listeners
   provider.on(

@@ -7,10 +7,17 @@ contract DomainObjs is Hasher {
     struct StateLeaf {
         uint256 identityCommitment;
         uint256 userStateRoot;
+        uint256 positiveKarma;
+        uint256 negativeKarma;
     }
 
     function hashStateLeaf(StateLeaf memory _stateLeaf) public pure returns (uint256) {
-        return hashLeftRight(_stateLeaf.identityCommitment, _stateLeaf.userStateRoot);
+        uint256[] memory hashElements = new uint256[](5);
+        hashElements[0] = _stateLeaf.identityCommitment;
+        hashElements[1] = _stateLeaf.userStateRoot;
+        hashElements[2] = _stateLeaf.positiveKarma;
+        hashElements[3] = _stateLeaf.negativeKarma;
+        return hash5(hashElements);
     }
 
     struct Attestation {

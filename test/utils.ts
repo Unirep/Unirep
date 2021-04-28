@@ -83,19 +83,17 @@ const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    let _maxUsers, _numEpochKeyNoncePerEpoch, _numAttestationsPerEpochKey, _defaultKarma, _epochLength, _attestingFee
+    let _maxUsers, _numEpochKeyNoncePerEpoch, _numAttestationsPerEpochKey, _epochLength, _attestingFee
     if (_settings) {
         _maxUsers = _settings.maxUsers
         _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
         _numAttestationsPerEpochKey = _settings.numAttestationsPerEpochKey
-        _defaultKarma = _settings.defaultKarma
         _epochLength = _settings.epochLength
         _attestingFee = _settings.attestingFee
     } else {
         _maxUsers = maxUsers
         _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
         _numAttestationsPerEpochKey = numAttestationsPerEpochKey
-        _defaultKarma = DEFAULT_AIRDROPPED_KARMA
         _epochLength = epochLength
         _attestingFee = attestingFee
     }
@@ -120,7 +118,6 @@ const deployUnirep = async (
         ReputationFromAttesterVerifierContract.address,
         _numEpochKeyNoncePerEpoch,
         _numAttestationsPerEpochKey,
-        _defaultKarma,
         _epochLength,
         _attestingFee,
         {
