@@ -22,7 +22,6 @@ import { computeEmptyUserStateRoot, defaultUserStateLeaf, genAttestationNullifie
 
 import { assert } from 'console'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import GSTLeaf from './models/treeLeaves'
 import { add0x, SparseMerkleTreeImpl } from '../crypto/SMT'
 import { settings } from 'cluster'
 import { DEFAULT_AIRDROPPED_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'

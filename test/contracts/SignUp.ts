@@ -9,6 +9,7 @@ import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from '../u
 const { expect } = chai
 
 import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
+import { DEFAULT_AIRDROPPED_KARMA } from '../../config/socialMedia'
 
 
 describe('Signup', () => {
@@ -74,7 +75,9 @@ describe('Signup', () => {
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
                     commitment,
-                    emptyUserStateRoot
+                    emptyUserStateRoot,
+                    BigInt(DEFAULT_AIRDROPPED_KARMA),
+                    BigInt(0)
                 ]
             )
             GSTree.insert(hashedStateLeaf)

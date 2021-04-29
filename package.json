@@ -11,7 +11,7 @@
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "buildProveReputationFromAttesterSnark": "./scripts/buildProveReputationFromAttesterSnark.sh",
-        "test-cli": "./scripts/testCLI.sh",
+        "test-cli": "npx hardhat compile && ./scripts/testCLI.sh",
         "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npm run contractUintTests && npm run circuitUintTests && npm run integrationTest",
         "contractUintTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
         "circuitUintTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",

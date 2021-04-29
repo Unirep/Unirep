@@ -300,16 +300,17 @@ const publishPost = async (args: any) => {
             nullifiers,
             { value: attestingFee, gasLimit: 1000000 }
         )
-        const db = await mongoose.connect(
-            dbUri, 
-             { useNewUrlParser: true, 
-               useFindAndModify: false, 
-               useUnifiedTopology: true
-             }
-        )
-        const res: IPost = await newpost.save()
-        db.disconnect();
-
+        if (args.from_database){
+            const db = await mongoose.connect(
+                dbUri, 
+                { useNewUrlParser: true, 
+                  useFindAndModify: false, 
+                  useUnifiedTopology: true
+                }
+            )
+            const res: IPost = await newpost.save()
+            db.disconnect();
+        }
     } catch(e) {
         console.error('Error: the transaction failed')
         if (e.message) {
