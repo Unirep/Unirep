@@ -13,12 +13,12 @@ import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyReputationFromAttesterProofAndPublicSignals, verifyProveReputationFromAttesterProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { add0x } from '../crypto/SMT'
-import { identityPrefix, reputationProofPrefix } from './prefix'
+import { identityPrefix, reputationProofFromAttesterPrefix } from './prefix'
 import { genProveReputationFromAttesterCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
-        'genReputationProof',
+        'genReputationProofFromAttester',
         { addHelp: true },
     )
 
@@ -108,7 +108,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const genReputationProof = async (args: any) => {
+const genReputationProofFromAttester = async (args: any) => {
 
     // Warning is there is no reputation and graffiti to prove
     if (!args.min_pos_rep && !args.max_neg_rep && !args.graffiti_preimage) {
@@ -196,10 +196,10 @@ const genReputationProof = async (args: any) => {
     const formattedProof = formatProofForVerifierContract(results["proof"])
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     console.log(`Proof of reputation from attester ${attesterId}:`)
-    console.log(reputationProofPrefix + encodedProof)
+    console.log(reputationProofFromAttesterPrefix + encodedProof)
 }
 
 export {
-    genReputationProof,
+    genReputationProofFromAttester,
     configureSubparser,
 }

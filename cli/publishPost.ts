@@ -20,10 +20,10 @@ import { add0x } from '../crypto/SMT'
 import { genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { identityPrefix, identityCommitmentPrefix, epkProofPrefix } from './prefix'
+import { identityPrefix, identityCommitmentPrefix, reputationProofPrefix } from './prefix'
 
 import Post, { IPost } from "../database/models/post";
-import { DEFAULT_POST_KARMA } from '../config/socialMedia'
+import { DEFAULT_POST_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { assert } from 'console'
 import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
 import { genEpochKey, genKarmaNullifier } from '../test/utils'
@@ -247,9 +247,9 @@ const publishPost = async (args: any) => {
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
     
-    for (let i = 0; i < DEFAULT_POST_KARMA; i++) {
+    for (let i = 0; i < MAX_KARMA_BUDGET; i++) {
         const variableName = 'main.karma_nullifiers['+i+']'
-        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
+        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName))
     }
     
     // TODO: Not sure if this validation is necessary
@@ -261,18 +261,9 @@ const publishPost = async (args: any) => {
 
     const proof = formatProofForVerifierContract(results['proof'])
     const epochKey = BigInt(add0x(epk))
-    console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
-    const publicSignals = results['publicSignals']
+    const encodedProof = base64url.encode(JSON.stringify(proof))
     
-
-    const isProofValid = await unirepContract.verifyReputation(
-        publicSignals,
-        proof
-    )
-    if (!isProofValid) {
-        console.error('Error: invalid reputation proof')
-        return
-    }
+    const publicSignals = results['publicSignals']
     
     if(proveMinRep){
         console.log(`Prove minimum reputation: ${minRep}`)
@@ -321,6 +312,8 @@ const publishPost = async (args: any) => {
     
     console.log('Post ID:', newpost._id.toString())
     console.log('Transaction hash:', tx.hash)
+    console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
+    console.log(reputationProofPrefix + encodedProof)
 }
 
 export {

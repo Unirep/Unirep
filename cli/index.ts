@@ -27,15 +27,15 @@ import {
     configureSubparser as configureSubparserForAttesterSignup,
 } from './attesterSignUp'
 
-import {
-    genEpochKeyAndProof,
-    configureSubparser as configureSubparserForGenEpochKeyAndProof,
-} from './genEpochKeyAndProof'
+// import {
+//     genEpochKeyAndProof,
+//     configureSubparser as configureSubparserForGenEpochKeyAndProof,
+// } from './genEpochKeyAndProof'
 
 import {
-    verifyEpochKeyProof,
-    configureSubparser as configureSubparserForVerifyEpochKeyProof,
-} from './verifyEpochKeyProof'
+    verifyReputationProof,
+    configureSubparser as configureSubparserForVerifyReputationProof,
+} from './verifyReputationProof'
 
 import {
     publishPost,
@@ -73,14 +73,14 @@ import {
 } from './userStateTransition'
 
 import {
-    genReputationProof,
-    configureSubparser as configureSubparserForGenReputationProof,
-} from './genReputationProof'
+    genReputationProofFromAttester,
+    configureSubparser as configureSubparserForGenReputationProofFromAttester,
+} from './genReputationProofFromAttester'
 
 import {
-    verifyReputationProof,
-    configureSubparser as configureSubparserForVerifyReputationProof,
-} from './verifyReputationProof'
+    verifyReputationProofFromAttester,
+    configureSubparser as configureSubparserForVerifyReputationProofFromAttester,
+} from './verifyReputationProofFromAttester'
 
 
 const main = async () => {
@@ -109,10 +109,10 @@ const main = async () => {
     configureSubparserForAttesterSignup(subparsers)
 
     // Subcommand: genEpochKeyAndProof
-    configureSubparserForGenEpochKeyAndProof(subparsers)
+    // configureSubparserForGenEpochKeyAndProof(subparsers)
 
-    // Subcommand: verifyEpochKeyProof
-    configureSubparserForVerifyEpochKeyProof(subparsers)
+    // Subcommand: verifyReputationProof
+    configureSubparserForVerifyReputationProof(subparsers)
 
     // Subcommand: publishPost
     configureSubparserForPublishPost(subparsers)
@@ -136,10 +136,10 @@ const main = async () => {
     configureSubparserForGenUserStateTransitionProof(subparsers)
 
     // Subcommand: genReputationProof
-    configureSubparserForGenReputationProof(subparsers)
+    configureSubparserForGenReputationProofFromAttester(subparsers)
 
     // Subcommand: verifyReputationProof
-    configureSubparserForVerifyReputationProof(subparsers)
+    configureSubparserForVerifyReputationProofFromAttester(subparsers)
 
     const args = parser.parseArgs()
 
@@ -154,10 +154,10 @@ const main = async () => {
         await userSignup(args)
     } else if (args.subcommand === 'attesterSignup') {
         await attesterSignup(args)
-    } else if (args.subcommand === 'genEpochKeyAndProof') {
-        await genEpochKeyAndProof(args)
-    } else if (args.subcommand === 'verifyEpochKeyProof') {
-        await verifyEpochKeyProof(args)
+    // } else if (args.subcommand === 'genEpochKeyAndProof') {
+    //     await genEpochKeyAndProof(args)
+    } else if (args.subcommand === 'verifyReputationProof') {
+        await verifyReputationProof(args)
     } else if (args.subcommand === 'publishPost') {
         await publishPost(args)
     } else if (args.subcommand === 'listAllPosts') {
@@ -172,10 +172,10 @@ const main = async () => {
         await epochTransition(args)
     } else if (args.subcommand === 'userStateTransition') {
         await userStateTransition(args)
-    } else if (args.subcommand === 'genReputationProof') {
-        await genReputationProof(args)
-    } else if (args.subcommand === 'verifyReputationProof') {
-        await verifyReputationProof(args)
+    } else if (args.subcommand === 'genReputationProofFromAttester') {
+        await genReputationProofFromAttester(args)
+    } else if (args.subcommand === 'verifyReputationProofFromAttester') {
+        await verifyReputationProofFromAttester(args)
     }
 }
 

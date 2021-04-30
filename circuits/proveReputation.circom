@@ -1,4 +1,5 @@
 include "../node_modules/circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/mux1.circom";
 include "./hasherPoseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
@@ -6,10 +7,6 @@ include "./modulo.circom";
 include "./sparseMerkleTree.circom";
 include "./userExists.circom";
 include "./verifiyEpochKey.circom";
-
-function Not(in) {
-    return 1 + in - (2 * in);
-}
 
 template ProveReputation(
         GST_tree_depth, 
@@ -43,6 +40,7 @@ template ProveReputation(
     signal private input positive_karma;
     signal private input negative_karma;
     // Karma nullifier
+    signal private input selectors[MAX_KARMA_BUDGET];
     signal input prove_karma_nullifiers;
     signal input prove_karma_amount;
     signal private input karma_nonce[MAX_KARMA_BUDGET];
@@ -135,6 +133,17 @@ template ProveReputation(
 
 
     /* 6. Check nullifiers are valid */
+    signal default_nullifier_zero;
+    component default_nullifier_zero_hasher = Hasher5();
+    default_nullifier_zero_hasher.in[0] <== 0;
+    default_nullifier_zero_hasher.in[1] <== 0;
+    default_nullifier_zero_hasher.in[2] <== 0;
+    default_nullifier_zero_hasher.in[3] <== 0;
+    default_nullifier_zero_hasher.in[4] <== 0;
+    default_nullifier_zero <== default_nullifier_zero_hasher.hash;
+
+    component if_check_nullifiers[MAX_KARMA_BUDGET];
+    component if_output_nullifiers[MAX_KARMA_BUDGET];
     component karma_nullifier_hasher[MAX_KARMA_BUDGET];
     component nonce_gt[MAX_KARMA_BUDGET];
     for(var i = 0; i< MAX_KARMA_BUDGET; i++) {
@@ -144,24 +153,36 @@ template ProveReputation(
         nonce_gt[i] = GreaterThan(MAX_REPUTATION_SCORE_BITS);
         nonce_gt[i].in[0] <== positive_karma - negative_karma;
         nonce_gt[i].in[1] <== karma_nonce[i];
-        nonce_gt[i].out * prove_karma_nullifiers + Not(prove_karma_nullifiers) === 1;
-        
+        if_check_nullifiers[i] = Mux1();
+        if_check_nullifiers[i].c[0] <== 1;
+        if_check_nullifiers[i].c[1] <== nonce_gt[i].out;
+        if_check_nullifiers[i].s <== prove_karma_nullifiers;
+        if_check_nullifiers[i].out === 1;
+
         // 6.2 Use karma_nonce to compute all karma nullifiers
+        if_output_nullifiers[i] = Mux1();
         karma_nullifier_hasher[i] = Hasher5();
         karma_nullifier_hasher[i].in[0] <== 3; // 3 is the domain separator for karma nullifier
         karma_nullifier_hasher[i].in[1] <== identity_nullifier;
         karma_nullifier_hasher[i].in[2] <== epoch;
         karma_nullifier_hasher[i].in[3] <== karma_nonce[i];
         karma_nullifier_hasher[i].in[4] <== 0;
-        karma_nullifiers[i] <== karma_nullifier_hasher[i].hash;
+        if_output_nullifiers[i].c[0] <== default_nullifier_zero;
+        if_output_nullifiers[i].c[1] <== karma_nullifier_hasher[i].hash;
+        if_output_nullifiers[i].s <== selectors[i];
+        karma_nullifiers[i] <== if_output_nullifiers[i].out;
     }
     /* End of check 6 */
 
 
     /* 7. Check if user has reputation greater than min_rep */
+    component if_check_min_rep = Mux1();
     component rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
     rep_get.in[0] <== positive_karma - negative_karma;
     rep_get.in[1] <== min_rep;
-    rep_get.out * prove_min_rep + Not(prove_min_rep) === 1;
+    if_check_min_rep.c[0] <== 1;
+    if_check_min_rep.c[1] <== rep_get.out;
+    if_check_min_rep.s <== prove_min_rep;
+    if_check_min_rep.out === 1;
     /* End of check 7 */
  }

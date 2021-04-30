@@ -276,9 +276,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 spendReputationAmount,
         actionChoices actionChoice
     ) internal {
-        require(karmaNullifiers.length == spendReputationAmount, "Unirep: should submit the exact amount of karma to execute action");
         // Determine if karma nullifiers are submitted before
-        for (uint i = 0; i < karmaNullifiers.length; i++) {
+        for (uint i = 0; i < spendReputationAmount; i++) {
             require(isKarmaNullifierSubmitted[karmaNullifiers[i]] == false, "Unirep: the nullifier has been submitted");
             isKarmaNullifierSubmitted[karmaNullifiers[i]] = true;
         }

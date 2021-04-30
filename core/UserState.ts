@@ -559,8 +559,13 @@ class UserState {
             BigInt(this.transitionedNegRep),
             BigInt(0)
         ])
+        const selectors: BigInt[] = []
+        for (let i = 0; i < karmaNonceList.length; i++) {
+            selectors.push(BigInt(1));
+        }
         for (let i = karmaNonceList.length ; i < MAX_KARMA_BUDGET; i++) {
             karmaNonceList.push(BigInt(0))
+            selectors.push(BigInt(0))
         }
 
         return stringifyBigInts({
@@ -578,6 +583,7 @@ class UserState {
             GST_root: GSTreeRoot,
             nullifier_tree_root: nullifierTreeRoot,
             nullifier_path_elements: epkNullifierProof,
+            selectors: selectors,
             positive_karma: BigInt(this.transitionedPosRep),
             negative_karma: BigInt(this.transitionedNegRep),
             prove_karma_nullifiers: proveKarmaNullifiers,

@@ -23,9 +23,10 @@ import { add0x } from '../crypto/SMT'
 import { Attestation } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { epkProofPrefix, identityPrefix } from './prefix'
+import { reputationProofPrefix, identityPrefix } from './prefix'
 import { nullifierTreeDepth } from '../config/testLocal'
 import { genProveReputationCircuitInputsFromDB } from '../database/utils'
+import { MAX_KARMA_BUDGET } from '../config/socialMedia'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -236,7 +237,7 @@ const vote = async (args: any) => {
     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
     const treeDepths = await unirepContract.treeDepths()
     const epochTreeDepth = treeDepths.epochTreeDepth
-    const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
+    const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth)
 
     // gen nullifier nonce list
     const proveKarmaNullifiers = BigInt(1)
@@ -295,9 +296,9 @@ const vote = async (args: any) => {
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
     
-    for (let i = 0; i < voteValue; i++) {
+    for (let i = 0; i < MAX_KARMA_BUDGET; i++) {
         const variableName = 'main.karma_nullifiers['+i+']'
-        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
+        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName))
     }
 
     // TODO: Not sure if this validation is necessary
@@ -308,8 +309,14 @@ const vote = async (args: any) => {
     }
 
     const proof = formatProofForVerifierContract(results['proof'])
-    const fromEpochKey = BigInt(add0x(epk))
+    const fromEpochKey = epk
+    const encodedProof = base64url.encode(JSON.stringify(proof))
+
     const publicSignals = results['publicSignals']
+
+    if(proveMinRep){
+        console.log(`Prove minimum reputation: ${minRep}`)
+    }
 
     // upvote or downvote to epoch key
     const attestationToEpochKey = new Attestation(
@@ -341,6 +348,8 @@ const vote = async (args: any) => {
     }
 
     console.log('Transaction hash:', tx.hash)
+    console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${fromEpochKey.toString(16)}`)
+    console.log(reputationProofPrefix + encodedProof)
 }
 
 export {

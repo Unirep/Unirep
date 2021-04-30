@@ -13,12 +13,11 @@ import { genUnirepStateFromContract } from '../core'
 import { add0x } from '../crypto/SMT'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { reputationProofPrefix } from './prefix'
-import { hash5 } from 'maci-crypto'
+import { reputationProofFromAttesterPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
-        'verifyReputationProof',
+        'verifyReputationProofFromAttester',
         { addHelp: true },
     )
 
@@ -41,11 +40,43 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.addArgument(
-        ['-epk', '--epoch-key'],
+        ['-a', '--attester-id'],
         {
             required: true,
             type: 'string',
-            help: 'The user\'s epoch key (in hex representation)',
+            help: 'The attester id (in hex representation)',
+        }
+    )
+    
+    parser.addArgument(
+        ['-mp', '--min-pos-rep'],
+        {
+            type: 'int',
+            help: 'The minimum positive score the attester given to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-mn', '--max-neg-rep'],
+        {
+            type: 'int',
+            help: 'The maximum negative score the attester given to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-md', '--min-rep-diff'],
+        {
+            type: 'int',
+            help: 'The difference between positive and negative scores the attester given to the user',
+        }
+    )
+
+    parser.addArgument(
+        ['-gp', '--graffiti-preimage'],
+        {
+            type: 'string',
+            help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
         }
     )
 
@@ -54,33 +85,7 @@ const configureSubparser = (subparsers: any) => {
         {
             required: true,
             type: 'string',
-            help: 'The snark proof of the user\'s epoch key and reputation ',
-        }
-    )
-
-    parser.addArgument(
-        ['-act', '--action'],
-        {
-            required: true,
-            type: 'string',
-            help: 'Which action the user spends reputation',
-        }
-    )
-
-    parser.addArgument(
-        ['-th', '--transaction-hash'],
-        {
-            required: true,
-            type: 'string',
-            help: 'The transaction hash of where user submit the reputation nullifiers ',
-        }
-    )
-
-    parser.addArgument(
-        ['-mr', '--min-rep'],
-        {
-            type: 'int',
-            help: 'The minimum reputation score the user has',
+            help: 'The snark proof of the user\'s epoch key ',
         }
     )
 
@@ -103,7 +108,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const verifyReputationProof = async (args: any) => {
+const verifyReputationProofFromAttester = async (args: any) => {
 
     // Unirep contract
     if (!validateEthAddress(args.contract)) {
@@ -123,17 +128,6 @@ const verifyReputationProof = async (args: any) => {
         return
     }
 
-    enum actions { 
-        publishPost,
-        leaveComment,
-        vote
-    }
-
-    if (!(args.action in actions)) {
-        console.error(`Error: there is no such action ${args.action}`)
-        return
-    }
-
     const unirepContract = new ethers.Contract(
         unirepAddress,
         Unirep.abi,
@@ -147,47 +141,37 @@ const verifyReputationProof = async (args: any) => {
         startBlock,
     )
 
-    // Verify on-chain
     const currentEpoch = unirepState.currentEpoch
-    const GSTRoot = unirepState.genGSTree(currentEpoch).root
+    const epoch = args.epoch ? Number(args.epoch) : currentEpoch
+    const attesterId = BigInt(add0x(args.attester_id))
+    const provePosRep = args.min_pos_rep != null ? BigInt(1) : BigInt(0)
+    const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
+    const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
+    const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
+    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
+    const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
+    const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
+    const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
+    const decodedProof = base64url.decode(args.proof.slice(reputationProofFromAttesterPrefix.length))
+    const proof = JSON.parse(decodedProof)
+
+    // Verify on-chain
+    const GSTreeRoot = unirepState.genGSTree(epoch).root
     const nullifierTree = await unirepState.genNullifierTree()
     const nullifierTreeRoot = nullifierTree.getRootHash()
-    const epk = BigInt(add0x(args.epoch_key))
-    
-    // get reputation nullifiers from contract
-    const tx = await provider.getTransaction(args.transaction_hash)
-    const iface = new ethers.utils.Interface(Unirep.abi)
-    const decodedData = iface.decodeFunctionData(args.action, tx.data)
-    const nullifiers = decodedData['karmaNullifiers'].map((n) => BigInt(n))
-
-    const proveKarmaNullifiers = BigInt(1)
-    let proveKarmaAmount: number = 0
-    const default_nullifier = hash5([BigInt(0),BigInt(0),BigInt(0),BigInt(0),BigInt(0)])
-    for (let i = 0; i < nullifiers.length; i++) {
-        if (nullifiers[i] != default_nullifier) {
-            proveKarmaAmount ++
-        }
-    }
-
-    // get minRep
-    const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
-
-    const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
-    const proof = JSON.parse(decodedProof)
-    
-    const publicInput = nullifiers.concat([
-        currentEpoch,
-        epk,
-        GSTRoot,
+    const publicInput = [epoch,
+        GSTreeRoot,
         nullifierTreeRoot,
-        proveKarmaNullifiers,
-        proveKarmaAmount,
-        proveMinRep,
-        minRep
-    ])
-
-    const isProofValid = await unirepContract.verifyReputation(
+        attesterId,
+        provePosRep,
+        proveNegRep,
+        proveRepDiff,
+        proveGraffiti,
+        minRepDiff,
+        minPosRep,
+        maxNegRep,
+        graffitiPreImage]
+    const isProofValid = await unirepContract.verifyReputationFromAttester(
         publicInput,
         proof
     )
@@ -196,10 +180,10 @@ const verifyReputationProof = async (args: any) => {
         return
     }
 
-    console.log(`Verify reputation proof of epoch key ${epk.toString(16)} with ${proveKarmaAmount} reputation spent in ${args.transaction_hash} transaction and minimum reputation ${minRep} succeed`)
+    console.log(`Verify reputation proof from attester ${attesterId} with min pos rep ${minPosRep}, max neg rep ${maxNegRep} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
 }
 
 export {
-    verifyReputationProof,
+    verifyReputationProofFromAttester,
     configureSubparser,
 }

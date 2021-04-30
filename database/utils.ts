@@ -23,7 +23,6 @@ import { computeEmptyUserStateRoot, defaultUserStateLeaf, genAttestationNullifie
 import { assert } from 'console'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { add0x, SparseMerkleTreeImpl } from '../crypto/SMT'
-import { settings } from 'cluster'
 import { DEFAULT_AIRDROPPED_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { dbUri } from '../config/database'
 
@@ -496,9 +495,13 @@ const genProveReputationCircuitInputsFromDB = async (
         BigInt(userState[epoch].transitionedNegRep),
         BigInt(0)
     ])
-
+    const selectors: BigInt[] = []
+    for (let i = 0; i < karmaNonceList.length; i++) {
+        selectors.push(BigInt(1));
+    }
     for (let i = karmaNonceList.length ; i < MAX_KARMA_BUDGET; i++) {
         karmaNonceList.push(BigInt(0))
+        selectors.push(BigInt(0))
     }
 
     db.disconnect();
@@ -518,6 +521,7 @@ const genProveReputationCircuitInputsFromDB = async (
         GST_root: GSTreeRoot,
         nullifier_tree_root: nullifierTreeRoot,
         nullifier_path_elements: epkNullifierProof,
+        selectors: selectors,
         positive_karma: userState[epoch].transitionedPosRep,
         negative_karma: userState[epoch].transitionedNegRep,
         prove_karma_nullifiers: proveKarmaNullifiers,
@@ -956,17 +960,20 @@ const updateDBFromReputationNullifierSubmittedEvent = async (
 ) => {
     const iface = new ethers.utils.Interface(Unirep.abi)
     const decodedData = iface.decodeEventLog("ReputationNullifierSubmitted",event.data)
+    const default_nullifier = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
 
     for (let nullifier of decodedData.karmaNullifiers) {
-        const newReputationNullifier: IReputationNullifier = new ReputationNullifier({
-            transactionHash: event.transactionHash,
-            action: action[decodedData.actionChoice],
-            nullifiers: nullifier.toString()
-        })
-
-        const res = await newReputationNullifier.save()
-        if(res) {
-            console.log('Database: saved reputation nullifiers')
+        if ( BigInt(nullifier) != default_nullifier ){
+            const newReputationNullifier: IReputationNullifier = new ReputationNullifier({
+                transactionHash: event.transactionHash,
+                action: action[decodedData.actionChoice],
+                nullifiers: nullifier.toString()
+            })
+    
+            const res = await newReputationNullifier.save()
+            if(res) {
+                console.log('Database: saved reputation nullifiers')
+            }
         }
     }
 }

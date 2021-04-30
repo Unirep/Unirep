@@ -19,11 +19,11 @@ import { add0x } from '../crypto/SMT'
 import { genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { epkProofPrefix, identityPrefix } from './prefix'
+import { reputationProofPrefix, identityPrefix } from './prefix'
 
 import Comment, { IComment } from "../database/models/comment";
 import Post, { IPost } from "../database/models/post";
-import { DEFAULT_COMMENT_KARMA } from '../config/socialMedia'
+import { DEFAULT_COMMENT_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../test/circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { nullifierTreeDepth } from '../config/testLocal'
@@ -257,9 +257,9 @@ const leaveComment = async (args: any) => {
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
     
-    for (let i = 0; i < DEFAULT_COMMENT_KARMA; i++) {
+    for (let i = 0; i < MAX_KARMA_BUDGET; i++) {
         const variableName = 'main.karma_nullifiers['+i+']'
-        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName) % BigInt(2 ** nullifierTreeDepth) )
+        nullifiers.push(getSignalByNameViaSym('proveReputation', results['witness'], variableName))
     }
     
     // TODO: Not sure if this validation is necessary
@@ -271,7 +271,13 @@ const leaveComment = async (args: any) => {
 
     const proof = formatProofForVerifierContract(results['proof'])
     const epochKey = BigInt(add0x(epk))
+    const encodedProof = base64url.encode(JSON.stringify(proof))
+
     const publicSignals = results['publicSignals']
+
+    if(proveMinRep){
+        console.log(`Prove minimum reputation: ${minRep}`)
+    }
 
     const newComment: IComment = new Comment({
         content: args.text,
@@ -321,6 +327,8 @@ const leaveComment = async (args: any) => {
 
     const receipt = await tx.wait()
     console.log('Transaction hash:', tx.hash)
+    console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
+    console.log(reputationProofPrefix + encodedProof)
 }
 
 export {
