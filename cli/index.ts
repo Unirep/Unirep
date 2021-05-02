@@ -27,10 +27,15 @@ import {
     configureSubparser as configureSubparserForAttesterSignup,
 } from './attesterSignUp'
 
-// import {
-//     genEpochKeyAndProof,
-//     configureSubparser as configureSubparserForGenEpochKeyAndProof,
-// } from './genEpochKeyAndProof'
+import {
+    genEpochKeyAndProof,
+    configureSubparser as configureSubparserForGenEpochKeyAndProof,
+} from './genEpochKeyAndProof'
+
+import {
+    verifyEpochKeyProof,
+    configureSubparser as configureSubparserForVerifyEpochKeyProof,
+} from './verifyEpochKeyProof'
 
 import {
     verifyReputationProof,
@@ -109,7 +114,10 @@ const main = async () => {
     configureSubparserForAttesterSignup(subparsers)
 
     // Subcommand: genEpochKeyAndProof
-    // configureSubparserForGenEpochKeyAndProof(subparsers)
+    configureSubparserForGenEpochKeyAndProof(subparsers)
+
+    // Subcommand: verifyEpochKeyProof
+    configureSubparserForVerifyEpochKeyProof(subparsers)
 
     // Subcommand: verifyReputationProof
     configureSubparserForVerifyReputationProof(subparsers)
@@ -154,8 +162,10 @@ const main = async () => {
         await userSignup(args)
     } else if (args.subcommand === 'attesterSignup') {
         await attesterSignup(args)
-    // } else if (args.subcommand === 'genEpochKeyAndProof') {
-    //     await genEpochKeyAndProof(args)
+    } else if (args.subcommand === 'genEpochKeyAndProof') {
+        await genEpochKeyAndProof(args)
+    } else if (args.subcommand === 'verifyEpochKeyProof') {
+        await verifyEpochKeyProof(args)
     } else if (args.subcommand === 'verifyReputationProof') {
         await verifyReputationProof(args)
     } else if (args.subcommand === 'publishPost') {

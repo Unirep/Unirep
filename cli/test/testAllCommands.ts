@@ -207,6 +207,42 @@ describe('test all CLI subcommands', function() {
         })
     })
 
+    describe('genEpochKeyAndProof CLI subcommand', () => {
+        it('should generate epoch key proof', async () => {
+            const command = `npx ts-node cli/index.ts genEpochKeyAndProof` +
+                ` -x ${unirepContract.address} ` +
+                ` -id ${userIdentity1} ` +
+                ` -n ${epochKeyNonce} `
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const epkRegMatch = output.match(/Epoch key of epoch 1 and nonce 0: ([a-fA-F0-9]+)/)
+            epk = epkRegMatch[1]
+            const epkProofRegMatch = output.match(/(Unirep.epkProof.[a-zA-Z0-9\-\_]+)$/)
+            epkProof = epkProofRegMatch[1]
+        })
+    })
+
+    describe('verifyEpochKeyProof CLI subcommand', () => {
+        it('should verify epoch key proof', async () => {
+            const command = `npx ts-node cli/index.ts verifyEpochKeyProof` +
+                ` -x ${unirepContract.address} ` +
+                ` -epk ${epk} ` +
+                ` -pf ${epkProof} `
+
+            const output = exec(command).stdout.trim()
+
+            console.log(command)
+            console.log(output)
+
+            const verifyRegMatch = output.match(/Verify epoch key proof with epoch key [a-fA-F0-9]+ succeed/)
+            expect(verifyRegMatch).not.equal(null)
+        })
+    })
+
     describe('publishPost CLI subcommand', () => {
         it('should publish a post', async () => {
             const command = `npx ts-node cli/index.ts publishPost` +

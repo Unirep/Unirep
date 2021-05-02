@@ -17,7 +17,7 @@ template userExists(GST_tree_depth){
     signal private input positive_karma;
     signal private input negative_karma;
     signal output out;
-
+    
     component identity_commitment = IdentityCommitment();
     identity_commitment.identity_pk[0] <== identity_pk[0];
     identity_commitment.identity_pk[1] <== identity_pk[1];

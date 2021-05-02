@@ -300,19 +300,29 @@ class UserState {
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
 
+        const userStateTree = await this.genUserStateTree()
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
+
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
 
         return stringifyBigInts({
+            GST_path_elements: GSTProof.pathElements,
+            GST_path_index: GSTProof.indices,
+            GST_root: GSTree.root,
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier, 
             identity_trapdoor: this.id.identityTrapdoor,
-            user_state_root: (await this.genUserStateTree()).getRootHash(),
-            path_elements: GSTProof.pathElements,
-            path_index: GSTProof.indices,
+            user_tree_root: userStateTree.getRootHash(),
+            user_state_hash: hashedLeaf,
             positive_karma: this.transitionedPosRep,
             negative_karma: this.transitionedNegRep,
-            root: GSTree.root,
             nonce: epochKeyNonce,
             epoch: epoch,
             epoch_key: epochKey,
