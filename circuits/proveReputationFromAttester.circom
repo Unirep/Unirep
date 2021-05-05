@@ -133,39 +133,39 @@ template proveReputationFromAttester(GST_tree_depth, user_state_tree_depth, null
     // if prove_pos_rep == TRUE then check GT
     // else return TRUE
     component if_check_pos_rep = Mux1();
-    component pos_rep_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-    pos_rep_gt.in[0] <== pos_rep;
-    pos_rep_gt.in[1] <== min_pos_rep;
+    component pos_rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
+    pos_rep_get.in[0] <== pos_rep;
+    pos_rep_get.in[1] <== min_pos_rep;
     if_check_pos_rep.c[0] <== 1;
-    if_check_pos_rep.c[1] <== pos_rep_gt.out;
+    if_check_pos_rep.c[1] <== pos_rep_get.out;
     if_check_pos_rep.s <== prove_pos_rep;
     if_check_pos_rep.out === 1;
 
     component if_check_neg_rep = Mux1();
-    component neg_rep_lt = LessThan(MAX_REPUTATION_SCORE_BITS);
-    neg_rep_lt.in[0] <== neg_rep;
-    neg_rep_lt.in[1] <== max_neg_rep;
+    component neg_rep_let = LessEqThan(MAX_REPUTATION_SCORE_BITS);
+    neg_rep_let.in[0] <== neg_rep;
+    neg_rep_let.in[1] <== max_neg_rep;
     if_check_neg_rep.c[0] <== 1;
-    if_check_neg_rep.c[1] <== neg_rep_lt.out;
+    if_check_neg_rep.c[1] <== neg_rep_let.out;
     if_check_neg_rep.s <== prove_neg_rep;
     if_check_neg_rep.out === 1;
 
     // only valid if pos_rep >= neg_rep
     component if_check_pos_get = Mux1();
     component if_check_diff_gt = Mux1();
-    component rep_diff_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
-    rep_diff_get.in[0] <== pos_rep;
-    rep_diff_get.in[1] <== neg_rep;
+    component rep_diff_get_zero = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
+    rep_diff_get_zero.in[0] <== pos_rep;
+    rep_diff_get_zero.in[1] <== neg_rep;
     if_check_pos_get.c[0] <== 1;
-    if_check_pos_get.c[1] <== rep_diff_get.out;
+    if_check_pos_get.c[1] <== rep_diff_get_zero.out;
     if_check_pos_get.s <== prove_rep_diff;
     if_check_pos_get.out === 1;
-    // // check if (pos_rep - neg_rep) > min_rep_diff
-    component rep_diff_gt = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-    rep_diff_gt.in[0] <== pos_rep - neg_rep;
-    rep_diff_gt.in[1] <== min_rep_diff;
+    // // check if (pos_rep - neg_rep) >= min_rep_diff
+    component rep_diff_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
+    rep_diff_get.in[0] <== pos_rep - neg_rep;
+    rep_diff_get.in[1] <== min_rep_diff;
     if_check_diff_gt.c[0] <== 1;
-    if_check_diff_gt.c[1] <== rep_diff_gt.out;
+    if_check_diff_gt.c[1] <== rep_diff_get.out;
     if_check_diff_gt.s <== prove_rep_diff;
     if_check_diff_gt.out === 1;
     /* End of check 5 */

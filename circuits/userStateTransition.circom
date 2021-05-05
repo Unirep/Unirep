@@ -64,7 +64,6 @@ template UserStateTransition(
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
-    signal private input user_tree_root;
     signal private input user_state_hash;
     // Sum of positive and negative karma
     signal private input old_positive_karma;
@@ -119,7 +118,7 @@ template UserStateTransition(
     user_exist.identity_pk[1] <== identity_pk[1];
     user_exist.identity_nullifier <== identity_nullifier;
     user_exist.identity_trapdoor <== identity_trapdoor;
-    user_exist.user_tree_root <== user_tree_root;
+    user_exist.user_tree_root <== intermediate_user_state_tree_roots[0];
     user_exist.user_state_hash <== user_state_hash;
     user_exist.positive_karma <== old_positive_karma;
     user_exist.negative_karma <== old_negative_karma;

@@ -358,24 +358,16 @@ describe('Integration', function () {
             const epk = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth).toString(16)
 
             // gen nullifier nonce list
-            const proveKarmaNullifiers = BigInt(1)
-            const proveKarmaAmount = BigInt(DEFAULT_POST_KARMA)
+            const proveKarmaAmount = DEFAULT_POST_KARMA
             const nonceStarter: number = 0
-            const nonceList: BigInt[] = []
-            for (let i = 0; i < DEFAULT_POST_KARMA; i++) {
-                nonceList.push( BigInt(nonceStarter + i) )
-            }
 
             // gen minRep proof
-            const proveMinRep = BigInt(0)
-            const minRep = BigInt(0)
+            const minRep = 0
 
             const circuitInputs = await users[0].genProveReputationCircuitInputs(
                 epochKeyNonce,                       // generate epoch key from epoch nonce
-                proveKarmaNullifiers,           // indicate to prove karma nullifiers
                 proveKarmaAmount,               // the amount of output karma nullifiers
-                nonceList,                      // nonce to generate karma nullifiers
-                proveMinRep,                    // indicate to prove minimum reputation the user has
+                nonceStarter,                      // nonce to generate karma nullifiers
                 minRep                          // the amount of minimum reputation the user wants to prove
             )
             const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
@@ -437,20 +429,13 @@ describe('Integration', function () {
             const secondUserEpochKey = genEpochKey(users[1].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
 
             // gen nullifier nonce list
-            const proveKarmaNullifiers = BigInt(1)
             const voteValue = 3
-            const proveKarmaAmount = BigInt(voteValue)
-            const upvoteValue = BigInt(voteValue)
-            
+            const proveKarmaAmount = voteValue
+            const upvoteValue = BigInt(voteValue)       
             const nonceStarter: number = 0
-            const nonceList: BigInt[] = []
-            for (let i = 0; i < voteValue; i++) {
-                nonceList.push( BigInt(nonceStarter + i) )
-            }
    
             // gen minRep proof
-            const proveMinRep =  BigInt(0)
-            const minRep =  BigInt(0)
+            const minRep =  0
 
             // Add graffiti pre-image to graffitiPreImageMap
             graffitiPreImageMap[0] = new Object()
@@ -460,10 +445,8 @@ describe('Integration', function () {
             // generating reputation proof
             const circuitInputs = await users[1].genProveReputationCircuitInputs(
                 nonce,                       // generate epoch key from epoch nonce
-                proveKarmaNullifiers,           // indicate to prove karma nullifiers
                 proveKarmaAmount,               // the amount of output karma nullifiers
-                nonceList,                      // nonce to generate karma nullifiers
-                proveMinRep,                    // indicate to prove minimum reputation the user has
+                nonceStarter,                      // nonce to generate karma nullifiers
                 minRep                          // the amount of minimum reputation the user wants to prove
             )
 
@@ -788,24 +771,16 @@ describe('Integration', function () {
             const epk = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth).toString(16)
 
             // gen nullifier nonce list
-            const proveKarmaNullifiers = BigInt(1)
-            const proveKarmaAmount = BigInt(DEFAULT_POST_KARMA)
+            const proveKarmaAmount = DEFAULT_COMMENT_KARMA
             const nonceStarter: number = 0
-            const nonceList: BigInt[] = []
-            for (let i = 0; i < DEFAULT_POST_KARMA; i++) {
-                nonceList.push( BigInt(nonceStarter + i) )
-            }
 
             // gen minRep proof
-            const proveMinRep = BigInt(0)
-            const minRep = BigInt(0)
+            const minRep = 0
 
             const circuitInputs = await users[0].genProveReputationCircuitInputs(
                 epochKeyNonce,                       // generate epoch key from epoch nonce
-                proveKarmaNullifiers,           // indicate to prove karma nullifiers
                 proveKarmaAmount,               // the amount of output karma nullifiers
-                nonceList,                      // nonce to generate karma nullifiers
-                proveMinRep,                    // indicate to prove minimum reputation the user has
+                nonceStarter,                      // nonce to generate karma nullifiers
                 minRep                          // the amount of minimum reputation the user wants to prove
             )
             const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))

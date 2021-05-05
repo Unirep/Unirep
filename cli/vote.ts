@@ -240,17 +240,9 @@ const vote = async (args: any) => {
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth)
 
     // gen nullifier nonce list
-    const proveKarmaNullifiers = BigInt(1)
-    const proveKarmaAmount = BigInt(voteValue)
+    const proveKarmaAmount = voteValue
     const nonceStarter: number = args.karma_nonce
-    const nonceList: BigInt[] = []
-    for (let i = 0; i < voteValue; i++) {
-        nonceList.push( BigInt(nonceStarter + i) )
-    }
-   
-    // gen minRep proof
-    const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    const minRep = args.min_rep != null ? args.min_rep : 0
     
     let circuitInputs: any
 
@@ -258,16 +250,14 @@ const vote = async (args: any) => {
 
         console.log('generating proving circuit from database...')
         
-         // Gen epoch key proof and reputation proof from database
+        // Gen epoch key proof and reputation proof from database
         circuitInputs = await genProveReputationCircuitInputsFromDB(
-            currentEpoch,
-            id,
-            epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaNullifiers,           // indicate to prove karma nullifiers
-            proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceList,                      // nonce to generate karma nullifiers
-            proveMinRep,                    // indicate to prove minimum reputation the user has
-            minRep                          // the amount of minimum reputation the user wants to prove
+           currentEpoch,
+           id,
+           epkNonce,                       // generate epoch key from epoch nonce
+           proveKarmaAmount,               // the amount of output karma nullifiers
+           nonceStarter,                      // nonce to generate karma nullifiers
+           minRep                          // the amount of minimum reputation the user wants to prove
         )
 
     } else {
@@ -285,10 +275,8 @@ const vote = async (args: any) => {
 
         circuitInputs = await userState.genProveReputationCircuitInputs(
             epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaNullifiers,           // indicate to prove karma nullifiers
             proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceList,                      // nonce to generate karma nullifiers
-            proveMinRep,                    // indicate to prove minimum reputation the user has
+            nonceStarter,                      // nonce to generate karma nullifiers
             minRep                          // the amount of minimum reputation the user wants to prove
         )
     }
@@ -314,7 +302,7 @@ const vote = async (args: any) => {
 
     const publicSignals = results['publicSignals']
 
-    if(proveMinRep){
+    if(args.min_rep != null){
         console.log(`Prove minimum reputation: ${minRep}`)
     }
 

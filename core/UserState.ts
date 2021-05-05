@@ -494,7 +494,6 @@ class UserState {
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.identityTrapdoor,
-            user_tree_root: userStateTree.getRootHash(),
             user_state_hash: hashedLeaf,
             old_positive_karma: BigInt(this.transitionedPosRep),
             old_negative_karma: BigInt(this.transitionedNegRep),
@@ -542,11 +541,9 @@ class UserState {
 
     public genProveReputationCircuitInputs = async (
         epochKeyNonce: number,
-        proveKarmaNullifiers: BigInt,
-        proveKarmaAmount: BigInt,
-        karmaNonceList: BigInt[],
-        proveMinRep: BigInt,
-        minRep: BigInt,
+        proveKarmaAmount: number,
+        nonceStarter: number,
+        minRep: number,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce < this.numEpochKeyNoncePerEpoch, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
@@ -570,11 +567,13 @@ class UserState {
             BigInt(0)
         ])
         const selectors: BigInt[] = []
-        for (let i = 0; i < karmaNonceList.length; i++) {
+        const nonceList: BigInt[] = []
+        for (let i = 0; i < proveKarmaAmount; i++) {
+            nonceList.push( BigInt(nonceStarter + i) )
             selectors.push(BigInt(1));
         }
-        for (let i = karmaNonceList.length ; i < MAX_KARMA_BUDGET; i++) {
-            karmaNonceList.push(BigInt(0))
+        for (let i = proveKarmaAmount ; i < MAX_KARMA_BUDGET; i++) {
+            nonceList.push(BigInt(0))
             selectors.push(BigInt(0))
         }
 
@@ -596,11 +595,11 @@ class UserState {
             selectors: selectors,
             positive_karma: BigInt(this.transitionedPosRep),
             negative_karma: BigInt(this.transitionedNegRep),
-            prove_karma_nullifiers: proveKarmaNullifiers,
-            prove_karma_amount: proveKarmaAmount,
-            karma_nonce: karmaNonceList,
-            prove_min_rep: proveMinRep,
-            min_rep: minRep
+            prove_karma_nullifiers: BigInt(Boolean(proveKarmaAmount)),
+            prove_karma_amount: BigInt(proveKarmaAmount),
+            karma_nonce: nonceList,
+            prove_min_rep: BigInt(Boolean(minRep)),
+            min_rep: BigInt(minRep)
         })
     }
 

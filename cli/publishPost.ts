@@ -190,18 +190,10 @@ const publishPost = async (args: any) => {
     const epochTreeDepth = treeDepths.epochTreeDepth
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
 
-    // gen nullifier nonce list
-    const proveKarmaNullifiers = BigInt(1)
-    const proveKarmaAmount = BigInt(DEFAULT_POST_KARMA)
+    // gen reputation proof 
+    const proveKarmaAmount = DEFAULT_POST_KARMA
     const nonceStarter: number = args.karma_nonce
-    const nonceList: BigInt[] = []
-    for (let i = 0; i < DEFAULT_POST_KARMA; i++) {
-        nonceList.push( BigInt(nonceStarter + i) )
-    }
-
-    // gen minRep proof
-    const proveMinRep = args.min_rep != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    const minRep = args.min_rep != null ? args.min_rep : 0
 
     let circuitInputs: any
 
@@ -214,10 +206,8 @@ const publishPost = async (args: any) => {
             currentEpoch,
             id,
             epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaNullifiers,           // indicate to prove karma nullifiers
             proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceList,                      // nonce to generate karma nullifiers
-            proveMinRep,                    // indicate to prove minimum reputation the user has
+            nonceStarter,                      // nonce to generate karma nullifiers
             minRep                          // the amount of minimum reputation the user wants to prove
         )
 
@@ -236,10 +226,8 @@ const publishPost = async (args: any) => {
 
         circuitInputs = await userState.genProveReputationCircuitInputs(
             epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaNullifiers,           // indicate to prove karma nullifiers
             proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceList,                      // nonce to generate karma nullifiers
-            proveMinRep,                    // indicate to prove minimum reputation the user has
+            nonceStarter,                      // nonce to generate karma nullifiers
             minRep                          // the amount of minimum reputation the user wants to prove
         )
     }
@@ -265,7 +253,7 @@ const publishPost = async (args: any) => {
     
     const publicSignals = results['publicSignals']
     
-    if(proveMinRep){
+    if(args.min_rep != null){
         console.log(`Prove minimum reputation: ${minRep}`)
     }
     
@@ -274,7 +262,7 @@ const publishPost = async (args: any) => {
         // TODO: hashedContent
         epochKey: epk,
         epkProof: base64url.encode(JSON.stringify(proof)),
-        proveMinRep: Boolean(proveMinRep),
+        proveMinRep: args.min_rep != null ? true : false,
         minRep: Number(minRep),
         comments: [],
         status: 0
