@@ -102,7 +102,7 @@ template UserStateTransition(
     ATTESTATIONS_PER_EPOCH_KEY * EPOCH_KEY_NONCE_PER_EPOCH === TOTAL_NUM_ATTESTATIONS;
     /* 0. Validate inputs */
     for (var i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
-        selectors[i] * (selectors[i] - 1) === 0
+        selectors[i] * (selectors[i] - 1) === 0;
     }
     /* End of check 0 */
 

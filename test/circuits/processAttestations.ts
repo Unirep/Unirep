@@ -64,12 +64,19 @@ describe('Process attestation circuit', function () {
 
         // Bootstrap user state
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const  attesterId = BigInt(i + 1)
+            const  attesterId = BigInt(i%(NUM_ATTESTATIONS/2)+1)
             if (reputationRecords[attesterId.toString()] === undefined) {
                 reputationRecords[attesterId.toString()] = new Reputation(
                     BigInt(Math.floor(Math.random() * 100)),
                     BigInt(Math.floor(Math.random() * 100)),
                     genRandomSalt(),
+                )
+            } else {
+                reputationRecords[attesterId.toString()].update(
+                    BigInt(Math.floor(Math.random() * 100)),
+                    BigInt(Math.floor(Math.random() * 100)),
+                    genRandomSalt(),
+                    true
                 )
             }
             await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
@@ -88,7 +95,7 @@ describe('Process attestation circuit', function () {
         nullifiers = []
         hashChainResult = BigInt(0)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const attesterId = BigInt(i + 1)
+            const  attesterId = BigInt(i%(NUM_ATTESTATIONS/2)+1)
             const attestation: Attestation = new Attestation(
                 attesterId,
                 BigInt(Math.floor(Math.random() * 100)),
@@ -112,9 +119,12 @@ describe('Process attestation circuit', function () {
                 userStateTreePathElements.push(oldReputationRecordProof)
 
                 // Update reputation record
-                reputationRecords[attesterId.toString()]['posRep'] = attestation['posRep']
-                reputationRecords[attesterId.toString()]['negRep'] = attestation['negRep']
-                if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
+                reputationRecords[attesterId.toString()].update(
+                    attestation['posRep'],
+                    attestation['negRep'],
+                    attestation['graffiti'],
+                    attestation['overwriteGraffiti']
+                )
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 

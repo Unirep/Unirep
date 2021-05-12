@@ -92,7 +92,6 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
     epoch_key_nullifier <== epoch_key_nullifier_hasher.hash;
     /* End of 1. verify attestation hash chain and compute nullifiers */
 
-
     /* 2. Process attestations and update user state tree */
 
     // If the attestation is not to be processed, we check and verify leaf 0 instead.
@@ -157,8 +156,8 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
         overwrite_graffiti_muxer[i].c[1] <== graffities[i];
         overwrite_graffiti_muxer[i].s <== overwrite_graffitis[i];
         new_leaf_value_hasher[i] = Hasher5();
-        new_leaf_value_hasher[i].in[0] <== pos_reps[i];
-        new_leaf_value_hasher[i].in[1] <== neg_reps[i];
+        new_leaf_value_hasher[i].in[0] <== pos_reps[i] + old_pos_reps[i];
+        new_leaf_value_hasher[i].in[1] <== neg_reps[i] + old_neg_reps[i];
         new_leaf_value_hasher[i].in[2] <== overwrite_graffiti_muxer[i].out;
         new_leaf_value_hasher[i].in[3] <== 0;
         new_leaf_value_hasher[i].in[4] <== 0;
