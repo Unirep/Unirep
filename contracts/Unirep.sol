@@ -284,7 +284,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         // Verify the proof
         proof.isValid = reputationVerifier.verifyProof(proof.a, proof.b, proof.c, proof.publicSignals);
-        require(proof.isValid);
+        require(proof.isValid, "Unirep: the proof is not valid");
 
         // Verify epoch key and its proof
         // Then submit negative attestation to this epoch key
