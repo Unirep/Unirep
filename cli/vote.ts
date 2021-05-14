@@ -216,8 +216,8 @@ const vote = async (args: any) => {
     }
 
     // upvote / downvote user 
-    const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
-    const overwriteGraffiti = args.graffiti ? true : false
+    const graffiti = args.graffiti != null ? BigInt(add0x(args.graffiti)) : BigInt(0)
+    const overwriteGraffiti = args.graffiti != null ? true : false
     const upvoteValue = args.upvote_value != null ? args.upvote_value : 0
     const downvoteValue = args.downvote_value != null ? args.downvote_value : 0
     const voteValue = upvoteValue + downvoteValue
