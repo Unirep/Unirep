@@ -14,7 +14,6 @@ import {
     IncrementalQuinTree,
     genRandomSalt,
     hash5,
-    hashLeftRight,
     hashOne,
     stringifyBigInts,
 } from 'maci-crypto'

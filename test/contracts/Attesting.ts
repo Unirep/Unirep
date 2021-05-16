@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { genRandomSalt, hashLeftRight, SNARK_FIELD_SIZE } from '../../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../utils'

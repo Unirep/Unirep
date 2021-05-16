@@ -5,9 +5,8 @@ import { ethers } from 'ethers'
 import {
   validateEthAddress,
 } from './utils'
-import mongoose from 'mongoose'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
+import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { saveSettingsFromContract,
   updateDBFromNewGSTLeafInsertedEvent,
   updateDBFromAttestationEvent,

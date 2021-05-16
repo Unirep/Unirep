@@ -2,7 +2,7 @@ import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
-import { hashLeftRight, hashOne, stringifyBigInts } from 'maci-crypto'
+import { stringifyBigInts } from 'maci-crypto'
 import mongoose from 'mongoose'
 
 import {
@@ -20,14 +20,12 @@ import { add0x } from '../crypto/SMT'
 import { genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { identityPrefix, identityCommitmentPrefix, reputationProofPrefix } from './prefix'
+import { identityPrefix, reputationProofPrefix } from './prefix'
 
 import Post, { IPost } from "../database/models/post";
 import { DEFAULT_POST_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
-import { assert } from 'console'
-import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
-import { genEpochKey, genKarmaNullifier } from '../test/utils'
-import { nullifierTreeDepth } from '../config/testLocal'
+import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
+import { genEpochKey } from '../core/utils'
 import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {

@@ -13,8 +13,6 @@ import { exec } from './utils'
 import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
 import { hashOne } from "maci-crypto"
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
-import { connectDB, initDB, updateDBFromAttestationEvent, updateDBFromCommentSubmittedEvent, updateDBFromEpochEndedEvent, updateDBFromNewGSTLeafInsertedEvent, updateDBFromPostSubmittedEvent, updateDBFromReputationNullifierSubmittedEvent, updateDBFromUserStateTransitionEvent } from '../../database/utils'
-import { dbUri } from '../../config/database'
 
 describe('test all CLI subcommands', function() {
     this.timeout(500000)

@@ -9,9 +9,9 @@ import { deployUnirep, genEpochKey, genNewUserStateTree, getTreeDepthsForTesting
 const { expect } = chai
 
 import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
-import { DEFAULT_AIRDROPPED_KARMA, DEFAULT_COMMENT_KARMA, DEFAULT_POST_KARMA, MAX_KARMA_BUDGET } from '../../config/socialMedia'
+import { DEFAULT_AIRDROPPED_KARMA, MAX_KARMA_BUDGET } from '../../config/socialMedia'
 import { Attestation, UnirepState, UserState } from '../../core'
-import { compileAndLoadCircuit, executeCircuit, formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
+import {  formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
 import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
 
 
@@ -213,9 +213,9 @@ describe('Vote', function () {
         it('submit upvote should succeed', async() => {
             currentEpoch = (await unirepContract.currentEpoch()).toNumber()
 
-            fromEpk = genEpochKey(ids[fromUser].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            fromEpk = genEpochKey(ids[fromUser].identityNullifier, currentEpoch, epochKeyNonce)
 
-            toEpk = genEpochKey(ids[toUser].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            toEpk = genEpochKey(ids[toUser].identityNullifier, currentEpoch, epochKeyNonce)
 
             const nullifiers: BigInt[] = [] 
 

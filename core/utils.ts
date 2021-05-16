@@ -1,15 +1,196 @@
+// The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
+// it can not read the hardhat config and error ts-2305 will be reported.
+// @ts-ignore
+import { ethers as hardhatEthers, waffle } from 'hardhat'
+import { ethers } from 'ethers'
+import Keyv from "keyv"
 import assert from 'assert'
-import { BigNumber, ethers } from 'ethers'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { numAttestationsPerEpochKey } from '../config/testLocal'
+import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
+import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
-import { hash5, hashLeftRight } from 'maci-crypto'
-import { computeEmptyUserStateRoot } from '../test/utils'
-import { id } from 'ethers/lib/utils'
-import comment from '../database/models/comment'
+import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt } from 'maci-crypto'
 import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
+import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN, KARMA_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
+import { SparseMerkleTreeImpl } from '../crypto/SMT'
+
+const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
+const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
+const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
+
+const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
+    const t = new IncrementalQuinTree(
+        treeDepth,
+        defaultUserStateLeaf,
+        2,
+    )
+    return t.root
+}
+
+const getTreeDepthsForTesting = (deployEnv: string = "circuit") => {
+    if (deployEnv === 'contract') {
+        return {
+            "userStateTreeDepth": userStateTreeDepth,
+            "globalStateTreeDepth": globalStateTreeDepth,
+            "epochTreeDepth": epochTreeDepth,
+            "nullifierTreeDepth": nullifierTreeDepth,
+        }
+    } else if (deployEnv === 'circuit') {
+        return {
+            "userStateTreeDepth": circuitUserStateTreeDepth,
+            "globalStateTreeDepth": circuitGlobalStateTreeDepth,
+            "epochTreeDepth": circuitEpochTreeDepth,
+            "nullifierTreeDepth": circuitNullifierTreeDepth,
+        }
+    } else {
+        throw new Error('Only contract and circuit testing env are supported')
+    }
+}
+
+const deployUnirep = async (
+    deployer: ethers.Signer,
+    _treeDepths: any,
+    _settings?: any): Promise<ethers.Contract> => {
+    let PoseidonT3Contract, PoseidonT6Contract
+    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract, ReputationFromAttesterVerifierContract
+
+    console.log('Deploying PoseidonT3')
+    PoseidonT3Contract = await waffle.deployContract(
+        deployer,
+        PoseidonT3
+    )
+    console.log('Deploying PoseidonT6')
+    PoseidonT6Contract = await waffle.deployContract(
+        deployer,
+        PoseidonT6,
+        [],
+        {
+            gasLimit: 9000000,
+        }
+    )
+
+    console.log('Deploying EpochKeyValidityVerifier')
+    EpochKeyValidityVerifierContract = await (await hardhatEthers.getContractFactory(
+        "EpochKeyValidityVerifier",
+        deployer
+    )).deploy()
+
+    console.log('Deploying UserStateTransitionVerifier')
+    UserStateTransitionVerifierContract = await (await hardhatEthers.getContractFactory(
+        "UserStateTransitionVerifier",
+        deployer
+    )).deploy()
+
+    console.log('Deploying ReputationVerifier')
+    ReputationVerifierContract = await (await hardhatEthers.getContractFactory(
+        "ReputationVerifier",
+        deployer
+    )).deploy()
+
+    console.log('Deploying ReputationFromAttesterVerifier')
+    ReputationFromAttesterVerifierContract = await (await hardhatEthers.getContractFactory(
+        "ReputationFromAttesterVerifier",
+        deployer
+    )).deploy()
+
+    console.log('Deploying Unirep')
+
+    let _maxUsers, _numEpochKeyNoncePerEpoch, _numAttestationsPerEpochKey, _epochLength, _attestingFee
+    if (_settings) {
+        _maxUsers = _settings.maxUsers
+        _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
+        _numAttestationsPerEpochKey = _settings.numAttestationsPerEpochKey
+        _epochLength = _settings.epochLength
+        _attestingFee = _settings.attestingFee
+    } else {
+        _maxUsers = maxUsers
+        _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
+        _numAttestationsPerEpochKey = numAttestationsPerEpochKey
+        _epochLength = epochLength
+        _attestingFee = attestingFee
+    }
+    const f = await hardhatEthers.getContractFactory(
+        "Unirep",
+        {
+            signer: deployer,
+            libraries: {
+                "PoseidonT3": PoseidonT3Contract.address,
+                "PoseidonT6": PoseidonT6Contract.address
+            }
+        }
+    )
+    const c = await (f.deploy(
+        _treeDepths,
+        {
+            "maxUsers": _maxUsers
+        },
+        EpochKeyValidityVerifierContract.address,
+        UserStateTransitionVerifierContract.address,
+        ReputationVerifierContract.address,
+        ReputationFromAttesterVerifierContract.address,
+        _numEpochKeyNoncePerEpoch,
+        _numAttestationsPerEpochKey,
+        _epochLength,
+        _attestingFee,
+        {
+            gasLimit: 9000000,
+        }
+    ))
+
+    // Print out deployment info
+    console.log("-----------------------------------------------------------------")
+    console.log("Bytecode size of Unirep:", Math.floor(Unirep.bytecode.length / 2), "bytes")
+    let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
+    console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
+    console.log("-----------------------------------------------------------------")
+
+    return c
+}
+
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = epochTreeDepth): SnarkBigInt => {
+    const values: any[] = [
+        identityNullifier,
+        epoch,
+        nonce,
+        BigInt(0),
+        BigInt(0),
+    ]
+    let epochKey = hash5(values)
+    // Adjust epoch key size according to epoch tree depth
+    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
+    return epochKeyModed
+}
+
+const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, epochKey: BigInt, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), epochKey])
+    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
+    return nullifierModed
+}
+
+const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([EPOCH_KEY_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
+    // Adjust epoch key size according to epoch tree depth
+    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
+    return nullifierModed
+}
+
+const genKarmaNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+    let nullifier = hash5([KARMA_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
+    // Adjust epoch key size according to epoch tree depth
+    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
+    return nullifierModed
+}
+
+const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTreeImpl> => {
+    return SparseMerkleTreeImpl.create(
+        new Keyv(),
+        treeDepth,
+        defaultLeafHash,
+    )
+}
 
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
@@ -484,7 +665,7 @@ const _genUserStateFromContract = async (
                     const newState = await userState.genNewUserStateAfterTransition()
                     userState.transition(newState.newUSTLeaves)
                     // User processed all epoch keys so non-zero GST leaf is generated.
-                    assert(BigNumber.from(newState.newGSTLeaf).eq(newLeaf), 'New GST leaf mismatch')
+                    assert(ethers.BigNumber.from(newState.newGSTLeaf).eq(newLeaf), 'New GST leaf mismatch')
                     // User transition to this epoch, increment (next) GST leaf index
                     currentEpochGSTLeafIndexToInsert ++
                 } else if (epkNullifiersMatched > 0) {
@@ -532,6 +713,17 @@ const genUserStateFromContract = async (
 }
 
 export {
+    defaultUserStateLeaf,
+    SMT_ONE_LEAF,
+    SMT_ZERO_LEAF,
+    computeEmptyUserStateRoot,
+    getTreeDepthsForTesting,
+    deployUnirep,
+    genEpochKey,
+    genAttestationNullifier,
+    genEpochKeyNullifier,
+    genKarmaNullifier,
+    genNewSMT,
     genUnirepStateFromContract,
     genUserStateFromContract,
     genUserStateFromParams,

@@ -22,12 +22,11 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { reputationProofPrefix, identityPrefix } from './prefix'
 
 import Comment, { IComment } from "../database/models/comment";
-import Post, { IPost } from "../database/models/post";
+import Post from "../database/models/post";
 import { DEFAULT_COMMENT_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
-import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
-import { nullifierTreeDepth } from '../config/testLocal'
-import { genEpochKey } from '../test/utils'
+import { genEpochKey } from '../core/utils'
 import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {

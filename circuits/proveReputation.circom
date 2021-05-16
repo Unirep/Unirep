@@ -10,12 +10,10 @@ include "./verifiyEpochKey.circom";
 
 template ProveReputation(
         GST_tree_depth, 
-        user_state_tree_depth, 
         nullifier_tree_depth,
         epoch_tree_depth,
         EPOCH_KEY_NONCE_PER_EPOCH, 
         MAX_REPUTATION_SCORE_BITS, 
-        NUM_ATTESTATIONS,
         MAX_KARMA_BUDGET) {
     signal input epoch;
     signal private input nonce;

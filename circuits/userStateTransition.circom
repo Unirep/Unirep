@@ -43,7 +43,6 @@ template epochKeyExist(epoch_tree_depth) {
 template UserStateTransition(
     GST_tree_depth, 
     epoch_tree_depth, 
-    nullifier_tree_depth, 
     user_state_tree_depth, 
     ATTESTATIONS_PER_EPOCH_KEY, 
     EPOCH_KEY_NONCE_PER_EPOCH, 
@@ -154,7 +153,7 @@ template UserStateTransition(
         }
 
         // 2.2 Begin processing attestations
-        process_attestations[n] = ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY);
+        process_attestations[n] = ProcessAttestations(user_state_tree_depth, ATTESTATIONS_PER_EPOCH_KEY);
         process_attestations[n].epoch <== epoch;
         process_attestations[n].nonce <== n;
         process_attestations[n].identity_nullifier <== identity_nullifier;

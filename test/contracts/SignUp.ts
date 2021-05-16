@@ -22,7 +22,7 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
+        const _treeDepths = getTreeDepthsForTesting("contract")
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()

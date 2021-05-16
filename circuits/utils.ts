@@ -12,6 +12,7 @@ import {
 } from 'maci-crypto'
 
 const zkutilPath = "~/.cargo/bin/zkutil"
+const buildPath = "../build"
 
 /*
  * @param circuitPath The subpath to the circuit file (e.g.
@@ -56,7 +57,7 @@ const getSignalByNameViaSym = (
     witness: any,
     signal: string,
 ) => {
-    const symPath = path.join(__dirname, '../../build/', `${circuitName}.sym`)
+    const symPath = path.join(__dirname, buildPath, `${circuitName}.sym`)
     const liner = new lineByLine(symPath)
     let line
     let index
@@ -140,14 +141,14 @@ const genProofAndPublicSignals = async (
     compileCircuit = true,
 ) => {
     const date = Date.now()
-    const paramsPath = path.join(__dirname, '../../build/', paramsFilename)
-    const circuitR1csPath = path.join(__dirname, '../../build/', circuitR1csFilename)
-    const circuitWasmPath = path.join(__dirname, '../../build/', circuitWasmFilename)
-    const inputJsonPath = path.join(__dirname, '../../build/' + date + '.input.json')
-    const witnessPath = path.join(__dirname, '../../build/' + date + '.witness.wtns')
-    const witnessJsonPath = path.join(__dirname, '../../build/' + date + '.witness.json')
-    const proofPath = path.join(__dirname, '../../build/' + date + '.proof.json')
-    const publicJsonPath = path.join(__dirname, '../../build/' + date + '.publicSignals.json')
+    const paramsPath = path.join(__dirname, buildPath, paramsFilename)
+    const circuitR1csPath = path.join(__dirname, buildPath, circuitR1csFilename)
+    const circuitWasmPath = path.join(__dirname, buildPath, circuitWasmFilename)
+    const inputJsonPath = path.join(__dirname, buildPath + date + '.input.json')
+    const witnessPath = path.join(__dirname, buildPath + date + '.witness.wtns')
+    const witnessJsonPath = path.join(__dirname, buildPath + date + '.witness.json')
+    const proofPath = path.join(__dirname, buildPath + date + '.proof.json')
+    const publicJsonPath = path.join(__dirname, buildPath + date + '.publicSignals.json')
 
     fs.writeFileSync(inputJsonPath, JSON.stringify(stringifyBigInts(inputs)))
 
@@ -156,7 +157,7 @@ const genProofAndPublicSignals = async (
          circuit = await compileAndLoadCircuit(circuitFilename)	
      }
 
-    const snarkjsCmd = 'node ' + path.join(__dirname, '../../node_modules/snarkjs/build/cli.cjs')
+    const snarkjsCmd = 'node ' + path.join(__dirname, '../node_modules/snarkjs/build/cli.cjs')
     const witnessCmd = `${snarkjsCmd} wc ${circuitWasmPath} ${inputJsonPath} ${witnessPath}`
 
     shell.exec(witnessCmd)
@@ -186,9 +187,9 @@ const verifyProof = async (
     proofFilename: string,
     publicSignalsFilename: string,
 ): Promise<boolean> => {
-    const paramsPath = path.join(__dirname, '../../build/', paramsFilename)
-    const proofPath = path.join(__dirname, '../../build/', proofFilename)
-    const publicSignalsPath = path.join(__dirname, '../../build/', publicSignalsFilename)
+    const paramsPath = path.join(__dirname, buildPath, paramsFilename)
+    const proofPath = path.join(__dirname, buildPath, proofFilename)
+    const publicSignalsPath = path.join(__dirname, buildPath, publicSignalsFilename)
 
     const verifyCmd = `${zkutilPath} verify -p ${paramsPath} -r ${proofPath} -i ${publicSignalsPath}`
     const output = shell.exec(verifyCmd).stdout.trim()
@@ -208,14 +209,14 @@ const verifyEPKProof = (
     const publicSignalsFilename = `${date}.verifyEpochKey.publicSignals.json`
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', proofFilename),
+        path.join(__dirname, buildPath, proofFilename),
         JSON.stringify(
             stringifyBigInts(proof)
         )
     )
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', publicSignalsFilename),
+        path.join(__dirname, buildPath, publicSignalsFilename),
         JSON.stringify(
             stringifyBigInts(publicSignals)
         )
@@ -233,14 +234,14 @@ const verifyUserStateTransitionProof = (
     const publicSignalsFilename = `${date}.userStateTransition.publicSignals.json`
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', proofFilename),
+        path.join(__dirname, buildPath, proofFilename),
         JSON.stringify(
             stringifyBigInts(proof)
         )
     )
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', publicSignalsFilename),
+        path.join(__dirname, buildPath, publicSignalsFilename),
         JSON.stringify(
             stringifyBigInts(publicSignals)
         )
@@ -258,14 +259,14 @@ const verifyProveReputationProof = (
     const publicSignalsFilename = `${date}.proveReputation.publicSignals.json`
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', proofFilename),
+        path.join(__dirname, buildPath, proofFilename),
         JSON.stringify(
             stringifyBigInts(proof)
         )
     )
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', publicSignalsFilename),
+        path.join(__dirname, buildPath, publicSignalsFilename),
         JSON.stringify(
             stringifyBigInts(publicSignals)
         )
@@ -283,14 +284,14 @@ const verifyProveReputationFromAttesterProof = (
     const publicSignalsFilename = `${date}.proveReputationFromAttester.publicSignals.json`
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', proofFilename),
+        path.join(__dirname, buildPath, proofFilename),
         JSON.stringify(
             stringifyBigInts(proof)
         )
     )
 
     fs.writeFileSync(
-        path.join(__dirname, '../../build/', publicSignalsFilename),
+        path.join(__dirname, buildPath, publicSignalsFilename),
         JSON.stringify(
             stringifyBigInts(publicSignals)
         )

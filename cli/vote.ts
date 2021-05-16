@@ -3,7 +3,6 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import { stringifyBigInts } from 'maci-crypto'
-import mongoose from 'mongoose'
 
 import {
     promptPwd,
@@ -15,16 +14,15 @@ import {
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
-import { genEpochKey } from '../test/utils'
+import { genEpochKey } from '../core/utils'
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../test/circuits/utils'
 
 import { add0x } from '../crypto/SMT'
 import { Attestation } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { reputationProofPrefix, identityPrefix } from './prefix'
-import { nullifierTreeDepth } from '../config/testLocal'
 import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 import { MAX_KARMA_BUDGET } from '../config/socialMedia'
 

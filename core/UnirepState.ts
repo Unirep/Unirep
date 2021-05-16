@@ -1,20 +1,17 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 import {
-    hashLeftRight,
     IncrementalQuinTree,
     hash5,
 } from 'maci-crypto'
 import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from '../test/utils'
+import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from './utils'
 
 interface IEpochTreeLeaf {
     epochKey: BigInt;
     hashchainResult: BigInt;
 }
-
-const DefaultHashchainResult = SMT_ONE_LEAF
 
 interface IAttestation {
     attesterId: BigInt;
@@ -162,6 +159,7 @@ class UnirepState {
      * Get the hash chain result of given epoch key
      */
     public getHashchain = (epochKey: string): BigInt => {
+        const DefaultHashchainResult = SMT_ONE_LEAF
         const hashchain = this.epochKeyToHashchainMap[epochKey]
         if (!hashchain) return DefaultHashchainResult
         else return hashchain

@@ -11,7 +11,7 @@ const { expect } = chai
 import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
 import { DEFAULT_AIRDROPPED_KARMA, DEFAULT_COMMENT_KARMA, DEFAULT_POST_KARMA, MAX_KARMA_BUDGET } from '../../config/socialMedia'
 import { UnirepState, UserState } from '../../core'
-import { compileAndLoadCircuit, executeCircuit, formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
+import {  formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
 import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
 
 
@@ -193,7 +193,7 @@ describe('Post', function () {
         it('submit post should succeed', async() => {
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce)
             const nullifiers: BigInt[] = [] 
             
             for (let i = 0; i < MAX_KARMA_BUDGET; i++) {
@@ -218,7 +218,7 @@ describe('Post', function () {
             const text = genRandomSalt().toString()
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce)
             const nonceStarter = 1
             const circuitInputs = await users[0].genProveReputationCircuitInputs(
                 epochKeyNonce,
@@ -263,7 +263,7 @@ describe('Post', function () {
             
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce)
             const nonceStarter = 10
             const circuitInputs = await users[0].genProveReputationCircuitInputs(
                 epochKeyNonce,
@@ -306,7 +306,7 @@ describe('Post', function () {
         it('submit a post with invalid proof should fail', async() => {
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[0].identityNullifier, currentEpoch, epochKeyNonce)
             const nonceStarter = 15
             const circuitInputs = await users[0].genProveReputationCircuitInputs(
                 epochKeyNonce,
@@ -376,7 +376,7 @@ describe('Post', function () {
 
         it('submit comment should succeed', async() => {
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
-            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce)
             const nullifiers: BigInt[] = [] 
             
             for (let i = 0; i < MAX_KARMA_BUDGET; i++) {
@@ -402,7 +402,7 @@ describe('Post', function () {
             const text = genRandomSalt().toString()
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce)
             const nonceStarter = 1
             const circuitInputs = await users[1].genProveReputationCircuitInputs(
                 epochKeyNonce,
@@ -448,7 +448,7 @@ describe('Post', function () {
             
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce)
             const nonceStarter = 10
             const circuitInputs = await users[1].genProveReputationCircuitInputs(
                 epochKeyNonce,
@@ -492,7 +492,7 @@ describe('Post', function () {
         it('submit a comment with invalid proof should fail', async() => {
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const epochKeyNonce = 0
-            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce, circuitEpochTreeDepth)
+            const epk = genEpochKey(ids[1].identityNullifier, currentEpoch, epochKeyNonce)
             const nonceStarter = 15
             const circuitInputs = await users[1].genProveReputationCircuitInputs(
                 epochKeyNonce,

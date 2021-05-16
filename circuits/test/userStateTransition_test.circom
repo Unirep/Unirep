@@ -3,7 +3,6 @@ include "../userStateTransition.circom"
 component main = UserStateTransition(
     4,   // GST_tree_depth
     8,   // epoch_tree_depth
-    128, // nullifier_tree_depth
     4,   // user_state_tree_depth
     // 20,  // airdropped_karma
     6,   // ATTESTATIONS_PER_EPOCH_KEY

@@ -1,5 +1,5 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
-// it can not read the hardhat config and error ts-2503 will be reported.
+// it can not read the hardhat config and error ts-2305 will be reported.
 // @ts-ignore
 import { ethers as hardhatEthers, waffle } from 'hardhat'
 import { ethers } from 'ethers'
@@ -13,9 +13,8 @@ import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN, KARMA_NULLIFI
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
-import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
 
-const getTreeDepthsForTesting = (deployEnv: string = "contract") => {
+const getTreeDepthsForTesting = (deployEnv: string = "circuit") => {
     if (deployEnv === 'contract') {
         return {
             "userStateTreeDepth": userStateTreeDepth,
@@ -135,7 +134,7 @@ const deployUnirep = async (
     return c
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = epochTreeDepth): SnarkBigInt => {
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = circuitEpochTreeDepth): SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
         epoch,

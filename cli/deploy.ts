@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { DEFAULT_AIRDROPPED_KARMA } from '../config/socialMedia'
 import { maxUsers } from '../config/testLocal'
-import { deployUnirep, getTreeDepthsForTesting } from '../test/utils'
+import { deployUnirep, getTreeDepthsForTesting } from '../core/utils'
 import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_NUM_ATTESTATIONS_PER_EPOCH_KEY, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
 import {
     checkDeployerProviderConnection,

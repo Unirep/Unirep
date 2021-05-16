@@ -1,13 +1,12 @@
 import assert from 'assert'
 import {
-    hashLeftRight,
     IncrementalQuinTree,
     hash5,
     stringifyBigInts,
     hashOne,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genKarmaNullifier } from '../test/utils'
+import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genKarmaNullifier } from './utils'
 import { IAttestation, UnirepState } from './UnirepState'
 import { DEFAULT_AIRDROPPED_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 
@@ -500,7 +499,6 @@ class UserState {
             epochKeyPathElements.push(await fromEpochTree.getMerkleProof(epochKey))
             hashChainResults.push(this.unirepState.getHashchain(epochKey.toString()))
         }
-
 
         return stringifyBigInts({
             epoch: fromEpoch,
