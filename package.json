@@ -10,9 +10,9 @@
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npm run contractUintTests && npm run circuitUintTests && npm run integrationTest",
-        "contractUintTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
-        "circuitUintTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",
+        "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npm run contractUnitTests && npm run circuitUnitTests && npm run integrationTest",
+        "contractUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
+        "circuitUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",
         "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')"
     },
     "repository": {
