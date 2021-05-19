@@ -82,7 +82,7 @@ const main = () => {
             help: 'Override an existing compiled circuit, proving key, and verifying key if set to true; otherwise (and by default), skip generation if a file already exists',
             action: 'storeTrue',
             required: false,
-            argumentDefault: false,
+            default: false,
         }
     )
 
