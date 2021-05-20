@@ -356,12 +356,12 @@ const genUnirepStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiers = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((n) => BigInt(n))
-            const epkNullifiers = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((n) => BigInt(n))
+            const attestationNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const epkNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
             // Combine nullifiers and mod them
-            const allNullifiers = attestationNullifiers.concat(epkNullifiers).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
-            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
+            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiersInEvent)
         } else {
             throw new Error(`Unexpected event: ${occurredEvent}`)
         }
@@ -633,14 +633,14 @@ const _genUserStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiers = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((n) => BigInt(n))
-            const epkNullifiers_ = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((n) => BigInt(n))
+            const attestationNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const epkNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
             // Combine nullifiers and mod them
-            const allNullifiers = attestationNullifiers.concat(epkNullifiers_).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
+            const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent)
 
             let isNullifierSeen = false
             // Verify nullifiers are not seen before
-            for (const nullifier of allNullifiers) {
+            for (const nullifier of allNullifiersInEvent) {
                 if (nullifier === BigInt(0)) continue
                 else {
                     if (userState.nullifierExist(nullifier)) {
@@ -658,9 +658,11 @@ const _genUserStateFromContract = async (
                 (userStateTransitionedEvent.args?.userTransitionedData.fromEpoch.toNumber() === userState.latestTransitionedEpoch)
             ) {
                 let epkNullifiersMatched = 0
-                for (const nullifier of epkNullifiers_) {
-                    if (epkNullifiers.indexOf(nullifier % BigInt(2 ** unirepState.nullifierTreeDepth)) !== -1) epkNullifiersMatched++
+                for (const nullifier of epkNullifiers) {
+                    if (epkNullifiersInEvent.indexOf(nullifier) !== -1) epkNullifiersMatched++
                 }
+                // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
+                // stand anymore, below `epkNullifiersMatched` check should be changed.
                 if (epkNullifiersMatched == userState.numEpochKeyNoncePerEpoch) {
                     const newState = await userState.genNewUserStateAfterTransition()
                     userState.transition(newState.newUSTLeaves)
@@ -673,7 +675,7 @@ const _genUserStateFromContract = async (
                 }
             }
 
-            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiers)
+            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiersInEvent)
         } else {
             throw new Error(`Unexpected event: ${occurredEvent}`)
         }

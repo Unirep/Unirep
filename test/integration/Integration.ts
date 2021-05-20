@@ -668,8 +668,8 @@ describe('Integration', function () {
             // Record state transition proof inputs to be used to submit duplicated proof
             duplicatedProofInputs = {
                 "newGSTLeaf": newGSTLeaf,
-                "attestationNullifiers": attestationNullifiers,
-                "epkNullifiers": epkNullifiers,
+                "attestationNullifiers": outputAttestationNullifiers,
+                "epkNullifiers": outputEPKNullifiers,
                 "fromEpoch": fromEpoch,
                 "GSTreeRoot": GSTreeRoot,
                 "epochTreeRoot": epochTreeRoot,

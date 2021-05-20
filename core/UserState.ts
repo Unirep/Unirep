@@ -165,7 +165,7 @@ class UserState {
                 latestTransitionedEpoch: this.latestTransitionedEpoch,
                 latestGSTLeafIndex: this.latestGSTLeafIndex,
                 latestUserStateLeaves: this.latestUserStateLeaves.map((l) => `${l.attesterId.toString()}: ${l.reputation.toJSON()}`),
-                unirepState: this.unirepState.toJSON()
+                unirepState: JSON.parse(this.unirepState.toJSON())
             },
             null,
             space
@@ -203,9 +203,11 @@ class UserState {
      */
     public getAttestationNullifiers = (epoch: number): BigInt[] => {
         const nullifiers: BigInt[] = []
+        console.log(`gettting AttestationNullifiers for epoch: ${epoch}`)
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const epochKey = genEpochKey(this.id.identityNullifier, epoch, nonce, this.unirepState.epochTreeDepth)
             const attestations = this.unirepState.getAttestations(epochKey.toString())
+            console.log(`nonce: ${nonce}, epochKey: ${epochKey}, number of attestations: ${attestations.length}`)
             for (const attestation of attestations) {
                 nullifiers.push(
                     genAttestationNullifier(this.id.identityNullifier, attestation.attesterId, epoch, epochKey, this.unirepState.nullifierTreeDepth)
