@@ -44,15 +44,6 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    // deployParser.addArgument(
-    //     ['-kn', '--max-epoch-key-nonce'],
-    //     {
-    //         action: 'store',
-    //         type: 'int',
-    //         help: 'The maximum supported epoch key nonce. Default: 2',
-    //     }
-    // )
-
     deployParser.addArgument(
         ['-l', '--epoch-length'],
         {

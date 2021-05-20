@@ -3,7 +3,6 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
 import { stringifyBigInts } from 'maci-crypto'
-import mongoose from 'mongoose'
 
 import {
     promptPwd,
@@ -14,7 +13,6 @@ import {
 } from './utils'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { dbUri } from '../config/database';
 
 import { add0x } from '../crypto/SMT'
 import { genUserStateFromContract } from '../core'
@@ -26,7 +24,6 @@ import Post, { IPost } from "../database/models/post";
 import { DEFAULT_POST_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
 import { genEpochKey } from '../core/utils'
-import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -93,14 +90,6 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'string',
             help: 'The Unirep contract address',
-        }
-    )
-
-    parser.addArgument(
-        ['-db', '--from-database'],
-        {
-            action: 'storeTrue',
-            help: 'Indicate if to generate proving circuit from database',
         }
     )
 
@@ -193,42 +182,21 @@ const publishPost = async (args: any) => {
     const nonceStarter: number = args.karma_nonce
     const minRep = args.min_rep != null ? args.min_rep : 0
 
-    let circuitInputs: any
-
-    if(args.from_database){
-
-        console.log('generating proving circuit from database...')
-        
-         // Gen epoch key proof and reputation proof from database
-        circuitInputs = await genProveReputationCircuitInputsFromDB(
-            currentEpoch,
-            id,
-            epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceStarter,                      // nonce to generate karma nullifiers
-            minRep                          // the amount of minimum reputation the user wants to prove
-        )
-
-    } else {
-
-        console.log('generating proving circuit from contract...')
-
-        // Gen epoch key proof and reputation proof from Unirep contract
-        const userState = await genUserStateFromContract(
-            provider,
-            unirepAddress,
-            startBlock,
-            id,
-            commitment,
-        )
-
-        circuitInputs = await userState.genProveReputationCircuitInputs(
-            epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceStarter,                      // nonce to generate karma nullifiers
-            minRep                          // the amount of minimum reputation the user wants to prove
-        )
-    }
+    // Gen epoch key proof and reputation proof from Unirep contract
+    const userState = await genUserStateFromContract(
+        provider,
+        unirepAddress,
+        startBlock,
+        id,
+        commitment,
+    )
+    
+    const circuitInputs = await userState.genProveReputationCircuitInputs(
+        epkNonce,                       // generate epoch key from epoch nonce
+        proveKarmaAmount,               // the amount of output karma nullifiers
+        nonceStarter,                   // nonce to generate karma nullifiers
+        minRep                          // the amount of minimum reputation the user wants to prove
+    )
 
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 
@@ -255,6 +223,7 @@ const publishPost = async (args: any) => {
         console.log(`Prove minimum reputation: ${minRep}`)
     }
     
+    // generate post id from mongoose schema
     const newpost: IPost = new Post({
         content: args.text,
         // TODO: hashedContent
@@ -277,17 +246,6 @@ const publishPost = async (args: any) => {
             nullifiers,
             { value: attestingFee, gasLimit: 1000000 }
         )
-        if (args.from_database){
-            const db = await mongoose.connect(
-                dbUri, 
-                { useNewUrlParser: true, 
-                  useFindAndModify: false, 
-                  useUnifiedTopology: true
-                }
-            )
-            const res: IPost = await newpost.save()
-            db.disconnect();
-        }
     } catch(e) {
         console.error('Error: the transaction failed')
         if (e.message) {

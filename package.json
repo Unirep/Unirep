@@ -5,7 +5,6 @@
     "main": "index.ts",
     "scripts": {
         "build": "npm run installZkutil && npm run buildVerifyEpochKeySnark && npm run buildUserStateTransitionSnark && npm run buildProveReputationSnark && npm run buildProveReputationFromAttesterSnark",
-        "start": "npx hardhat node & npx ts-node database/EventsListeners.ts",
         "installZkutil": "./scripts/installZkutil.sh",
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",

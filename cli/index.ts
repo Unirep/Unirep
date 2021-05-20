@@ -13,11 +13,6 @@ import {
 } from './deploy'
 
 import {
-    eventListeners,
-    configureSubparser as configureSubparserForEventListeners,
-} from './eventListeners'
-
-import {
     userSignup,
     configureSubparser as configureSubparserForUserSignup,
 } from './userSignUp'
@@ -56,11 +51,6 @@ import {
     leaveComment,
     configureSubparser as configureSubparserForleaveComment,
 } from './leaveComment'
-
-import {
-    attest,
-    configureSubparser as configureSubparserForAttest,
-} from './attest'
 
 import {
     vote,
@@ -104,9 +94,6 @@ const main = async () => {
     // Subcommand: deploy
     configureSubparserForDeploy(subparsers)
 
-    // Subcommand: eventListners
-    configureSubparserForEventListeners(subparsers)
-
     // Subcommand: userSignup
     configureSubparserForUserSignup(subparsers)
 
@@ -131,9 +118,6 @@ const main = async () => {
     // Subcommand: leaveComment
     configureSubparserForleaveComment(subparsers)
 
-    // Subcommand: attest
-    configureSubparserForAttest(subparsers)
-
     // Subcommand: vote
     configureSubparserForvote(subparsers)
 
@@ -156,8 +140,6 @@ const main = async () => {
         await genUnirepIdentity(args)
     } else if (args.subcommand === 'deploy') {
         await deploy(args)
-    } else if (args.subcommand === 'eventListeners') {
-        await eventListeners(args)
     } else if (args.subcommand === 'userSignup') {
         await userSignup(args)
     } else if (args.subcommand === 'attesterSignup') {
@@ -174,8 +156,6 @@ const main = async () => {
         await listAllPosts(args)
     } else if (args.subcommand === 'leaveComment') {
         await leaveComment(args)
-    } else if (args.subcommand === 'attest') {
-        await attest(args)
     } else if (args.subcommand === 'vote') {
         await vote(args)
     } else if (args.subcommand === 'epochTransition') {

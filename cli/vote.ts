@@ -23,7 +23,6 @@ import { Attestation } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { reputationProofPrefix, identityPrefix } from './prefix'
-import { genProveReputationCircuitInputsFromDB } from '../database/utils'
 import { MAX_KARMA_BUDGET } from '../config/socialMedia'
 
 const configureSubparser = (subparsers: any) => {
@@ -116,14 +115,6 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'string',
             help: 'The Unirep contract address',
-        }
-    )
-
-    parser.addArgument(
-        ['-db', '--from-database'],
-        {
-            action: 'storeTrue',
-            help: 'Indicate if to generate proving circuit from database',
         }
     )
 
@@ -241,43 +232,22 @@ const vote = async (args: any) => {
     const proveKarmaAmount = voteValue
     const nonceStarter: number = args.karma_nonce
     const minRep = args.min_rep != null ? args.min_rep : 0
-    
-    let circuitInputs: any
 
-    if(args.from_database){
+    // Gen epoch key proof and reputation proof from Unirep contract
+    const userState = await genUserStateFromContract(
+        provider,
+        unirepAddress,
+        startBlock,
+        id,
+        commitment,
+    )
 
-        console.log('generating proving circuit from database...')
-        
-        // Gen epoch key proof and reputation proof from database
-        circuitInputs = await genProveReputationCircuitInputsFromDB(
-           currentEpoch,
-           id,
-           epkNonce,                       // generate epoch key from epoch nonce
-           proveKarmaAmount,               // the amount of output karma nullifiers
-           nonceStarter,                      // nonce to generate karma nullifiers
-           minRep                          // the amount of minimum reputation the user wants to prove
-        )
-
-    } else {
-
-        console.log('generating proving circuit from contract...')
-
-        // Gen epoch key proof and reputation proof from Unirep contract
-        const userState = await genUserStateFromContract(
-            provider,
-            unirepAddress,
-            startBlock,
-            id,
-            commitment,
-        )
-
-        circuitInputs = await userState.genProveReputationCircuitInputs(
-            epkNonce,                       // generate epoch key from epoch nonce
-            proveKarmaAmount,               // the amount of output karma nullifiers
-            nonceStarter,                      // nonce to generate karma nullifiers
-            minRep                          // the amount of minimum reputation the user wants to prove
-        )
-    }
+    const circuitInputs = await userState.genProveReputationCircuitInputs(
+        epkNonce,                       // generate epoch key from epoch nonce
+        proveKarmaAmount,               // the amount of output karma nullifiers
+        nonceStarter,                   // nonce to generate karma nullifiers
+        minRep                          // the amount of minimum reputation the user wants to prove
+    )
     
     const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const nullifiers: BigInt[] = [] 

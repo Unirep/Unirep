@@ -35,8 +35,6 @@ describe('test all CLI subcommands', function() {
     const epochLength = 5
     let unirepContract: ethers.Contract
     let unirepState: UnirepState
-    const dbOption = ``
-    // const dbOption = ` -db`
     
     let userIdentity1, userIdentityCommitment1, userIdentity2, userIdentityCommitment2
     const attesterId = 1
@@ -249,8 +247,7 @@ describe('test all CLI subcommands', function() {
                 ` -d ${userPrivKey}` +
                 ` -id ${userIdentity1}` +
                 ` -n ${epochKeyNonce}` + 
-                ` -kn ${postNonce}` +
-                dbOption
+                ` -kn ${postNonce}` 
 
             const output = exec(command).stdout.trim()
 
@@ -317,8 +314,7 @@ describe('test all CLI subcommands', function() {
                 ` -id ${userIdentity1}` +
                 ` -n ${epochKeyNonce2}` +
                 ` -kn ${commentNonce}` +
-                ` -mr ${minRepDiff}` +
-                dbOption
+                ` -mr ${minRepDiff}`
 
             const output = exec(command).stdout.trim()
 
@@ -341,8 +337,7 @@ describe('test all CLI subcommands', function() {
                 ` -n ${epochKeyNonce}` +
                 ` -kn ${attestNonce}` +
                 ` -uv ${posRep} ` +
-                ` -gf ${graffiti.toString(16)} `  +
-                dbOption
+                ` -gf ${graffiti.toString(16)} `
 
             const output = exec(command).stdout.trim()
 
@@ -403,8 +398,7 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
-                ` -id ${userIdentity1} ` +
-                dbOption
+                ` -id ${userIdentity1} `
 
             const output = exec(command).stdout.trim()
 
@@ -419,8 +413,7 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts userStateTransition` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${userPrivKey} ` +
-                ` -id ${userIdentity2} ` + 
-                dbOption
+                ` -id ${userIdentity2} `
 
             const output = exec(command).stdout.trim()
 
@@ -441,8 +434,7 @@ describe('test all CLI subcommands', function() {
                 // ` -mp ${minPosRep} ` +
                 ` -mn ${maxNegRep} ` +
                 // ` -md ${minRepDiff}` +
-                ` -gp ${graffitiPreimage} ` +
-                dbOption
+                ` -gp ${graffitiPreimage} `
 
             const output = exec(command).stdout.trim()
 

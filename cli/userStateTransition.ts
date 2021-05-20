@@ -18,7 +18,6 @@ import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyUserStateTransitionProofAndPublicSignals, getSignalByNameViaSym, verifyUserStateTransitionProof } from '../circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { identityPrefix } from './prefix'
-import { genUserStateTransitionCircuitInputsFromDB } from '../database/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -59,14 +58,6 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'string',
             help: 'The Unirep contract address',
-        }
-    )
-
-    parser.addArgument(
-        ['-db', '--from-database'],
-        {
-            action: 'storeTrue',
-            help: 'Indicate if to generate proving circuit from database',
         }
     )
 
@@ -154,22 +145,8 @@ const userStateTransition = async (args: any) => {
         commitment,
     )
 
-    let circuitInputs: any
+    const circuitInputs = await userState.genUserStateTransitionCircuitInputs()
 
-    if(args.from_database){
-        console.log('generating proving circuit from database...')
-
-        circuitInputs = await genUserStateTransitionCircuitInputsFromDB(
-            currentEpoch,
-            id
-        )
-    } else {
-
-        console.log('generating proving circuit from contract...')
-
-        circuitInputs = await userState.genUserStateTransitionCircuitInputs()
-
-    }
     const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
     const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
     const newState = await userState.genNewUserStateAfterTransition()
