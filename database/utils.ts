@@ -563,7 +563,7 @@ const genProveReputationFromAttesterCircuitInputsFromDB = async (
     assert(attesterId < BigInt(2 ** userStateTreeDepth), `attesterId exceeds total number of attesters`)
 
     const latestGSTLeafIndex = userState[epoch].transitionedGSTLeafIndex
-    assert(latestGSTLeafIndex > 0, `user haven't transitioned from ${userState[epoch].fromEpoch} epoch`)
+    assert(latestGSTLeafIndex >= 0, `user haven't transitioned from ${userState[epoch].fromEpoch} epoch`)
 
     const fromEpoch = userState[epoch].fromEpoch
     const transitionedPosRep = userState[epoch].transitionedPosRep
