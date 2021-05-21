@@ -1,21 +1,17 @@
 import { ethers } from 'ethers'
 import mongoose from 'mongoose'
-import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch, numAttestationsPerEpochKey} from '../config/testLocal'
-
-import {  UnirepState } from '../core/UnirepState'
-import { IUserStateLeaf, UserState } from '../core/UserState'
+import { genIdentityCommitment } from 'libsemaphore'
+import { numAttestationsPerEpochKey} from '../config/testLocal'
 
 import Settings, { ISettings } from './models/settings'
 import UserSignUp, { IUserSignUp } from './models/userSignUp'
-import Attestations, { IAttestation, IAttestations } from './models/attestation'
-import Comment, { IComment } from "../database/models/comment";
-import Post, { IPost } from "../database/models/post";
+import Attestations, { IAttestation } from './models/attestation'
+import Post from "../database/models/post";
 import ReputationNullifier, { IReputationNullifier } from "../database/models/reputationNullifier";
 import UserTransitionedState, { IUserTransitionedState } from "../database/models/userTransitionedState";
 import GSTLeaves, { IGSTLeaf, IGSTLeaves } from '../database/models/GSTLeaf'
-import EpochTreeLeaves, { IEpochTreeLeaf, IEpochTreeLeaves } from '../database/models/epochTreeLeaf'
-import NullifierTreeLeaves, { INullifierTreeLeaves } from '../database/models/nullifierTreeLeaf'
+import EpochTreeLeaves, { IEpochTreeLeaf } from '../database/models/epochTreeLeaf'
+import NullifierTreeLeaves from '../database/models/nullifierTreeLeaf'
 
 import { hash5, hashLeftRight, IncrementalQuinTree, stringifyBigInts } from 'maci-crypto'
 import { computeEmptyUserStateRoot, defaultUserStateLeaf, genAttestationNullifier, genEpochKey, genEpochKeyNullifier, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from '../test/utils'
