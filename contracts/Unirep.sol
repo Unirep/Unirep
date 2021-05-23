@@ -512,7 +512,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function calcEmptyUserStateTreeRoot(uint8 _levels) internal pure returns (uint256) {
-        uint256[] memory defaultStateLeafValues = new uint256[](5);
+        uint256[5] memory defaultStateLeafValues;
         for (uint8 i = 0; i < 5; i++) {
             defaultStateLeafValues[i] = 0;
         }
