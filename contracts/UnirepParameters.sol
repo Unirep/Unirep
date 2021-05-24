@@ -1,5 +1,5 @@
-pragma experimental ABIEncoderV2;
-pragma solidity ^0.6.0;
+pragma abicoder v2;
+pragma solidity 0.7.6;
 
 contract UnirepParameters {
     // This structs help to reduce the number of parameters to the constructor
