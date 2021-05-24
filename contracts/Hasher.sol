@@ -5,7 +5,7 @@
  * This file is part of maci
  */
 
-pragma solidity ^0.6.0;
+pragma solidity 0.7.6;
 
 import {PoseidonT3, PoseidonT6} from "./Poseidon.sol";
 
@@ -13,7 +13,7 @@ import {SnarkConstants} from "./SnarkConstants.sol";
 
 
 contract Hasher is SnarkConstants {
-    function hash5(uint256[] memory array) public pure returns (uint256) {
+    function hash5(uint256[5] memory array) public pure returns (uint256) {
         return PoseidonT6.poseidon(array);
     }
 
@@ -22,7 +22,7 @@ contract Hasher is SnarkConstants {
         pure
         returns (uint256)
     {
-        uint256[] memory input = new uint256[](2);
+        uint256[2] memory input;
         input[0] = _left;
         input[1] = _right;
         return PoseidonT3.poseidon(input);

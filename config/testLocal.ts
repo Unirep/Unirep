@@ -23,7 +23,7 @@ const circuitGlobalStateTreeDepth = 4;
 
 const circuitUserStateTreeDepth = 4;
 
-const circuitEpochTreeDepth = 8;
+const circuitEpochTreeDepth = 32;
 
 const circuitNullifierTreeDepth = 128;
 

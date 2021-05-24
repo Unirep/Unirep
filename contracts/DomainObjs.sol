@@ -1,5 +1,5 @@
-pragma experimental ABIEncoderV2;
-pragma solidity ^0.6.0;
+pragma abicoder v2;
+pragma solidity 0.7.6;
 
 import { Hasher } from "./Hasher.sol";
 
@@ -28,7 +28,7 @@ contract DomainObjs is Hasher {
 
     function hashAttestation(Attestation memory attestation) internal returns (uint256) {
         uint256 overwriteGraffiti = attestation.overwriteGraffiti ? 1 : 0;
-        uint256[] memory attestationData = new uint256[](5);
+        uint256[5] memory attestationData;
         attestationData[0] = attestation.attesterId;
         attestationData[1] = attestation.posRep;
         attestationData[2] = attestation.negRep;
