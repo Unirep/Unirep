@@ -1,5 +1,5 @@
-pragma experimental ABIEncoderV2;
-pragma solidity ^0.6.0;
+pragma abicoder v2;
+pragma solidity 0.7.6;
 
 import { Hasher } from "./Hasher.sol";
 
