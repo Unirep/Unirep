@@ -4,7 +4,6 @@ node_modules
 cache
 artifacts
 build
-mongodb
 
 #Verifier solidity contracts
 EpochKeyValidityVerifier.sol
