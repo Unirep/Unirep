@@ -112,9 +112,12 @@ describe('Process attestation circuit', function () {
                 userStateTreePathElements.push(oldReputationRecordProof)
 
                 // Update reputation record
-                reputationRecords[attesterId.toString()]['posRep'] = attestation['posRep']
-                reputationRecords[attesterId.toString()]['negRep'] = attestation['negRep']
-                if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
+                reputationRecords[attesterId.toString()].update(
+                    attestation['posRep'],
+                    attestation['negRep'],
+                    attestation['graffiti'],
+                    attestation['overwriteGraffiti']
+                )
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
@@ -153,7 +156,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_result: hashChainResult
         }
-
         const witness = await executeCircuit(circuit, circuitInputs)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')

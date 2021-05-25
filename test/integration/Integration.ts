@@ -298,13 +298,40 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
         })
 
-        it('First attester attest to first user', async () => {
+        it('First attester attest to first user\'s first epoch key', async () => {
             const nonce = 0
             const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 attesters[0].id,
                 BigInt(3),
+                BigInt(1),
+                hashOne(graffitiPreImage),
+                true,
+            )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[0] = new Object()
+            graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
+            console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
+            const tx = await unirepContractCalledByFirstAttester.submitAttestation(
+                attestation,
+                firstUserEpochKey,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status, 'Submit attestation failed').to.equal(1)
+
+            secondEpochEpochKeys.push(firstUserEpochKey.toString())
+            unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
+        })
+
+        it('First attester attest to first user\'s second epoch key', async () => {
+            const nonce = 1
+            const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
+            const attestation: Attestation = new Attestation(
+                attesters[0].id,
+                BigInt(5),
                 BigInt(1),
                 hashOne(graffitiPreImage),
                 true,
@@ -426,14 +453,14 @@ describe('Integration', function () {
             // First filter by epoch
             const attestationsByEpochFilter = unirepContract.filters.AttestationSubmitted(currentEpoch)
             const attestationsByEpochEvent = await unirepContract.queryFilter(attestationsByEpochFilter)
-            expect(attestationsByEpochEvent.length, 'Number of attestations submitted should be 4').to.equal(4)
+            expect(attestationsByEpochEvent.length, 'Number of attestations submitted should be 5').to.equal(5)
 
             // Second filter by attester
             for (let attester of attesters) {
                 let attestationsByAttesterFilter = unirepContract.filters.AttestationSubmitted(null, null, attester['addr'])
                 let attestationsByAttesterEvent = await unirepContract.queryFilter(attestationsByAttesterFilter)
                 if (attester.id == 1) {
-                    expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 2').to.equal(2)
+                    expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 2').to.equal(3)
                 } else if (attester.id == 2) {
                     expect(attestationsByAttesterEvent.length, 'Number of attestations from second attester should be 2').to.equal(2)
                 } else {
@@ -491,7 +518,7 @@ describe('Integration', function () {
             expect(currentEpoch, 'Current epoch should be 3').to.equal(3)
 
             let [epochKeys_, epochKeyHashchains_] = await unirepContract.getEpochTreeLeaves(prevEpoch)
-            expect(epochKeys_.length, 'Number of epoch keys last epoch should be 2').to.equal(2)
+            expect(epochKeys_.length, 'Number of epoch keys last epoch should be 3').to.equal(3)
 
             epochKeys_ = epochKeys_.map((epk) => epk.toString())
             epochKeyHashchains_ = epochKeyHashchains_.map((hc) => hc.toString())
@@ -622,7 +649,7 @@ describe('Integration', function () {
 
         it('First user prove his reputation', async () => {
             const attesterId = attesters[0].id  // Prove reputation received from first attester
-            const minPosRep = BigInt(1)
+            const minPosRep = BigInt(7)
             const maxNegRep = BigInt(10)
             const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
             console.log(`Proving reputation from attester ${attesterId} with minPosRep ${minPosRep}, maxNegRep ${maxNegRep} and graffitiPreimage ${graffitiPreImage}`)
