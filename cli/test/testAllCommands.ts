@@ -464,7 +464,6 @@ describe('test all CLI subcommands', function() {
                 // ` -md ${minRepDiff}` +
                 ` -gp ${graffitiPreimage} ` +
                 ` -pf ${userRepProof} `
-
             const output = exec(command).stdout.trim()
 
             console.log(command)

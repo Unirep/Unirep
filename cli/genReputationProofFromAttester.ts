@@ -11,10 +11,11 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genUserStateFromContract } from '../core'
 import { formatProofForVerifierContract, genVerifyReputationFromAttesterProofAndPublicSignals, verifyProveReputationFromAttesterProof } from '../circuits/utils'
-import { stringifyBigInts } from 'maci-crypto'
+import { hashLeftRight, hashOne, stringifyBigInts } from 'maci-crypto'
 import { add0x } from '../crypto/SMT'
 import { identityPrefix, reputationProofFromAttesterPrefix } from './prefix'
 import { genProveReputationFromAttesterCircuitInputsFromDB } from '../database/utils'
+import { compileAndLoadCircuit, executeCircuit } from '../test/circuits/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -176,14 +177,6 @@ const genReputationProofFromAttester = async (args: any) => {
 
         circuitInputs = await userState.genProveReputationFromAttesterCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
     }
-    
-    // console.log('Proving reputation...')
-    // console.log('----------------------User State----------------------')
-    // console.log(userState.toJSON(4))
-    // console.log('------------------------------------------------------')
-    // console.log('----------------------Circuit inputs----------------------')
-    // console.log(circuitInputs)
-    // console.log('----------------------------------------------------------')
     const results = await genVerifyReputationFromAttesterProofAndPublicSignals(stringifyBigInts(circuitInputs))
 
     // TODO: Not sure if this validation is necessary

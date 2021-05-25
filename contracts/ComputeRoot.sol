@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity 0.7.6;
 
 import { SnarkConstants } from "./SnarkConstants.sol";
 import { Hasher } from "./Hasher.sol";

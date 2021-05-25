@@ -23,7 +23,7 @@ import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTre
 import { Reputation } from "../../core"
 import { MAX_KARMA_BUDGET } from "../../config/socialMedia"
 
-describe('Prove reputation from attester circuit', function () {
+describe('Prove reputation circuit', function () {
     this.timeout(300000)
 
     let circuit

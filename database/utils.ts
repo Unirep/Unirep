@@ -21,6 +21,7 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { add0x, SparseMerkleTreeImpl } from '../crypto/SMT'
 import { DEFAULT_AIRDROPPED_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { dbUri } from '../config/database'
+import { Reputation } from '../core/UserState'
 
 enum action {
     UpVote = 0,
@@ -317,17 +318,36 @@ const genUserStateTreeFromDB = async(
         throw new Error('Error: should save settings first')
     } 
 
+    let reputationRecords = {}
     const USTree = await genNewSMT(settings.userStateTreeDepth, defaultUserStateLeaf)
 
     for (const reputation of reputations) {
+        if (reputationRecords[reputation.attesterId] === undefined) {
+            reputationRecords[reputation.attesterId] = new Reputation(
+                BigInt(reputation.posRep),
+                BigInt(reputation.negRep),
+                BigInt(reputation.graffiti)
+            )
+        } else {
+            // Update attestation record
+            reputationRecords[reputation.attesterId].update(
+                BigInt(reputation.posRep),
+                BigInt(reputation.negRep),
+                BigInt(reputation.graffiti),
+                reputation.overwriteGraffiti
+            )
+        }
+    }
+
+    for (let attesterId in reputationRecords) {
         const hashedReputation = hash5([
-            BigInt(reputation.posRep),
-            BigInt(reputation.negRep),
-            BigInt(reputation.graffiti),
+            BigInt(reputationRecords[attesterId].posRep),
+            BigInt(reputationRecords[attesterId].negRep),
+            BigInt(reputationRecords[attesterId].graffiti),
             BigInt(0),
             BigInt(0)
         ])
-        await USTree.update(BigInt(reputation.attesterId), hashedReputation)
+        await USTree.update(BigInt(attesterId), hashedReputation)
     }
 
     return USTree
@@ -685,6 +705,7 @@ const genUserStateTransitionCircuitInputsFromDB = async (
         BigInt(0)
     ])
 
+    let reputationRecords = {}
     const selectors: number[] = []
     const attesterIds: BigInt[] = []
     const oldPosReps: BigInt[] = [], oldNegReps: BigInt[] = [], oldGraffities: BigInt[] = []
@@ -702,43 +723,43 @@ const genUserStateTransitionCircuitInputsFromDB = async (
             const attesterId = attestation.attesterId
             const oldAttestations = userState[fromEpoch].attestations
             const rep = await getRepByAttester(oldAttestations, attesterId)
-            oldPosReps.push(BigInt(rep.posRep))
-            oldNegReps.push(BigInt(rep.negRep))
-            oldGraffities.push(BigInt(rep.graffiti))
+
+            if (reputationRecords[attesterId.toString()] === undefined) {
+                reputationRecords[attesterId.toString()] = new Reputation(
+                    BigInt(rep.posRep),
+                    BigInt(rep.negRep),
+                    BigInt(rep.graffiti)
+                )
+            }
+
+            oldPosReps.push(reputationRecords[attesterId.toString()]['posRep'])
+            oldNegReps.push(reputationRecords[attesterId.toString()]['negRep'])
+            oldGraffities.push(reputationRecords[attesterId.toString()]['graffiti'])
 
             // Add UST merkle proof to the list
             const USTLeafPathElements = await fromEpochUserStateTree.getMerkleProof(BigInt(attesterId))
             userStateLeafPathElements.push(USTLeafPathElements)
 
-            // TODO: update new Rep by adding
-            const newRep: IAttestation = {
-                transactionHash: "0",
-                epoch: 0,
-                attester: "0",
-                attesterId: "0",
-                posRep: attestation.posRep,
-                negRep: attestation.negRep,
-                graffiti: attestation.graffiti,
-                overwriteGraffiti: attestation.overwriteGraffiti
-            }
-            const newRepHash = hash5([
-                BigInt(newRep.posRep),
-                BigInt(newRep.negRep),
-                BigInt(newRep.graffiti),
-                BigInt(0),
-                BigInt(0)
-            ])
-            await fromEpochUserStateTree.update(BigInt(attesterId), newRepHash)
+            // Update attestation record
+            reputationRecords[attesterId.toString()].update(
+                attestation['posRep'],
+                attestation['negRep'],
+                attestation['graffiti'],
+                attestation['overwriteGraffiti']
+            )
+            // Update UST
+            await fromEpochUserStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
+            // Add new UST root to intermediate UST roots
             intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
 
             selectors.push(1)
             attesterIds.push(BigInt(attesterId))
-            posReps.push(BigInt(newRep.posRep))
-            negReps.push(BigInt(newRep.negRep))
-            graffities.push(BigInt(newRep.graffiti))
+            posReps.push(BigInt(attestation.posRep))
+            negReps.push(BigInt(attestation.negRep))
+            graffities.push(BigInt(attestation.graffiti))
             overwriteGraffitis.push(attestation.overwriteGraffiti)
-            newPosRep += Number(newRep.posRep)
-            newNegRep += Number(newRep.negRep)
+            newPosRep += Number(attestation.posRep)
+            newNegRep += Number(attestation.negRep)
         }
         // Fill in blank data for non-exist attestation
         for (let i = 0; i < (numAttestationsPerEpochKey - attestations?.length); i++) {
@@ -818,7 +839,7 @@ const updateDBFromNewGSTLeafInsertedEvent = async (
 
     const _transactionHash = event.transactionHash
     const _epoch = Number(event?.topics[1])
-    const _hashedLeaf = decodedData?._hashedLeaf._hex
+    const _hashedLeaf = add0x(decodedData?._hashedLeaf._hex)
 
     // save the new leaf
     const newLeaf: IGSTLeaf = {
@@ -1030,7 +1051,7 @@ const updateDBFromUserStateTransitionEvent = async (
     const _toEpoch = Number(event.topics[1])
     const decodedUserStateTransitionedData = iface.decodeEventLog("UserStateTransitioned",event.data)
     const _transactionHash = event.transactionHash
-    const _hashedLeaf = decodedUserStateTransitionedData?.userTransitionedData?.newGlobalStateTreeLeaf._hex
+    const _hashedLeaf = add0x(decodedUserStateTransitionedData?.userTransitionedData?.newGlobalStateTreeLeaf._hex)
 
     // save new user transitioned state
     const newUserState: IUserTransitionedState = new UserTransitionedState({

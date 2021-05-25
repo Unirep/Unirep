@@ -17,7 +17,7 @@
 
 // 2019 OKIMS
 
-pragma solidity ^0.6.0;
+pragma solidity ^0.7.0;
 
 library Pairing {
 
