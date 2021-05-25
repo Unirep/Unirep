@@ -47,7 +47,6 @@
         "libsemaphore": "^1.0.15",
         "maci-config": "^0.7.4",
         "maci-crypto": "^0.7.4",
-        "mongoose": "^5.12.10",
         "n-readlines": "^1.0.1",
         "prompt-async": "^0.9.9",
         "shelljs": "^0.8.3",

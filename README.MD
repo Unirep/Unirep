@@ -26,5 +26,3 @@ Integration test
 ```
 npm run test
 ```
-
-To see how to use Unirep with [mongodb](https://www.mongodb.com/), refer to branch [database](https://github.com/vivianjeng/UniRep/tree/database)

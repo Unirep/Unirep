@@ -2,7 +2,7 @@ import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
-import { stringifyBigInts } from 'maci-crypto'
+import { genRandomSalt, stringifyBigInts } from 'maci-crypto'
 
 import {
     promptPwd,
@@ -20,7 +20,6 @@ import { genUserStateFromContract } from '../core'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { identityPrefix, reputationProofPrefix } from './prefix'
 
-import Post, { IPost } from "../database/models/post";
 import { DEFAULT_POST_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
 import { genEpochKey } from '../core/utils'
@@ -222,23 +221,14 @@ const publishPost = async (args: any) => {
     if(args.min_rep != null){
         console.log(`Prove minimum reputation: ${minRep}`)
     }
-    
-    // generate post id from mongoose schema
-    const newpost: IPost = new Post({
-        content: args.text,
-        // TODO: hashedContent
-        epochKey: epk,
-        epkProof: base64url.encode(JSON.stringify(proof)),
-        proveMinRep: args.min_rep != null ? true : false,
-        minRep: Number(minRep),
-        comments: [],
-        status: 0
-    });
 
+    // generate a random post ID
+    const postId = genRandomSalt()
+    
     let tx
     try {
         tx = await unirepContract.publishPost(
-            BigInt(add0x(newpost._id.toString())), 
+            postId, 
             epochKey,
             args.text, 
             publicSignals, 
@@ -254,7 +244,7 @@ const publishPost = async (args: any) => {
         return
     }
     
-    console.log('Post ID:', newpost._id.toString())
+    console.log('Post ID:', postId.toString())
     console.log('Transaction hash:', tx.hash)
     console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
     console.log(reputationProofPrefix + encodedProof)

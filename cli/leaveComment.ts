@@ -19,10 +19,9 @@ import { genUserStateFromContract } from '../core'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { reputationProofPrefix, identityPrefix } from './prefix'
 
-import Comment, { IComment } from "../database/models/comment";
 import { DEFAULT_COMMENT_KARMA, MAX_KARMA_BUDGET } from '../config/socialMedia'
 import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationProof } from '../circuits/utils'
-import { stringifyBigInts } from 'maci-crypto'
+import { genRandomSalt, stringifyBigInts } from 'maci-crypto'
 import { genEpochKey } from '../core/utils'
 
 const configureSubparser = (subparsers: any) => {
@@ -233,23 +232,14 @@ const leaveComment = async (args: any) => {
         console.log(`Prove minimum reputation: ${minRep}`)
     }
 
-    // generate comment id from mongoose schema
-    const newComment: IComment = new Comment({
-        content: args.text,
-        // TODO: hashedContent
-        epochKey: epk,
-        epkProof: base64url.encode(JSON.stringify(proof)),
-        proveMinRep: args.min_rep != null ? true : false,
-        minRep: Number(minRep),
-        comments: [],
-        status: 0
-    });
+    // generate a random comment ID
+    const commentId = genRandomSalt()
 
     let tx
     try {
         tx = await unirepContract.leaveComment(
-            BigInt(add0x(args.post_id)),
-            BigInt(add0x(newComment._id.toString())), 
+            BigInt(args.post_id),
+            commentId, 
             epochKey,
             args.text,
             publicSignals,
