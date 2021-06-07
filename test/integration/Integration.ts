@@ -336,8 +336,7 @@ describe('Integration', function () {
                 hashOne(graffitiPreImage),
                 true,
             )
-            // Add graffiti pre-image to graffitiPreImageMap
-            graffitiPreImageMap[0] = new Object()
+            // update graffiti pre-image in graffitiPreImageMap
             graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
             console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
