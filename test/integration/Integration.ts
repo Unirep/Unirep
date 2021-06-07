@@ -460,7 +460,7 @@ describe('Integration', function () {
                 let attestationsByAttesterFilter = unirepContract.filters.AttestationSubmitted(null, null, attester['addr'])
                 let attestationsByAttesterEvent = await unirepContract.queryFilter(attestationsByAttesterFilter)
                 if (attester.id == 1) {
-                    expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 2').to.equal(3)
+                    expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 3').to.equal(3)
                 } else if (attester.id == 2) {
                     expect(attestationsByAttesterEvent.length, 'Number of attestations from second attester should be 2').to.equal(2)
                 } else {
