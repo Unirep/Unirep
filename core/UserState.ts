@@ -47,12 +47,12 @@ class Reputation implements IReputation {
         _graffiti: BigInt,
         _overwriteGraffiti: boolean,
     ): Reputation => {
-        const newRep = new Reputation(
-            _posRep,
-            _negRep,
-            _overwriteGraffiti ? _graffiti : this.graffiti
-        )
-        return newRep
+        this.posRep = BigInt(Number(this.posRep) + Number(_posRep))
+        this.negRep = BigInt(Number(this.negRep) + Number(_negRep))
+        if(_overwriteGraffiti) {
+            this.graffiti = _graffiti
+        }
+        return this
     }
 
     public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
@@ -349,6 +349,7 @@ class UserState {
         const epochKeyPathElements: any[] = []
         const hashChainResults: BigInt[] = []
 
+        let reputationRecords = {}
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
         const oldPosReps: BigInt[] = [], oldNegReps: BigInt[] = [], oldGraffities: BigInt[] = []
@@ -363,25 +364,43 @@ class UserState {
                 const attestation = attestations[i]
                 const attesterId = attestation.attesterId
                 const rep = this.getRepByAttester(attesterId)
-                oldPosReps.push(rep.posRep)
-                oldNegReps.push(rep.negRep)
-                oldGraffities.push(rep.graffiti)
+                
+                if (reputationRecords[attesterId.toString()] === undefined) {
+                    reputationRecords[attesterId.toString()] = new Reputation(
+                        rep.posRep,
+                        rep.negRep,
+                        rep.graffiti
+                    )
+                }
+
+                oldPosReps.push(reputationRecords[attesterId.toString()]['posRep'])
+                oldNegReps.push(reputationRecords[attesterId.toString()]['negRep'])
+                oldGraffities.push(reputationRecords[attesterId.toString()]['graffiti'])
 
                 // Add UST merkle proof to the list
                 const USTLeafPathElements = await fromEpochUserStateTree.getMerkleProof(attesterId)
                 userStateLeafPathElements.push(USTLeafPathElements)
-                const newRep = rep.update(attestation.posRep, attestation.negRep, attestation.graffiti, attestation.overwriteGraffiti)
+
+                // Update attestation record
+                reputationRecords[attesterId.toString()].update(
+                    attestation['posRep'],
+                    attestation['negRep'],
+                    attestation['graffiti'],
+                    attestation['overwriteGraffiti']
+                )
+
                 // Update UST
-                await fromEpochUserStateTree.update(attesterId, newRep.hash())
+                await fromEpochUserStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
+
                 // Add new UST root to intermediate UST roots
                 intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
-                
+
                 selectors.push(1)
                 attesterIds.push(attesterId)
-                posReps.push(newRep.posRep)
-                negReps.push(newRep.negRep)
-                graffities.push(newRep.graffiti)
-                overwriteGraffitis.push(attestation.overwriteGraffiti)
+                posReps.push(attestation['posRep'])
+                negReps.push(attestation['negRep'])
+                graffities.push(attestation['graffiti'])
+                overwriteGraffitis.push(attestation['overwriteGraffiti'])
             }
             // Fill in blank data for non-exist attestation
             for (let i = 0; i < (this.numAttestationsPerEpochKey - attestations.length); i++) {

@@ -204,9 +204,12 @@ describe('User State Transition circuits', function () {
                         userStateLeafPathElements.push(oldReputationRecordProof)
 
                         // Update attestation record
-                        reputationRecords[attesterId.toString()]['posRep'] = attestation['posRep']
-                        reputationRecords[attesterId.toString()]['negRep'] = attestation['negRep']
-                        if (attestation['overwriteGraffiti']) reputationRecords[attesterId.toString()]['graffiti'] = attestation['graffiti']
+                        reputationRecords[attesterId.toString()].update(
+                            attestation['posRep'],
+                            attestation['negRep'],
+                            attestation['graffiti'],
+                            attestation['overwriteGraffiti']
+                        )
                         await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
 
                         const attestation_hash = attestation.hash()
