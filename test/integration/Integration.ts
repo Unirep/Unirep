@@ -336,8 +336,7 @@ describe('Integration', function () {
                 hashOne(graffitiPreImage),
                 true,
             )
-            // Add graffiti pre-image to graffitiPreImageMap
-            graffitiPreImageMap[0] = new Object()
+            // update graffiti pre-image in graffitiPreImageMap
             graffitiPreImageMap[0][attestation.attesterId.toString()] = graffitiPreImage
             console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
@@ -460,7 +459,7 @@ describe('Integration', function () {
                 let attestationsByAttesterFilter = unirepContract.filters.AttestationSubmitted(null, null, attester['addr'])
                 let attestationsByAttesterEvent = await unirepContract.queryFilter(attestationsByAttesterFilter)
                 if (attester.id == 1) {
-                    expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 2').to.equal(3)
+                    expect(attestationsByAttesterEvent.length, 'Number of attestations from first attester should be 3').to.equal(3)
                 } else if (attester.id == 2) {
                     expect(attestationsByAttesterEvent.length, 'Number of attestations from second attester should be 2').to.equal(2)
                 } else {
