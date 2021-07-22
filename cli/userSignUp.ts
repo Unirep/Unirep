@@ -16,10 +16,11 @@ import { add0x } from '../crypto/SMT'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { identityCommitmentPrefix } from './prefix'
+import { defaultAirdroppedKarma } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
-        'userSignup',
+        'userSignUp',
         { addHelp: true },
     )
 
@@ -38,6 +39,14 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'string',
             help: 'The user\'s identity commitment (in hex representation)',
+        }
+    )
+
+    parser.addArgument(
+        ['-k', '--karma'],
+        {
+            type: 'int',
+            help: 'The airdropped karma amount when the user signs up',
         }
     )
 
@@ -70,7 +79,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const userSignup = async (args: any) => {
+const userSignUp = async (args: any) => {
 
     // Unirep contract
     if (!validateEthAddress(args.contract)) {
@@ -120,11 +129,13 @@ const userSignup = async (args: any) => {
     const encodedCommitment = args.identity_commitment.slice(identityCommitmentPrefix.length)
     const decodedCommitment = base64url.decode(encodedCommitment)
     const commitment = add0x(decodedCommitment)
+    const airdroppedKarma = args.karma ? args.karma : defaultAirdroppedKarma
 
     let tx
     try {
         tx = await unirepContract.userSignUp(
             commitment,
+            airdroppedKarma,
             { gasLimit: 1000000 }
         )
 
@@ -143,6 +154,6 @@ const userSignup = async (args: any) => {
 }
 
 export {
-    userSignup,
+    userSignUp,
     configureSubparser,
 }

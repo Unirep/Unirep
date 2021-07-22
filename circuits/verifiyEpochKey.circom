@@ -1,43 +1,43 @@
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "./hasherPoseidon.circom";
-include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
+include "./userExists.circom";
 
-template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
+template verifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
+    // Global state tree
+    signal private input GST_path_index[GST_tree_depth];
+    signal private input GST_path_elements[GST_tree_depth][1];
+    signal input GST_root;
+    // Global state tree leaf: Identity & user state root
     signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
-
-    signal private input user_state_root;
-
-    signal private input path_elements[GST_tree_depth][1];
-    signal private input path_index[GST_tree_depth];
-    signal input root;
+    signal private input user_tree_root;
+    signal private input user_state_hash;
+    // Sum of positive and negative karma
+    signal private input positive_karma;
+    signal private input negative_karma;
 
     signal private input nonce;
     signal input epoch;
     signal input epoch_key;
 
     /* 1. Check if user exists in the Global State Tree */
-    component identity_commitment = IdentityCommitment();
-    identity_commitment.identity_pk[0] <== identity_pk[0];
-    identity_commitment.identity_pk[1] <== identity_pk[1];
-    identity_commitment.identity_nullifier <== identity_nullifier;
-    identity_commitment.identity_trapdoor <== identity_trapdoor;
-
-    component leaf = HashLeftRight();
-    leaf.left <== identity_commitment.out;
-    leaf.right <== user_state_root;
-
-    component GST_leaf_exists = LeafExists(GST_tree_depth);
-    GST_leaf_exists.leaf <== leaf.hash;
-    for (var i = 0; i < GST_tree_depth; i++) {
-        GST_leaf_exists.path_index[i] <== path_index[i];
-        GST_leaf_exists.path_elements[i][0] <== path_elements[i][0];
+    component user_exist = userExists(GST_tree_depth);
+    for (var i = 0; i< GST_tree_depth; i++) {
+        user_exist.GST_path_index[i] <== GST_path_index[i];
+        user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
     }
-    GST_leaf_exists.root <== root;
-    /* End of check 1*/
-
+    user_exist.GST_root <== GST_root;
+    user_exist.identity_pk[0] <== identity_pk[0];
+    user_exist.identity_pk[1] <== identity_pk[1];
+    user_exist.identity_nullifier <== identity_nullifier;
+    user_exist.identity_trapdoor <== identity_trapdoor;
+    user_exist.user_tree_root <== user_tree_root;
+    user_exist.user_state_hash <== user_state_hash;
+    user_exist.positive_karma <== positive_karma;
+    user_exist.negative_karma <== negative_karma;
+    /* End of check 1 */
 
     /* 2. Check nonce validity */
     var bitsPerNonce = 8;

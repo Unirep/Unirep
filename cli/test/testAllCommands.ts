@@ -27,6 +27,7 @@ describe('test all CLI subcommands', function() {
     const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
     const epochKeyNonce = 0
+    const epochKeyNonce1 = 1
     const epochLength = 5
     let unirepContract: ethers.Contract
     let unirepState: UnirepState
@@ -34,7 +35,7 @@ describe('test all CLI subcommands', function() {
     let userIdentity, userIdentityCommitment
     const attesterId = 1
     let epk, epkProof
-    const posRep = 10, negRep = 8, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
+    const posRep = 5, negRep = 4, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
     const minPosRep = 0, maxNegRep = 10
     let userRepProof
 
@@ -113,7 +114,7 @@ describe('test all CLI subcommands', function() {
 
     describe('userSignup CLI subcommand', () => {
         it('should sign user up', async () => {
-            const command = `npx ts-node cli/index.ts userSignup` +
+            const command = `npx ts-node cli/index.ts userSignUp` +
                 ` -x ${unirepContract.address} ` +
                 ` -c ${userIdentityCommitment} ` +
                 ` -d ${userPrivKey} `
@@ -128,9 +129,9 @@ describe('test all CLI subcommands', function() {
         })
     })
 
-    describe('attesterSignup CLI subcommand', () => {
+    describe('attesterSignUp CLI subcommand', () => {
         it('should sign attester up', async () => {
-            const command = `npx ts-node cli/index.ts attesterSignup` +
+            const command = `npx ts-node cli/index.ts attesterSignUp` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} `
 
@@ -186,6 +187,8 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
+                ` -id ${userIdentity} ` +
+                ` -n ${epochKeyNonce1} ` +
                 ` -pr ${posRep} ` +
                 ` -nr ${negRep} ` +
                 ` -gf ${graffiti.toString(16)} `
@@ -241,7 +244,7 @@ describe('test all CLI subcommands', function() {
                 ` -id ${userIdentity} ` +
                 ` -a ${attesterId} ` +
                 ` -mp ${minPosRep} ` +
-                ` -mn ${maxNegRep} ` +
+                // ` -mn ${maxNegRep} ` +
                 ` -gp ${graffitiPreimage} `
 
             const output = exec(command).stdout.trim()
@@ -260,7 +263,7 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -a ${attesterId} ` +
                 ` -mp ${minPosRep} ` +
-                ` -mn ${maxNegRep} ` +
+                // ` -mn ${maxNegRep} ` +
                 ` -gp ${graffitiPreimage} ` +
                 ` -pf ${userRepProof} `
 

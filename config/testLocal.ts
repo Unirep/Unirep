@@ -27,6 +27,10 @@ const circuitEpochTreeDepth = 32;
 
 const circuitNullifierTreeDepth = 128;
 
+const defaultAirdroppedKarma = 20;
+
+const maxKarmaBudget = 10;
+
 export {
     attestingFee,
     circuitGlobalStateTreeDepth,
@@ -40,5 +44,7 @@ export {
     maxUsers,
     nullifierTreeDepth,
     numAttestationsPerEpochKey,
-    userStateTreeDepth
+    userStateTreeDepth,
+    defaultAirdroppedKarma,
+    maxKarmaBudget,
 }

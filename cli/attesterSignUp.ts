@@ -15,7 +15,7 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
-        'attesterSignup',
+        'attesterSignUp',
         { addHelp: true },
     )
 
@@ -57,7 +57,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const attesterSignup = async (args: any) => {
+const attesterSignUp = async (args: any) => {
 
     // Unirep contract
     if (!validateEthAddress(args.contract)) {
@@ -125,6 +125,6 @@ const attesterSignup = async (args: any) => {
 }
 
 export {
-    attesterSignup,
+    attesterSignUp,
     configureSubparser,
 }

@@ -10,6 +10,7 @@ import {
     genRandomSalt,
     hashLeftRight,
     stringifyBigInts,
+    hash5,
 } from 'maci-crypto'
 
 import {
@@ -19,10 +20,11 @@ import {
     verifyUserStateTransitionProof,
     getSignalByName,
 } from './utils'
-import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, globalStateTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
-import { genEpochKey, genAttestationNullifier, genNewEpochTree, genNewNullifierTree, genNewUserStateTree, genEpochKeyNullifier, SMT_ONE_LEAF } from "../utils"
+import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
+import { genEpochKey, genAttestationNullifier, genNewEpochTree, genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
+import { defaultAirdroppedKarma } from "../../config/testLocal"
 
 describe('User State Transition circuits', function () {
     this.timeout(600000)
@@ -68,6 +70,7 @@ describe('User State Transition circuits', function () {
                 path_elements: epochTreePathElements
             }
 
+
             const witness = await executeCircuit(circuit, circuitInputs)
         })
     })
@@ -93,6 +96,11 @@ describe('User State Transition circuits', function () {
         let selectors: number[] = []
         let nullifiers: BigInt[]
         let hashChainResults: BigInt[] = []
+        let hashedLeaf
+        const transitionedPosRep = 20
+        const transitionedNegRep = 0
+        let currentEpochPosRep = 0
+        let currentEpochNegRep = 0
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -126,10 +134,16 @@ describe('User State Transition circuits', function () {
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
 
             // Global state tree
-            GSTree = new IncrementalQuinTree(globalStateTreeDepth, GSTZERO_VALUE, 2)
+            GSTree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
             const commitment = genIdentityCommitment(user)
-            const hashedStateLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
-            GSTree.insert(hashedStateLeaf)
+            hashedLeaf = hash5([
+                commitment, 
+                userStateTree.getRootHash(),
+                BigInt(transitionedPosRep),
+                BigInt(transitionedNegRep),
+                BigInt(0)
+            ])
+            GSTree.insert(hashedLeaf)
             GSTreeProof = GSTree.genMerklePath(0)
             GSTreeRoot = GSTree.root
 
@@ -210,6 +224,8 @@ describe('User State Transition circuits', function () {
                             attestation['graffiti'],
                             attestation['overwriteGraffiti']
                         )
+                        currentEpochPosRep += Number(attestation['posRep'])
+                        currentEpochNegRep += Number(attestation['negRep'])
                         await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
 
                         const attestation_hash = attestation.hash()
@@ -243,7 +259,13 @@ describe('User State Transition circuits', function () {
 
             // Compute new GST Leaf
             const latestUSTRoot = intermediateUserStateTreeRoots[TOTAL_NUM_ATTESTATIONS]
-            newGSTLeaf = hashLeftRight(commitment, latestUSTRoot)
+            newGSTLeaf = hash5([
+                commitment,
+                latestUSTRoot,
+                BigInt(transitionedPosRep + currentEpochPosRep + defaultAirdroppedKarma),
+                BigInt(transitionedNegRep + currentEpochNegRep),
+                BigInt(0)
+            ])
 
             for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
                 const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
@@ -265,6 +287,9 @@ describe('User State Transition circuits', function () {
                     identity_pk: user['keypair']['pubKey'],
                     identity_nullifier: user['identityNullifier'],
                     identity_trapdoor: user['identityTrapdoor'],
+                    user_state_hash: hashedLeaf,
+                    old_positive_karma: BigInt(transitionedPosRep),
+                    old_negative_karma: BigInt(transitionedNegRep),
                     GST_path_elements: GSTreeProof.pathElements,
                     GST_path_index: GSTreeProof.indices,
                     GST_root: GSTreeRoot,
@@ -274,6 +299,229 @@ describe('User State Transition circuits', function () {
                     neg_reps: negReps,
                     graffities: graffities,
                     overwrite_graffitis: overwriteGraffitis,
+                    positive_karma: BigInt(transitionedPosRep + currentEpochPosRep + defaultAirdroppedKarma),
+                    negative_karma: BigInt(transitionedNegRep + currentEpochNegRep),
+                    airdropped_karma: defaultAirdroppedKarma,
+                    epk_path_elements: epochTreePathElements,
+                    hash_chain_results: hashChainResults,
+                    epoch_tree_root: epochTreeRoot
+                }
+                const witness = await executeCircuit(circuit, circuitInputs)
+                for (let i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
+                    const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
+                    const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
+                    expect(modedNullifier).to.equal(nullifiers[i])
+                }
+                const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
+                expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))
+
+                const startTime = new Date().getTime()
+                const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
+                const endTime = new Date().getTime()
+                console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+                const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
+                expect(isValid).to.be.true
+            })
+
+            it('Same attester give reputation to different epoch keys should work', async () => {
+
+                // Epoch tree
+                epochTree = await genNewEpochTree("circuit")
+
+                // User state tree
+                userStateTree = await genNewUserStateTree("circuit")
+                intermediateUserStateTreeRoots = []
+                userStateLeafPathElements = []
+                oldPosReps = []
+                oldNegReps = []
+                oldGraffities = []
+
+                // Bootstrap user state
+                for (let i = 1; i < maxNumAttesters; i++) {
+                    const  attesterId = BigInt(i)
+                    if (reputationRecords[attesterId.toString()] === undefined) {
+                        reputationRecords[attesterId.toString()] = new Reputation(
+                            BigInt(Math.floor(Math.random() * 100)),
+                            BigInt(Math.floor(Math.random() * 100)),
+                            genRandomSalt(),
+                        )
+                    }
+                    await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
+                }
+                intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+
+                // Global state tree
+                GSTree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
+                const commitment = genIdentityCommitment(user)
+                hashedLeaf = hash5([
+                    commitment, 
+                    userStateTree.getRootHash(),
+                    BigInt(transitionedPosRep),
+                    BigInt(transitionedNegRep),
+                    BigInt(0)
+                ])
+                GSTree.insert(hashedLeaf)
+                GSTreeProof = GSTree.genMerklePath(0)
+                GSTreeRoot = GSTree.root
+
+                attesterIds = []
+                posReps = []
+                negReps = []
+                graffities = []
+                overwriteGraffitis = []
+                selectors = []
+                hashChainResults = []
+                currentEpochPosRep = 0
+                currentEpochNegRep = 0
+
+                let numAttestationsMade = 0
+                for (let i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
+                    if (numAttestationsMade < expectedNumAttestationsMade) {
+                        const s = Math.floor(Math.random() * 2)
+                        selectors.push(s)
+                        if (s == 1) numAttestationsMade++
+                    } else {
+                        selectors.push(0)
+                    }
+                }
+
+                // Begin generating and processing attestations
+                nullifiers = []
+                epochTreePathElements = []
+                let hashChainResult: BigInt
+                const attesterToNonceMap = {}
+                let startIndex
+                // generate an attester id list
+                const attesterIdList: BigInt[] = []
+                for(let i = 1; i <= ATTESTATIONS_PER_EPOCH_KEY; i++) {
+                    attesterIdList.push(BigInt(i))
+                }
+                
+                for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
+                    startIndex = nonce * ATTESTATIONS_PER_EPOCH_KEY
+                    attesterToNonceMap[nonce] = []
+                    hashChainResult = BigInt(0)
+                    // Each epoch key has `ATTESTATIONS_PER_EPOCH_KEY` of attestations so
+                    // interval between starting index of each epoch key is `ATTESTATIONS_PER_EPOCH_KEY`.
+                    const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
+                    for (let i = 0; i < ATTESTATIONS_PER_EPOCH_KEY; i++) {
+                        // attesterId ranges from 1 to (maxNumAttesters - 1)
+                        let attesterId = attesterIdList[i]
+                        const attestation: Attestation = new Attestation(
+                            attesterId,
+                            BigInt(Math.floor(Math.random() * 100)),
+                            BigInt(Math.floor(Math.random() * 100)),
+                            genRandomSalt(),
+                            true,
+                        )
+                        // If nullifier tree is too small, it's likely that nullifier would be zero and
+                        // this conflicts with the reserved zero leaf of nullifier tree.
+                        // In this case, force selector to be zero.
+                        const nullifier = genAttestationNullifier(user['identityNullifier'], attesterId, epoch, epochKey, circuitNullifierTreeDepth)
+                        if ( nullifier == BigInt(0) ) {
+                            if (selectors[startIndex + i] == 1) numAttestationsMade--
+                            selectors[startIndex + i] = 0
+                        }
+
+                        if ( selectors[startIndex + i] == 1) {
+                            attesterToNonceMap[nonce].push(attesterId)
+
+                            attesterIds.push(attesterId)
+                            posReps.push(attestation['posRep'])
+                            negReps.push(attestation['negRep'])
+                            graffities.push(attestation['graffiti'])
+                            overwriteGraffitis.push(attestation['overwriteGraffiti'])
+
+                            oldPosReps.push(reputationRecords[attesterId.toString()]['posRep'])
+                            oldNegReps.push(reputationRecords[attesterId.toString()]['negRep'])
+                            oldGraffities.push(reputationRecords[attesterId.toString()]['graffiti'])
+
+                            // Get old attestation record proof
+                            const oldReputationRecordProof = await userStateTree.getMerkleProof(attesterId)
+                            userStateLeafPathElements.push(oldReputationRecordProof)
+
+                            // Update attestation record
+                            reputationRecords[attesterId.toString()].update(
+                                attestation['posRep'],
+                                attestation['negRep'],
+                                attestation['graffiti'],
+                                attestation['overwriteGraffiti']
+                            )
+                            currentEpochPosRep += Number(attestation['posRep'])
+                            currentEpochNegRep += Number(attestation['negRep'])
+                            await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
+
+                            const attestation_hash = attestation.hash()
+                            hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+
+                            nullifiers.push(nullifier)
+                        } else {
+                            attesterIds.push(BigInt(0))
+                            posReps.push(BigInt(0))
+                            negReps.push(BigInt(0))
+                            graffities.push(BigInt(0))
+                            overwriteGraffitis.push(false)
+
+                            oldPosReps.push(BigInt(0))
+                            oldNegReps.push(BigInt(0))
+                            oldGraffities.push(BigInt(0))
+
+                            const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
+                            userStateLeafPathElements.push(USTLeafZeroPathElements)
+
+                            nullifiers.push(BigInt(0))
+                        }
+                        intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+                    }
+                    // Seal hash chain of this epoch key
+                    hashChainResult = hashLeftRight(BigInt(1), hashChainResult)
+                    hashChainResults.push(hashChainResult)
+                    // Update epoch tree
+                    await epochTree.update(epochKey, hashChainResult)
+                }
+
+                // Compute new GST Leaf
+                const latestUSTRoot = intermediateUserStateTreeRoots[TOTAL_NUM_ATTESTATIONS]
+                newGSTLeaf = hash5([
+                    commitment,
+                    latestUSTRoot,
+                    BigInt(transitionedPosRep + currentEpochPosRep + defaultAirdroppedKarma),
+                    BigInt(transitionedNegRep + currentEpochNegRep),
+                    BigInt(0)
+                ])
+
+                for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
+                    const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
+                    // Get epoch tree root and merkle proof for this epoch key
+                    epochTreePathElements.push(await epochTree.getMerkleProof(epochKey))
+                }
+                epochTreeRoot = epochTree.getRootHash()
+
+                const circuitInputs = {
+                    epoch: epoch,
+                    intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                    old_pos_reps: oldPosReps,
+                    old_neg_reps: oldNegReps,
+                    old_graffities: oldGraffities,
+                    UST_path_elements: userStateLeafPathElements,
+                    identity_pk: user['keypair']['pubKey'],
+                    identity_nullifier: user['identityNullifier'],
+                    identity_trapdoor: user['identityTrapdoor'],
+                    user_state_hash: hashedLeaf,
+                    old_positive_karma: BigInt(transitionedPosRep),
+                    old_negative_karma: BigInt(transitionedNegRep),
+                    GST_path_elements: GSTreeProof.pathElements,
+                    GST_path_index: GSTreeProof.indices,
+                    GST_root: GSTreeRoot,
+                    selectors: selectors,
+                    attester_ids: attesterIds,
+                    pos_reps: posReps,
+                    neg_reps: negReps,
+                    graffities: graffities,
+                    overwrite_graffitis: overwriteGraffitis,
+                    positive_karma: BigInt(transitionedPosRep + currentEpochPosRep + defaultAirdroppedKarma),
+                    negative_karma: BigInt(transitionedNegRep + currentEpochNegRep),
+                    airdropped_karma: defaultAirdroppedKarma,
                     epk_path_elements: epochTreePathElements,
                     hash_chain_results: hashChainResults,
                     epoch_tree_root: epochTreeRoot
@@ -310,6 +558,9 @@ describe('User State Transition circuits', function () {
                     identity_pk: user['keypair']['pubKey'],
                     identity_nullifier: user['identityNullifier'],
                     identity_trapdoor: user['identityTrapdoor'],
+                    user_state_hash: hashedLeaf,
+                    old_positive_karma: BigInt(transitionedPosRep),
+                    old_negative_karma: BigInt(transitionedNegRep),
                     GST_path_elements: GSTreeProof.pathElements,
                     GST_path_index: GSTreeProof.indices,
                     GST_root: GSTreeRoot,
@@ -319,6 +570,9 @@ describe('User State Transition circuits', function () {
                     neg_reps: negReps,
                     graffities: graffities,
                     overwrite_graffitis: overwriteGraffitis,
+                    positive_karma: BigInt(transitionedPosRep + currentEpochPosRep + defaultAirdroppedKarma),
+                    negative_karma: BigInt(transitionedNegRep + currentEpochNegRep),
+                    airdropped_karma: defaultAirdroppedKarma,
                     epk_path_elements: epochTreePathElements,
                     hash_chain_results: hashChainResults,
                     epoch_tree_root: epochTreeRoot

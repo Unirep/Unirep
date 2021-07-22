@@ -9,12 +9,18 @@ import {
     contractExists,
 } from './utils'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { add0x } from '../crypto/SMT'
-import { Attestation } from '../core'
+import { Attestation, genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import { identityPrefix } from './prefix'
+import base64url from 'base64url'
+import { genIdentityCommitment, stringifyBigInts, unSerialiseIdentity } from 'libsemaphore'
+import { formatProofForVerifierContract, genVerifyReputationNullifierProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationNullifierProof } from '../test/circuits/utils'
+import { maxKarmaBudget } from '../config/testLocal'
+import { genEpochKey } from '../core/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.addParser(
@@ -40,10 +46,35 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
+    parser.add_argument(
+        '-id', '--identity',
+        {
+            required: true,
+            type: 'str',
+            help: 'The (serialized) user\'s identity',
+        }
+    )
+
+    parser.add_argument(
+        '-n', '--epoch-key-nonce',
+        {
+            required: true,
+            type: 'int',
+            help: 'The attester\'s epoch key nonce',
+        }
+    )
+
+    parser.add_argument(
+        '-mr', '--min-rep',
+        {
+            type: 'int',
+            help: 'The minimum reputation score the attester has',
+        }
+    )
+
     parser.addArgument(
         ['-pr', '--pos-rep'],
         {
-            required: true,
             type: 'int',
             help: 'Score of positive reputation to give to the user',
         }
@@ -52,7 +83,6 @@ const configureSubparser = (subparsers: any) => {
     parser.addArgument(
         ['-nr', '--neg-rep'],
         {
-            required: true,
             type: 'int',
             help: 'Score of negative reputation to give to the user',
         }
@@ -142,6 +172,28 @@ const attest = async (args: any) => {
         Unirep.abi,
         wallet,
     )
+
+    const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
+    // Validate epoch key nonce
+    const epkNonce = args.epoch_key_nonce
+    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
+    if (epkNonce >= numEpochKeyNoncePerEpoch) {
+        console.error('Error: epoch key nonce must be less than max epoch key nonce')
+        return
+    }
+
+    // Generate reputation nullifier proof
+    const encodedIdentity = args.identity.slice(identityPrefix.length)
+    const decodedIdentity = base64url.decode(encodedIdentity)
+    const id = unSerialiseIdentity(decodedIdentity)
+    const commitment = genIdentityCommitment(id)
+
+    const toEpk = BigInt(add0x(args.epoch_key))
+    const posRep = args.pos_rep ? BigInt(args.pos_rep) : BigInt(0)
+    const negRep = args.neg_rep ? BigInt(args.neg_rep) : BigInt(0)
+    const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
+    const overwriteGraffiti = args.graffiti ? true : false
+
     const attestingFee = await unirepContract.attestingFee()
     const ethAddr = ethers.utils.computeAddress(args.eth_privkey)
     const attesterId = await unirepContract.attesters(ethAddr)
@@ -149,24 +201,75 @@ const attest = async (args: any) => {
         console.error('Error: attester has not registered yet')
         return
     }
-
-    const epk = BigInt(add0x(args.epoch_key))
-    const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
-    const overwriteGraffiti = args.graffiti ? true : false
     const attestation = new Attestation(
         BigInt(attesterId),
-        BigInt(args.pos_rep),
-        BigInt(args.neg_rep),
+        posRep,
+        negRep,
         graffiti,
         overwriteGraffiti,
     )
     console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${args.pos_rep}, neg rep ${args.neg_rep} and graffiti ${graffiti.toString(16)} (overwrite graffit: ${overwriteGraffiti})`)
+    const proveKarmaAmount = Number(posRep + negRep)
+    const minRep = args.min_rep != null ? args.min_rep : 0
+
+    const userState = await genUserStateFromContract(
+        provider,
+        unirepAddress,
+        startBlock,
+        id,
+        commitment,
+    )
+    const circuitInputs = await userState.genProveReputationNullifierCircuitInputs(
+        epkNonce,                       // generate epoch key from epoch nonce
+        proveKarmaAmount,               // the amount of output karma nullifiers
+        minRep                          // the amount of minimum reputation the user wants to prove
+    )
+    console.log('Proving epoch key...')
+    console.log('----------------------User State----------------------')
+    console.log(userState.toJSON(4))
+    console.log('------------------------------------------------------')
+    console.log('----------------------Circuit inputs----------------------')
+    console.log(circuitInputs)
+    console.log('----------------------------------------------------------')
+    const results = await genVerifyReputationNullifierProofAndPublicSignals(stringifyBigInts(circuitInputs))
+
+    // TODO: Not sure if this validation is necessary
+    const isValid = await verifyProveReputationNullifierProof(results['proof'], results['publicSignals'])
+    if(!isValid) {
+        console.error('Error: reputation nullifier proof generated is not valid!')
+        return
+    }
+
+    // generate public signals
+    const epoch = userState.getUnirepStateCurrentEpoch()
+    const fromEpochKey = genEpochKey(id.identityNullifier, epoch, epkNonce)
+    const nullifiers: BigInt[] = []
+    const GSTRoot = userState.getUnirepStateGSTree(epoch).root
+    const nullifierTree = await userState.getUnirepStateNullifierTree()
+    const nullifierTreeRoot = nullifierTree.getRootHash()
+    for (let i = 0; i < maxKarmaBudget; i++) {
+        const variableName = 'main.karma_nullifiers['+i+']'
+        nullifiers.push(getSignalByNameViaSym('proveReputationNullifier', results['witness'], variableName))
+    }
+    const publicSignals = [
+        GSTRoot,
+        nullifierTreeRoot,
+        BigInt(true),
+        Number(attestation.posRep) + Number(attestation.negRep),
+        BigInt(Boolean(minRep)),
+        BigInt(minRep)
+    ]
+    
     let tx
     try {
         tx = await unirepContract.submitAttestation(
             attestation,
-            epk,
-            { value: attestingFee, gasLimit: 1000000 }
+            fromEpochKey,
+            toEpk,
+            nullifiers,
+            publicSignals,
+            formatProofForVerifierContract(results['proof']),
+            {value: attestingFee}
         )
     } catch(e) {
         console.error('Error: the transaction failed')

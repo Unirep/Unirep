@@ -15,10 +15,11 @@ import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../utils'
 
 import {
     genRandomSalt,
+    hash5,
     IncrementalQuinTree,
     stringifyBigInts,
 } from 'maci-crypto'
-import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
+import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, defaultAirdroppedKarma } from "../../config/testLocal"
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
@@ -34,6 +35,9 @@ describe('Verify Epoch Key circuits', function () {
     let id, commitment, stateRoot
     let tree, proof, root
     let nonce, currentEpoch, epochKey
+    let hashedLeaf
+    const transitionedPosRep = 20
+    const transitionedNegRep = 0
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -50,11 +54,20 @@ describe('Verify Epoch Key circuits', function () {
         id = genIdentity()
         commitment = genIdentityCommitment(id)
         stateRoot = genRandomSalt()
+        hashedLeaf = hash5([
+            commitment,
+            stateRoot,
+            BigInt(transitionedPosRep),
+            BigInt(transitionedNegRep),
+            BigInt(0)
+        ])
 
         const hashedStateLeaf = await unirepContract.hashStateLeaf(
             [
                 commitment.toString(),
-                stateRoot.toString()
+                stateRoot.toString(),
+                BigInt(defaultAirdroppedKarma),
+                BigInt(0)
             ]
         )
         tree.insert(BigInt(hashedStateLeaf.toString()))
@@ -71,14 +84,18 @@ describe('Verify Epoch Key circuits', function () {
         for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
             const n = i
             const epk = genEpochKey(id['identityNullifier'], currentEpoch, n, circuitEpochTreeDepth)
+            
             const circuitInputs = {
+                GST_path_elements: proof.pathElements,
+                GST_path_index: proof.indices,
+                GST_root: root,
                 identity_pk: id['keypair']['pubKey'],
                 identity_nullifier: id['identityNullifier'], 
                 identity_trapdoor: id['identityTrapdoor'],
-                user_state_root: stateRoot,
-                path_elements: proof.pathElements,
-                path_index: proof.indices,
-                root: root,
+                user_tree_root: stateRoot,
+                user_state_hash: hashedLeaf,
+                positive_karma: transitionedPosRep,
+                negative_karma: transitionedNegRep,
                 nonce: n,
                 epoch: currentEpoch,
                 epoch_key: epk,
@@ -97,13 +114,16 @@ describe('Verify Epoch Key circuits', function () {
         // Validate against invalid epoch key
         const invalidEpochKey1 = maxEPK
         let circuitInputs = {
+            GST_path_elements: proof.pathElements,
+            GST_path_index: proof.indices,
+            GST_root: root,
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
-            user_state_root: stateRoot,
-            path_elements: proof.pathElements,
-            path_index: proof.indices,
-            root: root,
+            user_tree_root: stateRoot,
+            user_state_hash: hashedLeaf,
+            positive_karma: transitionedPosRep,
+            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: currentEpoch,
             epoch_key: invalidEpochKey1,
@@ -122,13 +142,16 @@ describe('Verify Epoch Key circuits', function () {
     it('Wrong Id should not pass check', async () => {
         const fakeId = genIdentity()
         const circuitInputs = {
+            GST_path_elements: proof.pathElements,
+            GST_path_index: proof.indices,
+            GST_root: root,
             identity_pk: fakeId['keypair']['pubKey'],
             identity_nullifier: fakeId['identityNullifier'], 
             identity_trapdoor: fakeId['identityTrapdoor'],
-            user_state_root: stateRoot,
-            path_elements: proof.pathElements,
-            path_index: proof.indices,
-            root: root,
+            user_tree_root: stateRoot,
+            user_state_hash: hashedLeaf,
+            positive_karma: transitionedPosRep,
+            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
@@ -147,13 +170,16 @@ describe('Verify Epoch Key circuits', function () {
     it('Mismatched GST tree root should not pass check', async () => {
         const otherTreeRoot = genRandomSalt()
         const circuitInputs = {
+            GST_path_elements: proof.pathElements,
+            GST_path_index: proof.indices,
+            GST_root: root,
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
-            user_state_root: stateRoot,
-            path_elements: proof.pathElements,
-            path_index: proof.indices,
-            root: otherTreeRoot,
+            user_tree_root: otherTreeRoot,
+            user_state_hash: hashedLeaf,
+            positive_karma: transitionedPosRep,
+            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
@@ -172,13 +198,16 @@ describe('Verify Epoch Key circuits', function () {
     it('Invalid nonce should not pass check', async () => {
         const invalidNonce = numEpochKeyNoncePerEpoch
         const circuitInputs = {
+            GST_path_elements: proof.pathElements,
+            GST_path_index: proof.indices,
+            GST_root: root,
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
-            user_state_root: stateRoot,
-            path_elements: proof.pathElements,
-            path_index: proof.indices,
-            root: root,
+            user_tree_root: stateRoot,
+            user_state_hash: hashedLeaf,
+            positive_karma: transitionedPosRep,
+            negative_karma: transitionedNegRep,
             nonce: invalidNonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
@@ -203,13 +232,16 @@ describe('Verify Epoch Key circuits', function () {
             invalidEpochKey = genEpochKey(id['identityNullifier'], invalidEpoch, nonce, circuitEpochTreeDepth)
         }
         const circuitInputs = {
+            GST_path_elements: proof.pathElements,
+            GST_path_index: proof.indices,
+            GST_root: root,
             identity_pk: id['keypair']['pubKey'],
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
-            user_state_root: stateRoot,
-            path_elements: proof.pathElements,
-            path_index: proof.indices,
-            root: root,
+            user_tree_root: stateRoot,
+            user_state_hash: hashedLeaf,
+            positive_karma: transitionedPosRep,
+            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: invalidEpoch,
             epoch_key: epochKey,

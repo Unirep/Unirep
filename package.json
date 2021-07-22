@@ -4,13 +4,15 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "npm run installZkutil && npm run buildVerifyEpochKeySnark && npm run buildUserStateTransitionSnark && npm run buildProveReputationSnark",
+        "build": "npm run installZkutil && npm run buildVerifyEpochKeySnark && npm run buildUserStateTransitionSnark && npm run buildProveReputationSnark && npm run buildProveReputationNullifierSnark && npm run compile",
+        "compile": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts",
         "installZkutil": "./scripts/installZkutil.sh",
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
+        "buildProveReputationNullifierSnark": "./scripts/buildProveReputationNullifierSnark.sh",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts && npm run contractUnitTests && npm run circuitUnitTests && npm run integrationTest",
+        "test": "npm run contractUnitTests && npm run circuitUnitTests && npm run integrationTest",
         "contractUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
         "circuitUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",
         "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')"

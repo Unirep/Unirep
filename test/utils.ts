@@ -39,7 +39,7 @@ const deployUnirep = async (
     _treeDepths: any,
     _settings?: any): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
-    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
+    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract, ReputationNullifierVerifierContract
 
     console.log('Deploying PoseidonT3')
     PoseidonT3Contract = await waffle.deployContract(
@@ -71,6 +71,12 @@ const deployUnirep = async (
     console.log('Deploying ReputationVerifier')
     ReputationVerifierContract = await (await hardhatEthers.getContractFactory(
         "ReputationVerifier",
+        deployer
+    )).deploy()
+
+    console.log('Deploying ReputationNullifierVerifier')
+    ReputationNullifierVerifierContract = await (await hardhatEthers.getContractFactory(
+        "ReputationNullifierVerifier",
         deployer
     )).deploy()
 
@@ -108,6 +114,7 @@ const deployUnirep = async (
         EpochKeyValidityVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
+        ReputationNullifierVerifierContract.address,
         _numEpochKeyNoncePerEpoch,
         _numAttestationsPerEpochKey,
         _epochLength,
@@ -127,7 +134,7 @@ const deployUnirep = async (
     return c
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = epochTreeDepth): SnarkBigInt => {
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = circuitEpochTreeDepth): SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
         epoch,
@@ -141,13 +148,13 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return epochKeyModed
 }
 
-const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, epochKey: BigInt, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, epochKey: BigInt, _nullifierTreeDepth: number = circuitNullifierTreeDepth): SnarkBigInt => {
     let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), epochKey])
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
     return nullifierModed
 }
 
-const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = nullifierTreeDepth): SnarkBigInt => {
+const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = circuitNullifierTreeDepth): SnarkBigInt => {
     let nullifier = hash5([EPOCH_KEY_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
     // Adjust epoch key size according to epoch tree depth
     const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)

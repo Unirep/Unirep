@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma abicoder v2;
 pragma solidity 0.7.6;
 
@@ -7,10 +8,17 @@ contract DomainObjs is Hasher {
     struct StateLeaf {
         uint256 identityCommitment;
         uint256 userStateRoot;
+        uint256 positiveRepScore;
+        uint256 negativeRepScore;
     }
 
     function hashStateLeaf(StateLeaf memory _stateLeaf) public pure returns (uint256) {
-        return hashLeftRight(_stateLeaf.identityCommitment, _stateLeaf.userStateRoot);
+        uint256[5] memory hashElements;
+        hashElements[0] = _stateLeaf.identityCommitment;
+        hashElements[1] = _stateLeaf.userStateRoot;
+        hashElements[2] = _stateLeaf.positiveRepScore;
+        hashElements[3] = _stateLeaf.negativeRepScore;
+        return hash5(hashElements);
     }
 
     struct Attestation {
@@ -26,7 +34,7 @@ contract DomainObjs is Hasher {
         bool overwriteGraffiti;
     }
 
-    function hashAttestation(Attestation memory attestation) internal returns (uint256) {
+    function hashAttestation(Attestation memory attestation) internal pure returns (uint256) {
         uint256 overwriteGraffiti = attestation.overwriteGraffiti ? 1 : 0;
         uint256[5] memory attestationData;
         attestationData[0] = attestation.attesterId;

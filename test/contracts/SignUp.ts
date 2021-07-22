@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth} from '../../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, userStateTreeDepth, defaultAirdroppedKarma} from '../../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { IncrementalQuinTree } from 'maci-crypto'
 import { deployUnirep, genNewUserStateTree, getTreeDepthsForTesting } from '../utils'
@@ -63,7 +63,7 @@ describe('Signup', () => {
         const commitment = genIdentityCommitment(id)
 
         it('sign up should succeed', async () => {
-            const tx = await unirepContract.userSignUp(commitment)
+            const tx = await unirepContract.userSignUp(commitment, defaultAirdroppedKarma)
             const receipt = await tx.wait()
 
             expect(receipt.status).equal(1)
@@ -74,26 +74,29 @@ describe('Signup', () => {
             const hashedStateLeaf = await unirepContract.hashStateLeaf(
                 [
                     commitment,
-                    emptyUserStateRoot
+                    emptyUserStateRoot,
+                    BigInt(defaultAirdroppedKarma),
+                    BigInt(0)
                 ]
             )
             GSTree.insert(hashedStateLeaf)
         })
 
         it('double sign up should fail', async () => {
-            await expect(unirepContract.userSignUp(commitment))
+            await expect(unirepContract.userSignUp(commitment, defaultAirdroppedKarma))
                 .to.be.revertedWith('Unirep: the user has already signed up')
         })
 
         it('sign up should fail if max capacity reached', async () => {
             for (let i = 1; i < maxUsers; i++) {
                 let tx = await unirepContract.userSignUp(
-                    genIdentityCommitment(genIdentity())
+                    genIdentityCommitment(genIdentity()),
+                    defaultAirdroppedKarma
                 )
                 let receipt = await tx.wait()
                 expect(receipt.status).equal(1)
             }
-            await expect(unirepContract.userSignUp(genIdentityCommitment(genIdentity())))
+            await expect(unirepContract.userSignUp(genIdentityCommitment(genIdentity()), defaultAirdroppedKarma))
                 .to.be.revertedWith('Unirep: maximum number of signups reached')
         })
     })

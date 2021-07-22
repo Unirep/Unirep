@@ -4,7 +4,7 @@ include "./hasherPoseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./verifyHashChain.circom";
 
-template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_ATTESTATIONS) {
+template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS) {
     signal input epoch;
     signal input nonce;
     signal input identity_nullifier;
@@ -91,7 +91,6 @@ template ProcessAttestations(nullifier_tree_depth, user_state_tree_depth, NUM_AT
 
     epoch_key_nullifier <== epoch_key_nullifier_hasher.hash;
     /* End of 1. verify attestation hash chain and compute nullifiers */
-
 
     /* 2. Process attestations and update user state tree */
 

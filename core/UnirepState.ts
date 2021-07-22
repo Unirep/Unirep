@@ -1,19 +1,16 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 import {
-    hashLeftRight,
     IncrementalQuinTree,
     hash5,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from '../test/utils'
+import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from './utils'
 
 interface IEpochTreeLeaf {
     epochKey: BigInt;
     hashchainResult: BigInt;
 }
-
-const DefaultHashchainResult = SMT_ONE_LEAF
 
 interface IAttestation {
     attesterId: BigInt;
@@ -88,6 +85,7 @@ class UnirepState {
 
     private epochKeyToHashchainMap: {[key: string]: BigInt} = {}
     private epochKeyToAttestationsMap: {[key: string]: IAttestation[]} = {}
+    public karmaNullifiersMap: {[key: string]: boolean} = {}
 
     constructor(
         _globalStateTreeDepth: number,
@@ -112,10 +110,13 @@ class UnirepState {
         this.currentEpoch = 1
         this.GSTLeaves[this.currentEpoch] = []
         const emptyUserStateRoot = computeEmptyUserStateRoot(_userStateTreeDepth)
-        this.defaultGSTLeaf = hashLeftRight(
+        this.defaultGSTLeaf = hash5([
             BigInt(0),  // zero identityCommitment
             emptyUserStateRoot,  // zero user state root
-        )
+            BigInt(0), // default airdropped karma
+            BigInt(0), // default negative karma
+            BigInt(0)
+        ])
     }
 
     public toJSON = (space = 0): string => {
@@ -157,6 +158,7 @@ class UnirepState {
      * Get the hash chain result of given epoch key
      */
     public getHashchain = (epochKey: string): BigInt => {
+        const DefaultHashchainResult = SMT_ONE_LEAF
         const hashchain = this.epochKeyToHashchainMap[epochKey]
         if (!hashchain) return DefaultHashchainResult
         else return hashchain
@@ -193,6 +195,17 @@ class UnirepState {
         const attestations = this.epochKeyToAttestationsMap[epochKey]
         if (!attestations) this.epochKeyToAttestationsMap[epochKey] = []
         this.epochKeyToAttestationsMap[epochKey].push(attestation)
+    }
+
+    /*
+    * Add karma nullifiers to the map state
+    */
+    public addKarmaNullifiers = (
+        nullifier: BigInt
+    ) => {
+        if (nullifier > BigInt(0)) {
+            this.karmaNullifiersMap[nullifier.toString()] = true
+        }
     }
 
     /*

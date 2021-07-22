@@ -1,4 +1,5 @@
 node_modules
+.DS_STORE
 
 #Buidler files
 cache
@@ -8,4 +9,5 @@ build
 #Verifier solidity contracts
 EpochKeyValidityVerifier.sol
 ReputationVerifier.sol
+ReputationNullifierVerifier.sol
 UserStateTransitionVerifier.sol

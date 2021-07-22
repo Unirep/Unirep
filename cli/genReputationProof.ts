@@ -48,29 +48,34 @@ const configureSubparser = (subparsers: any) => {
         }
     )
     
-    parser.addArgument(
-        ['-mp', '--min-pos-rep'],
+    parser.add_argument(
+        '-mp', '--min-pos-rep',
         {
-            required: true,
             type: 'int',
             help: 'The minimum positive score the attester given to the user',
         }
     )
 
-    parser.addArgument(
-        ['-mn', '--max-neg-rep'],
+    parser.add_argument(
+        '-mn', '--max-neg-rep',
         {
-            required: true,
             type: 'int',
             help: 'The maximum negative score the attester given to the user',
         }
     )
 
-    parser.addArgument(
-        ['-gp', '--graffiti-preimage'],
+    parser.add_argument(
+        '-md', '--min-rep-diff',
         {
-            required: true,
-            type: 'string',
+            type: 'int',
+            help: 'The difference between positive and negative scores the attester given to the user',
+        }
+    )
+
+    parser.add_argument(
+        '-gp', '--graffiti-preimage',
+        {
+            type: 'str',
             help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
         }
     )
@@ -130,10 +135,16 @@ const genReputationProof = async (args: any) => {
         commitment,
     )
     const attesterId = BigInt(add0x(args.attester_id))
-    const minPosRep = BigInt(args.min_pos_rep)
-    const maxNegRep = BigInt(args.max_neg_rep)
-    const graffitiPreImage = BigInt(add0x(args.graffiti_preimage))
-    const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, minPosRep, maxNegRep, graffitiPreImage)
+    // Proving content
+    const provePosRep = args.min_pos_rep != null ? BigInt(1) : BigInt(0)
+    const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
+    const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
+    const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
+    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
+    const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
+    const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
+    const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
+    const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
     console.log('Proving reputation...')
     console.log('----------------------User State----------------------')
     console.log(userState.toJSON(4))

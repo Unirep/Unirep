@@ -1,14 +1,14 @@
 import assert from 'assert'
 import {
-    hashLeftRight,
     IncrementalQuinTree,
     hash5,
     stringifyBigInts,
     hashOne,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier } from '../test/utils'
+import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genKarmaNullifier } from './utils'
 import { IAttestation, UnirepState } from './UnirepState'
+import { defaultAirdroppedKarma, maxKarmaBudget } from '../config/testLocal'
 
 interface IUserStateLeaf {
     attesterId: BigInt;
@@ -94,6 +94,14 @@ class UserState {
     public id
     public commitment
     private hasSignedUp: boolean = false
+    // All positive reputations given by attesters + default allowance after user state transition
+    private transitionedPosRep: number 
+    // All negative reputations given by attesters + spent karma after user state transition
+    private transitionedNegRep: number
+    // All positive reputations given by attesters before user state transition 
+    private currentEpochPosRep: number 
+    // All negative reputations given by attesters and all spent karma before user state transition
+    private currentEpochNegRep: number
 
     public latestTransitionedEpoch: number  // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number  // Leaf index of the latest GST where the user has a record in
@@ -104,6 +112,10 @@ class UserState {
         _id,
         _commitment,
         _hasSignedUp: boolean,
+        _transitionedPosRep?: number,
+        _transitionedNegRep?: number,
+        _currentEpochPosRep?: number,
+        _currentEpochNegRep?: number,
         _latestTransitionedEpoch?: number,
         _latestGSTLeafIndex?: number,
         _latestUserStateLeaves?: IUserStateLeaf[],
@@ -119,9 +131,17 @@ class UserState {
         if (_hasSignedUp) {
             assert(_latestTransitionedEpoch !== undefined, "User has signed up but missing latestTransitionedEpoch")
             assert(_latestGSTLeafIndex !== undefined, "User has signed up but missing latestTransitionedEpoch")
+            assert(_transitionedPosRep !== undefined, "User has signed up but missing transitionedPosRep")
+            assert(_transitionedNegRep !== undefined, "User has signed up but missing transitionedNegRep")
+            assert(_currentEpochPosRep !== undefined, "User has signed up but missing currentEpochPosRep")
+            assert(_currentEpochNegRep !== undefined, "User has signed up but missing currentEpochNegRep")
 
             this.latestTransitionedEpoch = _latestTransitionedEpoch
             this.latestGSTLeafIndex = _latestGSTLeafIndex
+            this.transitionedPosRep = _transitionedPosRep
+            this.transitionedNegRep = _transitionedNegRep
+            this.currentEpochPosRep = _currentEpochPosRep
+            this.currentEpochNegRep = _currentEpochNegRep
             if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
             else this.latestUserStateLeaves = []
             this.hasSignedUp = _hasSignedUp
@@ -129,6 +149,10 @@ class UserState {
             this.latestTransitionedEpoch = 0
             this.latestGSTLeafIndex = 0
             this.latestUserStateLeaves = []
+            this.transitionedPosRep = 0
+            this.transitionedNegRep = 0
+            this.currentEpochPosRep = 0
+            this.currentEpochNegRep = 0
         }
     }
 
@@ -215,6 +239,22 @@ class UserState {
     }
 
     /*
+    * Genearte karma nullifiers from nonce starter 
+    */
+    public genKarmaNullifiersFromNonce = (nonce: number, amount: number): BigInt[] => {
+        assert(this.hasSignedUp, "User has not signed up yet")
+        assert((nonce+amount-1) < (this.transitionedPosRep-this.transitionedNegRep), `Should choose a nonce less than ${this.transitionedPosRep-this.transitionedNegRep}`)
+        const nullifiers: BigInt[] = []
+        for (let i = 0; i < amount; i++) {
+            const karmaNullifier = genKarmaNullifier(this.id.identityNullifier, this.unirepState.currentEpoch, nonce + i);
+            assert(!this.nullifierExist(karmaNullifier), `Karma nullifier with nonce ${nonce + i} is already existed, it's nullifier: ${karmaNullifier}`)
+            nullifiers.push(karmaNullifier)
+        }
+        assert(nullifiers.length == amount, `Should generate ${amount} nullifiers but got ${nullifiers.length}. Change the starter nonce`)
+        return nullifiers
+    }
+
+    /*
      * Check if given nullifier exists in nullifier tree
      */
     public nullifierExist = (nullifier: BigInt): boolean => {
@@ -229,6 +269,7 @@ class UserState {
         this.latestTransitionedEpoch = _latestTransitionedEpoch
         this.latestGSTLeafIndex = _latestGSTLeafIndex
         this.hasSignedUp = true
+        this.transitionedPosRep = defaultAirdroppedKarma
     }
 
     /*
@@ -260,17 +301,29 @@ class UserState {
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
 
+        const userStateTree = await this.genUserStateTree()
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
+
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
 
         return stringifyBigInts({
+            GST_path_elements: GSTProof.pathElements,
+            GST_path_index: GSTProof.indices,
+            GST_root: GSTree.root,
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier, 
             identity_trapdoor: this.id.identityTrapdoor,
-            user_state_root: (await this.genUserStateTree()).getRootHash(),
-            path_elements: GSTProof.pathElements,
-            path_index: GSTProof.indices,
-            root: GSTree.root,
+            user_tree_root: userStateTree.getRootHash(),
+            user_state_hash: hashedLeaf,
+            positive_karma: this.transitionedPosRep,
+            negative_karma: this.transitionedNegRep,
             nonce: epochKeyNonce,
             epoch: epoch,
             epoch_key: epochKey,
@@ -299,6 +352,17 @@ class UserState {
         return stateLeaves
     }
 
+    public updateAttestation = async (epochKey: BigInt, posRep: BigInt, negRep: BigInt) => {
+        const fromEpoch = this.latestTransitionedEpoch
+        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
+            if(epochKey == genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.epochTreeDepth)){
+                this.currentEpochPosRep += Number(posRep)
+                this.currentEpochNegRep += Number(negRep)
+                return
+            }
+        }
+    }
+
     public genNewUserStateAfterTransition = async () => {
         assert(this.hasSignedUp, "User has not signed up yet")
         const fromEpoch = this.latestTransitionedEpoch
@@ -320,9 +384,15 @@ class UserState {
 
         // Gen new user state tree
         const newUserStateTree = await this._genUserStateTreeFromLeaves(stateLeaves)
+    
         // Gen new GST leaf
-        const newGSTLeaf = hashLeftRight(this.commitment, newUserStateTree.getRootHash())
-
+        const newGSTLeaf = hash5([
+            this.commitment,
+            newUserStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep + this.currentEpochPosRep + defaultAirdroppedKarma),
+            BigInt(this.transitionedNegRep + this.currentEpochNegRep),
+            BigInt(0)
+        ])
         return {
             'newGSTLeaf': newGSTLeaf,
             'newUSTLeaves': stateLeaves
@@ -348,6 +418,16 @@ class UserState {
         const epochTreeRoot = fromEpochTree.getRootHash()
         const epochKeyPathElements: any[] = []
         const hashChainResults: BigInt[] = []
+        // User state tree
+        const userStateTree = await this.genUserStateTree()
+    
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
 
         let reputationRecords = {}
         const selectors: number[] = []
@@ -364,7 +444,7 @@ class UserState {
                 const attestation = attestations[i]
                 const attesterId = attestation.attesterId
                 const rep = this.getRepByAttester(attesterId)
-                
+
                 if (reputationRecords[attesterId.toString()] === undefined) {
                     reputationRecords[attesterId.toString()] = new Reputation(
                         rep.posRep,
@@ -391,10 +471,9 @@ class UserState {
 
                 // Update UST
                 await fromEpochUserStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
-
                 // Add new UST root to intermediate UST roots
                 intermediateUserStateTreeRoots.push(fromEpochUserStateTree.getRootHash())
-
+                
                 selectors.push(1)
                 attesterIds.push(attesterId)
                 posReps.push(attestation['posRep'])
@@ -423,7 +502,6 @@ class UserState {
             hashChainResults.push(this.unirepState.getHashchain(epochKey.toString()))
         }
 
-
         return stringifyBigInts({
             epoch: fromEpoch,
             intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
@@ -434,6 +512,9 @@ class UserState {
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.identityTrapdoor,
+            user_state_hash: hashedLeaf,
+            old_positive_karma: BigInt(this.transitionedPosRep),
+            old_negative_karma: BigInt(this.transitionedNegRep),
             GST_path_elements: GSTreeProof.pathElements,
             GST_path_index: GSTreeProof.indices,
             GST_root: GSTreeRoot,
@@ -443,6 +524,9 @@ class UserState {
             neg_reps: negReps,
             graffities: graffities,
             overwrite_graffitis: overwriteGraffitis,
+            positive_karma: BigInt(this.transitionedPosRep + this.currentEpochPosRep + defaultAirdroppedKarma),
+            negative_karma: BigInt(this.transitionedNegRep + this.currentEpochNegRep),
+            airdropped_karma: defaultAirdroppedKarma,
             epk_path_elements: epochKeyPathElements,
             hash_chain_results: hashChainResults,
             epoch_tree_root: epochTreeRoot
@@ -467,12 +551,98 @@ class UserState {
 
         // Update user state leaves
         this.latestUserStateLeaves = latestStateLeaves.slice()
+        this.transitionedPosRep = this.transitionedPosRep + this.currentEpochPosRep + defaultAirdroppedKarma
+        this.transitionedNegRep = this.transitionedNegRep + this.currentEpochNegRep
+        this.currentEpochPosRep = 0
+        this.currentEpochNegRep = 0
+    }
+
+    public genProveReputationNullifierCircuitInputs = async (
+        epochKeyNonce: number,
+        proveKarmaAmount: number,
+        minRep: number,
+    ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
+        assert(epochKeyNonce < this.numEpochKeyNoncePerEpoch, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
+        assert(proveKarmaAmount <= maxKarmaBudget, `Max provable amount of nullifiers is ${maxKarmaBudget} due to circuit constraint`)
+        assert(proveKarmaAmount <= this.transitionedPosRep - this.transitionedNegRep, `Prove karma amount is more than available karma`)
+
+        const epoch = this.latestTransitionedEpoch
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
+        const nonce = 0
+        const userStateTree = await this.genUserStateTree()
+        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTreeProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
+        const GSTreeRoot = GSTree.root
+        const nullifierTree = await this.unirepState.genNullifierTree()
+        const nullifierTreeRoot = nullifierTree.getRootHash()
+        const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, epoch, nonce, this.unirepState.nullifierTreeDepth)
+        const epkNullifierProof = await nullifierTree.getMerkleProof(epkNullifier)
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
+        const selectors: BigInt[] = []
+        const nonceList: BigInt[] = []
+        let nonceStarter = -1
+
+        // find valid nonce starter
+        for (let n = 0; n < this.transitionedPosRep - this.transitionedNegRep; n++) {
+            const karmaNullifier = genKarmaNullifier(this.id.identityNullifier, epoch, n, this.unirepState.nullifierTreeDepth)
+            if(!this.unirepState.karmaNullifiersMap[karmaNullifier.toString()]) {
+                nonceStarter = n
+                break
+            }
+        }
+        assert(nonceStarter != -1, "Cannot find valid nonce")
+        assert((nonceStarter + proveKarmaAmount) <= this.transitionedPosRep - this.transitionedNegRep, "Not enough karma to spend")
+        for (let i = 0; i < proveKarmaAmount; i++) {
+            nonceList.push( BigInt(nonceStarter + i) )
+            selectors.push(BigInt(1));
+        }
+        for (let i = proveKarmaAmount ; i < maxKarmaBudget; i++) {
+            nonceList.push(BigInt(0))
+            selectors.push(BigInt(0))
+        }
+
+        return stringifyBigInts({
+            epoch: epoch,
+            nonce: nonce,
+            identity_pk: this.id.keypair.pubKey,
+            identity_nullifier: this.id.identityNullifier, 
+            identity_trapdoor: this.id.identityTrapdoor,
+            user_tree_root: userStateTree.getRootHash(),
+            user_state_hash: hashedLeaf,
+            epoch_key_nonce: epochKeyNonce,
+            epoch_key: epochKey,
+            GST_path_index: GSTreeProof.indices,
+            GST_path_elements: GSTreeProof.pathElements,
+            GST_root: GSTreeRoot,
+            nullifier_tree_root: nullifierTreeRoot,
+            nullifier_path_elements: epkNullifierProof,
+            selectors: selectors,
+            positive_karma: BigInt(this.transitionedPosRep),
+            negative_karma: BigInt(this.transitionedNegRep),
+            prove_karma_nullifiers: BigInt(Boolean(proveKarmaAmount)),
+            prove_karma_amount: BigInt(proveKarmaAmount),
+            karma_nonce: nonceList,
+            prove_min_rep: BigInt(Boolean(minRep)),
+            min_rep: BigInt(minRep)
+        })
     }
 
     public genProveReputationCircuitInputs = async (
         attesterId: BigInt,
+        provePosRep: BigInt,
+        proveNegRep: BigInt,
+        proveRepDiff: BigInt,
+        proveGraffiti: BigInt,
         minPosRep: BigInt,
         maxNegRep: BigInt,
+        minRepDiff: BigInt,
         graffitiPreImage: BigInt,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
@@ -485,6 +655,13 @@ class UserState {
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const userStateTree = await this.genUserStateTree()
+        const hashedLeaf = hash5([
+            this.commitment,
+            userStateTree.getRootHash(),
+            BigInt(this.transitionedPosRep),
+            BigInt(this.transitionedNegRep),
+            BigInt(0)
+        ])
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTreeProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
@@ -500,7 +677,8 @@ class UserState {
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier, 
             identity_trapdoor: this.id.identityTrapdoor,
-            user_state_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.getRootHash(),
+            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -511,6 +689,13 @@ class UserState {
             neg_rep: negRep,
             graffiti: graffiti,
             UST_path_elements: USTPathElements,
+            positive_karma: BigInt(this.transitionedPosRep),
+            negative_karma: BigInt(this.transitionedNegRep),
+            prove_pos_rep: provePosRep,
+            prove_neg_rep: proveNegRep,
+            prove_rep_diff: proveRepDiff,
+            prove_graffiti: proveGraffiti,
+            min_rep_diff: minRepDiff,
             min_pos_rep: minPosRep,
             max_neg_rep: maxNegRep,
             graffiti_pre_image: graffitiPreImage
