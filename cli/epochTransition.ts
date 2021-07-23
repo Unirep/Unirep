@@ -14,52 +14,52 @@ import { DEFAULT_ETH_PROVIDER } from './defaults'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
-    const parser = subparsers.addParser(
+    const parser = subparsers.add_parser(
         'epochTransition',
-        { addHelp: true },
+        { add_help: true },
     )
 
-    parser.addArgument(
-        ['-e', '--eth-provider'],
+    parser.add_argument(
+        '-e', '--eth-provider',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
         }
     )
 
-    parser.addArgument(
-        ['-t', '--is-test'],
+    parser.add_argument(
+        '-t', '--is-test',
         {
-            action: 'storeTrue',
+            action: 'store_true',
             help: 'Indicate if the provider is a testing environment',
         }
     )
 
-    parser.addArgument(
-        ['-x', '--contract'],
+    parser.add_argument(
+        '-x', '--contract',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The Unirep contract address',
         }
     )
 
-    const privkeyGroup = parser.addMutuallyExclusiveGroup({ required: true })
+    const privkeyGroup = parser.add_mutually_exclusive_group({ required: true })
 
-    privkeyGroup.addArgument(
-        ['-dp', '--prompt-for-eth-privkey'],
+    privkeyGroup.add_argument(
+        '-dp', '--prompt-for-eth-privkey',
         {
-            action: 'storeTrue',
+            action: 'store_true',
             help: 'Whether to prompt for the user\'s Ethereum private key and ignore -d / --eth-privkey',
         }
     )
 
-    privkeyGroup.addArgument(
-        ['-d', '--eth-privkey'],
+    privkeyGroup.add_argument(
+        '-d', '--eth-privkey',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: 'The deployer\'s Ethereum private key',
         }
     )

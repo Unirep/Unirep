@@ -4,9 +4,9 @@ import { genIdentity, genIdentityCommitment, serialiseIdentity } from 'libsemaph
 import { identityPrefix, identityCommitmentPrefix } from "./prefix"
 
 const configureSubparser = (subparsers: any) => {
-    subparsers.addParser(
+    subparsers.add_parser(
         'genUnirepIdentity',
-        { addHelp: true },
+        { add_help: true },
     )
 }
 

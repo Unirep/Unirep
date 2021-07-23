@@ -63,7 +63,7 @@ const main = async () => {
         description: 'Unirep',
     })
 
-    const subparsers = parser.addSubparsers({
+    const subparsers = parser.add_subparsers({
         title: 'Subcommands',
         dest: 'subcommand',
     })
@@ -101,7 +101,7 @@ const main = async () => {
     // Subcommand: verifyReputationProof
     configureSubparserForVerifyReputationProof(subparsers)
 
-    const args = parser.parseArgs()
+    const args = parser.parse_args()
 
     // Execute the subcommand method
     if (args.subcommand === 'genUnirepIdentity') {

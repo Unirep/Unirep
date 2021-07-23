@@ -15,7 +15,7 @@ import { add0x } from '../crypto/SMT'
 import { Attestation, genUserStateFromContract } from '../core'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import { identityPrefix } from './prefix'
+import { identityPrefix, reputationNullifierProofPrefix } from './prefix'
 import base64url from 'base64url'
 import { genIdentityCommitment, stringifyBigInts, unSerialiseIdentity } from 'libsemaphore'
 import { formatProofForVerifierContract, genVerifyReputationNullifierProofAndPublicSignals, getSignalByNameViaSym, verifyProveReputationNullifierProof } from '../test/circuits/utils'
@@ -23,25 +23,25 @@ import { maxKarmaBudget } from '../config/testLocal'
 import { genEpochKey } from '../core/utils'
 
 const configureSubparser = (subparsers: any) => {
-    const parser = subparsers.addParser(
+    const parser = subparsers.add_parser(
         'attest',
-        { addHelp: true },
+        { add_help: true },
     )
 
-    parser.addArgument(
-        ['-e', '--eth-provider'],
+    parser.add_argument(
+        '-e', '--eth-provider',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
         }
     )
 
-    parser.addArgument(
-        ['-epk', '--epoch-key'],
+    parser.add_argument(
+        '-epk', '--epoch-key',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The user\'s epoch key to attest to (in hex representation)',
         }
     )
@@ -72,55 +72,55 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    parser.addArgument(
-        ['-pr', '--pos-rep'],
+    parser.add_argument(
+        '-pr', '--pos-rep',
         {
             type: 'int',
             help: 'Score of positive reputation to give to the user',
         }
     )
 
-    parser.addArgument(
-        ['-nr', '--neg-rep'],
+    parser.add_argument(
+        '-nr', '--neg-rep',
         {
             type: 'int',
             help: 'Score of negative reputation to give to the user',
         }
     )
 
-    parser.addArgument(
-        ['-gf', '--graffiti'],
+    parser.add_argument(
+        '-gf', '--graffiti',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: 'Graffiti for the reputation given to the user (in hex representation)',
         }
     )
 
-    parser.addArgument(
-        ['-x', '--contract'],
+    parser.add_argument(
+        '-x', '--contract',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The Unirep contract address',
         }
     )
 
-    const privkeyGroup = parser.addMutuallyExclusiveGroup({ required: true })
+    const privkeyGroup = parser.add_mutually_exclusive_group({ required: true })
 
-    privkeyGroup.addArgument(
-        ['-dp', '--prompt-for-eth-privkey'],
+    privkeyGroup.add_argument(
+        '-dp', '--prompt-for-eth-privkey',
         {
-            action: 'storeTrue',
+            action: 'store_true',
             help: 'Whether to prompt for the user\'s Ethereum private key and ignore -d / --eth-privkey',
         }
     )
 
-    privkeyGroup.addArgument(
-        ['-d', '--eth-privkey'],
+    privkeyGroup.add_argument(
+        '-d', '--eth-privkey',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: 'The deployer\'s Ethereum private key',
         }
     )
@@ -279,6 +279,10 @@ const attest = async (args: any) => {
         return
     }
 
+    const formattedProof = formatProofForVerifierContract(results["proof"])
+    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    console.log(`Reputation nullifier proof: `)
+    console.log(reputationNullifierProofPrefix + encodedProof)
     console.log('Transaction hash:', tx.hash)
 }
 

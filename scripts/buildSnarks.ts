@@ -20,89 +20,89 @@ const main = () => {
         description: 'Compile a circom circuit and generate its proving key, verification key, and Solidity verifier'
     })
 
-    parser.addArgument(
-        ['-i', '--input'],
+    parser.add_argument(
+        '-i', '--input',
         {
             help: 'The filepath of the circom file',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-j', '--r1cs-out'],
+    parser.add_argument(
+        '-j', '--r1cs-out',
         {
             help: 'The filepath to save the compiled circom file',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-w', '--wasm-out'],
+    parser.add_argument(
+        '-w', '--wasm-out',
         {
             help: 'The filepath to save the WASM file',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-y', '--sym-out'],
+    parser.add_argument(
+        '-y', '--sym-out',
         {
             help: 'The filepath to save the SYM file',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-v', '--vk-out'],
+    parser.add_argument(
+        '-v', '--vk-out',
         {
             help: 'The filepath to save the verification key',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-p', '--pk-out'],
+    parser.add_argument(
+        '-p', '--pk-out',
         {
             help: 'The filepath to save the proving key (as a .json file)',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-s', '--sol-out'],
+    parser.add_argument(
+        '-s', '--sol-out',
         {
             help: 'The filepath to save the Solidity verifier contract',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-r', '--override'],
+    parser.add_argument(
+        '-r', '--override',
         {
             help: 'Override an existing compiled circuit, proving key, and verifying key if set to true; otherwise (and by default), skip generation if a file already exists',
-            action: 'storeTrue',
+            action: 'store_true',
             required: false,
             default: false,
         }
     )
 
-    parser.addArgument(
-        ['-vs', '--verifier-name'],
+    parser.add_argument(
+        '-vs', '--verifier-name',
         {
             help: 'The desired name of the verifier contract',
             required: true
         }
     )
 
-    parser.addArgument(
-        ['-pr', '--params-out'],
+    parser.add_argument(
+        '-pr', '--params-out',
         {
             help: 'The filepath to save the params file',
             required: true
         }
     )
 
-    const args = parser.parseArgs()
+    const args = parser.parse_args()
     const vkOut = args.vk_out
     const solOut = args.sol_out
     const inputFile = args.input

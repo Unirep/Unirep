@@ -252,10 +252,8 @@ describe('Epoch Transition', function (){
         expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
         const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
         const newState = await userState.genNewUserStateAfterTransition()
-        // const attestationNullifiers = userState.getAttestationNullifiers(1)
         const epkNullifiers = userState.getEpochKeyNullifiers(1)
         console.log()
-        // const allNullifiers = attestationNullifiers.concat(epkNullifiers)
         expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
         userState.transition(newState.newUSTLeaves)
         unirepState.userStateTransition(epoch_, BigInt(newGSTLeaf), epkNullifiers)

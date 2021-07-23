@@ -5,3 +5,5 @@ export const identityCommitmentPrefix = 'Unirep.identityCommitment.'
 export const epkProofPrefix = 'Unirep.epkProof.'
 
 export const reputationProofPrefix = 'Unirep.reputationProof.'
+
+export const reputationNullifierProofPrefix = 'Unirep.reputationNullifierProof.'

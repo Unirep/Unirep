@@ -16,34 +16,34 @@ import { add0x } from '../crypto/SMT'
 import { identityPrefix, reputationProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
-    const parser = subparsers.addParser(
+    const parser = subparsers.add_parser(
         'genReputationProof',
-        { addHelp: true },
+        { add_help: true },
     )
 
-    parser.addArgument(
-        ['-e', '--eth-provider'],
+    parser.add_argument(
+        '-e', '--eth-provider',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
         }
     )
 
-    parser.addArgument(
-        ['-id', '--identity'],
+    parser.add_argument(
+        '-id', '--identity',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The (serialized) user\'s identity',
         }
     )
 
-    parser.addArgument(
-        ['-a', '--attester-id'],
+    parser.add_argument(
+        '-a', '--attester-id',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The attester id (in hex representation)',
         }
     )
@@ -80,8 +80,8 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    parser.addArgument(
-        ['-b', '--start-block'],
+    parser.add_argument(
+        '-b', '--start-block',
         {
             action: 'store',
             type: 'int',
@@ -89,11 +89,11 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    parser.addArgument(
-        ['-x', '--contract'],
+    parser.add_argument(
+        '-x', '--contract',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The Unirep contract address',
         }
     )

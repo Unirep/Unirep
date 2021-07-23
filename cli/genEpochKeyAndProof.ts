@@ -19,31 +19,31 @@ import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix, identityPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
-    const parser = subparsers.addParser(
+    const parser = subparsers.add_parser(
         'genEpochKeyAndProof',
-        { addHelp: true },
+        { add_help: true },
     )
 
-    parser.addArgument(
-        ['-e', '--eth-provider'],
+    parser.add_argument(
+        '-e', '--eth-provider',
         {
             action: 'store',
-            type: 'string',
+            type: 'str',
             help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
         }
     )
 
-    parser.addArgument(
-        ['-id', '--identity'],
+    parser.add_argument(
+        '-id', '--identity',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The (serialized) user\'s identity',
         }
     )
 
-    parser.addArgument(
-        ['-n', '--epoch-key-nonce'],
+    parser.add_argument(
+        '-n', '--epoch-key-nonce',
         {
             required: true,
             type: 'int',
@@ -51,8 +51,8 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    parser.addArgument(
-        ['-b', '--start-block'],
+    parser.add_argument(
+        '-b', '--start-block',
         {
             action: 'store',
             type: 'int',
@@ -60,11 +60,11 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    parser.addArgument(
-        ['-x', '--contract'],
+    parser.add_argument(
+        '-x', '--contract',
         {
             required: true,
-            type: 'string',
+            type: 'str',
             help: 'The Unirep contract address',
         }
     )
