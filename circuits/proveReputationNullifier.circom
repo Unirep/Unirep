@@ -154,7 +154,7 @@ template ProveReputationNullifier(
         // 5.2 Use karma_nonce to compute all karma nullifiers
         if_output_nullifiers[i] = Mux1();
         karma_nullifier_hasher[i] = Hasher5();
-        karma_nullifier_hasher[i].in[0] <== 3; // 3 is the domain separator for karma nullifier
+        karma_nullifier_hasher[i].in[0] <== 1; // 1 is the domain separator for karma nullifier
         karma_nullifier_hasher[i].in[1] <== identity_nullifier;
         karma_nullifier_hasher[i].in[2] <== epoch;
         karma_nullifier_hasher[i].in[3] <== karma_nonce[i];

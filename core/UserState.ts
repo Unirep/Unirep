@@ -6,7 +6,7 @@ import {
     hashOne,
 } from 'maci-crypto'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
-import { genAttestationNullifier, defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genKarmaNullifier } from './utils'
+import { defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genKarmaNullifier } from './utils'
 import { IAttestation, UnirepState } from './UnirepState'
 import { defaultAirdroppedKarma, maxKarmaBudget } from '../config/testLocal'
 
@@ -196,28 +196,6 @@ class UserState {
      */
     public getAttestations = (epochKey: string): IAttestation[] => {
         return this.unirepState.getAttestations(epochKey)
-    }
-
-    /*
-     * Get the nullifier of the attestations of given epoch
-     */
-    public getAttestationNullifiers = (epoch: number): BigInt[] => {
-        const nullifiers: BigInt[] = []
-        console.log(`gettting AttestationNullifiers for epoch: ${epoch}`)
-        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
-            const epochKey = genEpochKey(this.id.identityNullifier, epoch, nonce, this.unirepState.epochTreeDepth)
-            const attestations = this.unirepState.getAttestations(epochKey.toString())
-            console.log(`nonce: ${nonce}, epochKey: ${epochKey}, number of attestations: ${attestations.length}`)
-            for (const attestation of attestations) {
-                nullifiers.push(
-                    genAttestationNullifier(this.id.identityNullifier, attestation.attesterId, epoch, epochKey, this.unirepState.nullifierTreeDepth)
-                )
-            }
-            for (let i = 0; i < (this.numAttestationsPerEpochKey - attestations.length); i++) {
-                nullifiers.push(BigInt(0))
-            }
-        }
-        return nullifiers
     }
 
     /*

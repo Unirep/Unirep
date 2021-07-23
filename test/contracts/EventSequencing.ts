@@ -209,11 +209,6 @@ describe('EventSequencing', function (){
 
     it('Second user should perform transition', async () => {
         let transitionFromEpoch = 1
-        const numAttestationsPerEpoch = numEpochKeyNoncePerEpoch * numAttestationsPerEpochKey
-        const attestationNullifiers: BigInt[] = []
-        for (let i = 0; i < numAttestationsPerEpoch; i++) {
-            attestationNullifiers.push(BigInt(16 + i))
-        }
         const epkNullifiers: BigInt[] = []
         for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
             epkNullifiers.push(BigInt(255))
@@ -224,7 +219,6 @@ describe('EventSequencing', function (){
         }
         const tx = await unirepContract.updateUserStateRoot(
             genRandomSalt(),
-            attestationNullifiers,
             epkNullifiers,
             transitionFromEpoch,
             genRandomSalt(),
@@ -260,11 +254,6 @@ describe('EventSequencing', function (){
 
     it('First user should perform transition', async () => {
         const transitionFromEpoch = 1
-        const numAttestationsPerEpoch = numEpochKeyNoncePerEpoch * numAttestationsPerEpochKey
-        const attestationNullifiers: BigInt[] = []
-        for (let i = 0; i < numAttestationsPerEpoch; i++) {
-            attestationNullifiers.push(BigInt(16 + i))
-        }
         const epkNullifiers: BigInt[] = []
         for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
             epkNullifiers.push(BigInt(255))
@@ -275,7 +264,6 @@ describe('EventSequencing', function (){
         }
         const tx = await unirepContract.updateUserStateRoot(
             genRandomSalt(),
-            attestationNullifiers,
             epkNullifiers,
             transitionFromEpoch,
             genRandomSalt(),
@@ -290,11 +278,6 @@ describe('EventSequencing', function (){
 
     it('Second user should perform transition', async () => {
         const transitionFromEpoch = 1
-        const numAttestationsPerEpoch = numEpochKeyNoncePerEpoch * numAttestationsPerEpochKey
-        const attestationNullifiers: BigInt[] = []
-        for (let i = 0; i < numAttestationsPerEpoch; i++) {
-            attestationNullifiers.push(BigInt(16 + i))
-        }
         const epkNullifiers: BigInt[] = []
         for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
             epkNullifiers.push(BigInt(255))
@@ -305,7 +288,6 @@ describe('EventSequencing', function (){
         }
         const tx = await unirepContract.updateUserStateRoot(
             genRandomSalt(),
-            attestationNullifiers,
             epkNullifiers,
             transitionFromEpoch,
             genRandomSalt(),

@@ -29,24 +29,12 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS) {
     signal input hash_chain_result;
 
     // Nullifiers of the attestations
-    signal output nullifiers[NUM_ATTESTATIONS];
     signal output epoch_key_nullifier;
-
 
     component attestation_hashers[NUM_ATTESTATIONS];
 
-    component nullifier_hashers[NUM_ATTESTATIONS];
-
     component hash_chain_verifier = VerifyHashChain(NUM_ATTESTATIONS);
     hash_chain_verifier.result <== hash_chain_result;
-
-    component nullifier_muxer[NUM_ATTESTATIONS];
-
-    signal one_leaf;
-    component one_leaf_hasher = HashLeftRight();
-    one_leaf_hasher.left <== 1;
-    one_leaf_hasher.right <== 0;
-    one_leaf <== one_leaf_hasher.hash;
 
     /* 1. Verify attestation hash chain and compute nullifiers */
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
@@ -59,25 +47,6 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS) {
         attestation_hashers[i].in[4] <== overwrite_graffitis[i];
         hash_chain_verifier.hashes[i] <== attestation_hashers[i].hash;
         hash_chain_verifier.selectors[i] <== selectors[i];
-
-        // 1.2 Compute nullifier of the attestation
-        nullifier_hashers[i] = Hasher5();
-        nullifier_hashers[i].in[0] <== 1;  // 1 is the domain separator for attestation nullifier
-        nullifier_hashers[i].in[1] <== identity_nullifier;
-        nullifier_hashers[i].in[2] <== attester_ids[i];
-        nullifier_hashers[i].in[3] <== epoch;
-        // Add epoch key into nullifier computation in case attester attests more than one epoch key
-        // in same epoch and results in duplicated nullifiers.
-        nullifier_hashers[i].in[4] <== epoch_key;
-
-        // Ouput nullifiers
-        // Filter by selectors, if selector is true, output actual nullifier,
-        // output 0 otherwise since leaf 0 of nullifier tree is reserved.
-        nullifier_muxer[i] = Mux1();
-        nullifier_muxer[i].c[0] <== 0;
-        nullifier_muxer[i].c[1] <== nullifier_hashers[i].hash;
-        nullifier_muxer[i].s <== selectors[i];
-        nullifiers[i] <== nullifier_muxer[i].out;
     }
 
     // 1.2 Compute epoch key nullifier

@@ -30,7 +30,6 @@ contract UnirepParameters {
         uint256 fromNullifierTreeRoot;
         uint256 newGlobalStateTreeLeaf;
         uint256[8] proof;
-        uint256[] attestationNullifiers;
         uint256[] epkNullifiers;
     }
 

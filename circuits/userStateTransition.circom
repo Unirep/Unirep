@@ -92,8 +92,6 @@ template UserStateTransition(
     signal input epoch_tree_root;
 
     signal output new_GST_leaf;
-    // Nullifier of the attestations
-    signal output nullifiers[TOTAL_NUM_ATTESTATIONS];
     // Nullifier of epoch keys
     signal output epoch_key_nullifier[EPOCH_KEY_NONCE_PER_EPOCH];
 
@@ -123,19 +121,7 @@ template UserStateTransition(
     user_exist.negative_karma <== old_negative_karma;
     /* End of check 1 */
 
-    /* 2. Process the attestations of the epoch key specified by nonce `n` and verify attestation nullifiers */
-    signal zero_leaf;
-    component zero_leaf_hasher = HashLeftRight();
-    zero_leaf_hasher.left <== 0;
-    zero_leaf_hasher.right <== 0;
-    zero_leaf <== zero_leaf_hasher.hash;
-    // Leaf of a seen nullifier should have value hashLeftRight(1, 0)
-    signal one_leaf;
-    component one_leaf_hasher = HashLeftRight();
-    one_leaf_hasher.left <== 1;
-    one_leaf_hasher.right <== 0;
-    one_leaf <== one_leaf_hasher.hash;
-
+    /* 2. Process the attestations of the epoch key specified by nonce `n` */
     var start_index;
     component epkExist[EPOCH_KEY_NONCE_PER_EPOCH];
     component process_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
@@ -176,14 +162,10 @@ template UserStateTransition(
             process_attestations[n].selectors[i] <== selectors[start_index + i];
         }
 
-        // 2.3 Output attestations nullifers
-        for (var i = 0; i < ATTESTATIONS_PER_EPOCH_KEY; i++) {
-            nullifiers[start_index + i] <== process_attestations[n].nullifiers[i];
-        }
-        // Output epoch key nullifiers
+        // 2.3 Output epoch key nullifiers
         epoch_key_nullifier[n] <== process_attestations[n].epoch_key_nullifier;
     }
-    /* End of 2. process the attestations of the epoch key specified by nonce `n` and verify attestation nullifiers */
+    /* End of 2. process the attestations of the epoch key specified by nonce `n` */
 
 
     /* 3. Compute and output new GST leaf */

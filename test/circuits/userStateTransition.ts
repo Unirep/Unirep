@@ -21,7 +21,7 @@ import {
     getSignalByName,
 } from './utils'
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
-import { genEpochKey, genAttestationNullifier, genNewEpochTree, genNewUserStateTree } from "../utils"
+import { genEpochKey, genNewEpochTree, genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Attestation, Reputation } from "../../core"
 import { defaultAirdroppedKarma } from "../../config/testLocal"
@@ -94,7 +94,6 @@ describe('User State Transition circuits', function () {
         let reputationRecords = {}
         let attesterIds: BigInt[], posReps: BigInt[], negReps: BigInt[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
         let selectors: number[] = []
-        let nullifiers: BigInt[]
         let hashChainResults: BigInt[] = []
         let hashedLeaf
         const transitionedPosRep = 20
@@ -165,7 +164,6 @@ describe('User State Transition circuits', function () {
             }
 
             // Begin generating and processing attestations
-            nullifiers = []
             epochTreePathElements = []
             let hashChainResult: BigInt
             const attesterToNonceMap = {}
@@ -191,14 +189,6 @@ describe('User State Transition circuits', function () {
                         genRandomSalt(),
                         true,
                     )
-                    // If nullifier tree is too small, it's likely that nullifier would be zero and
-                    // this conflicts with the reserved zero leaf of nullifier tree.
-                    // In this case, force selector to be zero.
-                    const nullifier = genAttestationNullifier(user['identityNullifier'], attesterId, epoch, epochKey, circuitNullifierTreeDepth)
-                    if ( nullifier == BigInt(0) ) {
-                        if (selectors[startIndex + i] == 1) numAttestationsMade--
-                        selectors[startIndex + i] = 0
-                    }
 
                     if ( selectors[startIndex + i] == 1) {
                         attesterToNonceMap[nonce].push(attesterId)
@@ -230,8 +220,6 @@ describe('User State Transition circuits', function () {
 
                         const attestation_hash = attestation.hash()
                         hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
-
-                        nullifiers.push(nullifier)
                     } else {
                         attesterIds.push(BigInt(0))
                         posReps.push(BigInt(0))
@@ -245,8 +233,6 @@ describe('User State Transition circuits', function () {
 
                         const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
                         userStateLeafPathElements.push(USTLeafZeroPathElements)
-
-                        nullifiers.push(BigInt(0))
                     }
                     intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
                 }
@@ -307,11 +293,6 @@ describe('User State Transition circuits', function () {
                     epoch_tree_root: epochTreeRoot
                 }
                 const witness = await executeCircuit(circuit, circuitInputs)
-                for (let i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
-                    const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-                    const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
-                    expect(modedNullifier).to.equal(nullifiers[i])
-                }
                 const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
                 expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))
 
@@ -386,7 +367,6 @@ describe('User State Transition circuits', function () {
                 }
 
                 // Begin generating and processing attestations
-                nullifiers = []
                 epochTreePathElements = []
                 let hashChainResult: BigInt
                 const attesterToNonceMap = {}
@@ -414,14 +394,6 @@ describe('User State Transition circuits', function () {
                             genRandomSalt(),
                             true,
                         )
-                        // If nullifier tree is too small, it's likely that nullifier would be zero and
-                        // this conflicts with the reserved zero leaf of nullifier tree.
-                        // In this case, force selector to be zero.
-                        const nullifier = genAttestationNullifier(user['identityNullifier'], attesterId, epoch, epochKey, circuitNullifierTreeDepth)
-                        if ( nullifier == BigInt(0) ) {
-                            if (selectors[startIndex + i] == 1) numAttestationsMade--
-                            selectors[startIndex + i] = 0
-                        }
 
                         if ( selectors[startIndex + i] == 1) {
                             attesterToNonceMap[nonce].push(attesterId)
@@ -453,8 +425,6 @@ describe('User State Transition circuits', function () {
 
                             const attestation_hash = attestation.hash()
                             hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
-
-                            nullifiers.push(nullifier)
                         } else {
                             attesterIds.push(BigInt(0))
                             posReps.push(BigInt(0))
@@ -468,8 +438,6 @@ describe('User State Transition circuits', function () {
 
                             const USTLeafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
                             userStateLeafPathElements.push(USTLeafZeroPathElements)
-
-                            nullifiers.push(BigInt(0))
                         }
                         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
                     }
@@ -528,11 +496,6 @@ describe('User State Transition circuits', function () {
                 }
 
                 const witness = await executeCircuit(circuit, circuitInputs)
-                for (let i = 0; i < TOTAL_NUM_ATTESTATIONS; i++) {
-                    const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-                    const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
-                    expect(modedNullifier).to.equal(nullifiers[i])
-                }
                 const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
                 expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))
 

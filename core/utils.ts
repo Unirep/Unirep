@@ -13,7 +13,7 @@ import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circu
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
 import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt } from 'maci-crypto'
-import { ATTESTATION_NULLIFIER_DOMAIN, EPOCH_KEY_NULLIFIER_DOMAIN, KARMA_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
+import { EPOCH_KEY_NULLIFIER_DOMAIN, KARMA_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
 
 const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
@@ -161,12 +161,6 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed
-}
-
-const genAttestationNullifier = (identityNullifier: SnarkBigInt, attesterId: BigInt, epoch: number, epochKey: BigInt, _nullifierTreeDepth: number = circuitNullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([ATTESTATION_NULLIFIER_DOMAIN, identityNullifier, attesterId, BigInt(epoch), epochKey])
-    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
-    return nullifierModed
 }
 
 const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = circuitNullifierTreeDepth): SnarkBigInt => {
@@ -327,7 +321,7 @@ const genUnirepStateFromContract = async (
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
+                // userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
@@ -341,12 +335,9 @@ const genUnirepStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
             const epkNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
-            // Combine nullifiers and mod them
-            const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent).map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
 
-            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiersInEvent)
+            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), epkNullifiersInEvent)
         } else {
             throw new Error(`Unexpected event: ${occurredEvent}`)
         }
@@ -590,7 +581,7 @@ const _genUserStateFromContract = async (
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
+                // userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
@@ -604,14 +595,11 @@ const _genUserStateFromContract = async (
                 continue
             }
 
-            const attestationNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
             const epkNullifiersInEvent = userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers.map((nullifier) => BigInt(nullifier) % BigInt(2 ** unirepState.nullifierTreeDepth))
-            // Combine nullifiers and mod them
-            const allNullifiersInEvent = attestationNullifiersInEvent.concat(epkNullifiersInEvent)
 
             let isNullifierSeen = false
             // Verify nullifiers are not seen before
-            for (const nullifier of allNullifiersInEvent) {
+            for (const nullifier of epkNullifiersInEvent) {
                 if (nullifier === BigInt(0)) continue
                 else {
                     if (userState.nullifierExist(nullifier)) {
@@ -645,7 +633,7 @@ const _genUserStateFromContract = async (
                     throw new Error(`Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${numEpochKeyNoncePerEpoch}`)
                 }
             }
-            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), allNullifiersInEvent)
+            unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), epkNullifiersInEvent)
         } else {
             throw new Error(`Unexpected event: ${occurredEvent}`)
         }
@@ -692,7 +680,6 @@ export {
     getTreeDepthsForTesting,
     deployUnirep,
     genEpochKey,
-    genAttestationNullifier,
     genEpochKeyNullifier,
     genKarmaNullifier,
     genNewSMT,

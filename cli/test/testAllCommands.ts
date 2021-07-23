@@ -27,7 +27,6 @@ describe('test all CLI subcommands', function() {
     const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
     const epochKeyNonce = 0
-    const epochKeyNonce1 = 1
     const epochLength = 5
     let unirepContract: ethers.Contract
     let unirepState: UnirepState
@@ -188,7 +187,7 @@ describe('test all CLI subcommands', function() {
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
                 ` -id ${userIdentity} ` +
-                ` -n ${epochKeyNonce1} ` +
+                ` -n ${epochKeyNonce} ` +
                 ` -pr ${posRep} ` +
                 ` -nr ${negRep} ` +
                 ` -gf ${graffiti.toString(16)} `

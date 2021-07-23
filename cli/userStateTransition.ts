@@ -169,19 +169,9 @@ const userStateTransition = async (args: any) => {
     const GSTreeRoot = userState.getUnirepStateGSTree(fromEpoch).root
     const epochTreeRoot = (await userState.getUnirepStateEpochTree(fromEpoch)).getRootHash()
     const nullifierTreeRoot = (await userState.getUnirepStateNullifierTree()).getRootHash()
-    const attestationNullifiers = userState.getAttestationNullifiers(fromEpoch)
     const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
+
     // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
-    const outputAttestationNullifiers: BigInt[] = []
-    for (let i = 0; i < attestationNullifiers.length; i++) {
-        const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.nullifiers[' + i + ']')
-        const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** nullifierTreeDepth)
-        if (modedOutputNullifier != attestationNullifiers[i]) {
-            console.error(`Error: nullifier outputted by circuit(${modedOutputNullifier}) does not match the ${i}-th computed attestation nullifier(${attestationNullifiers[i]})`)
-            return
-        }
-        outputAttestationNullifiers.push(outputNullifier)
-    }
     const outputEPKNullifiers: BigInt[] = []
     for (let i = 0; i < epkNullifiers.length; i++) {
         const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
@@ -197,7 +187,6 @@ const userStateTransition = async (args: any) => {
     try {
         tx = await unirepContract.updateUserStateRoot(
             newGSTLeaf,
-            outputAttestationNullifiers,
             outputEPKNullifiers,
             fromEpoch,
             GSTreeRoot,

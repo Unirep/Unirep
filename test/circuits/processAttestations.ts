@@ -8,7 +8,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { genAttestationNullifier, genEpochKey, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
+import { genEpochKey, genEpochKeyNullifier, genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,
@@ -38,7 +38,6 @@ describe('Process attestation circuit', function () {
     let reputationRecords: { [key: string]: Reputation } = {}
     let attesterIds: BigInt[], posReps: BigInt[], negReps: BigInt[], graffities: SnarkBigInt[], overwriteGraffitis: boolean[]
     let selectors: number[] = []
-    let nullifiers: SnarkBigInt[]
     let hashChainResult: SnarkBigInt
 
     before(async () => {
@@ -85,7 +84,6 @@ describe('Process attestation circuit', function () {
             else selectors.push(Math.floor(Math.random() * 2))
         }
 
-        nullifiers = []
         hashChainResult = BigInt(0)
         for (let i = 0; i < NUM_ATTESTATIONS; i++) {
             const attesterId = BigInt(i + 1)
@@ -121,15 +119,11 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                nullifiers.push(genAttestationNullifier(user['identityNullifier'], attesterId, epoch, epochKey, circuitNullifierTreeDepth))
-
                 const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
                 userStateTreePathElements.push(leafZeroPathElements)
-
-                nullifiers.push(BigInt(0))
             }
             
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
@@ -157,11 +151,6 @@ describe('Process attestation circuit', function () {
             hash_chain_result: hashChainResult
         }
         const witness = await executeCircuit(circuit, circuitInputs)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-            const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
-            expect(BigNumber.from(modedNullifier)).to.equal(BigNumber.from(nullifiers[i]))
-        }
         const epkNullifier = genEpochKeyNullifier(user['identityNullifier'], epoch, nonce, circuitNullifierTreeDepth)
         const _epkNullifier = getSignalByName(circuit, witness, 'main.epoch_key_nullifier')
         const _modedEPKNullifier = BigInt(_epkNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
@@ -329,17 +318,6 @@ describe('Process attestation circuit', function () {
         }
 
         const witness = await executeCircuit(circuit, circuitInputs)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-            const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
-            if (selectors[i] == 0) {
-                // If selector is false, nullifier should be zero
-                expect(BigNumber.from(modedNullifier)).to.equal(0)
-            } else {
-                // Otherwise nullifier should not be the same as the correct nullifier
-                expect(BigNumber.from(modedNullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
-            }
-        }
     })
 
     it('process attestations with wrong nullifier should fail', async () => {
@@ -364,17 +342,6 @@ describe('Process attestation circuit', function () {
         }
 
         const witness = await executeCircuit(circuit, circuitInputs)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
-            const nullifier = getSignalByName(circuit, witness, 'main.nullifiers[' + i + ']')
-            const modedNullifier = BigInt(nullifier) % BigInt(2 ** circuitNullifierTreeDepth)
-            if (selectors[i] == 0) {
-                // If selector is false, nullifier should be zero
-                expect(BigNumber.from(modedNullifier)).to.equal(0)
-            } else {
-                // Otherwise nullifier should not be the same as the correct nullifier
-                expect(BigNumber.from(modedNullifier)).to.not.equal(BigNumber.from(nullifiers[i]))
-            }
-        }
     })
 
     it('process attestations with incorrect number of elements should fail', async () => {
