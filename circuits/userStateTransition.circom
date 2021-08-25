@@ -137,7 +137,7 @@ template UserStateTransition(
     component epoch_key_nullifier_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
         epoch_key_nullifier_hasher[n] = Hasher5();
-        epoch_key_nullifier_hasher[n].in[0] <== 2;  // 2 is the domain separator for epoch key nullifier
+        epoch_key_nullifier_hasher[n].in[0] <== 1;  // 1 is the domain separator for epoch key nullifier
         epoch_key_nullifier_hasher[n].in[1] <== identity_nullifier;
         epoch_key_nullifier_hasher[n].in[2] <== epoch;
         epoch_key_nullifier_hasher[n].in[3] <== n;

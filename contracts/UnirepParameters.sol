@@ -27,19 +27,11 @@ contract UnirepParameters {
         uint256 fromEpoch;
         uint256 fromGlobalStateTree;
         uint256 fromEpochTree;
-        uint256 fromNullifierTreeRoot;
         uint256 newGlobalStateTreeLeaf;
         uint256[8] proof;
+        uint256[] blindedUserStates;
+        uint256[] blindedHashChains;
         uint256[] epkNullifiers;
-    }
-
-    struct RepNullifierProofSignals{
-        uint256 globalStateTree;
-        uint256 nullifierTree;
-        uint256 proveRepNullifiers;
-        uint256 proveRepAmount;
-        uint256 proveMinRep;
-        uint256 minRep;
     }
 
     struct ReputationProofSignals{

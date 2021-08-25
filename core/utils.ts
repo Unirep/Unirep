@@ -9,11 +9,11 @@ import assert from 'assert'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numAttestationsPerEpochKey, numEpochKeyNoncePerEpoch, userStateTreeDepth, defaultAirdroppedKarma } from '../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth, airdroppedRepScore } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
 import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt } from 'maci-crypto'
-import { EPOCH_KEY_NULLIFIER_DOMAIN, KARMA_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
+import { EPOCH_KEY_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
 import { SparseMerkleTreeImpl } from '../crypto/SMT'
 
 const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
@@ -54,7 +54,7 @@ const deployUnirep = async (
     _treeDepths: any,
     _settings?: any): Promise<ethers.Contract> => {
     let PoseidonT3Contract, PoseidonT6Contract
-    let EpochKeyValidityVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract, ReputationFromAttesterVerifierContract
+    let EpochKeyValidityVerifierContract, StartTransitionVerifierContract, ProcessAttestationsVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
     console.log('Deploying PoseidonT3')
     PoseidonT3Contract = await waffle.deployContract(
@@ -77,6 +77,19 @@ const deployUnirep = async (
         deployer
     )).deploy()
 
+    console.log('Deploying StartTransitionVerifier')
+    StartTransitionVerifierContract = await (await hardhatEthers.getContractFactory(
+        "StartTransitionVerifier",
+        deployer
+    )).deploy()
+
+
+    console.log('Deploying ProcessAttestationsVerifier')
+    ProcessAttestationsVerifierContract = await (await hardhatEthers.getContractFactory(
+        "ProcessAttestationsVerifier",
+        deployer
+    )).deploy()
+
     console.log('Deploying UserStateTransitionVerifier')
     UserStateTransitionVerifierContract = await (await hardhatEthers.getContractFactory(
         "UserStateTransitionVerifier",
@@ -89,25 +102,17 @@ const deployUnirep = async (
         deployer
     )).deploy()
 
-    console.log('Deploying ReputationFromAttesterVerifier')
-    ReputationFromAttesterVerifierContract = await (await hardhatEthers.getContractFactory(
-        "ReputationFromAttesterVerifier",
-        deployer
-    )).deploy()
-
     console.log('Deploying Unirep')
 
-    let _maxUsers, _numEpochKeyNoncePerEpoch, _numAttestationsPerEpochKey, _epochLength, _attestingFee
+    let _maxUsers, _numEpochKeyNoncePerEpoch, _epochLength, _attestingFee
     if (_settings) {
         _maxUsers = _settings.maxUsers
         _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
-        _numAttestationsPerEpochKey = _settings.numAttestationsPerEpochKey
         _epochLength = _settings.epochLength
         _attestingFee = _settings.attestingFee
     } else {
         _maxUsers = maxUsers
         _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
-        _numAttestationsPerEpochKey = numAttestationsPerEpochKey
         _epochLength = epochLength
         _attestingFee = attestingFee
     }
@@ -127,11 +132,11 @@ const deployUnirep = async (
             "maxUsers": _maxUsers
         },
         EpochKeyValidityVerifierContract.address,
+        StartTransitionVerifierContract.address,
+        ProcessAttestationsVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
-        ReputationFromAttesterVerifierContract.address,
         _numEpochKeyNoncePerEpoch,
-        _numAttestationsPerEpochKey,
         _epochLength,
         _attestingFee,
         {
@@ -170,13 +175,6 @@ const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, non
     return nullifierModed
 }
 
-const genKarmaNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _nullifierTreeDepth: number = circuitNullifierTreeDepth): SnarkBigInt => {
-    let nullifier = hash5([KARMA_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
-    // Adjust epoch key size according to epoch tree depth
-    const nullifierModed = BigInt(nullifier) % BigInt(2 ** _nullifierTreeDepth)
-    return nullifierModed
-}
-
 const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTreeImpl> => {
     return SparseMerkleTreeImpl.create(
         new Keyv(),
@@ -209,6 +207,7 @@ const genUnirepStateFromContract = async (
     const userStateTreeDepth = treeDepths_.userStateTreeDepth
     const epochTreeDepth = treeDepths_.epochTreeDepth
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
+    const airdroppedRepScore = await unirepContract.airdroppedRepScore
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
@@ -218,10 +217,10 @@ const genUnirepStateFromContract = async (
         ethers.BigNumber.from(userStateTreeDepth).toNumber(),
         ethers.BigNumber.from(epochTreeDepth).toNumber(),
         ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
+        airdroppedRepScore,
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
         ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
-        numAttestationsPerEpochKey,
     )
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
@@ -271,7 +270,6 @@ const genUnirepStateFromContract = async (
                 BigInt(_attestation.posRep),
                 BigInt(_attestation.negRep),
                 BigInt(_attestation.graffiti),
-                _attestation.overwriteGraffiti
             )
             unirepState.addAttestation(attestationEvent.args?._epochKey.toString(), attestation)
         } else if (occurredEvent === "ReputationNullifierSubmitted") {
@@ -286,7 +284,7 @@ const genUnirepStateFromContract = async (
             // TODO: add reputation nullifiers in nullifier tree
             for (let i = 0; i < reputationEvent.args?.reputationNullifiers.length; i++) {
                 const modedNullifier = BigInt(reputationEvent.args?.reputationNullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-                unirepState.addKarmaNullifiers(modedNullifier)
+                unirepState.addReputationNullifiers(modedNullifier)
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
@@ -325,7 +323,7 @@ const genUnirepStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
-                defaultAirdroppedKarma,
+                airdroppedRepScore,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
@@ -427,20 +425,20 @@ const _genUserStateFromContract = async (
     const userStateTreeDepth = treeDepths_.userStateTreeDepth
     const epochTreeDepth = treeDepths_.epochTreeDepth
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
+    const airdroppedRepScore = await unirepContract.airdroppedRepScore
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
-    const numAttestationsPerEpochKey = await unirepContract.numAttestationsPerEpochKey()
 
     const unirepState = new UnirepState(
         ethers.BigNumber.from(globalStateTreeDepth).toNumber(),
         ethers.BigNumber.from(userStateTreeDepth).toNumber(),
         ethers.BigNumber.from(epochTreeDepth).toNumber(),
         ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
+        airdroppedRepScore,
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
         ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
-        ethers.BigNumber.from(numAttestationsPerEpochKey).toNumber(),
     )
 
     const userState = new UserState(
@@ -453,7 +451,7 @@ const _genUserStateFromContract = async (
     const userDefaultGSTLeaf = hash5([
         userIdentityCommitment,
         emptyUserStateRoot,
-        BigInt(defaultAirdroppedKarma),
+        BigInt(airdroppedRepScore),
         BigInt(0),
         BigInt(0)
     ])
@@ -517,13 +515,12 @@ const _genUserStateFromContract = async (
                 BigInt(_attestation.posRep),
                 BigInt(_attestation.negRep),
                 BigInt(_attestation.graffiti),
-                _attestation.overwriteGraffiti
             )
             const epochKey = attestationEvent.args?._epochKey
             unirepState.addAttestation(epochKey.toString(), attestation)
-            if(userHasSignedUp){
-                userState.updateAttestation(epochKey, attestation.posRep, attestation.negRep)
-            }
+            // if(userHasSignedUp){
+            //     userState.updateAttestation(epochKey, attestation.posRep, attestation.negRep)
+            // }
         } else if (occurredEvent === "ReputationNullifierSubmitted") {
             const reputationEvent = reputationNullifierEvents.pop()
             assert(reputationEvent !== undefined, `Event sequence mismatch: missing ReputationNullifierSubmittedEvent`)
@@ -536,7 +533,7 @@ const _genUserStateFromContract = async (
             // TODO: add reputation nullifiers in nullifier tree
             for (let i = 0; i < reputationEvent.args?.reputationNullifiers.length; i++) {
                 const modedNullifier = BigInt(reputationEvent.args?.reputationNullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-                unirepState.addKarmaNullifiers(modedNullifier)
+                unirepState.addReputationNullifiers(modedNullifier)
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
@@ -585,7 +582,7 @@ const _genUserStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
-                defaultAirdroppedKarma,
+                airdroppedRepScore,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
@@ -681,7 +678,6 @@ export {
     deployUnirep,
     genEpochKey,
     genEpochKeyNullifier,
-    genKarmaNullifier,
     genNewSMT,
     genUnirepStateFromContract,
     genUserStateFromContract,

@@ -13,10 +13,6 @@ template verifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
     signal private input user_tree_root;
-    signal private input user_state_hash;
-    // Sum of positive and negative karma
-    signal private input positive_karma;
-    signal private input negative_karma;
 
     signal private input nonce;
     signal input epoch;
@@ -34,9 +30,6 @@ template verifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
     user_exist.identity_nullifier <== identity_nullifier;
     user_exist.identity_trapdoor <== identity_trapdoor;
     user_exist.user_tree_root <== user_tree_root;
-    user_exist.user_state_hash <== user_state_hash;
-    user_exist.positive_karma <== positive_karma;
-    user_exist.negative_karma <== negative_karma;
     /* End of check 1 */
 
     /* 2. Check nonce validity */

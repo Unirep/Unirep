@@ -1,3 +1,3 @@
 include "../verifiyEpochKey.circom"
 
-component main = verifyEpochKey(4, 32, 2);
+component main = verifyEpochKey(16, 64, 5);

@@ -5,8 +5,6 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
-    genVerifyReputationProofAndPublicSignals,
-    verifyProveReputationProof,
 } from './utils'
 import { genEpochKeyNullifier, genNewNullifierTree, genNewUserStateTree, SMT_ONE_LEAF } from '../utils'
 
@@ -16,11 +14,13 @@ import {
     hash5,
     hashOne,
     stringifyBigInts,
+    hashLeftRight,
 } from 'maci-crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 import { Reputation } from "../../core"
+import { genProofAndPublicSignals, verifyProof } from "../../circuits/utils"
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -39,8 +39,6 @@ describe('Prove reputation from attester circuit', function () {
     let hashedLeaf
 
     let reputationRecords = {}
-    const transitionedPosRep = 20
-    const transitionedNegRep = 0
     const MIN_POS_REP = 10
     const MAX_NEG_REP = 10
 
@@ -71,13 +69,7 @@ describe('Prove reputation from attester circuit', function () {
         // Global state tree
         GSTree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
         const commitment = genIdentityCommitment(user)
-        hashedLeaf = hash5([
-            commitment, 
-            userStateRoot,
-            BigInt(transitionedPosRep),
-            BigInt(transitionedNegRep),
-            BigInt(0)
-        ])
+        hashedLeaf = hashLeftRight(commitment, userStateRoot)
         GSTree.insert(hashedLeaf)
         GSTreeProof = GSTree.genMerklePath(0)
         GSTreeRoot = GSTree.root
@@ -102,7 +94,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -113,8 +104,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -127,10 +116,10 @@ describe('Prove reputation from attester circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
-        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -146,7 +135,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -157,8 +145,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(reputationRecords[attesterId]['posRep'])),
             prove_neg_rep: BigInt(Boolean(reputationRecords[attesterId]['negRep'])),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -171,10 +157,10 @@ describe('Prove reputation from attester circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
-        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -190,7 +176,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -201,8 +186,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(1),
             prove_neg_rep: BigInt(0),
             prove_rep_diff: BigInt(0),
@@ -215,10 +198,10 @@ describe('Prove reputation from attester circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
-        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -234,7 +217,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -245,8 +227,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(0),
             prove_neg_rep: BigInt(1),
             prove_rep_diff: BigInt(0),
@@ -259,10 +239,10 @@ describe('Prove reputation from attester circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
-        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -278,7 +258,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -289,8 +268,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(0),
             prove_neg_rep: BigInt(0),
             prove_rep_diff: BigInt(1),
@@ -303,10 +280,10 @@ describe('Prove reputation from attester circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
-        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -325,7 +302,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -336,8 +312,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(1),
             prove_neg_rep: BigInt(0),
             prove_rep_diff: BigInt(0),
@@ -350,10 +324,10 @@ describe('Prove reputation from attester circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
-        const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -370,7 +344,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -381,8 +354,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -417,7 +388,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: wrongUserStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -428,8 +398,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -466,7 +434,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -477,8 +444,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -508,7 +473,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -519,8 +483,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -554,7 +516,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -565,8 +526,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
@@ -605,7 +564,6 @@ describe('Prove reputation from attester circuit', function () {
             identity_nullifier: user['identityNullifier'], 
             identity_trapdoor: user['identityTrapdoor'],
             user_tree_root: userStateRoot,
-            user_state_hash: hashedLeaf,
             GST_path_index: GSTreeProof.indices,
             GST_path_elements: GSTreeProof.pathElements,
             GST_root: GSTreeRoot,
@@ -616,8 +574,6 @@ describe('Prove reputation from attester circuit', function () {
             neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti: reputationRecords[attesterId]['graffiti'],
             UST_path_elements: USTPathElements,
-            positive_karma: BigInt(transitionedPosRep),
-            negative_karma: BigInt(transitionedNegRep),
             prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
             prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
             prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
