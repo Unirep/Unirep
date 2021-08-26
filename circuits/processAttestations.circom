@@ -17,7 +17,6 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     signal private input path_elements[NUM_ATTESTATIONS][user_state_tree_depth][1];
 
     // Inputs of the atttestations
-    signal private input attestation_idx_starter;
     signal private input attester_ids[NUM_ATTESTATIONS];
     signal private input pos_reps[NUM_ATTESTATIONS];
     signal private input neg_reps[NUM_ATTESTATIONS];
@@ -99,11 +98,11 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
         /* 2. Verify attestation hash chain */
         // 2.1 Compute hash of the attestation and verify the hash chain of these hashes
         attestation_hashers[i] = Hasher5();
-        attestation_hashers[i].in[0] <== attestation_idx_starter + i;
-        attestation_hashers[i].in[1] <== attester_ids[i];
-        attestation_hashers[i].in[2] <== pos_reps[i];
-        attestation_hashers[i].in[3] <== neg_reps[i];
-        attestation_hashers[i].in[4] <== graffities[i];
+        attestation_hashers[i].in[0] <== attester_ids[i];
+        attestation_hashers[i].in[1] <== pos_reps[i];
+        attestation_hashers[i].in[2] <== neg_reps[i];
+        attestation_hashers[i].in[3] <== graffities[i];
+        attestation_hashers[i].in[4] <== 0;
         
         hash_chain_hasher.hashes[i] <== attestation_hashers[i].hash;
         hash_chain_hasher.selectors[i] <== selectors[i];

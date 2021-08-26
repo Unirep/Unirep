@@ -9,7 +9,7 @@ import assert from 'assert'
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth, airdroppedRepScore } from '../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
 import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt } from 'maci-crypto'
@@ -207,7 +207,7 @@ const genUnirepStateFromContract = async (
     const userStateTreeDepth = treeDepths_.userStateTreeDepth
     const epochTreeDepth = treeDepths_.epochTreeDepth
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
-    const airdroppedRepScore = await unirepContract.airdroppedRepScore
+
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
@@ -217,7 +217,6 @@ const genUnirepStateFromContract = async (
         ethers.BigNumber.from(userStateTreeDepth).toNumber(),
         ethers.BigNumber.from(epochTreeDepth).toNumber(),
         ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
-        airdroppedRepScore,
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
         ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
@@ -323,7 +322,6 @@ const genUnirepStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
-                airdroppedRepScore,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
@@ -425,7 +423,6 @@ const _genUserStateFromContract = async (
     const userStateTreeDepth = treeDepths_.userStateTreeDepth
     const epochTreeDepth = treeDepths_.epochTreeDepth
     const nullifierTreeDepth = treeDepths_.nullifierTreeDepth
-    const airdroppedRepScore = await unirepContract.airdroppedRepScore
     const attestingFee = await unirepContract.attestingFee()
     const epochLength = await unirepContract.epochLength()
     const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
@@ -435,7 +432,6 @@ const _genUserStateFromContract = async (
         ethers.BigNumber.from(userStateTreeDepth).toNumber(),
         ethers.BigNumber.from(epochTreeDepth).toNumber(),
         ethers.BigNumber.from(nullifierTreeDepth).toNumber(),
-        airdroppedRepScore,
         attestingFee,
         ethers.BigNumber.from(epochLength).toNumber(),
         ethers.BigNumber.from(numEpochKeyNoncePerEpoch).toNumber(),
@@ -448,13 +444,7 @@ const _genUserStateFromContract = async (
         false,
     )
     const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth)
-    const userDefaultGSTLeaf = hash5([
-        userIdentityCommitment,
-        emptyUserStateRoot,
-        BigInt(airdroppedRepScore),
-        BigInt(0),
-        BigInt(0)
-    ])
+    const userDefaultGSTLeaf = hashLeftRight(userIdentityCommitment, emptyUserStateRoot)
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
     const newGSTLeafInsertedEvents =  await unirepContract.queryFilter(newGSTLeafInsertedFilter, startBlock)
@@ -582,7 +572,6 @@ const _genUserStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
-                airdroppedRepScore,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )

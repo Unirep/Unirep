@@ -25,13 +25,13 @@ contract DomainObjs is Hasher {
         uint256 graffiti;
     }
 
-    function hashAttestation(uint256 attestationIdx, Attestation memory attestation) internal pure returns (uint256) {
+    function hashAttestation(Attestation memory attestation) internal pure returns (uint256) {
         uint256[5] memory attestationData;
-        attestationData[0] = attestationIdx;
-        attestationData[1] = attestation.attesterId;
-        attestationData[2] = attestation.posRep;
-        attestationData[3] = attestation.negRep;
-        attestationData[4] = attestation.graffiti;
+        attestationData[0] = attestation.attesterId;
+        attestationData[1] = attestation.posRep;
+        attestationData[2] = attestation.negRep;
+        attestationData[3] = attestation.graffiti;
+        attestationData[4] = 0;
         return hash5(attestationData);
     }
 }

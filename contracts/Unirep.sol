@@ -310,7 +310,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(attestation.graffiti < SNARK_SCALAR_FIELD, "Unirep: invalid attestation graffiti");
         
         epochKeyHashchain[epochKey] = hashLeftRight(
-            hashAttestation(attesters[attester], attestation),
+            hashAttestation(attestation),
             epochKeyHashchain[epochKey]
         );
         numAttestationsToEpochKey[epochKey] += 1;

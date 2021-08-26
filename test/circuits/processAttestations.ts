@@ -119,7 +119,7 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                const attestation_hash = attestation.hash(BigInt(attestationIdxStarter + i))
+                const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
@@ -142,7 +142,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -180,7 +179,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: noAttestationUserStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -257,7 +255,7 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                const attestation_hash = attestation.hash(BigInt(attestationIdxStarter + i))
+                const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 oldPosReps.push(BigInt(0))
@@ -280,7 +278,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -358,7 +355,7 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                const attestation_hash = attestation.hash(BigInt(attestationIdxStarter + i))
+                const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 oldPosReps.push(BigInt(0))
@@ -381,7 +378,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -459,7 +455,7 @@ describe('Process attestation circuit', function () {
 
                 await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
-                const attestation_hash = attestation.hash(BigInt(attestationIdxStarter + i))
+                const attestation_hash = attestation.hash()
                 hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
             } else {
                 oldPosReps.push(BigInt(0))
@@ -482,7 +478,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -522,7 +517,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: wrongOldNegReps,
             old_graffities: wrongOldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -557,7 +551,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -591,7 +584,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: attesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
@@ -626,7 +618,6 @@ describe('Process attestation circuit', function () {
             old_neg_reps: oldNegReps,
             old_graffities: oldGraffities,
             path_elements: userStateTreePathElements,
-            attestation_idx_starter: attestationIdxStarter,
             attester_ids: wrongAttesterIds,
             pos_reps: posReps,
             neg_reps: negReps,
