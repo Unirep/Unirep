@@ -357,13 +357,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function startUserStateTransition(
-        uint256 _epkNonce,
-        uint256 _GSTRoot,
         uint256 _blindedUserState,
         uint256 _blindedHashChain,
+        uint256 _GSTRoot,
         uint256[8] calldata _proof
     ) external {
-        bool proofIsValid = verifyStartTransitionProof(_epkNonce, _GSTRoot, _blindedUserState, _blindedHashChain, _proof);
+        bool proofIsValid = verifyStartTransitionProof(_blindedUserState, _blindedHashChain, _GSTRoot, _proof);
         require(proofIsValid, "Unirep: the proof is not valid");
 
         // Set the blinded variables true
@@ -372,15 +371,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function processAttestations(
-        uint256 _inputBlindedUserState,
-        uint256 _inputBlindedHashChain,
         uint256 _outputBlindedUserState,
         uint256 _outputBlindedHashChain,
+        uint256 _inputBlindedUserState,
+        uint256 _inputBlindedHashChain,
         uint256[8] calldata _proof
     ) external {
         require(blindedUserStates[_inputBlindedUserState] == true, "Unirep: processing attestations with an invalid blinded user state");
         require(blindedHashChains[_inputBlindedHashChain] == true, "Unirep: processing attestations with an invalid blinded hash chain");
-        bool proofIsValid = verifyProcessAttestationProof(_inputBlindedUserState, _inputBlindedHashChain, _outputBlindedUserState, _outputBlindedHashChain, _proof);
+        bool proofIsValid = verifyProcessAttestationProof(_outputBlindedUserState, _outputBlindedHashChain, _inputBlindedUserState, _inputBlindedHashChain, _proof);
         require(proofIsValid, "Unirep: the proof is not valid");
 
         // Set the blinded variables true
@@ -464,17 +463,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function verifyStartTransitionProof(
-        uint256 _epkNonce,
-        uint256 _GSTRoot,
         uint256 _blindedUserState,
         uint256 _blindedHashChain,
+        uint256 _GSTRoot,
         uint256[8] memory _proof) public view returns (bool) {
 
         uint256[] memory _publicSignals = new uint256[](4);
-        _publicSignals[0] = _epkNonce;
-        _publicSignals[1] = _GSTRoot;
-        _publicSignals[2] = _blindedUserState;
-        _publicSignals[3] = _blindedHashChain;
+        _publicSignals[0] = _blindedUserState;
+        _publicSignals[1] = _blindedHashChain;
+        _publicSignals[2] = _GSTRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
@@ -500,17 +497,17 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     }
 
     function verifyProcessAttestationProof(
-        uint256 _inputBlindedUserState,
-        uint256 _inputBlindedHashChain,
         uint256 _outputBlindedUserState,
         uint256 _outputBlindedHashChain,
+        uint256 _inputBlindedUserState,
+        uint256 _inputBlindedHashChain,
         uint256[8] memory _proof) public view returns (bool) {
 
         uint256[] memory _publicSignals = new uint256[](4);
-        _publicSignals[0] = _inputBlindedUserState;
-        _publicSignals[1] = _inputBlindedHashChain;
-        _publicSignals[2] = _outputBlindedUserState;
-        _publicSignals[3] = _outputBlindedHashChain;
+        _publicSignals[0] = _outputBlindedUserState;
+        _publicSignals[1] = _outputBlindedHashChain;
+        _publicSignals[2] = _inputBlindedUserState;
+        _publicSignals[3] = _inputBlindedHashChain;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

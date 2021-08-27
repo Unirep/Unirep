@@ -15,7 +15,7 @@ import {
     executeCircuit,
     getSignalByName,
 } from './utils'
-import { circuitGlobalStateTreeDepth, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
+import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
 import { genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Reputation } from "../../core"

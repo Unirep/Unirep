@@ -228,9 +228,6 @@ const genUnirepStateFromContract = async (
     const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
     const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, startBlock)
 
-    const reputationNullifierFilter = unirepContract.filters.ReputationNullifierSubmitted()
-    const reputationNullifierEvents =  await unirepContract.queryFilter(reputationNullifierFilter, startBlock)
-
     const epochEndedFilter = unirepContract.filters.EpochEnded()
     const epochEndedEvents =  await unirepContract.queryFilter(epochEndedFilter, startBlock)
 
@@ -271,20 +268,6 @@ const genUnirepStateFromContract = async (
                 BigInt(_attestation.graffiti),
             )
             unirepState.addAttestation(attestationEvent.args?._epochKey.toString(), attestation)
-        } else if (occurredEvent === "ReputationNullifierSubmitted") {
-            const reputationEvent = reputationNullifierEvents.pop()
-            assert(reputationEvent !== undefined, `Event sequence mismatch: missing ReputationNullifierSubmittedEvent`)
-            const epoch = reputationEvent.args?._epoch.toNumber()
-            assert(
-                epoch === unirepState.currentEpoch,
-                `Reputation spent epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
-            )
-
-            // TODO: add reputation nullifiers in nullifier tree
-            for (let i = 0; i < reputationEvent.args?.reputationNullifiers.length; i++) {
-                const modedNullifier = BigInt(reputationEvent.args?.reputationNullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-                unirepState.addReputationNullifiers(modedNullifier)
-            }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
@@ -452,9 +435,6 @@ const _genUserStateFromContract = async (
     const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
     const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, startBlock)
 
-    const reputationNullifierFilter = unirepContract.filters.ReputationNullifierSubmitted()
-    const reputationNullifierEvents =  await unirepContract.queryFilter(reputationNullifierFilter, startBlock)
-
     const epochEndedFilter = unirepContract.filters.EpochEnded()
     const epochEndedEvents =  await unirepContract.queryFilter(epochEndedFilter, startBlock)
 
@@ -511,20 +491,6 @@ const _genUserStateFromContract = async (
             // if(userHasSignedUp){
             //     userState.updateAttestation(epochKey, attestation.posRep, attestation.negRep)
             // }
-        } else if (occurredEvent === "ReputationNullifierSubmitted") {
-            const reputationEvent = reputationNullifierEvents.pop()
-            assert(reputationEvent !== undefined, `Event sequence mismatch: missing ReputationNullifierSubmittedEvent`)
-            const epoch = reputationEvent.args?._epoch.toNumber()
-            assert(
-                epoch === unirepState.currentEpoch,
-                `Reputation spent epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
-            )
-            
-            // TODO: add reputation nullifiers in nullifier tree
-            for (let i = 0; i < reputationEvent.args?.reputationNullifiers.length; i++) {
-                const modedNullifier = BigInt(reputationEvent.args?.reputationNullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-                unirepState.addReputationNullifiers(modedNullifier)
-            }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)

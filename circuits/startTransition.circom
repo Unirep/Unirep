@@ -9,7 +9,7 @@ include "./userExists.circom";
 
 template StartTransition(GST_tree_depth) {
     // Start from which epoch key nonce
-    signal input nonce;
+    signal private input nonce;
 
     // User state tree
     signal private input user_tree_root;
