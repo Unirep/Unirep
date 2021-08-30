@@ -28,7 +28,6 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     // Inputs of blinded user state and hash chain result that the circuit starts from
     signal private input hash_chain_starter;
     signal input input_blinded_user_state;
-    signal input input_blinded_hash_chain;
 
     // Output blinded user state and hash chain result that can be published on smart contract
     signal output blinded_user_state;
@@ -74,8 +73,7 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     to_nonce_lt.out === 1;
     /* End of check 0 */
 
-    /* 1. Verify blinded inputs */
-    // 1.1 input_blinded_user_state = hash5(identity, UST_root, epoch_key_nonce, 0, 0)
+    /* 1. Verify blinded input user state */
     component input_blinded_user_state_hasher = Hasher5();
     input_blinded_user_state_hasher.in[0] <== identity_nullifier;
     input_blinded_user_state_hasher.in[1] <== intermediate_user_state_tree_roots[0];
@@ -83,16 +81,7 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     input_blinded_user_state_hasher.in[3] <== 0;
     input_blinded_user_state_hasher.in[4] <== 0;
     input_blinded_user_state === input_blinded_user_state_hasher.hash;
-
-    // 1.2 input_blinded_hash_chain = hash5(identity, hash_chain_starter, epoch_key_nonce)
-    component input_blinded_hash_chain_hasher = Hasher5();
-    input_blinded_hash_chain_hasher.in[0] <== identity_nullifier;
-    input_blinded_hash_chain_hasher.in[1] <== hash_chain_starter;
-    input_blinded_hash_chain_hasher.in[2] <== from_nonce;
-    input_blinded_hash_chain_hasher.in[3] <== 0;
-    input_blinded_hash_chain_hasher.in[4] <== 0;
-    input_blinded_hash_chain === input_blinded_hash_chain_hasher.hash;
-    /* End of 1. Verify blined inputs*/
+    /* End of 1. Verify blinded input user state*/
 
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
         /* 2. Verify attestation hash chain */

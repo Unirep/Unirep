@@ -85,10 +85,10 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     mapping(uint256 => EpochKeyList) internal epochKeys;
 
     // Mpapping of submitted blinded user state
-    mapping(uint256 => bool) internal blindedUserStates;
+    mapping(uint256 => bool) public blindedUserStates;
 
     // Mpapping of submitted blinded hash chain
-    mapping(uint256 => bool) internal blindedHashChains;
+    mapping(uint256 => bool) public blindedHashChains;
 
     TreeDepths public treeDepths;
 
@@ -362,6 +362,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _GSTRoot,
         uint256[8] calldata _proof
     ) external {
+        require(blindedUserStates[_blindedUserState] == false, "Unirep: blinded user state has been submitted before");
         bool proofIsValid = verifyStartTransitionProof(_blindedUserState, _blindedHashChain, _GSTRoot, _proof);
         require(proofIsValid, "Unirep: the proof is not valid");
 
@@ -374,12 +375,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _outputBlindedUserState,
         uint256 _outputBlindedHashChain,
         uint256 _inputBlindedUserState,
-        uint256 _inputBlindedHashChain,
         uint256[8] calldata _proof
     ) external {
         require(blindedUserStates[_inputBlindedUserState] == true, "Unirep: processing attestations with an invalid blinded user state");
-        require(blindedHashChains[_inputBlindedHashChain] == true, "Unirep: processing attestations with an invalid blinded hash chain");
-        bool proofIsValid = verifyProcessAttestationProof(_outputBlindedUserState, _outputBlindedHashChain, _inputBlindedUserState, _inputBlindedHashChain, _proof);
+        require(blindedUserStates[_outputBlindedUserState] == false, "Unirep: blinded user state has been submitted before");
+        require(blindedHashChains[_outputBlindedHashChain] == false, "Unirep: blinded hash chain has been submitted before");
+        bool proofIsValid = verifyProcessAttestationProof(_outputBlindedUserState, _outputBlindedHashChain, _inputBlindedUserState, _proof);
         require(proofIsValid, "Unirep: the proof is not valid");
 
         // Set the blinded variables true
@@ -500,14 +501,12 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256 _outputBlindedUserState,
         uint256 _outputBlindedHashChain,
         uint256 _inputBlindedUserState,
-        uint256 _inputBlindedHashChain,
         uint256[8] memory _proof) public view returns (bool) {
 
         uint256[] memory _publicSignals = new uint256[](4);
         _publicSignals[0] = _outputBlindedUserState;
         _publicSignals[1] = _outputBlindedHashChain;
         _publicSignals[2] = _inputBlindedUserState;
-        _publicSignals[3] = _inputBlindedHashChain;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

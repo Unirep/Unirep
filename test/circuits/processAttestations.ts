@@ -37,7 +37,6 @@ describe('Process attestation circuit', function () {
     let oldPosReps, oldNegReps, oldGraffities
     let hashChainStarter = genRandomSalt()
     let inputBlindedUserState
-    let inputBlindedHashChain
 
     let reputationRecords: { [key: string]: Reputation } = {}
     let attesterIds: BigInt[], posReps: BigInt[], negReps: BigInt[], graffities: SnarkBigInt[]
@@ -129,7 +128,6 @@ describe('Process attestation circuit', function () {
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         }
         inputBlindedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[0], nonce])
-        inputBlindedHashChain = hash5([user['identityNullifier'], hashChainStarter, nonce])
     })
 
     it('successfully process attestations', async () => {
@@ -149,7 +147,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
@@ -160,7 +157,6 @@ describe('Process attestation circuit', function () {
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
         const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
-        inputBlindedHashChain = outputHashChainResult
     })
 
     it('successfully process zero attestations', async () => {
@@ -186,7 +182,6 @@ describe('Process attestation circuit', function () {
             selectors: zeroSelectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: zeroInputUserState,
-            input_blinded_hash_chain: zeroInputHashChain
         }
 
         const witness = await executeCircuit(circuit, circuitInputs)
@@ -285,7 +280,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
@@ -296,7 +290,6 @@ describe('Process attestation circuit', function () {
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
         const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
-        inputBlindedHashChain = outputHashChainResult
     })
 
     it('successfully continue to process attestations to next epoch key', async () => {
@@ -385,7 +378,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
@@ -396,7 +388,6 @@ describe('Process attestation circuit', function () {
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
         const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, toNonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
-        inputBlindedHashChain = outputHashChainResult
     })
 
     it('Same attester give reputation to same epoch keys should work', async () => {
@@ -485,7 +476,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
@@ -524,7 +514,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
 
         let error
@@ -558,7 +547,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
 
         let error
@@ -591,7 +579,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
         
         let error
@@ -625,7 +612,6 @@ describe('Process attestation circuit', function () {
             selectors: selectors,
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
-            input_blinded_hash_chain: inputBlindedHashChain
         }
 
         let error

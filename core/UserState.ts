@@ -374,20 +374,21 @@ class UserState {
         const epochKeyPathElements: any[] = []
 
         // start transition proof
-        const startTransitionProof = (await this._genStartTransitionCircuitInputs(fromNonce, intermediateUserStateTreeRoots[0], GSTreeProof, GSTreeRoot)).circuitInputs
+        const startTransitionProof = await this._genStartTransitionCircuitInputs(fromNonce, intermediateUserStateTreeRoots[0], GSTreeProof, GSTreeRoot)
         
         // process attestation proof
         const processAttestationProofs: any[] = []
-        const fromNonces: number[] = []
+        const fromNonces: number[] = [ fromNonce ]
         const toNonces: number[] = []
         const hashChainStarter: BigInt[] = []
-        const blindedUserState: BigInt[] = []
+        const blindedUserState: BigInt[] = [ startTransitionProof.blindedUserState ]
         const blindedHashChain: BigInt[] = []
         let reputationRecords = {}
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
         const oldPosReps: BigInt[] = [], oldNegReps: BigInt[] = [], oldGraffities: BigInt[] = []
         const posReps: BigInt[] = [], negReps: BigInt[] = [], graffities: BigInt[] = []
+        const finalBlindedUserState: BigInt[] = []
         const finalUserState: BigInt[] = [ intermediateUserStateTreeRoots[0] ]
         const finalHashChain: BigInt[] = []
 
@@ -396,15 +397,21 @@ class UserState {
             let currentHashChain: BigInt = BigInt(0)
 
             // Blinded user state and hash chain of the epoch key
-            if(nonce) toNonces.push(nonce)
-            fromNonces.push(nonce)
+            toNonces.push(nonce)
             hashChainStarter.push(currentHashChain)
-            blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
-            blindedHashChain.push(hash5([this.id.identityNullifier, currentHashChain, nonce]))
 
             // Attestations
             const attestations = this.unirepState.getAttestations(epochKey.toString())
             for (let i = 0; i < attestations.length; i++) {
+
+                // Include a blinded user state and blinded hash chain per proof
+                if(i && (i % this.numAttestationsPerProof == 0) && (i != this.numAttestationsPerProof - 1)){
+                    toNonces.push(nonce)
+                    fromNonces.push(nonce)
+                    hashChainStarter.push(currentHashChain)
+                    blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
+                }
+
                 const attestation = attestations[i]
                 const attesterId = attestation.attesterId
                 const rep = this.getRepByAttester(attesterId)
@@ -446,15 +453,6 @@ class UserState {
                 // Update current hashchain result
                 const attestationHash = attestation.hash()
                 currentHashChain = hashLeftRight(attestationHash, currentHashChain)
-
-                // Include a blinded user state and blinded hash chain per proof
-                if(i && (i % this.numAttestationsPerProof == 0) && (i != this.numAttestationsPerProof - 1)){
-                    toNonces.push(nonce)
-                    fromNonces.push(nonce)
-                    hashChainStarter.push(currentHashChain)
-                    blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
-                    blindedHashChain.push(hash5([this.id.identityNullifier, currentHashChain, nonce]))
-                }
             }
             // Fill in blank data for non-exist attestation
             const filledAttestationNum = attestations.length ? Math.ceil(attestations.length / this.numAttestationsPerProof) * this.numAttestationsPerProof : this.numAttestationsPerProof
@@ -476,12 +474,16 @@ class UserState {
             epochKeyPathElements.push(await fromEpochTree.getMerkleProof(epochKey))
             finalUserState.push(fromEpochUserStateTree.getRootHash())
             finalHashChain.push(currentHashChain)
+            blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
+            finalBlindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
+            blindedHashChain.push(hash5([this.id.identityNullifier, currentHashChain, nonce]))
+            if(nonce != this.numEpochKeyNoncePerEpoch - 1) fromNonces.push(nonce)
         }
-        toNonces.push(this.numEpochKeyNoncePerEpoch - 1)
 
         for (let i = 0; i < fromNonces.length; i++) {
             const startIdx = this.numAttestationsPerProof * i
             const endIdx = this.numAttestationsPerProof * (i+1)
+            if(fromNonces[i] == toNonces[i] && intermediateUserStateTreeRoots[startIdx] == intermediateUserStateTreeRoots[endIdx]) continue
             processAttestationProofs.push(stringifyBigInts({
                 from_nonce: fromNonces[i],
                 to_nonce: toNonces[i],
@@ -498,14 +500,13 @@ class UserState {
                 selectors: selectors.slice(startIdx, endIdx),
                 hash_chain_starter: hashChainStarter[i],
                 input_blinded_user_state: blindedUserState[i],
-                input_blinded_hash_chain: blindedHashChain[i]
             }))
         }
 
         // final user state transition proof
         const finalTransitionProof = stringifyBigInts({
             epoch: fromEpoch,
-            blinded_user_state: blindedUserState,
+            blinded_user_state: finalBlindedUserState,
             intermediate_user_state_tree_roots: finalUserState,
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier,
@@ -520,7 +521,7 @@ class UserState {
         })
 
         return {
-            startTransitionProof: startTransitionProof,
+            startTransitionProof: startTransitionProof.circuitInputs,
             processAttestationProof: processAttestationProofs,
             finalTransitionProof: finalTransitionProof,
         }
