@@ -8,7 +8,7 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
-} from './utils'
+} from '../../circuits/utils'
 import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
 
 import {

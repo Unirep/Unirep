@@ -5,8 +5,9 @@ import {
     compileAndLoadCircuit,
     executeCircuit,
     getSignalByName,
-} from './utils'
-import { genEpochKey, genNewUserStateTree } from '../utils'
+} from '../../circuits/utils'
+import { genEpochKey } from '../../core/utils'
+import { genNewUserStateTree } from '../utils'
 
 import {
     genRandomSalt,

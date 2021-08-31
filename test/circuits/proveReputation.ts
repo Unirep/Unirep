@@ -5,13 +5,13 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
-} from './utils'
-import { genEpochKeyNullifier, genNewNullifierTree, genNewUserStateTree, SMT_ONE_LEAF } from '../utils'
+} from '../../circuits/utils'
+import { genNewNullifierTree, genNewUserStateTree, SMT_ONE_LEAF } from '../utils'
+import { genEpochKeyNullifier } from '../../core/utils'
 
 import {
     IncrementalQuinTree,
     genRandomSalt,
-    hash5,
     hashOne,
     stringifyBigInts,
     hashLeftRight,

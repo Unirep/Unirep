@@ -14,7 +14,7 @@ import {
     compileAndLoadCircuit,
     executeCircuit,
     getSignalByName,
-} from './utils'
+} from '../../circuits/utils'
 import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
 import { genNewUserStateTree } from "../utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"

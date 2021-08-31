@@ -5,7 +5,7 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
-} from './utils'
+} from '../../circuits/utils'
 
 import {
     genRandomSalt,

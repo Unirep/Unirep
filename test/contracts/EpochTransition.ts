@@ -14,7 +14,6 @@ import { UserState } from '../../core'
 import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '../../circuits/utils'
 import { IncrementalQuinTree } from 'maci-crypto'
 
-
 describe('Epoch Transition', function () {
     this.timeout(1000000)
 

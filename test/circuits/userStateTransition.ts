@@ -17,12 +17,14 @@ import {
     compileAndLoadCircuit,
     executeCircuit,
     getSignalByName,
-} from './utils'
+    genProofAndPublicSignals,
+    verifyProof
+} from '../../circuits/utils'
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
-import { genEpochKey, genNewEpochTree, genNewUserStateTree } from "../utils"
+import { genNewEpochTree, genNewUserStateTree } from "../utils"
+import { genEpochKey } from "../../core/utils"
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Reputation } from "../../core"
-import { genProofAndPublicSignals, verifyProof } from "../../circuits/utils"
 
 describe('User State Transition circuits', function () {
     this.timeout(600000)
