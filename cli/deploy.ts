@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { maxUsers } from '../config/testLocal'
-import { deployUnirep, getTreeDepthsForTesting } from '../test/utils'
-import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_NUM_ATTESTATIONS_PER_EPOCH_KEY, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
+import { deployUnirep, getTreeDepthsForTesting } from '../core/utils'
+import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
 import {
     checkDeployerProviderConnection,
     genJsonRpcDeployer,
@@ -102,8 +102,6 @@ const deploy = async (args: any) => {
     // const _numEpochKeyNoncePerEpoch = (args.max_epoch_key_nonce != undefined) ? args.max_epoch_key_nonce : DEFAULT_MAX_EPOCH_KEY_NONCE
     const _numEpochKeyNoncePerEpoch = DEFAULT_MAX_EPOCH_KEY_NONCE
 
-    const _numAttestationsPerEpochKey = DEFAULT_NUM_ATTESTATIONS_PER_EPOCH_KEY
-
     // Epoch length
     const _epochLength = (args.epoch_length != undefined) ? args.epoch_length : DEFAULT_EPOCH_LENGTH
 
@@ -113,7 +111,6 @@ const deploy = async (args: any) => {
     const settings = {
         'maxUsers': maxUsers,
         'numEpochKeyNoncePerEpoch': _numEpochKeyNoncePerEpoch,
-        'numAttestationsPerEpochKey': _numAttestationsPerEpochKey,
         'epochLength': _epochLength,
         'attestingFee': _attestingFee,
     }

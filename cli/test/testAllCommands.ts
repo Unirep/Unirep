@@ -186,8 +186,6 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
-                ` -id ${userIdentity} ` +
-                ` -n ${epochKeyNonce} ` +
                 ` -pr ${posRep} ` +
                 ` -nr ${negRep} ` +
                 ` -gf ${graffiti.toString(16)} `
