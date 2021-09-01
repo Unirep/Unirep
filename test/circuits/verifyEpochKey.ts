@@ -1,6 +1,4 @@
 import chai from "chai"
-import { ethers as hardhatEthers } from "hardhat"
-import { ethers } from 'ethers'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 
 const { expect } = chai
@@ -9,10 +7,11 @@ import {
     compileAndLoadCircuit,
     executeCircuit,
 } from '../../circuits/utils'
-import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
+import { genEpochKey } from '../../core/utils'
 
 import {
     genRandomSalt,
+    hashLeftRight,
     IncrementalQuinTree,
     stringifyBigInts,
 } from 'maci-crypto'
@@ -23,10 +22,7 @@ describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
 
     let circuit
-
-    let accounts: ethers.Signer[]
-    let unirepContract: ethers.Contract
-    let ZERO_VALUE
+    let ZERO_VALUE = 0
 
     const maxEPK = BigInt(2 ** circuitEpochTreeDepth)
 
@@ -35,11 +31,6 @@ describe('Verify Epoch Key circuits', function () {
     let nonce, currentEpoch, epochKey
 
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
-    
-        const _treeDepths = getTreeDepthsForTesting("circuit")
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
-        ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -50,12 +41,7 @@ describe('Verify Epoch Key circuits', function () {
         commitment = genIdentityCommitment(id)
         stateRoot = genRandomSalt()
 
-        const hashedStateLeaf = await unirepContract.hashStateLeaf(
-            [
-                commitment.toString(),
-                stateRoot.toString(),
-            ]
-        )
+        const hashedStateLeaf = hashLeftRight(commitment.toString(), stateRoot.toString())
         tree.insert(BigInt(hashedStateLeaf.toString()))
         proof = tree.genMerklePath(0)
         root = tree.root

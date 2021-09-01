@@ -1,3 +1,3 @@
 include "../processAttestations.circom"
 
-component main = ProcessAttestations(16, 10, 5);
+component main = ProcessAttestations(4, 5, 3);

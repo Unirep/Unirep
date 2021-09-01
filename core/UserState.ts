@@ -319,6 +319,7 @@ class UserState {
     private _genStartTransitionCircuitInputs = async (fromNonce: number, userStateTreeRoot: BigInt, GSTreeProof: any, GSTreeRoot: BigInt) => {
         // Circuit inputs
         const circuitInputs = stringifyBigInts({
+            epoch: this.latestTransitionedEpoch,
             nonce: fromNonce,
             user_tree_root: userStateTreeRoot,
             identity_pk: this.id.keypair.pubKey,
@@ -334,15 +335,15 @@ class UserState {
         const blindedUserState = hash5([
             this.id.identityNullifier,
             userStateTreeRoot,
+            this.latestTransitionedEpoch,
             fromNonce,
-            BigInt(0),
             BigInt(0)
         ])
         const blindedHashChain = hash5([
             this.id.identityNullifier,
             BigInt(0), // hashchain starter
+            this.latestTransitionedEpoch,
             fromNonce,
-            BigInt(0),
             BigInt(0)
         ])
 
@@ -409,7 +410,7 @@ class UserState {
                     toNonces.push(nonce)
                     fromNonces.push(nonce)
                     hashChainStarter.push(currentHashChain)
-                    blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
+                    blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
                 }
 
                 const attestation = attestations[i]
@@ -474,9 +475,9 @@ class UserState {
             epochKeyPathElements.push(await fromEpochTree.getMerkleProof(epochKey))
             finalUserState.push(fromEpochUserStateTree.getRootHash())
             finalHashChain.push(currentHashChain)
-            blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
-            finalBlindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), nonce]))
-            blindedHashChain.push(hash5([this.id.identityNullifier, currentHashChain, nonce]))
+            blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
+            finalBlindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
+            blindedHashChain.push(hash5([this.id.identityNullifier, currentHashChain, fromEpoch, nonce]))
             if(nonce != this.numEpochKeyNoncePerEpoch - 1) fromNonces.push(nonce)
         }
 
@@ -485,6 +486,7 @@ class UserState {
             const endIdx = this.numAttestationsPerProof * (i+1)
             if(fromNonces[i] == toNonces[i] && intermediateUserStateTreeRoots[startIdx] == intermediateUserStateTreeRoots[endIdx]) continue
             processAttestationProofs.push(stringifyBigInts({
+                epoch: fromEpoch,
                 from_nonce: fromNonces[i],
                 to_nonce: toNonces[i],
                 identity_nullifier: this.id.identityNullifier,

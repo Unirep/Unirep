@@ -301,10 +301,11 @@ const genUnirepStateFromContract = async (
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                // userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
+                userStateTransitionedEvent.args?.userTransitionedData.blindedUserStates,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
+                userStateTransitionedEvent.args?.userTransitionedData.blindedHashChains,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
@@ -534,10 +535,11 @@ const _genUserStateFromContract = async (
 
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 newLeaf,
-                // userStateTransitionedEvent.args?.userTransitionedData.attestationNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.epkNullifiers,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpoch,
+                userStateTransitionedEvent.args?.userTransitionedData.blindedUserStates,
                 userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree,
+                userStateTransitionedEvent.args?.userTransitionedData.blindedHashChains,
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )

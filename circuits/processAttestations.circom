@@ -5,6 +5,7 @@ include "./sparseMerkleTree.circom";
 include "./verifyHashChain.circom";
 
 template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_NONCE_PER_EPOCH) {
+    signal private input epoch;
     signal private input from_nonce;
     signal private input to_nonce;
     signal private input identity_nullifier;
@@ -77,8 +78,8 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     component input_blinded_user_state_hasher = Hasher5();
     input_blinded_user_state_hasher.in[0] <== identity_nullifier;
     input_blinded_user_state_hasher.in[1] <== intermediate_user_state_tree_roots[0];
-    input_blinded_user_state_hasher.in[2] <== from_nonce;
-    input_blinded_user_state_hasher.in[3] <== 0;
+    input_blinded_user_state_hasher.in[2] <== epoch;
+    input_blinded_user_state_hasher.in[3] <== from_nonce;
     input_blinded_user_state_hasher.in[4] <== 0;
     input_blinded_user_state === input_blinded_user_state_hasher.hash;
     /* End of 1. Verify blinded input user state*/
@@ -156,21 +157,21 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     }
 
     /* 5. Compute blinded public output */
-    // 5.1 blinded_user_state = hash5(identity, UST_root, epoch_key_nonce, 0, 0)
+    // 5.1 blinded_user_state = hash5(identity, UST_root, epoch, epoch_key_nonce, 0)
     component blinded_user_state_hasher = Hasher5();
     blinded_user_state_hasher.in[0] <== identity_nullifier;
     blinded_user_state_hasher.in[1] <== intermediate_user_state_tree_roots[NUM_ATTESTATIONS];
-    blinded_user_state_hasher.in[2] <== to_nonce;
-    blinded_user_state_hasher.in[3] <== 0;
+    blinded_user_state_hasher.in[2] <== epoch;
+    blinded_user_state_hasher.in[3] <== to_nonce;
     blinded_user_state_hasher.in[4] <== 0;
     blinded_user_state <== blinded_user_state_hasher.hash;
 
-    // 5.2 blinded_hash_chain_result = hash5(identity, hash_chain_result, epoch_key_nonce, 0, 0)
+    // 5.2 blinded_hash_chain_result = hash5(identity, hash_chain_result, epoch, epoch_key_nonce, 0)
     component blinded_hash_chain_result_hasher = Hasher5();
     blinded_hash_chain_result_hasher.in[0] <== identity_nullifier;
     blinded_hash_chain_result_hasher.in[1] <== hash_chain_hasher.result;
-    blinded_hash_chain_result_hasher.in[2] <== to_nonce;
-    blinded_hash_chain_result_hasher.in[3] <== 0;
+    blinded_hash_chain_result_hasher.in[2] <== epoch;
+    blinded_hash_chain_result_hasher.in[3] <== to_nonce;
     blinded_hash_chain_result_hasher.in[4] <== 0;
     blinded_hash_chain_result <== blinded_hash_chain_result_hasher.hash;
     /* End of 5. Compute blinded public output */

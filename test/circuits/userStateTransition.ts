@@ -142,11 +142,11 @@ describe('User State Transition circuits', function () {
 
                 // Blinded user state result
                 intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
-                blindedUserState.push(hash5([user['identityNullifier'], intermediateUserStateTreeRoot, nonce]))
+                blindedUserState.push(hash5([user['identityNullifier'], intermediateUserStateTreeRoot, epoch, nonce]))
 
                 // Blinded hash chain result
                 hashChainResults.push(hashChainResult)
-                blindedHashChain.push(hash5([user['identityNullifier'], hashChainResult, nonce]))
+                blindedHashChain.push(hash5([user['identityNullifier'], hashChainResult, epoch, nonce]))
 
                 // Seal hash chain of this epoch key
                 const sealedHashChainResult = hashLeftRight(BigInt(1), hashChainResult)

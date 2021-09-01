@@ -1,3 +1,3 @@
 include "../startTransition.circom"
 
-component main = StartTransition(16);
+component main = StartTransition(4);

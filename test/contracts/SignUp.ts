@@ -23,7 +23,7 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
+        const _treeDepths = getTreeDepthsForTesting("contract")
         // Set maxUsers to testMaxUser
         const _settings = {
             maxUsers: testMaxUser,

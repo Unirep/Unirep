@@ -1,3 +1,3 @@
 include "../userStateTransition.circom"
 
-component main = epochKeyExist(64);
+component main = epochKeyExist(32);

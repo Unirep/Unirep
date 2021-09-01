@@ -9,6 +9,7 @@ include "./userExists.circom";
 
 template StartTransition(GST_tree_depth) {
     // Start from which epoch key nonce
+    signal private input epoch;
     signal private input nonce;
 
     // User state tree
@@ -42,21 +43,21 @@ template StartTransition(GST_tree_depth) {
     /* End of check 1 */
 
     /* 2. Compute blinded public output */
-    // 2.1 blinded_user_state = hash5(identity, UST_root, epoch_key_nonce, 0, 0)
+    // 2.1 blinded_user_state = hash5(identity, UST_root, epoch, epoch_key_nonce)
     component blinded_user_state_hasher = Hasher5();
     blinded_user_state_hasher.in[0] <== identity_nullifier;
     blinded_user_state_hasher.in[1] <== user_tree_root;
-    blinded_user_state_hasher.in[2] <== nonce;
-    blinded_user_state_hasher.in[3] <== 0;
+    blinded_user_state_hasher.in[2] <== epoch;
+    blinded_user_state_hasher.in[3] <== nonce;
     blinded_user_state_hasher.in[4] <== 0;
     blinded_user_state <== blinded_user_state_hasher.hash;
 
-    // 2.2 blinded_hash_chain_result = hash5(identity, hash_chain_result, epoch_key_nonce)
+    // 2.2 blinded_hash_chain_result = hash5(identity, hash_chain_result, epoch, epoch_key_nonce)
     component blinded_hash_chain_result_hasher = Hasher5();
     blinded_hash_chain_result_hasher.in[0] <== identity_nullifier;
     blinded_hash_chain_result_hasher.in[1] <== 0; // hashchain start from 0
-    blinded_hash_chain_result_hasher.in[2] <== nonce;
-    blinded_hash_chain_result_hasher.in[3] <== 0;
+    blinded_hash_chain_result_hasher.in[2] <== epoch;
+    blinded_hash_chain_result_hasher.in[3] <== nonce;
     blinded_hash_chain_result_hasher.in[4] <== 0;
     blinded_hash_chain_result <== blinded_hash_chain_result_hasher.hash;
     /* End of 2. Compute blinded public output */

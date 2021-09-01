@@ -28,6 +28,7 @@ describe('User State Transition circuits', function () {
     describe('Start User State Transition', () => {
 
         let circuit
+        const epoch = 1
         const expectedNumAttestationsMade = 5
 
         let GSTZERO_VALUE = 0, GSTree: IncrementalQuinTree, GSTreeRoot, GSTreeProof
@@ -71,6 +72,7 @@ describe('User State Transition circuits', function () {
         describe('Start process user state tree', () => {
             it('Valid user state update inputs should work', async () => {
                 const circuitInputs = {
+                    epoch: epoch,
                     nonce: nonce,
                     user_tree_root: userStateTree.getRootHash(),
                     identity_pk: user['keypair']['pubKey'],
@@ -82,17 +84,18 @@ describe('User State Transition circuits', function () {
                 }
                 const witness = await executeCircuit(circuit, circuitInputs)
                 const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-                const expectedUserState = hash5([user['identityNullifier'], userStateTree.getRootHash(), nonce])
+                const expectedUserState = hash5([user['identityNullifier'], userStateTree.getRootHash(), epoch, nonce])
                 expect(outputUserState).to.equal(expectedUserState)
 
                 const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-                const expectedHashChainResult = hash5([user['identityNullifier'], 0, nonce])
+                const expectedHashChainResult = hash5([user['identityNullifier'], 0, epoch, nonce])
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
             })
 
             it('User can start with different epoch key nonce', async () => {
                 const newNonce = 1
                 const circuitInputs = {
+                    epoch: epoch,
                     nonce: newNonce,
                     user_tree_root: userStateTree.getRootHash(),
                     identity_pk: user['keypair']['pubKey'],
@@ -104,11 +107,11 @@ describe('User State Transition circuits', function () {
                 }
                 const witness = await executeCircuit(circuit, circuitInputs)
                 const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-                const expectedUserState = hash5([user['identityNullifier'], userStateTree.getRootHash(), newNonce])
+                const expectedUserState = hash5([user['identityNullifier'], userStateTree.getRootHash(), epoch, newNonce])
                 expect(outputUserState).to.equal(expectedUserState)
 
                 const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-                const expectedHashChainResult = hash5([user['identityNullifier'], 0, newNonce])
+                const expectedHashChainResult = hash5([user['identityNullifier'], 0, epoch, newNonce])
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
             })
         })

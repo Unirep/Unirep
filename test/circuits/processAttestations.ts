@@ -6,7 +6,6 @@ import {
     executeCircuit,
     getSignalByName,
 } from '../../circuits/utils'
-import { genEpochKey } from '../../core/utils'
 import { genNewUserStateTree } from '../utils'
 
 import {
@@ -17,7 +16,7 @@ import {
 } from 'maci-crypto'
 import { genIdentity } from 'libsemaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
-import { circuitEpochTreeDepth } from "../../config/testLocal"
+import { numAttestationsPerProof } from "../../config/testLocal"
 import { Attestation, Reputation } from "../../core"
 
 describe('Process attestation circuit', function () {
@@ -29,9 +28,6 @@ describe('Process attestation circuit', function () {
     const nonce = 0
     const toNonce = 1
     const user = genIdentity()
-    const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
-    let attestationIdxStarter = 0
-    const NUM_ATTESTATIONS = 10
 
     let userStateTree: SparseMerkleTreeImpl
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
@@ -65,7 +61,7 @@ describe('Process attestation circuit', function () {
         oldGraffities = []
 
         // Bootstrap user state
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             const  attesterId = BigInt(i + 1)
             if (reputationRecords[attesterId.toString()] === undefined) {
                 reputationRecords[attesterId.toString()] = new Reputation(
@@ -78,17 +74,17 @@ describe('Process attestation circuit', function () {
         }
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) noAttestationUserStateTreePathElements.push(leafZeroPathElements)
+        for (let i = 0; i < numAttestationsPerProof; i++) noAttestationUserStateTreePathElements.push(leafZeroPathElements)
 
         // Ensure as least one of the selectors is true
-        const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        const selTrue = Math.floor(Math.random() * numAttestationsPerProof)
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             if (i == selTrue) selectors.push(1)
             else selectors.push(Math.floor(Math.random() * 2))
         }
 
         hashChainResult = hashChainStarter
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             const attesterId = BigInt(i + 1)
             const attestation: Attestation = new Attestation(
                 attesterId,
@@ -128,11 +124,12 @@ describe('Process attestation circuit', function () {
             
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
         }
-        inputBlindedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[0], nonce])
+        inputBlindedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[0], epoch, nonce])
     })
 
     it('successfully process attestations', async () => {
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: nonce,
             to_nonce: nonce,
             identity_nullifier: user['identityNullifier'],
@@ -151,12 +148,12 @@ describe('Process attestation circuit', function () {
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[NUM_ATTESTATIONS], nonce])
+        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])
         expect(outputUserState).to.equal(expectedUserState)
         inputBlindedUserState = outputUserState
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, nonce])
+        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })
 
@@ -165,9 +162,9 @@ describe('Process attestation circuit', function () {
         const noAttestationHashChainResult = hashChainStarter
         const initialUserStateTreeRoot = intermediateUserStateTreeRoots[0]
         const noAttestationIntermediateUserStateTreeRoots = intermediateUserStateTreeRoots.map(() => initialUserStateTreeRoot)
-        const zeroInputUserState = hash5([user['identityNullifier'], initialUserStateTreeRoot, nonce])
-        const zeroInputHashChain = hash5([user['identityNullifier'], noAttestationHashChainResult, nonce])
+        const zeroInputUserState = hash5([user['identityNullifier'], initialUserStateTreeRoot, epoch, nonce])
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: nonce,
             to_nonce: nonce,
             identity_nullifier: user['identityNullifier'],
@@ -187,18 +184,17 @@ describe('Process attestation circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], noAttestationIntermediateUserStateTreeRoots[NUM_ATTESTATIONS], nonce])
+        const expectedUserState = hash5([user['identityNullifier'], noAttestationIntermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], noAttestationHashChainResult, nonce])
+        const expectedHashChainResult = hash5([user['identityNullifier'], noAttestationHashChainResult, epoch, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })
 
     it('successfully continue to process attestations', async () => {
         hashChainStarter = hashChainResult
 
-        attestationIdxStarter = NUM_ATTESTATIONS
         oldPosReps = []
         oldNegReps = []
         oldGraffities = []
@@ -213,13 +209,13 @@ describe('Process attestation circuit', function () {
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
 
         // Ensure as least one of the selectors is true
-        const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        const selTrue = Math.floor(Math.random() * numAttestationsPerProof)
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             if (i == selTrue) selectors.push(1)
             else selectors.push(Math.floor(Math.random() * 2))
         }
 
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             const attesterId = BigInt(i + 1)
             const attestation: Attestation = new Attestation(
                 attesterId,
@@ -266,6 +262,7 @@ describe('Process attestation circuit', function () {
         }
 
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: nonce,
             to_nonce: nonce,
             identity_nullifier: user['identityNullifier'],
@@ -284,19 +281,18 @@ describe('Process attestation circuit', function () {
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[NUM_ATTESTATIONS], nonce])
+        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])
         expect(outputUserState).to.equal(expectedUserState)
         inputBlindedUserState = outputUserState
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, nonce])
+        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })
 
     it('successfully continue to process attestations to next epoch key', async () => {
         hashChainStarter = hashChainResult
 
-        attestationIdxStarter = NUM_ATTESTATIONS
         oldPosReps = []
         oldNegReps = []
         oldGraffities = []
@@ -311,13 +307,13 @@ describe('Process attestation circuit', function () {
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
 
         // Ensure as least one of the selectors is true
-        const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        const selTrue = Math.floor(Math.random() * numAttestationsPerProof)
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             if (i == selTrue) selectors.push(1)
             else selectors.push(Math.floor(Math.random() * 2))
         }
 
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             const attesterId = BigInt(i + 1)
             const attestation: Attestation = new Attestation(
                 attesterId,
@@ -364,6 +360,7 @@ describe('Process attestation circuit', function () {
         }
 
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: nonce,
             to_nonce: toNonce,
             identity_nullifier: user['identityNullifier'],
@@ -382,19 +379,18 @@ describe('Process attestation circuit', function () {
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[NUM_ATTESTATIONS], toNonce])
+        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, toNonce])
         expect(outputUserState).to.equal(expectedUserState)
         inputBlindedUserState = outputUserState
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, toNonce])
+        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })
 
     it('Same attester give reputation to same epoch keys should work', async () => {
         hashChainStarter = hashChainResult
 
-        attestationIdxStarter = NUM_ATTESTATIONS * 2
         oldPosReps = []
         oldNegReps = []
         oldGraffities = []
@@ -409,13 +405,13 @@ describe('Process attestation circuit', function () {
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
 
         // Ensure as least one of the selectors is true
-        const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS)
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        const selTrue = Math.floor(Math.random() * numAttestationsPerProof)
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             if (i == selTrue) selectors.push(1)
             else selectors.push(Math.floor(Math.random() * 2))
         }
 
-        for (let i = 0; i < NUM_ATTESTATIONS; i++) {
+        for (let i = 0; i < numAttestationsPerProof; i++) {
             const attesterId = BigInt(i + 1)
             const attestation: Attestation = new Attestation(
                 attesterId,
@@ -462,6 +458,7 @@ describe('Process attestation circuit', function () {
         }
 
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: toNonce,
             to_nonce: toNonce,
             identity_nullifier: user['identityNullifier'],
@@ -480,19 +477,19 @@ describe('Process attestation circuit', function () {
         }
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[NUM_ATTESTATIONS], toNonce])
+        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, toNonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, toNonce])
+        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })
 
     
 
     it('process attestations with wrong attestation record should not work', async () => {
-        let indexWrongAttestationRecord = Math.floor(Math.random() * NUM_ATTESTATIONS)
-        while (selectors[indexWrongAttestationRecord] == 0) indexWrongAttestationRecord = (indexWrongAttestationRecord + 1) % NUM_ATTESTATIONS
+        let indexWrongAttestationRecord = Math.floor(Math.random() * numAttestationsPerProof)
+        while (selectors[indexWrongAttestationRecord] == 0) indexWrongAttestationRecord = (indexWrongAttestationRecord + 1) % numAttestationsPerProof
         const wrongOldPosReps = oldPosReps.slice()
         wrongOldPosReps[indexWrongAttestationRecord] = BigInt(Math.floor(Math.random() * 100))
         const wrongOldNegReps = oldNegReps.slice()
@@ -500,6 +497,7 @@ describe('Process attestation circuit', function () {
         const wrongOldGraffities = oldGraffities.slice()
         wrongOldGraffities[indexWrongAttestationRecord] = genRandomSalt()
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: toNonce,
             to_nonce: toNonce,
             identity_nullifier: user['identityNullifier'],
@@ -530,9 +528,10 @@ describe('Process attestation circuit', function () {
 
     it('process attestations with wrong intermediate roots should not work', async () => {
         const wrongIntermediateUserStateTreeRoots = intermediateUserStateTreeRoots.slice()
-        const indexWrongRoot = Math.floor(Math.random() * NUM_ATTESTATIONS)
+        const indexWrongRoot = Math.floor(Math.random() * numAttestationsPerProof)
         wrongIntermediateUserStateTreeRoots[indexWrongRoot] = genRandomSalt()
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: toNonce,
             to_nonce: toNonce,
             identity_nullifier: user['identityNullifier'],
@@ -562,9 +561,10 @@ describe('Process attestation circuit', function () {
     })
 
     it('process attestations with wrong path elements should not work', async () => {
-        const indexWrongPathElements = Math.floor(Math.random() * NUM_ATTESTATIONS)
+        const indexWrongPathElements = Math.floor(Math.random() * numAttestationsPerProof)
         userStateTreePathElements[indexWrongPathElements].reverse()
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: toNonce,
             to_nonce: toNonce,
             identity_nullifier: user['identityNullifier'],
@@ -598,6 +598,7 @@ describe('Process attestation circuit', function () {
     it('process attestations with incorrect number of elements should fail', async () => {
         const wrongAttesterIds = attesterIds.concat([BigInt(4)])
         const circuitInputs = {
+            epoch: epoch,
             from_nonce: toNonce,
             to_nonce: toNonce,
             identity_nullifier: user['identityNullifier'],

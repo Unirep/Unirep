@@ -96,8 +96,8 @@ template UserStateTransition(
         blinded_hash_chain_hasher[n] = Hasher5();
         blinded_hash_chain_hasher[n].in[0] <== identity_nullifier;
         blinded_hash_chain_hasher[n].in[1] <== hash_chain_results[n];
-        blinded_hash_chain_hasher[n].in[2] <== n;
-        blinded_hash_chain_hasher[n].in[3] <== 0;
+        blinded_hash_chain_hasher[n].in[2] <== epoch;
+        blinded_hash_chain_hasher[n].in[3] <== n;
         blinded_hash_chain_hasher[n].in[4] <== 0;
         blinded_hash_chain_results[n] === blinded_hash_chain_hasher[n].hash;
 
@@ -125,8 +125,8 @@ template UserStateTransition(
         blinded_user_state_hasher[n] = Hasher5();
         blinded_user_state_hasher[n].in[0] <== identity_nullifier;
         blinded_user_state_hasher[n].in[1] <== intermediate_user_state_tree_roots[n + 1];
-        blinded_user_state_hasher[n].in[2] <== n;
-        blinded_user_state_hasher[n].in[3] <== 0;
+        blinded_user_state_hasher[n].in[2] <== epoch;
+        blinded_user_state_hasher[n].in[3] <== n;
         blinded_user_state_hasher[n].in[4] <== 0;
         blinded_user_state[n] === blinded_user_state_hasher[n].hash;
     }

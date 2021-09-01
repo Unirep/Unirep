@@ -51,6 +51,8 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     uint256 public numUserSignUps = 0;
 
+    uint256 internal nextGSTLeafIndex = 0;
+
     mapping(uint256 => bool) public hasUserSignedUp;
 
     // Fee required for submitting an attestation
@@ -100,6 +102,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event NewGSTLeafInserted(
         uint256 indexed _epoch,
+        uint256 _leafIndex,
         uint256 _hashedLeaf
     );
 
@@ -114,6 +117,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
     event UserStateTransitioned(
         uint256 indexed _toEpoch,
+        uint256 _leafIndex,
         UserTransitionedRelated userTransitionedData
     );
 
@@ -197,7 +201,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         numUserSignUps ++;
 
         emit Sequencer("UserSignUp");
-        emit NewGSTLeafInserted(currentEpoch ,hashedLeaf);
+        emit NewGSTLeafInserted(currentEpoch, nextGSTLeafIndex ,hashedLeaf);
+
+        nextGSTLeafIndex ++;
     }
 
     /*
@@ -350,6 +356,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
             latestEpochTransitionTime = block.timestamp;
             currentEpoch ++;
+            nextGSTLeafIndex = 0;
         }
 
         uint256 gasUsed = initGas.sub(gasleft());
@@ -418,10 +425,11 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         emit Sequencer("UserStateTransitioned");
         emit UserStateTransitioned(
             currentEpoch,
+            nextGSTLeafIndex,
             userTransitionedData
         );
-        // emit NewGSTLeafInserted(currentEpoch, _newGlobalStateTreeLeaf);
 
+        nextGSTLeafIndex ++;
     }
 
     function verifyEpochKeyValidity(
