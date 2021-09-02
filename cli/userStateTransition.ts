@@ -151,11 +151,11 @@ const userStateTransition = async (args: any) => {
     console.log('----------------------User State----------------------')
     console.log(userState.toJSON(4))
     console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
     
     // start user state transition proof
+    console.log('----------------------Circuit inputs----------------------')
+    console.log(circuitInputs.startTransitionProof)
+    console.log('----------------------------------------------------------')
     let results = await genProofAndPublicSignals('startTransition', stringifyBigInts(circuitInputs.startTransitionProof))
     let isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
     if (!isValid) {
@@ -184,6 +184,9 @@ const userStateTransition = async (args: any) => {
 
     // process attestations proof
     for (let i = 0; i < circuitInputs.processAttestationProof.length; i++) {
+        console.log('----------------------Circuit inputs----------------------')
+        console.log(circuitInputs.processAttestationProof[i])
+        console.log('----------------------------------------------------------')
         results = await genProofAndPublicSignals('processAttestations', stringifyBigInts(circuitInputs.processAttestationProof[i]))
         const isValid = await verifyProof('processAttestations', results['proof'], results['publicSignals'])
         if (!isValid) {
@@ -211,6 +214,9 @@ const userStateTransition = async (args: any) => {
     }
 
     // update user state proof
+    console.log('----------------------Circuit inputs----------------------')
+    console.log(circuitInputs.finalTransitionProof)
+    console.log('----------------------------------------------------------')
     results = await genProofAndPublicSignals('userStateTransition', stringifyBigInts(circuitInputs.finalTransitionProof))
     const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
     const newState = await userState.genNewUserStateAfterTransition()

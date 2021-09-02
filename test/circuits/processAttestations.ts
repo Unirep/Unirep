@@ -149,7 +149,6 @@ describe('Process attestation circuit', function () {
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
         }
-        console.log(circuitInputs)
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])

@@ -149,14 +149,16 @@ const attest = async (args: any) => {
     }
 
     const epk = BigInt(add0x(args.epoch_key))
+    const posRep = args.pos_rep ? args.pos_rep : 0
+    const negRep = args.neg_rep ? args.neg_rep : 0
     const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
     const attestation = new Attestation(
         BigInt(attesterId),
-        BigInt(args.pos_rep),
-        BigInt(args.neg_rep),
+        BigInt(posRep),
+        BigInt(negRep),
         graffiti,
     )
-    console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${args.pos_rep}, neg rep ${args.neg_rep} and graffiti ${graffiti.toString(16)}`)
+    console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${posRep}, neg rep ${negRep} and graffiti ${graffiti.toString(16)}`)
     let tx
     try {
         tx = await unirepContract.submitAttestation(

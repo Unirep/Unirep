@@ -385,8 +385,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         uint256[8] calldata _proof
     ) external {
         require(blindedUserStates[_inputBlindedUserState] == true, "Unirep: processing attestations with an invalid blinded user state");
-        require(blindedUserStates[_outputBlindedUserState] == false, "Unirep: blinded user state has been submitted before");
-        require(blindedHashChains[_outputBlindedHashChain] == false, "Unirep: blinded hash chain has been submitted before");
         bool proofIsValid = verifyProcessAttestationProof(_outputBlindedUserState, _outputBlindedHashChain, _inputBlindedUserState, _proof);
         require(proofIsValid, "Unirep: the proof is not valid");
 

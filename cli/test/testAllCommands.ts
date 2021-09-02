@@ -186,9 +186,9 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
-                ` -pr ${posRep} ` +
-                ` -nr ${negRep} ` +
-                ` -gf ${graffiti.toString(16)} `
+                ` -pr ${posRep} `
+                // ` -nr ${negRep} ` +
+                // ` -gf ${graffiti.toString(16)} `
 
             const output = exec(command).stdout.trim()
 
@@ -240,9 +240,9 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -id ${userIdentity} ` +
                 ` -a ${attesterId} ` +
-                ` -mp ${minPosRep} ` +
+                ` -mp ${minPosRep} `
                 // ` -mn ${maxNegRep} ` +
-                ` -gp ${graffitiPreimage} `
+                // ` -gp ${graffitiPreimage} `
 
             const output = exec(command).stdout.trim()
 
@@ -261,7 +261,7 @@ describe('test all CLI subcommands', function() {
                 ` -a ${attesterId} ` +
                 ` -mp ${minPosRep} ` +
                 // ` -mn ${maxNegRep} ` +
-                ` -gp ${graffitiPreimage} ` +
+                // ` -gp ${graffitiPreimage} ` +
                 ` -pf ${userRepProof} `
 
             const output = exec(command).stdout.trim()

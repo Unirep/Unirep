@@ -107,7 +107,7 @@ describe('Epoch Transition', function () {
             BigInt(attesterId.toString()),
             BigInt(0),
             BigInt(99),
-            genRandomSalt(),
+            BigInt(0),
         )
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
@@ -264,20 +264,6 @@ describe('Epoch Transition', function () {
             expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
             console.log("Gas cost of submit a process attestations proof:", receipt.gasUsed.toString())
         }
-    })
-
-    it('duplicated process attestations transition proof should fail', async() => {
-        const outputBlindedUserState = results['publicSignals'][0]
-        const outputBlindedHashChain = results['publicSignals'][1]
-        const inputBlindedUserState = results['publicSignals'][2]
-
-        await expect(unirepContract.processAttestations(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            formatProofForVerifierContract(results['proof']),
-        ))
-            .to.be.revertedWith('Unirep: blinded user state has been submitted before')
     })
 
     it('invalid blinded input should fail', async() => {
