@@ -16,7 +16,6 @@ template proveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
     signal private input user_tree_root;
-    signal private input user_state_hash;
     // Global state tree
     signal private input GST_path_index[GST_tree_depth];
     signal private input GST_path_elements[GST_tree_depth][1];
@@ -31,9 +30,6 @@ template proveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
     signal private input neg_rep;
     signal private input graffiti;
     signal private input UST_path_elements[user_state_tree_depth][1];
-    // Sum of positive and negative karma
-    signal private input positive_karma;
-    signal private input negative_karma;
     // Adding flexibility to prove mp, mn or graffiti
     signal input prove_pos_rep;
     signal input prove_neg_rep;
@@ -69,9 +65,6 @@ template proveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
     user_exist.identity_nullifier <== identity_nullifier;
     user_exist.identity_trapdoor <== identity_trapdoor;
     user_exist.user_tree_root <== user_tree_root;
-    user_exist.user_state_hash <== user_state_hash;
-    user_exist.positive_karma <== positive_karma;
-    user_exist.negative_karma <== negative_karma;
     /* End of check 2 */
 
 
@@ -97,7 +90,7 @@ template proveReputation(GST_tree_depth, user_state_tree_depth, nullifier_tree_d
     // We check that nullifier of the epoch key is not seen before.
     // 4.1.1 Compute nullifier of the epoch key
     component epoch_key_nullifier_hasher = Hasher5();
-    epoch_key_nullifier_hasher.in[0] <== 2;  // 2 is the domain separator for epoch key nullifier
+    epoch_key_nullifier_hasher.in[0] <== 1;  // 1 is the domain separator for epoch key nullifier
     epoch_key_nullifier_hasher.in[1] <== identity_nullifier;
     epoch_key_nullifier_hasher.in[2] <== epoch;
     epoch_key_nullifier_hasher.in[3] <== nonce;

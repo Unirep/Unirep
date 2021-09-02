@@ -1,20 +1,18 @@
 import { ethers } from 'ethers'
 
-const globalStateTreeDepth = 4;
+const globalStateTreeDepth = 16;
 
-const userStateTreeDepth = 4;
+const userStateTreeDepth = 16;
 
-const epochTreeDepth = 80;
+const epochTreeDepth = 64;
 
-const nullifierTreeDepth = 80;
-
-const maxUsers = 2 ** globalStateTreeDepth - 1;
+const nullifierTreeDepth = 128;
 
 const attestingFee = ethers.utils.parseEther("0.01")
 
-const numEpochKeyNoncePerEpoch = 2;
+const numEpochKeyNoncePerEpoch = 3;
 
-const numAttestationsPerEpochKey = 6;
+const numAttestationsPerProof = 5;
 
 const epochLength = 30;  // 30 seconds
 
@@ -27,9 +25,9 @@ const circuitEpochTreeDepth = 32;
 
 const circuitNullifierTreeDepth = 128;
 
-const defaultAirdroppedKarma = 20;
+const maxReputationBudget = 10;
 
-const maxKarmaBudget = 10;
+const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1;
 
 export {
     attestingFee,
@@ -41,10 +39,9 @@ export {
     epochTreeDepth,
     globalStateTreeDepth,
     numEpochKeyNoncePerEpoch,
+    numAttestationsPerProof,
     maxUsers,
     nullifierTreeDepth,
-    numAttestationsPerEpochKey,
     userStateTreeDepth,
-    defaultAirdroppedKarma,
-    maxKarmaBudget,
+    maxReputationBudget,
 }

@@ -4,6 +4,7 @@ import lineByLine from 'n-readlines'
 import * as path from 'path'
 import { SnarkProof } from 'libsemaphore'
 const circom = require('circom')
+const snarkjs = require('snarkjs')
 import * as shell from 'shelljs'
 
 import {
@@ -23,7 +24,7 @@ const compileAndLoadCircuit = async (
 ) => {
     const circuit = await circom.tester(path.join(
         __dirname,
-        `../../circuits/${circuitPath}`,
+        `../circuits/${circuitPath}`,
     ))
 
     await circuit.loadSymbols()
@@ -80,70 +81,15 @@ const getSignalByNameViaSym = (
     return witness[index]
 }
 
-const genVerifyEpochKeyProofAndPublicSignals = (
-    inputs: any,
-) => {
-    return genProofAndPublicSignals(
-        inputs,
-        '/test/verifyEpochKey_test.circom',
-        'verifyEpochKeyCircuit.r1cs',
-        'verifyEpochKey.wasm',
-        'verifyEpochKey.params',
-        false,
-    )
-}
-
-const genVerifyUserStateTransitionProofAndPublicSignals = (
-    inputs: any,
-) => {
-    return genProofAndPublicSignals(
-        inputs,
-        '/test/userStateTransition_test.circom',
-        'userStateTransitionCircuit.r1cs',
-        'userStateTransition.wasm',
-        'userStateTransition.params',
-        false,
-    )
-}
-
-const genVerifyReputationProofAndPublicSignals = (
-    inputs: any,
-) => {
-    return genProofAndPublicSignals(
-        inputs,
-        '/test/proveReputation_test.circom',
-        'proveReputationCircuit.r1cs',
-        'proveReputation.wasm',
-        'proveReputation.params',
-        false,
-    )
-}
-
-const genVerifyReputationFromAttesterProofAndPublicSignals = (
-    inputs: any,
-) => {
-    return genProofAndPublicSignals(
-        inputs,
-        '/test/proveReputationFromAttester_test.circom',
-        'proveReputationFromAttesterCircuit.r1cs',
-        'proveReputationFromAttester.wasm',
-        'proveReputationFromAttester.params',
-        false,
-    )
-}
-
 const genProofAndPublicSignals = async (
+    circuitName: string,
     inputs: any,
-    circuitFilename: string,
-    circuitR1csFilename: string,
-    circuitWasmFilename: string,
-    paramsFilename: string,
     compileCircuit = true,
 ) => {
     const date = Date.now()
-    const paramsPath = path.join(__dirname, buildPath, paramsFilename)
-    const circuitR1csPath = path.join(__dirname, buildPath, circuitR1csFilename)
-    const circuitWasmPath = path.join(__dirname, buildPath, circuitWasmFilename)
+    const paramsPath = path.join(__dirname, buildPath, `${circuitName}.params`)
+    const circuitR1csPath = path.join(__dirname, buildPath, `${circuitName}Circuit.r1cs`)
+    const circuitWasmPath = path.join(__dirname, buildPath, `${circuitName}.wasm`)
     const inputJsonPath = path.join(__dirname, buildPath + date + '.input.json')
     const witnessPath = path.join(__dirname, buildPath + date + '.witness.wtns')
     const witnessJsonPath = path.join(__dirname, buildPath + date + '.witness.json')
@@ -154,7 +100,7 @@ const genProofAndPublicSignals = async (
 
     let circuit
      if (compileCircuit) {	
-         circuit = await compileAndLoadCircuit(circuitFilename)	
+         circuit = await compileAndLoadCircuit(`/test/${circuitName}_test.circom`)	
      }
 
     const snarkjsCmd = 'node ' + path.join(__dirname, '../node_modules/snarkjs/build/cli.cjs')
@@ -183,11 +129,30 @@ const genProofAndPublicSignals = async (
 }
 
 const verifyProof = async (
-    paramsFilename: string,
-    proofFilename: string,
-    publicSignalsFilename: string,
+    circuitName: string,
+    proof: any,
+    publicSignals: any,
 ): Promise<boolean> => {
-    const paramsPath = path.join(__dirname, buildPath, paramsFilename)
+
+    const date = Date.now().toString()
+    const proofFilename = `${date}.${circuitName}.proof.json`
+    const publicSignalsFilename = `${date}.${circuitName}.publicSignals.json`
+
+    fs.writeFileSync(
+        path.join(__dirname, buildPath, proofFilename),
+        JSON.stringify(
+            stringifyBigInts(proof)
+        )
+    )
+
+    fs.writeFileSync(
+        path.join(__dirname, buildPath, publicSignalsFilename),
+        JSON.stringify(
+            stringifyBigInts(publicSignals)
+        )
+    )
+
+    const paramsPath = path.join(__dirname, buildPath, `${circuitName}.params`)
     const proofPath = path.join(__dirname, buildPath, proofFilename)
     const publicSignalsPath = path.join(__dirname, buildPath, publicSignalsFilename)
 
@@ -198,106 +163,6 @@ const verifyProof = async (
     shell.rm('-f', publicSignalsPath)
 
     return output === 'Proof is correct'
-}
-
-const verifyEPKProof = (
-    proof: any,
-    publicSignals: any,
-) => {
-    const date = Date.now().toString()
-    const proofFilename = `${date}.verifyEpochKey.proof.json`
-    const publicSignalsFilename = `${date}.verifyEpochKey.publicSignals.json`
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, proofFilename),
-        JSON.stringify(
-            stringifyBigInts(proof)
-        )
-    )
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, publicSignalsFilename),
-        JSON.stringify(
-            stringifyBigInts(publicSignals)
-        )
-    )
-
-    return verifyProof('verifyEpochKey.params', proofFilename, publicSignalsFilename)
-}
-
-const verifyUserStateTransitionProof = (
-    proof: any,
-    publicSignals: any,
-) => {
-    const date = Date.now().toString()
-    const proofFilename = `${date}.userStateTransition.proof.json`
-    const publicSignalsFilename = `${date}.userStateTransition.publicSignals.json`
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, proofFilename),
-        JSON.stringify(
-            stringifyBigInts(proof)
-        )
-    )
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, publicSignalsFilename),
-        JSON.stringify(
-            stringifyBigInts(publicSignals)
-        )
-    )
-
-    return verifyProof('userStateTransition.params', proofFilename, publicSignalsFilename)
-}
-
-const verifyProveReputationProof = (
-    proof: any,
-    publicSignals: any,
-) => {
-    const date = Date.now().toString()
-    const proofFilename = `${date}.proveReputation.proof.json`
-    const publicSignalsFilename = `${date}.proveReputation.publicSignals.json`
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, proofFilename),
-        JSON.stringify(
-            stringifyBigInts(proof)
-        )
-    )
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, publicSignalsFilename),
-        JSON.stringify(
-            stringifyBigInts(publicSignals)
-        )
-    )
-
-    return verifyProof('proveReputation.params', proofFilename, publicSignalsFilename)
-}
-
-const verifyProveReputationFromAttesterProof = (
-    proof: any,
-    publicSignals: any,
-) => {
-    const date = Date.now().toString()
-    const proofFilename = `${date}.proveReputationFromAttester.proof.json`
-    const publicSignalsFilename = `${date}.proveReputationFromAttester.publicSignals.json`
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, proofFilename),
-        JSON.stringify(
-            stringifyBigInts(proof)
-        )
-    )
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, publicSignalsFilename),
-        JSON.stringify(
-            stringifyBigInts(publicSignals)
-        )
-    )
-
-    return verifyProof('proveReputationFromAttester.params', proofFilename, publicSignalsFilename)
 }
 
 const formatProofForVerifierContract = (
@@ -322,14 +187,6 @@ export {
     formatProofForVerifierContract,
     getSignalByName,
     getSignalByNameViaSym,
-    genVerifyEpochKeyProofAndPublicSignals,
-    genVerifyReputationProofAndPublicSignals,
-    genVerifyReputationFromAttesterProofAndPublicSignals,
-    genVerifyUserStateTransitionProofAndPublicSignals,
-    verifyEPKProof,
-    verifyProveReputationProof,
-    verifyProveReputationFromAttesterProof,
-    verifyUserStateTransitionProof,
     genProofAndPublicSignals,
     verifyProof,
 }

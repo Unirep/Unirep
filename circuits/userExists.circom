@@ -12,10 +12,6 @@ template userExists(GST_tree_depth){
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
     signal private input user_tree_root;
-    signal private input user_state_hash;
-    // Sum of positive and negative karma
-    signal private input positive_karma;
-    signal private input negative_karma;
     signal output out;
     
     component identity_commitment = IdentityCommitment();
@@ -26,17 +22,11 @@ template userExists(GST_tree_depth){
     out <== identity_commitment.out;
 
     // Compute user state tree root
-    component leaf_hasher = Hasher5();
-    leaf_hasher.in[0] <== identity_commitment.out;
-    leaf_hasher.in[1] <== user_tree_root;
-    leaf_hasher.in[2] <== positive_karma;
-    leaf_hasher.in[3] <== negative_karma;
-    leaf_hasher.in[4] <== 0;
+    component leaf_hasher = HashLeftRight();
+    leaf_hasher.left <== identity_commitment.out;
+    leaf_hasher.right <== user_tree_root;
 
-    // 3.4 Check computed hash == user state tree leaf
-    leaf_hasher.hash === user_state_hash;
-
-    // 3.6 Check if user state hash is in GST
+    // Check if user state hash is in GST
     component GST_leaf_exists = LeafExists(GST_tree_depth);
     GST_leaf_exists.leaf <== leaf_hasher.hash;
     for (var i = 0; i < GST_tree_depth; i++) {

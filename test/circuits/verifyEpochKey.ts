@@ -1,6 +1,4 @@
 import chai from "chai"
-import { ethers as hardhatEthers } from "hardhat"
-import { ethers } from 'ethers'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
 
 const { expect } = chai
@@ -8,43 +6,31 @@ const { expect } = chai
 import {
     compileAndLoadCircuit,
     executeCircuit,
-    genVerifyEpochKeyProofAndPublicSignals,
-    verifyEPKProof,
-} from './utils'
-import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../utils'
+} from '../../circuits/utils'
+import { genEpochKey } from '../../core/utils'
 
 import {
     genRandomSalt,
-    hash5,
+    hashLeftRight,
     IncrementalQuinTree,
     stringifyBigInts,
 } from 'maci-crypto'
-import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, defaultAirdroppedKarma } from "../../config/testLocal"
+import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../../config/testLocal"
+import { genProofAndPublicSignals, verifyProof } from "../../circuits/utils"
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
 
     let circuit
-
-    let accounts: ethers.Signer[]
-    let unirepContract: ethers.Contract
-    let ZERO_VALUE
+    let ZERO_VALUE = 0
 
     const maxEPK = BigInt(2 ** circuitEpochTreeDepth)
 
     let id, commitment, stateRoot
     let tree, proof, root
     let nonce, currentEpoch, epochKey
-    let hashedLeaf
-    const transitionedPosRep = 20
-    const transitionedNegRep = 0
 
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
-    
-        const _treeDepths = getTreeDepthsForTesting("circuit")
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
-        ZERO_VALUE = await unirepContract.hashedBlankStateLeaf()
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
         circuit = await compileAndLoadCircuit('test/verifyEpochKey_test.circom')
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -54,22 +40,8 @@ describe('Verify Epoch Key circuits', function () {
         id = genIdentity()
         commitment = genIdentityCommitment(id)
         stateRoot = genRandomSalt()
-        hashedLeaf = hash5([
-            commitment,
-            stateRoot,
-            BigInt(transitionedPosRep),
-            BigInt(transitionedNegRep),
-            BigInt(0)
-        ])
 
-        const hashedStateLeaf = await unirepContract.hashStateLeaf(
-            [
-                commitment.toString(),
-                stateRoot.toString(),
-                BigInt(defaultAirdroppedKarma),
-                BigInt(0)
-            ]
-        )
+        const hashedStateLeaf = hashLeftRight(commitment.toString(), stateRoot.toString())
         tree.insert(BigInt(hashedStateLeaf.toString()))
         proof = tree.genMerklePath(0)
         root = tree.root
@@ -93,19 +65,16 @@ describe('Verify Epoch Key circuits', function () {
                 identity_nullifier: id['identityNullifier'], 
                 identity_trapdoor: id['identityTrapdoor'],
                 user_tree_root: stateRoot,
-                user_state_hash: hashedLeaf,
-                positive_karma: transitionedPosRep,
-                negative_karma: transitionedNegRep,
                 nonce: n,
                 epoch: currentEpoch,
                 epoch_key: epk,
             }
             const witness = await executeCircuit(circuit, circuitInputs)
             const startTime = new Date().getTime()
-            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genProofAndPublicSignals('verifyEpochKey', stringifyBigInts(circuitInputs))
             const endTime = new Date().getTime()
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-            const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
+            const isValid = await verifyProof('verifyEpochKey', results['proof'], results['publicSignals'])
             expect(isValid).to.be.true
         }
     })
@@ -121,9 +90,6 @@ describe('Verify Epoch Key circuits', function () {
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
             user_tree_root: stateRoot,
-            user_state_hash: hashedLeaf,
-            positive_karma: transitionedPosRep,
-            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: currentEpoch,
             epoch_key: invalidEpochKey1,
@@ -149,9 +115,6 @@ describe('Verify Epoch Key circuits', function () {
             identity_nullifier: fakeId['identityNullifier'], 
             identity_trapdoor: fakeId['identityTrapdoor'],
             user_tree_root: stateRoot,
-            user_state_hash: hashedLeaf,
-            positive_karma: transitionedPosRep,
-            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
@@ -177,9 +140,6 @@ describe('Verify Epoch Key circuits', function () {
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
             user_tree_root: otherTreeRoot,
-            user_state_hash: hashedLeaf,
-            positive_karma: transitionedPosRep,
-            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
@@ -205,9 +165,6 @@ describe('Verify Epoch Key circuits', function () {
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
             user_tree_root: stateRoot,
-            user_state_hash: hashedLeaf,
-            positive_karma: transitionedPosRep,
-            negative_karma: transitionedNegRep,
             nonce: invalidNonce,
             epoch: currentEpoch,
             epoch_key: epochKey,
@@ -239,9 +196,6 @@ describe('Verify Epoch Key circuits', function () {
             identity_nullifier: id['identityNullifier'], 
             identity_trapdoor: id['identityTrapdoor'],
             user_tree_root: stateRoot,
-            user_state_hash: hashedLeaf,
-            positive_karma: transitionedPosRep,
-            negative_karma: transitionedNegRep,
             nonce: nonce,
             epoch: invalidEpoch,
             epoch_key: epochKey,

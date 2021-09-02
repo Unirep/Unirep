@@ -124,7 +124,7 @@ const main = () => {
     }
 
     // Set memory options for node
-    shell.env['NODE_OPTIONS'] = '--max-old-space-size=4096'
+    shell.env['NODE_OPTIONS'] = '--max-old-space-size=16384'
 
     // Check if the circuitOut file exists and if we should not override files
     const circuitOutFileExists = fileExists(circuitOut)
@@ -134,7 +134,7 @@ const main = () => {
     } else {
         console.log(`Compiling ${inputFile}...`)
         // Compile the .circom file
-        shell.exec(`node ./node_modules/circom/cli.js ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
+        shell.exec(`node --stack-size=65500 ./node_modules/circom/cli.js ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
         console.log('Generated', circuitOut, 'and', wasmOut)
     }
 

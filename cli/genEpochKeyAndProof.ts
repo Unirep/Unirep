@@ -11,12 +11,13 @@ import {
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
-import { genEpochKey } from '../test/utils'
+import { genEpochKey } from '../core/utils'
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, verifyEPKProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract } from '../circuits/utils'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix, identityPrefix } from './prefix'
+import { genProofAndPublicSignals, verifyProof } from '../circuits/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -131,10 +132,10 @@ const genEpochKeyAndProof = async (args: any) => {
     console.log('----------------------Circuit inputs----------------------')
     console.log(circuitInputs)
     console.log('----------------------------------------------------------')
-    const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    const results = await genProofAndPublicSignals('verifyEpochKey',stringifyBigInts(circuitInputs))
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
+    const isValid = await verifyProof('verifyEpochKey', results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
         return
