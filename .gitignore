@@ -9,5 +9,6 @@ build
 #Verifier solidity contracts
 EpochKeyValidityVerifier.sol
 ReputationVerifier.sol
-ReputationNullifierVerifier.sol
+StartTransitionVerifier.sol
+ProcessAttestationsVerifier.sol
 UserStateTransitionVerifier.sol

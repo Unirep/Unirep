@@ -1,20 +1,19 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch, numAttestationsPerEpochKey, defaultAirdroppedKarma, maxKarmaBudget} from '../../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashOne, hash5 } from 'maci-crypto'
-import { deployUnirep, genEpochKey, toCompleteHexString, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../utils'
+import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
+import { deployUnirep, genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../../core/utils'
+import { toCompleteHexString } from '../utils'
 
 const { expect } = chai
 
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
-import { formatProofForVerifierContract, genVerifyEpochKeyProofAndPublicSignals, genVerifyReputationNullifierProofAndPublicSignals, genVerifyReputationProofAndPublicSignals,
-genVerifyUserStateTransitionProofAndPublicSignals, getSignalByNameViaSym, verifyEPKProof, verifyProveReputationNullifierProof, verifyUserStateTransitionProof, verifyProveReputationProof, compileAndLoadCircuit, executeCircuit } from "../circuits/utils"
-import { add0x } from '../../crypto/SMT'
+import { compileAndLoadCircuit, formatProofForVerifierContract, genProofAndPublicSignals, getSignalByNameViaSym, verifyProof } from "../../circuits/utils"
 
 describe('Integration', function () {
-    this.timeout(500000)
+    this.timeout(1000000)
 
     let unirepState: UnirepState
     let users: UserState[] = new Array(2)
@@ -30,8 +29,7 @@ describe('Integration', function () {
     let graffitiPreImageMap = new Array(2)
 
     let unirepContract: ethers.Contract
-    let contractCalledByFirstAttester, contractCalledBySecondAttester
-    let _treeDepths
+    let unirepContractCalledByFirstAttester, unirepContractCalledBySecondAttester
 
     let prevEpoch: ethers.BigNumber
     let currentEpoch: ethers.BigNumber
@@ -44,20 +42,15 @@ describe('Integration', function () {
 
     let duplicatedProofInputs
 
-    let postId = '123456'
-    let commentId = '654321'
-    let postText = 'postText'
-    let commentText = 'commentText'
-
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        _treeDepths = getTreeDepthsForTesting("circuit")
+        const _treeDepths = getTreeDepthsForTesting("circuit")
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
 
         currentEpoch = await unirepContract.currentEpoch()
         emptyUserStateRoot = computeEmptyUserStateRoot(circuitUserStateTreeDepth)
-        blankGSLeaf = hash5([BigInt(0), emptyUserStateRoot, BigInt(0), BigInt(0), BigInt(0)])
+        blankGSLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
 
         unirepState = new UnirepState(
             circuitGlobalStateTreeDepth,
@@ -67,7 +60,6 @@ describe('Integration', function () {
             attestingFee,
             epochLength,
             numEpochKeyNoncePerEpoch,
-            numAttestationsPerEpochKey,
         )
     })
 
@@ -76,18 +68,11 @@ describe('Integration', function () {
             const id = genIdentity()
             const commitment = genIdentityCommitment(id)
 
-            const tx = await unirepContract.userSignUp(commitment, defaultAirdroppedKarma)
+            const tx = await unirepContract.userSignUp(commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
 
-            const hashedStateLeaf = await unirepContract.hashStateLeaf(
-                [
-                    commitment,
-                    emptyUserStateRoot,
-                    BigInt(defaultAirdroppedKarma),
-                    BigInt(0)
-                ]
-            )
+            const hashedStateLeaf = await unirepContract.hashStateLeaf([commitment, emptyUserStateRoot])
             unirepState.signUp(currentEpoch.toNumber(), BigInt(hashedStateLeaf))
             users[firstUser] = new UserState(
                 unirepState,
@@ -96,17 +81,7 @@ describe('Integration', function () {
                 false,
             )
             const latestTransitionedToEpoch = currentEpoch.toNumber()
-            const newLeafFilter = unirepContract.filters.NewGSTLeafInserted(currentEpoch)
-            const newLeafEvents = await unirepContract.queryFilter(newLeafFilter)
-            let GSTreeLeafIndex: number = -1
-
-            for (let i = 0; i < newLeafEvents.length; i++) {
-                if(BigInt(newLeafEvents[i]?.args?._hashedLeaf) == BigInt(hashedStateLeaf)){
-                    GSTreeLeafIndex = newLeafEvents[i]?.args?._leafIndex.toNumber()
-                }
-            }
-            expect(GSTreeLeafIndex).to.equal(0)
-            
+            const GSTreeLeafIndex = 0
             users[firstUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
             console.log(`First user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
             console.log('----------------------User State----------------------')
@@ -118,10 +93,9 @@ describe('Integration', function () {
             attesters[firstAttester] = new Object()
             attesters[firstAttester]['acct'] = accounts[1]
             attesters[firstAttester]['addr'] = await attesters[firstAttester]['acct'].getAddress()
-            contractCalledByFirstAttester = unirepContract.connect(attesters[firstAttester]['acct'])
-            const message = ethers.utils.solidityKeccak256(["address", "address"], [attesters[firstAttester]['addr'], unirepContract.address])
-            attesterSigs[firstAttester] = await attesters[firstAttester]['acct'].signMessage(ethers.utils.arrayify(message))
-            const tx = await contractCalledByFirstAttester.attesterSignUp()
+            unirepContractCalledByFirstAttester = unirepContract.connect(attesters[firstAttester]['acct'])
+
+            const tx = await unirepContractCalledByFirstAttester.attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status, 'Attester sign up failed').to.equal(1)
             
@@ -161,7 +135,6 @@ describe('Integration', function () {
 
     describe('Second epoch', () => {
         const secondEpochEpochKeys: string[] = []
-        let attestationsFromUnirepSocial: number = 0
         let attestationsFromFirstAttester: number = 0
         let attestationsFromSecondAttester: number = 0
         it('begin first epoch epoch transition', async () => {
@@ -199,10 +172,48 @@ describe('Integration', function () {
             console.log(`and epkNullifiers [${epkNullifiers}]`)
 
             const circuitInputs = await users[firstUser].genUserStateTransitionCircuitInputs()
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
-            const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-            expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
+            let results = await genProofAndPublicSignals('startTransition', circuitInputs.startTransitionProof)
+            let isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+            expect(isValid, 'Verify start transition circuit off-chain failed').to.be.true
+
+            const blindedUserState = results['publicSignals'][0]
+            const blindedHashChain = results['publicSignals'][1]
+            let tx = await unirepContract.startUserStateTransition(
+                blindedUserState,
+                blindedHashChain,
+                GSTreeRoot,
+                formatProofForVerifierContract(results['proof']),
+            )
+            let receipt = await tx.wait()
+            expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+
+            for (let i = 0; i < circuitInputs.processAttestationProof.length; i++) {
+                results = await genProofAndPublicSignals('processAttestations', circuitInputs.processAttestationProof[i])
+                isValid = await verifyProof('processAttestations', results['proof'], results['publicSignals'])
+                expect(isValid, 'Verify process attestations circuit off-chain failed').to.be.true
+
+                const outputBlindedUserState = results['publicSignals'][0]
+                const outputBlindedHashChain = results['publicSignals'][1]
+                const inputBlindedUserState = results['publicSignals'][2]
+
+                tx = await unirepContract.processAttestations(
+                    outputBlindedUserState,
+                    outputBlindedHashChain,
+                    inputBlindedUserState,
+                    formatProofForVerifierContract(results['proof']),
+                )
+                receipt = await tx.wait()
+                expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
+            }
+
+            results = await genProofAndPublicSignals('userStateTransition', circuitInputs.finalTransitionProof)
+            isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
+            expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
             const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
+
+            const outputEpkNullifiers = results['publicSignals'].slice(1,1 + numEpochKeyNoncePerEpoch)
+            const blindedUserStates = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
+            const blindedHashChains = results['publicSignals'].slice(3 + 2*numEpochKeyNoncePerEpoch,3 + 3*numEpochKeyNoncePerEpoch)
 
             // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
             const outputEPKNullifiers: BigInt[] = []
@@ -216,18 +227,20 @@ describe('Integration', function () {
             const newState = await users[firstUser].genNewUserStateAfterTransition()
             expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
-            let tx = await unirepContract.updateUserStateRoot(
+            userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
+
+            tx = await unirepContract.updateUserStateRoot(
                 newGSTLeaf,
-                outputEPKNullifiers,
+                outputEpkNullifiers,
+                blindedUserStates,
+                blindedHashChains,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
-                nullifierTreeRoot,
                 formatProofForVerifierContract(results['proof']),
             )
-            let receipt = await tx.wait()
+            receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
-            userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
         })
 
         it('Verify state transition of first user\'s epoch transition', async () => {
@@ -242,17 +255,17 @@ describe('Integration', function () {
                 stateTransitionArgs['userTransitionedData']['newGlobalStateTreeLeaf'],
                 stateTransitionArgs['userTransitionedData']['epkNullifiers'],
                 stateTransitionArgs['userTransitionedData']['fromEpoch'],
+                stateTransitionArgs['userTransitionedData']['blindedUserStates'],
                 stateTransitionArgs['userTransitionedData']['fromGlobalStateTree'],
-                defaultAirdroppedKarma,
+                stateTransitionArgs['userTransitionedData']['blindedHashChains'],
                 stateTransitionArgs['userTransitionedData']['fromEpochTree'],
                 stateTransitionArgs['userTransitionedData']['proof'],
             )
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
-
+            
             const epkNullifiers = stateTransitionArgs['userTransitionedData']['epkNullifiers'].map((n) => BigInt(n) % BigInt(2 ** circuitNullifierTreeDepth))
-            // Combine nullifiers and mod them
 
-            const latestUserStateLeaves = userStateLeavesAfterTransition[0]  // Leaves should be empty as no reputations are given yet
+            const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]  // Leaves should be empty as no reputations are given yet
             users[firstUser].transition(latestUserStateLeaves)
             console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             expect(users[firstUser].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
@@ -278,18 +291,11 @@ describe('Integration', function () {
             const id = genIdentity()
             const commitment = genIdentityCommitment(id)
 
-            const tx = await unirepContract.userSignUp(commitment, defaultAirdroppedKarma)
+            const tx = await unirepContract.userSignUp(commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
 
-            const hashedStateLeaf = await unirepContract.hashStateLeaf(
-                [
-                    commitment,
-                    emptyUserStateRoot,
-                    BigInt(defaultAirdroppedKarma),
-                    BigInt(0)
-                ]
-            )
+            const hashedStateLeaf = await unirepContract.hashStateLeaf([commitment, emptyUserStateRoot])
             unirepState.signUp(currentEpoch.toNumber(), BigInt(hashedStateLeaf.toString()))
             users[secondUser] = new UserState(
                 unirepState,
@@ -320,10 +326,10 @@ describe('Integration', function () {
             attesters[secondAttester] = new Object()
             attesters[secondAttester]['acct'] = accounts[2]
             attesters[secondAttester]['addr'] = await attesters[secondAttester]['acct'].getAddress()
-            contractCalledBySecondAttester = unirepContract.connect(attesters[secondAttester]['acct'])
+            unirepContractCalledBySecondAttester = unirepContract.connect(attesters[secondAttester]['acct'])
             const message = ethers.utils.solidityKeccak256(["address", "address"], [attesters[secondAttester]['addr'], unirepContract.address])
             attesterSigs[secondAttester] = await attesters[secondAttester]['acct'].signMessage(ethers.utils.arrayify(message))
-            const tx = await contractCalledBySecondAttester.attesterSignUp()
+            const tx = await unirepContractCalledBySecondAttester.attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status, 'Attester sign up failed').to.equal(1)
 
@@ -331,274 +337,184 @@ describe('Integration', function () {
             console.log(`First attester signs up, attester id: ${attesters[secondAttester].id}`)
         })
 
-        it('first user generate an epoch key and verify it', async () => {
+        it('Verify epoch key of first user', async () => {
             const epochKeyNonce = 0
-            const epk = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth).toString(16)
-
-            const circuitInputs = await users[firstUser].genVerifyEpochKeyCircuitInputs(
-                epochKeyNonce,                       // generate epoch key from epoch nonce
-            )
-            const results = await genVerifyEpochKeyProofAndPublicSignals(stringifyBigInts(circuitInputs))
-
-            const isValid = await verifyEPKProof(results['proof'], results['publicSignals'])
-            expect(isValid, 'Verify epoch key proof off-chain failed').to.be.true
+            const circuitInputs = await users[firstUser].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
+            const results = await genProofAndPublicSignals('verifyEpochKey', stringifyBigInts(circuitInputs))
+            const isValid = await verifyProof('verifyEpochKey', results['proof'], results['publicSignals'])
+            expect(isValid, 'Verify epk proof off-chain failed').to.be.true
             
             // Verify on-chain
             const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
-            const proof = formatProofForVerifierContract(results['proof'])
-
-            const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
+            const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 GSTree.root,
                 currentEpoch,
                 firstUserEpochKey,
-                proof
+                formatProofForVerifierContract(results['proof']),
             )
-            console.log(`Verifying epk proof with epoch ${currentEpoch} and epk ${firstUserEpochKey}`)
-            expect(isProofValid, 'Verify reputation proof on-chain failed').to.be.true
+            console.log(`Verifying epk proof with GSTreeRoot ${GSTree.root}, epoch ${currentEpoch} and epk ${firstUserEpochKey}`)
+            expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
         })
 
-        // it('first user publish a post and generate epoch key', async () => {
-        //     const epochKeyNonce = 0
-        //     const epk = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth).toString(16)
+        it('First attester attest to first user\'s first epoch key', async () => {
+            const nonce = 0
+            const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
+            const attestation: Attestation = new Attestation(
+                attesters[firstAttester].id,
+                BigInt(3),
+                BigInt(1),
+                hashOne(graffitiPreImage),
+            )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[firstUser] = new Object()
+            graffitiPreImageMap[firstUser][attestation.attesterId.toString()] = graffitiPreImage
+            console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
+            const tx = await unirepContractCalledByFirstAttester.submitAttestation(
+                attestation,
+                firstUserEpochKey,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status, 'Submit attestation failed').to.equal(1)
 
-        //     // gen nullifier nonce list
-        //     const proveKarmaAmount = DEFAULT_POST_KARMA
+            secondEpochEpochKeys.push(firstUserEpochKey.toString())
+            epochKeys[firstUserEpochKey.toString()] = true
+            attestationsFromFirstAttester ++
+            unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
+        })
 
-        //     // gen minRep proof
-        //     const minRep = 0
+        it('First attester attest to first user\'s second epoch key', async () => {
+            const nonce = 1
+            const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
+            const attestation: Attestation = new Attestation(
+                attesters[firstAttester].id,
+                BigInt(5),
+                BigInt(1),
+                hashOne(graffitiPreImage),
+            )
+            // update graffiti pre-image in graffitiPreImageMap
+            graffitiPreImageMap[firstUser][attestation.attesterId.toString()] = graffitiPreImage
+            console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
+            const tx = await unirepContractCalledByFirstAttester.submitAttestation(
+                attestation,
+                firstUserEpochKey,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status, 'Submit attestation failed').to.equal(1)
 
-        //     const circuitInputs = await users[0].genProveReputationNullifierCircuitInputs(
-        //         epochKeyNonce,                       // generate epoch key from epoch nonce
-        //         proveKarmaAmount,               // the amount of output karma nullifiers
-        //         minRep                          // the amount of minimum reputation the user wants to prove
-        //     )
-        //     const results = await genVerifyReputationNullifierProofAndPublicSignals(stringifyBigInts(circuitInputs))
-
-        //     const isValid = await verifyProveReputationNullifierProof(results['proof'], results['publicSignals'])
-        //     expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
-            
-        //     // Verify on-chain
-        //     const proof = formatProofForVerifierContract(results['proof'])
-        //     const epochKey = BigInt(add0x(epk))
-        //     const nullifiers = results['publicSignals'].slice(0, maxKarmaBudget)
-        //     const publicSignals = results['publicSignals'].slice(maxKarmaBudget+2)
-
-        //     const firstUserEpochKey = genEpochKey(users[0].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
-        //     const isProofValid = await unirepContract.verifyReputation(
-        //         nullifiers,
-        //         currentEpoch,
-        //         epochKey,
-        //         publicSignals,
-        //         proof
-        //     )
-        //     console.log(`Verifying epk proof with epoch ${currentEpoch} and epk ${firstUserEpochKey}`)
-        //     expect(isProofValid, 'Verify reputation proof on-chain failed').to.be.true
-
-        //     const attestationToEpochKey = new Attestation(
-        //         BigInt(unirepSocialId),
-        //         BigInt(0),
-        //         BigInt(DEFAULT_POST_KARMA),
-        //         BigInt(0),
-        //         false,
-        //     )
-            
-        //     const tx = await unirepContract.publishPost(
-        //         BigInt(add0x(postId)), 
-        //         epochKey,
-        //         postText, 
-        //         nullifiers,
-        //         publicSignals, 
-        //         proof,
-        //         { value: attestingFee, gasLimit: 1000000 }
-        //     )
-
-        //     const receipt = await tx.wait()
-        //     expect(receipt.status, 'Submit post failed').to.equal(1)
-
-        //     for (let i = 0; i < maxKarmaBudget; i++) {
-        //         const modedNullifier = BigInt(nullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-        //         unirepState.addKarmaNullifiers(modedNullifier)
-        //     }
-
-        //     // User submit a post through Unirep Social should be found in Unirep Social Events
-        //     const postFilter = unirepContract.filters.PostSubmitted(currentEpoch, BigInt(add0x(postId)), epochKey)
-        //     const postEvents = await unirepContract.queryFilter(postFilter)
-        //     expect(postEvents.length).to.equal(1)
-
-        //     secondEpochEpochKeys.push(firstUserEpochKey.toString())
-        //     unirepState.addAttestation(firstUserEpochKey.toString(), attestationToEpochKey)
-        //     for(const user of users){
-        //         user.updateAttestation(firstUserEpochKey, attestationToEpochKey.posRep, attestationToEpochKey.negRep)
-        //     }
-        //     attestationsFromUnirepSocial++
-        //     epochKeys[epochKey.toString()] = true
-        // })
+            secondEpochEpochKeys.push(firstUserEpochKey.toString())
+            epochKeys[firstUserEpochKey.toString()] = true
+            attestationsFromFirstAttester ++
+            unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
+        })
 
         it('Second attester attest to first user', async () => {
             const nonce = 0
             const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
             const graffitiPreImage = genRandomSalt()
-            const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-
-            let attestation: Attestation = new Attestation(
-                BigInt(attesters[secondAttester].id),
+            const attestation: Attestation = new Attestation(
+                attesters[secondAttester].id,
+                BigInt(3),
                 BigInt(1),
-                BigInt(0),
                 hashOne(graffitiPreImage),
-                true,
-            )  
-   
-            // gen minRep proof
-            const minRep =  0
-
+            )
             // Add graffiti pre-image to graffitiPreImageMap
-            graffitiPreImageMap[0] = new Object()
-            graffitiPreImageMap[0][attesters[secondAttester].id] = graffitiPreImage
+            graffitiPreImageMap[firstUser][attestation.attesterId.toString()] = graffitiPreImage
             console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
-
-            // generating reputation proof
-            const circuitInputs = await users[secondUser].genProveReputationNullifierCircuitInputs(
-                nonce,                       // generate epoch key from epoch nonce
-                Number(attestation.posRep) + Number(attestation.negRep),  // the amount of output karma nullifiers
-                minRep                          // the amount of minimum reputation the user wants to prove
-            )
-
-            const results = await genVerifyReputationNullifierProofAndPublicSignals(stringifyBigInts(circuitInputs))
-
-            // verify reputation proof
-            const isValid = await verifyProveReputationNullifierProof(results['proof'], results['publicSignals'])
-            expect(isValid, 'verify reputation circuit failed').to.equal(true)
-
-            // format proof
-            const proof = formatProofForVerifierContract(results['proof'])
-            const fromEpochKey = BigInt(add0x(secondUserEpochKey.toString(16)))
-            const nullifiers = results['publicSignals'].slice(0, maxKarmaBudget)
-            const publicSignals = results['publicSignals'].slice(maxKarmaBudget+2)
-
-            const attestationToEpochKey = attestation
-
-            const attestationToAttester = new Attestation(
-                BigInt(attesters[secondAttester].id),
-                BigInt(0),
-                BigInt(Number(attestation.posRep) + Number(attestation.negRep)),
-                BigInt(0),
-                false,
-            )
-
-            const tx = await contractCalledBySecondAttester.submitAttestation(
+            const tx = await unirepContractCalledBySecondAttester.submitAttestation(
                 attestation,
-                fromEpochKey,
                 firstUserEpochKey,
-                nullifiers,
-                publicSignals,
-                formatProofForVerifierContract(results['proof']),
-                {value: attestingFee}
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status, 'Submit attestation failed').to.equal(1)
 
-            for (let i = 0; i < maxKarmaBudget; i++) {
-                const modedNullifier = BigInt(nullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-                unirepState.addKarmaNullifiers(modedNullifier)
-            }
-
-            secondEpochEpochKeys.push(secondUserEpochKey.toString())
-            
-            unirepState.addAttestation(secondUserEpochKey.toString(), attestationToAttester)
-            unirepState.addAttestation(firstUserEpochKey.toString(), attestationToEpochKey)
-            for(const user of users){
-                user.updateAttestation(secondUserEpochKey, attestationToAttester.posRep, attestationToAttester.negRep)
-                user.updateAttestation(firstUserEpochKey, attestationToEpochKey.posRep, attestationToEpochKey.negRep)
-            }
-            attestationsFromSecondAttester += 2
-            epochKeys[firstUserEpochKey.toString()] = true
-            epochKeys[fromEpochKey.toString()] = true
+            attestationsFromSecondAttester ++
+            unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
         })
 
-        // it('first user leave a comment and generate epoch key', async () => {
-        //     const epochKeyNonce = 1
-        //     const epk = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth).toString(16)
-
-        //     // gen nullifier nonce list
-        //     const proveKarmaAmount = DEFAULT_COMMENT_KARMA
-
-        //     // gen minRep proof
-        //     const minRep = 0
-
-        //     const circuitInputs = await users[firstUser].genProveReputationNullifierCircuitInputs(
-        //         epochKeyNonce,                       // generate epoch key from epoch nonce
-        //         proveKarmaAmount,               // the amount of output karma nullifiers
-        //         minRep                          // the amount of minimum reputation the user wants to prove
-        //     )
-        //     const results = await genVerifyReputationNullifierProofAndPublicSignals(stringifyBigInts(circuitInputs))
-
-        //     const isValid = await verifyProveReputationNullifierProof(results['proof'], results['publicSignals'])
-        //     expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
+        it('Verify epoch key of second user', async () => {
+            const epochKeyNonce = 0
+            const circuitInputs = await users[secondUser].genVerifyEpochKeyCircuitInputs(epochKeyNonce)
+            const results = await genProofAndPublicSignals('verifyEpochKey', stringifyBigInts(circuitInputs))
+            const isValid = await verifyProof('verifyEpochKey', results['proof'], results['publicSignals'])
+            expect(isValid, 'Verify epk proof off-chain failed').to.be.true
             
-        //     // Verify on-chain
-        //     const proof = formatProofForVerifierContract(results['proof'])
-        //     const epochKey = BigInt(add0x(epk))
-        //     const nullifiers = results['publicSignals'].slice(0, maxKarmaBudget)
-        //     const publicSignals = results['publicSignals'].slice(maxKarmaBudget+2)
+            // Verify on-chain
+            const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
+            const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
+            const isProofValid = await unirepContract.verifyEpochKeyValidity(
+                GSTree.root,
+                currentEpoch,
+                secondUserEpochKey,
+                formatProofForVerifierContract(results['proof']),
+            )
+            console.log(`Verifying epk proof with GSTreeRoot ${GSTree.root}, epoch ${currentEpoch} and epk ${secondUserEpochKey}`)
+            expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
+        })
 
-        //     const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
-        //     const isProofValid = await unirepContract.verifyReputation(
-        //         nullifiers,
-        //         currentEpoch,
-        //         epochKey,
-        //         publicSignals,
-        //         proof
-        //     )
-        //     console.log(`Verifying epk proof with epoch ${currentEpoch} and epk ${firstUserEpochKey}`)
-        //     expect(isProofValid, 'Verify reputation proof on-chain failed').to.be.true
+        it('First attester attest to second user', async () => {
+            const nonce = 0
+            const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
+            const attestation: Attestation = new Attestation(
+                attesters[firstAttester].id,
+                BigInt(2),
+                BigInt(6),
+                hashOne(graffitiPreImage),
+            )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[secondUser] = new Object()
+            graffitiPreImageMap[secondUser][attestation.attesterId.toString()] = graffitiPreImage
+            console.log(`Attester attest to epk ${secondUserEpochKey} with ${attestation.toJSON()}`)
+            const tx = await unirepContractCalledByFirstAttester.submitAttestation(
+                attestation,
+                secondUserEpochKey,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status, 'Submit attestation failed').to.equal(1)
 
-        //     const attestationToEpochKey = new Attestation(
-        //         BigInt(unirepSocialId),
-        //         BigInt(0),
-        //         BigInt(DEFAULT_COMMENT_KARMA),
-        //         BigInt(0),
-        //         false,
-        //     )
-            
-        //     const tx = await unirepContract.leaveComment(
-        //         BigInt(add0x(postId)), 
-        //         BigInt(add0x(commentId)),
-        //         epochKey,
-        //         commentText, 
-        //         nullifiers,
-        //         publicSignals, 
-        //         proof,
-        //         { value: attestingFee, gasLimit: 1000000 }
-        //     )
+            secondEpochEpochKeys.push(secondUserEpochKey.toString())
+            epochKeys[secondUserEpochKey.toString()] = true
+            attestationsFromFirstAttester ++
+            unirepState.addAttestation(secondUserEpochKey.toString(), attestation)
+        })
 
-        //     const receipt = await tx.wait()
-        //     expect(receipt.status, 'Submit comment failed').to.equal(1)
+        it('Second attester attest to second user', async () => {
+            const nonce = 0
+            const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
+            const graffitiPreImage = genRandomSalt()
+            const attestation: Attestation = new Attestation(
+                attesters[secondAttester].id,
+                BigInt(0),
+                BigInt(3),
+                hashOne(graffitiPreImage),
+            )
+            // Add graffiti pre-image to graffitiPreImageMap
+            graffitiPreImageMap[secondUser][attestation.attesterId.toString()] = graffitiPreImage
+            console.log(`Attester attest to epk ${secondUserEpochKey} with ${attestation.toJSON()}`)
+            const tx = await unirepContractCalledBySecondAttester.submitAttestation(
+                attestation,
+                secondUserEpochKey,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status, 'Submit attestation failed').to.equal(1)
 
-        //     for (let i = 0; i < maxKarmaBudget; i++) {
-        //         const modedNullifier = BigInt(nullifiers[i]) % BigInt(2 ** unirepState.nullifierTreeDepth)
-        //         unirepState.addKarmaNullifiers(modedNullifier)
-        //     }
-
-        //     // User submit a comment through Unirep Social should be found in Unirep Social Events
-        //     const commentFilter = unirepContract.filters.CommentSubmitted(currentEpoch, BigInt(add0x(postId)), epochKey)
-        //     const commentEvents = await unirepContract.queryFilter(commentFilter)
-        //     expect(commentEvents.length).to.equal(1)
-
-        //     secondEpochEpochKeys.push(firstUserEpochKey.toString())
-        //     unirepState.addAttestation(firstUserEpochKey.toString(), attestationToEpochKey)
-        //     for(const user of users){
-        //         user.updateAttestation(firstUserEpochKey, attestationToEpochKey.posRep, attestationToEpochKey.negRep)
-        //     }
-        //     attestationsFromUnirepSocial++
-        //     epochKeys[epochKey.toString()] = true
-        // })
+            attestationsFromSecondAttester ++
+            unirepState.addAttestation(secondUserEpochKey.toString(), attestation)
+        })
 
         it('Attestations gathered from events should match', async () => {
             // First filter by epoch
             const attestationsByEpochFilter = unirepContract.filters.AttestationSubmitted(currentEpoch)
             const attestationsByEpochEvent = await unirepContract.queryFilter(attestationsByEpochFilter)
-            const attestationNum = attestationsFromUnirepSocial + attestationsFromFirstAttester + attestationsFromSecondAttester
+            const attestationNum = attestationsFromFirstAttester + attestationsFromSecondAttester
             expect(attestationsByEpochEvent.length, `Number of attestations submitted should be ${attestationNum}`).to.equal(attestationNum)
 
             // Second filter by attester
@@ -630,7 +546,6 @@ describe('Integration', function () {
                     expect(attestations[i]['posRep'], 'Mismatched posRep').to.equal(attestations_[i]['posRep'])
                     expect(attestations[i]['negRep'], 'Mismatched negRep').to.equal(attestations_[i]['negRep'])
                     expect(attestations[i]['graffiti'], 'Mismatched graffiti').to.equal(attestations_[i]['graffiti'])
-                    expect(attestations[i]['overwriteGraffiti'], 'Mismatched overwriteGraffiti').to.equal(attestations_[i]['overwriteGraffiti'])
                 }
             }
         })
@@ -656,7 +571,6 @@ describe('Integration', function () {
 
             let observedGST = new IncrementalQuinTree(circuitGlobalStateTreeDepth, blankGSLeaf, 2)
             for(let leaf of newLeaves) {
-                console.log("event",BigInt(leaf))
                 // Only insert non-zero leaf
                 if (leaf.gt(0)) observedGST.insert(leaf)
             }
@@ -710,17 +624,57 @@ describe('Integration', function () {
             const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
             const epochTreeRoot = fromEpochTree.getRootHash()
             const nullifierTreeRoot = (await unirepState.genNullifierTree()).getRootHash()
-            const epkNullifiers = users[0].getEpochKeyNullifiers(fromEpoch)
+            const epkNullifiers = users[firstUser].getEpochKeyNullifiers(fromEpoch)
             console.log('Processing first user\'s transition: ')
             console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}, nullifierTreeRoot ${nullifierTreeRoot}`)
             console.log(`and epkNullifiers [${epkNullifiers}]`)
 
             const circuitInputs = await users[firstUser].genUserStateTransitionCircuitInputs()
-            const results = await genVerifyUserStateTransitionProofAndPublicSignals(stringifyBigInts(circuitInputs))
-            const isValid = await verifyUserStateTransitionProof(results['proof'], results['publicSignals'])
-            expect(isValid, 'Verify user transition circuit off-chain failed').to.be.true
+            let results = await genProofAndPublicSignals('startTransition', circuitInputs.startTransitionProof)
+            let isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+            expect(isValid, 'Verify start transition circuit off-chain failed').to.be.true
+
+            const blindedUserState = results['publicSignals'][0]
+            const blindedHashChain = results['publicSignals'][1]
+
+            let tx = await unirepContract.startUserStateTransition(
+                blindedUserState,
+                blindedHashChain,
+                GSTreeRoot,
+                formatProofForVerifierContract(results['proof']),
+            )
+            let receipt = await tx.wait()
+            expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+
+            for (let i = 0; i < circuitInputs.processAttestationProof.length; i++) {
+                results = await genProofAndPublicSignals('processAttestations', circuitInputs.processAttestationProof[i])
+                isValid = await verifyProof('processAttestations', results['proof'], results['publicSignals'])
+                expect(isValid, 'Verify process attestations circuit off-chain failed').to.be.true
+
+                const outputBlindedUserState = results['publicSignals'][0]
+                const outputBlindedHashChain = results['publicSignals'][1]
+                const inputBlindedUserState = results['publicSignals'][2]
+
+                tx = await unirepContract.processAttestations(
+                    outputBlindedUserState,
+                    outputBlindedHashChain,
+                    inputBlindedUserState,
+                    formatProofForVerifierContract(results['proof']),
+                )
+                receipt = await tx.wait()
+                expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
+            }
+
+            results = await genProofAndPublicSignals('userStateTransition', circuitInputs.finalTransitionProof)
+            isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
+            expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
             const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
 
+            const outputEpkNullifiers = results['publicSignals'].slice(1,1 + numEpochKeyNoncePerEpoch)
+            const blindedUserStates = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
+            const blindedHashChains = results['publicSignals'].slice(3 + 2*numEpochKeyNoncePerEpoch,3 + 3*numEpochKeyNoncePerEpoch)
+
+            // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
             const outputEPKNullifiers: BigInt[] = []
             for (let i = 0; i < epkNullifiers.length; i++) {
                 const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
@@ -732,27 +686,30 @@ describe('Integration', function () {
             const newState = await users[firstUser].genNewUserStateAfterTransition()
             expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
-            let tx = await unirepContract.updateUserStateRoot(
+            userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
+
+            tx = await unirepContract.updateUserStateRoot(
                 newGSTLeaf,
-                outputEPKNullifiers,
+                outputEpkNullifiers,
+                blindedUserStates,
+                blindedHashChains,
                 fromEpoch,
                 GSTreeRoot,
                 epochTreeRoot,
-                nullifierTreeRoot,
                 formatProofForVerifierContract(results['proof']),
             )
-            let receipt = await tx.wait()
+            receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
-            userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
 
             // Record state transition proof inputs to be used to submit duplicated proof
             duplicatedProofInputs = {
                 "newGSTLeaf": newGSTLeaf,
                 "epkNullifiers": outputEPKNullifiers,
+                "blindedUserStates": blindedUserStates,
+                "blindedHashChains": blindedHashChains,
                 "fromEpoch": fromEpoch,
                 "GSTreeRoot": GSTreeRoot,
                 "epochTreeRoot": epochTreeRoot,
-                "nullifierTreeRoot": nullifierTreeRoot,
                 "proof": formatProofForVerifierContract(results['proof']),
             }
         })
@@ -763,30 +720,30 @@ describe('Integration', function () {
             expect(stateTransitionByEpochEvent.length, `Number of state transition events current epoch should be ${userStateTransitionedNum[currentEpoch.toNumber()].length}`).to.equal(userStateTransitionedNum[currentEpoch.toNumber()].length)
 
             const stateTransitionArgs: any = stateTransitionByEpochEvent[0]['args']
-            const newGSTLeaf: any = stateTransitionArgs['userTransitionedData']['newGlobalStateTreeLeaf']
 
             // Verify on-chain
             const isProofValid = await unirepContract.verifyUserStateTransition(
                 stateTransitionArgs['userTransitionedData']['newGlobalStateTreeLeaf'],
                 stateTransitionArgs['userTransitionedData']['epkNullifiers'],
                 stateTransitionArgs['userTransitionedData']['fromEpoch'],
+                stateTransitionArgs['userTransitionedData']['blindedUserStates'],
                 stateTransitionArgs['userTransitionedData']['fromGlobalStateTree'],
-                defaultAirdroppedKarma,
+                stateTransitionArgs['userTransitionedData']['blindedHashChains'],
                 stateTransitionArgs['userTransitionedData']['fromEpochTree'],
                 stateTransitionArgs['userTransitionedData']['proof'],
             )
             expect(isProofValid, 'Verify user state transition on-chain failed').to.be.true
-
+            
             const epkNullifiers = stateTransitionArgs['userTransitionedData']['epkNullifiers'].map((n) => BigInt(n) % BigInt(2 ** circuitNullifierTreeDepth))
 
-            const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]
+            const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]  // Leaves should be empty as no reputations are given yet
             users[firstUser].transition(latestUserStateLeaves)
             console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
-            expect(users[0].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
+            expect(users[firstUser].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
 
-            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(newGSTLeaf), epkNullifiers)
+            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(stateTransitionArgs['userTransitionedData']['newGlobalStateTreeLeaf']), epkNullifiers)
             console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(newGSTLeaf)} and epk nullifier ${epkNullifiers}`)
+            console.log(`newGSTLeaf ${BigInt(stateTransitionArgs['userTransitionedData']['newGlobalStateTreeLeaf'])} and epk nullifier ${epkNullifiers}`)
             console.log('----------------------User State----------------------')
             console.log(users[firstUser].toJSON(4))
             console.log('------------------------------------------------------')
@@ -802,22 +759,22 @@ describe('Integration', function () {
         })
 
         it('First user prove his reputation', async () => {
-            const attesterId = attesters[secondAttester].id  // Prove reputation received from first attester
+            const attesterId = attesters[firstAttester].id  // Prove reputation received from first attester
             const provePosRep = BigInt(1)
             const proveNegRep = BigInt(1)
-            const proveRepDiff = BigInt(1)
+            const proveRepDiff = BigInt(0)
             const proveGraffiti = BigInt(1)
-            const minPosRep = BigInt(1)
+            const minPosRep = BigInt(7)
             const maxNegRep = BigInt(10)
             const minRepDiff = BigInt(0)
-            const graffitiPreImage = graffitiPreImageMap[0][attesterId.toString()]
+            const graffitiPreImage = graffitiPreImageMap[firstUser][attesterId.toString()]
             console.log(`Proving reputation from attester ${attesterId} with minPosRep ${minPosRep}, maxNegRep ${maxNegRep} and graffitiPreimage ${graffitiPreImage}`)
             const circuitInputs = await users[firstUser].genProveReputationCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
             const startTime = new Date().getTime()
-            const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+            const results = await genProofAndPublicSignals('proveReputation', stringifyBigInts(circuitInputs))
             const endTime = new Date().getTime()
             console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-            const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+            const isValid = await verifyProof('proveReputation', results['proof'], results['publicSignals'])
             expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
 
             // Verify on-chain
@@ -849,10 +806,11 @@ describe('Integration', function () {
             let tx = await unirepContract.updateUserStateRoot(
                 duplicatedProofInputs["newGSTLeaf"],
                 duplicatedProofInputs["epkNullifiers"],
+                duplicatedProofInputs["blindedUserStates"],
+                duplicatedProofInputs["blindedHashChains"],
                 duplicatedProofInputs["fromEpoch"],
                 duplicatedProofInputs["GSTreeRoot"],
                 duplicatedProofInputs["epochTreeRoot"],
-                duplicatedProofInputs["nullifierTreeRoot"],
                 duplicatedProofInputs["proof"],
             )
             let receipt = await tx.wait()

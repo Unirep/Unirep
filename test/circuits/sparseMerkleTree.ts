@@ -6,7 +6,7 @@ import {
     compileAndLoadCircuit,
     executeCircuit,
     getSignalByName,
-} from './utils'
+} from '../../circuits/utils'
 
 import {
     genRandomSalt,

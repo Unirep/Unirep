@@ -10,10 +10,11 @@ import {
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, genVerifyReputationProofAndPublicSignals, verifyProveReputationProof } from '../test/circuits/utils'
+import { formatProofForVerifierContract } from '../circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { add0x } from '../crypto/SMT'
 import { identityPrefix, reputationProofPrefix } from './prefix'
+import { genProofAndPublicSignals, verifyProof } from '../circuits/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -152,10 +153,10 @@ const genReputationProof = async (args: any) => {
     console.log('----------------------Circuit inputs----------------------')
     console.log(circuitInputs)
     console.log('----------------------------------------------------------')
-    const results = await genVerifyReputationProofAndPublicSignals(stringifyBigInts(circuitInputs))
+    const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProveReputationProof(results['proof'], results['publicSignals'])
+    const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
     if(!isValid) {
         console.error('Error: reputation proof generated is not valid!')
         return
