@@ -22,6 +22,7 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     signal private input pos_reps[NUM_ATTESTATIONS];
     signal private input neg_reps[NUM_ATTESTATIONS];
     signal private input graffities[NUM_ATTESTATIONS];
+    signal private input overwrite_graffities[NUM_ATTESTATIONS];
 
     // Selector is used to determined if the attestation should be processed
     signal private input selectors[NUM_ATTESTATIONS];
@@ -48,6 +49,7 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     component old_leaf_value_hasher[NUM_ATTESTATIONS];
     component which_old_leaf_value_to_check[NUM_ATTESTATIONS];
 
+    component overwrite_graffiti_muxer[NUM_ATTESTATIONS];
     component new_leaf_value_hasher[NUM_ATTESTATIONS];
     component which_new_leaf_value_to_check[NUM_ATTESTATIONS];
 
@@ -131,10 +133,15 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
         old_attestation_record_match_check[i].root <== intermediate_user_state_tree_roots[i];
 
         // Top up pos and neg reps
+        // Update graffiti if overwrite_graffiti is true
+        overwrite_graffiti_muxer[i] = Mux1();
+        overwrite_graffiti_muxer[i].c[0] <== old_graffities[i];
+        overwrite_graffiti_muxer[i].c[1] <== graffities[i];
+        overwrite_graffiti_muxer[i].s <== overwrite_graffities[i];
         new_leaf_value_hasher[i] = Hasher5();
         new_leaf_value_hasher[i].in[0] <== pos_reps[i] + old_pos_reps[i];
         new_leaf_value_hasher[i].in[1] <== neg_reps[i] + old_neg_reps[i];
-        new_leaf_value_hasher[i].in[2] <== graffities[i];
+        new_leaf_value_hasher[i].in[2] <== overwrite_graffiti_muxer[i].out;
         new_leaf_value_hasher[i].in[3] <== 0;
         new_leaf_value_hasher[i].in[4] <== 0;
 

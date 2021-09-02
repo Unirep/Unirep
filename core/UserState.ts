@@ -388,7 +388,7 @@ class UserState {
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
         const oldPosReps: BigInt[] = [], oldNegReps: BigInt[] = [], oldGraffities: BigInt[] = []
-        const posReps: BigInt[] = [], negReps: BigInt[] = [], graffities: BigInt[] = []
+        const posReps: BigInt[] = [], negReps: BigInt[] = [], graffities: BigInt[] = [], overwriteGraffities: any[] = []
         const finalBlindedUserState: BigInt[] = []
         const finalUserState: BigInt[] = [ intermediateUserStateTreeRoots[0] ]
         const finalHashChain: BigInt[] = []
@@ -450,6 +450,7 @@ class UserState {
                 posReps.push(attestation['posRep'])
                 negReps.push(attestation['negRep'])
                 graffities.push(attestation['graffiti'])
+                overwriteGraffities.push(attestation['graffiti'] != BigInt(0))
 
                 // Update current hashchain result
                 const attestationHash = attestation.hash()
@@ -471,6 +472,7 @@ class UserState {
                 posReps.push(BigInt(0))
                 negReps.push(BigInt(0))
                 graffities.push(BigInt(0))
+                overwriteGraffities.push(BigInt(0))
             }
             epochKeyPathElements.push(await fromEpochTree.getMerkleProof(epochKey))
             finalUserState.push(fromEpochUserStateTree.getRootHash())
@@ -499,6 +501,7 @@ class UserState {
                 pos_reps: posReps.slice(startIdx, endIdx),
                 neg_reps: negReps.slice(startIdx, endIdx),
                 graffities: graffities.slice(startIdx, endIdx),
+                overwrite_graffities: overwriteGraffities.slice(startIdx, endIdx),
                 selectors: selectors.slice(startIdx, endIdx),
                 hash_chain_starter: hashChainStarter[i],
                 input_blinded_user_state: blindedUserState[i],
