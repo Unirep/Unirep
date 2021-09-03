@@ -10,7 +10,7 @@ import { toCompleteHexString } from '../utils'
 const { expect } = chai
 
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
-import { compileAndLoadCircuit, formatProofForVerifierContract, genProofAndPublicSignals, getSignalByNameViaSym, verifyProof } from "../../circuits/utils"
+import { formatProofForVerifierContract, genProofAndPublicSignals, getSignalByNameViaSym, verifyProof } from "../../circuits/utils"
 
 describe('Integration', function () {
     this.timeout(1000000)

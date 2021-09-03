@@ -2,14 +2,13 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, circuitUserStateTreeDepth, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { genRandomSalt, hash5, hashLeftRight, SNARK_FIELD_SIZE } from '../../crypto/crypto'
+import { genRandomSalt, hash5, hashLeftRight } from '../../crypto/crypto'
 import { genIdentity, genIdentityCommitment } from 'libsemaphore'
-import { computeEmptyUserStateRoot, deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
+import { deployUnirep, getTreeDepthsForTesting } from '../../core/utils'
 
 const { expect } = chai
 
-import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
-import { Attestation, IEpochTreeLeaf, UnirepState } from '../../core/UnirepState'
+import { UnirepState } from '../../core/UnirepState'
 import { UserState } from '../../core'
 import { genNewSMT } from '../utils'
 import { genProofAndPublicSignals, verifyProof } from '../../circuits/utils'
