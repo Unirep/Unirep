@@ -82,7 +82,7 @@ describe('Integration', function () {
             )
             const latestTransitionedToEpoch = currentEpoch.toNumber()
             const GSTreeLeafIndex = 0
-            users[firstUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
+            users[firstUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex, 0, 0)
             console.log(`First user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
             console.log('----------------------User State----------------------')
             console.log(users[firstUser].toJSON(4))
@@ -315,7 +315,7 @@ describe('Integration', function () {
             }
             expect(GSTreeLeafIndex).to.equal(1)
 
-            users[secondUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
+            users[secondUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex, 0, 0)
             console.log(`Second user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
             console.log('----------------------User State----------------------')
             console.log(users[secondUser].toJSON(4))

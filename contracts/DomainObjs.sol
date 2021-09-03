@@ -14,6 +14,15 @@ contract DomainObjs is Hasher {
         return hashLeftRight(_stateLeaf.identityCommitment, _stateLeaf.userStateRoot);
     }
 
+    function hashAirdroppedLeaf(uint256 airdropPosRep) public pure returns (uint256) {
+        uint256[5] memory airdroppedLeafValues;
+        airdroppedLeafValues[0] = airdropPosRep;
+        for (uint8 i = 1; i < 5; i++) {
+            airdroppedLeafValues[i] = 0;
+        }
+        return hash5(airdroppedLeafValues);
+    }
+
     struct Attestation {
         // The attester’s ID
         uint256 attesterId;

@@ -76,12 +76,7 @@ describe('Signup', () => {
             const numUserSignUps_ = await unirepContract.numUserSignUps()
             expect(1).equal(numUserSignUps_)
 
-            const hashedStateLeaf = await unirepContract.hashStateLeaf(
-                [
-                    commitment,
-                    emptyUserStateRoot,
-                ]
-            )
+            const hashedStateLeaf = await unirepContract.hashStateLeaf([commitment, emptyUserStateRoot])
             GSTree.insert(hashedStateLeaf)
         })
 

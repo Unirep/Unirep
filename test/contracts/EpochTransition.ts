@@ -67,7 +67,7 @@ describe('Epoch Transition', function () {
         )
         const latestTransitionedToEpoch = currentEpoch.toNumber()
         const GSTreeLeafIndex = 0
-        userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex)
+        userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, 0, 0)
 
         console.log('Attester sign up')
         attester = accounts[1]
@@ -227,8 +227,6 @@ describe('Epoch Transition', function () {
         const receipt = await tx.wait()
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
         console.log("Gas cost of submit a start transition proof:", receipt.gasUsed.toString())
-        const userStateIsStored = await unirepContract.blindedUserStates(blindedUserState)
-        expect(userStateIsStored, 'blinded user state is not stored correctly').to.be.true
     })
 
     it('duplicated start user state transition proof should fail', async() => {
