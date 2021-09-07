@@ -36,7 +36,7 @@
         "ts-node": "^9.0.0"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^3.2.0",
+        "@openzeppelin/contracts": "^3.4.2",
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "circom": "^0.5.38",
