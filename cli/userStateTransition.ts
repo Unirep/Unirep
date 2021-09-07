@@ -15,7 +15,7 @@ import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract, getSignalByName, getSignalByNameViaSym } from '../circuits/utils'
+import { formatProofForVerifierContract } from '../circuits/utils'
 import { stringifyBigInts } from 'maci-crypto'
 import { identityPrefix } from './prefix'
 import { genProofAndPublicSignals, verifyProof } from '../circuits/utils'
@@ -162,8 +162,8 @@ const userStateTransition = async (args: any) => {
         console.error('Error: start state transition proof generated is not valid!')
         return
     }
-    let blindedUserState = getSignalByNameViaSym('startTransition', results['witness'], 'main.blinded_user_state')
-    let blindedHashChain = getSignalByNameViaSym('startTransition', results['witness'], 'main.blinded_hash_chain_result')
+    let blindedUserState = results['publicSignals'][0]
+    let blindedHashChain = results['publicSignals'][1]
     const fromEpoch = userState.latestTransitionedEpoch
     const GSTreeRoot = userState.getUnirepStateGSTree(fromEpoch).root
 
@@ -194,9 +194,9 @@ const userStateTransition = async (args: any) => {
             return
         }
 
-        const outputBlindedUserState = getSignalByNameViaSym('processAttestations', results['witness'], 'main.blinded_user_state')
-        const outputBlindedHashChain = getSignalByNameViaSym('processAttestations', results['witness'], 'main.blinded_hash_chain_result')
-        const inputBlindedUserState = getSignalByNameViaSym('processAttestations', results['witness'], 'main.input_blinded_user_state')
+        const outputBlindedUserState = results['publicSignals'][0]
+        const outputBlindedHashChain = results['publicSignals'][1]
+        const inputBlindedUserState = results['publicSignals'][2]
 
         try {
             tx = await unirepContract.processAttestations(
@@ -218,9 +218,9 @@ const userStateTransition = async (args: any) => {
     console.log(circuitInputs.finalTransitionProof)
     console.log('----------------------------------------------------------')
     results = await genProofAndPublicSignals('userStateTransition', stringifyBigInts(circuitInputs.finalTransitionProof))
-    const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
+    const newGSTLeaf = results['publicSignals'][0]
     const newState = await userState.genNewUserStateAfterTransition()
-    if (newGSTLeaf != newState.newGSTLeaf) {
+    if (newGSTLeaf != newState.newGSTLeaf.toString()) {
         console.error('Error: Computed new GST leaf should match')
         return
     }
@@ -236,7 +236,7 @@ const userStateTransition = async (args: any) => {
     // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
     const outputEPKNullifiers: BigInt[] = []
     for (let i = 0; i < epkNullifiers.length; i++) {
-        const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+        const outputNullifier = results['publicSignals'][1+i]
         const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** nullifierTreeDepth)
         if (modedOutputNullifier != epkNullifiers[i]) {
             console.error(`Error: nullifier outputted by circuit(${modedOutputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`)
@@ -246,14 +246,8 @@ const userStateTransition = async (args: any) => {
     }
 
     // blinded user states and hash chains
-    const blindedUserStates: BigInt[] = []
-    const blindedHashChains: BigInt[] = []
-    for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-        const outputBlindedUserState = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.blinded_user_state[' + i + ']')
-        const outputBlindedHashChain = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.blinded_hash_chain_results[' + i + ']')
-        blindedUserStates.push(outputBlindedUserState)
-        blindedHashChains.push(outputBlindedHashChain)
-    }
+    const blindedUserStates: BigInt[] = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
+    const blindedHashChains: BigInt[] = results['publicSignals'].slice(3 + 2*numEpochKeyNoncePerEpoch,3 + 3*numEpochKeyNoncePerEpoch)
 
     try {
         tx = await unirepContract.updateUserStateRoot(
@@ -276,7 +270,8 @@ const userStateTransition = async (args: any) => {
 
     console.log('Transaction hash:', tx.hash)
     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
-    console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)        
+    console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
+    process.exit(0)        
 }
 
 export {

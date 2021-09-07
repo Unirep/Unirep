@@ -145,6 +145,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
     console.log(epkProofPrefix + encodedProof)
+    process.exit(0)
 }
 
 export {

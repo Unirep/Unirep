@@ -13,7 +13,7 @@ const fileExists = (filepath: string): boolean => {
     return inputFileExists
 }
 
-const zkutilPath = "~/.cargo/bin/zkutil"
+const snarkjsCliPath = path.join(__dirname, '../node_modules/snarkjs/cli.js')
 
 const main = () => {
     const parser = new argparse.ArgumentParser({ 
@@ -53,25 +53,25 @@ const main = () => {
     )
 
     parser.add_argument(
-        '-v', '--vk-out',
-        {
-            help: 'The filepath to save the verification key',
-            required: true
-        }
-    )
-
-    parser.add_argument(
-        '-p', '--pk-out',
-        {
-            help: 'The filepath to save the proving key (as a .json file)',
-            required: true
-        }
-    )
-
-    parser.add_argument(
         '-s', '--sol-out',
         {
             help: 'The filepath to save the Solidity verifier contract',
+            required: true
+        }
+    )
+
+    parser.add_argument(
+        '-pt', '--ptau',
+        {
+            help: 'The filepath of existed ptau',
+            required: true
+        }
+    )
+
+    parser.add_argument(
+        '-zk', '--zkey-out',
+        {
+            help: 'The filepath to save the zkey',
             required: true
         }
     )
@@ -94,16 +94,7 @@ const main = () => {
         }
     )
 
-    parser.add_argument(
-        '-pr', '--params-out',
-        {
-            help: 'The filepath to save the params file',
-            required: true
-        }
-    )
-
     const args = parser.parse_args()
-    const vkOut = args.vk_out
     const solOut = args.sol_out
     const inputFile = args.input
     const override = args.override
@@ -111,8 +102,9 @@ const main = () => {
     const symOut = args.sym_out
     const wasmOut = args.wasm_out
     const verifierName = args.verifier_name
-    const paramsOut = args.params_out
-    const pkOut = args.pk_out
+    const ptau = args.ptau
+    const zkey = args.zkey_out
+    const zkeyJson = zkey + '.json'
 
     // Check if the input circom file exists
     const inputFileExists = fileExists(inputFile)
@@ -124,7 +116,7 @@ const main = () => {
     }
 
     // Set memory options for node
-    shell.env['NODE_OPTIONS'] = '--max-old-space-size=16384'
+    shell.env['NODE_OPTIONS'] = ['--max-old-space-size=4096']
 
     // Check if the circuitOut file exists and if we should not override files
     const circuitOutFileExists = fileExists(circuitOut)
@@ -134,25 +126,24 @@ const main = () => {
     } else {
         console.log(`Compiling ${inputFile}...`)
         // Compile the .circom file
-        shell.exec(`node --stack-size=65500 ./node_modules/circom/cli.js ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
+        shell.exec(`node ./node_modules/circom/cli.js ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
         console.log('Generated', circuitOut, 'and', wasmOut)
     }
 
-    const paramsFileExists = fileExists(paramsOut)
-    if (!override && paramsFileExists) {
-        console.log('params file exists. Skipping setup.')
+    const zkeyOutFileExists = fileExists(zkey)
+    if (!override && zkeyOutFileExists) {
+        console.log(zkey, 'exists. Skipping compilation.')
     } else {
-        console.log('Generating params file...')
-        shell.exec(`${zkutilPath} setup -c ${circuitOut} -p ${paramsOut}`)
+        console.log('Exporting verification key...')
+        shell.exec(`node ${snarkjsCliPath} zkn ${circuitOut} ${ptau} ${zkey}`)
+        shell.exec(`node ${snarkjsCliPath} zkev ${zkey} ${zkeyJson}`)
+        console.log(`Generated ${zkey} and ${zkeyJson}`)
     }
 
-    console.log('Exporting verification key...')
-    shell.exec(`${zkutilPath} export-keys -c ${circuitOut} -p ${paramsOut} -r ${pkOut} -v ${vkOut}`)
-    console.log(`Generated ${pkOut} and ${vkOut}`)
-
+    console.log('Exporting verification contract...')
     const verifier = genSnarkVerifierSol(
         verifierName,
-        JSON.parse(fs.readFileSync(vkOut).toString()),
+        JSON.parse(fs.readFileSync(zkeyJson).toString()),
     )
 
     fs.writeFileSync(solOut, verifier)
