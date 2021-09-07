@@ -210,11 +210,18 @@ class UserState {
     /*
      * Add a new epoch key to the list of epoch key of current epoch.
      */
-    public signUp = (_latestTransitionedEpoch: number, _latestGSTLeafIndex: number,) => {
+    public signUp = (_latestTransitionedEpoch: number, _latestGSTLeafIndex: number, _attesterId: number, _airdropAmount: number) => {
         assert(!this.hasSignedUp, "User has already signed up")
         this.latestTransitionedEpoch = _latestTransitionedEpoch
         this.latestGSTLeafIndex = _latestGSTLeafIndex
         this.hasSignedUp = true
+        if(_attesterId && _airdropAmount) {
+            const stateLeave: IUserStateLeaf = {
+                attesterId: BigInt(_attesterId),
+                reputation: Reputation.default().update(BigInt(_airdropAmount), BigInt(0), BigInt(0))
+            }
+            this.latestUserStateLeaves = [ stateLeave ]
+        }
     }
 
     /*

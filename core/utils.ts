@@ -29,6 +29,17 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
     return t.root
 }
 
+const computeInitUserStateRoot = async (treeDepth: number, leafIdx: number, airdropPosRep: number): Promise<BigInt> => {
+    const t = await SparseMerkleTreeImpl.create(
+        new Keyv(),
+        treeDepth,
+        defaultUserStateLeaf,
+    )
+    const leafValue = hash5([BigInt(airdropPosRep)])
+    await t.update(BigInt(leafIdx), leafValue)
+    return t.getRootHash()
+}
+
 const getTreeDepthsForTesting = (deployEnv: string = "circuit") => {
     if (deployEnv === 'contract') {
         return {
@@ -427,8 +438,6 @@ const _genUserStateFromContract = async (
         userIdentityCommitment,
         false,
     )
-    const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth)
-    const userDefaultGSTLeaf = hashLeftRight(userIdentityCommitment, emptyUserStateRoot)
 
     const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
     const newGSTLeafInsertedEvents =  await unirepContract.queryFilter(newGSTLeafInsertedFilter, startBlock)
@@ -464,8 +473,12 @@ const _genUserStateFromContract = async (
             const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
             unirepState.signUp(unirepState.currentEpoch, newLeaf)
             // New leaf matches user's default leaf means user signed up.
-            if (userDefaultGSTLeaf === newLeaf) {
-                userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert)
+            const attesterId = newLeafEvent.args?._attesterId
+            const airdropPosRep = newLeafEvent.args?._airdropAmount
+            const initUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep)
+            const userInitGSTLeaf = hashLeftRight(userIdentityCommitment, initUserStateRoot)
+            if (userInitGSTLeaf === newLeaf) {
+                userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, attesterId, airdropPosRep)
                 userHasSignedUp = true
             }
 
@@ -489,9 +502,6 @@ const _genUserStateFromContract = async (
             )
             const epochKey = attestationEvent.args?._epochKey
             unirepState.addAttestation(epochKey.toString(), attestation)
-            // if(userHasSignedUp){
-            //     userState.updateAttestation(epochKey, attestation.posRep, attestation.negRep)
-            // }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
@@ -631,6 +641,7 @@ export {
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
+    computeInitUserStateRoot,
     getTreeDepthsForTesting,
     deployUnirep,
     genEpochKey,

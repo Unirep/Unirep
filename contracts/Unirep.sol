@@ -47,8 +47,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     // The maximum number of signups allowed
     uint256 immutable public maxUsers;
 
-    uint256 immutable public zeroNullifier;
-
     uint256 public numUserSignUps = 0;
 
     uint256 internal nextGSTLeafIndex = 0;
@@ -87,10 +85,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     mapping(uint256 => EpochKeyList) internal epochKeys;
 
     // Mpapping of submitted blinded user state
-    mapping(uint256 => bool) public blindedUserStates;
+    mapping(uint256 => bool) internal blindedUserStates;
 
     // Mpapping of submitted blinded hash chain
-    mapping(uint256 => bool) public blindedHashChains;
+    mapping(uint256 => bool) internal blindedHashChains;
+
+    // Mapping of the airdrop amount of an attester
+    mapping(address => uint256) public airdropAmount;
 
     TreeDepths public treeDepths;
 
@@ -103,7 +104,9 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     event NewGSTLeafInserted(
         uint256 indexed _epoch,
         uint256 _leafIndex,
-        uint256 _hashedLeaf
+        uint256 _hashedLeaf,
+        uint256 _attesterId,
+        uint256 _airdropAmount
     );
 
     event AttestationSubmitted(
@@ -175,9 +178,6 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         emptyGlobalStateTreeRoot = calcEmptyGlobalStateTreeRoot(_treeDepths.globalStateTreeDepth);
 
         attestingFee = _attestingFee;
-
-        // Set default reputation nullifier
-        zeroNullifier = hash5([uint256(0),uint256(0),uint256(0),uint256(0),uint256(0)]);
     }
 
     /*
@@ -189,10 +189,17 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         require(hasUserSignedUp[_identityCommitment] == false, "Unirep: the user has already signed up");
         require(numUserSignUps < maxUsers, "Unirep: maximum number of signups reached");
         
+        uint256 defaultUserStateRoot = emptyUserStateRoot;
+        uint256 attesterId = attesters[msg.sender];
+        uint256 airdropPosRep = airdropAmount[msg.sender];
+        if(attesterId > 0 && airdropPosRep > 0) {
+            uint256 airdropLeaf = hashAirdroppedLeaf(airdropPosRep);
+            defaultUserStateRoot = calcAirdropUSTRoot(attesterId, airdropLeaf);
+        }
         // Create, hash, and insert a fresh state leaf
         StateLeaf memory stateLeaf = StateLeaf({
             identityCommitment: _identityCommitment,
-            userStateRoot: emptyUserStateRoot
+            userStateRoot: defaultUserStateRoot
         });
 
         uint256 hashedLeaf = hashStateLeaf(stateLeaf);
@@ -201,7 +208,7 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         numUserSignUps ++;
 
         emit Sequencer("UserSignUp");
-        emit NewGSTLeafInserted(currentEpoch, nextGSTLeafIndex ,hashedLeaf);
+        emit NewGSTLeafInserted(currentEpoch, nextGSTLeafIndex ,hashedLeaf, attesterId, airdropPosRep);
 
         nextGSTLeafIndex ++;
     }
@@ -248,6 +255,16 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
 
         attesters[attester] = nextAttesterId;
         nextAttesterId ++;
+    }
+
+    /*
+     * An attester can set the initial airdrop amount when user signs up through this attester
+     * Then the contract inserts an airdropped leaf into the user's user state tree
+     * @param _airdropAmount how much pos rep add to user's leaf
+     */
+    function setAirdropAmount(uint256 _airdropAmount) external {
+        require(attesters[msg.sender] > 0, "Unirep: attester has not signed up yet");
+        airdropAmount[msg.sender] = _airdropAmount;
     }
 
     /*
@@ -676,6 +693,15 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
         });
 
         return hashStateLeaf(stateLeaf);
+    }
+
+    function calcAirdropUSTRoot(uint256 _leafIndex, uint256 _leafValue) public view returns (uint256) {
+        uint256[5] memory defaultStateLeafValues;
+        for (uint8 i = 0; i < 5; i++) {
+            defaultStateLeafValues[i] = 0;
+        }
+        uint256 defaultUserStateLeaf = hash5(defaultStateLeafValues);
+        return computeOneNonZeroLeafRoot(treeDepths.userStateTreeDepth, _leafIndex, _leafValue, defaultUserStateLeaf);
     }
 
     function calcEmptyUserStateTreeRoot(uint8 _levels) internal pure returns (uint256) {
