@@ -4,28 +4,25 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "npm run installZkutil && npm run buildVerifyEpochKeySnark && npm run buildUserStateTransitionSnark && npm run buildProveReputationSnark && npm run compile",
+        "build": "yarn installZkutil && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn compile",
         "compile": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts",
         "installZkutil": "./scripts/installZkutil.sh",
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "npm run contractUnitTests && npm run circuitUnitTests && npm run integrationTest",
+        "test": "yarn contractUnitTests && yarn circuitUnitTests && yarn integrationTest",
         "contractUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
         "circuitUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",
         "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')"
     },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/NIC619/UniRep.git"
-    },
+    "repository": "git+https://github.com/appliedzkp/UniRep.git",
     "author": "",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/NIC619/UniRep/issues"
+        "url": "https://github.com/appliedzkp/UniRep/issues"
     },
-    "homepage": "https://github.com/NIC619/UniRep#readme",
+    "homepage": "https://github.com/appliedzkp/UniRep#readme",
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -40,6 +37,7 @@
     },
     "dependencies": {
         "@openzeppelin/contracts": "^3.2.0",
+        "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "circom": "^0.5.38",
         "circomlib": "^0.5.1",
@@ -51,6 +49,10 @@
         "prompt-async": "^0.9.9",
         "shelljs": "^0.8.3",
         "snarkjs": "^0.3.59",
-        "typescript": "^4.0.5"
+        "typescript": "^4.0.5",
+        "utf-8-validate": "5.0.4",
+        "web3": "1.2.11",
+        "web3-bzz": "1.3.6",
+        "web3-shh": "1.3.6"
     }
 }
