@@ -6,18 +6,18 @@ For more information, refer to the [documentation](https://vivi432.gitbook.io/un
 ## Install and build
 
 ```
-npm install
+yarn install
 ```
 
 then run
 
 ```
-npm run build
+yarn build
 ``` 
 to build the circuits
 
 ## Test
 
 ```
-npm run test
+yarn test && yarn test-cli
 ```
