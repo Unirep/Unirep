@@ -14,6 +14,7 @@ const fileExists = (filepath: string): boolean => {
 }
 
 const snarkjsCliPath = path.join(__dirname, '../node_modules/snarkjs/cli.js')
+const circomCliPath = path.join(__dirname, '../node_modules/circom/cli.js')
 
 const main = () => {
     const parser = new argparse.ArgumentParser({ 
@@ -126,7 +127,7 @@ const main = () => {
     } else {
         console.log(`Compiling ${inputFile}...`)
         // Compile the .circom file
-        shell.exec(`node ./node_modules/circom/cli.js ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
+        shell.exec(`node ${circomCliPath} ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
         console.log('Generated', circuitOut, 'and', wasmOut)
     }
 
