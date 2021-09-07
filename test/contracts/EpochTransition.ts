@@ -323,7 +323,7 @@ describe('Epoch Transition', function () {
         const newState = await userState.genNewUserStateAfterTransition()
         const epkNullifiers = userState.getEpochKeyNullifiers(1)
         const epoch_ = await unirepContract.currentEpoch()
-        expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
+        expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf.toString())
         userState.transition(newState.newUSTLeaves)
         unirepState.userStateTransition(epoch_, BigInt(newGSTLeaf), epkNullifiers)
     })
