@@ -4,7 +4,6 @@ import { SnarkProof } from 'libsemaphore'
 const circom = require('circom')
 const snarkjs = require('snarkjs')
 
-
 const buildPath = "../build"
 
 /*
@@ -61,8 +60,8 @@ const verifyProof = async (
     proof: any,
     publicSignals: any,
 ): Promise<boolean> => {
-    const zkeyJsonPath = path.join(__dirname, buildPath,`${circuitName}.zkey.json`)
-    const vKey = JSON.parse(fs.readFileSync(zkeyJsonPath).toString());
+    const vkeyJsonPath = path.join(__dirname, buildPath,`${circuitName}.vkey.json`)
+    const vKey = JSON.parse(fs.readFileSync(vkeyJsonPath).toString());
     const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
 
     return res

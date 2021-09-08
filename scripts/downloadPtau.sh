@@ -9,5 +9,4 @@ then
     exit
 fi
 
-curl -O https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_17.ptau
-mv powersOfTau28_hez_final_17.ptau build/powersOfTau28_hez_final_17.ptau
+curl -o build/powersOfTau28_hez_final_17.ptau https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_17.ptau
