@@ -1,18 +1,9 @@
 import * as fs from 'fs'
-import assert from 'assert'
-import lineByLine from 'n-readlines'
 import * as path from 'path'
 import { SnarkProof } from 'libsemaphore'
 const circom = require('circom')
 const snarkjs = require('snarkjs')
-import * as shell from 'shelljs'
 
-import {
-    stringifyBigInts,
-    unstringifyBigInts,
-} from 'maci-crypto'
-
-const zkutilPath = "~/.cargo/bin/zkutil"
 const buildPath = "../build"
 
 /*
@@ -53,79 +44,15 @@ const getSignalByName = (
     return witness[circuit.symbols[signal].varIdx]
 }
 
-const getSignalByNameViaSym = (
-    circuitName: any,
-    witness: any,
-    signal: string,
-) => {
-    const symPath = path.join(__dirname, buildPath, `${circuitName}.sym`)
-    const liner = new lineByLine(symPath)
-    let line
-    let index
-    let found = false
-
-    while (true) {
-        line = liner.next()
-        debugger
-        if (!line) { break }
-        const s = line.toString().split(',')
-        if (signal === s[3]) {
-            index = s[1]
-            found = true
-            break
-        }
-    }
-
-    assert(found)
-
-    return witness[index]
-}
-
 const genProofAndPublicSignals = async (
     circuitName: string,
     inputs: any,
-    compileCircuit = true,
 ) => {
-    const date = Date.now()
-    const paramsPath = path.join(__dirname, buildPath, `${circuitName}.params`)
-    const circuitR1csPath = path.join(__dirname, buildPath, `${circuitName}Circuit.r1cs`)
     const circuitWasmPath = path.join(__dirname, buildPath, `${circuitName}.wasm`)
-    const inputJsonPath = path.join(__dirname, buildPath + date + '.input.json')
-    const witnessPath = path.join(__dirname, buildPath + date + '.witness.wtns')
-    const witnessJsonPath = path.join(__dirname, buildPath + date + '.witness.json')
-    const proofPath = path.join(__dirname, buildPath + date + '.proof.json')
-    const publicJsonPath = path.join(__dirname, buildPath + date + '.publicSignals.json')
+    const zkeyPath = path.join(__dirname, buildPath,`${circuitName}.zkey`)
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(inputs, circuitWasmPath, zkeyPath);
 
-    fs.writeFileSync(inputJsonPath, JSON.stringify(stringifyBigInts(inputs)))
-
-    let circuit
-     if (compileCircuit) {	
-         circuit = await compileAndLoadCircuit(`/test/${circuitName}_test.circom`)	
-     }
-
-    const snarkjsCmd = 'node ' + path.join(__dirname, '../node_modules/snarkjs/build/cli.cjs')
-    const witnessCmd = `${snarkjsCmd} wc ${circuitWasmPath} ${inputJsonPath} ${witnessPath}`
-
-    shell.exec(witnessCmd)
-
-    const witnessJsonCmd = `${snarkjsCmd} wej ${witnessPath} ${witnessJsonPath}`
-    shell.exec(witnessJsonCmd)
-
-    const proveCmd = `${zkutilPath} prove -c ${circuitR1csPath} -p ${paramsPath} -w ${witnessJsonPath} -r ${proofPath} -o ${publicJsonPath}`
-
-    shell.exec(proveCmd)
-
-    const witness = unstringifyBigInts(JSON.parse(fs.readFileSync(witnessJsonPath).toString()))
-    const publicSignals = unstringifyBigInts(JSON.parse(fs.readFileSync(publicJsonPath).toString()))
-    const proof = JSON.parse(fs.readFileSync(proofPath).toString())
-
-    shell.rm('-f', witnessPath)
-    shell.rm('-f', witnessJsonPath)
-    shell.rm('-f', proofPath)
-    shell.rm('-f', publicJsonPath)
-    shell.rm('-f', inputJsonPath)
-
-    return { circuit, proof, publicSignals, witness }
+    return { proof, publicSignals }
 }
 
 const verifyProof = async (
@@ -133,36 +60,11 @@ const verifyProof = async (
     proof: any,
     publicSignals: any,
 ): Promise<boolean> => {
+    const vkeyJsonPath = path.join(__dirname, buildPath,`${circuitName}.vkey.json`)
+    const vKey = JSON.parse(fs.readFileSync(vkeyJsonPath).toString());
+    const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
 
-    const date = Date.now().toString()
-    const proofFilename = `${date}.${circuitName}.proof.json`
-    const publicSignalsFilename = `${date}.${circuitName}.publicSignals.json`
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, proofFilename),
-        JSON.stringify(
-            stringifyBigInts(proof)
-        )
-    )
-
-    fs.writeFileSync(
-        path.join(__dirname, buildPath, publicSignalsFilename),
-        JSON.stringify(
-            stringifyBigInts(publicSignals)
-        )
-    )
-
-    const paramsPath = path.join(__dirname, buildPath, `${circuitName}.params`)
-    const proofPath = path.join(__dirname, buildPath, proofFilename)
-    const publicSignalsPath = path.join(__dirname, buildPath, publicSignalsFilename)
-
-    const verifyCmd = `${zkutilPath} verify -p ${paramsPath} -r ${proofPath} -i ${publicSignalsPath}`
-    const output = shell.exec(verifyCmd).stdout.trim()
-
-    shell.rm('-f', proofPath)
-    shell.rm('-f', publicSignalsPath)
-
-    return output === 'Proof is correct'
+    return res
 }
 
 const formatProofForVerifierContract = (
@@ -186,7 +88,6 @@ export {
     executeCircuit,
     formatProofForVerifierContract,
     getSignalByName,
-    getSignalByNameViaSym,
     genProofAndPublicSignals,
     verifyProof,
 }

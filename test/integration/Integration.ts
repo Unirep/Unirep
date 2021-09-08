@@ -10,7 +10,7 @@ import { toCompleteHexString } from '../utils'
 const { expect } = chai
 
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
-import { formatProofForVerifierContract, genProofAndPublicSignals, getSignalByNameViaSym, verifyProof } from "../../circuits/utils"
+import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from "../../circuits/utils"
 
 describe('Integration', function () {
     this.timeout(1000000)
@@ -209,7 +209,7 @@ describe('Integration', function () {
             results = await genProofAndPublicSignals('userStateTransition', circuitInputs.finalTransitionProof)
             isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
-            const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
+            const newGSTLeaf = results['publicSignals'][0]
 
             const outputEpkNullifiers = results['publicSignals'].slice(1,1 + numEpochKeyNoncePerEpoch)
             const blindedUserStates = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
@@ -218,14 +218,14 @@ describe('Integration', function () {
             // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
             const outputEPKNullifiers: BigInt[] = []
             for (let i = 0; i < epkNullifiers.length; i++) {
-                const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+                const outputNullifier = results['publicSignals'][1+i]
                 const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
                 expect(BigNumber.from(epkNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
                 outputEPKNullifiers.push(outputNullifier)
             }
             // Verify new state state outputted by circuit is the same as the one computed off-chain
             const newState = await users[firstUser].genNewUserStateAfterTransition()
-            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
+            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf.toString())
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
             userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
 
@@ -668,7 +668,7 @@ describe('Integration', function () {
             results = await genProofAndPublicSignals('userStateTransition', circuitInputs.finalTransitionProof)
             isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
             expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
-            const newGSTLeaf = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.new_GST_leaf')
+            const newGSTLeaf = results['publicSignals'][0]
 
             const outputEpkNullifiers = results['publicSignals'].slice(1,1 + numEpochKeyNoncePerEpoch)
             const blindedUserStates = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
@@ -677,14 +677,14 @@ describe('Integration', function () {
             // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
             const outputEPKNullifiers: BigInt[] = []
             for (let i = 0; i < epkNullifiers.length; i++) {
-                const outputNullifier = getSignalByNameViaSym('userStateTransition', results['witness'], 'main.epoch_key_nullifier[' + i + ']')
+                const outputNullifier = results['publicSignals'][1+i]
                 const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** circuitNullifierTreeDepth)
                 expect(BigNumber.from(epkNullifiers[i])).to.equal(BigNumber.from(modedOutputNullifier))
                 outputEPKNullifiers.push(outputNullifier)
             }
             // Verify new state state outputted by circuit is the same as the one computed off-chain
             const newState = await users[firstUser].genNewUserStateAfterTransition()
-            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf)
+            expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf.toString())
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
             userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
 

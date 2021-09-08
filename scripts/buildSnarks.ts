@@ -1,7 +1,10 @@
 import * as argparse from 'argparse' 
 import * as fs from 'fs'
 import * as path from 'path'
-import * as shell from 'shelljs'
+import { stringifyBigInts } from 'maci-crypto';
+const compiler = require('circom').compiler
+const snarkjs = require('snarkjs')
+const fastFile = require("fastfile");
 
 import { genSnarkVerifierSol } from './genVerifier'
 
@@ -13,9 +16,7 @@ const fileExists = (filepath: string): boolean => {
     return inputFileExists
 }
 
-const zkutilPath = "~/.cargo/bin/zkutil"
-
-const main = () => {
+const main = async () => {
     const parser = new argparse.ArgumentParser({ 
         description: 'Compile a circom circuit and generate its proving key, verification key, and Solidity verifier'
     })
@@ -53,25 +54,33 @@ const main = () => {
     )
 
     parser.add_argument(
-        '-v', '--vk-out',
-        {
-            help: 'The filepath to save the verification key',
-            required: true
-        }
-    )
-
-    parser.add_argument(
-        '-p', '--pk-out',
-        {
-            help: 'The filepath to save the proving key (as a .json file)',
-            required: true
-        }
-    )
-
-    parser.add_argument(
         '-s', '--sol-out',
         {
             help: 'The filepath to save the Solidity verifier contract',
+            required: true
+        }
+    )
+
+    parser.add_argument(
+        '-pt', '--ptau',
+        {
+            help: 'The filepath of existed ptau',
+            required: true
+        }
+    )
+
+    parser.add_argument(
+        '-zk', '--zkey-out',
+        {
+            help: 'The filepath to save the zkey',
+            required: true
+        }
+    )
+
+    parser.add_argument(
+        '-vk', '--vkey-out',
+        {
+            help: 'The filepath to save the vkey',
             required: true
         }
     )
@@ -94,16 +103,7 @@ const main = () => {
         }
     )
 
-    parser.add_argument(
-        '-pr', '--params-out',
-        {
-            help: 'The filepath to save the params file',
-            required: true
-        }
-    )
-
     const args = parser.parse_args()
-    const vkOut = args.vk_out
     const solOut = args.sol_out
     const inputFile = args.input
     const override = args.override
@@ -111,8 +111,9 @@ const main = () => {
     const symOut = args.sym_out
     const wasmOut = args.wasm_out
     const verifierName = args.verifier_name
-    const paramsOut = args.params_out
-    const pkOut = args.pk_out
+    const ptau = args.ptau
+    const zkey = args.zkey_out
+    const vkOut = args.vkey_out
 
     // Check if the input circom file exists
     const inputFileExists = fileExists(inputFile)
@@ -123,9 +124,6 @@ const main = () => {
         return 1
     }
 
-    // Set memory options for node
-    shell.env['NODE_OPTIONS'] = '--max-old-space-size=16384'
-
     // Check if the circuitOut file exists and if we should not override files
     const circuitOutFileExists = fileExists(circuitOut)
 
@@ -134,22 +132,28 @@ const main = () => {
     } else {
         console.log(`Compiling ${inputFile}...`)
         // Compile the .circom file
-        shell.exec(`node --stack-size=65500 ./node_modules/circom/cli.js ${inputFile} -r ${circuitOut} -w ${wasmOut} -s ${symOut}`)
+        const options = {
+            wasmFile: await fastFile.createOverride(wasmOut),
+            r1csFileName: circuitOut,
+            symWriteStream: fs.createWriteStream(symOut),
+        };
+        await compiler(inputFile, options)
         console.log('Generated', circuitOut, 'and', wasmOut)
     }
 
-    const paramsFileExists = fileExists(paramsOut)
-    if (!override && paramsFileExists) {
-        console.log('params file exists. Skipping setup.')
+    const zkeyOutFileExists = fileExists(zkey)
+    if (!override && zkeyOutFileExists) {
+        console.log(zkey, 'exists. Skipping compilation.')
     } else {
-        console.log('Generating params file...')
-        shell.exec(`${zkutilPath} setup -c ${circuitOut} -p ${paramsOut}`)
+        console.log('Exporting verification key...')
+        await snarkjs.zKey.newZKey(circuitOut, ptau, zkey)
+        const vkeyJson = await snarkjs.zKey.exportVerificationKey(zkey)
+        const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1);
+        await fs.promises.writeFile(vkOut, S);
+        console.log(`Generated ${zkey} and ${vkOut}`)
     }
 
-    console.log('Exporting verification key...')
-    shell.exec(`${zkutilPath} export-keys -c ${circuitOut} -p ${paramsOut} -r ${pkOut} -v ${vkOut}`)
-    console.log(`Generated ${pkOut} and ${vkOut}`)
-
+    console.log('Exporting verification contract...')
     const verifier = genSnarkVerifierSol(
         verifierName,
         JSON.parse(fs.readFileSync(vkOut).toString()),
@@ -159,13 +163,13 @@ const main = () => {
     return 0
 }
 
-if (require.main === module) {
+(async () => {
     let exitCode;
     try {
-        exitCode = main()
+        exitCode = await main();
     } catch (err) {
         console.error(err)
         exitCode = 1
     }
     process.exit(exitCode)
-}
+})();
