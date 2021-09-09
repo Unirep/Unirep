@@ -2,8 +2,8 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, circuitUserStateTreeDepth, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { genRandomSalt, hash5, hashLeftRight } from '../../crypto/crypto'
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genRandomSalt, hash5, hashLeftRight, stringifyBigInts } from 'maci-crypto'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 import { deployUnirep, getTreeDepthsForTesting } from '../../core/utils'
 
 const { expect } = chai
@@ -12,8 +12,6 @@ import { UnirepState } from '../../core/UnirepState'
 import { UserState } from '../../core'
 import { genNewSMT } from '../utils'
 import { genProofAndPublicSignals, verifyProof } from '../../circuits/utils'
-import { stringifyBigInts } from 'maci-crypto'
-
 
 describe('Airdrop', function () {
     this.timeout(100000)

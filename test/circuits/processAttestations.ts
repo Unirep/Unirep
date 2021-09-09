@@ -14,7 +14,7 @@ import {
     hashLeftRight,
     SnarkBigInt,
 } from 'maci-crypto'
-import { genIdentity } from 'libsemaphore'
+import { genIdentity } from '../../crypto/semaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { numAttestationsPerProof } from "../../config/testLocal"
 import { Attestation, Reputation } from "../../core"
@@ -24,9 +24,9 @@ describe('Process attestation circuit', function () {
 
     let circuit
 
-    const epoch = 1
-    const nonce = 0
-    const toNonce = 1
+    const epoch = BigInt(1)
+    const nonce = BigInt(0)
+    const toNonce = BigInt(1)
     const user = genIdentity()
 
     let userStateTree: SparseMerkleTreeImpl

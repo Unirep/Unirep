@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity } from 'libsemaphore'
+import { genIdentityCommitment, unSerialiseIdentity } from '../crypto/semaphore'
 import { stringifyBigInts } from 'maci-crypto'
 
 import {

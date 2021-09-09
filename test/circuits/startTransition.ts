@@ -2,7 +2,7 @@ import chai from "chai"
 
 const { expect } = chai
 
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 import {
     IncrementalQuinTree,
     genRandomSalt,
@@ -28,7 +28,7 @@ describe('User State Transition circuits', function () {
     describe('Start User State Transition', () => {
 
         let circuit
-        const epoch = 1
+        const epoch = BigInt(1)
         const expectedNumAttestationsMade = 5
 
         let GSTZERO_VALUE = 0, GSTree: IncrementalQuinTree, GSTreeRoot, GSTreeProof
@@ -36,7 +36,8 @@ describe('User State Transition circuits', function () {
 
         let reputationRecords = {}
         let hashedLeaf
-        const nonce = 0
+        const zeroHashChain = BigInt(0)
+        const nonce = BigInt(0)
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -88,12 +89,12 @@ describe('User State Transition circuits', function () {
                 expect(outputUserState).to.equal(expectedUserState)
 
                 const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-                const expectedHashChainResult = hash5([user['identityNullifier'], 0, epoch, nonce])
+                const expectedHashChainResult = hash5([user['identityNullifier'], zeroHashChain, epoch, nonce])
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
             })
 
             it('User can start with different epoch key nonce', async () => {
-                const newNonce = 1
+                const newNonce = BigInt(1)
                 const circuitInputs = {
                     epoch: epoch,
                     nonce: newNonce,
@@ -111,7 +112,7 @@ describe('User State Transition circuits', function () {
                 expect(outputUserState).to.equal(expectedUserState)
 
                 const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-                const expectedHashChainResult = hash5([user['identityNullifier'], 0, epoch, newNonce])
+                const expectedHashChainResult = hash5([user['identityNullifier'], zeroHashChain, epoch, newNonce])
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
             })
         })

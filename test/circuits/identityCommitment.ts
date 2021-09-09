@@ -8,7 +8,7 @@ import {
     getSignalByName,
 } from '../../circuits/utils'
 
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 
 describe('(Semaphore) identity commitment', function () {
     this.timeout(200000)

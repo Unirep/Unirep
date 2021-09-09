@@ -4,7 +4,7 @@ import * as path from 'path'
 import { stringifyBigInts } from 'maci-crypto';
 const compiler = require('circom').compiler
 const snarkjs = require('snarkjs')
-const fastFile = require("fastfile");
+const fastFile = require("fastfile")
 
 import { genSnarkVerifierSol } from './genVerifier'
 

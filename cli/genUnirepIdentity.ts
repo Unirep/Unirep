@@ -1,5 +1,5 @@
 import base64url from 'base64url'
-import { genIdentity, genIdentityCommitment, serialiseIdentity } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment, serialiseIdentity } from '../crypto/semaphore'
 
 import { identityPrefix, identityCommitmentPrefix } from "./prefix"
 

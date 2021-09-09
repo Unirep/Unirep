@@ -1,5 +1,5 @@
 import chai from "chai"
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 
 const { expect } = chai
 

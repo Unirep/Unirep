@@ -2,8 +2,8 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { genRandomSalt, hashLeftRight } from '../../crypto/crypto'
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genRandomSalt, hashLeftRight } from 'maci-crypto'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 import { computeEmptyUserStateRoot, deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
 
 const { expect } = chai

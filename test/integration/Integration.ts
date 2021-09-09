@@ -2,7 +2,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
 import { deployUnirep, genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../../core/utils'
 import { toCompleteHexString } from '../utils'

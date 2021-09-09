@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { SnarkProof } from 'libsemaphore'
+import { SnarkProof } from '../crypto/semaphore'
 const circom = require('circom')
 const snarkjs = require('snarkjs')
 

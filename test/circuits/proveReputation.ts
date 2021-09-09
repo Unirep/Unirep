@@ -16,7 +16,7 @@ import {
     stringifyBigInts,
     hashLeftRight,
 } from 'maci-crypto'
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 import { Reputation } from "../../core"

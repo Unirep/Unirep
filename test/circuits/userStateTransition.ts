@@ -3,7 +3,7 @@ import chai from "chai"
 
 const { expect } = chai
 
-import { genIdentity, genIdentityCommitment } from 'libsemaphore'
+import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
 import {
     IncrementalQuinTree,
     SnarkBigInt,
@@ -142,11 +142,11 @@ describe('User State Transition circuits', function () {
 
                 // Blinded user state result
                 intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
-                blindedUserState.push(hash5([user['identityNullifier'], intermediateUserStateTreeRoot, epoch, nonce]))
+                blindedUserState.push(hash5([user['identityNullifier'], intermediateUserStateTreeRoot, BigInt(epoch), BigInt(nonce)]))
 
                 // Blinded hash chain result
                 hashChainResults.push(hashChainResult)
-                blindedHashChain.push(hash5([user['identityNullifier'], hashChainResult, epoch, nonce]))
+                blindedHashChain.push(hash5([user['identityNullifier'], hashChainResult, BigInt(epoch), BigInt(nonce)]))
 
                 // Seal hash chain of this epoch key
                 const sealedHashChainResult = hashLeftRight(BigInt(1), hashChainResult)
