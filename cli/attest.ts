@@ -1,4 +1,3 @@
-import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 
 import {
@@ -127,7 +126,7 @@ const attest = async (args: any) => {
         return
     }
 
-    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
+    const provider = new ethers.providers.JsonRpcProvider(ethProvider)
     const wallet = new ethers.Wallet(ethSk, provider)
 
     if (! await contractExists(provider, unirepAddress)) {
@@ -168,8 +167,8 @@ const attest = async (args: any) => {
         )
     } catch(e) {
         console.error('Error: the transaction failed')
-        if (e.message) {
-            console.error(e.message)
+        if (e) {
+            console.error(e)
         }
         return
     }

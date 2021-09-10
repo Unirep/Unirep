@@ -19,7 +19,7 @@
  * along with Semaphore.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.0;
 
 contract SnarkConstants {
     // The scalar field

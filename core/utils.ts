@@ -1,12 +1,18 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2305 will be reported.
 // @ts-ignore
-import { ethers as hardhatEthers, waffle } from 'hardhat'
+import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import Keyv from "keyv"
 import assert from 'assert'
 
 import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+import EpochKeyValidityVerifier from "../artifacts/contracts/EpochKeyValidityVerifier.sol/EpochKeyValidityVerifier.json"
+import StartTransitionVerifier from "../artifacts/contracts/StartTransitionVerifier.sol/StartTransitionVerifier.json"
+import ReputationVerifier from "../artifacts/contracts/ReputationVerifier.sol/ReputationVerifier.json"
+import UserStateTransitionVerifier from "../artifacts/contracts/UserStateTransitionVerifier.sol/UserStateTransitionVerifier.json"
+import ProcessAttestationsVerifier from "../artifacts/contracts/ProcessAttestationsVerifier.sol/ProcessAttestationsVerifier.json"
+
 import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
 import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
@@ -68,50 +74,40 @@ const deployUnirep = async (
     let EpochKeyValidityVerifierContract, StartTransitionVerifierContract, ProcessAttestationsVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
     console.log('Deploying PoseidonT3')
-    PoseidonT3Contract = await waffle.deployContract(
-        deployer,
-        PoseidonT3
-    )
+    const PoseidonT3Factory = new ethers.ContractFactory(PoseidonT3.abi, PoseidonT3.bytecode, deployer)
+    PoseidonT3Contract = await PoseidonT3Factory.deploy()
+    await PoseidonT3Contract.deployTransaction.wait()
+    
     console.log('Deploying PoseidonT6')
-    PoseidonT6Contract = await waffle.deployContract(
-        deployer,
-        PoseidonT6,
-        [],
-        {
-            gasLimit: 9000000,
-        }
-    )
+    const PoseidonT6Factory = new ethers.ContractFactory(PoseidonT6.abi, PoseidonT6.bytecode, deployer)
+    PoseidonT6Contract = await PoseidonT6Factory.deploy()
+    await PoseidonT6Contract.deployTransaction.wait()
 
     console.log('Deploying EpochKeyValidityVerifier')
-    EpochKeyValidityVerifierContract = await (await hardhatEthers.getContractFactory(
-        "EpochKeyValidityVerifier",
-        deployer
-    )).deploy()
+    const EpochKeyValidityVerifierFactory = new ethers.ContractFactory(EpochKeyValidityVerifier.abi, EpochKeyValidityVerifier.bytecode, deployer)
+    EpochKeyValidityVerifierContract = await EpochKeyValidityVerifierFactory.deploy()
+    await EpochKeyValidityVerifierContract.deployTransaction.wait()
 
     console.log('Deploying StartTransitionVerifier')
-    StartTransitionVerifierContract = await (await hardhatEthers.getContractFactory(
-        "StartTransitionVerifier",
-        deployer
-    )).deploy()
+    const StartTransitionVerifierFactory = new ethers.ContractFactory(StartTransitionVerifier.abi, StartTransitionVerifier.bytecode, deployer)
+    StartTransitionVerifierContract = await StartTransitionVerifierFactory.deploy()
+    await StartTransitionVerifierContract.deployTransaction.wait()
 
 
     console.log('Deploying ProcessAttestationsVerifier')
-    ProcessAttestationsVerifierContract = await (await hardhatEthers.getContractFactory(
-        "ProcessAttestationsVerifier",
-        deployer
-    )).deploy()
+    const ProcessAttestationsVerifierFactory = new ethers.ContractFactory(ProcessAttestationsVerifier.abi, ProcessAttestationsVerifier.bytecode, deployer)
+    ProcessAttestationsVerifierContract = await ProcessAttestationsVerifierFactory.deploy()
+    await ProcessAttestationsVerifierContract.deployTransaction.wait()
 
     console.log('Deploying UserStateTransitionVerifier')
-    UserStateTransitionVerifierContract = await (await hardhatEthers.getContractFactory(
-        "UserStateTransitionVerifier",
-        deployer
-    )).deploy()
+    const UserStateTransitionVerifierFactory = new ethers.ContractFactory(UserStateTransitionVerifier.abi, UserStateTransitionVerifier.bytecode, deployer)
+    UserStateTransitionVerifierContract = await UserStateTransitionVerifierFactory.deploy()
+    await UserStateTransitionVerifierContract.deployTransaction.wait()
 
     console.log('Deploying ReputationVerifier')
-    ReputationVerifierContract = await (await hardhatEthers.getContractFactory(
-        "ReputationVerifier",
-        deployer
-    )).deploy()
+    const  ReputationVerifierFactory = new ethers.ContractFactory(ReputationVerifier.abi,  ReputationVerifier.bytecode, deployer)
+    ReputationVerifierContract = await ReputationVerifierFactory.deploy()
+    await ReputationVerifierContract.deployTransaction.wait()
 
     console.log('Deploying Unirep')
 
@@ -137,7 +133,7 @@ const deployUnirep = async (
             }
         }
     )
-    const c = await (f.deploy(
+    const c = await f.deploy(
         _treeDepths,
         {
             "maxUsers": _maxUsers
@@ -151,9 +147,9 @@ const deployUnirep = async (
         _epochLength,
         _attestingFee,
         {
-            gasLimit: 9000000,
-        }
-    ))
+        gasLimit: 9000000,
+    })
+    await c.deployTransaction.wait()
 
     // Print out deployment info
     console.log("-----------------------------------------------------------------")

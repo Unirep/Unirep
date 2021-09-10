@@ -5,7 +5,7 @@
  * This file is part of maci
  */
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.0;
 
 import {PoseidonT3, PoseidonT6} from "./Poseidon.sol";
 

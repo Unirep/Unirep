@@ -1,5 +1,4 @@
 import base64url from 'base64url'
-import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '../crypto/semaphore'
 import { stringifyBigInts } from 'maci-crypto'
@@ -84,7 +83,7 @@ const genEpochKeyAndProof = async (args: any) => {
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
 
-    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
+    const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
     if (! await contractExists(provider, unirepAddress)) {
         console.error('Error: there is no contract deployed at the specified address')

@@ -375,7 +375,7 @@ describe('Epoch Transition', function () {
         const compensation = await unirepContract.epochTransitionCompensation(attesterAddress)
         expect(compensation).to.gt(0)
         // Set gas price to 0 so attester will not be charged transaction fee
-        await expect(() => unirepContractCalledByAttester.collectEpochTransitionCompensation({gasPrice: 0}))
+        await expect(() => unirepContractCalledByAttester.collectEpochTransitionCompensation())
             .to.changeEtherBalance(attester, compensation)
         expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.equal(0)
     })

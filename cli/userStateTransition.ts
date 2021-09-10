@@ -1,5 +1,4 @@
 import base64url from 'base64url'
-import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '../crypto/semaphore'
 
@@ -116,7 +115,7 @@ const userStateTransition = async (args: any) => {
         return
     }
 
-    const provider = new hardhatEthers.providers.JsonRpcProvider(ethProvider)
+    const provider = new ethers.providers.JsonRpcProvider(ethProvider)
     const wallet = new ethers.Wallet(ethSk, provider)
 
     if (! await contractExists(provider, unirepAddress)) {
@@ -177,8 +176,8 @@ const userStateTransition = async (args: any) => {
         )
     } catch(e) {
         console.error('Error: the transaction failed')
-        if (e.message) {
-            console.error(e.message)
+        if (e) {
+            console.error(e)
         }
     }
 
@@ -207,8 +206,8 @@ const userStateTransition = async (args: any) => {
             )
         } catch(e) {
             console.error('Error: the transaction failed')
-            if (e.message) {
-                console.error(e.message)
+            if (e) {
+                console.error(e)
             }
         }    
     }
@@ -262,8 +261,8 @@ const userStateTransition = async (args: any) => {
         )
     } catch(e) {
         console.error('Error: the transaction failed')
-        if (e.message) {
-            console.error(e.message)
+        if (e) {
+            console.error(e)
         }
         return
     }

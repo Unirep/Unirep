@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma abicoder v2;
-pragma solidity 0.7.6;
+pragma solidity 0.8.0;
 
-import "@openzeppelin/contracts/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import { DomainObjs } from './DomainObjs.sol';
 import { SnarkConstants } from './SnarkConstants.sol';
@@ -743,13 +743,13 @@ contract Unirep is DomainObjs, ComputeRoot, UnirepParameters {
     function burnAttestingFee() external {
         uint256 amount = collectedAttestingFee;
         collectedAttestingFee = 0;
-        Address.sendValue(address(0), amount);
+        Address.sendValue(payable(address(0)), amount);
     }
 
     function collectEpochTransitionCompensation() external {
         // NOTE: currently there are no revenue to pay for epoch transition compensation
         uint256 amount = epochTransitionCompensation[msg.sender];
         epochTransitionCompensation[msg.sender] = 0;
-        Address.sendValue(msg.sender, amount);
+        Address.sendValue(payable(msg.sender), amount);
     }
 }
