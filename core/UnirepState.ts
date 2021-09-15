@@ -1,11 +1,6 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
-import {
-    IncrementalQuinTree,
-    hash5,
-    hashLeftRight,
-} from 'maci-crypto'
-import { SparseMerkleTreeImpl } from '../crypto/SMT'
+import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl } from '@unirep/crypto'
 import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from './utils'
 
 interface IEpochTreeLeaf {

@@ -1,13 +1,10 @@
 import { ethers } from 'ethers'
+import { deployUnirep } from '@unirep/contracts'
+
 import { maxUsers } from '../config/testLocal'
-import { deployUnirep, getTreeDepthsForTesting } from '../core/utils'
+import { getTreeDepthsForTesting } from '../core/utils'
 import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
-import {
-    checkDeployerProviderConnection,
-    genJsonRpcDeployer,
-    promptPwd,
-    validateEthSk,
-} from './utils'
+import { checkDeployerProviderConnection, genJsonRpcDeployer, promptPwd, validateEthSk, } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const deployParser = subparsers.add_parser(
@@ -42,15 +39,6 @@ const configureSubparser = (subparsers: any) => {
             help: 'A connection string to an Ethereum provider. Default: http://localhost:8545',
         }
     )
-
-    // deployParser.add_argument(
-    //     '-kn', '--max-epoch-key-nonce',
-    //     {
-    //         action: 'store',
-    //         type: 'int',
-    //         help: 'The maximum supported epoch key nonce. Default: 2',
-    //     }
-    // )
 
     deployParser.add_argument(
         '-l', '--epoch-length',

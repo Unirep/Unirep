@@ -18,6 +18,9 @@ const config: HardhatUserConfig = {
       optimizer: { enabled: true, runs: 200 }
     }
   },
+  paths: {
+    artifacts: "./node_modules/@unirep/contracts/artifacts"
+  },
 }
 
 export default config;

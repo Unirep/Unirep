@@ -1,31 +1,15 @@
 import chai from "chai"
-
 const { expect } = chai
+import { IncrementalQuinTree, genRandomSalt, hashOne, stringifyBigInts, hashLeftRight, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
 
-import {
-    compileAndLoadCircuit,
-    executeCircuit,
-} from '../../circuits/utils'
 import { genNewNullifierTree, genNewUserStateTree, SMT_ONE_LEAF } from '../utils'
 import { genEpochKeyNullifier } from '../../core/utils'
-
-import {
-    IncrementalQuinTree,
-    genRandomSalt,
-    hashOne,
-    stringifyBigInts,
-    hashLeftRight,
-} from 'maci-crypto'
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth } from "../../config/testLocal"
 import { Reputation } from "../../core"
-import { genProofAndPublicSignals, verifyProof } from "../../circuits/utils"
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
-
-    let circuit
 
     const epoch = 1
     const nonce = 1
@@ -33,8 +17,8 @@ describe('Prove reputation from attester circuit', function () {
     const NUM_ATTESTERS = 10
 
     let GSTZERO_VALUE = 0, GSTree, GSTreeRoot, GSTreeProof
-    let userStateTree: SparseMerkleTreeImpl, userStateRoot
-    let nullifierTree: SparseMerkleTreeImpl, nullifierTreeRoot, epkNullifierProof
+    let userStateTree, userStateRoot
+    let nullifierTree, nullifierTreeRoot, epkNullifierProof
     let epkNullifier
     let hashedLeaf
 
@@ -43,10 +27,6 @@ describe('Prove reputation from attester circuit', function () {
     const MAX_NEG_REP = 10
 
     before(async () => {
-        const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit('test/proveReputation_test.circom')
-        const endCompileTime = Math.floor(new Date().getTime() / 1000)
-        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         // User state
         userStateTree = await genNewUserStateTree("circuit")
@@ -113,8 +93,6 @@ describe('Prove reputation from attester circuit', function () {
             max_neg_rep: BigInt(MAX_NEG_REP),
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -154,8 +132,6 @@ describe('Prove reputation from attester circuit', function () {
             max_neg_rep: reputationRecords[attesterId]['negRep'],
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -195,8 +171,6 @@ describe('Prove reputation from attester circuit', function () {
             max_neg_rep: BigInt(MAX_NEG_REP),
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -236,8 +210,6 @@ describe('Prove reputation from attester circuit', function () {
             max_neg_rep: BigInt(MAX_NEG_REP),
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -277,8 +249,6 @@ describe('Prove reputation from attester circuit', function () {
             max_neg_rep: BigInt(MAX_NEG_REP),
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -321,8 +291,6 @@ describe('Prove reputation from attester circuit', function () {
             max_neg_rep: BigInt(wrongMaxNegRep),
             graffiti_pre_image: wrongGraffitiPreImage
         }
-
-        const witness = await executeCircuit(circuit, circuitInputs)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -364,15 +332,12 @@ describe('Prove reputation from attester circuit', function () {
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Root mismatch results from wrong attester Id should throw error")
-        }
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
     })
 
     it('prove reputation with not exist user state should fail', async () => {
@@ -408,15 +373,12 @@ describe('Prove reputation from attester circuit', function () {
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Root mismatch results from wrong user state should throw error")
-        }
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
     })
 
     it('prove reputation with incorrect reputation should fail', async () => {
@@ -454,15 +416,12 @@ describe('Prove reputation from attester circuit', function () {
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs1)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Mismatch reputation record should throw error")
-        }
+        let startTime = new Date().getTime()
+        let results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs1))
+        let endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        let isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
 
         const wrongMaxNegRep = Number(negRep) - 1
 
@@ -493,14 +452,12 @@ describe('Prove reputation from attester circuit', function () {
             graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
         }
 
-        try {
-            await executeCircuit(circuit, circuitInputs2)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Mismatch reputation record should throw error")
-        }
+        startTime = new Date().getTime()
+        results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs2))
+        endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
     })
 
     it('prove reputation with wrong graffiti pre image should fail', async () => {
@@ -536,62 +493,11 @@ describe('Prove reputation from attester circuit', function () {
             graffiti_pre_image: wrongGraffitiPreImage
         }
 
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Wrong graffiti pre-image should throw error")
-        }
-    })
-
-    it('prove reputation with epoch key nullifier seen before should fail', async () => {
-        const attesterIds = Object.keys(reputationRecords)
-        const attesterId = Number(attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)])
-        const USTPathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
-        // Create another nullifier tree that inserted the epoch key nullifier
-        const _nullifierTree = await genNewNullifierTree("circuit")
-        await _nullifierTree.update(BigInt(attesterId), SMT_ONE_LEAF)
-        const _nullifierTreeRoot = _nullifierTree.getRootHash()
-
-
-        const circuitInputs = {
-            epoch: epoch,
-            nonce: nonce,
-            identity_pk: user['keypair']['pubKey'],
-            identity_nullifier: user['identityNullifier'], 
-            identity_trapdoor: user['identityTrapdoor'],
-            user_tree_root: userStateRoot,
-            GST_path_index: GSTreeProof.indices,
-            GST_path_elements: GSTreeProof.pathElements,
-            GST_root: GSTreeRoot,
-            nullifier_tree_root: _nullifierTreeRoot,
-            nullifier_path_elements: epkNullifierProof,
-            attester_id: attesterId,
-            pos_rep: reputationRecords[attesterId]['posRep'],
-            neg_rep: reputationRecords[attesterId]['negRep'],
-            graffiti: reputationRecords[attesterId]['graffiti'],
-            UST_path_elements: USTPathElements,
-            prove_pos_rep: BigInt(Boolean(MIN_POS_REP)),
-            prove_neg_rep: BigInt(Boolean(MAX_NEG_REP)),
-            prove_rep_diff: BigInt(Boolean(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep'])),
-            prove_graffiti: BigInt(Boolean(reputationRecords[attesterId]['graffitiPreImage'])),
-            min_rep_diff: BigInt(reputationRecords[attesterId]['posRep'] - reputationRecords[attesterId]['negRep']),
-            min_pos_rep: BigInt(MIN_POS_REP),
-            max_neg_rep: BigInt(MAX_NEG_REP),
-            graffiti_pre_image: reputationRecords[attesterId]['graffitiPreImage']
-        }
-
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Seen epoch key nullifier should throw error")
-        }
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
     })
 })

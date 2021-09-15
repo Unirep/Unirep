@@ -1,16 +1,16 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne } from 'maci-crypto'
-import { deployUnirep, genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../../core/utils'
-import { toCompleteHexString } from '../utils'
-
 const { expect } = chai
+import { IncrementalQuinTree, genRandomSalt, stringifyBigInts, hashLeftRight, hashOne, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { deployUnirep } from '@unirep/contracts'
 
+import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../../core/utils'
+import { toCompleteHexString } from '../utils'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from "../../circuits/utils"
+
 
 describe('Integration', function () {
     this.timeout(1000000)

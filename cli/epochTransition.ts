@@ -1,16 +1,8 @@
 import { ethers } from 'ethers'
+import { getUnirepContract } from '@unirep/contracts'
 
-import {
-    promptPwd,
-    validateEthSk,
-    validateEthAddress,
-    checkDeployerProviderConnection,
-    contractExists,
-} from './utils'
-
+import { promptPwd, validateEthSk, validateEthAddress, checkDeployerProviderConnection, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -105,11 +97,7 @@ const epochTransition = async (args: any) => {
         return
     }
 
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        wallet,
-    )
+    const unirepContract = await getUnirepContract(unirepAddress, wallet)
 
     // Fast-forward to end of epoch if in test environment
     if (args.is_test) {

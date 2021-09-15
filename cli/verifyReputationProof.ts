@@ -1,17 +1,11 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
+import { add0x } from '@unirep/crypto'
+import { getUnirepContract } from '@unirep/contracts'
 
-import {
-    validateEthAddress,
-    contractExists,
-} from './utils'
-
+import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-
 import { genUnirepStateFromContract } from '../core'
-import { add0x } from '../crypto/SMT'
-
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { reputationProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
@@ -119,11 +113,7 @@ const verifyReputationProof = async (args: any) => {
         return
     }
 
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        provider,
-    )
+    const unirepContract = await getUnirepContract(unirepAddress, provider)
 
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(

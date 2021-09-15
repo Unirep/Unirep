@@ -1,20 +1,12 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity } from '../crypto/semaphore'
+import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts, add0x } from '@unirep/crypto'
+import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
 
-import {
-    validateEthAddress,
-    contractExists,
-} from './utils'
-
+import { validateEthAddress, contractExists, } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract } from '../circuits/utils'
-import { stringifyBigInts } from 'maci-crypto'
-import { add0x } from '../crypto/SMT'
 import { identityPrefix, reputationProofPrefix } from './prefix'
-import { genProofAndPublicSignals, verifyProof } from '../circuits/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(

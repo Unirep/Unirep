@@ -1,14 +1,12 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { genRandomSalt, hashLeftRight, SNARK_FIELD_SIZE } from 'maci-crypto'
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
-
 const { expect } = chai
+import { genRandomSalt, hashLeftRight, SNARK_FIELD_SIZE, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
+import { attestingFee, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
 import { Attestation } from "../../core"
 
 
@@ -214,7 +212,7 @@ describe('Attesting', () => {
         let nonAttesterId = await unirepContract.attesters(nonAttesterAddress)
         expect((0).toString()).equal(nonAttesterId.toString())
 
-        let unirepContractCalledByNonAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, nonAttester)
+        let unirepContractCalledByNonAttester = await getUnirepContract(unirepContract.address, nonAttester)
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)

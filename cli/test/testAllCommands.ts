@@ -1,18 +1,15 @@
 import base64url from 'base64url'
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity } from '../../crypto/semaphore'
 import chai from "chai"
-
 const { expect } = chai
+import { genIdentityCommitment, unSerialiseIdentity, hashOne } from '@unirep/crypto'
+import { getUnirepContract } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
 import { genUnirepStateFromContract, UnirepState } from '../../core'
-import { exec } from './utils'
-
-import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
-import { hashOne } from "maci-crypto"
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
+import { exec } from './utils'
 
 describe('test all CLI subcommands', function() {
     this.timeout(500000)
@@ -69,11 +66,7 @@ describe('test all CLI subcommands', function() {
             const unirepAddress = regMatch[1]
 
             const provider = new hardhatEthers.providers.JsonRpcProvider(DEFAULT_ETH_PROVIDER)
-            unirepContract = new ethers.Contract(
-                unirepAddress,
-                Unirep.abi,
-                provider,
-            )
+            unirepContract = await getUnirepContract(unirepAddress, provider)
 
             unirepState = await genUnirepStateFromContract(
                 provider,

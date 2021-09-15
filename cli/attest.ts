@@ -1,19 +1,10 @@
 import { ethers } from 'ethers'
+import { add0x } from '@unirep/crypto'
+import { getUnirepContract } from '@unirep/contracts'
 
-import {
-    promptPwd,
-    validateEthSk,
-    validateEthAddress,
-    checkDeployerProviderConnection,
-    contractExists,
-} from './utils'
-
+import {promptPwd, validateEthSk, validateEthAddress, checkDeployerProviderConnection, contractExists} from './utils'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-
-import { add0x } from '../crypto/SMT'
 import { Attestation } from '../core'
-
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -134,11 +125,7 @@ const attest = async (args: any) => {
         return
     }
 
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        wallet,
-    )
+    const unirepContract = await getUnirepContract(unirepAddress, wallet)
     const attestingFee = await unirepContract.attestingFee()
     const ethAddr = ethers.utils.computeAddress(args.eth_privkey)
     const attesterId = await unirepContract.attesters(ethAddr)

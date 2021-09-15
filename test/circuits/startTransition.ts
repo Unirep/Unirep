@@ -1,23 +1,10 @@
 import chai from "chai"
-
 const { expect } = chai
+import { genIdentity, genIdentityCommitment, IncrementalQuinTree, genRandomSalt, hashLeftRight, hash5, stringifyBigInts } from '@unirep/crypto'
+import { genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
 
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import {
-    IncrementalQuinTree,
-    genRandomSalt,
-    hashLeftRight,
-    hash5,
-} from 'maci-crypto'
-
-import {
-    compileAndLoadCircuit,
-    executeCircuit,
-    getSignalByName,
-} from '../../circuits/utils'
 import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
 import { genNewUserStateTree } from "../utils"
-import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Reputation } from "../../core"
 
 describe('User State Transition circuits', function () {
@@ -27,12 +14,11 @@ describe('User State Transition circuits', function () {
 
     describe('Start User State Transition', () => {
 
-        let circuit
         const epoch = BigInt(1)
         const expectedNumAttestationsMade = 5
 
         let GSTZERO_VALUE = 0, GSTree: IncrementalQuinTree, GSTreeRoot, GSTreeProof
-        let userStateTree: SparseMerkleTreeImpl
+        let userStateTree
 
         let reputationRecords = {}
         let hashedLeaf
@@ -40,11 +26,6 @@ describe('User State Transition circuits', function () {
         const nonce = BigInt(0)
 
         before(async () => {
-            const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await compileAndLoadCircuit('test/startTransition_test.circom')
-            const endCompileTime = Math.floor(new Date().getTime() / 1000)
-            console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
-
             // User state tree
             userStateTree = await genNewUserStateTree("circuit")
 
@@ -83,14 +64,12 @@ describe('User State Transition circuits', function () {
                     GST_path_index: GSTreeProof.indices,
                     GST_root: GSTreeRoot
                 }
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-                const expectedUserState = hash5([user['identityNullifier'], userStateTree.getRootHash(), epoch, nonce])
-                expect(outputUserState).to.equal(expectedUserState)
-
-                const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-                const expectedHashChainResult = hash5([user['identityNullifier'], zeroHashChain, epoch, nonce])
-                expect(outputHashChainResult).to.equal(expectedHashChainResult)
+                const startTime = new Date().getTime()
+                const results = await genProofAndPublicSignals('startTransition', stringifyBigInts(circuitInputs))
+                const endTime = new Date().getTime()
+                console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+                const isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+                expect(isValid).to.be.true
             })
 
             it('User can start with different epoch key nonce', async () => {
@@ -106,14 +85,12 @@ describe('User State Transition circuits', function () {
                     GST_path_index: GSTreeProof.indices,
                     GST_root: GSTreeRoot
                 }
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-                const expectedUserState = hash5([user['identityNullifier'], userStateTree.getRootHash(), epoch, newNonce])
-                expect(outputUserState).to.equal(expectedUserState)
-
-                const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-                const expectedHashChainResult = hash5([user['identityNullifier'], zeroHashChain, epoch, newNonce])
-                expect(outputHashChainResult).to.equal(expectedHashChainResult)
+                const startTime = new Date().getTime()
+                const results = await genProofAndPublicSignals('startTransition', stringifyBigInts(circuitInputs))
+                const endTime = new Date().getTime()
+                console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+                const isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+                expect(isValid).to.be.true
             })
         })
     })

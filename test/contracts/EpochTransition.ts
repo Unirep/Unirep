@@ -1,18 +1,14 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { genRandomSalt, hashLeftRight } from 'maci-crypto'
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import { computeEmptyUserStateRoot, deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
-
 const { expect } = chai
+import { genRandomSalt, hashLeftRight, IncrementalQuinTree, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
-import { Attestation, IEpochTreeLeaf, UnirepState } from '../../core/UnirepState'
-import { UserState } from '../../core'
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '../../circuits/utils'
-import { IncrementalQuinTree } from 'maci-crypto'
+import { computeEmptyUserStateRoot, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
+import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { Attestation, IEpochTreeLeaf, UnirepState, UserState } from '../../core'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -72,7 +68,7 @@ describe('Epoch Transition', function () {
         console.log('Attester sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
+        unirepContractCalledByAttester = await getUnirepContract(unirepContract.address, attester)
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

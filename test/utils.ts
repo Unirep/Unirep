@@ -3,9 +3,7 @@
 // @ts-ignore
 import { ethers } from 'ethers'
 import Keyv from "keyv"
-import { IncrementalQuinTree } from 'maci-crypto'
-import { SparseMerkleTreeImpl, add0x } from '../crypto/SMT'
-import { hash5, hashLeftRight } from 'maci-crypto'
+import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, add0x } from '@unirep/crypto'
 import { circuitEpochTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, nullifierTreeDepth, userStateTreeDepth} from '../config/testLocal'
 
 const toCompleteHexString = (str: string, len?: number): string => {

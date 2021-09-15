@@ -1,29 +1,12 @@
-import { BigNumber } from "ethers"
 import chai from "chai"
 
 const { expect } = chai
+import { IncrementalQuinTree, genRandomSalt, hashLeftRight, stringifyBigInts, hash5, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
 
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import {
-    IncrementalQuinTree,
-    SnarkBigInt,
-    genRandomSalt,
-    hashLeftRight,
-    stringifyBigInts,
-    hash5,
-} from 'maci-crypto'
-
-import {
-    compileAndLoadCircuit,
-    executeCircuit,
-    getSignalByName,
-    genProofAndPublicSignals,
-    verifyProof
-} from '../../circuits/utils'
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
 import { genNewEpochTree, genNewUserStateTree } from "../utils"
 import { genEpochKey } from "../../core/utils"
-import { SparseMerkleTreeImpl } from "../../crypto/SMT"
 import { Reputation } from "../../core"
 
 describe('User State Transition circuits', function () {
@@ -32,59 +15,14 @@ describe('User State Transition circuits', function () {
     const epoch = 1
     const user = genIdentity()
 
-    describe('Epoch key exists', () => {
-
-        let circuit
-
-        const nonce = numEpochKeyNoncePerEpoch - 1
-        const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
-
-        let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
-
-        let hashChainResult: SnarkBigInt
-
-        before(async () => {
-            const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await compileAndLoadCircuit('test/epochKeyExists_test.circom')
-            const endCompileTime = Math.floor(new Date().getTime() / 1000)
-            console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
-
-            // Epoch tree
-            epochTree = await genNewEpochTree("circuit")
-
-            hashChainResult = genRandomSalt()
-
-            await epochTree.update(epochKey, hashChainResult)
-            
-            epochTreePathElements = await epochTree.getMerkleProof(epochKey)
-            epochTreeRoot = epochTree.getRootHash()
-        })
-
-        it('Existed epoch key should pass check', async () => {
-            const circuitInputs = {
-                identity_nullifier: user['identityNullifier'],
-                epoch: epoch,
-                nonce: nonce,
-                hash_chain_result: hashChainResult,
-                epoch_tree_root: epochTreeRoot,
-                path_elements: epochTreePathElements
-            }
-
-
-            const witness = await executeCircuit(circuit, circuitInputs)
-        })
-    })
-
     describe('User State Transition', () => {
-
-        let circuit
 
         const EPK_NONCE_PER_EPOCH = numEpochKeyNoncePerEpoch
         const expectedNumAttestationsMade = 5
 
         let GSTZERO_VALUE = 0, GSTree: IncrementalQuinTree, GSTreeRoot, GSTreeProof, newGSTLeaf
-        let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements: any[]
-        let userStateTree: SparseMerkleTreeImpl
+        let epochTree, epochTreeRoot, epochTreePathElements: any[]
+        let userStateTree
         let intermediateUserStateTreeRoots
         let blindedUserState: BigInt[]
         let blindedHashChain: BigInt[]
@@ -94,11 +32,6 @@ describe('User State Transition circuits', function () {
         let hashedLeaf
 
         before(async () => {
-            const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await compileAndLoadCircuit('test/userStateTransition_test.circom')
-            const endCompileTime = Math.floor(new Date().getTime() / 1000)
-            console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
-
             // Epoch tree
             epochTree = await genNewEpochTree("circuit")
 
@@ -184,10 +117,6 @@ describe('User State Transition circuits', function () {
                     blinded_hash_chain_results: blindedHashChain,
                     epoch_tree_root: epochTreeRoot
                 }
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
-                expect(BigNumber.from(_newGSTLeaf)).to.equal(BigNumber.from(newGSTLeaf))
-
                 const startTime = new Date().getTime()
                 const results = await genProofAndPublicSignals('userStateTransition', stringifyBigInts(circuitInputs))
                 const endTime = new Date().getTime()

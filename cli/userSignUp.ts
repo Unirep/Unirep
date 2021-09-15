@@ -1,19 +1,10 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
+import { add0x } from '@unirep/crypto'
+import { getUnirepContract } from '@unirep/contracts'
 
-import {
-    promptPwd,
-    validateEthSk,
-    validateEthAddress,
-    checkDeployerProviderConnection,
-    contractExists,
-} from './utils'
-
+import { promptPwd, validateEthSk, validateEthAddress, checkDeployerProviderConnection, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-
-import { add0x } from '../crypto/SMT'
-
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { identityCommitmentPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
@@ -110,11 +101,7 @@ const userSignUp = async (args: any) => {
         return
     }
 
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        wallet,
-    )
+    const unirepContract = await getUnirepContract(unirepAddress, wallet)
 
     const encodedCommitment = args.identity_commitment.slice(identityCommitmentPrefix.length)
     const decodedCommitment = base64url.decode(encodedCommitment)

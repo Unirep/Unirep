@@ -1,23 +1,13 @@
 import base64url from 'base64url'
 import { BigNumber, ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity } from '../crypto/semaphore'
+import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts } from '@unirep/crypto'
+import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { getUnirepContract } from '@unirep/contracts'
 
-import {
-    validateEthAddress,
-    contractExists,
-    promptPwd,
-    validateEthSk,
-    checkDeployerProviderConnection,
-} from './utils'
-
+import { validateEthAddress, contractExists, promptPwd, validateEthSk, checkDeployerProviderConnection } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract } from '../circuits/utils'
-import { stringifyBigInts } from 'maci-crypto'
 import { identityPrefix } from './prefix'
-import { genProofAndPublicSignals, verifyProof } from '../circuits/utils'
 import { numEpochKeyNoncePerEpoch } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
@@ -123,11 +113,7 @@ const userStateTransition = async (args: any) => {
         return
     }
 
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        wallet,
-    )
+    const unirepContract = await getUnirepContract(unirepAddress, wallet)
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
     const nullifierTreeDepth = BigNumber.from((await unirepContract.treeDepths())["nullifierTreeDepth"]).toNumber()

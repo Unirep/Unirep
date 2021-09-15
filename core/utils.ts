@@ -1,26 +1,25 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2305 will be reported.
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import Keyv from "keyv"
 import assert from 'assert'
+import { getUnirepContract } from '@unirep/contracts'
+import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
 
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
-import EpochKeyValidityVerifier from "../artifacts/contracts/EpochKeyValidityVerifier.sol/EpochKeyValidityVerifier.json"
-import StartTransitionVerifier from "../artifacts/contracts/StartTransitionVerifier.sol/StartTransitionVerifier.json"
-import ReputationVerifier from "../artifacts/contracts/ReputationVerifier.sol/ReputationVerifier.json"
-import UserStateTransitionVerifier from "../artifacts/contracts/UserStateTransitionVerifier.sol/UserStateTransitionVerifier.json"
-import ProcessAttestationsVerifier from "../artifacts/contracts/ProcessAttestationsVerifier.sol/ProcessAttestationsVerifier.json"
+// import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
+// import EpochKeyValidityVerifier from "../artifacts/contracts/EpochKeyValidityVerifier.sol/EpochKeyValidityVerifier.json"
+// import StartTransitionVerifier from "../artifacts/contracts/StartTransitionVerifier.sol/StartTransitionVerifier.json"
+// import ReputationVerifier from "../artifacts/contracts/ReputationVerifier.sol/ReputationVerifier.json"
+// import UserStateTransitionVerifier from "../artifacts/contracts/UserStateTransitionVerifier.sol/UserStateTransitionVerifier.json"
+// import ProcessAttestationsVerifier from "../artifacts/contracts/ProcessAttestationsVerifier.sol/ProcessAttestationsVerifier.json"
 
-import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
-import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
+// import PoseidonT3 from "../artifacts/contracts/Poseidon.sol/PoseidonT3.json"
+// import PoseidonT6 from "../artifacts/contracts/Poseidon.sol/PoseidonT6.json"
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, maxUsers, nullifierTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
-import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt } from 'maci-crypto'
 import { EPOCH_KEY_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
-import { SparseMerkleTreeImpl } from '../crypto/SMT'
 
 const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
@@ -66,100 +65,100 @@ const getTreeDepthsForTesting = (deployEnv: string = "circuit") => {
     }
 }
 
-const deployUnirep = async (
-    deployer: ethers.Signer,
-    _treeDepths: any,
-    _settings?: any): Promise<ethers.Contract> => {
-    let PoseidonT3Contract, PoseidonT6Contract
-    let EpochKeyValidityVerifierContract, StartTransitionVerifierContract, ProcessAttestationsVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
+// const deployUnirep = async (
+//     deployer: ethers.Signer,
+//     _treeDepths: any,
+//     _settings?: any): Promise<ethers.Contract> => {
+//     let PoseidonT3Contract, PoseidonT6Contract
+//     let EpochKeyValidityVerifierContract, StartTransitionVerifierContract, ProcessAttestationsVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract
 
-    console.log('Deploying PoseidonT3')
-    const PoseidonT3Factory = new ethers.ContractFactory(PoseidonT3.abi, PoseidonT3.bytecode, deployer)
-    PoseidonT3Contract = await PoseidonT3Factory.deploy()
-    await PoseidonT3Contract.deployTransaction.wait()
+//     console.log('Deploying PoseidonT3')
+//     const PoseidonT3Factory = new ethers.ContractFactory(PoseidonT3.abi, PoseidonT3.bytecode, deployer)
+//     PoseidonT3Contract = await PoseidonT3Factory.deploy()
+//     await PoseidonT3Contract.deployTransaction.wait()
     
-    console.log('Deploying PoseidonT6')
-    const PoseidonT6Factory = new ethers.ContractFactory(PoseidonT6.abi, PoseidonT6.bytecode, deployer)
-    PoseidonT6Contract = await PoseidonT6Factory.deploy()
-    await PoseidonT6Contract.deployTransaction.wait()
+//     console.log('Deploying PoseidonT6')
+//     const PoseidonT6Factory = new ethers.ContractFactory(PoseidonT6.abi, PoseidonT6.bytecode, deployer)
+//     PoseidonT6Contract = await PoseidonT6Factory.deploy()
+//     await PoseidonT6Contract.deployTransaction.wait()
 
-    console.log('Deploying EpochKeyValidityVerifier')
-    const EpochKeyValidityVerifierFactory = new ethers.ContractFactory(EpochKeyValidityVerifier.abi, EpochKeyValidityVerifier.bytecode, deployer)
-    EpochKeyValidityVerifierContract = await EpochKeyValidityVerifierFactory.deploy()
-    await EpochKeyValidityVerifierContract.deployTransaction.wait()
+//     console.log('Deploying EpochKeyValidityVerifier')
+//     const EpochKeyValidityVerifierFactory = new ethers.ContractFactory(EpochKeyValidityVerifier.abi, EpochKeyValidityVerifier.bytecode, deployer)
+//     EpochKeyValidityVerifierContract = await EpochKeyValidityVerifierFactory.deploy()
+//     await EpochKeyValidityVerifierContract.deployTransaction.wait()
 
-    console.log('Deploying StartTransitionVerifier')
-    const StartTransitionVerifierFactory = new ethers.ContractFactory(StartTransitionVerifier.abi, StartTransitionVerifier.bytecode, deployer)
-    StartTransitionVerifierContract = await StartTransitionVerifierFactory.deploy()
-    await StartTransitionVerifierContract.deployTransaction.wait()
+//     console.log('Deploying StartTransitionVerifier')
+//     const StartTransitionVerifierFactory = new ethers.ContractFactory(StartTransitionVerifier.abi, StartTransitionVerifier.bytecode, deployer)
+//     StartTransitionVerifierContract = await StartTransitionVerifierFactory.deploy()
+//     await StartTransitionVerifierContract.deployTransaction.wait()
 
 
-    console.log('Deploying ProcessAttestationsVerifier')
-    const ProcessAttestationsVerifierFactory = new ethers.ContractFactory(ProcessAttestationsVerifier.abi, ProcessAttestationsVerifier.bytecode, deployer)
-    ProcessAttestationsVerifierContract = await ProcessAttestationsVerifierFactory.deploy()
-    await ProcessAttestationsVerifierContract.deployTransaction.wait()
+//     console.log('Deploying ProcessAttestationsVerifier')
+//     const ProcessAttestationsVerifierFactory = new ethers.ContractFactory(ProcessAttestationsVerifier.abi, ProcessAttestationsVerifier.bytecode, deployer)
+//     ProcessAttestationsVerifierContract = await ProcessAttestationsVerifierFactory.deploy()
+//     await ProcessAttestationsVerifierContract.deployTransaction.wait()
 
-    console.log('Deploying UserStateTransitionVerifier')
-    const UserStateTransitionVerifierFactory = new ethers.ContractFactory(UserStateTransitionVerifier.abi, UserStateTransitionVerifier.bytecode, deployer)
-    UserStateTransitionVerifierContract = await UserStateTransitionVerifierFactory.deploy()
-    await UserStateTransitionVerifierContract.deployTransaction.wait()
+//     console.log('Deploying UserStateTransitionVerifier')
+//     const UserStateTransitionVerifierFactory = new ethers.ContractFactory(UserStateTransitionVerifier.abi, UserStateTransitionVerifier.bytecode, deployer)
+//     UserStateTransitionVerifierContract = await UserStateTransitionVerifierFactory.deploy()
+//     await UserStateTransitionVerifierContract.deployTransaction.wait()
 
-    console.log('Deploying ReputationVerifier')
-    const  ReputationVerifierFactory = new ethers.ContractFactory(ReputationVerifier.abi,  ReputationVerifier.bytecode, deployer)
-    ReputationVerifierContract = await ReputationVerifierFactory.deploy()
-    await ReputationVerifierContract.deployTransaction.wait()
+//     console.log('Deploying ReputationVerifier')
+//     const  ReputationVerifierFactory = new ethers.ContractFactory(ReputationVerifier.abi,  ReputationVerifier.bytecode, deployer)
+//     ReputationVerifierContract = await ReputationVerifierFactory.deploy()
+//     await ReputationVerifierContract.deployTransaction.wait()
 
-    console.log('Deploying Unirep')
+//     console.log('Deploying Unirep')
 
-    let _maxUsers, _numEpochKeyNoncePerEpoch, _epochLength, _attestingFee
-    if (_settings) {
-        _maxUsers = _settings.maxUsers
-        _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
-        _epochLength = _settings.epochLength
-        _attestingFee = _settings.attestingFee
-    } else {
-        _maxUsers = maxUsers
-        _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
-        _epochLength = epochLength
-        _attestingFee = attestingFee
-    }
-    const f = await hardhatEthers.getContractFactory(
-        "Unirep",
-        {
-            signer: deployer,
-            libraries: {
-                "PoseidonT3": PoseidonT3Contract.address,
-                "PoseidonT6": PoseidonT6Contract.address
-            }
-        }
-    )
-    const c = await f.deploy(
-        _treeDepths,
-        {
-            "maxUsers": _maxUsers
-        },
-        EpochKeyValidityVerifierContract.address,
-        StartTransitionVerifierContract.address,
-        ProcessAttestationsVerifierContract.address,
-        UserStateTransitionVerifierContract.address,
-        ReputationVerifierContract.address,
-        _numEpochKeyNoncePerEpoch,
-        _epochLength,
-        _attestingFee,
-        {
-        gasLimit: 9000000,
-    })
-    await c.deployTransaction.wait()
+//     let _maxUsers, _numEpochKeyNoncePerEpoch, _epochLength, _attestingFee
+//     if (_settings) {
+//         _maxUsers = _settings.maxUsers
+//         _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
+//         _epochLength = _settings.epochLength
+//         _attestingFee = _settings.attestingFee
+//     } else {
+//         _maxUsers = maxUsers
+//         _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
+//         _epochLength = epochLength
+//         _attestingFee = attestingFee
+//     }
+//     const f = await hardhatEthers.getContractFactory(
+//         "Unirep",
+//         {
+//             signer: deployer,
+//             libraries: {
+//                 "PoseidonT3": PoseidonT3Contract.address,
+//                 "PoseidonT6": PoseidonT6Contract.address
+//             }
+//         }
+//     )
+//     const c = await f.deploy(
+//         _treeDepths,
+//         {
+//             "maxUsers": _maxUsers
+//         },
+//         EpochKeyValidityVerifierContract.address,
+//         StartTransitionVerifierContract.address,
+//         ProcessAttestationsVerifierContract.address,
+//         UserStateTransitionVerifierContract.address,
+//         ReputationVerifierContract.address,
+//         _numEpochKeyNoncePerEpoch,
+//         _epochLength,
+//         _attestingFee,
+//         {
+//         gasLimit: 9000000,
+//     })
+//     await c.deployTransaction.wait()
 
-    // Print out deployment info
-    console.log("-----------------------------------------------------------------")
-    console.log("Bytecode size of Unirep:", Math.floor(Unirep.bytecode.length / 2), "bytes")
-    let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
-    console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
-    console.log("-----------------------------------------------------------------")
+//     // Print out deployment info
+//     console.log("-----------------------------------------------------------------")
+//     console.log("Bytecode size of Unirep:", Math.floor(Unirep.bytecode.length / 2), "bytes")
+//     let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
+//     console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
+//     console.log("-----------------------------------------------------------------")
 
-    return c
-}
+//     return c
+// }
 
 const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = circuitEpochTreeDepth): SnarkBigInt => {
     const values: any[] = [
@@ -203,9 +202,8 @@ const genUnirepStateFromContract = async (
     startBlock: number,
 ) => {
 
-    const unirepContract = new ethers.Contract(
+    const unirepContract = await getUnirepContract(
         address,
-        Unirep.abi,
         provider,
     )
 
@@ -403,11 +401,7 @@ const _genUserStateFromContract = async (
     userIdentityCommitment: any,
 ) => {
 
-    const unirepContract = new ethers.Contract(
-        address,
-        Unirep.abi,
-        provider,
-    )
+    const unirepContract = await getUnirepContract(address, provider)
 
     const treeDepths_ = await unirepContract.treeDepths()
     const globalStateTreeDepth = treeDepths_.globalStateTreeDepth
@@ -639,7 +633,6 @@ export {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     getTreeDepthsForTesting,
-    deployUnirep,
     genEpochKey,
     genEpochKeyNullifier,
     genNewSMT,

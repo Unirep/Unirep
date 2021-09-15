@@ -1,22 +1,14 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity } from '../crypto/semaphore'
-import { stringifyBigInts } from 'maci-crypto'
+import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts } from '@unirep/crypto'
+import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { getUnirepContract } from '@unirep/contracts'
 
-import {
-    validateEthAddress,
-    contractExists,
-} from './utils'
-
+import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-
 import { genEpochKey } from '../core/utils'
 import { genUserStateFromContract } from '../core'
-import { formatProofForVerifierContract } from '../circuits/utils'
-
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json"
 import { epkProofPrefix, identityPrefix } from './prefix'
-import { genProofAndPublicSignals, verifyProof } from '../circuits/utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -90,11 +82,7 @@ const genEpochKeyAndProof = async (args: any) => {
         return
     }
 
-    const unirepContract = new ethers.Contract(
-        unirepAddress,
-        Unirep.abi,
-        provider,
-    )
+    const unirepContract = await getUnirepContract(unirepAddress, provider)
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
     // Validate epoch key nonce

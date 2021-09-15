@@ -1,12 +1,5 @@
 import assert from 'assert'
-import {
-    IncrementalQuinTree,
-    hash5,
-    stringifyBigInts,
-    hashOne,
-    hashLeftRight,
-} from 'maci-crypto'
-import { SparseMerkleTreeImpl } from '../crypto/SMT'
+import { IncrementalQuinTree, hash5, stringifyBigInts, hashOne, hashLeftRight, SparseMerkleTreeImpl } from '@unirep/crypto'
 import { defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier } from './utils'
 import { IAttestation, UnirepState } from './UnirepState'
 import { numAttestationsPerProof } from '../config/testLocal'
@@ -167,11 +160,11 @@ class UserState {
         return this.unirepState.genGSTree(epoch)
     }
 
-    public getUnirepStateEpochTree = async (epoch: number): Promise<SparseMerkleTreeImpl> => {
+    public getUnirepStateEpochTree = async (epoch: number) => {
         return this.unirepState.genEpochTree(epoch)
     }
 
-    public getUnirepStateNullifierTree = async (): Promise<SparseMerkleTreeImpl> => {
+    public getUnirepStateNullifierTree = async () => {
         return this.unirepState.genNullifierTree()
     }
 

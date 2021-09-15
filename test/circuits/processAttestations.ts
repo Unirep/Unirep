@@ -1,35 +1,21 @@
 import chai from "chai"
 const { expect } = chai
+import { stringifyBigInts, genIdentity, genRandomSalt, hash5, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
+import { genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
 
-import {
-    compileAndLoadCircuit,
-    executeCircuit,
-    getSignalByName,
-} from '../../circuits/utils'
 import { genNewUserStateTree } from '../utils'
-
-import {
-    genRandomSalt,
-    hash5,
-    hashLeftRight,
-    SnarkBigInt,
-} from 'maci-crypto'
-import { genIdentity } from '../../crypto/semaphore'
-import { SparseMerkleTreeImpl } from "../../crypto/SMT"
-import { numAttestationsPerProof } from "../../config/testLocal"
 import { Attestation, Reputation } from "../../core"
+import { numAttestationsPerProof } from "../../config/testLocal"
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
-
-    let circuit
 
     const epoch = BigInt(1)
     const nonce = BigInt(0)
     const toNonce = BigInt(1)
     const user = genIdentity()
 
-    let userStateTree: SparseMerkleTreeImpl
+    let userStateTree
     let intermediateUserStateTreeRoots, userStateTreePathElements, noAttestationUserStateTreePathElements
     let oldPosReps, oldNegReps, oldGraffities
     let hashChainStarter = genRandomSalt()
@@ -41,10 +27,6 @@ describe('Process attestation circuit', function () {
     let hashChainResult: SnarkBigInt
 
     before(async () => {
-        const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit('test/processAttestations_test.circom')
-        const endCompileTime = Math.floor(new Date().getTime() / 1000)
-        console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
         attesterIds = []
         posReps = []
@@ -149,15 +131,15 @@ describe('Process attestation circuit', function () {
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
         }
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])
-        expect(outputUserState).to.equal(expectedUserState)
-        inputBlindedUserState = outputUserState
+        inputBlindedUserState = expectedUserState
 
-        const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, nonce])
-        expect(outputHashChainResult).to.equal(expectedHashChainResult)
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('successfully process zero attestations', async () => {
@@ -186,14 +168,12 @@ describe('Process attestation circuit', function () {
             input_blinded_user_state: zeroInputUserState,
         }
 
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], noAttestationIntermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])
-        expect(outputUserState).to.equal(expectedUserState)
-
-        const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], noAttestationHashChainResult, epoch, nonce])
-        expect(outputHashChainResult).to.equal(expectedHashChainResult)
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('successfully continue to process attestations', async () => {
@@ -286,15 +266,15 @@ describe('Process attestation circuit', function () {
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
         }
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, nonce])
-        expect(outputUserState).to.equal(expectedUserState)
-        inputBlindedUserState = outputUserState
+        inputBlindedUserState = expectedUserState
 
-        const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, nonce])
-        expect(outputHashChainResult).to.equal(expectedHashChainResult)
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('successfully continue to process attestations to next epoch key', async () => {
@@ -387,15 +367,15 @@ describe('Process attestation circuit', function () {
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
         }
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, toNonce])
-        expect(outputUserState).to.equal(expectedUserState)
-        inputBlindedUserState = outputUserState
+        inputBlindedUserState = expectedUserState
 
-        const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
-        expect(outputHashChainResult).to.equal(expectedHashChainResult)
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('Same attester give reputation to same epoch keys should work', async () => {
@@ -488,14 +468,12 @@ describe('Process attestation circuit', function () {
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
         }
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], intermediateUserStateTreeRoots[numAttestationsPerProof], epoch, toNonce])
-        expect(outputUserState).to.equal(expectedUserState)
-
-        const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
-        expect(outputHashChainResult).to.equal(expectedHashChainResult)
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('process attestations with wrong attestation record should not work', async () => {
@@ -527,15 +505,12 @@ describe('Process attestation circuit', function () {
             input_blinded_user_state: inputBlindedUserState,
         }
 
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Root mismatch results from wrong attestation record should throw error")
-        }
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
     })
 
     it('process attestations with wrong intermediate roots should not work', async () => {
@@ -562,15 +537,12 @@ describe('Process attestation circuit', function () {
             input_blinded_user_state: inputBlindedUserState,
         }
 
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Root mismatch results from wrong intermediate roots should throw error")
-        }
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
     })
 
     it('process attestations with wrong path elements should not work', async () => {
@@ -595,50 +567,14 @@ describe('Process attestation circuit', function () {
             hash_chain_starter: hashChainStarter,
             input_blinded_user_state: inputBlindedUserState,
         }
-        
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Root mismatch results from wrong path elements should throw error")
-        }
+
+        const startTime = new Date().getTime()
+        const results = await genProofAndPublicSignals('processAttestations',stringifyBigInts(circuitInputs))
+        const endTime = new Date().getTime()
+        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
+        const isValid = await verifyProof('processAttestations',results['proof'], results['publicSignals'])
+        expect(isValid).to.be.false
 
         userStateTreePathElements[indexWrongPathElements].reverse()
-    })
-
-    it('process attestations with incorrect number of elements should fail', async () => {
-        const wrongAttesterIds = attesterIds.concat([BigInt(4)])
-        const circuitInputs = {
-            epoch: epoch,
-            from_nonce: toNonce,
-            to_nonce: toNonce,
-            identity_nullifier: user['identityNullifier'],
-            intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
-            old_pos_reps: oldPosReps,
-            old_neg_reps: oldNegReps,
-            old_graffities: oldGraffities,
-            path_elements: userStateTreePathElements,
-            attester_ids: wrongAttesterIds,
-            pos_reps: posReps,
-            neg_reps: negReps,
-            graffities: graffities,
-            overwrite_graffities: overwriteGraffitis,
-            selectors: selectors,
-            hash_chain_starter: hashChainStarter,
-            input_blinded_user_state: inputBlindedUserState,
-        }
-
-        let error
-        try {
-            await executeCircuit(circuit, circuitInputs)
-        } catch (e) {
-            error = e
-            expect(true).to.be.true
-        } finally {
-            if (!error) throw Error("Incorrect number of elements should throw error")
-        }
     })
 })

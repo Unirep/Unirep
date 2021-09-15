@@ -1,14 +1,12 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { genRandomSalt } from 'maci-crypto'
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import { deployUnirep, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
-
 const { expect } = chai
+import { genRandomSalt, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
+import { genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
+import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { Attestation } from "../../core"
 
 
@@ -43,7 +41,7 @@ describe('EventSequencing', () => {
         // Attester sign up, no events emitted
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
+        unirepContractCalledByAttester = await getUnirepContract(unirepContract.address, attester)
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

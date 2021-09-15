@@ -1,15 +1,13 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import chai from "chai"
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, nullifierTreeDepth, userStateTreeDepth} from '../../config/testLocal'
-import { genIdentity, genIdentityCommitment } from '../../crypto/semaphore'
-import { IncrementalQuinTree } from 'maci-crypto'
-import { deployUnirep, getTreeDepthsForTesting } from '../../core/utils'
-import { genNewUserStateTree } from '../utils'
-
 const { expect } = chai
+import { IncrementalQuinTree, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import Unirep from "../../artifacts/contracts/Unirep.sol/Unirep.json"
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, nullifierTreeDepth, userStateTreeDepth} from '../../config/testLocal'
+import { getTreeDepthsForTesting } from '../../core/utils'
+import { genNewUserStateTree } from '../utils'
 
 
 describe('Signup', () => {
@@ -109,7 +107,7 @@ describe('Signup', () => {
         it('sign up should succeed', async () => {
             attester = accounts[1]
             attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
+            unirepContractCalledByAttester = await getUnirepContract(unirepContract.address, attester)
             const tx = await unirepContractCalledByAttester.attesterSignUp()
             const receipt = await tx.wait()
 
