@@ -3,18 +3,12 @@ UniRep is a private and nonrepudiable repuation system. Users can receive positi
 
 For more information, refer to the [documentation](https://vivi432.gitbook.io/unirep/)
 
-## Install and build
+## Install
 
 ```
 yarn install
 ```
 
-then run
-
-```
-yarn build
-``` 
-to build the circuits
 
 ## Test
 
