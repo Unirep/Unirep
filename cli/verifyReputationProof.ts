@@ -6,7 +6,7 @@ import { getUnirepContract } from '@unirep/contracts'
 import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUnirepStateFromContract } from '../core'
-import { reputationProofPrefix } from './prefix'
+import { reputationProofPrefix, reputationNullifierPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -42,26 +42,45 @@ const configureSubparser = (subparsers: any) => {
     )
     
     parser.add_argument(
-        '-mp', '--min-pos-rep',
+        '-r', '--reputation-nullifier',
         {
             type: 'int',
-            help: 'The minimum positive score the attester given to the user',
+            help: 'The number of reputation nullifiers to prove',
+        }
+    )
+    
+    parser.add_argument(
+        '-mr', '--min-rep',
+        {
+            type: 'int',
+            help: 'The minimum positive score minus negative score the attester given to the user',
         }
     )
 
-    parser.add_argument(
-        '-mn', '--max-neg-rep',
-        {
-            type: 'int',
-            help: 'The maximum negative score the attester given to the user',
-        }
-    )
 
     parser.add_argument(
         '-gp', '--graffiti-preimage',
         {
             type: 'str',
             help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
+        }
+    )
+
+    parser.add_argument(
+        '-epk', '--epoch-key',
+        {
+            required: true,
+            type: 'str',
+            help: 'The user\'s epoch key (in hex representation)',
+        }
+    )
+
+    parser.add_argument(
+        '-n', '--nullifiers',
+        {
+            required: true,
+            type: 'str',
+            help: 'The reputation nullifiers of the proof ',
         }
     )
 
@@ -125,46 +144,37 @@ const verifyReputationProof = async (args: any) => {
     const currentEpoch = unirepState.currentEpoch
     const epoch = args.epoch ? Number(args.epoch) : currentEpoch
     const attesterId = BigInt(add0x(args.attester_id))
-    const provePosRep = args.min_pos_rep != null ? BigInt(1) : BigInt(0)
-    const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
-    const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
+    const epk = BigInt(add0x(args.epoch_key))
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
-    const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
-    const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
+    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    const repNullifiersAmount = args.reputaiton_nullifier != null ? args.reputaiton_nullifier : 0
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
     const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
+    const decodedNullifiers = base64url.decode(args.nullifiers.slice(reputationNullifierPrefix.length))
+    const outputNullifiers = JSON.parse(decodedNullifiers)
     const proof = JSON.parse(decodedProof)
 
     // Verify on-chain
     const GSTreeRoot = unirepState.genGSTree(epoch).root
-    const nullifierTree = await unirepState.genNullifierTree()
-    const nullifierTreeRoot = nullifierTree.getRootHash()
-    const publicInput = [
-        provePosRep,
-        proveNegRep,
-        proveRepDiff,
-        proveGraffiti,
-        minRepDiff,
-        minPosRep,
-        maxNegRep,
-        graffitiPreImage
-    ]
 
     const isProofValid = await unirepContract.verifyReputation(
+        outputNullifiers,
         epoch,
+        epk,
         GSTreeRoot,
-        nullifierTreeRoot,
         attesterId,
-        publicInput,
-        proof
+        repNullifiersAmount,
+        minRep,
+        proveGraffiti,
+        graffitiPreImage,
+        proof,
     )
     if (!isProofValid) {
         console.error('Error: invalid reputation proof')
         return
     }
 
-    console.log(`Verify reputation proof from attester ${attesterId} with min pos rep ${minPosRep}, max neg rep ${maxNegRep} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
+    console.log(`Verify reputation proof from attester ${attesterId} with min rep ${minRep}, reputation nullifiers amount ${repNullifiersAmount} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
 }
 
 export {

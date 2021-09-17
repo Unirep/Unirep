@@ -116,7 +116,6 @@ const userStateTransition = async (args: any) => {
     const unirepContract = await getUnirepContract(unirepAddress, wallet)
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
-    const nullifierTreeDepth = BigNumber.from((await unirepContract.treeDepths())["nullifierTreeDepth"]).toNumber()
 
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
@@ -222,9 +221,8 @@ const userStateTransition = async (args: any) => {
     const outputEPKNullifiers: BigInt[] = []
     for (let i = 0; i < epkNullifiers.length; i++) {
         const outputNullifier = results['publicSignals'][1+i]
-        const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** nullifierTreeDepth)
-        if (modedOutputNullifier != epkNullifiers[i]) {
-            console.error(`Error: nullifier outputted by circuit(${modedOutputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`)
+        if (outputNullifier != epkNullifiers[i]) {
+            console.error(`Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`)
             return
         }
         outputEPKNullifiers.push(outputNullifier)

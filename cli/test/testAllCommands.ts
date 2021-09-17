@@ -34,6 +34,7 @@ describe('test all CLI subcommands', function() {
     const posRep = 5, negRep = 4, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage))
     const minPosRep = 0, maxNegRep = 10
     let userRepProof
+    let nullifiers
 
     before(async() => {
         deployerPrivKey = ethers.utils.solidityKeccak256(['uint'], [0])
@@ -57,9 +58,8 @@ describe('test all CLI subcommands', function() {
                 ` -l ${epochLength} ` +
                 ` -f ${attestingFee.toString()} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const regMatch = output.match(/Unirep: (0x[a-fA-F0-9]{40})$/)
@@ -83,9 +83,8 @@ describe('test all CLI subcommands', function() {
         it('should generate an identity for user', async () => {
             const command = `npx ts-node cli/index.ts genUnirepIdentity`
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const idRegMatch = output.match(/^(Unirep.identity.[a-zA-Z0-9\-\_]+)\n/)
@@ -111,9 +110,8 @@ describe('test all CLI subcommands', function() {
                 ` -c ${userIdentityCommitment} ` +
                 ` -d ${userPrivKey} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const signUpRegMatch = output.match(/Sign up epoch: 1/)
@@ -127,9 +125,8 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const signUpRegMatch = output.match(/Attester sign up with attester id: 1/)
@@ -144,9 +141,8 @@ describe('test all CLI subcommands', function() {
                 ` -id ${userIdentity} ` +
                 ` -n ${epochKeyNonce} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const epkRegMatch = output.match(/Epoch key of epoch 1 and nonce 0: ([a-fA-F0-9]+)/)
@@ -163,9 +159,8 @@ describe('test all CLI subcommands', function() {
                 ` -epk ${epk} ` +
                 ` -pf ${epkProof} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const verifyRegMatch = output.match(/Verify epoch key proof with epoch key [a-fA-F0-9]+ succeed/)
@@ -183,9 +178,8 @@ describe('test all CLI subcommands', function() {
                 // ` -nr ${negRep} ` +
                 // ` -gf ${graffiti.toString(16)} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const txRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)
@@ -200,9 +194,8 @@ describe('test all CLI subcommands', function() {
                 ` -d ${deployerPrivKey} ` +
                 ` -t `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const epochEndRegMatch = output.match(/End of epoch: 1/)
@@ -217,9 +210,8 @@ describe('test all CLI subcommands', function() {
                 ` -d ${userPrivKey} ` +
                 ` -id ${userIdentity} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const userTransitionRegMatch = output.match(/User transitioned from epoch 1 to epoch 2/)
@@ -233,17 +225,21 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -id ${userIdentity} ` +
                 ` -a ${attesterId} ` +
-                ` -mp ${minPosRep} `
+                ` -mr ${minPosRep} ` +
+                ` -n ${epochKeyNonce}`
                 // ` -mn ${maxNegRep} ` +
                 // ` -gp ${graffitiPreimage} `
 
-            const output = exec(command).stdout.trim()
-
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
-            const userRepProofRegMatch = output.match(/(Unirep.reputationProof.[a-zA-Z0-9\-\_]+)$/)
+            const userRepProofRegMatch = output.match(/(Unirep.reputationProof.[a-zA-Z0-9\-\_]+)/)
+            const epochKeyRegMatch = output.match(/Epoch key of the user: ([a-zA-Z0-9]+)/)
+            const nullifierRegMatch = output.match(/(Unirep.reputationNullifier.[a-zA-Z0-9]+)/)
             userRepProof = userRepProofRegMatch[1]
+            epk = epochKeyRegMatch[1]
+            nullifiers = nullifierRegMatch[1]
         })
     })
 
@@ -252,14 +248,15 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts verifyReputationProof` +
                 ` -x ${unirepContract.address} ` +
                 ` -a ${attesterId} ` +
-                ` -mp ${minPosRep} ` +
+                ` -mr ${minPosRep} ` +
+                ` -epk ${epk}` +
                 // ` -mn ${maxNegRep} ` +
                 // ` -gp ${graffitiPreimage} ` +
-                ` -pf ${userRepProof} `
-
-            const output = exec(command).stdout.trim()
+                ` -pf ${userRepProof} ` + 
+                ` -n ${nullifiers}`
 
             console.log(command)
+            const output = exec(command).stdout.trim()
             console.log(output)
 
             const verifyRegMatch = output.match(/Verify reputation proof from attester 1 .+, succeed/)

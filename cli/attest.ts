@@ -56,6 +56,15 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
+        '-s', '--sign-up',
+        {
+            action: 'store',
+            type: 'int',
+            help: 'Whether to set sign up flag to the user',
+        }
+    )
+
+    parser.add_argument(
         '-x', '--contract',
         {
             required: true,
@@ -138,11 +147,13 @@ const attest = async (args: any) => {
     const posRep = args.pos_rep ? args.pos_rep : 0
     const negRep = args.neg_rep ? args.neg_rep : 0
     const graffiti = args.graffiti ? BigInt(add0x(args.graffiti)) : BigInt(0)
+    const signUp = args.sign_up ? args.sign_up : 0
     const attestation = new Attestation(
         BigInt(attesterId),
         BigInt(posRep),
         BigInt(negRep),
         graffiti,
+        BigInt(signUp)
     )
     console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${posRep}, neg rep ${negRep} and graffiti ${graffiti.toString(16)}`)
     let tx

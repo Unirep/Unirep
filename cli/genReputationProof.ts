@@ -6,7 +6,8 @@ import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof }
 import { validateEthAddress, contractExists, } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUserStateFromContract } from '../core'
-import { identityPrefix, reputationProofPrefix } from './prefix'
+import { identityPrefix, reputationNullifierPrefix, reputationProofPrefix } from './prefix'
+import { maxReputationBudget } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -33,6 +34,15 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
+        '-n', '--epoch-key-nonce',
+        {
+            required: true,
+            type: 'int',
+            help: 'The epoch key nonce',
+        }
+    )
+
+    parser.add_argument(
         '-a', '--attester-id',
         {
             required: true,
@@ -40,30 +50,23 @@ const configureSubparser = (subparsers: any) => {
             help: 'The attester id (in hex representation)',
         }
     )
+
+    parser.add_argument(
+        '-r', '--reputation-nullifier',
+        {
+            type: 'int',
+            help: 'The number of reputation nullifiers to prove',
+        }
+    )
     
     parser.add_argument(
-        '-mp', '--min-pos-rep',
+        '-mr', '--min-rep',
         {
             type: 'int',
-            help: 'The minimum positive score the attester given to the user',
+            help: 'The minimum positive score minus negative score the attester given to the user',
         }
     )
 
-    parser.add_argument(
-        '-mn', '--max-neg-rep',
-        {
-            type: 'int',
-            help: 'The maximum negative score the attester given to the user',
-        }
-    )
-
-    parser.add_argument(
-        '-md', '--min-rep-diff',
-        {
-            type: 'int',
-            help: 'The difference between positive and negative scores the attester given to the user',
-        }
-    )
 
     parser.add_argument(
         '-gp', '--graffiti-preimage',
@@ -128,16 +131,13 @@ const genReputationProof = async (args: any) => {
         commitment,
     )
     const attesterId = BigInt(add0x(args.attester_id))
+    const epkNonce = args.epoch_key_nonce
     // Proving content
-    const provePosRep = args.min_pos_rep != null ? BigInt(1) : BigInt(0)
-    const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
-    const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
-    const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
-    const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
+    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    const repNullifiersAmount = args.reputaiton_nullifier != null ? args.reputaiton_nullifier : 0
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
-    const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+    const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
     console.log('Proving reputation...')
     console.log('----------------------User State----------------------')
     console.log(userState.toJSON(4))
@@ -156,8 +156,12 @@ const genReputationProof = async (args: any) => {
     
     const formattedProof = formatProofForVerifierContract(results["proof"])
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    const nullifiers = results['publicSignals'].slice(0, maxReputationBudget)
+    const encodedNullifiers = base64url.encode(JSON.stringify(nullifiers))
     console.log(`Proof of reputation from attester ${attesterId}:`)
+    console.log(`Epoch key of the user: ${BigInt(circuitInputs.epoch_key).toString(16)}`)
     console.log(reputationProofPrefix + encodedProof)
+    console.log(reputationNullifierPrefix + encodedNullifiers)
     process.exit(0)
 }
 

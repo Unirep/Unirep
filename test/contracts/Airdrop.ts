@@ -1,12 +1,11 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
-import chai from "chai"
-const { expect } = chai
+import { expect } from 'chai'
 import { genRandomSalt, hash5, hashLeftRight, stringifyBigInts, genIdentity, genIdentityCommitment } from '@unirep/crypto'
 import { genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
-import { attestingFee, circuitUserStateTreeDepth, epochLength, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { attestingFee, circuitUserStateTreeDepth, epochLength, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { getTreeDepthsForTesting } from '../../core/utils'
 import { UnirepState, UserState } from '../../core'
 import { genNewSMT } from '../utils'
@@ -26,7 +25,8 @@ describe('Airdrop', function () {
     let attester2, attester2Address, attester2Id, unirepContractCalledByAttester2
 
     const airdropPosRep = 20
-
+    const repNullifiersAmount = 0
+    const epkNonce = 0
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -35,6 +35,7 @@ describe('Airdrop', function () {
         const _settings = {
             maxUsers: maxUsers,
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
             epochLength: epochLength,
             attestingFee: attestingFee
         }
@@ -43,10 +44,11 @@ describe('Airdrop', function () {
             _treeDepths.globalStateTreeDepth,
             _treeDepths.userStateTreeDepth,
             _treeDepths.epochTreeDepth,
-            _treeDepths.nullifierTreeDepth,
+            // _treeDepths.nullifierTreeDepth,
             attestingFee,
             epochLength,
             numEpochKeyNoncePerEpoch,
+            maxReputationBudget,
         )
     })
 
@@ -104,7 +106,7 @@ describe('Airdrop', function () {
 
         // expected airdropped user state
         const defaultLeafHash = hash5([])
-        const leafValue = hash5([BigInt(airdropPosRep)])
+        const leafValue = hash5([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)])
         const tree = await genNewSMT(circuitUserStateTreeDepth, defaultLeafHash)
         await tree.update(BigInt(attesterId), leafValue)
         const SMTRoot = await tree.getRootHash()
@@ -124,9 +126,9 @@ describe('Airdrop', function () {
         const latestTransitionedToEpoch = currentEpoch.toNumber()
         const GSTreeLeafIndex = 0
         userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, attesterId, airdropPosRep)
-        const provePosRep = 1, proveNegRep = 0, proveRepDiff = 0, proveGraffiti = 0
-        const minPosRep = 19, maxNegRep = 0, minRepDiff = 0, graffitiPreImage = 0
-        const circuitInputs = await userState.genProveReputationCircuitInputs(BigInt(attesterId), provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+        const proveGraffiti = 0
+        const minPosRep = 19, graffitiPreImage = 0
+        const circuitInputs = await userState.genProveReputationCircuitInputs(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation', stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
@@ -168,9 +170,9 @@ describe('Airdrop', function () {
         const GSTreeLeafIndex = 0
         const airdropAmount = 0
         userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, attester2Id, airdropAmount)
-        const provePosRep = 1, proveNegRep = 0, proveRepDiff = 0, proveGraffiti = 0
-        const minPosRep = 19, maxNegRep = 0, minRepDiff = 0, graffitiPreImage = 0
-        const circuitInputs = await userState.genProveReputationCircuitInputs(BigInt(attesterId), provePosRep, proveNegRep, proveRepDiff, proveGraffiti, minPosRep, maxNegRep, minRepDiff, graffitiPreImage)
+        const proveGraffiti = 0
+        const minPosRep = 19, graffitiPreImage = 0
+        const circuitInputs = await userState.genProveReputationCircuitInputs(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
         const startTime = new Date().getTime()
         const results = await genProofAndPublicSignals('proveReputation', stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()

@@ -6,4 +6,4 @@ export const epkProofPrefix = 'Unirep.epkProof.'
 
 export const reputationProofPrefix = 'Unirep.reputationProof.'
 
-export const reputationNullifierProofPrefix = 'Unirep.reputationNullifierProof.'
+export const reputationNullifierPrefix = 'Unirep.reputationNullifier.'

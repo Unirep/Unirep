@@ -1330,20 +1330,19 @@
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
 "@unirep/circuits@git+https://github.com/Unirep/circuits.git":
-  version "1.0.0"
-  resolved "git+https://github.com/Unirep/circuits.git#c467f4eaf118734d7e1cac72a0dd38ec1e9674ff"
+  version "1.0.1"
+  resolved "git+https://github.com/Unirep/circuits.git#a2af47bfbec2e95da53d038bf281804ee079da11"
   dependencies:
     "@unirep/crypto" "git+https://github.com/Unirep/crypto.git"
     argparse "^2.0.1"
     circom "^0.5.45"
     circomlib "^0.5.3"
-    maci-crypto "^0.9.1"
     snarkjs "^0.4.7"
     typescript "^4.4.2"
 
 "@unirep/contracts@git+https://github.com/Unirep/contracts.git":
-  version "1.0.0"
-  resolved "git+https://github.com/Unirep/contracts.git#0444a23152a10dff4dabdf3dd29f2aea8cbe41d3"
+  version "1.0.1"
+  resolved "git+https://github.com/Unirep/contracts.git#23321cb212ca4dceecef14e3b721c281d67f71de"
   dependencies:
     "@openzeppelin/contracts" "^4.3.1"
     "@unirep/circuits" "git+https://github.com/Unirep/circuits.git"
@@ -1355,7 +1354,7 @@
 
 "@unirep/crypto@git+https://github.com/Unirep/crypto.git":
   version "1.0.0"
-  resolved "git+https://github.com/Unirep/crypto.git#105d5337628ff4fd0d7117d980cffc4b59cae4be"
+  resolved "git+https://github.com/Unirep/crypto.git#43a23e961c9b69be68a503bcaf9025a5152f78e0"
   dependencies:
     bigint-conversion "^2.1.12"
     maci-config "^0.9.1"
