@@ -257,7 +257,7 @@ const genUnirepStateFromContract = async (
             assert(processedAttestationsEvent !== undefined, `Event sequence mismatch: missing processedAttestationsEvent`)
 
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                if(unirepState.blindedUserStateMap[processedAttestationsEvent.args?._inputBlindedUserState] != true){
+                if(unirepState.blindedUserStateExist(processedAttestationsEvent.args?._inputBlindedUserState) != true){
                     console.log(`Unprocessed blinded user state`)
                     continue
                 }
@@ -288,7 +288,7 @@ const genUnirepStateFromContract = async (
             const newLeaf = userStateTransitionedEvent.args?.userTransitionedData.newGlobalStateTreeLeaf
             const _blindedHashChains = userStateTransitionedEvent.args?.userTransitionedData.blindedHashChains
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                if(unirepState.blindedHashChainMap[_blindedHashChains[i].toString()] != true){
+                if(unirepState.blindedHashChainExist(_blindedHashChains[i].toString()) != true){
                     console.log(`Unprocessed blinded hash chain`)
                     continue
                 }
@@ -581,7 +581,7 @@ const _genUserStateFromContract = async (
             const processedAttestationsEvent = processedAttestationsEvents.pop()
             assert(processedAttestationsEvent !== undefined, `Event sequence mismatch: missing processedAttestationsEvent`)
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                if(unirepState.blindedUserStateMap[processedAttestationsEvent.args?._inputBlindedUserState] != true){
+                if(unirepState.blindedUserStateExist(processedAttestationsEvent.args?._inputBlindedUserState) != true){
                     console.log(`Unprocessed blinded user state`)
                     continue
                 }

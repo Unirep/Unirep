@@ -77,13 +77,12 @@ class UnirepState {
     public defaultGSTLeaf: BigInt
     private GSTLeaves: {[key: number]: BigInt[]} = {}
     private epochTreeLeaves: {[key: number]: IEpochTreeLeaf[]} = {}
-    private nullifiers: BigInt[] = []
+    private nullifiers: {[key: string]: boolean} = {}
 
     private epochKeyToHashchainMap: {[key: string]: BigInt} = {}
     private epochKeyToAttestationsMap: {[key: string]: IAttestation[]} = {}
-    public reputationNullifiersMap: {[key: string]: boolean} = {}
-    public blindedUserStateMap: {[key: string]: boolean} = {}
-    public blindedHashChainMap: {[key: string]: boolean} = {}
+    private blindedUserStateMap: {[key: string]: boolean} = {}
+    private blindedHashChainMap: {[key: string]: boolean} = {}
 
     constructor(
         _globalStateTreeDepth: number,
@@ -128,7 +127,7 @@ class UnirepState {
                 currentEpoch: this.currentEpoch,
                 latestEpochGSTLeaves: this.GSTLeaves[this.currentEpoch].map((l) => l.toString()),
                 latestEpochTreeLeaves: latestEpochTreeLeaves,
-                nullifiers: this.nullifiers.map((n) => n.toString())
+                nullifiers: this.nullifiers
             },
             null,
             space
@@ -163,14 +162,14 @@ class UnirepState {
     }
 
     /*
-     * Check if given nullifier exists in nullifier tree
+     * Check if given nullifier exists in Unirep State
      */
     public nullifierExist = (nullifier: BigInt): boolean => {
         if (nullifier === BigInt(0)) {
             console.log("Nullifier 0 exists because it is reserved")
             return true
         }
-        return (this.nullifiers.indexOf(nullifier) !== -1)
+        return this.nullifiers[nullifier.toString()]
     }
 
 
@@ -194,7 +193,7 @@ class UnirepState {
     ) => {
         const zeroNullifier = hash5([])
         if (nullifier != zeroNullifier) {
-            this.reputationNullifiersMap[nullifier.toString()] = true
+            this.nullifiers[nullifier.toString()] = true
         }
     }
 
@@ -216,6 +215,19 @@ class UnirepState {
         this.blindedHashChainMap[blindedHashChain.toString()] = true
     }
 
+    /*
+     * Check if given blinded user state exists in Unirep State
+     */
+    public blindedUserStateExist = (blindedUserState: BigInt): boolean => {
+        return this.blindedUserStateMap[blindedUserState.toString()]
+    }
+
+    /*
+     * Check if given blinded hash chain exists in Unirep State
+     */
+    public blindedHashChainExist = (blindedHashChain: BigInt): boolean => {
+        return this.blindedHashChainMap[blindedHashChain.toString()]
+    }
 
 
     /*
@@ -301,12 +313,12 @@ class UnirepState {
         // Check if all nullifiers are not duplicated then update Unirep state
         for (let nullifier of nullifiers) {
             if (nullifier > BigInt(0)) {
-                if(this.nullifiers.indexOf(nullifier) != -1) return
+                if(this.nullifiers[nullifier.toString()]) return
             }
         }
 
         for (let nullifier of nullifiers) {
-            if (nullifier > BigInt(0)) this.nullifiers.push(nullifier)
+            if (nullifier > BigInt(0)) this.nullifiers[nullifier.toString()] = true
         }
         // Only insert non-zero GST leaf (zero GST leaf means the user has epoch keys left to process)
         if (GSTLeaf > BigInt(0)) this.GSTLeaves[epoch].push(GSTLeaf)

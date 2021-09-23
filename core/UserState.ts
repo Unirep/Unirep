@@ -577,8 +577,7 @@ class UserState {
         assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
         assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
         const epoch = this.latestTransitionedEpoch
-        const nonce = 0
-        const epochKey = genEpochKey(this.id.identityNullifier, epoch, nonce)
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epkNonce)
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
         const negRep = rep.negRep
@@ -596,7 +595,7 @@ class UserState {
             // find valid nonce starter
             for (let n = 0; n < Number(posRep) - Number(negRep); n++) {
                 const reputationNullifier = genReputationNullifier(this.id.identityNullifier, epoch, n)
-                if(!this.unirepState.reputationNullifiersMap[reputationNullifier.toString()]) {
+                if(!this.unirepState.nullifierExist(reputationNullifier)) {
                     nonceStarter = n
                     break
                 }
@@ -637,6 +636,45 @@ class UserState {
             min_rep: minRep,
             prove_graffiti: proveGraffiti,
             graffiti_pre_image: graffitiPreImage
+        })
+    }
+
+    public genUserSignUpCircuitInputs = async (
+        attesterId: BigInt,
+    ) => {
+        assert(this.hasSignedUp, "User has not signed up yet")
+        assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
+        assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
+        const epoch = this.latestTransitionedEpoch
+        const nonce = 0
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, nonce)
+        const rep = this.getRepByAttester(attesterId)
+        const posRep = rep.posRep
+        const negRep = rep.negRep
+        const graffiti = rep.graffiti
+        const signUp = rep.signUp
+        const userStateTree = await this.genUserStateTree()
+        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTreeProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
+        const GSTreeRoot = GSTree.root
+        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
+
+        return stringifyBigInts({
+            epoch: epoch,
+            epoch_key: epochKey,
+            identity_pk: this.id.keypair.pubKey,
+            identity_nullifier: this.id.identityNullifier, 
+            identity_trapdoor: this.id.identityTrapdoor,
+            user_tree_root: userStateTree.getRootHash(),
+            GST_path_index: GSTreeProof.indices,
+            GST_path_elements: GSTreeProof.pathElements,
+            GST_root: GSTreeRoot,
+            attester_id: attesterId,
+            pos_rep: posRep,
+            neg_rep: negRep,
+            graffiti: graffiti,
+            sign_up: signUp,
+            UST_path_elements: USTPathElements,
         })
     }
 }
