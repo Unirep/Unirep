@@ -1,8 +1,9 @@
 import assert from 'assert'
 import { IncrementalQuinTree, hash5, stringifyBigInts, hashOne, hashLeftRight, SparseMerkleTreeImpl } from '@unirep/crypto'
+import { genProofAndPublicSignals } from '@unirep/circuits'
 import { defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genReputationNullifier } from './utils'
 import { IAttestation, UnirepState } from './UnirepState'
-import { maxReputationBudget, numAttestationsPerProof } from '../config/testLocal'
+import { maxReputationBudget, numAttestationsPerProof, numEpochKeyNoncePerEpoch } from '../config/testLocal'
 
 interface IUserStateLeaf {
     attesterId: BigInt;
@@ -242,20 +243,18 @@ class UserState {
     }
 
 
-    public genVerifyEpochKeyCircuitInputs = async (
+    public genVerifyEpochKeyProof = async (
         epochKeyNonce: number,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce < this.numEpochKeyNoncePerEpoch, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
-
         const userStateTree = await this.genUserStateTree()
-
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
 
-        return stringifyBigInts({
+        const circuitInputs = stringifyBigInts({
             GST_path_elements: GSTProof.pathElements,
             GST_path_index: GSTProof.indices,
             GST_root: GSTree.root,
@@ -267,6 +266,16 @@ class UserState {
             epoch: epoch,
             epoch_key: epochKey,
         })
+
+        const results = await genProofAndPublicSignals('verifyEpochKey',circuitInputs)
+
+        return { 
+            proof: results['proof'],
+            publicSignals: results['publicSignals'],
+            globalStateTree: results['publicSignals'][0],
+            epoch: results['publicSignals'][1],
+            epochKey: results['publicSignals'][2],
+        }
     }
 
     private _updateUserStateLeaf = (attestation: IAttestation, stateLeaves: IUserStateLeaf[]): IUserStateLeaf[] => {
@@ -359,7 +368,7 @@ class UserState {
         }
     }
 
-    public genUserStateTransitionCircuitInputs = async () => {
+    public genUserStateTransitionProofs = async () => {
         assert(this.hasSignedUp, "User has not signed up yet")
         const fromEpoch = this.latestTransitionedEpoch
         const fromNonce = 0
@@ -380,14 +389,14 @@ class UserState {
         const epochKeyPathElements: any[] = []
 
         // start transition proof
-        const startTransitionProof = await this._genStartTransitionCircuitInputs(fromNonce, intermediateUserStateTreeRoots[0], GSTreeProof, GSTreeRoot)
+        const startTransitionCircuitInputs = await this._genStartTransitionCircuitInputs(fromNonce, intermediateUserStateTreeRoots[0], GSTreeProof, GSTreeRoot)
         
         // process attestation proof
-        const processAttestationProofs: any[] = []
+        const processAttestationCircuitInputs: any[] = []
         const fromNonces: number[] = [ fromNonce ]
         const toNonces: number[] = []
         const hashChainStarter: BigInt[] = []
-        const blindedUserState: BigInt[] = [ startTransitionProof.blindedUserState ]
+        const blindedUserState: BigInt[] = [ startTransitionCircuitInputs.blindedUserState ]
         const blindedHashChain: BigInt[] = []
         let reputationRecords = {}
         const selectors: number[] = []
@@ -498,7 +507,7 @@ class UserState {
             const startIdx = this.numAttestationsPerProof * i
             const endIdx = this.numAttestationsPerProof * (i+1)
             if(fromNonces[i] == toNonces[i] && intermediateUserStateTreeRoots[startIdx] == intermediateUserStateTreeRoots[endIdx]) continue
-            processAttestationProofs.push(stringifyBigInts({
+            processAttestationCircuitInputs.push(stringifyBigInts({
                 epoch: fromEpoch,
                 from_nonce: fromNonces[i],
                 to_nonce: toNonces[i],
@@ -522,7 +531,7 @@ class UserState {
         }
 
         // final user state transition proof
-        const finalTransitionProof = stringifyBigInts({
+        const finalTransitionCircuitInputs = stringifyBigInts({
             epoch: fromEpoch,
             blinded_user_state: finalBlindedUserState,
             intermediate_user_state_tree_roots: finalUserState,
@@ -538,10 +547,43 @@ class UserState {
             epoch_tree_root: epochTreeRoot
         })
 
+        // Generate proofs
+        const startTransitionresults = await genProofAndPublicSignals('startTransition', startTransitionCircuitInputs.circuitInputs)
+
+        const processAttestationProofs: any[] = []
+        for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
+            const results = await genProofAndPublicSignals('processAttestations', processAttestationCircuitInputs[i])
+            processAttestationProofs.push({
+                proof: results['proof'],
+                publicSignals: results['publicSignals'],
+                outputBlindedUserState: results['publicSignals'][0],
+                outputBlindedHashChain: results['publicSignals'][1],
+                inputBlindedUserState: results['publicSignals'][2],
+            })
+        }
+
+        const finalProofResults = await genProofAndPublicSignals('userStateTransition', finalTransitionCircuitInputs)
+
         return {
-            startTransitionProof: startTransitionProof.circuitInputs,
-            processAttestationProof: processAttestationProofs,
-            finalTransitionProof: finalTransitionProof,
+            startTransitionProof: {
+                proof: startTransitionresults['proof'],
+                publicSignals: startTransitionresults['publicSignals'],
+                blindedUserState: startTransitionresults['publicSignals'][0],
+                blindedHashChain: startTransitionresults['publicSignals'][1],
+                globalStateTreeRoot: startTransitionresults['publicSignals'][2],
+            },
+            processAttestationProofs: processAttestationProofs,
+            finalTransitionProof: {
+                proof: finalProofResults['proof'],
+                publicSignals: finalProofResults['publicSignals'],
+                newGlobalStateTreeLeaf: finalProofResults['publicSignals'][0],
+                epochKeyNullifiers: finalProofResults['publicSignals'].slice(1, 1+numEpochKeyNoncePerEpoch),
+                transitionedFromEpoch: finalProofResults['publicSignals'][1+numEpochKeyNoncePerEpoch],
+                blindedUserStates: finalProofResults['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch, 2 + 2* numEpochKeyNoncePerEpoch),
+                fromGSTRoot: finalProofResults['publicSignals'][2 + numEpochKeyNoncePerEpoch * 2],
+                blindedHashChains: finalProofResults['publicSignals'].slice(3+ 2* numEpochKeyNoncePerEpoch, 3+3* numEpochKeyNoncePerEpoch),
+                fromEpochTree: finalProofResults['publicSignals'][3+3*numEpochKeyNoncePerEpoch],
+            }
         }
     }
 
@@ -565,7 +607,7 @@ class UserState {
         this.latestUserStateLeaves = latestStateLeaves.slice()
     }
 
-    public genProveReputationCircuitInputs = async (
+    public genProveReputationProof = async (
         attesterId: BigInt,
         repNullifiersAmount: number,
         epkNonce: number,
@@ -601,7 +643,7 @@ class UserState {
                 }
             }
             assert(nonceStarter != -1, "Cannot find valid nonce")
-            assert((nonceStarter + repNullifiersAmount) <= Number(posRep) - Number(negRep), "Not enough karma to spend")
+            assert((nonceStarter + repNullifiersAmount) <= Number(posRep) - Number(negRep), "Not enough reputation to spend")
             for (let i = 0; i < repNullifiersAmount; i++) {
                 nonceList.push( BigInt(nonceStarter + i) )
                 selectors.push(BigInt(1));
@@ -613,7 +655,7 @@ class UserState {
             selectors.push(BigInt(0))
         }
 
-        return stringifyBigInts({
+        const circuitInputs = stringifyBigInts({
             epoch: epoch,
             epoch_key_nonce: epkNonce,
             epoch_key: epochKey,
@@ -637,16 +679,32 @@ class UserState {
             prove_graffiti: proveGraffiti,
             graffiti_pre_image: graffitiPreImage
         })
+
+        const results = await genProofAndPublicSignals('proveReputation',circuitInputs)
+
+        return {
+            proof: results['proof'],
+            publicSignals: results['publicSignals'],
+            reputationNullifiers: results['publicSignals'].slice(0, maxReputationBudget),
+            epoch: results['publicSignals'][maxReputationBudget],
+            epochKey: results['publicSignals'][maxReputationBudget+1],
+            globalStatetreeRoot: results['publicSignals'][maxReputationBudget+2],
+            attesterId: results['publicSignals'][maxReputationBudget+3],
+            proveReputationAmount: results['publicSignals'][maxReputationBudget+4],
+            minRep: results['publicSignals'][maxReputationBudget+5],
+            proveGraffiti: results['publicSignals'][maxReputationBudget+6],
+            graffitiPreImage: results['publicSignals'][maxReputationBudget+7],
+        }
     }
 
-    public genUserSignUpCircuitInputs = async (
+    public genUserSignUpProof = async (
         attesterId: BigInt,
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
         assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
         const epoch = this.latestTransitionedEpoch
-        const nonce = 0
+        const nonce = 0 // fixed epk nonce
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, nonce)
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
@@ -659,7 +717,7 @@ class UserState {
         const GSTreeRoot = GSTree.root
         const USTPathElements = await userStateTree.getMerkleProof(attesterId)
 
-        return stringifyBigInts({
+        const circuitInputs = stringifyBigInts({
             epoch: epoch,
             epoch_key: epochKey,
             identity_pk: this.id.keypair.pubKey,
@@ -676,6 +734,17 @@ class UserState {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
+
+        const results = await genProofAndPublicSignals('proveUserSignUp',circuitInputs)
+
+        return {
+            proof: results['proof'],
+            publicSignals: results['publicSignals'],
+            epoch: results['publicSignals'][0],
+            epochKey: results['publicSignals'][1],
+            globalStateTreeRoot: results['publicSignals'][2],
+            attesterId: results['publicSignals'][3],
+        }
     }
 }
 

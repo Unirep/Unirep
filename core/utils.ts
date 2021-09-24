@@ -231,7 +231,7 @@ const genUnirepStateFromContract = async (
                 epochTreeLeaves.push(epochTreeLeaf)
             }
 
-            unirepState.epochTransition(epoch, epochTreeLeaves)
+            await unirepState.epochTransition(epoch, epochTreeLeaves)
         } else if (occurredEvent === "StartedTransition") {
             const startedTransitiodEvent = startedTransitionEvents.pop()
             assert(startedTransitiodEvent !== undefined, `Event sequence mismatch: missing startedTransitiodEvent`)
@@ -545,8 +545,7 @@ const _genUserStateFromContract = async (
                 }
                 epochTreeLeaves.push(epochTreeLeaf)
             }
-
-            unirepState.epochTransition(epoch, epochTreeLeaves)
+            await unirepState.epochTransition(epoch, epochTreeLeaves)
             if (userHasSignedUp) {
                 if (epoch === userState.latestTransitionedEpoch) {
                     // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key

@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts } from '@unirep/crypto'
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
+import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { getUnirepContract } from '@unirep/contracts'
 
 import { validateEthAddress, contractExists } from './utils'
@@ -111,24 +111,16 @@ const genEpochKeyAndProof = async (args: any) => {
         id,
         commitment,
     )
-    const circuitInputs = await userState.genVerifyEpochKeyCircuitInputs(epkNonce)
-    console.log('Proving epoch key...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
-    const results = await genProofAndPublicSignals('verifyEpochKey',stringifyBigInts(circuitInputs))
+    const results = await userState.genVerifyEpochKeyProof(epkNonce)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof('verifyEpochKey', results['proof'], results['publicSignals'])
+    const isValid = await verifyProof('verifyEpochKey', results.proof, results.publicSignals)
     if(!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results["proof"])
+    const formattedProof = formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
     console.log(epkProofPrefix + encodedProof)

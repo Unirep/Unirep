@@ -128,12 +128,8 @@ describe('Airdrop', function () {
         userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, attesterId, airdropPosRep)
         const proveGraffiti = 0
         const minPosRep = 19, graffitiPreImage = 0
-        const circuitInputs = await userState.genProveReputationCircuitInputs(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
-        const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation', stringifyBigInts(circuitInputs))
-        const endTime = new Date().getTime()
-        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation', results['proof'], results['publicSignals'])
+        const results = await userState.genProveReputationProof(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
+        const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
     })
 
@@ -172,12 +168,8 @@ describe('Airdrop', function () {
         userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, attester2Id, airdropAmount)
         const proveGraffiti = 0
         const minPosRep = 19, graffitiPreImage = 0
-        const circuitInputs = await userState.genProveReputationCircuitInputs(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
-        const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation', stringifyBigInts(circuitInputs))
-        const endTime = new Date().getTime()
-        console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation', results['proof'], results['publicSignals'])
+        const results = await userState.genProveReputationProof(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
+        const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.false
     })
 

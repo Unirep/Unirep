@@ -208,19 +208,15 @@ describe('Epoch Transition', function () {
     })
         
     it('start user state transition should succeed', async() => {
-        circuitInputs = await userState.genUserStateTransitionCircuitInputs()
-        results = await genProofAndPublicSignals('startTransition', circuitInputs.startTransitionProof)
-        const isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+        results = await userState.genUserStateTransitionProofs()
+        const isValid = await verifyProof('startTransition', results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
         expect(isValid, 'Verify start transition circuit off-chain failed').to.be.true
 
-        const blindedUserState = results['publicSignals'][0]
-        const blindedHashChain = results['publicSignals'][1]
-        const GSTreeRoot = results['publicSignals'][2]
         const tx = await unirepContract.startUserStateTransition(
-            blindedUserState,
-            blindedHashChain,
-            GSTreeRoot,
-            formatProofForVerifierContract(results['proof']),
+            results.startTransitionProof.blindedUserState,
+            results.startTransitionProof.blindedHashChain,
+            results.startTransitionProof.globalStateTreeRoot,
+            formatProofForVerifierContract(results.startTransitionProof.proof),
         )
         const receipt = await tx.wait()
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
@@ -228,20 +224,19 @@ describe('Epoch Transition', function () {
     })
 
     it('submit process attestations proofs should succeed', async() => {
-        for (let i = 0; i < circuitInputs.processAttestationProof.length; i++) {
-            results = await genProofAndPublicSignals('processAttestations', circuitInputs.processAttestationProof[i])
-            const isValid = await verifyProof('processAttestations', results['proof'], results['publicSignals'])
+        for (let i = 0; i < results.processAttestationProofs.length; i++) {
+            const isValid = await verifyProof('processAttestations', results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
             expect(isValid, 'Verify process attestations circuit off-chain failed').to.be.true
 
-            const outputBlindedUserState = results['publicSignals'][0]
-            const outputBlindedHashChain = results['publicSignals'][1]
-            const inputBlindedUserState = results['publicSignals'][2]
+            const outputBlindedUserState = results.processAttestationProofs[i].outputBlindedUserState
+            const outputBlindedHashChain = results.processAttestationProofs[i].outputBlindedHashChain
+            const inputBlindedUserState = results.processAttestationProofs[i].inputBlindedUserState
 
             const tx = await unirepContract.processAttestations(
                 outputBlindedUserState,
                 outputBlindedHashChain,
                 inputBlindedUserState,
-                formatProofForVerifierContract(results['proof']),
+                formatProofForVerifierContract(results.processAttestationProofs[i].proof),
             )
             const receipt = await tx.wait()
             expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
@@ -250,19 +245,16 @@ describe('Epoch Transition', function () {
     })
 
     it('submit user state transition proofs should succeed', async() => {
-        results = await genProofAndPublicSignals('userStateTransition', circuitInputs.finalTransitionProof)
-        const isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
+        const isValid = await verifyProof('userStateTransition', results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
         expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
 
-        const newGSTLeaf = results['publicSignals'][0]
-        const outputEpkNullifiers = results['publicSignals'].slice(1,1 + numEpochKeyNoncePerEpoch)
-        const blindedUserStates = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
-        const blindedHashChains = results['publicSignals'].slice(3 + 2*numEpochKeyNoncePerEpoch,3 + 3*numEpochKeyNoncePerEpoch)
-        const fromEpoch = userState.latestTransitionedEpoch
-        const fromEpochGSTree: IncrementalQuinTree = unirepState.genGSTree(fromEpoch)
-        const GSTreeRoot = fromEpochGSTree.root
-        const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
-        const epochTreeRoot = fromEpochTree.getRootHash()
+        const newGSTLeaf = results.finalTransitionProof.newGlobalStateTreeLeaf
+        const outputEpkNullifiers = results.finalTransitionProof.epochKeyNullifiers
+        const blindedUserStates = results.finalTransitionProof.blindedUserStates
+        const blindedHashChains = results.finalTransitionProof.blindedHashChains
+        const fromEpoch = results.finalTransitionProof.transitionedFromEpoch
+        const GSTreeRoot = results.finalTransitionProof.fromGSTRoot
+        const epochTreeRoot = results.finalTransitionProof.fromEpochTree
 
         // Verify userStateTransition proof on-chain
         const isProofValid = await unirepContract.verifyUserStateTransition(
@@ -273,7 +265,7 @@ describe('Epoch Transition', function () {
             GSTreeRoot,
             blindedHashChains,
             epochTreeRoot,
-            formatProofForVerifierContract(results['proof']),
+            formatProofForVerifierContract(results.finalTransitionProof.proof),
         )
         expect(isProofValid, 'Verify user state transition circuit on-chain failed').to.be.true
 
@@ -285,7 +277,7 @@ describe('Epoch Transition', function () {
             fromEpoch,
             GSTreeRoot,
             epochTreeRoot,
-            formatProofForVerifierContract(results['proof']),
+            formatProofForVerifierContract(results.finalTransitionProof.proof),
         )
         const receipt = await tx.wait()
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)

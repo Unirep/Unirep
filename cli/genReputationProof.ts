@@ -1,13 +1,12 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts, add0x } from '@unirep/crypto'
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { genIdentityCommitment, unSerialiseIdentity, add0x } from '@unirep/crypto'
+import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { validateEthAddress, contractExists, } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUserStateFromContract } from '../core'
 import { identityPrefix, reputationNullifierPrefix, reputationProofPrefix } from './prefix'
-import { maxReputationBudget } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -137,29 +136,21 @@ const genReputationProof = async (args: any) => {
     const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
     const repNullifiersAmount = args.reputaiton_nullifier != null ? args.reputaiton_nullifier : 0
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
-    const circuitInputs = await userState.genProveReputationCircuitInputs(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
-    console.log('Proving reputation...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
-    const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+    const results = await userState.genProveReputationProof(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+    const isValid = await verifyProof('proveReputation',results.proof, results.publicSignals)
     if(!isValid) {
         console.error('Error: reputation proof generated is not valid!')
         return
     }
     
-    const formattedProof = formatProofForVerifierContract(results["proof"])
+    const formattedProof = formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
-    const nullifiers = results['publicSignals'].slice(0, maxReputationBudget)
+    const nullifiers = results.reputationNullifiers
     const encodedNullifiers = base64url.encode(JSON.stringify(nullifiers))
-    console.log(`Proof of reputation from attester ${attesterId}:`)
-    console.log(`Epoch key of the user: ${BigInt(circuitInputs.epoch_key).toString(16)}`)
+    console.log(`Proof of reputation from attester ${results.attesterId}:`)
+    console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString(16)}`)
     console.log(reputationProofPrefix + encodedProof)
     console.log(reputationNullifierPrefix + encodedNullifiers)
     process.exit(0)
