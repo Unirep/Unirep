@@ -1331,7 +1331,7 @@
 
 "@unirep/circuits@git+https://github.com/Unirep/circuits.git":
   version "1.0.1"
-  resolved "git+https://github.com/Unirep/circuits.git#a2af47bfbec2e95da53d038bf281804ee079da11"
+  resolved "git+https://github.com/Unirep/circuits.git#831d023a504df90de2aa89418708dc577046e3bc"
   dependencies:
     "@unirep/crypto" "git+https://github.com/Unirep/crypto.git"
     argparse "^2.0.1"
@@ -1342,7 +1342,7 @@
 
 "@unirep/contracts@git+https://github.com/Unirep/contracts.git":
   version "1.0.1"
-  resolved "git+https://github.com/Unirep/contracts.git#23321cb212ca4dceecef14e3b721c281d67f71de"
+  resolved "git+https://github.com/Unirep/contracts.git#b26e11570a2cfd984289b26e92c88e9f8be64e9b"
   dependencies:
     "@openzeppelin/contracts" "^4.3.1"
     "@unirep/circuits" "git+https://github.com/Unirep/circuits.git"

@@ -495,10 +495,10 @@ class UserState {
                 signUps.push(BigInt(0))
             }
             epochKeyPathElements.push(await fromEpochTree.getMerkleProof(epochKey))
-            finalUserState.push(fromEpochUserStateTree.getRootHash())
+            // finalUserState.push(fromEpochUserStateTree.getRootHash())
             finalHashChain.push(currentHashChain)
             blindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
-            finalBlindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
+            // finalBlindedUserState.push(hash5([this.id.identityNullifier, fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
             blindedHashChain.push(hash5([this.id.identityNullifier, currentHashChain, fromEpoch, nonce]))
             if(nonce != this.numEpochKeyNoncePerEpoch - 1) fromNonces.push(nonce)
         }
@@ -531,10 +531,17 @@ class UserState {
         }
 
         // final user state transition proof
+        const startEpochKeyNonce = 0
+        const endEpochKeyNonce = this.numEpochKeyNoncePerEpoch - 1
+        finalUserState.push(fromEpochUserStateTree.getRootHash())
+        finalBlindedUserState.push(hash5([this.id.identityNullifier, finalUserState[0], fromEpoch, startEpochKeyNonce]))
+        finalBlindedUserState.push(hash5([this.id.identityNullifier, finalUserState[1], fromEpoch, endEpochKeyNonce]))
         const finalTransitionCircuitInputs = stringifyBigInts({
             epoch: fromEpoch,
             blinded_user_state: finalBlindedUserState,
             intermediate_user_state_tree_roots: finalUserState,
+            start_epoch_key_nonce: startEpochKeyNonce,
+            end_epoch_key_nonce: endEpochKeyNonce,
             identity_pk: this.id.keypair.pubKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.identityTrapdoor,
@@ -579,10 +586,10 @@ class UserState {
                 newGlobalStateTreeLeaf: finalProofResults['publicSignals'][0],
                 epochKeyNullifiers: finalProofResults['publicSignals'].slice(1, 1+numEpochKeyNoncePerEpoch),
                 transitionedFromEpoch: finalProofResults['publicSignals'][1+numEpochKeyNoncePerEpoch],
-                blindedUserStates: finalProofResults['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch, 2 + 2* numEpochKeyNoncePerEpoch),
-                fromGSTRoot: finalProofResults['publicSignals'][2 + numEpochKeyNoncePerEpoch * 2],
-                blindedHashChains: finalProofResults['publicSignals'].slice(3+ 2* numEpochKeyNoncePerEpoch, 3+3* numEpochKeyNoncePerEpoch),
-                fromEpochTree: finalProofResults['publicSignals'][3+3*numEpochKeyNoncePerEpoch],
+                blindedUserStates: finalProofResults['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch, 4 + numEpochKeyNoncePerEpoch),
+                fromGSTRoot: finalProofResults['publicSignals'][4 + numEpochKeyNoncePerEpoch],
+                blindedHashChains: finalProofResults['publicSignals'].slice(5 + numEpochKeyNoncePerEpoch,5 + 2*numEpochKeyNoncePerEpoch),
+                fromEpochTree: finalProofResults['publicSignals'][5 + 2*numEpochKeyNoncePerEpoch],
             }
         }
     }

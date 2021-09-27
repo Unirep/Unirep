@@ -63,7 +63,7 @@ describe('EventSequencing', () => {
         for (let i = 0; i < 8; i++) {
             proof.push(BigInt(0))
         }
-        tx = await unirepContractCalledByAttester.submitReputaionNullifiers(
+        tx = await unirepContractCalledByAttester.submitReputationNullifiers(
             reputationNullifiers,
             currentEpoch,
             epochKey,

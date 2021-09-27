@@ -255,8 +255,10 @@ describe('Integration', function () {
             // Check if all blinded hashcahins and user states submitted before
             const _blindedUserState = stateTransitionArgs['userTransitionedData']['blindedUserStates'].map(n=> n.toString())
             const _blindedHashChain = stateTransitionArgs['userTransitionedData']['blindedHashChains'].map(n=> n.toString())
-            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            for (let i = 0; i < 2; i++) {
                 expect(unirepState.blindedUserStateExist(_blindedUserState[i])).to.be.true
+            }
+            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
                 expect(unirepState.blindedHashChainExist(_blindedHashChain[i])).to.be.true
             }
 
@@ -437,7 +439,7 @@ describe('Integration', function () {
             )
             expect(isProofValid, 'Verify reputation on-chain failed').to.be.true
 
-            const tx = await unirepContract.submitReputaionNullifiers(
+            const tx = await unirepContract.submitReputationNullifiers(
                 results.reputationNullifiers,
                 results.epoch,
                 results.epochKey,
@@ -875,8 +877,10 @@ describe('Integration', function () {
             // Check if all blinded hashcahins and user states submitted before
             const _blindedUserState = stateTransitionArgs['userTransitionedData']['blindedUserStates'].map(n=> n.toString())
             const _blindedHashChain = stateTransitionArgs['userTransitionedData']['blindedHashChains'].map(n=> n.toString())
-            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            for (let i = 0; i < 2; i++) {
                 expect(unirepState.blindedUserStateExist(_blindedUserState[i])).to.be.true
+            }
+            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
                 expect(unirepState.blindedHashChainExist(_blindedHashChain[i])).to.be.true
             }
 
