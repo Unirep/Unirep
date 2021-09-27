@@ -1,12 +1,10 @@
 import base64url from 'base64url'
-import { ethers } from 'ethers'
-import { add0x } from '@unirep/crypto'
-import { getUnirepContract } from '@unirep/contracts'
 
-import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUnirepStateFromContract } from '../core'
-import { epkProofPrefix } from './prefix'
+import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
+import { UnirepContract } from '../core/UnirepContract'
+import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -24,11 +22,11 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-epk', '--epoch-key',
+        '-s', '--public-signals',
         {
             required: true,
             type: 'str',
-            help: 'The user\'s epoch key (in hex representation)',
+            help: 'The snark public signals of the user\'s epoch key ',
         }
     )
 
@@ -61,39 +59,37 @@ const configureSubparser = (subparsers: any) => {
 }
 
 const verifyEpochKeyProof = async (args: any) => {
-
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
+    
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
     
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
     )
-
-    const currentEpoch = unirepState.currentEpoch
-    const GSTRoot = unirepState.genGSTree(currentEpoch).root
-    const epk = BigInt(add0x(args.epoch_key))
+    
     const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(epkPublicSignalsPrefix.length))
     const proof = JSON.parse(decodedProof)
+    const publicSignals = JSON.parse(decodedPublicSignals)
+    const currentEpoch = unirepState.currentEpoch
+    const epk = publicSignals[2]
+    const inputEpoch = publicSignals[1]
+    const GSTRoot = publicSignals[0]
+    console.log(`Verifying epoch key ${epk} with GSTRoot ${GSTRoot} in epoch ${inputEpoch}`)
+    if(inputEpoch != currentEpoch) {
+        console.log(`Warning: the epoch key is expired. Epoch key is in epoch ${inputEpoch}, but the current epoch is ${currentEpoch}`)
+    }
 
-    const unirepContract = await getUnirepContract(unirepAddress, provider)
+    // TODO: check GSTRoot
+    // unirepState.verifyEpochKeyValidity
+    
     const isProofValid = await unirepContract.verifyEpochKeyValidity(
         GSTRoot,
         currentEpoch,
@@ -104,7 +100,7 @@ const verifyEpochKeyProof = async (args: any) => {
         console.error('Error: invalid epoch key proof')
         return
     }
-    console.log(`Verify epoch key proof with epoch key ${args.epoch_key} succeed`)
+    console.log(`Verify epoch key proof with epoch key ${epk} succeed`)
 }
 
 export {

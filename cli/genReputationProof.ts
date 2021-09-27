@@ -1,12 +1,11 @@
 import base64url from 'base64url'
-import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity, add0x } from '@unirep/crypto'
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
-import { validateEthAddress, contractExists, } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUserStateFromContract } from '../core'
-import { identityPrefix, reputationNullifierPrefix, reputationProofPrefix } from './prefix'
+import { identityPrefix, reputationPublicSignalsPrefix, reputationProofPrefix } from './prefix'
+import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -96,24 +95,10 @@ const configureSubparser = (subparsers: any) => {
 
 const genReputationProof = async (args: any) => {
 
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
-
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
-
+    
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
     const encodedIdentity = args.identity.slice(identityPrefix.length)
@@ -124,7 +109,7 @@ const genReputationProof = async (args: any) => {
     // Gen reputation proof
     const userState = await genUserStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
         id,
         commitment,
@@ -147,12 +132,11 @@ const genReputationProof = async (args: any) => {
     
     const formattedProof = formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
-    const nullifiers = results.reputationNullifiers
-    const encodedNullifiers = base64url.encode(JSON.stringify(nullifiers))
+    const encodedPublicSignals = base64url.encode(JSON.stringify(results.publicSignals))
     console.log(`Proof of reputation from attester ${results.attesterId}:`)
-    console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString(16)}`)
+    console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString()}`)
     console.log(reputationProofPrefix + encodedProof)
-    console.log(reputationNullifierPrefix + encodedNullifiers)
+    console.log(reputationPublicSignalsPrefix + encodedPublicSignals)
     process.exit(0)
 }
 

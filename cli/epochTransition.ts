@@ -1,8 +1,5 @@
-import { ethers } from 'ethers'
-import { getUnirepContract } from '@unirep/contracts'
-
-import { promptPwd, validateEthSk, validateEthAddress, checkDeployerProviderConnection, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
+import { UnirepContract } from '../core/UnirepContract'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -58,71 +55,24 @@ const configureSubparser = (subparsers: any) => {
 
 const epochTransition = async (args: any) => {
 
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
 
-    let ethSk
-    // The deployer's Ethereum private key
-    // The user may either enter it as a command-line option or via the
-    // standard input
-    if (args.prompt_for_eth_privkey) {
-        ethSk = await promptPwd('Your Ethereum private key')
-    } else {
-        ethSk = args.eth_privkey
-    }
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
 
-    if (!validateEthSk(ethSk)) {
-        console.error('Error: invalid Ethereum private key')
-        return
-    }
-
-    if (! (await checkDeployerProviderConnection(ethSk, ethProvider))) {
-        console.error('Error: unable to connect to the Ethereum provider at', ethProvider)
-        return
-    }
-
-    const provider = new ethers.providers.JsonRpcProvider(ethProvider)
-    const wallet = new ethers.Wallet(ethSk, provider)
-
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
-
-    const unirepContract = await getUnirepContract(unirepAddress, wallet)
+    // Connect a signer
+    await unirepContract.unlock(args.eth_privkey)
 
     // Fast-forward to end of epoch if in test environment
     if (args.is_test) {
-        const epochLength = (await unirepContract.epochLength()).toNumber()
-        await provider.send("evm_increaseTime", [epochLength])
+        await unirepContract.fastForward()
     }
 
     const currentEpoch = await unirepContract.currentEpoch()
-    let tx
-    try {
-        const numEpochKeysToSeal = await unirepContract.getNumEpochKey(currentEpoch)
-        tx = await unirepContract.beginEpochTransition(
-            numEpochKeysToSeal,
-            { gasLimit: 9000000 }
-        )
+    const tx = await unirepContract.epochTransition()
 
-    } catch(e) {
-        console.error('Error: the transaction failed')
-        if (e) {
-            console.error(e)
-        }
-        return
-    }
-
-    console.log('Transaction hash:', tx.hash)
+    console.log('Transaction hash:', tx?.hash)
     console.log('End of epoch:', currentEpoch.toString())
 }
 

@@ -230,7 +230,7 @@ describe('Attesting', () => {
         let nonAttesterId = await unirepContract.attesters(nonAttesterAddress)
         expect((0).toString()).equal(nonAttesterId.toString())
 
-        let unirepContractCalledByNonAttester = await getUnirepContract(unirepContract.address, nonAttester)
+        let unirepContractCalledByNonAttester = getUnirepContract(unirepContract.address, nonAttester)
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)

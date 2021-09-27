@@ -1,12 +1,11 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { add0x } from '@unirep/crypto'
-import { getUnirepContract } from '@unirep/contracts'
 
-import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUnirepStateFromContract } from '../core'
-import { reputationProofPrefix, reputationNullifierPrefix } from './prefix'
+import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
+import { maxReputationBudget } from '../config/testLocal'
+import { UnirepContract } from '../core/UnirepContract'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -33,54 +32,11 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-a', '--attester-id',
+        '-s', '--public-signals',
         {
             required: true,
             type: 'str',
-            help: 'The attester id (in hex representation)',
-        }
-    )
-    
-    parser.add_argument(
-        '-r', '--reputation-nullifier',
-        {
-            type: 'int',
-            help: 'The number of reputation nullifiers to prove',
-        }
-    )
-    
-    parser.add_argument(
-        '-mr', '--min-rep',
-        {
-            type: 'int',
-            help: 'The minimum positive score minus negative score the attester given to the user',
-        }
-    )
-
-
-    parser.add_argument(
-        '-gp', '--graffiti-preimage',
-        {
-            type: 'str',
-            help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
-        }
-    )
-
-    parser.add_argument(
-        '-epk', '--epoch-key',
-        {
-            required: true,
-            type: 'str',
-            help: 'The user\'s epoch key (in hex representation)',
-        }
-    )
-
-    parser.add_argument(
-        '-n', '--nullifiers',
-        {
-            required: true,
-            type: 'str',
-            help: 'The reputation nullifiers of the proof ',
+            help: 'The snark public signals of the user\'s epoch key ',
         }
     )
 
@@ -114,54 +70,43 @@ const configureSubparser = (subparsers: any) => {
 
 const verifyReputationProof = async (args: any) => {
 
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
-
-    const unirepContract = await getUnirepContract(unirepAddress, provider)
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
 
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
     )
 
-    const currentEpoch = unirepState.currentEpoch
-    const epoch = args.epoch ? Number(args.epoch) : currentEpoch
-    const attesterId = BigInt(add0x(args.attester_id))
-    const epk = BigInt(add0x(args.epoch_key))
-    const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
-    const repNullifiersAmount = args.reputaiton_nullifier != null ? args.reputaiton_nullifier : 0
-    const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
+    // Parse Inputs
     const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
-    const decodedNullifiers = base64url.decode(args.nullifiers.slice(reputationNullifierPrefix.length))
-    const outputNullifiers = JSON.parse(decodedNullifiers)
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(reputationPublicSignalsPrefix.length))
+    const publicSignals = JSON.parse(decodedPublicSignals)
+    const outputNullifiers = publicSignals.slice(0, maxReputationBudget)
+    const epoch = publicSignals[maxReputationBudget]
+    const epk = publicSignals[maxReputationBudget + 1]
+    const GSTRoot = publicSignals[maxReputationBudget + 2]
+    const attesterId = publicSignals[maxReputationBudget + 3]
+    const repNullifiersAmount = publicSignals[maxReputationBudget + 4]
+    const minRep = publicSignals[maxReputationBudget + 5]
+    const proveGraffiti = publicSignals[maxReputationBudget + 6]
+    const graffitiPreImage = publicSignals[maxReputationBudget + 7]
     const proof = JSON.parse(decodedProof)
 
-    // Verify on-chain
-    const GSTreeRoot = unirepState.genGSTree(epoch).root
+    // TODO: check GSTRoot
+    // unirepState.verifyEpochKeyValidity
 
     const isProofValid = await unirepContract.verifyReputation(
         outputNullifiers,
         epoch,
         epk,
-        GSTreeRoot,
+        GSTRoot,
         attesterId,
         repNullifiersAmount,
         minRep,

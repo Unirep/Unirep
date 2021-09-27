@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl } from '@unirep/crypto'
-import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, SMT_ZERO_LEAF } from './utils'
+import { computeEmptyUserStateRoot, genNewSMT, SMT_ONE_LEAF, } from './utils'
 
 interface IEpochTreeLeaf {
     epochKey: BigInt;
@@ -203,8 +203,7 @@ class UnirepState {
     public addReputationNullifiers = (
         nullifier: BigInt
     ) => {
-        const zeroNullifier = hash5([])
-        if (nullifier != zeroNullifier) {
+        if (nullifier > BigInt(0)) {
             this.nullifiers[nullifier.toString()] = true
         }
     }

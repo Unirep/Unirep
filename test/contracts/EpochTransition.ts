@@ -68,7 +68,7 @@ describe('Epoch Transition', function () {
         console.log('Attester sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = await getUnirepContract(unirepContract.address, attester)
+        unirepContractCalledByAttester = getUnirepContract(unirepContract.address, attester)
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

@@ -4,6 +4,8 @@ export const identityCommitmentPrefix = 'Unirep.identityCommitment.'
 
 export const epkProofPrefix = 'Unirep.epkProof.'
 
+export const epkPublicSignalsPrefix = 'Unirep.epkPublicSignals.'
+
 export const reputationProofPrefix = 'Unirep.reputationProof.'
 
-export const reputationNullifierPrefix = 'Unirep.reputationNullifier.'
+export const reputationPublicSignalsPrefix = 'Unirep.reputationPublicSignals.'

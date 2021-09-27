@@ -7,7 +7,7 @@ import assert from 'assert'
 import { getUnirepContract } from '@unirep/contracts'
 import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
 
-import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitNullifierTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, nullifierTreeDepth, userStateTreeDepth } from '../config/testLocal'
+import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
 import { IUserStateLeaf, UserState } from './UserState'
 import { EPOCH_KEY_NULLIFIER_DOMAIN, REPUTATION_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
@@ -42,14 +42,12 @@ const getTreeDepthsForTesting = (deployEnv: string = "circuit") => {
             "userStateTreeDepth": userStateTreeDepth,
             "globalStateTreeDepth": globalStateTreeDepth,
             "epochTreeDepth": epochTreeDepth,
-            "nullifierTreeDepth": nullifierTreeDepth,
         }
     } else if (deployEnv === 'circuit') {
         return {
             "userStateTreeDepth": circuitUserStateTreeDepth,
             "globalStateTreeDepth": circuitGlobalStateTreeDepth,
             "epochTreeDepth": circuitEpochTreeDepth,
-            "nullifierTreeDepth": circuitNullifierTreeDepth,
         }
     } else {
         throw new Error('Only contract and circuit testing env are supported')

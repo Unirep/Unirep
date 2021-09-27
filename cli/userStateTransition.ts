@@ -1,13 +1,12 @@
 import base64url from 'base64url'
-import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
-import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
-import { getUnirepContract } from '@unirep/contracts'
+import { verifyProof } from '@unirep/circuits'
 
-import { validateEthAddress, contractExists, promptPwd, validateEthSk, checkDeployerProviderConnection } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUserStateFromContract } from '../core'
 import { identityPrefix } from './prefix'
+import { UnirepContract } from '../core/UnirepContract'
+import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -73,82 +72,45 @@ const configureSubparser = (subparsers: any) => {
 
 const userStateTransition = async (args: any) => {
 
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
-    let ethSk
-    // The deployer's Ethereum private key
-    // The user may either enter it as a command-line option or via the
-    // standard input
-    if (args.prompt_for_eth_privkey) {
-        ethSk = await promptPwd('Your Ethereum private key')
-    } else {
-        ethSk = args.eth_privkey
-    }
-
-    if (!validateEthSk(ethSk)) {
-        console.error('Error: invalid Ethereum private key')
-        return
-    }
-
-    if (! (await checkDeployerProviderConnection(ethSk, ethProvider))) {
-        console.error('Error: unable to connect to the Ethereum provider at', ethProvider)
-        return
-    }
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
-    const wallet = new ethers.Wallet(ethSk, provider)
 
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
 
-    const unirepContract = await getUnirepContract(unirepAddress, wallet)
+    // Connect a signer
+    await unirepContract.unlock(args.eth_privkey)
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
-
+    // Parse inputs
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
 
+    // Generate user state transition proofs
     const userState = await genUserStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
         id,
         commitment,
     )
     const results = await userState.genUserStateTransitionProofs()
+
+    // Start user state transition proof
     let isValid = await verifyProof('startTransition', results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
     if (!isValid) {
         console.error('Error: start state transition proof generated is not valid!')
     }
-
-    let tx
-    try {
-        console.log('submit start user state transition proof')
-        tx = await unirepContract.startUserStateTransition(
-            results.startTransitionProof.blindedUserState,
-            results.startTransitionProof.blindedHashChain,
-            results.startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(results.startTransitionProof.proof),
-        )
-    } catch(e) {
-        console.error('Error: the transaction failed')
-        if (e) {
-            console.error(e)
-        }
-    }
+    let tx = await unirepContract.startUserStateTransition(
+        results.startTransitionProof.blindedUserState,
+        results.startTransitionProof.blindedHashChain,
+        results.startTransitionProof.globalStateTreeRoot,
+        results.startTransitionProof.proof,
+    )
+    console.log('Transaction hash:', tx?.hash)
 
     // process attestations proof
     for (let i = 0; i < results.processAttestationProofs.length; i++) {
@@ -157,20 +119,13 @@ const userStateTransition = async (args: any) => {
             console.error('Error: process attestations proof generated is not valid!')
         }
 
-        try {
-            console.log(`submit the ${i+1}th process attestations proof`)
-            tx = await unirepContract.processAttestations(
-                results.processAttestationProofs[i].outputBlindedUserState,
-                results.processAttestationProofs[i].outputBlindedHashChain,
-                results.processAttestationProofs[i].inputBlindedUserState,
-                formatProofForVerifierContract(results.processAttestationProofs[i].proof),
-            )
-        } catch(e) {
-            console.error('Error: the transaction failed')
-            if (e) {
-                console.error(e)
-            }
-        }    
+        tx = await unirepContract.processAttestations(
+            results.processAttestationProofs[i].outputBlindedUserState,
+            results.processAttestationProofs[i].outputBlindedHashChain,
+            results.processAttestationProofs[i].inputBlindedUserState,
+            results.processAttestationProofs[i].proof,
+        )
+        console.log('Transaction hash:', tx?.hash)
     }
 
     // update user state proof
@@ -195,27 +150,19 @@ const userStateTransition = async (args: any) => {
         }
     }
 
-    try {
-        console.log('submit final user state transition proof')
-        tx = await unirepContract.updateUserStateRoot(
-            results.finalTransitionProof.newGlobalStateTreeLeaf,
-            results.finalTransitionProof.epochKeyNullifiers,
-            results.finalTransitionProof.blindedUserStates,
-            results.finalTransitionProof.blindedHashChains,
-            results.finalTransitionProof.transitionedFromEpoch,
-            results.finalTransitionProof.fromGSTRoot,
-            results.finalTransitionProof.fromEpochTree,
-            formatProofForVerifierContract(results.finalTransitionProof.proof),
-        )
-    } catch(e) {
-        console.error('Error: the transaction failed')
-        if (e) {
-            console.error(e)
-        }
-    }
-
-    console.log('Transaction hash:', tx.hash)
-    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+    tx = await unirepContract.updateUserStateRoot(
+        results.finalTransitionProof.newGlobalStateTreeLeaf,
+        results.finalTransitionProof.epochKeyNullifiers,
+        results.finalTransitionProof.blindedUserStates,
+        results.finalTransitionProof.blindedHashChains,
+        results.finalTransitionProof.transitionedFromEpoch,
+        results.finalTransitionProof.fromGSTRoot,
+        results.finalTransitionProof.fromEpochTree,
+        results.finalTransitionProof.proof,
+    )
+    
+    console.log('Transaction hash:', tx?.hash)
+    const currentEpoch = await unirepContract.currentEpoch()
     console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
     process.exit(0)
 }

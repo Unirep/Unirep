@@ -44,7 +44,6 @@ describe('Airdrop', function () {
             _treeDepths.globalStateTreeDepth,
             _treeDepths.userStateTreeDepth,
             _treeDepths.epochTreeDepth,
-            // _treeDepths.nullifierTreeDepth,
             attestingFee,
             epochLength,
             numEpochKeyNoncePerEpoch,
