@@ -2,9 +2,8 @@ import base64url from 'base64url'
 import { ethers } from 'ethers'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genUnirepStateFromContract } from '../core'
+import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
-import { UnirepContract } from '../core/UnirepContract'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(

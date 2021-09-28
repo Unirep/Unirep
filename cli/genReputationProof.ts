@@ -1,11 +1,11 @@
 import base64url from 'base64url'
+import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity, add0x } from '@unirep/crypto'
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUserStateFromContract } from '../core'
 import { identityPrefix, reputationPublicSignalsPrefix, reputationProofPrefix } from './prefix'
-import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(

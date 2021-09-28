@@ -51,20 +51,92 @@ export class UnirepContract {
     }
 
 
-    async currentEpoch(): Promise<number> {
+    async currentEpoch(): Promise<any> {
         return this.contract.currentEpoch()
     }
 
-    async attesters(ethAddr: string): Promise<ethers.BigNumber> {
+    async epochLength(): Promise<any> {
+        return this.contract.epochLength()
+    }
+
+    async latestEpochTransitionTime(): Promise<any> {
+        return this.contract.latestEpochTransitionTime()
+    }
+
+    async emptyUserStateRoot(): Promise<any> {
+        return this.contract.emptyUserStateRoot()
+    }
+
+    async emptyGlobalStateTreeRoot(): Promise<any> {
+        return this.contract.emptyGlobalStateTreeRoot()
+    }
+
+    async numEpochKeyNoncePerEpoch(): Promise<any> {
+        return this.contract.numEpochKeyNoncePerEpoch()
+    }
+
+    async maxReputationBudget(): Promise<any> {
+        return this.contract.maxReputationBudget()
+    }
+
+    async maxUsers(): Promise<any> {
+        return this.contract.maxUsers()
+    }
+
+    async numUserSignUps(): Promise<any> {
+        return this.contract.numUserSignUps()
+    }
+
+    async hasUserSignedUp(idCommitment: BigInt | string): Promise<boolean> {
+        return this.contract.hasUserSignedUp(idCommitment)
+    }
+
+    async attestingFee(): Promise<any> {
+        return this.contract.attestingFee()
+    }
+
+    async collectedAttestingFee(): Promise<any> {
+        return this.contract.collectedAttestingFee()
+    }
+
+    async epochTransitionCompensation(ethAddr: string): Promise<any> {
+        return this.contract.epochTransitionCompensation(ethAddr)
+    }
+
+    async attesters(ethAddr: string): Promise<any> {
         return this.contract.attesters(ethAddr)
     }
 
-    async numEpochKeyNoncePerEpoch(): Promise<number> {
-        return this.contract.numEpochKeyNoncePerEpoch()
+    async nextAttesterId(): Promise<any> {
+        return this.contract.nextAttesterId()
+    }
+
+    async isEpochKeyHashChainSealed(epochKey: BigInt | string): Promise<boolean> {
+        return this.contract.isEpochKeyHashChainSealed(epochKey)
+    }
+
+    async epochKeyHashchain(epochKey: BigInt | string): Promise<any> {
+        return this.contract.epochKeyHashchain(epochKey)
+    }
+
+    async airdropAmount(ethAddr: string): Promise<any> {
+        return this.contract.airdropAmount(ethAddr)
     }
 
     async treeDepths(): Promise<any> {
         return this.contract.treeDepths()
+    }
+
+    async getNumEpochKey(epoch: number | BigInt | string): Promise<any> {
+        return this.contract.getNumEpochKey(epoch)
+    }
+
+    async getNumSealedEpochKey(epoch: number | BigInt | string): Promise<any> {
+        return this.contract.getNumSealedEpochKey(epoch)
+    }
+
+    async getEpochKey(epoch: number | BigInt | string, index: number | BigInt | string): Promise<any> {
+        return this.contract.getEpochKey(epoch)
     }
 
     async userSignUp(commitment: string): Promise<any> {
@@ -102,7 +174,7 @@ export class UnirepContract {
         }
         let tx
         try {
-            tx = await this.contract.attesterSignUp({ gasLimit: 1000000 })
+            tx = await this.contract.attesterSignUp()
         } catch(e) {
             console.error('Error: the transaction failed')
             if (e) {
@@ -113,7 +185,49 @@ export class UnirepContract {
         return tx
     }
 
-    async submitAttestation(attestation: IAttestation, epochKey: BigInt): Promise<any> {
+    async attesterSignUpViaRelayer(attesterAddr: string, signature: string): Promise<any> {
+        if(this.signer != undefined){
+            this.contract = this.contract.connect(this.signer)
+        }
+        else{
+            console.log("Error: should connect a signer")
+            return
+        }
+        let tx
+        try {
+            tx = await this.contract.attesterSignUpViaRelayer(attesterAddr, signature)
+        } catch(e) {
+            console.error('Error: the transaction failed')
+            if (e) {
+                console.error(e)
+            }
+            return
+        }
+        return tx
+    }
+
+    async setAirdropAmount(airdropAmount: number | BigInt): Promise<any> {
+        if(this.signer != undefined){
+            this.contract = this.contract.connect(this.signer)
+        }
+        else{
+            console.log("Error: should connect a signer")
+            return
+        }
+        let tx
+        try {
+            tx = await this.contract.setAirdropAmount(airdropAmount)
+        } catch(e) {
+            console.error('Error: the transaction failed')
+            if (e) {
+                console.error(e)
+            }
+            return
+        }
+        return tx
+    }
+
+    async submitAttestation(attestation: IAttestation, epochKey: BigInt | string): Promise<any> {
         if(this.signer != undefined){
             const attesterAddr = await this.signer?.getAddress()
             const attesterExist = await this.attesters(attesterAddr)
@@ -134,6 +248,83 @@ export class UnirepContract {
                 attestation,
                 epochKey,
                 { value: attestingFee, gasLimit: 1000000 }
+            )
+        } catch(e) {
+            console.error('Error: the transaction failed')
+            if (e) {
+                console.error(e)
+            }
+            return
+        }
+        return tx
+    }
+
+    async submitAttestationViaRelayer(attesterAddr: string, signature: string, attestation: IAttestation, epochKey: BigInt | string): Promise<any> {
+        if(this.signer != undefined){
+            const attesterExist = await this.attesters(attesterAddr)
+            if(attesterExist.toNumber() == 0){
+                console.error('Error: attester has not registered yet')
+                return
+            }
+            this.contract = this.contract.connect(this.signer)
+        } else {
+            console.log("Error: shoud connect a signer")
+            return
+        }
+       
+        const attestingFee = await this.contract.attestingFee()
+        let tx
+        try {
+            tx = await this.contract.submitAttestationViaRelayer(
+                attesterAddr,
+                signature,
+                attestation,
+                epochKey,
+                { value: attestingFee, gasLimit: 1000000 }
+            )
+        } catch(e) {
+            console.error('Error: the transaction failed')
+            if (e) {
+                console.error(e)
+            }
+            return
+        }
+        return tx
+    }
+
+    async submitReputationNullifiers(
+        outputNullifiers: BigInt[] | string [],
+        epoch: number | BigInt | string,
+        epk: number | BigInt | string,
+        GSTRoot: BigInt | string,
+        attesterId: number | BigInt | string,
+        repNullifiersAmount: number | BigInt | string,
+        minRep: number | BigInt | string,
+        proveGraffiti: number | BigInt | string,
+        graffitiPreImage: BigInt | string,
+        proof: any,
+    ): Promise<any> {
+        if(this.signer != undefined){
+            this.contract = this.contract.connect(this.signer)
+        }
+        else{
+            console.log("Error: should connect a signer")
+            return
+        }
+        let tx
+        try {
+            tx = await this.contract.submitReputationNullifiers(
+                outputNullifiers,
+                epoch,
+                epk,
+                GSTRoot,
+                attesterId,
+                repNullifiersAmount,
+                minRep,
+                proveGraffiti,
+                graffitiPreImage,
+                proof,
+                { gasLimit: 100000 }
             )
         } catch(e) {
             console.error('Error: the transaction failed')
@@ -234,7 +425,8 @@ export class UnirepContract {
         transitionedFromEpoch: BigInt | number | string,
         fromGSTRoot: BigInt | string,
         fromEpochTree: BigInt | string,
-        proof: any): Promise<any> {
+        proof: any
+    ): Promise<any> {
         if(this.signer != undefined){
             this.contract = this.contract.connect(this.signer)
         }
@@ -273,6 +465,56 @@ export class UnirepContract {
             GSTRoot,
             currentEpoch,
             epk,
+            proof,
+        )
+    }
+
+    async verifyStartTransitionProof(
+        blindedUserState: BigInt | string,
+        blindedHashChain: BigInt | string,
+        GSTRoot: BigInt | string,
+        proof: any,
+    ): Promise<boolean> {
+        return this.contract.verifyStartTransitionProof(
+            blindedUserState,
+            blindedHashChain,
+            GSTRoot,
+            proof,
+        )
+    }
+
+    async verifyProcessAttestationProof(
+        outputBlindedUserState: BigInt | string,
+        outputBlindedHashChain: BigInt | string,
+        intputBlindedUserState: BigInt | string,
+        proof: any,
+    ): Promise<boolean> {
+        return this.contract.verifyProcessAttestationProof(
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            intputBlindedUserState,
+            proof,
+        )
+    }
+
+    async verifyUserStateTransition(
+        newGSTLeaf: BigInt | string,
+        epkNullifiers: BigInt[] | string[],
+        fromEpoch: number | BigInt | string,
+        blindedUserStates: BigInt[] | string[],
+        fromGlobalStateTree: BigInt | string,
+        blindedHashChains: BigInt[] | string[],
+        fromEpochTree: BigInt | string,
+        proof: any,
+    ): Promise<boolean> {
+        return this.contract.verifyUserStateTransition(
+            newGSTLeaf,
+            epkNullifiers,
+            fromEpoch,
+            blindedUserStates,
+            fromGlobalStateTree,
+            blindedHashChains,
+            fromEpochTree,
             proof,
         )
     }
@@ -317,5 +559,57 @@ export class UnirepContract {
             attesterId,
             proof,
         )
+    }
+
+    async hashedBlankStateLeaf(): Promise<any> {
+        return this.contract.hashedBlankStateLeaf()
+    }
+
+    async calcAirdropUSTRoot(leafIndex: number | BigInt, leafValue: BigInt | string): Promise<any> {
+        return this.contract.calcAirdropUSTRoot(leafIndex, leafValue)
+    }
+
+    async getEpochTreeLeaves(epoch: number | BigInt | string ): Promise<any> {
+        return this.contract.getEpochTreeLeaves(epoch)
+    }
+
+    async burnAttestingFee(): Promise<any> {
+        if(this.signer != undefined){
+            this.contract = this.contract.connect(this.signer)
+        }
+        else{
+            console.log("Error: should connect a signer")
+            return
+        }
+        let tx
+        try {
+            tx = await this.contract.burnAttestingFee()
+        } catch(e) {
+            console.error('Error: the transaction failed')
+            if (e) {
+                console.error(e)
+            }
+        }
+        return tx
+    }
+
+    async collectEpochTransitionCompensation(): Promise<any> {
+        if(this.signer != undefined){
+            this.contract = this.contract.connect(this.signer)
+        }
+        else{
+            console.log("Error: should connect a signer")
+            return
+        }
+        let tx
+        try {
+            tx = await this.contract.collectEpochTransitionCompensation()
+        } catch(e) {
+            console.error('Error: the transaction failed')
+            if (e) {
+                console.error(e)
+            }
+        }
+        return tx
     }
 }

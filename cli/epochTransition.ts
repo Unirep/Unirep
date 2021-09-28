@@ -1,5 +1,5 @@
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { UnirepContract } from '../core/UnirepContract'
+import { UnirepContract } from '../core'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(

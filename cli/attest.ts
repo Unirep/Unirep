@@ -2,8 +2,7 @@ import { ethers } from 'ethers'
 import { add0x } from '@unirep/crypto'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { Attestation } from '../core'
-import { UnirepContract } from '../core/UnirepContract'
+import { Attestation, UnirepContract } from '../core'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(

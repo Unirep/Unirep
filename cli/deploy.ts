@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { deployUnirep } from '@unirep/contracts'
 
 import { maxReputationBudget, maxUsers } from '../config/testLocal'
-import { getTreeDepthsForTesting } from '../core/utils'
+import { getTreeDepthsForTesting } from '../core'
 import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
 import { checkDeployerProviderConnection, genJsonRpcDeployer, promptPwd, validateEthSk, } from './utils'
 

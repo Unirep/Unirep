@@ -1,9 +1,10 @@
 {
     "name": "unirep",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "",
-    "main": "index.js",
+    "main": "build/core/index.js",
     "scripts": {
+        "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "yarn contractUnitTests && yarn circuitUnitTests && yarn integrationTest",
         "contractUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",

@@ -1,13 +1,11 @@
 import base64url from 'base64url'
+import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genEpochKey } from '../core/utils'
-import { genUserStateFromContract } from '../core'
+import { genUserStateFromContract, genEpochKey, UnirepContract } from '../core'
 import { epkProofPrefix, epkPublicSignalsPrefix, identityPrefix } from './prefix'
-import { UnirepContract } from '../core/UnirepContract'
-import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(

@@ -3,7 +3,7 @@ import { add0x } from '@unirep/crypto'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { identityCommitmentPrefix } from './prefix'
-import { UnirepContract } from '../core/UnirepContract'
+import { UnirepContract } from '../core'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
