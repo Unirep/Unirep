@@ -185,7 +185,6 @@ const genUnirepStateFromContract = async (
             const nullifierEvent = nullifierSubmittedEvents.pop()
             assert(nullifierEvent !== undefined, `Event sequence mismatch: missing nullifierSubmittedEvent`)
 
-            // TODO: verify GST root
             const isProofValid = await unirepContract.verifyReputation(
                 nullifierEvent.args?.reputationNullifiers,
                 nullifierEvent.args?._epoch,
@@ -198,6 +197,15 @@ const genUnirepStateFromContract = async (
                 nullifierEvent.args?.reputationProofData.graffitiPreImage,
                 nullifierEvent.args?.reputationProofData.proof,
             )
+            // Check if Global state tree root exists
+            const GSTRoot = nullifierEvent.args?.reputationProofData.globalStateTree
+            const epoch = nullifierEvent.args?._epoch
+            const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+            if(!isGSTRootExisted) {
+                console.log('Global state tree root does not exist')
+                continue
+            }
+
             // Proof is invalid, skip this step
             if (!isProofValid) {
                 console.log("Invalid Reputation proof")
@@ -234,7 +242,6 @@ const genUnirepStateFromContract = async (
             const startedTransitiodEvent = startedTransitionEvents.pop()
             assert(startedTransitiodEvent !== undefined, `Event sequence mismatch: missing startedTransitiodEvent`)
 
-            // TODO: verify GST root
             const isProofValid = await unirepContract.verifyStartTransitionProof(
                 startedTransitiodEvent.args?._blindedUserState,
                 startedTransitiodEvent.args?._blindedHashChain,
@@ -261,7 +268,6 @@ const genUnirepStateFromContract = async (
                 }
             }
 
-            // TODO: verify GST root
             const isProofValid = await unirepContract.verifyProcessAttestationProof(
                 processedAttestationsEvent.args?._outputBlindedUserState,
                 processedAttestationsEvent.args?._outputBlindedHashChain,
@@ -278,8 +284,6 @@ const genUnirepStateFromContract = async (
             unirepState.addBlindedUserState(processedAttestationsEvent.args?._outputBlindedUserState)
             unirepState.addBlindedHashChain(processedAttestationsEvent.args?._outputBlindedHashChain)
         } else if (occurredEvent === "UserStateTransitioned") {
-            // const newLeafEvent = newGSTLeafInsertedEvents.pop()
-            // assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
             const userStateTransitionedEvent = userStateTransitionedEvents.pop()
             assert(userStateTransitionedEvent !== undefined, `Event sequence mismatch: missing userStateTransitionedEvent`)
 
@@ -302,6 +306,24 @@ const genUnirepStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
+
+            // Check if Global state tree root exists
+            const GSTRoot = userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree
+            const epoch = userStateTransitionedEvent.args?.userTransitionedData.fromEpoch
+            const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+            if(!isGSTRootExisted) {
+                console.log('Global state tree root does not exist')
+                continue
+            }
+
+            // Check if epoch tree root matches
+            const epochTreeRoot = userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree
+            const isEpochTreeExisted = unirepState.epochTreeRootExists(epochTreeRoot, epoch)
+            if(!isEpochTreeExisted){
+                console.log('Epoch tree root mismatches')
+                continue
+            }
+
             // Proof is invalid, skip this step
             if (!isProofValid) {
                 console.log("Invalid UserStateTransitioned proof")
@@ -500,7 +522,6 @@ const _genUserStateFromContract = async (
             const nullifierEvent = nullifierSubmittedEvents.pop()
             assert(nullifierEvent !== undefined, `Event sequence mismatch: missing nullifierSubmittedEvent`)
 
-            // TODO: verify GST root
             const isProofValid = await unirepContract.verifyReputation(
                 nullifierEvent.args?.reputationNullifiers,
                 nullifierEvent.args?._epoch,
@@ -513,6 +534,16 @@ const _genUserStateFromContract = async (
                 nullifierEvent.args?.reputationProofData.graffitiPreImage,
                 nullifierEvent.args?.reputationProofData.proof,
             )
+
+            // Check if Global state tree root exists
+            const GSTRoot = nullifierEvent.args?.reputationProofData.globalStateTree
+            const epoch = nullifierEvent.args?._epoch
+            const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+            if(!isGSTRootExisted) {
+                console.log('Global state tree root does not exist')
+                continue
+            }
+
             // Proof is invalid, skip this step
             if (!isProofValid) {
                 console.log("Invalid Reputation proof")
@@ -558,7 +589,6 @@ const _genUserStateFromContract = async (
             const startedTransitiodEvent = startedTransitionEvents.pop()
             assert(startedTransitiodEvent !== undefined, `Event sequence mismatch: missing startedTransitiodEvent`)
 
-            // TODO: verify GST root
             const isProofValid = await unirepContract.verifyStartTransitionProof(
                 startedTransitiodEvent.args?._blindedUserState,
                 startedTransitiodEvent.args?._blindedHashChain,
@@ -584,7 +614,6 @@ const _genUserStateFromContract = async (
                 }
             }
 
-            // TODO: verify GST root
             const isProofValid = await unirepContract.verifyProcessAttestationProof(
                 processedAttestationsEvent.args?._outputBlindedUserState,
                 processedAttestationsEvent.args?._outputBlindedHashChain,
@@ -601,8 +630,6 @@ const _genUserStateFromContract = async (
             unirepState.addBlindedUserState(processedAttestationsEvent.args?._outputBlindedUserState)
             unirepState.addBlindedHashChain(processedAttestationsEvent.args?._outputBlindedHashChain)
         } else if (occurredEvent === "UserStateTransitioned") {
-            // const newLeafEvent = newGSTLeafInsertedEvents.pop()
-            // assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
             const userStateTransitionedEvent = userStateTransitionedEvents.pop()
             assert(userStateTransitionedEvent !== undefined, `Event sequence mismatch: missing userStateTransitionedEvent`)
 
@@ -618,6 +645,24 @@ const _genUserStateFromContract = async (
                 userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree,
                 userStateTransitionedEvent.args?.userTransitionedData.proof,
             )
+
+            // Check if Global state tree root exists
+            const GSTRoot = userStateTransitionedEvent.args?.userTransitionedData.fromGlobalStateTree
+            const epoch = userStateTransitionedEvent.args?.userTransitionedData.fromEpoch
+            const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+            if(!isGSTRootExisted) {
+                console.log('Global state tree root does not exist')
+                continue
+            }
+
+            // Check if epoch tree root matches
+            const epochTreeRoot = userStateTransitionedEvent.args?.userTransitionedData.fromEpochTree
+            const isEpochTreeExisted = unirepState.epochTreeRootExists(epochTreeRoot, epoch)
+            if(!isEpochTreeExisted){
+                console.log('Epoch tree root mismatches')
+                continue
+            }
+
             // Proof is invalid, skip this event
             if (!isProofValid) {
                 console.log("Invalid UserStateTransitioned proof")

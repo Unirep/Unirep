@@ -3,13 +3,12 @@ import { ethers } from 'ethers'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUnirepStateFromContract } from '../core'
-import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
-import { maxReputationBudget } from '../config/testLocal'
+import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
 import { UnirepContract } from '../core/UnirepContract'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'verifyReputationProof',
+        'verifyUserSignUpProof',
         { add_help: true },
     )
 
@@ -68,7 +67,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const verifyReputationProof = async (args: any) => {
+const verifyUserSignUpProof = async (args: any) => {
 
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
@@ -85,18 +84,13 @@ const verifyReputationProof = async (args: any) => {
     )
 
     // Parse Inputs
-    const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
-    const decodedPublicSignals = base64url.decode(args.public_signals.slice(reputationPublicSignalsPrefix.length))
+    const decodedProof = base64url.decode(args.proof.slice(signUpProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(signUpPublicSignalsPrefix.length))
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const outputNullifiers = publicSignals.slice(0, maxReputationBudget)
-    const epoch = publicSignals[maxReputationBudget]
-    const epk = publicSignals[maxReputationBudget + 1]
-    const GSTRoot = publicSignals[maxReputationBudget + 2]
-    const attesterId = publicSignals[maxReputationBudget + 3]
-    const repNullifiersAmount = publicSignals[maxReputationBudget + 4]
-    const minRep = publicSignals[maxReputationBudget + 5]
-    const proveGraffiti = publicSignals[maxReputationBudget + 6]
-    const graffitiPreImage = publicSignals[maxReputationBudget + 7]
+    const epoch = publicSignals[0]
+    const epk = publicSignals[1]
+    const GSTRoot = publicSignals[2]
+    const attesterId = publicSignals[3]
     const proof = JSON.parse(decodedProof)
 
     // Check if Global state tree root exists
@@ -107,28 +101,23 @@ const verifyReputationProof = async (args: any) => {
     }
 
     // Verify the proof on-chain
-    const isProofValid = await unirepContract.verifyReputation(
-        outputNullifiers,
+    const isProofValid = await unirepContract.verifyUserSignUp(
         epoch,
         epk,
         GSTRoot,
         attesterId,
-        repNullifiersAmount,
-        minRep,
-        proveGraffiti,
-        graffitiPreImage,
         proof,
     )
     if (!isProofValid) {
-        console.error('Error: invalid reputation proof')
+        console.error('Error: invalid user sign up proof')
         return
     }
 
     console.log(`Epoch key of the user: ${epk}`)
-    console.log(`Verify reputation proof from attester ${attesterId} with min rep ${minRep}, reputation nullifiers amount ${repNullifiersAmount} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
+    console.log(`Verify user sign up proof from attester ${attesterId} succeed`)
 }
 
 export {
-    verifyReputationProof,
+    verifyUserSignUpProof,
     configureSubparser,
 }

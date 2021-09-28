@@ -33,8 +33,8 @@ describe('test all CLI subcommands', function() {
     let epk, epkProof, epkPublicSignals
     const posRep = 5, negRep = 4, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage)), signUpFlag = 1
     const minPosRep = 0, maxNegRep = 10
-    let userRepProof
-    let repPublicSignals
+    let userRepProof, signUpProof
+    let repPublicSignals, signUpPublicSignals
 
     before(async() => {
         deployerPrivKey = ethers.utils.solidityKeccak256(['uint'], [0])
@@ -147,9 +147,9 @@ describe('test all CLI subcommands', function() {
 
             const epkRegMatch = output.match(/Epoch key of epoch 1 and nonce 0: ([a-fA-F0-9]+)/)
             epk = epkRegMatch[1]
-            const epkProofRegMatch = output.match(/(Unirep.epkProof.[a-zA-Z0-9\-\_]+)/)
+            const epkProofRegMatch = output.match(/(Unirep.epk.proof.[a-zA-Z0-9\-\_]+)/)
             epkProof = epkProofRegMatch[1]
-            const epkPublicSignalsRegMatch = output.match(/(Unirep.epkPublicSignals.[a-zA-Z0-9\-\_]+)$/)
+            const epkPublicSignalsRegMatch = output.match(/(Unirep.epk.publicSignals.[a-zA-Z0-9\-\_]+)$/)
             epkPublicSignals = epkPublicSignalsRegMatch[1]
         })
     })
@@ -159,7 +159,7 @@ describe('test all CLI subcommands', function() {
             const command = `npx ts-node cli/index.ts verifyEpochKeyProof` +
                 ` -x ${unirepContract.address} ` +
                 ` -pf ${epkProof} ` +
-                ` -s ${epkPublicSignals}$`
+                ` -s ${epkPublicSignals}`
 
             console.log(command)
             const output = exec(command).stdout.trim()
@@ -177,10 +177,10 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
-                ` -pr ${posRep} `
+                ` -pr ${posRep} ` +
                 // ` -nr ${negRep} ` +
                 // ` -gf ${graffiti.toString(16)} ` +
-                // ` -s ${signUpFlag}$`
+                ` -s ${signUpFlag}`
 
             console.log(command)
             const output = exec(command).stdout.trim()
@@ -238,9 +238,9 @@ describe('test all CLI subcommands', function() {
             const output = exec(command).stdout.trim()
             console.log(output)
 
-            const userRepProofRegMatch = output.match(/(Unirep.reputationProof.[a-zA-Z0-9\-\_]+)/)
+            const userRepProofRegMatch = output.match(/(Unirep.reputation.proof.[a-zA-Z0-9\-\_]+)/)
             const epochKeyRegMatch = output.match(/Epoch key of the user: ([0-9]+)/)
-            const publicSignalRegMatch = output.match(/(Unirep.reputationPublicSignals.[a-zA-Z0-9]+)/)
+            const publicSignalRegMatch = output.match(/(Unirep.reputation.publicSignals.[a-zA-Z0-9]+)/)
             userRepProof = userRepProofRegMatch[1]
             epk = epochKeyRegMatch[1]
             repPublicSignals = publicSignalRegMatch[1]
@@ -259,6 +259,42 @@ describe('test all CLI subcommands', function() {
             console.log(output)
 
             const verifyRegMatch = output.match(/Verify reputation proof from attester 1 .+, succeed/)
+            expect(verifyRegMatch).not.equal(null)
+        })
+    })
+
+    describe('genUserSignUpProof CLI subcommand', () => {
+        it('should generate user sign up proof', async () => {
+            const command = `npx ts-node cli/index.ts genUserSignUpProof` +
+                ` -x ${unirepContract.address} ` +
+                ` -id ${userIdentity} ` +
+                ` -a ${attesterId} ` 
+
+            console.log(command)
+            const output = exec(command).stdout.trim()
+            console.log(output)
+
+            const signUpProofRegMatch = output.match(/(Unirep.signUp.proof.[a-zA-Z0-9\-\_]+)/)
+            const epochKeyRegMatch = output.match(/Epoch key of the user: ([0-9]+)/)
+            const publicSignalRegMatch = output.match(/(Unirep.signUp.publicSignals.[a-zA-Z0-9]+)/)
+            signUpProof = signUpProofRegMatch[1]
+            epk = epochKeyRegMatch[1]
+            signUpPublicSignals = publicSignalRegMatch[1]
+        })
+    })
+
+    describe('verifyUserSignUpProof CLI subcommand', () => {
+        it('should verify user sign up proof', async () => {
+            const command = `npx ts-node cli/index.ts verifyUserSignUpProof` +
+                ` -x ${unirepContract.address} ` +
+                ` -pf ${signUpProof} ` + 
+                ` -s ${signUpPublicSignals}`
+
+            console.log(command)
+            const output = exec(command).stdout.trim()
+            console.log(output)
+
+            const verifyRegMatch = output.match(/Verify user sign up proof from attester 1 succeed/)
             expect(verifyRegMatch).not.equal(null)
         })
     })

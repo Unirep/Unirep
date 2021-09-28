@@ -8,7 +8,7 @@ import { deployUnirep } from '@unirep/contracts'
 
 import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../../core/utils'
 import { toCompleteHexString } from '../utils'
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, maxReputationBudget, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxReputationBudget, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
 
 
@@ -962,6 +962,103 @@ describe('Integration', function () {
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit duplicated user state transition proof failed').to.equal(1)
+        })
+
+        it('genUserStateFromContract should return equivalent UserState and UnirepState', async () => {
+            const userStateFromContract = await genUserStateFromContract(
+                hardhatEthers.provider,
+                unirepContract.address,
+                0,
+                users[firstUser].id,
+                users[firstUser].commitment,
+            )
+
+            // Check user state matches
+            expect(users[firstUser].latestTransitionedEpoch, 'First user latest transitioned epoch mismatch').to.equal(userStateFromContract.latestTransitionedEpoch)
+            expect(users[firstUser].latestGSTLeafIndex, 'First user latest GST leaf index mismatch').to.equal(userStateFromContract.latestGSTLeafIndex)
+            expect((await users[firstUser].genUserStateTree()).getRootHash(), 'First user UST mismatch').to.equal((await userStateFromContract.genUserStateTree()).getRootHash())
+
+            // Check unirep state matches
+            expect(unirepState.currentEpoch, 'Unirep state current epoch mismatch').to.equal(userStateFromContract.getUnirepStateCurrentEpoch())
+            // Epoch tree is built after epoch transition
+            // there is no epochTree[3] in the 3rd epoch
+            for (let epoch = 1; epoch < unirepState.currentEpoch; epoch++) {
+                const GST = unirepState.genGSTree(epoch)
+                const _GST = userStateFromContract.getUnirepStateGSTree(epoch)
+                expect(GST.root, `Epoch ${epoch} GST root mismatch`).to.equal(_GST.root)
+
+                const epochTree = unirepState.genEpochTree(epoch)
+                const _epochTree = await userStateFromContract.getUnirepStateEpochTree(epoch)
+                expect(epochTree.getRootHash(), `Epoch ${epoch} epoch tree root mismatch`).to.equal(_epochTree.getRootHash())
+            }
+        })
+
+        it('Submit random incorrect proof should not effect the unirepState', async () => {
+            const epkNullifiers: BigInt[] = []
+            const blindedHashChains: BigInt[] = []
+            const blindedUserStates: BigInt[] = []
+            const proof: BigInt[] = []
+            const reputationNullifiers: BigInt[] = []
+            const proveReputationAmount = 0
+            const minRep = 0
+            const proveGraffiti = 1
+            const randonKey = genRandomSalt().toString()
+            const epochKey = BigInt(randonKey) % BigInt(2 ** epochTreeDepth)
+            for (let i = 0; i < maxReputationBudget; i++) {
+                reputationNullifiers.push(BigInt(255))
+            }
+            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+                epkNullifiers.push(BigInt(255))
+                blindedHashChains.push(BigInt(255))
+            }
+            for (let i = 0; i < 2; i++) {
+                blindedUserStates.push(BigInt(255))
+            }
+            for (let i = 0; i < 8; i++) {
+                proof.push(BigInt(0))
+            }
+            let tx = await unirepContract.startUserStateTransition(
+                genRandomSalt(),
+                genRandomSalt(),
+                genRandomSalt(),
+                proof,
+            )
+            let receipt = await tx.wait()
+            expect(receipt.status, 'Submit random start transition proof failed').equal(1)
+            tx = await unirepContract.processAttestations(
+                genRandomSalt(),
+                genRandomSalt(),
+                genRandomSalt(),
+                proof,
+            )
+            receipt = await tx.wait()
+            expect(receipt.status, 'Submit random process attestations proof failed').equal(1)
+            tx = await unirepContract.updateUserStateRoot(
+                genRandomSalt(),
+                epkNullifiers,
+                blindedUserStates,
+                blindedHashChains,
+                1,
+                genRandomSalt(),
+                genRandomSalt(),
+                proof,
+            )
+            receipt = await tx.wait()
+            expect(receipt.status, 'Submit random user state transition proof failed').to.equal(1)
+            tx = await unirepContractCalledByFirstAttester.submitReputationNullifiers(
+                reputationNullifiers,
+                currentEpoch,
+                epochKey,
+                genRandomSalt(),
+                attesters[firstAttester].id,
+                proveReputationAmount,
+                minRep,
+                proveGraffiti,
+                genRandomSalt(),
+                proof
+            )
+            receipt = await tx.wait()
+            expect(receipt.status, 'Submit random reputation nullifiers proof failed').to.equal(1)
         })
 
         it('genUserStateFromContract should return equivalent UserState and UnirepState', async () => {

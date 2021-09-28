@@ -121,8 +121,15 @@ class UnirepState {
 
     public toJSON = (space = 0): string => {
         let latestEpochTreeLeaves
-        if (this.currentEpoch == 1) latestEpochTreeLeaves = []
-        else latestEpochTreeLeaves = this.epochTreeLeaves[this.currentEpoch - 1].map((l) => `${l.epochKey.toString()}: ${l.hashchainResult.toString()}`)
+        let latestEpothTreeRoot
+        if (this.currentEpoch == 1) { 
+            latestEpochTreeLeaves = []
+            latestEpothTreeRoot = BigInt(0).toString()
+        }
+        else {
+            latestEpochTreeLeaves = this.epochTreeLeaves[this.currentEpoch - 1].map((l) => `${l.epochKey.toString()}: ${l.hashchainResult.toString()}`)
+            latestEpothTreeRoot = this.epochTreeRoot[this.currentEpoch - 1].toString()
+        }
         return JSON.stringify(
             {
                 settings: {
@@ -138,6 +145,7 @@ class UnirepState {
                 currentEpoch: this.currentEpoch,
                 latestEpochGSTLeaves: this.GSTLeaves[this.currentEpoch].map((l) => l.toString()),
                 latestEpochTreeLeaves: latestEpochTreeLeaves,
+                latestEpochTreeRoot: latestEpothTreeRoot,
                 globalStateTreeRoots: Array.from(this.epochGSTRootMap[this.currentEpoch].keys()),
                 nullifiers: this.nullifiers
             },
@@ -333,6 +341,26 @@ class UnirepState {
             this.globalStateTree[epoch].insert(GSTLeaf)
             this.epochGSTRootMap[epoch].set(this.globalStateTree[epoch].root.toString(), true)
         }
+    }
+
+    /*
+     * Check if the root is one of the Global state tree roots in the given epoch
+     */
+    public GSTRootExists = (
+        GSTRoot: BigInt | string,
+        epoch: number,
+    ): boolean => {
+        return this.epochGSTRootMap[epoch].has(GSTRoot.toString())
+    }
+
+    /*
+     * Check if the root is one of the epoch tree roots in the given epoch
+     */
+    public epochTreeRootExists = (
+        _epochTreeRoot: BigInt | string,
+        epoch: number,
+    ): boolean => {
+        return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString()
     }
 }
 

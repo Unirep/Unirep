@@ -302,4 +302,20 @@ export class UnirepContract {
             proof,
         )
     }
+
+    async verifyUserSignUp(
+        epoch: number | BigInt | string,
+        epk: number | BigInt | string,
+        GSTRoot: BigInt | string,
+        attesterId: number | BigInt | string,
+        proof: any,
+    ): Promise<boolean> {
+        return this.contract.verifyUserSignUp(
+            epoch,
+            epk,
+            GSTRoot,
+            attesterId,
+            proof,
+        )
+    }
 }

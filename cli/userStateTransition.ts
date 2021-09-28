@@ -3,7 +3,7 @@ import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
 import { verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genUserStateFromContract } from '../core'
+import { genUnirepStateFromContract, genUserStateFromContract } from '../core'
 import { identityPrefix } from './prefix'
 import { UnirepContract } from '../core/UnirepContract'
 import { ethers } from 'ethers'
@@ -150,6 +150,27 @@ const userStateTransition = async (args: any) => {
         }
     }
 
+    // Check if Global state tree root and epoch tree root exist
+    const unirepState = await genUnirepStateFromContract(
+        provider,
+        args.contract,
+        startBlock,
+    )
+    const GSTRoot = results.finalTransitionProof.fromGSTRoot
+    const inputEpoch = results.finalTransitionProof.transitionedFromEpoch
+    const epochTreeRoot= results.finalTransitionProof.fromEpochTree
+    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, inputEpoch)
+    const isEpochTreeExisted = unirepState.epochTreeRootExists(epochTreeRoot, inputEpoch)
+    if(!isGSTRootExisted) {
+        console.error('Error: invalid global state tree root')
+        return
+    }
+    if(!isEpochTreeExisted){
+        console.error('Error: invalid epoch tree root')
+        return
+    }
+
+    // Submit the user state transition transaction
     tx = await unirepContract.updateUserStateRoot(
         results.finalTransitionProof.newGlobalStateTreeLeaf,
         results.finalTransitionProof.epochKeyNullifiers,
@@ -160,7 +181,6 @@ const userStateTransition = async (args: any) => {
         results.finalTransitionProof.fromEpochTree,
         results.finalTransitionProof.proof,
     )
-    
     console.log('Transaction hash:', tx?.hash)
     const currentEpoch = await unirepContract.currentEpoch()
     console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)

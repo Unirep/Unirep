@@ -1,8 +1,8 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, hash5, hashLeftRight, stringifyBigInts, genIdentity, genIdentityCommitment } from '@unirep/crypto'
-import { genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { genRandomSalt, hash5, hashLeftRight, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
 import { attestingFee, circuitUserStateTreeDepth, epochLength, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'

@@ -57,6 +57,17 @@ import {
     configureSubparser as configureSubparserForVerifyReputationProof,
 } from './verifyReputationProof'
 
+import {
+    genUserSignUpProof,
+    configureSubparser as configureSubparserForGenUserSignUpProof,
+} from './genUserSignUpProof'
+
+import {
+    verifyUserSignUpProof,
+    configureSubparser as configureSubparserForVerifyUserSignUpProof,
+} from './verifyUserSignUpProof'
+
+
 
 const main = async () => {
     const parser = new argparse.ArgumentParser({ 
@@ -101,6 +112,12 @@ const main = async () => {
     // Subcommand: verifyReputationProof
     configureSubparserForVerifyReputationProof(subparsers)
 
+    // Subcommand: genUserSignUpProof
+    configureSubparserForGenUserSignUpProof(subparsers)
+
+    // Subcommand: verifyUserSignUpProof
+    configureSubparserForVerifyUserSignUpProof(subparsers)
+
     const args = parser.parse_args()
 
     // Execute the subcommand method
@@ -126,6 +143,10 @@ const main = async () => {
         await genReputationProof(args)
     } else if (args.subcommand === 'verifyReputationProof') {
         await verifyReputationProof(args)
+    } else if (args.subcommand === 'genUserSignUpProof') {
+        await genUserSignUpProof(args)
+    } else if (args.subcommand === 'verifyUserSignUpProof') {
+        await verifyUserSignUpProof(args)
     }
 }
 

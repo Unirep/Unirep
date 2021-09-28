@@ -87,12 +87,17 @@ const verifyEpochKeyProof = async (args: any) => {
         console.log(`Warning: the epoch key is expired. Epoch key is in epoch ${inputEpoch}, but the current epoch is ${currentEpoch}`)
     }
 
-    // TODO: check GSTRoot
-    // unirepState.verifyEpochKeyValidity
+    // Check if Global state tree root exists
+    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, inputEpoch)
+    if(!isGSTRootExisted) {
+        console.error('Error: invalid global state tree root')
+        return
+    }
     
+    // Verify the proof on-chain
     const isProofValid = await unirepContract.verifyEpochKeyValidity(
         GSTRoot,
-        currentEpoch,
+        inputEpoch,
         epk,
         proof,
     )
