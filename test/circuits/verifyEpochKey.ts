@@ -1,6 +1,4 @@
-import chai from "chai"
-const { expect } = chai
-
+import { expect } from 'chai'
 import { genRandomSalt, hashLeftRight, IncrementalQuinTree, stringifyBigInts, genIdentity, genIdentityCommitment } from '@unirep/crypto'
 import { genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
 

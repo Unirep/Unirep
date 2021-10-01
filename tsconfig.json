@@ -8,6 +8,6 @@
         "noImplicitAny": false,
         "outDir": "./build",
     },
-    "include": ["./crypto", "./core", "./cli", "./test"],
+    "include": ["./core"],
     "files": ["./hardhat.config.ts"]
 }

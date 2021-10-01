@@ -1,11 +1,10 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
-import chai from "chai"
-const { expect } = chai
+import { expect } from 'chai'
 import { IncrementalQuinTree, genIdentity, genIdentityCommitment } from '@unirep/crypto'
 import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, nullifierTreeDepth, userStateTreeDepth} from '../../config/testLocal'
+import { attestingFee, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth, maxReputationBudget} from '../../config/testLocal'
 import { getTreeDepthsForTesting } from '../../core/utils'
 import { genNewUserStateTree } from '../utils'
 
@@ -19,6 +18,10 @@ describe('Signup', () => {
     let accounts: ethers.Signer[]
     
     before(async () => {
+        
+    })
+
+    it('should have the correct config value', async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting("contract")
@@ -26,6 +29,7 @@ describe('Signup', () => {
         const _settings = {
             maxUsers: testMaxUser,
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
             epochLength: epochLength,
             attestingFee: attestingFee
         }
@@ -33,9 +37,6 @@ describe('Signup', () => {
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
         GSTree = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)
-    })
-
-    it('should have the correct config value', async () => {
         const attestingFee_ = await unirepContract.attestingFee()
         expect(attestingFee).equal(attestingFee_)
         const epochLength_ = await unirepContract.epochLength()
@@ -48,7 +49,6 @@ describe('Signup', () => {
         const treeDepths_ = await unirepContract.treeDepths()
         expect(epochTreeDepth).equal(treeDepths_.epochTreeDepth)
         expect(globalStateTreeDepth).equal(treeDepths_.globalStateTreeDepth)
-        expect(nullifierTreeDepth).equal(treeDepths_.nullifierTreeDepth)
         expect(userStateTreeDepth).equal(treeDepths_.userStateTreeDepth)
     })
 
@@ -107,7 +107,7 @@ describe('Signup', () => {
         it('sign up should succeed', async () => {
             attester = accounts[1]
             attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = await getUnirepContract(unirepContract.address, attester)
+            unirepContractCalledByAttester = getUnirepContract(unirepContract.address, attester)
             const tx = await unirepContractCalledByAttester.attesterSignUp()
             const receipt = await tx.wait()
 

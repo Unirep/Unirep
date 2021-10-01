@@ -1,12 +1,10 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { add0x } from '@unirep/crypto'
-import { getUnirepContract } from '@unirep/contracts'
 
-import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genUnirepStateFromContract } from '../core'
-import { reputationProofPrefix } from './prefix'
+import { genUnirepStateFromContract, UnirepContract } from '../core'
+import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
+import { maxReputationBudget } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -33,35 +31,11 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-a', '--attester-id',
+        '-s', '--public-signals',
         {
             required: true,
             type: 'str',
-            help: 'The attester id (in hex representation)',
-        }
-    )
-    
-    parser.add_argument(
-        '-mp', '--min-pos-rep',
-        {
-            type: 'int',
-            help: 'The minimum positive score the attester given to the user',
-        }
-    )
-
-    parser.add_argument(
-        '-mn', '--max-neg-rep',
-        {
-            type: 'int',
-            help: 'The maximum negative score the attester given to the user',
-        }
-    )
-
-    parser.add_argument(
-        '-gp', '--graffiti-preimage',
-        {
-            type: 'str',
-            help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
+            help: 'The snark public signals of the user\'s epoch key ',
         }
     )
 
@@ -95,76 +69,62 @@ const configureSubparser = (subparsers: any) => {
 
 const verifyReputationProof = async (args: any) => {
 
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
-
-    const unirepContract = await getUnirepContract(unirepAddress, provider)
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
 
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
     )
 
-    const currentEpoch = unirepState.currentEpoch
-    const epoch = args.epoch ? Number(args.epoch) : currentEpoch
-    const attesterId = BigInt(add0x(args.attester_id))
-    const provePosRep = args.min_pos_rep != null ? BigInt(1) : BigInt(0)
-    const proveNegRep = args.max_neg_rep != null ? BigInt(1) : BigInt(0)
-    const proveRepDiff = args.min_rep_diff != null ? BigInt(1) : BigInt(0)
-    const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRepDiff = args.min_rep_diff != null ? BigInt(args.min_rep_diff) : BigInt(0)
-    const minPosRep = args.min_pos_rep != null ? BigInt(args.min_pos_rep) : BigInt(0)
-    const maxNegRep = args.max_neg_rep != null ? BigInt(args.max_neg_rep) : BigInt(0)
-    const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
+    // Parse Inputs
     const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(reputationPublicSignalsPrefix.length))
+    const publicSignals = JSON.parse(decodedPublicSignals)
+    const outputNullifiers = publicSignals.slice(0, maxReputationBudget)
+    const epoch = publicSignals[maxReputationBudget]
+    const epk = publicSignals[maxReputationBudget + 1]
+    const GSTRoot = publicSignals[maxReputationBudget + 2]
+    const attesterId = publicSignals[maxReputationBudget + 3]
+    const repNullifiersAmount = publicSignals[maxReputationBudget + 4]
+    const minRep = publicSignals[maxReputationBudget + 5]
+    const proveGraffiti = publicSignals[maxReputationBudget + 6]
+    const graffitiPreImage = publicSignals[maxReputationBudget + 7]
     const proof = JSON.parse(decodedProof)
 
-    // Verify on-chain
-    const GSTreeRoot = unirepState.genGSTree(epoch).root
-    const nullifierTree = await unirepState.genNullifierTree()
-    const nullifierTreeRoot = nullifierTree.getRootHash()
-    const publicInput = [
-        provePosRep,
-        proveNegRep,
-        proveRepDiff,
-        proveGraffiti,
-        minRepDiff,
-        minPosRep,
-        maxNegRep,
-        graffitiPreImage
-    ]
+    // Check if Global state tree root exists
+    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+    if(!isGSTRootExisted) {
+        console.error('Error: invalid global state tree root')
+        return
+    }
 
+    // Verify the proof on-chain
     const isProofValid = await unirepContract.verifyReputation(
+        outputNullifiers,
         epoch,
-        GSTreeRoot,
-        nullifierTreeRoot,
+        epk,
+        GSTRoot,
         attesterId,
-        publicInput,
-        proof
+        repNullifiersAmount,
+        minRep,
+        proveGraffiti,
+        graffitiPreImage,
+        proof,
     )
     if (!isProofValid) {
         console.error('Error: invalid reputation proof')
         return
     }
 
-    console.log(`Verify reputation proof from attester ${attesterId} with min pos rep ${minPosRep}, max neg rep ${maxNegRep} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
+    console.log(`Epoch key of the user: ${epk}`)
+    console.log(`Verify reputation proof from attester ${attesterId} with min rep ${minRep}, reputation nullifiers amount ${repNullifiersAmount} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
 }
 
 export {

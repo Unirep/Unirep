@@ -1,14 +1,11 @@
 import base64url from 'base64url'
-import { BigNumber, ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts } from '@unirep/crypto'
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
-import { getUnirepContract } from '@unirep/contracts'
+import { ethers } from 'ethers'
+import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
+import { verifyProof } from '@unirep/circuits'
 
-import { validateEthAddress, contractExists, promptPwd, validateEthSk, checkDeployerProviderConnection } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genUserStateFromContract } from '../core'
+import { genUnirepStateFromContract, genUserStateFromContract, UnirepContract } from '../core'
 import { identityPrefix } from './prefix'
-import { numEpochKeyNoncePerEpoch } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -74,189 +71,119 @@ const configureSubparser = (subparsers: any) => {
 
 const userStateTransition = async (args: any) => {
 
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
-    let ethSk
-    // The deployer's Ethereum private key
-    // The user may either enter it as a command-line option or via the
-    // standard input
-    if (args.prompt_for_eth_privkey) {
-        ethSk = await promptPwd('Your Ethereum private key')
-    } else {
-        ethSk = args.eth_privkey
-    }
-
-    if (!validateEthSk(ethSk)) {
-        console.error('Error: invalid Ethereum private key')
-        return
-    }
-
-    if (! (await checkDeployerProviderConnection(ethSk, ethProvider))) {
-        console.error('Error: unable to connect to the Ethereum provider at', ethProvider)
-        return
-    }
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
-    const wallet = new ethers.Wallet(ethSk, provider)
 
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
 
-    const unirepContract = await getUnirepContract(unirepAddress, wallet)
+    // Connect a signer
+    await unirepContract.unlock(args.eth_privkey)
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
-    const nullifierTreeDepth = BigNumber.from((await unirepContract.treeDepths())["nullifierTreeDepth"]).toNumber()
-
+    // Parse inputs
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
 
+    // Generate user state transition proofs
     const userState = await genUserStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
         id,
         commitment,
     )
+    const results = await userState.genUserStateTransitionProofs()
 
-    const circuitInputs = await userState.genUserStateTransitionCircuitInputs()
-    console.log('Proving user state transition...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    
-    // start user state transition proof
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs.startTransitionProof)
-    console.log('----------------------------------------------------------')
-    let results = await genProofAndPublicSignals('startTransition', stringifyBigInts(circuitInputs.startTransitionProof))
-    let isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+    // Start user state transition proof
+    let isValid = await verifyProof('startTransition', results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
     if (!isValid) {
         console.error('Error: start state transition proof generated is not valid!')
-        return
     }
-    let blindedUserState = results['publicSignals'][0]
-    let blindedHashChain = results['publicSignals'][1]
-    const fromEpoch = userState.latestTransitionedEpoch
-    const GSTreeRoot = userState.getUnirepStateGSTree(fromEpoch).root
-
-    let tx
-    try {
-        tx = await unirepContract.startUserStateTransition(
-            blindedUserState,
-            blindedHashChain,
-            GSTreeRoot,
-            formatProofForVerifierContract(results['proof']),
-        )
-    } catch(e) {
-        console.error('Error: the transaction failed')
-        if (e) {
-            console.error(e)
-        }
-    }
+    let tx = await unirepContract.startUserStateTransition(
+        results.startTransitionProof.blindedUserState,
+        results.startTransitionProof.blindedHashChain,
+        results.startTransitionProof.globalStateTreeRoot,
+        results.startTransitionProof.proof,
+    )
+    console.log('Transaction hash:', tx?.hash)
 
     // process attestations proof
-    for (let i = 0; i < circuitInputs.processAttestationProof.length; i++) {
-        console.log('----------------------Circuit inputs----------------------')
-        console.log(circuitInputs.processAttestationProof[i])
-        console.log('----------------------------------------------------------')
-        results = await genProofAndPublicSignals('processAttestations', stringifyBigInts(circuitInputs.processAttestationProof[i]))
-        const isValid = await verifyProof('processAttestations', results['proof'], results['publicSignals'])
+    for (let i = 0; i < results.processAttestationProofs.length; i++) {
+        const isValid = await verifyProof('processAttestations', results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
         if (!isValid) {
             console.error('Error: process attestations proof generated is not valid!')
-            return
         }
 
-        const outputBlindedUserState = results['publicSignals'][0]
-        const outputBlindedHashChain = results['publicSignals'][1]
-        const inputBlindedUserState = results['publicSignals'][2]
-
-        try {
-            tx = await unirepContract.processAttestations(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                formatProofForVerifierContract(results['proof']),
-            )
-        } catch(e) {
-            console.error('Error: the transaction failed')
-            if (e) {
-                console.error(e)
-            }
-        }    
+        tx = await unirepContract.processAttestations(
+            results.processAttestationProofs[i].outputBlindedUserState,
+            results.processAttestationProofs[i].outputBlindedHashChain,
+            results.processAttestationProofs[i].inputBlindedUserState,
+            results.processAttestationProofs[i].proof,
+        )
+        console.log('Transaction hash:', tx?.hash)
     }
 
     // update user state proof
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs.finalTransitionProof)
-    console.log('----------------------------------------------------------')
-    results = await genProofAndPublicSignals('userStateTransition', stringifyBigInts(circuitInputs.finalTransitionProof))
-    const newGSTLeaf = results['publicSignals'][0]
+    const newGSTLeaf = results.finalTransitionProof.newGlobalStateTreeLeaf
     const newState = await userState.genNewUserStateAfterTransition()
     if (newGSTLeaf != newState.newGSTLeaf.toString()) {
         console.error('Error: Computed new GST leaf should match')
-        return
     }
-    isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
+    isValid = await verifyProof('userStateTransition', results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
     if (!isValid) {
         console.error('Error: user state transition proof generated is not valid!')
-        return
     }
 
-    const epochTreeRoot = (await userState.getUnirepStateEpochTree(fromEpoch)).getRootHash()
+    const fromEpoch = results.finalTransitionProof.transitionedFromEpoch
     const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
 
     // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
-    const outputEPKNullifiers: BigInt[] = []
     for (let i = 0; i < epkNullifiers.length; i++) {
-        const outputNullifier = results['publicSignals'][1+i]
-        const modedOutputNullifier = BigInt(outputNullifier) % BigInt(2 ** nullifierTreeDepth)
-        if (modedOutputNullifier != epkNullifiers[i]) {
-            console.error(`Error: nullifier outputted by circuit(${modedOutputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`)
-            return
+        const outputNullifier = results.finalTransitionProof.epochKeyNullifiers[i]
+        if (outputNullifier != epkNullifiers[i]) {
+            console.error(`Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`)
         }
-        outputEPKNullifiers.push(outputNullifier)
     }
 
-    // blinded user states and hash chains
-    const blindedUserStates: BigInt[] = results['publicSignals'].slice(2 + numEpochKeyNoncePerEpoch,2 + 2 * numEpochKeyNoncePerEpoch)
-    const blindedHashChains: BigInt[] = results['publicSignals'].slice(3 + 2*numEpochKeyNoncePerEpoch,3 + 3*numEpochKeyNoncePerEpoch)
-
-    try {
-        tx = await unirepContract.updateUserStateRoot(
-            newGSTLeaf,
-            outputEPKNullifiers,
-            blindedUserStates,
-            blindedHashChains,
-            fromEpoch,
-            GSTreeRoot,
-            epochTreeRoot,
-            formatProofForVerifierContract(results['proof']),
-        )
-    } catch(e) {
-        console.error('Error: the transaction failed')
-        if (e) {
-            console.error(e)
-        }
+    // Check if Global state tree root and epoch tree root exist
+    const unirepState = await genUnirepStateFromContract(
+        provider,
+        args.contract,
+        startBlock,
+    )
+    const GSTRoot = results.finalTransitionProof.fromGSTRoot
+    const inputEpoch = results.finalTransitionProof.transitionedFromEpoch
+    const epochTreeRoot= results.finalTransitionProof.fromEpochTree
+    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, inputEpoch)
+    const isEpochTreeExisted = unirepState.epochTreeRootExists(epochTreeRoot, inputEpoch)
+    if(!isGSTRootExisted) {
+        console.error('Error: invalid global state tree root')
+        return
+    }
+    if(!isEpochTreeExisted){
+        console.error('Error: invalid epoch tree root')
         return
     }
 
-    console.log('Transaction hash:', tx.hash)
-    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+    // Submit the user state transition transaction
+    tx = await unirepContract.updateUserStateRoot(
+        results.finalTransitionProof.newGlobalStateTreeLeaf,
+        results.finalTransitionProof.epochKeyNullifiers,
+        results.finalTransitionProof.blindedUserStates,
+        results.finalTransitionProof.blindedHashChains,
+        results.finalTransitionProof.transitionedFromEpoch,
+        results.finalTransitionProof.fromGSTRoot,
+        results.finalTransitionProof.fromEpochTree,
+        results.finalTransitionProof.proof,
+    )
+    console.log('Transaction hash:', tx?.hash)
+    const currentEpoch = await unirepContract.currentEpoch()
     console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
-    process.exit(0)        
+    process.exit(0)
 }
 
 export {

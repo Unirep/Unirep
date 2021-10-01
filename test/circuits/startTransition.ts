@@ -1,6 +1,5 @@
-import chai from "chai"
-const { expect } = chai
-import { genIdentity, genIdentityCommitment, IncrementalQuinTree, genRandomSalt, hashLeftRight, hash5, stringifyBigInts } from '@unirep/crypto'
+import { expect } from 'chai'
+import { genIdentity, genIdentityCommitment, IncrementalQuinTree, genRandomSalt, hashLeftRight, stringifyBigInts } from '@unirep/crypto'
 import { genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
 
 import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
@@ -24,6 +23,7 @@ describe('User State Transition circuits', function () {
         let hashedLeaf
         const zeroHashChain = BigInt(0)
         const nonce = BigInt(0)
+        const signUp = 1
 
         before(async () => {
             // User state tree
@@ -37,6 +37,7 @@ describe('User State Transition circuits', function () {
                         BigInt(Math.floor(Math.random() * 100)),
                         BigInt(Math.floor(Math.random() * 100)),
                         genRandomSalt(),
+                        BigInt(signUp),
                     )
                 }
                 await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())

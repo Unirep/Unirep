@@ -5,11 +5,11 @@ import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUserStateFromContract } from '../core'
-import { identityPrefix, reputationPublicSignalsPrefix, reputationProofPrefix } from './prefix'
+import { identityPrefix, signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'genReputationProof',
+        'genUserSignUpProof',
         { add_help: true },
     )
 
@@ -32,45 +32,11 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-n', '--epoch-key-nonce',
-        {
-            required: true,
-            type: 'int',
-            help: 'The epoch key nonce',
-        }
-    )
-
-    parser.add_argument(
         '-a', '--attester-id',
         {
             required: true,
             type: 'str',
             help: 'The attester id (in hex representation)',
-        }
-    )
-
-    parser.add_argument(
-        '-r', '--reputation-nullifier',
-        {
-            type: 'int',
-            help: 'The number of reputation nullifiers to prove',
-        }
-    )
-    
-    parser.add_argument(
-        '-mr', '--min-rep',
-        {
-            type: 'int',
-            help: 'The minimum positive score minus negative score the attester given to the user',
-        }
-    )
-
-
-    parser.add_argument(
-        '-gp', '--graffiti-preimage',
-        {
-            type: 'str',
-            help: 'The pre-image of the graffiti for the reputation the attester given to the user (in hex representation)',
         }
     )
 
@@ -93,7 +59,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const genReputationProof = async (args: any) => {
+const genUserSignUpProof = async (args: any) => {
 
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
@@ -106,7 +72,7 @@ const genReputationProof = async (args: any) => {
     const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
 
-    // Gen reputation proof
+    // Gen user sign up proof
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
@@ -115,32 +81,26 @@ const genReputationProof = async (args: any) => {
         commitment,
     )
     const attesterId = BigInt(add0x(args.attester_id))
-    const epkNonce = args.epoch_key_nonce
-    // Proving content
-    const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
-    const repNullifiersAmount = args.reputaiton_nullifier != null ? args.reputaiton_nullifier : 0
-    const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
-    const results = await userState.genProveReputationProof(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
+    const results = await userState.genUserSignUpProof(attesterId)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof('proveReputation',results.proof, results.publicSignals)
+    const isValid = await verifyProof('proveUserSignUp',results.proof, results.publicSignals)
     if(!isValid) {
-        console.error('Error: reputation proof generated is not valid!')
+        console.error('Error: user sign up proof generated is not valid!')
         return
     }
     
     const formattedProof = formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     const encodedPublicSignals = base64url.encode(JSON.stringify(results.publicSignals))
-    console.log(`Proof of reputation from attester ${results.attesterId}:`)
+    console.log(`Proof of user sign up from attester ${results.attesterId}:`)
     console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString()}`)
-    console.log(reputationProofPrefix + encodedProof)
-    console.log(reputationPublicSignalsPrefix + encodedPublicSignals)
+    console.log(signUpProofPrefix + encodedProof)
+    console.log(signUpPublicSignalsPrefix + encodedPublicSignals)
     process.exit(0)
 }
 
 export {
-    genReputationProof,
+    genUserSignUpProof,
     configureSubparser,
 }

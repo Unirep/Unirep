@@ -3,12 +3,11 @@ import { ethers } from 'ethers'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
-import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
-
+import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'verifyEpochKeyProof',
+        'verifyUserSignUpProof',
         { add_help: true },
     )
 
@@ -18,6 +17,15 @@ const configureSubparser = (subparsers: any) => {
             action: 'store',
             type: 'str',
             help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
+        }
+    )
+
+    parser.add_argument(
+        '-ep', '--epoch',
+        {
+            action: 'store',
+            type: 'int',
+            help: 'The latest epoch user transitioned to. Default: current epoch',
         }
     )
 
@@ -58,57 +66,57 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const verifyEpochKeyProof = async (args: any) => {
-    
+const verifyUserSignUpProof = async (args: any) => {
+
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
     // Unirep contract
     const unirepContract = new UnirepContract(args.contract, ethProvider)
-    
+
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(
         provider,
         args.contract,
         startBlock,
     )
-    
-    const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
-    const decodedPublicSignals = base64url.decode(args.public_signals.slice(epkPublicSignalsPrefix.length))
-    const proof = JSON.parse(decodedProof)
+
+    // Parse Inputs
+    const decodedProof = base64url.decode(args.proof.slice(signUpProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(signUpPublicSignalsPrefix.length))
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const currentEpoch = unirepState.currentEpoch
-    const epk = publicSignals[2]
-    const inputEpoch = publicSignals[1]
-    const GSTRoot = publicSignals[0]
-    console.log(`Verifying epoch key ${epk} with GSTRoot ${GSTRoot} in epoch ${inputEpoch}`)
-    if(inputEpoch != currentEpoch) {
-        console.log(`Warning: the epoch key is expired. Epoch key is in epoch ${inputEpoch}, but the current epoch is ${currentEpoch}`)
-    }
+    const epoch = publicSignals[0]
+    const epk = publicSignals[1]
+    const GSTRoot = publicSignals[2]
+    const attesterId = publicSignals[3]
+    const proof = JSON.parse(decodedProof)
 
     // Check if Global state tree root exists
-    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, inputEpoch)
+    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
     if(!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
         return
     }
-    
+
     // Verify the proof on-chain
-    const isProofValid = await unirepContract.verifyEpochKeyValidity(
-        GSTRoot,
-        inputEpoch,
+    const isProofValid = await unirepContract.verifyUserSignUp(
+        epoch,
         epk,
+        GSTRoot,
+        attesterId,
         proof,
     )
     if (!isProofValid) {
-        console.error('Error: invalid epoch key proof')
+        console.error('Error: invalid user sign up proof')
         return
     }
-    console.log(`Verify epoch key proof with epoch key ${epk} succeed`)
+
+    console.log(`Epoch key of the user: ${epk}`)
+    console.log(`Verify user sign up proof from attester ${attesterId} succeed`)
 }
 
 export {
-    verifyEpochKeyProof,
+    verifyUserSignUpProof,
     configureSubparser,
 }

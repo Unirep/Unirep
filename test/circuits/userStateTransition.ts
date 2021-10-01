@@ -1,6 +1,4 @@
-import chai from "chai"
-
-const { expect } = chai
+import { expect } from 'chai'
 import { IncrementalQuinTree, genRandomSalt, hashLeftRight, stringifyBigInts, hash5, genIdentity, genIdentityCommitment } from '@unirep/crypto'
 import { genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
 
@@ -14,6 +12,9 @@ describe('User State Transition circuits', function () {
 
     const epoch = 1
     const user = genIdentity()
+    const signUp = 1
+    const startEpochKeyNonce = 0
+    const endEpochKeyNonce = numEpochKeyNoncePerEpoch - 1
 
     describe('User State Transition', () => {
 
@@ -38,6 +39,9 @@ describe('User State Transition circuits', function () {
             // User state tree
             userStateTree = await genNewUserStateTree("circuit")
             intermediateUserStateTreeRoots = []
+            blindedUserState = []
+            blindedHashChain = []
+            epochTreePathElements = []
 
             // Bootstrap user state for the first `expectedNumAttestationsMade` attesters
             for (let i = 1; i < expectedNumAttestationsMade; i++) {
@@ -47,11 +51,13 @@ describe('User State Transition circuits', function () {
                         BigInt(Math.floor(Math.random() * 100)),
                         BigInt(Math.floor(Math.random() * 100)),
                         genRandomSalt(),
+                        BigInt(signUp),
                     )
                 }
                 await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
             }
             intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+            blindedUserState.push(hash5([user['identityNullifier'], userStateTree.getRootHash(), BigInt(epoch), BigInt(startEpochKeyNonce)]))
 
             // Global state tree
             GSTree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
@@ -61,21 +67,12 @@ describe('User State Transition circuits', function () {
             GSTreeProof = GSTree.genMerklePath(0)
             GSTreeRoot = GSTree.root
 
-            blindedUserState = []
-            blindedHashChain = []
-
             // Begin generating and processing attestations
-            epochTreePathElements = []
             for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
                 // Each epoch key has `ATTESTATIONS_PER_EPOCH_KEY` of attestations so
                 // interval between starting index of each epoch key is `ATTESTATIONS_PER_EPOCH_KEY`.
                 const epochKey = genEpochKey(user['identityNullifier'], epoch, nonce, circuitEpochTreeDepth)
-                const intermediateUserStateTreeRoot = genRandomSalt()
                 const hashChainResult = genRandomSalt()
-
-                // Blinded user state result
-                intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
-                blindedUserState.push(hash5([user['identityNullifier'], intermediateUserStateTreeRoot, BigInt(epoch), BigInt(nonce)]))
 
                 // Blinded hash chain result
                 hashChainResults.push(hashChainResult)
@@ -88,8 +85,12 @@ describe('User State Transition circuits', function () {
                 await epochTree.update(epochKey, sealedHashChainResult)
             }
 
+            const intermediateUserStateTreeRoot = genRandomSalt()
+            intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
+            blindedUserState.push(hash5([user['identityNullifier'], intermediateUserStateTreeRoot, BigInt(epoch), BigInt(endEpochKeyNonce)]))
+
             // Compute new GST Leaf
-            const latestUSTRoot = intermediateUserStateTreeRoots[EPK_NONCE_PER_EPOCH]
+            const latestUSTRoot = intermediateUserStateTreeRoots[1]
             newGSTLeaf = hashLeftRight(commitment, latestUSTRoot)
 
             for (let nonce = 0; nonce < EPK_NONCE_PER_EPOCH; nonce++) {
@@ -106,6 +107,8 @@ describe('User State Transition circuits', function () {
                     epoch: epoch,
                     blinded_user_state: blindedUserState,
                     intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
+                    start_epoch_key_nonce: startEpochKeyNonce,
+                    end_epoch_key_nonce: endEpochKeyNonce,
                     identity_pk: user['keypair']['pubKey'],
                     identity_nullifier: user['identityNullifier'],
                     identity_trapdoor: user['identityTrapdoor'],

@@ -1,14 +1,11 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity, stringifyBigInts } from '@unirep/crypto'
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
-import { getUnirepContract } from '@unirep/contracts'
+import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
+import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
-import { validateEthAddress, contractExists } from './utils'
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genEpochKey } from '../core/utils'
-import { genUserStateFromContract } from '../core'
-import { epkProofPrefix, identityPrefix } from './prefix'
+import { genUserStateFromContract, genEpochKey, UnirepContract } from '../core'
+import { epkProofPrefix, epkPublicSignalsPrefix, identityPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -63,26 +60,13 @@ const configureSubparser = (subparsers: any) => {
 }
 
 const genEpochKeyAndProof = async (args: any) => {
-
-    // Unirep contract
-    if (!validateEthAddress(args.contract)) {
-        console.error('Error: invalid Unirep contract address')
-        return
-    }
-
-    const unirepAddress = args.contract
-
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
-    if (! await contractExists(provider, unirepAddress)) {
-        console.error('Error: there is no contract deployed at the specified address')
-        return
-    }
-
-    const unirepContract = await getUnirepContract(unirepAddress, provider)
+    // Unirep contract
+    const unirepContract = new UnirepContract(args.contract, ethProvider)
+    
     const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
     // Validate epoch key nonce
@@ -98,40 +82,34 @@ const genEpochKeyAndProof = async (args: any) => {
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
     const commitment = genIdentityCommitment(id)
-    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+    const currentEpoch = await unirepContract.currentEpoch()
     const treeDepths = await unirepContract.treeDepths()
     const epochTreeDepth = treeDepths.epochTreeDepth
-    const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString(16)
+    const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString()
 
     // Gen epoch key proof
     const userState = await genUserStateFromContract(
         provider,
-        unirepAddress,
+        args.contract,
         startBlock,
         id,
         commitment,
     )
-    const circuitInputs = await userState.genVerifyEpochKeyCircuitInputs(epkNonce)
-    console.log('Proving epoch key...')
-    console.log('----------------------User State----------------------')
-    console.log(userState.toJSON(4))
-    console.log('------------------------------------------------------')
-    console.log('----------------------Circuit inputs----------------------')
-    console.log(circuitInputs)
-    console.log('----------------------------------------------------------')
-    const results = await genProofAndPublicSignals('verifyEpochKey',stringifyBigInts(circuitInputs))
+    const results = await userState.genVerifyEpochKeyProof(epkNonce)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof('verifyEpochKey', results['proof'], results['publicSignals'])
+    const isValid = await verifyProof('verifyEpochKey', results.proof, results.publicSignals)
     if(!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results["proof"])
+    const formattedProof = formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    const encodedPublicSignals = base64url.encode(JSON.stringify(results.publicSignals))
     console.log(`Epoch key of epoch ${currentEpoch} and nonce ${epkNonce}: ${epk}`)
     console.log(epkProofPrefix + encodedProof)
+    console.log(epkPublicSignalsPrefix + encodedPublicSignals)
     process.exit(0)
 }
 

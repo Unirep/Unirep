@@ -1,15 +1,10 @@
 {
     "name": "unirep",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "",
-    "main": "index.js",
+    "main": "build/core/index.js",
     "scripts": {
-        "build": "yarn downloadPtau && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn compile",
-        "compile": "npx hardhat compile && npx ts-node scripts/buildPoseidon.ts",
-        "downloadPtau": "./scripts/downloadPtau.sh",
-        "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
-        "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
-        "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
+        "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "yarn contractUnitTests && yarn circuitUnitTests && yarn integrationTest",
         "contractUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
@@ -37,18 +32,14 @@
         "ts-node": "^10.2.1"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^4.3.1",
         "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
         "@unirep/circuits": "git+https://github.com/Unirep/circuits.git",
         "@unirep/contracts": "git+https://github.com/Unirep/contracts.git",
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
-        "circom": "^0.5.45",
-        "circomlib": "^0.5.3",
         "ethers": "^5.4.6",
         "prompt-async": "^0.9.9",
         "shelljs": "^0.8.3",
-        "snarkjs": "^0.4.7",
         "typescript": "^4.0.5",
         "utf-8-validate": "5.0.4"
     }
