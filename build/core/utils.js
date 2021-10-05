@@ -29,7 +29,7 @@ const computeEmptyUserStateRoot = (treeDepth) => {
 exports.computeEmptyUserStateRoot = computeEmptyUserStateRoot;
 const computeInitUserStateRoot = async (treeDepth, leafIdx, airdropPosRep) => {
     const t = await crypto_1.SparseMerkleTreeImpl.create(new keyv_1.default(), treeDepth, defaultUserStateLeaf);
-    const leafValue = crypto_1.hash5([BigInt(airdropPosRep)]);
+    const leafValue = crypto_1.hash5([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)]);
     await t.update(BigInt(leafIdx), leafValue);
     return t.getRootHash();
 };
@@ -160,7 +160,7 @@ const genUnirepStateFromContract = async (provider, address, startBlock) => {
             }
             // Update nullifiers
             for (let i = 0; i < ((_t = nullifierEvent.args) === null || _t === void 0 ? void 0 : _t.reputationNullifiers.length); i++) {
-                unirepState.addReputationNullifiers((_u = nullifierEvent.args) === null || _u === void 0 ? void 0 : _u.reputationNullifiers);
+                unirepState.addReputationNullifiers((_u = nullifierEvent.args) === null || _u === void 0 ? void 0 : _u.reputationNullifiers[i]);
             }
         }
         else if (occurredEvent === "EpochEnded") {
@@ -340,13 +340,19 @@ const _genUserStateFromContract = async (provider, address, startBlock, userIden
             assert_1.default(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`);
             const newLeaf = BigInt((_b = newLeafEvent.args) === null || _b === void 0 ? void 0 : _b._hashedLeaf);
             unirepState.signUp(unirepState.currentEpoch, newLeaf);
-            // New leaf matches user's default leaf means user signed up.
+            // New leaf matches user's airdropped leaf means user signed up.
             const attesterId = (_c = newLeafEvent.args) === null || _c === void 0 ? void 0 : _c._attesterId.toNumber();
             const airdropPosRep = (_d = newLeafEvent.args) === null || _d === void 0 ? void 0 : _d._airdropAmount.toNumber();
-            const initUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep);
-            const userInitGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, initUserStateRoot);
-            if (userInitGSTLeaf === newLeaf) {
+            const airdropUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep);
+            const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth);
+            const userAirdropGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, airdropUserStateRoot);
+            const userEmptyGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, emptyUserStateRoot);
+            if (userAirdropGSTLeaf === newLeaf) {
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, attesterId, airdropPosRep);
+                userHasSignedUp = true;
+            }
+            else if (userEmptyGSTLeaf === newLeaf) {
+                userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, 0, 0);
                 userHasSignedUp = true;
             }
             // A user sign up, increment (next) GST leaf index
@@ -381,7 +387,7 @@ const _genUserStateFromContract = async (provider, address, startBlock, userIden
             }
             // Update nullifiers
             for (let i = 0; i < ((_v = nullifierEvent.args) === null || _v === void 0 ? void 0 : _v.reputationNullifiers.length); i++) {
-                unirepState.addReputationNullifiers((_w = nullifierEvent.args) === null || _w === void 0 ? void 0 : _w.reputationNullifiers);
+                unirepState.addReputationNullifiers((_w = nullifierEvent.args) === null || _w === void 0 ? void 0 : _w.reputationNullifiers[i]);
             }
         }
         else if (occurredEvent === "EpochEnded") {
