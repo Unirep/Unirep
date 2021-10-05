@@ -65,6 +65,9 @@ class UnirepContract {
     async maxUsers() {
         return this.contract.maxUsers();
     }
+    async maxAttesters() {
+        return this.contract.maxAttesters();
+    }
     async numUserSignUps() {
         return this.contract.numUserSignUps();
     }

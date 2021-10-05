@@ -5,7 +5,7 @@ import { genRandomSalt, hash5, hashLeftRight, genIdentity, genIdentityCommitment
 import { verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
-import { attestingFee, circuitUserStateTreeDepth, epochLength, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { attestingFee, circuitUserStateTreeDepth, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { getTreeDepthsForTesting } from '../../core/utils'
 import { UnirepState, UserState } from '../../core'
 import { genNewSMT } from '../utils'
@@ -34,6 +34,7 @@ describe('Airdrop', function () {
         const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
             maxUsers: maxUsers,
+            maxAttesters: maxAttesters,
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
             maxReputationBudget: maxReputationBudget,
             epochLength: epochLength,

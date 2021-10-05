@@ -79,6 +79,8 @@ describe('Epoch Transition', function () {
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        let results = await userState.genVerifyEpochKeyProof(nonce)
+        let epkProofData = [results.globalStateTree, formatProofForVerifierContract(results.proof)]
         const attestationNum = 11
         for (let i = 0; i < attestationNum; i++) {
             let attestation = new Attestation(
@@ -91,6 +93,7 @@ describe('Epoch Transition', function () {
             tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
+                epkProofData,
                 {value: attestingFee}
             )
             receipt = await tx.wait()
@@ -100,6 +103,8 @@ describe('Epoch Transition', function () {
         
         nonce = 1
         epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        results = await userState.genVerifyEpochKeyProof(nonce)
+        epkProofData = [results.globalStateTree, formatProofForVerifierContract(results.proof)]
         const attestation = new Attestation(
             BigInt(attesterId.toString()),
             BigInt(0),
@@ -110,79 +115,37 @@ describe('Epoch Transition', function () {
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,
             epochKey,
+            epkProofData,
             {value: attestingFee}
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         unirepState.addAttestation(epochKey, attestation)
-
-        numEpochKey = await unirepContract.getNumEpochKey(epoch)
-        expect(numEpochKey).equal(2)
     })
 
     it('premature epoch transition should fail', async () => {
-        const numEpochKeysToSeal = numEpochKey
-        await expect(unirepContract.beginEpochTransition(numEpochKeysToSeal)
+        await expect(unirepContract.beginEpochTransition()
             ).to.be.revertedWith('Unirep: epoch not yet ended')
     })
 
     it('epoch transition should succeed', async () => {
         // Record data before epoch transition so as to compare them with data after epoch transition
         let epoch = await unirepContract.currentEpoch()
-        let epochKeyHashchainMap = {}
-        let epochKey_, hashChainBefore
-        for (let i = 0; i < numEpochKey; i++) {
-            epochKey_ = await unirepContract.getEpochKey(epoch, i)
-            hashChainBefore = await unirepContract.epochKeyHashchain(epochKey_)
-            epochKeyHashchainMap[epochKey_] = hashChainBefore
-        }
 
         // Fast-forward epochLength of seconds
         await hardhatEthers.provider.send("evm_increaseTime", [epochLength])
         // Assert no epoch transition compensation is dispensed to volunteer
         expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.be.equal(0)
-        // Begin epoch transition but only seal hash chain of one epoch key
-        let numEpochKeysToSeal = numEpochKey.sub(1)
-        let tx = await unirepContractCalledByAttester.beginEpochTransition(numEpochKeysToSeal)
+        // Begin epoch transition 
+        let tx = await unirepContractCalledByAttester.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
         console.log("Gas cost of sealing one epoch key:", receipt.gasUsed.toString())
-        expect(await unirepContract.getNumSealedEpochKey(epoch)).to.be.equal(1)
         // Verify compensation to the volunteer increased
         expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.gt(0)
 
-        // Complete epoch transition by sealing hash chain of the rest of the epoch keys
-        const prevAttesterCompensation = await unirepContract.epochTransitionCompensation(attesterAddress)
-        numEpochKeysToSeal = numEpochKey
-        tx = await unirepContractCalledByAttester.beginEpochTransition(numEpochKeysToSeal)
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-        console.log("Gas cost of sealing hash chain of the rest of the epoch key and complete epoch transition:", receipt.gasUsed.toString())
-        expect(await unirepContract.getNumSealedEpochKey(epoch)).to.be.equal(numEpochKey)
+        // Complete epoch transition
         expect(await unirepContract.currentEpoch()).to.be.equal(epoch.add(1))
-        // Verify compensation to the volunteer increased
-        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.gt(prevAttesterCompensation)
-        let [epochKeys_, epochKeyHashchains_] = await unirepContract.getEpochTreeLeaves(epoch)
-        epochKeys_ = epochKeys_.map((epk) => epk.toString())
-        expect(epochKeys_.length).to.be.equal(numEpochKey)
-
-        // Verify each epoch key hash chain is sealed
-        let hashChainAfter
-        let sealedHashChain
-        let epkIndex
-        for (epochKey_ in epochKeyHashchainMap) {
-            sealedHashChain = hashLeftRight(
-                BigInt(1),
-                epochKeyHashchainMap[epochKey_]
-            )
-            hashChainAfter = await unirepContract.epochKeyHashchain(epochKey_)
-            expect(hashChainAfter).equal(sealedHashChain)
-
-            // Check that epoch keys and hashchains also match the ones in epoch tree
-            epkIndex = epochKeys_.indexOf(epochKey_)
-            expect(epkIndex >= 0).to.be.true
-            expect(epochKeyHashchains_[epkIndex]).to.be.equal(sealedHashChain)
-        }
 
         // Verify latestEpochTransitionTime and currentEpoch
         let latestEpochTransitionTime = await unirepContract.latestEpochTransitionTime()
@@ -192,14 +155,46 @@ describe('Epoch Transition', function () {
         expect(epoch_).equal(epoch.add(1))
 
         // Unirep and user state transition from the first epoch
-        // Get epoch tree leaves of the ending epoch
-        epochKeys_ = epochKeys_.map((epk) => BigInt(epk.toString()))
-        epochKeyHashchains_ = epochKeyHashchains_.map((hc) => BigInt(hc.toString()))
         const epochTreeLeaves: IEpochTreeLeaf[] = []
-        for (let i = 0; i < epochKeys_.length; i++) {
+
+        // Generate valid epoch tree leaves
+        const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
+        const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter)
+        const attestationMap = {}
+
+        // compute hash chain of valid epoch key
+        for (let i = 0; i < attestationSubmittedEvents.length; i++) {
+            const isProofValid = await unirepContract.verifyEpochKeyValidity(
+                attestationSubmittedEvents[i].args?.epkProofData?.fromGlobalStateTree,
+                attestationSubmittedEvents[i].args?._epoch,
+                attestationSubmittedEvents[i].args?._epochKey,
+                attestationSubmittedEvents[i].args?.epkProofData?.proof,
+            )
+            if(isProofValid) {
+                const epochKey = attestationSubmittedEvents[i].args?._epochKey
+                if(attestationMap[epochKey] == undefined) {
+                    attestationMap[epochKey] = BigInt(0)
+                } 
+                const attestation = new Attestation(
+                    BigInt(attestationSubmittedEvents[i].args?.attestation?.attesterId.toString()),
+                    BigInt(attestationSubmittedEvents[i].args?.attestation?.posRep.toString()),
+                    BigInt(attestationSubmittedEvents[i].args?.attestation?.negRep.toString()),
+                    BigInt(attestationSubmittedEvents[i].args?.attestation?.graffiti.toString()),
+                    BigInt(attestationSubmittedEvents[i].args?.attestation?.signUp.toString()),
+                )
+                attestationMap[epochKey] = hashLeftRight(
+                    attestation.hash(), 
+                    attestationMap[epochKey]
+                )
+            }
+        }
+
+        // seal hash chain
+        for(let k in attestationMap) {
+            attestationMap[k] = hashLeftRight(BigInt(1), attestationMap[k])
             const epochTreeLeaf: IEpochTreeLeaf = {
-                epochKey: epochKeys_[i],
-                hashchainResult: epochKeyHashchains_[i]
+                epochKey: BigInt(k),
+                hashchainResult: attestationMap[k]
             }
             epochTreeLeaves.push(epochTreeLeaf)
         }
@@ -291,39 +286,13 @@ describe('Epoch Transition', function () {
         unirepState.userStateTransition(epoch_, BigInt(newGSTLeaf), epkNullifiers)
     })
 
-    it('attesting to a sealed epoch key should fail', async () => {
-        let attestation = {
-            attesterId: attesterId.toString(),
-            posRep: 1,
-            negRep: 0,
-            graffiti: genRandomSalt().toString(),
-            overwriteGraffiti: true,
-            signUp: signedUpInLeaf,
-        }
-
-        let prevEpoch = (await unirepContract.currentEpoch()).sub(1)
-        let numEpochKey = await unirepContract.getNumEpochKey(prevEpoch)
-        for (let i = 0; i < numEpochKey; i++) {
-            let epochKey_ = await unirepContract.getEpochKey(prevEpoch, i)
-
-            await expect(unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey_,
-                {value: attestingFee}
-            )).to.be.revertedWith('Unirep: hash chain of this epoch key has been sealed')
-        }
-    })
-
     it('epoch transition with no attestations and epoch keys should also succeed', async () => {
         let epoch = await unirepContract.currentEpoch()
-        let numEpochKey = await unirepContract.getNumEpochKey(epoch)
-        expect(numEpochKey).equal(0)
 
         // Fast-forward epochLength of seconds
         await hardhatEthers.provider.send("evm_increaseTime", [epochLength])
         // Begin epoch transition
-        const numEpochKeysToSeal = await unirepContract.getNumEpochKey(epoch)
-        let tx = await unirepContract.beginEpochTransition(numEpochKeysToSeal)
+        let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 

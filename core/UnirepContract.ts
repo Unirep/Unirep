@@ -83,6 +83,10 @@ export class UnirepContract {
         return this.contract.maxUsers()
     }
 
+    async maxAttesters(): Promise<any> {
+        return this.contract.maxAttesters()
+    }
+
     async numUserSignUps(): Promise<any> {
         return this.contract.numUserSignUps()
     }

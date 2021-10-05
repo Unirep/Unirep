@@ -18,7 +18,7 @@ class Reputation {
             if (_graffiti != BigInt(0)) {
                 this.graffiti = _graffiti;
             }
-            this.signUp = _signUp;
+            this.signUp = this.signUp || _signUp;
             return this;
         };
         this.addGraffitiPreImage = (_graffitiPreImage) => {
