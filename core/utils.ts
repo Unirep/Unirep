@@ -31,7 +31,7 @@ const computeInitUserStateRoot = async (treeDepth: number, leafIdx: number, aird
         treeDepth,
         defaultUserStateLeaf,
     )
-    const leafValue = hash5([BigInt(airdropPosRep)])
+    const leafValue = hash5([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)])
     await t.update(BigInt(leafIdx), leafValue)
     return t.getRootHash()
 }
@@ -213,7 +213,7 @@ const genUnirepStateFromContract = async (
             }
             // Update nullifiers
             for (let i = 0; i < nullifierEvent.args?.reputationNullifiers.length; i++) {
-                unirepState.addReputationNullifiers(nullifierEvent.args?.reputationNullifiers)
+                unirepState.addReputationNullifiers(nullifierEvent.args?.reputationNullifiers[i])
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
@@ -487,13 +487,19 @@ const _genUserStateFromContract = async (
 
             const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
             unirepState.signUp(unirepState.currentEpoch, newLeaf)
-            // New leaf matches user's default leaf means user signed up.
+            // New leaf matches user's airdropped leaf means user signed up.
             const attesterId = newLeafEvent.args?._attesterId.toNumber()
             const airdropPosRep = newLeafEvent.args?._airdropAmount.toNumber()
-            const initUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep)
-            const userInitGSTLeaf = hashLeftRight(userIdentityCommitment, initUserStateRoot)
-            if (userInitGSTLeaf === newLeaf) {
+            const airdropUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep)
+            const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth)
+            const userAirdropGSTLeaf = hashLeftRight(userIdentityCommitment, airdropUserStateRoot)
+            const userEmptyGSTLeaf = hashLeftRight(userIdentityCommitment, emptyUserStateRoot)
+
+            if (userAirdropGSTLeaf === newLeaf) {
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, attesterId, airdropPosRep)
+                userHasSignedUp = true
+            } else if (userEmptyGSTLeaf === newLeaf){
+                userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, 0, 0)
                 userHasSignedUp = true
             }
 
@@ -551,7 +557,7 @@ const _genUserStateFromContract = async (
             }
             // Update nullifiers
             for (let i = 0; i < nullifierEvent.args?.reputationNullifiers.length; i++) {
-                unirepState.addReputationNullifiers(nullifierEvent.args?.reputationNullifiers)
+                unirepState.addReputationNullifiers(nullifierEvent.args?.reputationNullifiers[i])
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
