@@ -506,7 +506,7 @@ class UserState {
         for (let i = 0; i < fromNonces.length; i++) {
             const startIdx = this.numAttestationsPerProof * i
             const endIdx = this.numAttestationsPerProof * (i+1)
-            if(fromNonces[i] == toNonces[i] && intermediateUserStateTreeRoots[startIdx] == intermediateUserStateTreeRoots[endIdx]) continue
+            // if(fromNonces[i] == toNonces[i] && intermediateUserStateTreeRoots[startIdx] == intermediateUserStateTreeRoots[endIdx]) continue
             processAttestationCircuitInputs.push(stringifyBigInts({
                 epoch: fromEpoch,
                 from_nonce: fromNonces[i],

@@ -185,8 +185,8 @@ const genUnirepStateFromContract = async (provider, address, startBlock) => {
                 continue;
             }
             // Update nullifiers
-            for (let i = 0; i < ((_j = nullifierEvent.args) === null || _j === void 0 ? void 0 : _j.reputationNullifiers.length); i++) {
-                unirepState.addReputationNullifiers((_k = nullifierEvent.args) === null || _k === void 0 ? void 0 : _k.reputationNullifiers[i]);
+            for (let i = 0; i < ((_t = nullifierEvent.args) === null || _t === void 0 ? void 0 : _t.reputationNullifiers.length); i++) {
+                unirepState.addReputationNullifiers((_u = nullifierEvent.args) === null || _u === void 0 ? void 0 : _u.reputationNullifiers[i]);
             }
             // add a negative reputation
             const attestation = new UnirepState_1.Attestation(BigInt(attesterId), BigInt(0), BigInt(nullifiersAmount), BigInt(0), BigInt(0));
@@ -373,15 +373,15 @@ const _genUserStateFromContract = async (provider, address, startBlock, userIden
             // New leaf matches user's airdropped leaf means user signed up.
             const attesterId = (_c = newLeafEvent.args) === null || _c === void 0 ? void 0 : _c._attesterId.toNumber();
             const airdropPosRep = (_d = newLeafEvent.args) === null || _d === void 0 ? void 0 : _d._airdropAmount.toNumber();
-            const initUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep);
-            const userInitGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, initUserStateRoot);
+            const airdropUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep);
             const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth);
-            const userDefaultGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, emptyUserStateRoot);
-            if (userInitGSTLeaf === newLeaf) {
+            const userAirdropGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, airdropUserStateRoot);
+            const userEmptyGSTLeaf = crypto_1.hashLeftRight(userIdentityCommitment, emptyUserStateRoot);
+            if (userAirdropGSTLeaf === newLeaf) {
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, attesterId, airdropPosRep);
                 userHasSignedUp = true;
             }
-            else if (userDefaultGSTLeaf == newLeaf) {
+            else if (userEmptyGSTLeaf === newLeaf) {
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, 0, 0);
                 userHasSignedUp = true;
             }
@@ -442,8 +442,8 @@ const _genUserStateFromContract = async (provider, address, startBlock, userIden
                 continue;
             }
             // Update nullifiers
-            for (let i = 0; i < ((_k = nullifierEvent.args) === null || _k === void 0 ? void 0 : _k.reputationNullifiers.length); i++) {
-                unirepState.addReputationNullifiers((_l = nullifierEvent.args) === null || _l === void 0 ? void 0 : _l.reputationNullifiers[i]);
+            for (let i = 0; i < ((_v = nullifierEvent.args) === null || _v === void 0 ? void 0 : _v.reputationNullifiers.length); i++) {
+                unirepState.addReputationNullifiers((_w = nullifierEvent.args) === null || _w === void 0 ? void 0 : _w.reputationNullifiers[i]);
             }
             // add a negative reputation
             const attestation = new UnirepState_1.Attestation(BigInt(attesterId), BigInt(0), BigInt(nullifiersAmount), BigInt(0), BigInt(0));

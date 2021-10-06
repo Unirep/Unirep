@@ -537,15 +537,15 @@ const _genUserStateFromContract = async (
             // New leaf matches user's airdropped leaf means user signed up.
             const attesterId = newLeafEvent.args?._attesterId.toNumber()
             const airdropPosRep = newLeafEvent.args?._airdropAmount.toNumber()
-            const initUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep)
-            const userInitGSTLeaf = hashLeftRight(userIdentityCommitment, initUserStateRoot)
-
+            const airdropUserStateRoot = await computeInitUserStateRoot(unirepState.userStateTreeDepth, attesterId, airdropPosRep)
             const emptyUserStateRoot = computeEmptyUserStateRoot(unirepState.userStateTreeDepth)
-            const userDefaultGSTLeaf = hashLeftRight(userIdentityCommitment, emptyUserStateRoot)
-            if (userInitGSTLeaf === newLeaf) {
+            const userAirdropGSTLeaf = hashLeftRight(userIdentityCommitment, airdropUserStateRoot)
+            const userEmptyGSTLeaf = hashLeftRight(userIdentityCommitment, emptyUserStateRoot)
+
+            if (userAirdropGSTLeaf === newLeaf) {
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, attesterId, airdropPosRep)
                 userHasSignedUp = true
-            } else if (userDefaultGSTLeaf == newLeaf) {
+            } else if (userEmptyGSTLeaf === newLeaf){
                 userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, 0, 0)
                 userHasSignedUp = true
             }
