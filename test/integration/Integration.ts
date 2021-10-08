@@ -271,12 +271,8 @@ describe('Integration', function () {
             expect(isStartTransitionProofValid, 'Verify start user state transition proof on-chain failed').to.be.true
             validProofIndex[proofIndex.toNumber()] = true
 
-            // Check if all blinded hashcahins and user states submitted before
-            for (let i = 0; i < 2; i++) {
-                expect(unirepState.blindedUserStateExist(transitionArgs.blindedUserStates[i]), 'Verify blinded user state off-chain failed').to.be.true
-            }
+            // Check if all blinded hashcahins submitted before
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                expect(unirepState.blindedHashChainExist(transitionArgs.blindedHashChains[i]), 'Verify blinded hash chain off-chain failed').to.be.true
                 const hashChainFilter = unirepContract.filters.ProcessedAttestationsProof(null, transitionArgs.blindedHashChains[i])
                 const hashChainFilterEvents = await unirepContract.queryFilter(hashChainFilter)
                 expect(hashChainFilterEvents.length, 'Verify blinded hash chain filters failed').not.equal(0)
@@ -921,12 +917,8 @@ describe('Integration', function () {
             expect(isStartTransitionProofValid, 'Verify start user state transition proof on-chain failed').to.be.true
             validProofIndex[proofIndex.toNumber()] = true
 
-            // Check if all blinded hashcahins and user states submitted before
-            for (let i = 0; i < 2; i++) {
-                expect(unirepState.blindedUserStateExist(transitionArgs.blindedUserStates[i]), 'Verify blinded user state off-chain failed').to.be.true
-            }
+            // Check if all blinded hashcahinssubmitted before
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                expect(unirepState.blindedHashChainExist(transitionArgs.blindedHashChains[i]), 'Verify blinded hash chain off-chain failed').to.be.true
                 const hashChainFilter = unirepContract.filters.ProcessedAttestationsProof(null, transitionArgs.blindedHashChains[i])
                 const hashChainFilterEvents = await unirepContract.queryFilter(hashChainFilter)
                 expect(hashChainFilterEvents.length, 'Verify blinded hash chain filters failed').not.equal(0)

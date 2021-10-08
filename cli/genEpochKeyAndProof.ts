@@ -95,7 +95,6 @@ const genEpochKeyAndProof = async (args: any) => {
         id,
         commitment,
     )
-    console.log(userState.toJSON(4))
     const results = await userState.genVerifyEpochKeyProof(epkNonce)
 
     // TODO: Not sure if this validation is necessary
