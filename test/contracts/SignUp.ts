@@ -18,10 +18,6 @@ describe('Signup', () => {
     let accounts: ethers.Signer[]
     
     before(async () => {
-        
-    })
-
-    it('should have the correct config value', async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting("contract")
@@ -38,6 +34,9 @@ describe('Signup', () => {
 
         const blankGSLeaf = await unirepContract.hashedBlankStateLeaf()
         GSTree = new IncrementalQuinTree(globalStateTreeDepth, blankGSLeaf, 2)
+    })
+
+    it('should have the correct config value', async () => {
         const attestingFee_ = await unirepContract.attestingFee()
         expect(attestingFee).equal(attestingFee_)
         const epochLength_ = await unirepContract.epochLength()
@@ -46,8 +45,6 @@ describe('Signup', () => {
         expect(numEpochKeyNoncePerEpoch).equal(numEpochKeyNoncePerEpoch_)
         const maxUsers_ = await unirepContract.maxUsers()
         expect(testMaxUser).equal(maxUsers_)
-        const maxAttestsers_ = await unirepContract.maxAttesters()
-        expect(testMaxUser).equal(maxAttestsers_)
 
         const treeDepths_ = await unirepContract.treeDepths()
         expect(epochTreeDepth).equal(treeDepths_.epochTreeDepth)

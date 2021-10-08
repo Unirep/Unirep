@@ -3,6 +3,9 @@ import { add0x } from '@unirep/crypto'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { Attestation, UnirepContract } from '../core'
+import { verifyEpochKeyProof } from './verifyEpochKeyProof'
+import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
+import base64url from 'base64url'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -20,11 +23,20 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-epk', '--epoch-key',
+        '-p', '--public-signals',
         {
             required: true,
             type: 'str',
-            help: 'The user\'s epoch key to attest to (in hex representation)',
+            help: 'The snark public signals of the user\'s epoch key ',
+        }
+    )
+
+    parser.add_argument(
+        '-pf', '--proof',
+        {
+            required: true,
+            type: 'str',
+            help: 'The snark proof of the user\'s epoch key ',
         }
     )
 
@@ -102,8 +114,15 @@ const attest = async (args: any) => {
     // Connect a signer
     await unirepContract.unlock(args.eth_privkey)
 
+    await verifyEpochKeyProof(args)
+    
     // Parse input
-    const epk = args.epoch_key
+    const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(epkPublicSignalsPrefix.length))
+    const proof = JSON.parse(decodedProof)
+    const publicSignals = JSON.parse(decodedPublicSignals)
+    const epkProofData = publicSignals.concat([proof])
+    const epochKey = publicSignals[2]
     const posRep = args.pos_rep != undefined ? args.pos_rep : 0
     const negRep = args.neg_rep != undefined ? args.neg_rep : 0
     const graffiti = args.graffiti != undefined ? BigInt(add0x(args.graffiti)) : BigInt(0)
@@ -117,10 +136,10 @@ const attest = async (args: any) => {
         graffiti,
         BigInt(signUp)
     )
-    console.log(`Attesting to epoch key ${args.epoch_key} with pos rep ${posRep}, neg rep ${negRep}, graffiti ${graffiti.toString(16)} and sign up flag ${signUp}`)
+    console.log(`Attesting to epoch key ${epochKey} with pos rep ${posRep}, neg rep ${negRep}, graffiti ${graffiti.toString(16)} and sign up flag ${signUp}`)
 
     // Submit attestation
-    const tx = await unirepContract.submitAttestation(attestation, epk)
+    const tx = await unirepContract.submitAttestation(attestation, epkProofData)
     console.log('Transaction hash:', tx?.hash)
 }
 

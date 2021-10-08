@@ -180,9 +180,11 @@ const userStateTransition = async (args: any) => {
         results.finalTransitionProof.fromEpochTree,
         results.finalTransitionProof.proof,
     )
-    console.log('Transaction hash:', tx?.hash)
-    const currentEpoch = await unirepContract.currentEpoch()
-    console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
+    if(tx != undefined) {
+        console.log('Transaction hash:', tx?.hash)
+        const currentEpoch = await unirepContract.currentEpoch()
+        console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
+    }
     process.exit(0)
 }
 

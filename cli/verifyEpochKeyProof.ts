@@ -22,7 +22,7 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-s', '--public-signals',
+        '-p', '--public-signals',
         {
             required: true,
             type: 'str',

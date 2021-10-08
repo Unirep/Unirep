@@ -741,7 +741,6 @@ class UserState {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
-
         const results = await genProofAndPublicSignals('proveUserSignUp',circuitInputs)
 
         return {

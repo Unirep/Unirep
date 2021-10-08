@@ -75,13 +75,13 @@ describe('Epoch Transition', function () {
 
         attesterId = await unirepContract.attesters(attesterAddress)
 
-        // Submit 2 attestations
+        // Submit attestations
         let epoch = await unirepContract.currentEpoch()
-        let nonce = 0
+        let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let results = await userState.genVerifyEpochKeyProof(nonce)
-        let epkProofData = [results.globalStateTree, formatProofForVerifierContract(results.proof)]
-        const attestationNum = 11
+        const attestationNum = 7
+        let epochKeyProof = results['publicSignals'].concat([formatProofForVerifierContract(results['proof'])])
         for (let i = 0; i < attestationNum; i++) {
             let attestation = new Attestation(
                 BigInt(attesterId.toString()),
@@ -92,8 +92,7 @@ describe('Epoch Transition', function () {
             ) 
             tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
-                epochKey,
-                epkProofData,
+                epochKeyProof,
                 {value: attestingFee}
             )
             receipt = await tx.wait()
@@ -101,26 +100,51 @@ describe('Epoch Transition', function () {
             unirepState.addAttestation(epochKey, attestation)
         }
         
-        nonce = 1
+        nonce = 2
         epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         results = await userState.genVerifyEpochKeyProof(nonce)
-        epkProofData = [results.globalStateTree, formatProofForVerifierContract(results.proof)]
-        const attestation = new Attestation(
-            BigInt(attesterId.toString()),
-            BigInt(0),
-            BigInt(99),
-            BigInt(0),
-            BigInt(signedUpInLeaf),
-        )
-        tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            epkProofData,
-            {value: attestingFee}
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-        unirepState.addAttestation(epochKey, attestation)
+        epochKeyProof = results['publicSignals'].concat([formatProofForVerifierContract(results['proof'])])
+
+        for (let i = 0; i < attestationNum; i++) {
+            let attestation = new Attestation(
+                BigInt(attesterId.toString()),
+                BigInt(i),
+                BigInt(0),
+                genRandomSalt(),
+                BigInt(signedUpInLeaf),
+            ) 
+            tx = await unirepContractCalledByAttester.submitAttestation(
+                attestation,
+                epochKeyProof,
+                {value: attestingFee}
+            )
+            receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+            unirepState.addAttestation(epochKey, attestation)
+        }
+
+        nonce = 0
+        epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        results = await userState.genVerifyEpochKeyProof(nonce)
+        epochKeyProof = results['publicSignals'].concat([formatProofForVerifierContract(results['proof'])])
+
+        for (let i = 0; i < 0; i++) {
+            let attestation = new Attestation(
+                BigInt(attesterId.toString()),
+                BigInt(i),
+                BigInt(0),
+                genRandomSalt(),
+                BigInt(signedUpInLeaf),
+            ) 
+            tx = await unirepContractCalledByAttester.submitAttestation(
+                attestation,
+                epochKeyProof,
+                {value: attestingFee}
+            )
+            receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+            unirepState.addAttestation(epochKey, attestation)
+        }
     })
 
     it('premature epoch transition should fail', async () => {
@@ -158,29 +182,71 @@ describe('Epoch Transition', function () {
         const epochTreeLeaves: IEpochTreeLeaf[] = []
 
         // Generate valid epoch tree leaves
-        const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
+        const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted(epoch)
         const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter)
         const attestationMap = {}
 
         // compute hash chain of valid epoch key
         for (let i = 0; i < attestationSubmittedEvents.length; i++) {
-            const isProofValid = await unirepContract.verifyEpochKeyValidity(
-                attestationSubmittedEvents[i].args?.epkProofData?.fromGlobalStateTree,
-                attestationSubmittedEvents[i].args?._epoch,
-                attestationSubmittedEvents[i].args?._epochKey,
-                attestationSubmittedEvents[i].args?.epkProofData?.proof,
-            )
+            const proofIndex = attestationSubmittedEvents[i].args?._proofIndex
+            const epochKeyProofFilter = unirepContract.filters.EpochKeyProof(proofIndex)
+            const epochKeyProofEvent = await unirepContract.queryFilter(epochKeyProofFilter)
+            const repProofFilter = unirepContract.filters.ReputationNullifierProof(proofIndex)
+            const repProofEvent = await unirepContract.queryFilter(repProofFilter)
+            const signUpProofFilter = unirepContract.filters.UserSignedUpProof(proofIndex)
+            const signUpProofEvent = await unirepContract.queryFilter(signUpProofFilter)
+
+            let isProofValid
+            // Should find ReputationNullifierProof as well
+            // Should find UserSignedUpProof as well
+            if (epochKeyProofEvent.length == 1){
+                console.log('epoch key event')
+                const args = epochKeyProofEvent[0]?.args?.epochKeyProofData
+                isProofValid = await unirepContract.verifyEpochKeyValidity(
+                    args?.fromGlobalStateTree,
+                    args?.epoch,
+                    args?.epochKey,
+                    args?.proof,
+                )
+            } else if (repProofEvent.length == 1){
+                console.log('rep nullifier event')
+                const args = repProofEvent[0]?.args?.reputationProofData
+                isProofValid = await unirepContract.verifyReputation(
+                    args?.repNullifiers,
+                    args?.epoch,
+                    args?.epochKey,
+                    args?.globalStateTree,
+                    args?.attesterId,
+                    args?.proveReputationAmount,
+                    args?.minRep,
+                    args?.proveGraffiti,
+                    args?.graffitiPreImage,
+                    args?.proof,
+                )
+            } else if (signUpProofEvent.length == 1){
+                console.log('sign up event')
+                const args = signUpProofEvent[0]?.args?.signUpProofData
+                isProofValid = await unirepContract.verifyUserSignUp(
+                    args?.epoch,
+                    args?.epochKey,
+                    args?.globalStateTree,
+                    args?.attesterId,
+                    args?.proof,
+                )
+            }
+
             if(isProofValid) {
                 const epochKey = attestationSubmittedEvents[i].args?._epochKey
+                const _attestation = attestationSubmittedEvents[i].args?.attestation
                 if(attestationMap[epochKey] == undefined) {
                     attestationMap[epochKey] = BigInt(0)
                 } 
                 const attestation = new Attestation(
-                    BigInt(attestationSubmittedEvents[i].args?.attestation?.attesterId.toString()),
-                    BigInt(attestationSubmittedEvents[i].args?.attestation?.posRep.toString()),
-                    BigInt(attestationSubmittedEvents[i].args?.attestation?.negRep.toString()),
-                    BigInt(attestationSubmittedEvents[i].args?.attestation?.graffiti.toString()),
-                    BigInt(attestationSubmittedEvents[i].args?.attestation?.signUp.toString()),
+                    BigInt(_attestation?.attesterId.toString()),
+                    BigInt(_attestation?.posRep.toString()),
+                    BigInt(_attestation?.negRep.toString()),
+                    BigInt(_attestation?.graffiti.toString()),
+                    BigInt(_attestation?.signUp.toString()),
                 )
                 attestationMap[epochKey] = hashLeftRight(
                     attestation.hash(), 
@@ -263,16 +329,19 @@ describe('Epoch Transition', function () {
             formatProofForVerifierContract(results.finalTransitionProof.proof),
         )
         expect(isProofValid, 'Verify user state transition circuit on-chain failed').to.be.true
-
-        const tx = await unirepContract.updateUserStateRoot(
+        
+        let transitionProof = [
             newGSTLeaf,
             outputEpkNullifiers,
-            blindedUserStates,
-            blindedHashChains,
             fromEpoch,
+            blindedUserStates,
             GSTreeRoot,
+            blindedHashChains,
             epochTreeRoot,
             formatProofForVerifierContract(results.finalTransitionProof.proof),
+        ]
+        const tx = await unirepContract.updateUserStateRoot(
+            transitionProof
         )
         const receipt = await tx.wait()
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)

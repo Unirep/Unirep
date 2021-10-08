@@ -119,15 +119,17 @@ const genReputationProof = async (args: any) => {
     // Proving content
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
     const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
-    const repNullifiersAmount = args.reputaiton_nullifier != null ? args.reputaiton_nullifier : 0
+    const repNullifiersAmount = args.reputation_nullifier != null ? args.reputation_nullifier : 0
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
     const results = await userState.genProveReputationProof(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
+
+    console.log('repnullifier amount', repNullifiersAmount)
 
     // TODO: Not sure if this validation is necessary
     const isValid = await verifyProof('proveReputation',results.proof, results.publicSignals)
     if(!isValid) {
         console.error('Error: reputation proof generated is not valid!')
-        return
+        process.exit(0)
     }
     
     const formattedProof = formatProofForVerifierContract(results.proof)

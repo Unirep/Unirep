@@ -1,9 +1,12 @@
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { UnirepContract } from '../core'
+import { verifyUserSignUpProof } from './verifyUserSignUpProof'
+import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
+import base64url from 'base64url'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'epochTransition',
+        'giveAirdrop',
         { add_help: true },
     )
 
@@ -17,10 +20,20 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-t', '--is-test',
+        '-p', '--public-signals',
         {
-            action: 'store_true',
-            help: 'Indicate if the provider is a testing environment',
+            required: true,
+            type: 'str',
+            help: 'The snark public signals of the user\'s epoch key ',
+        }
+    )
+
+    parser.add_argument(
+        '-pf', '--proof',
+        {
+            required: true,
+            type: 'str',
+            help: 'The snark proof of the user\'s epoch key ',
         }
     )
 
@@ -53,7 +66,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const epochTransition = async (args: any) => {
+const giveAirdrop = async (args: any) => {
 
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
@@ -64,21 +77,25 @@ const epochTransition = async (args: any) => {
     // Connect a signer
     await unirepContract.unlock(args.eth_privkey)
 
-    // Fast-forward to end of epoch if in test environment
-    if (args.is_test) {
-        await unirepContract.fastForward()
-    }
+    await verifyUserSignUpProof(args)
+    
+    // Parse input
+    const decodedProof = base64url.decode(args.proof.slice(signUpProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(signUpPublicSignalsPrefix.length))
+    const publicSignals = JSON.parse(decodedPublicSignals)
+    const epoch = publicSignals[0]
+    const epk = publicSignals[1]
+    const GSTRoot = publicSignals[2]
+    const attesterId = publicSignals[3]
+    const proof = JSON.parse(decodedProof)
+    console.log(`Airdrop to epoch key ${epk} in attester ID ${attesterId}`)
 
-    const currentEpoch = await unirepContract.currentEpoch()
-    const tx = await unirepContract.epochTransition()
-
-    if(tx != undefined) {
-        console.log('Transaction hash:', tx.hash)
-        console.log('End of epoch:', currentEpoch.toString())
-    }
+    // Submit attestation
+    const tx = await unirepContract.airdropEpochKey(epoch, epk, GSTRoot, attesterId, proof)
+    if(tx != undefined) console.log('Transaction hash:', tx?.hash)
 }
 
 export {
-    epochTransition,
+    giveAirdrop,
     configureSubparser,
 }

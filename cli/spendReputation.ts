@@ -2,13 +2,14 @@ import base64url from 'base64url'
 import { ethers } from 'ethers'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
+import { verifyReputationProof } from './verifyReputationProof'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { maxReputationBudget } from '../config/testLocal'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'verifyReputationProof',
+        'spendReputation',
         { add_help: true },
     )
 
@@ -65,9 +66,28 @@ const configureSubparser = (subparsers: any) => {
             help: 'The Unirep contract address',
         }
     )
+
+    const privkeyGroup = parser.add_mutually_exclusive_group({ required: true })
+
+    privkeyGroup.add_argument(
+        '-dp', '--prompt-for-eth-privkey',
+        {
+            action: 'store_true',
+            help: 'Whether to prompt for the user\'s Ethereum private key and ignore -d / --eth-privkey',
+        }
+    )
+
+    privkeyGroup.add_argument(
+        '-d', '--eth-privkey',
+        {
+            action: 'store',
+            type: 'str',
+            help: 'The deployer\'s Ethereum private key',
+        }
+    )
 }
 
-const verifyReputationProof = async (args: any) => {
+const spendReputation = async (args: any) => {
 
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
@@ -76,12 +96,10 @@ const verifyReputationProof = async (args: any) => {
     // Unirep contract
     const unirepContract = new UnirepContract(args.contract, ethProvider)
 
-    const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        args.contract,
-        startBlock,
-    )
+    // Connect a signer
+    await unirepContract.unlock(args.eth_privkey)
+
+    await verifyReputationProof(args)
 
     // Parse Inputs
     const decodedProof = base64url.decode(args.proof.slice(reputationProofPrefix.length))
@@ -98,16 +116,10 @@ const verifyReputationProof = async (args: any) => {
     const graffitiPreImage = publicSignals[maxReputationBudget + 7]
     const proof = JSON.parse(decodedProof)
 
-    // Check if Global state tree root exists
-    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
-    if(!isGSTRootExisted) {
-        console.error('Error: invalid global state tree root')
-        return
-    }
+    console.log(`User spends ${repNullifiersAmount} reputation points from attester ${attesterId}`)
 
-    // Verify the proof on-chain
-    const isProofValid = await unirepContract.verifyReputation(
-        outputNullifiers,
+    // Submit reputation
+    const tx = await unirepContract.spendReputation(outputNullifiers,
         epoch,
         epk,
         GSTRoot,
@@ -116,18 +128,12 @@ const verifyReputationProof = async (args: any) => {
         minRep,
         proveGraffiti,
         graffitiPreImage,
-        proof,
+        proof
     )
-    if (!isProofValid) {
-        console.error('Error: invalid reputation proof')
-        return
-    }
-
-    console.log(`Epoch key of the user: ${epk}`)
-    console.log(`Verify reputation proof from attester ${attesterId} with min rep ${minRep}, reputation nullifiers amount ${repNullifiersAmount} and graffiti pre-image ${args.graffiti_preimage}, succeed`)
+    if(tx != undefined) console.log('Transaction hash:', tx?.hash)
 }
 
 export {
-    verifyReputationProof,
+    spendReputation,
     configureSubparser,
 }

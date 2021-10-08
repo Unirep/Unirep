@@ -85,8 +85,6 @@ class UnirepState {
     private epochKeyInEpoch: {[key: number]: Map<string, boolean>} = {}
     private epochKeyToHashchainMap: {[key: string]: BigInt} = {}
     private epochKeyToAttestationsMap: {[key: string]: IAttestation[]} = {}
-    private blindedUserStateMap: {[key: string]: boolean} = {}
-    private blindedHashChainMap: {[key: string]: boolean} = {}
     private epochGSTRootMap: {[key: number]: Map<string, boolean>} = {}
 
     constructor(
@@ -232,39 +230,6 @@ class UnirepState {
             this.nullifiers[nullifier.toString()] = true
         }
     }
-
-    /*
-    * Add blinded user state to the map state
-    */
-    public addBlindedUserState = (
-        blindedUserState: BigInt
-    ) => {
-        this.blindedUserStateMap[blindedUserState.toString()] = true
-    }
-
-    /*
-    * Add blinded hash chain to the map state
-    */
-    public addBlindedHashChain = (
-        blindedHashChain: BigInt
-    ) => {
-        this.blindedHashChainMap[blindedHashChain.toString()] = true
-    }
-
-    /*
-     * Check if given blinded user state exists in Unirep State
-     */
-    public blindedUserStateExist = (blindedUserState: BigInt): boolean => {
-        return this.blindedUserStateMap[blindedUserState.toString()]
-    }
-
-    /*
-     * Check if given blinded hash chain exists in Unirep State
-     */
-    public blindedHashChainExist = (blindedHashChain: BigInt): boolean => {
-        return this.blindedHashChainMap[blindedHashChain.toString()]
-    }
-
 
     /*
      * Computes the global state tree of given epoch

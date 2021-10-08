@@ -46,8 +46,6 @@ class UnirepState {
         this.epochKeyInEpoch = {};
         this.epochKeyToHashchainMap = {};
         this.epochKeyToAttestationsMap = {};
-        this.blindedUserStateMap = {};
-        this.blindedHashChainMap = {};
         this.epochGSTRootMap = {};
         this.toJSON = (space = 0) => {
             let latestEpochTreeLeaves;
@@ -145,30 +143,6 @@ class UnirepState {
             if (nullifier > BigInt(0)) {
                 this.nullifiers[nullifier.toString()] = true;
             }
-        };
-        /*
-        * Add blinded user state to the map state
-        */
-        this.addBlindedUserState = (blindedUserState) => {
-            this.blindedUserStateMap[blindedUserState.toString()] = true;
-        };
-        /*
-        * Add blinded hash chain to the map state
-        */
-        this.addBlindedHashChain = (blindedHashChain) => {
-            this.blindedHashChainMap[blindedHashChain.toString()] = true;
-        };
-        /*
-         * Check if given blinded user state exists in Unirep State
-         */
-        this.blindedUserStateExist = (blindedUserState) => {
-            return this.blindedUserStateMap[blindedUserState.toString()];
-        };
-        /*
-         * Check if given blinded hash chain exists in Unirep State
-         */
-        this.blindedHashChainExist = (blindedHashChain) => {
-            return this.blindedHashChainMap[blindedHashChain.toString()];
         };
         /*
          * Computes the global state tree of given epoch

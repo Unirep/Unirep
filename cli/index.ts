@@ -33,9 +33,24 @@ import {
 } from './verifyEpochKeyProof'
 
 import {
+    setAirdropAmount,
+    configureSubparser as configureSubparserForSetAirdropAmount,
+} from './setAirdropAmount'
+
+import {
     attest,
     configureSubparser as configureSubparserForAttest,
 } from './attest'
+
+import {
+    giveAirdrop,
+    configureSubparser as configureSubparserForGiveAirdrop,
+} from './giveAirdrop'
+
+import {
+    spendReputation,
+    configureSubparser as configureSubparserForSpendReputation,
+} from './spendReputation'
 
 import {
     epochTransition,
@@ -97,8 +112,17 @@ const main = async () => {
     // Subcommand: verifyEpochKeyProof
     configureSubparserForVerifyEpochKeyProof(subparsers)
 
+    // Subcommand: setAirdropAmount
+    configureSubparserForSetAirdropAmount(subparsers)
+
     // Subcommand: attest
     configureSubparserForAttest(subparsers)
+
+    // Subcommand: giveAirdrop
+    configureSubparserForGiveAirdrop(subparsers)
+
+    // Subcommand: spendReputation
+    configureSubparserForSpendReputation(subparsers)
 
     // Subcommand: epochTransition
     configureSubparserForEpochTransition(subparsers)
@@ -133,8 +157,14 @@ const main = async () => {
         await genEpochKeyAndProof(args)
     } else if (args.subcommand === 'verifyEpochKeyProof') {
         await verifyEpochKeyProof(args)
+    } else if (args.subcommand === 'setAirdropAmount') {
+        await setAirdropAmount(args)
     } else if (args.subcommand === 'attest') {
         await attest(args)
+    } else if (args.subcommand === 'giveAirdrop') {
+        await giveAirdrop(args)
+    } else if (args.subcommand === 'spendReputation') {
+        await spendReputation(args)
     } else if (args.subcommand === 'epochTransition') {
         await epochTransition(args)
     } else if (args.subcommand === 'userStateTransition') {
