@@ -6,8 +6,8 @@ import { IncrementalQuinTree, genRandomSalt, hashLeftRight, hashOne, genIdentity
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
-import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting } from '../../core/utils'
-import { toCompleteHexString, verifyNewGSTLeafEvents, verifyProcessAttestationEvents } from '../utils'
+import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, verifyNewGSTProofByIndex } from '../../core/utils'
+import { computeEpochKeyProofHash, toCompleteHexString, verifyNewGSTLeafEvents, verifyProcessAttestationEvents } from '../utils'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxReputationBudget, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
 
@@ -40,6 +40,8 @@ describe('Integration', function () {
     let userStateTransitionedNum: {[key: number]: ethers.BigNumber[]} = {}
     let epochKeys: {[key: string]: boolean} = {}
     let validProofIndex: {[key: number]: boolean} = {}
+    let epochKeyProof
+    let epochKeyProofIndex: {[key: string]: ethers.BigNumber} = {}
 
     let accounts: ethers.Signer[]
 
@@ -152,6 +154,7 @@ describe('Integration', function () {
             const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
             const epochTreeRoot = fromEpochTree.getRootHash()
             const epkNullifiers = users[firstUser].getEpochKeyNullifiers(fromEpoch)
+            const proofIndexes: BigInt[] = []
             console.log('Processing first user\'s transition: ')
             console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}`)
             console.log(`and epkNullifiers [${epkNullifiers}]`)
@@ -162,14 +165,26 @@ describe('Integration', function () {
 
             const blindedUserState = results.startTransitionProof.blindedUserState
             const blindedHashChain = results.startTransitionProof.blindedHashChain
+            const globalStateTree = results.startTransitionProof.globalStateTreeRoot
+            const proof = formatProofForVerifierContract(results.startTransitionProof.proof)
             let tx = await unirepContract.startUserStateTransition(
                 blindedUserState,
                 blindedHashChain,
-                results.startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(results.startTransitionProof.proof),
+                globalStateTree,
+                proof,
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+            console.log("Gas cost of submit a start transition proof:", receipt.gasUsed.toString())
+
+            let proofNullifier = await unirepContract.hashStartTransitionProof(
+                blindedUserState,
+                blindedHashChain,
+                GSTreeRoot,
+                proof
+            )
+            let proofIndex = await unirepContract.getProofIndex(proofNullifier)
+            proofIndexes.push(BigInt(proofIndex))
 
             for (let i = 0; i < results.processAttestationProofs.length; i++) {
                 isValid = await verifyProof('processAttestations', results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
@@ -198,6 +213,16 @@ describe('Integration', function () {
                 )
                 receipt = await tx.wait()
                 expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
+                console.log("Gas cost of submit a process attestations proof:", receipt.gasUsed.toString())
+
+                const proofNullifier = await unirepContract.hashProcessAttestationsProof(
+                    outputBlindedUserState,
+                    outputBlindedHashChain,
+                    inputBlindedUserState,
+                    formatProofForVerifierContract(results.processAttestationProofs[i].proof),
+                )
+                const proofIndex = await unirepContract.getProofIndex(proofNullifier)
+                proofIndexes.push(BigInt(proofIndex))
             }
 
             isValid = await verifyProof('userStateTransition', results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
@@ -214,7 +239,7 @@ describe('Integration', function () {
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
             userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
 
-            tx = await unirepContract.updateUserStateRoot([
+            const transitionProof = [
                 newGSTLeaf,
                 outputEpkNullifiers,
                 fromEpoch,
@@ -223,9 +248,15 @@ describe('Integration', function () {
                 blindedHashChains,
                 epochTreeRoot,
                 formatProofForVerifierContract(results.finalTransitionProof.proof),
-            ])
+            ]
+
+            tx = await unirepContract.updateUserStateRoot(
+                transitionProof, 
+                proofIndexes,
+            )
             receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+            console.log("Gas cost of submit a user state transition proof:", receipt.gasUsed.toString())
         })
 
         it('Verify state transition of first user\'s epoch transition', async () => {
@@ -234,61 +265,24 @@ describe('Integration', function () {
             expect(newLeafEvents.length, `Number of state transition events current epoch should be ${userStateTransitionedNum[currentEpoch.toNumber()].length}`).to.equal(userStateTransitionedNum[currentEpoch.toNumber()].length)
 
             const proofIndex = newLeafEvents[0]?.args?._proofIndex
-            // 2. verify user state transition proof
-            // TODO verify GST root and epoch tree root
-            const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex)
-            const transitionEvents = await unirepContract.queryFilter(transitionFilter)
-            expect(transitionEvents.length, `Transition event is not found`).to.equal(1)
-            // proof index is supposed to be unique, therefore it should be only one event found
-            const transitionArgs = transitionEvents[0]?.args?.userTransitionedData
-            // backward verification
-            const isValid = await unirepContract.verifyUserStateTransition(
-                transitionArgs.newGlobalStateTreeLeaf,
-                transitionArgs.epkNullifiers,
-                transitionArgs.transitionFromEpoch,
-                transitionArgs.blindedUserStates,
-                transitionArgs.fromGlobalStateTree,
-                transitionArgs.blindedHashChains,
-                transitionArgs.fromEpochTree,
-                transitionArgs.proof,
-            )
-            expect(isValid, 'Verify user state transition on-chain failed').to.be.true
-            
-            const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1])
-            expect(isProcessAttestationValid, 'Verify process attestations proofs on-chain failed').to.be.true
-
-            const startTransitionFilter = unirepContract.filters.StartedTransitionProof(transitionArgs.blindedUserStates[0],null, transitionArgs.fromGlobalStateTree)
-            const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
-            expect(startTransitionEvents.length, 'Start transitino proof not found').not.equal(0)
-
-            const startTransitionArgs = startTransitionEvents[0]?.args
-            const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(
-                startTransitionArgs?._blindedUserState,
-                startTransitionArgs?._blindedHashChain,
-                startTransitionArgs?._GSTRoot,
-                startTransitionArgs?._proof,
-            )
-            expect(isStartTransitionProofValid, 'Verify start user state transition proof on-chain failed').to.be.true
+            const isValidEvent = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
+            expect(isValidEvent).not.equal(undefined)
+            expect(isValidEvent['event']).equal("UserStateTransitionProof")
+            const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
             validProofIndex[proofIndex.toNumber()] = true
-
-            // Check if all blinded hashcahins submitted before
-            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                const hashChainFilter = unirepContract.filters.ProcessedAttestationsProof(null, transitionArgs.blindedHashChains[i])
-                const hashChainFilterEvents = await unirepContract.queryFilter(hashChainFilter)
-                expect(hashChainFilterEvents.length, 'Verify blinded hash chain filters failed').not.equal(0)
-            }
-
             
-            const epkNullifiers = transitionArgs.epkNullifiers
+            const epkNullifiers = isValidEvent['args']['userTransitionedData']['epkNullifiers']
+            const _newGlobalStateTreeLeaf = isValidEvent['args']['userTransitionedData']['newGlobalStateTreeLeaf']
+            expect(newLeaf).equal(_newGlobalStateTreeLeaf)
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]  // Leaves should be empty as no reputations are given yet
             users[firstUser].transition(latestUserStateLeaves)
             console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             expect(users[firstUser].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
 
-            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(transitionArgs.newGlobalStateTreeLeaf), epkNullifiers)
+            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(_newGlobalStateTreeLeaf), epkNullifiers)
             console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(transitionArgs.newGlobalStateTreeLeaf)} and epk nullifier ${epkNullifiers}`)
+            console.log(`newGSTLeaf ${BigInt(_newGlobalStateTreeLeaf)} and epk nullifier ${epkNullifiers}`)
             console.log('----------------------User State----------------------')
             console.log(users[firstUser].toJSON(4))
             console.log('------------------------------------------------------')
@@ -363,10 +357,6 @@ describe('Integration', function () {
                     validProofIndex[proofIndex.toNumber()] = true
                     continue
                 }
-
-                // 2. verify user state transition proof
-                // TODO verify GST root and epoch tree root
-                // TODO verify user state transition events
             }
             expect(GSTreeLeafIndex).to.equal(1)
 
@@ -531,6 +521,7 @@ describe('Integration', function () {
             // Verify on-chain
             const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
             const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
+            epochKeyProof = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 results.globalStateTree,
                 results.epoch,
@@ -541,11 +532,19 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
         })
 
+        it('submit first user\'s first epoch key', async () => {
+            console.log(epochKeyProof)
+            const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+
+            const proofNullifier = await unirepContract.hashEpochKeyProof(epochKeyProof)
+            epochKeyProofIndex[epochKeyProof[2]] = await unirepContract.getProofIndex(proofNullifier)
+        })
+
         it('First attester attest to first user\'s first epoch key', async () => {
             const nonce = 0
             const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            const results = await users[firstUser].genVerifyEpochKeyProof(nonce)
-            const epkProofData = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 attesters[firstAttester].id,
@@ -560,7 +559,8 @@ describe('Integration', function () {
             console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
                 attestation,
-                epkProofData,
+                firstUserEpochKey,
+                epochKeyProofIndex[firstUserEpochKey.toString()],
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -572,11 +572,22 @@ describe('Integration', function () {
             unirepState.addAttestation(firstUserEpochKey.toString(), attestation)
         })
 
+        it('submit first user\'s second epoch key', async () => {
+            const nonce = 1
+            const results = await users[firstUser].genVerifyEpochKeyProof(nonce)
+            epochKeyProof = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
+
+            const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+
+            const proofNullifier = await unirepContract.hashEpochKeyProof(epochKeyProof)
+            epochKeyProofIndex[epochKeyProof[2]] = await unirepContract.getProofIndex(proofNullifier)
+        })
+
         it('First attester attest to first user\'s second epoch key', async () => {
             const nonce = 1
             const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            const results = await users[firstUser].genVerifyEpochKeyProof(nonce)
-            const epkProofData = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 attesters[firstAttester].id,
@@ -590,7 +601,8 @@ describe('Integration', function () {
             console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
                 attestation,
-                epkProofData,
+                firstUserEpochKey,
+                epochKeyProofIndex[firstUserEpochKey.toString()],
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -605,8 +617,7 @@ describe('Integration', function () {
         it('Second attester attest to first user', async () => {
             const nonce = 0
             const firstUserEpochKey = genEpochKey(users[firstUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            const results = await users[firstUser].genVerifyEpochKeyProof(nonce)
-            const epkProofData = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
+            
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 attesters[secondAttester].id,
@@ -618,9 +629,11 @@ describe('Integration', function () {
             // Add graffiti pre-image to graffitiPreImageMap
             graffitiPreImageMap[firstUser][attestation.attesterId.toString()] = graffitiPreImage
             console.log(`Attester attest to epk ${firstUserEpochKey} with ${attestation.toJSON()}`)
+
             const tx = await unirepContractCalledBySecondAttester.submitAttestation(
                 attestation,
-                epkProofData,
+                firstUserEpochKey,
+                epochKeyProofIndex[firstUserEpochKey.toString()],
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -639,6 +652,7 @@ describe('Integration', function () {
             // Verify on-chain
             const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
             const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
+            epochKeyProof = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 results.globalStateTree,
                 results.epoch,
@@ -649,11 +663,18 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
         })
 
+        it('submit second user\'s first epoch key', async () => {
+            const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+
+            const proofNullifier = await unirepContract.hashEpochKeyProof(epochKeyProof)
+            epochKeyProofIndex[epochKeyProof[2]] = await unirepContract.getProofIndex(proofNullifier)
+        })
+
         it('First attester attest to second user', async () => {
             const nonce = 0
             const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            const results = await users[secondUser].genVerifyEpochKeyProof(nonce)
-            const epkProofData = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 attesters[firstAttester].id,
@@ -668,7 +689,8 @@ describe('Integration', function () {
             console.log(`Attester attest to epk ${secondUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledByFirstAttester.submitAttestation(
                 attestation,
-                epkProofData,
+                secondUserEpochKey,
+                epochKeyProofIndex[secondUserEpochKey.toString()],
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -683,8 +705,7 @@ describe('Integration', function () {
         it('Second attester attest to second user', async () => {
             const nonce = 0
             const secondUserEpochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-            const results = await users[secondUser].genVerifyEpochKeyProof(nonce)
-            const epkProofData = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
+
             const graffitiPreImage = genRandomSalt()
             const attestation: Attestation = new Attestation(
                 attesters[secondAttester].id,
@@ -698,7 +719,8 @@ describe('Integration', function () {
             console.log(`Attester attest to epk ${secondUserEpochKey} with ${attestation.toJSON()}`)
             const tx = await unirepContractCalledBySecondAttester.submitAttestation(
                 attestation,
-                epkProofData,
+                secondUserEpochKey,
+                epochKeyProofIndex[secondUserEpochKey.toString()],
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -789,6 +811,7 @@ describe('Integration', function () {
             const fromEpochTree = await unirepState.genEpochTree(fromEpoch)
             const epochTreeRoot = fromEpochTree.getRootHash()
             const epkNullifiers = users[firstUser].getEpochKeyNullifiers(fromEpoch)
+            const proofIndexes: BigInt[] = []
             console.log('Processing first user\'s transition: ')
             console.log(`from epoch ${fromEpoch}, GSTreeRoot ${GSTreeRoot}, epochTreeRoot ${epochTreeRoot}`)
             console.log(`and epkNullifiers [${epkNullifiers}]`)
@@ -799,15 +822,26 @@ describe('Integration', function () {
 
             const blindedUserState = results.startTransitionProof.blindedUserState
             const blindedHashChain = results.startTransitionProof.blindedHashChain
-
+            // const GSTreeRoot = results.startTransitionProof.globalStateTreeRoot
+            const proof = formatProofForVerifierContract(results.startTransitionProof.proof)
+    
             let tx = await unirepContract.startUserStateTransition(
                 blindedUserState,
                 blindedHashChain,
-                results.startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(results.startTransitionProof.proof),
+                GSTreeRoot,
+                proof
             )
             let receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+
+            let proofNullifier = await unirepContract.hashStartTransitionProof(
+                blindedUserState,
+                blindedHashChain,
+                GSTreeRoot,
+                proof
+            )
+            let proofIndex = await unirepContract.getProofIndex(proofNullifier)
+            proofIndexes.push(BigInt(proofIndex))
 
             for (let i = 0; i < results.processAttestationProofs.length; i++) {
                 isValid = await verifyProof('processAttestations', results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
@@ -825,6 +859,15 @@ describe('Integration', function () {
                 )
                 receipt = await tx.wait()
                 expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
+
+                const proofNullifier = await unirepContract.hashProcessAttestationsProof(
+                    outputBlindedUserState,
+                    outputBlindedHashChain,
+                    inputBlindedUserState,
+                    formatProofForVerifierContract(results.processAttestationProofs[i].proof),
+                )
+                const proofIndex = await unirepContract.getProofIndex(proofNullifier)
+                proofIndexes.push(BigInt(proofIndex))
             }
 
             isValid = await verifyProof('userStateTransition', results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
@@ -848,7 +891,7 @@ describe('Integration', function () {
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
             userStateTransitionedNum[currentEpoch.toNumber()].push(newGSTLeaf)
 
-            tx = await unirepContract.updateUserStateRoot([
+            const transitionProof = [
                 newGSTLeaf,
                 outputEpkNullifiers,
                 fromEpoch,
@@ -857,7 +900,11 @@ describe('Integration', function () {
                 blindedHashChains,
                 epochTreeRoot,
                 formatProofForVerifierContract(results.finalTransitionProof.proof),
-            ])
+            ]
+            tx = await unirepContract.updateUserStateRoot(
+                transitionProof,
+                proofIndexes,
+            )
             receipt = await tx.wait()
             expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
 
@@ -871,6 +918,7 @@ describe('Integration', function () {
                 "GSTreeRoot": GSTreeRoot,
                 "epochTreeRoot": epochTreeRoot,
                 "proof": formatProofForVerifierContract(results.finalTransitionProof.proof),
+                "proofIndexes": proofIndexes,
             }
         })
 
@@ -880,61 +928,24 @@ describe('Integration', function () {
             expect(newLeafEvents.length, `Number of state transition events current epoch should be ${userStateTransitionedNum[currentEpoch.toNumber()].length}`).to.equal(userStateTransitionedNum[currentEpoch.toNumber()].length)
 
             const proofIndex = newLeafEvents[0]?.args?._proofIndex
-            // 2. verify user state transition proof
-            // TODO verify GST root and epoch tree root
-            const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex)
-            const transitionEvents = await unirepContract.queryFilter(transitionFilter)
-            expect(transitionEvents.length, `Transition event is not found`).to.equal(1)
-            // proof index is supposed to be unique, therefore it should be only one event found
-            const transitionArgs = transitionEvents[0]?.args?.userTransitionedData
-            // backward verification
-            const isValid = await unirepContract.verifyUserStateTransition(
-                transitionArgs.newGlobalStateTreeLeaf,
-                transitionArgs.epkNullifiers,
-                transitionArgs.transitionFromEpoch,
-                transitionArgs.blindedUserStates,
-                transitionArgs.fromGlobalStateTree,
-                transitionArgs.blindedHashChains,
-                transitionArgs.fromEpochTree,
-                transitionArgs.proof,
-            )
-            expect(isValid, 'Verify user state transition on-chain failed').to.be.true
-            
-            const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1])
-            expect(isProcessAttestationValid, 'Verify process attestations proofs on-chain failed').to.be.true
-
-            const startTransitionFilter = unirepContract.filters.StartedTransitionProof(transitionArgs.blindedUserStates[0],null, transitionArgs.fromGlobalStateTree)
-            const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
-            expect(startTransitionEvents.length, 'Start transitino proof not found').not.equal(0)
-
-            const startTransitionArgs = startTransitionEvents[0]?.args
-            const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(
-                startTransitionArgs?._blindedUserState,
-                startTransitionArgs?._blindedHashChain,
-                startTransitionArgs?._GSTRoot,
-                startTransitionArgs?._proof,
-            )
-            expect(isStartTransitionProofValid, 'Verify start user state transition proof on-chain failed').to.be.true
+            const isValidEvent = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
+            expect(isValidEvent).not.equal(undefined)
+            expect(isValidEvent['event']).equal("UserStateTransitionProof")
+            const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
             validProofIndex[proofIndex.toNumber()] = true
-
-            // Check if all blinded hashcahinssubmitted before
-            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                const hashChainFilter = unirepContract.filters.ProcessedAttestationsProof(null, transitionArgs.blindedHashChains[i])
-                const hashChainFilterEvents = await unirepContract.queryFilter(hashChainFilter)
-                expect(hashChainFilterEvents.length, 'Verify blinded hash chain filters failed').not.equal(0)
-            }
-
             
-            const epkNullifiers = transitionArgs.epkNullifiers
+            const epkNullifiers = isValidEvent['args']['userTransitionedData']['epkNullifiers']
+            const _newGlobalStateTreeLeaf = isValidEvent['args']['userTransitionedData']['newGlobalStateTreeLeaf']
+            expect(newLeaf).equal(_newGlobalStateTreeLeaf)
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]  // Leaves should be empty as no reputations are given yet
             users[firstUser].transition(latestUserStateLeaves)
             console.log(`First user finish state transition. AttesterIds in UST: [${latestUserStateLeaves.map((l) => l.attesterId.toString())}]`)
             expect(users[firstUser].latestTransitionedEpoch, 'First user should transition to current epoch').to.equal(currentEpoch.toNumber())
 
-            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(transitionArgs.newGlobalStateTreeLeaf), epkNullifiers)
+            unirepState.userStateTransition(currentEpoch.toNumber(), BigInt(_newGlobalStateTreeLeaf), epkNullifiers)
             console.log('User state transition off-chain: ')
-            console.log(`newGSTLeaf ${BigInt(transitionArgs.newGlobalStateTreeLeaf)} and epk nullifier ${epkNullifiers}`)
+            console.log(`newGSTLeaf ${BigInt(_newGlobalStateTreeLeaf)} and epk nullifier ${epkNullifiers}`)
             console.log('----------------------User State----------------------')
             console.log(users[firstUser].toJSON(4))
             console.log('------------------------------------------------------')
@@ -968,8 +979,8 @@ describe('Integration', function () {
             expect(isProofValid, 'Verify reputation on-chain failed').to.be.true
         })
 
-        it('First user submits duplicated state transition proof', async () => {
-            let tx = await unirepContract.updateUserStateRoot([
+        it('First user submits duplicated state transition proof should fail', async () => {
+            await expect(unirepContract.updateUserStateRoot([
                 duplicatedProofInputs.newGSTLeaf,
                 duplicatedProofInputs.epkNullifiers,
                 duplicatedProofInputs.fromEpoch,
@@ -978,9 +989,8 @@ describe('Integration', function () {
                 duplicatedProofInputs.blindedHashChains,
                 duplicatedProofInputs.epochTreeRoot,
                 duplicatedProofInputs.proof,
-            ])
-            let receipt = await tx.wait()
-            expect(receipt.status, 'Submit duplicated user state transition proof failed').to.equal(1)
+                ], duplicatedProofInputs.proofIndexes)
+            ).to.be.revertedWith('Unirep: the proof has been submitted before')
         })
 
         it('genUserStateFromContract should return equivalent UserState and UnirepState', async () => {
@@ -1018,6 +1028,7 @@ describe('Integration', function () {
             const blindedUserStates: BigInt[] = []
             const proof: BigInt[] = []
             const reputationNullifiers: BigInt[] = []
+            const proofIndexes: BigInt[] = []
             const proveReputationAmount = 0
             const minRep = 0
             const proveGraffiti = 1
@@ -1061,7 +1072,7 @@ describe('Integration', function () {
                 blindedHashChains,
                 genRandomSalt(),
                 proof,
-            ])
+            ], proofIndexes )
             receipt = await tx.wait()
             expect(receipt.status, 'Submit random user state transition proof failed').to.equal(1)
             tx = await unirepContractCalledByFirstAttester.spendReputation([

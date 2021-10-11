@@ -30,7 +30,7 @@ describe('test all CLI subcommands', function() {
     
     let userIdentity, userIdentityCommitment
     const attesterId = 1
-    let epk, epkProof, epkPublicSignals
+    let epk, epkProof, epkPublicSignals, proofIdx
     const airdropPosRep = 30
     const posRep = 5, negRep = 4, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage)), signUpFlag = 1
     const minPosRep = 0, maxNegRep = 10
@@ -188,16 +188,36 @@ describe('test all CLI subcommands', function() {
         })
     })
 
+    describe('submitEpochKeyProof CLI subcommand', () => {
+        it('should submit epoch key proof', async () => {
+            const command = `npx ts-node cli/index.ts submitEpochKeyProof` +
+                ` -x ${unirepContract.address} ` +
+                ` -d ${deployerPrivKey} ` +
+                ` -pf ${epkProof} ` +
+                ` -p ${epkPublicSignals}`
+
+            console.log(command)
+            const output = exec(command).stdout.trim()
+            console.log(output)
+
+            const txRegMatch = output.match(/Transaction hash: 0x[a-fA-F0-9]{64}/)
+            expect(txRegMatch).not.equal(null)
+
+            const proofIndexRegMatch = output.match(/Proof index:  ([0-9]+)/)
+            proofIdx = proofIndexRegMatch[1]
+        })
+    })
+
     describe('attest CLI subcommand', () => {
         it('should attest to user', async () => {
             const command = `npx ts-node cli/index.ts attest` +
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
+                ` -epk ${epk} ` +
+                ` -i ${proofIdx} ` +
                 ` -pr ${posRep} ` +
-                ` -p ${epkPublicSignals}` + 
-                ` -pf ${epkProof}` + 
-                // ` -nrep ${negRep} ` +
-                // ` -gf ${graffiti.toString(16)} ` +
+                ` -nr ${negRep} ` +
+                ` -gf ${graffiti.toString(16)} ` +
                 ` -s ${signUpFlag}`
 
             console.log(command)

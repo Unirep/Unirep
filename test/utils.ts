@@ -60,49 +60,56 @@ const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<Spar
     return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
 }
 
+const computeEpochKeyProofHash = (epochKeyProof: any) => {
+    const abiEncoder = ethers.utils.defaultAbiCoder.encode([ "uint256", "uint256", "uint256", "uint256[8]" ], epochKeyProof)
+    return ethers.utils.keccak256(abiEncoder)
+}
+
 const verifyNewGSTProofByIndex = async(unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber): Promise<boolean> => {
     const signUpFilter = unirepContract.filters.UserSignUp(proofIndex)
     const signUpEvents = await unirepContract.queryFilter(signUpFilter)
     // found user sign up event, then continue
-        if (signUpEvents.length == 1) return true
-        
-        // 2. verify user state transition proof
-        // TODO verify GST root and epoch tree root
-        const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex)
-        const transitionEvents = await unirepContract.queryFilter(transitionFilter)
-        if(transitionEvents.length == 0) return false
-        // proof index is supposed to be unique, therefore it should be only one event found
-        const transitionArgs = transitionEvents[0]?.args?.userTransitionedData
-        // backward verification
-        const isValid = await unirepContract.verifyUserStateTransition(
-            transitionArgs.newGlobalStateTreeLeaf,
-            transitionArgs.epkNullifiers,
-            transitionArgs.transitionFromEpoch,
-            transitionArgs.blindedUserStates,
-            transitionArgs.fromGlobalStateTree,
-            transitionArgs.blindedHashChains,
-            transitionArgs.fromEpochTree,
-            transitionArgs.proof,
-        )
-        if(!isValid) return false
+    if (signUpEvents.length == 1) return true
 
-        // process attestations proofs
-        const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1])
-        if(!isProcessAttestationValid) return false
+    // 2. verify user state transition proof
+    const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex)
+    const transitionEvents = await unirepContract.queryFilter(transitionFilter)
+    if(transitionEvents.length == 0) return false
+    // proof index is supposed to be unique, therefore it should be only one event found
+    const transitionArgs = transitionEvents[0]?.args?.userTransitionedData
+    // backward verification
+    const isValid = await unirepContract.verifyUserStateTransition(
+        transitionArgs.newGlobalStateTreeLeaf,
+        transitionArgs.epkNullifiers,
+        transitionArgs.transitionFromEpoch,
+        transitionArgs.blindedUserStates,
+        transitionArgs.fromGlobalStateTree,
+        transitionArgs.blindedHashChains,
+        transitionArgs.fromEpochTree,
+        transitionArgs.proof,
+    )
+    if(!isValid) return false
+    
+    const _proofIndexes = transitionEvents[0]?.args?._proofIndexRecords
+    // Proof index 0 should be the start transition proof
+    const startTransitionFilter = unirepContract.filters.StartedTransitionProof(_proofIndexes[0], transitionArgs.blindedUserStates[0], transitionArgs.fromGlobalStateTree)
+    const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
+    if(startTransitionEvents.length == 0) return false
 
-        const startTransitionFilter = unirepContract.filters.StartedTransitionProof(transitionArgs.blindedUserStates[0], null, transitionArgs.fromGlobalStateTree)
-        const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
-        if(startTransitionEvents.length == 0) return false
+    const startTransitionArgs = startTransitionEvents[0]?.args
+    const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(
+        startTransitionArgs?._blindedUserState,
+        startTransitionArgs?._blindedHashChain,
+        startTransitionArgs?._globalStateTree,
+        startTransitionArgs?._proof,
+    )
+    if(!isStartTransitionProofValid) return false
 
-        const startTransitionArgs = startTransitionEvents[0]?.args
-        const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(
-            startTransitionArgs?._blindedUserState,
-            startTransitionArgs?._blindedHashChain,
-            startTransitionArgs?._GSTRoot,
-            startTransitionArgs?._proof,
-        )
-        if(!isStartTransitionProofValid) return false
-        return true
+    // process attestations proofs
+    const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1], _proofIndexes)
+    if(!isProcessAttestationValid) return false
+
+    return true
 }
 
 
@@ -128,31 +135,26 @@ const verifyNewGSTLeafEvents = async(unirepContract: ethers.Contract, currentEpo
     return newLeaves
 }
 
-const verifyProcessAttestationEvents = async(unirepContract: ethers.Contract, startBlindedUserState: BigInt | string, currentBlindedUserState: BigInt | string): Promise<boolean> => {
+const verifyProcessAttestationEvents = async(unirepContract: ethers.Contract, startBlindedUserState: ethers.BigNumber, finalBlindedUserState: ethers.BigNumber, _proofIndexes: ethers.BigNumber[]): Promise<boolean> => {
 
-    const processAttestationFilter = unirepContract.filters.ProcessedAttestationsProof(currentBlindedUserState)
-    const processAttestationEvents = await unirepContract.queryFilter(processAttestationFilter)
-    if(processAttestationEvents.length == 0) return false
+    let currentBlindedUserState = startBlindedUserState
+    // The rest are process attestations proofs
+    for (let i = 1; i < _proofIndexes.length; i++) {
+        const processAttestationsFilter = unirepContract.filters.ProcessedAttestationsProof(_proofIndexes[i], currentBlindedUserState)
+        const processAttestationsEvents = await unirepContract.queryFilter(processAttestationsFilter)
+        if(processAttestationsEvents.length == 0) return false
 
-    let returnValue = false
-    for(const event of processAttestationEvents){
-        const args = event?.args
+        const args = processAttestationsEvents[0]?.args
         const isValid = await unirepContract.verifyProcessAttestationProof(
             args?._outputBlindedUserState,
             args?._outputBlindedHashChain,
             args?._inputBlindedUserState,
             args?._proof
         )
-        if(!isValid) continue
-        if (BigInt(args?._inputBlindedUserState) == startBlindedUserState) {
-            returnValue = true
-            break
-        }
-        else {
-            returnValue = returnValue || await verifyProcessAttestationEvents(unirepContract, startBlindedUserState, args?._inputBlindedUserState)
-        }
+        if(!isValid) return false
+        currentBlindedUserState = args?._outputBlindedUserState
     }
-    return returnValue
+    return currentBlindedUserState.eq(finalBlindedUserState)
 }
 
 export {
@@ -164,6 +166,7 @@ export {
     genNewUserStateTree,
     genNewSMT,
     toCompleteHexString,
+    computeEpochKeyProofHash,
     verifyNewGSTProofByIndex,
     verifyNewGSTLeafEvents,
     verifyProcessAttestationEvents,

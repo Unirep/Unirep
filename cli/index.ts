@@ -53,6 +53,11 @@ import {
 } from './spendReputation'
 
 import {
+    submitEpochKeyProof,
+    configureSubparser as configureSubparserForSubmitEpochKeyProof
+} from './submitEpochKeyProof'
+
+import {
     epochTransition,
     configureSubparser as configureSubparserForEpochTransition,
 } from './epochTransition'
@@ -124,6 +129,9 @@ const main = async () => {
     // Subcommand: spendReputation
     configureSubparserForSpendReputation(subparsers)
 
+    // Subcommand: submitEpochKeyProof
+    configureSubparserForSubmitEpochKeyProof(subparsers)
+
     // Subcommand: epochTransition
     configureSubparserForEpochTransition(subparsers)
 
@@ -165,6 +173,8 @@ const main = async () => {
         await giveAirdrop(args)
     } else if (args.subcommand === 'spendReputation') {
         await spendReputation(args)
+    } else if (args.subcommand === 'submitEpochKeyProof') {
+        await submitEpochKeyProof(args)
     } else if (args.subcommand === 'epochTransition') {
         await epochTransition(args)
     } else if (args.subcommand === 'userStateTransition') {

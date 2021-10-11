@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.genUserStateFromParams = exports.genUserStateFromContract = exports.genUnirepStateFromContract = exports.genNewSMT = exports.genReputationNullifier = exports.genEpochKeyNullifier = exports.genEpochKey = exports.getTreeDepthsForTesting = exports.computeInitUserStateRoot = exports.computeEmptyUserStateRoot = exports.SMT_ZERO_LEAF = exports.SMT_ONE_LEAF = exports.defaultUserStateLeaf = void 0;
+exports.verifyNewGSTProofByIndex = exports.genUserStateFromParams = exports.genUserStateFromContract = exports.genUnirepStateFromContract = exports.genNewSMT = exports.genReputationNullifier = exports.genEpochKeyNullifier = exports.genEpochKey = exports.getTreeDepthsForTesting = exports.computeInitUserStateRoot = exports.computeEmptyUserStateRoot = exports.SMT_ZERO_LEAF = exports.SMT_ONE_LEAF = exports.defaultUserStateLeaf = void 0;
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2305 will be reported.
 // @ts-ignore
@@ -81,14 +81,13 @@ const genNewSMT = async (treeDepth, defaultLeafHash) => {
 };
 exports.genNewSMT = genNewSMT;
 const verifyNewGSTProofByIndex = async (unirepContract, proofIndex) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     const signUpFilter = unirepContract.filters.UserSignUp(proofIndex);
     const signUpEvents = await unirepContract.queryFilter(signUpFilter);
     // found user sign up event, then continue
     if (signUpEvents.length == 1)
         return signUpEvents[0];
     // 2. verify user state transition proof
-    // TODO verify GST root and epoch tree root
     const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex);
     const transitionEvents = await unirepContract.queryFilter(transitionFilter);
     if (transitionEvents.length == 0)
@@ -99,40 +98,39 @@ const verifyNewGSTProofByIndex = async (unirepContract, proofIndex) => {
     const isValid = await unirepContract.verifyUserStateTransition(transitionArgs.newGlobalStateTreeLeaf, transitionArgs.epkNullifiers, transitionArgs.transitionFromEpoch, transitionArgs.blindedUserStates, transitionArgs.fromGlobalStateTree, transitionArgs.blindedHashChains, transitionArgs.fromEpochTree, transitionArgs.proof);
     if (!isValid)
         return;
-    // process attestations proofs
-    const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1]);
-    if (!isProcessAttestationValid)
-        return;
-    const startTransitionFilter = unirepContract.filters.StartedTransitionProof(transitionArgs.blindedUserStates[0], null, transitionArgs.fromGlobalStateTree);
+    const _proofIndexes = (_d = (_c = transitionEvents[0]) === null || _c === void 0 ? void 0 : _c.args) === null || _d === void 0 ? void 0 : _d._proofIndexRecords;
+    // Proof index 0 should be the start transition proof
+    const startTransitionFilter = unirepContract.filters.StartedTransitionProof(_proofIndexes[0], transitionArgs.blindedUserStates[0], transitionArgs.fromGlobalStateTree);
     const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter);
     if (startTransitionEvents.length == 0)
         return;
-    const startTransitionArgs = (_c = startTransitionEvents[0]) === null || _c === void 0 ? void 0 : _c.args;
-    const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._blindedUserState, startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._blindedHashChain, startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._GSTRoot, startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._proof);
+    const startTransitionArgs = (_e = startTransitionEvents[0]) === null || _e === void 0 ? void 0 : _e.args;
+    const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._blindedUserState, startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._blindedHashChain, startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._globalStateTree, startTransitionArgs === null || startTransitionArgs === void 0 ? void 0 : startTransitionArgs._proof);
     if (!isStartTransitionProofValid)
+        return;
+    // process attestations proofs
+    const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1], _proofIndexes);
+    if (!isProcessAttestationValid)
         return;
     return transitionEvents[0];
 };
-const verifyProcessAttestationEvents = async (unirepContract, startBlindedUserState, currentBlindedUserState) => {
-    const processAttestationFilter = unirepContract.filters.ProcessedAttestationsProof(currentBlindedUserState);
-    const processAttestationEvents = await unirepContract.queryFilter(processAttestationFilter);
-    if (processAttestationEvents.length == 0)
-        return false;
-    let returnValue = false;
-    for (const event of processAttestationEvents) {
-        const args = event === null || event === void 0 ? void 0 : event.args;
+exports.verifyNewGSTProofByIndex = verifyNewGSTProofByIndex;
+const verifyProcessAttestationEvents = async (unirepContract, startBlindedUserState, finalBlindedUserState, _proofIndexes) => {
+    var _a;
+    let currentBlindedUserState = startBlindedUserState;
+    // The rest are process attestations proofs
+    for (let i = 1; i < _proofIndexes.length; i++) {
+        const processAttestationsFilter = unirepContract.filters.ProcessedAttestationsProof(_proofIndexes[i], currentBlindedUserState);
+        const processAttestationsEvents = await unirepContract.queryFilter(processAttestationsFilter);
+        if (processAttestationsEvents.length == 0)
+            return false;
+        const args = (_a = processAttestationsEvents[0]) === null || _a === void 0 ? void 0 : _a.args;
         const isValid = await unirepContract.verifyProcessAttestationProof(args === null || args === void 0 ? void 0 : args._outputBlindedUserState, args === null || args === void 0 ? void 0 : args._outputBlindedHashChain, args === null || args === void 0 ? void 0 : args._inputBlindedUserState, args === null || args === void 0 ? void 0 : args._proof);
         if (!isValid)
-            continue;
-        if (BigInt(args === null || args === void 0 ? void 0 : args._inputBlindedUserState) == startBlindedUserState) {
-            returnValue = true;
-            break;
-        }
-        else {
-            returnValue = returnValue || await verifyProcessAttestationEvents(unirepContract, startBlindedUserState, args === null || args === void 0 ? void 0 : args._inputBlindedUserState);
-        }
+            return false;
+        currentBlindedUserState = args === null || args === void 0 ? void 0 : args._outputBlindedUserState;
     }
-    return returnValue;
+    return currentBlindedUserState.eq(finalBlindedUserState);
 };
 const verifyAttestationProofsByIndex = async (unirepContract, proofIndex) => {
     var _a, _b, _c, _d, _e, _f;
@@ -142,40 +140,29 @@ const verifyAttestationProofsByIndex = async (unirepContract, proofIndex) => {
     const repProofEvent = await unirepContract.queryFilter(repProofFilter);
     const signUpProofFilter = unirepContract.filters.UserSignedUpProof(proofIndex);
     const signUpProofEvent = await unirepContract.queryFilter(signUpProofFilter);
+    let args;
     if (epochKeyProofEvent.length == 1) {
         console.log('epoch key event');
-        const args = (_b = (_a = epochKeyProofEvent[0]) === null || _a === void 0 ? void 0 : _a.args) === null || _b === void 0 ? void 0 : _b.epochKeyProofData;
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(args === null || args === void 0 ? void 0 : args.fromGlobalStateTree, args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.proof);
+        args = (_b = (_a = epochKeyProofEvent[0]) === null || _a === void 0 ? void 0 : _a.args) === null || _b === void 0 ? void 0 : _b.epochKeyProofData;
+        const isProofValid = await unirepContract.verifyEpochKeyValidity(args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.proof);
         if (isProofValid)
-            return {
-                GSTRoot: args === null || args === void 0 ? void 0 : args.fromGlobalStateTree,
-                nullifiers: []
-            };
+            return args;
     }
     else if (repProofEvent.length == 1) {
         console.log('rep nullifier event');
-        const args = (_d = (_c = repProofEvent[0]) === null || _c === void 0 ? void 0 : _c.args) === null || _d === void 0 ? void 0 : _d.reputationProofData;
+        args = (_d = (_c = repProofEvent[0]) === null || _c === void 0 ? void 0 : _c.args) === null || _d === void 0 ? void 0 : _d.reputationProofData;
         const isProofValid = await unirepContract.verifyReputation(args === null || args === void 0 ? void 0 : args.repNullifiers, args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.attesterId, args === null || args === void 0 ? void 0 : args.proveReputationAmount, args === null || args === void 0 ? void 0 : args.minRep, args === null || args === void 0 ? void 0 : args.proveGraffiti, args === null || args === void 0 ? void 0 : args.graffitiPreImage, args === null || args === void 0 ? void 0 : args.proof);
         if (isProofValid)
-            return {
-                GSTRoot: args === null || args === void 0 ? void 0 : args.globalStateTree,
-                nullifiers: args === null || args === void 0 ? void 0 : args.repNullifiers,
-            };
+            return args;
     }
     else if (signUpProofEvent.length == 1) {
         console.log('sign up event');
-        const args = (_f = (_e = signUpProofEvent[0]) === null || _e === void 0 ? void 0 : _e.args) === null || _f === void 0 ? void 0 : _f.signUpProofData;
+        args = (_f = (_e = signUpProofEvent[0]) === null || _e === void 0 ? void 0 : _e.args) === null || _f === void 0 ? void 0 : _f.signUpProofData;
         const isProofValid = await unirepContract.verifyUserSignUp(args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.attesterId, args === null || args === void 0 ? void 0 : args.proof);
         if (isProofValid)
-            return {
-                GSTRoot: args === null || args === void 0 ? void 0 : args.globalStateTree,
-                nullifiers: [],
-            };
+            return args;
     }
-    return {
-        GSTRoot: BigInt(0),
-        nullifiers: []
-    };
+    return args;
 };
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
@@ -254,20 +241,24 @@ const genUnirepStateFromContract = async (provider, address, startBlock) => {
             const _attestation = args === null || args === void 0 ? void 0 : args.attestation;
             const proofIndex = args === null || args === void 0 ? void 0 : args._proofIndex;
             const results = await verifyAttestationProofsByIndex(unirepContract, proofIndex);
-            if (results.GSTRoot == BigInt(0)) {
+            if (results == undefined) {
                 console.log('Proof is invalid');
                 continue;
             }
-            const isGSTRootExisted = unirepState.GSTRootExists(results.GSTRoot, epoch);
+            const isGSTRootExisted = unirepState.GSTRootExists(results === null || results === void 0 ? void 0 : results.globalStateTree, epoch);
             if (!isGSTRootExisted) {
                 console.log('Global state tree root does not exist');
                 continue;
             }
             const attestation = new UnirepState_1.Attestation(BigInt(_attestation.attesterId), BigInt(_attestation.posRep), BigInt(_attestation.negRep), BigInt(_attestation.graffiti), BigInt(_attestation.signUp));
             const epochKey = args === null || args === void 0 ? void 0 : args._epochKey;
-            unirepState.addAttestation(epochKey.toString(), attestation);
-            for (let nullifier of results.nullifiers) {
-                unirepState.addReputationNullifiers(nullifier);
+            if (epochKey.eq(results === null || results === void 0 ? void 0 : results.epochKey)) {
+                unirepState.addAttestation(epochKey.toString(), attestation);
+                if ((results === null || results === void 0 ? void 0 : results.repNullifiers) == undefined)
+                    continue;
+                for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                    unirepState.addReputationNullifiers(nullifier);
+                }
             }
         }
         else if (occurredEvent === "EpochEnded") {
@@ -441,20 +432,24 @@ const _genUserStateFromContract = async (provider, address, startBlock, userIden
             const _attestation = args === null || args === void 0 ? void 0 : args.attestation;
             const proofIndex = args === null || args === void 0 ? void 0 : args._proofIndex;
             const results = await verifyAttestationProofsByIndex(unirepContract, proofIndex);
-            if (results.GSTRoot == BigInt(0)) {
+            if (results == undefined) {
                 console.log('Proof is invalid');
                 continue;
             }
-            const isGSTRootExisted = unirepState.GSTRootExists(results.GSTRoot, epoch);
+            const isGSTRootExisted = unirepState.GSTRootExists(results === null || results === void 0 ? void 0 : results.globalStateTree, epoch);
             if (!isGSTRootExisted) {
                 console.log('Global state tree root does not exist');
                 continue;
             }
             const attestation = new UnirepState_1.Attestation(BigInt(_attestation.attesterId), BigInt(_attestation.posRep), BigInt(_attestation.negRep), BigInt(_attestation.graffiti), BigInt(_attestation.signUp));
             const epochKey = args === null || args === void 0 ? void 0 : args._epochKey;
-            unirepState.addAttestation(epochKey.toString(), attestation);
-            for (let nullifier of results.nullifiers) {
-                unirepState.addReputationNullifiers(nullifier);
+            if (epochKey.eq(results === null || results === void 0 ? void 0 : results.epochKey)) {
+                unirepState.addAttestation(epochKey.toString(), attestation);
+                if ((results === null || results === void 0 ? void 0 : results.repNullifiers) == undefined)
+                    continue;
+                for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                    unirepState.addReputationNullifiers(nullifier);
+                }
             }
         }
         else if (occurredEvent === "EpochEnded") {

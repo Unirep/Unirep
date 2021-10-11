@@ -27,6 +27,7 @@ describe('Airdrop', function () {
     const airdropPosRep = 20
     const repNullifiersAmount = 0
     const epkNonce = 0
+    const proofIndexes: BigInt[] = []
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -204,7 +205,7 @@ describe('Airdrop', function () {
                 console.log('epoch key event')
                 const args = epochKeyProofEvent[0]?.args?.epochKeyProofData
                 isProofValid = await unirepContract.verifyEpochKeyValidity(
-                    args?.fromGlobalStateTree,
+                    args?.globalStateTree,
                     args?.epoch,
                     args?.epochKey,
                     args?.proof,
@@ -283,15 +284,29 @@ describe('Airdrop', function () {
         )
         expect(isProofValid, 'Verify start transition circuit on-chain failed').to.be.true
 
+        const blindedUserState = results.startTransitionProof.blindedUserState
+        const blindedHashChain = results.startTransitionProof.blindedHashChain
+        const GSTreeRoot = results.startTransitionProof.globalStateTreeRoot
+        const proof = formatProofForVerifierContract(results.startTransitionProof.proof)
+
         let tx = await unirepContract.startUserStateTransition(
-            results.startTransitionProof.blindedUserState,
-            results.startTransitionProof.blindedHashChain,
-            results.startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(results.startTransitionProof.proof),
+            blindedUserState,
+            blindedHashChain,
+            GSTreeRoot,
+            proof
         )
         let receipt = await tx.wait()
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
         console.log("Gas cost of submit a start transition proof:", receipt.gasUsed.toString())
+
+        let proofNullifier = await unirepContract.hashStartTransitionProof(
+            blindedUserState,
+            blindedHashChain,
+            GSTreeRoot,
+            proof
+        )
+        let proofIndex = await unirepContract.getProofIndex(proofNullifier)
+        proofIndexes.push(BigInt(proofIndex))
 
         for (let i = 0; i < results.processAttestationProofs.length; i++) {
             const isValid = await verifyProof('processAttestations', results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
@@ -319,6 +334,15 @@ describe('Airdrop', function () {
             const receipt = await tx.wait()
             expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
             console.log("Gas cost of submit a process attestations proof:", receipt.gasUsed.toString())
+
+            const proofNullifier = await unirepContract.hashProcessAttestationsProof(
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
+                formatProofForVerifierContract(results.processAttestationProofs[i].proof),
+            )
+            const proofIndex = await unirepContract.getProofIndex(proofNullifier)
+            proofIndexes.push(BigInt(proofIndex))
         }
 
         isValid = await verifyProof('userStateTransition', results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
@@ -329,7 +353,7 @@ describe('Airdrop', function () {
         const blindedUserStates = results.finalTransitionProof.blindedUserStates
         const blindedHashChains = results.finalTransitionProof.blindedHashChains
         const fromEpoch = results.finalTransitionProof.transitionedFromEpoch
-        const GSTreeRoot = results.finalTransitionProof.fromGSTRoot
+        // const GSTreeRoot = results.finalTransitionProof.fromGSTRoot
         const epochTreeRoot = results.finalTransitionProof.fromEpochTree
 
         // Verify userStateTransition proof on-chain
@@ -345,7 +369,7 @@ describe('Airdrop', function () {
         )
         expect(isProofValid, 'Verify user state transition circuit on-chain failed').to.be.true
 
-        tx = await unirepContract.updateUserStateRoot([
+        let transitionProof = [
             newGSTLeaf,
             outputEpkNullifiers,
             fromEpoch,
@@ -353,8 +377,12 @@ describe('Airdrop', function () {
             GSTreeRoot,
             blindedHashChains,
             epochTreeRoot,
-            formatProofForVerifierContract(results.finalTransitionProof.proof)
-        ])
+            formatProofForVerifierContract(results.finalTransitionProof.proof),
+        ]
+        tx = await unirepContract.updateUserStateRoot(
+            transitionProof,
+            proofIndexes,
+        )
         receipt = await tx.wait()
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
         console.log("Gas cost of submit a user state transition proof:", receipt.gasUsed.toString())

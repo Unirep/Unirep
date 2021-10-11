@@ -1,12 +1,14 @@
-import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { UnirepContract } from '../core'
-import { verifyUserSignUpProof } from './verifyUserSignUpProof'
-import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
 import base64url from 'base64url'
+import { ethers } from 'ethers'
+
+import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
+import { genUnirepStateFromContract, UnirepContract } from '../core'
+import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
+
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'giveAirdrop',
+        'submitEpochKeyProof',
         { add_help: true },
     )
 
@@ -34,6 +36,15 @@ const configureSubparser = (subparsers: any) => {
             required: true,
             type: 'str',
             help: 'The snark proof of the user\'s epoch key ',
+        }
+    )
+
+    parser.add_argument(
+        '-b', '--start-block',
+        {
+            action: 'store',
+            type: 'int',
+            help: 'The block the Unirep contract is deployed. Default: 0',
         }
     )
 
@@ -66,40 +77,49 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const giveAirdrop = async (args: any) => {
-
+const submitEpochKeyProof = async (args: any) => {
+    
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
+    const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
     // Unirep contract
     const unirepContract = new UnirepContract(args.contract, ethProvider)
+    
+    const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
+    const unirepState = await genUnirepStateFromContract(
+        provider,
+        args.contract,
+        startBlock,
+    )
+    
+    const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
+    const decodedPublicSignals = base64url.decode(args.public_signals.slice(epkPublicSignalsPrefix.length))
+    const proof = JSON.parse(decodedProof)
+    const publicSignals = JSON.parse(decodedPublicSignals)
+    const currentEpoch = unirepState.currentEpoch
+    const epk = publicSignals[2]
+    const inputEpoch = publicSignals[1]
+    const GSTRoot = publicSignals[0]
+    const epkProofData = publicSignals.concat([proof])
+    console.log(`Submit epoch key ${epk} with GSTRoot ${GSTRoot} in epoch ${inputEpoch}`)
+    if(inputEpoch != currentEpoch) {
+        console.log(`Warning: the epoch key is expired. Epoch key is in epoch ${inputEpoch}, but the current epoch is ${currentEpoch}`)
+    }
 
     // Connect a signer
     await unirepContract.unlock(args.eth_privkey)
 
-    await verifyUserSignUpProof(args)
-    
-    // Parse input
-    const decodedProof = base64url.decode(args.proof.slice(signUpProofPrefix.length))
-    const decodedPublicSignals = base64url.decode(args.public_signals.slice(signUpPublicSignalsPrefix.length))
-    const publicSignals = JSON.parse(decodedPublicSignals)
-    const epoch = publicSignals[0]
-    const epk = publicSignals[1]
-    const GSTRoot = publicSignals[2]
-    const attesterId = publicSignals[3]
-    const proof = JSON.parse(decodedProof)
-    console.log(`Airdrop to epoch key ${epk} in attester ID ${attesterId}`)
-
-    // Submit attestation
-    const tx = await unirepContract.airdropEpochKey(epoch, epk, GSTRoot, attesterId, proof)
-    const proofIndex = await unirepContract.getSignUpProofIndex([epoch, epk, GSTRoot, attesterId, proof])
+    // Submit epoch key proof
+    const tx = await unirepContract.submitEpochKeyProof(epkProofData)
+    const proofIndex = await unirepContract.getEpochKeyProofIndex(epkProofData)
     if(tx != undefined){
         console.log('Transaction hash:', tx?.hash)
-        console.log('Proof index:', proofIndex.toNumber())
+        console.log('Proof index: ', proofIndex.toNumber())
     }
 }
 
 export {
-    giveAirdrop,
+    submitEpochKeyProof,
     configureSubparser,
 }

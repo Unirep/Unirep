@@ -185,7 +185,48 @@ class UnirepContract {
             }
             return tx;
         };
-        this.submitAttestation = async (attestation, epochKeyProof) => {
+        this.submitEpochKeyProof = async (epochKeyProof) => {
+            if (this.signer != undefined) {
+                this.contract = this.contract.connect(this.signer);
+            }
+            else {
+                console.log("Error: shoud connect a signer");
+                return;
+            }
+            let tx;
+            try {
+                tx = await this.contract.submitEpochKeyProof(epochKeyProof);
+            }
+            catch (e) {
+                console.error('Error: the transaction failed');
+                if (e) {
+                    console.error(e);
+                }
+                return;
+            }
+            return tx;
+        };
+        this.getEpochKeyProofIndex = async (epochKeyProof) => {
+            const proofNullifier = await this.contract.hashEpochKeyProof(epochKeyProof);
+            return this.contract.getProofIndex(proofNullifier);
+        };
+        this.getReputationProofIndex = async (reputationProof) => {
+            const proofNullifier = await this.contract.hashReputationProof(reputationProof);
+            return this.contract.getProofIndex(proofNullifier);
+        };
+        this.getSignUpProofIndex = async (signUpProof) => {
+            const proofNullifier = await this.contract.hashSignUpProof(signUpProof);
+            return this.contract.getProofIndex(proofNullifier);
+        };
+        this.getStartTransitionProofIndex = async (blindedUserState, blindedHashChain, GSTreeRoot, proof) => {
+            const proofNullifier = await this.contract.hashStartTransitionProof(blindedUserState, blindedHashChain, GSTreeRoot, circuits_1.formatProofForVerifierContract(proof));
+            return this.contract.getProofIndex(proofNullifier);
+        };
+        this.getProcessAttestationsProofIndex = async (outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof) => {
+            const proofNullifier = await this.contract.hashProcessAttestationsProof(outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, circuits_1.formatProofForVerifierContract(proof));
+            return this.contract.getProofIndex(proofNullifier);
+        };
+        this.submitAttestation = async (attestation, epochKey, proofIndex) => {
             var _a;
             if (this.signer != undefined) {
                 const attesterAddr = await ((_a = this.signer) === null || _a === void 0 ? void 0 : _a.getAddress());
@@ -203,7 +244,7 @@ class UnirepContract {
             const attestingFee = await this.contract.attestingFee();
             let tx;
             try {
-                tx = await this.contract.submitAttestation(attestation, epochKeyProof, { value: attestingFee, gasLimit: 1000000 });
+                tx = await this.contract.submitAttestation(attestation, epochKey, proofIndex, { value: attestingFee, gasLimit: 1000000 });
             }
             catch (e) {
                 console.error('Error: the transaction failed');
@@ -372,7 +413,7 @@ class UnirepContract {
             }
             return tx;
         };
-        this.updateUserStateRoot = async (newGSTLeaf, epochKeyNullifiers, blindedUserStates, blindedHashChains, transitionedFromEpoch, fromGSTRoot, fromEpochTree, proof) => {
+        this.updateUserStateRoot = async (newGSTLeaf, epochKeyNullifiers, blindedUserStates, blindedHashChains, transitionedFromEpoch, fromGSTRoot, fromEpochTree, proof, proofIndexes) => {
             if (this.signer != undefined) {
                 this.contract = this.contract.connect(this.signer);
             }
@@ -391,7 +432,7 @@ class UnirepContract {
                     blindedHashChains,
                     fromEpochTree,
                     circuits_1.formatProofForVerifierContract(proof),
-                ]);
+                ], proofIndexes);
             }
             catch (e) {
                 console.error('Error: the transaction failed');
