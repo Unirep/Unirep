@@ -47,6 +47,7 @@ import {
     numEpochKeyNoncePerEpoch,
     numAttestationsPerProof,
     maxUsers,
+    maxAttesters,
     userStateTreeDepth,
     maxReputationBudget,
 } from '../config/testLocal'
@@ -85,6 +86,7 @@ export {
     numEpochKeyNoncePerEpoch,
     numAttestationsPerProof,
     maxUsers,
+    maxAttesters,
     userStateTreeDepth,
     maxReputationBudget,
 }
