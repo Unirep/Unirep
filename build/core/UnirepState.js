@@ -43,10 +43,9 @@ class UnirepState {
         this.nullifiers = {};
         this.globalStateTree = {};
         this.epochTree = {};
+        this.epochKeyInEpoch = {};
         this.epochKeyToHashchainMap = {};
         this.epochKeyToAttestationsMap = {};
-        this.blindedUserStateMap = {};
-        this.blindedHashChainMap = {};
         this.epochGSTRootMap = {};
         this.toJSON = (space = 0) => {
             let latestEpochTreeLeaves;
@@ -108,6 +107,12 @@ class UnirepState {
                 return attestations;
         };
         /*
+         * Get all epoch keys of given epoch key
+         */
+        this.getEpochKeys = (epoch) => {
+            return Array.from(this.epochKeyInEpoch[epoch].keys());
+        };
+        /*
          * Check if given nullifier exists in Unirep State
          */
         this.nullifierExist = (nullifier) => {
@@ -125,6 +130,11 @@ class UnirepState {
             if (!attestations)
                 this.epochKeyToAttestationsMap[epochKey] = [];
             this.epochKeyToAttestationsMap[epochKey].push(attestation);
+            this.epochKeyInEpoch[this.currentEpoch].set(epochKey, true);
+            if (this.epochKeyToHashchainMap[epochKey] == undefined) {
+                this.epochKeyToHashchainMap[epochKey] = BigInt(0);
+            }
+            this.epochKeyToHashchainMap[epochKey] = crypto_1.hashLeftRight(attestation.hash(), this.epochKeyToHashchainMap[epochKey]);
         };
         /*
         * Add reputation nullifiers to the map state
@@ -133,30 +143,6 @@ class UnirepState {
             if (nullifier > BigInt(0)) {
                 this.nullifiers[nullifier.toString()] = true;
             }
-        };
-        /*
-        * Add blinded user state to the map state
-        */
-        this.addBlindedUserState = (blindedUserState) => {
-            this.blindedUserStateMap[blindedUserState.toString()] = true;
-        };
-        /*
-        * Add blinded hash chain to the map state
-        */
-        this.addBlindedHashChain = (blindedHashChain) => {
-            this.blindedHashChainMap[blindedHashChain.toString()] = true;
-        };
-        /*
-         * Check if given blinded user state exists in Unirep State
-         */
-        this.blindedUserStateExist = (blindedUserState) => {
-            return this.blindedUserStateMap[blindedUserState.toString()];
-        };
-        /*
-         * Check if given blinded hash chain exists in Unirep State
-         */
-        this.blindedHashChainExist = (blindedHashChain) => {
-            return this.blindedHashChainMap[blindedHashChain.toString()];
         };
         /*
          * Computes the global state tree of given epoch
@@ -188,22 +174,32 @@ class UnirepState {
         /*
          * Add the leaves of epoch tree of given epoch and increment current epoch number
          */
-        this.epochTransition = async (epoch, epochTreeLeaves) => {
+        this.epochTransition = async (epoch) => {
             assert_1.default(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`);
             this.epochTree[epoch] = await utils_1.genNewSMT(this.epochTreeDepth, utils_1.SMT_ONE_LEAF);
+            const epochTreeLeaves = [];
+            // seal all epoch keys in current epoch
+            const epochKeys = this.getEpochKeys(epoch);
+            for (let epochKey of epochKeys) {
+                this.epochKeyToHashchainMap[epochKey] = crypto_1.hashLeftRight(BigInt(1), this.epochKeyToHashchainMap[epochKey]);
+                const epochTreeLeaf = {
+                    epochKey: BigInt(epochKey),
+                    hashchainResult: this.epochKeyToHashchainMap[epochKey]
+                };
+                epochTreeLeaves.push(epochTreeLeaf);
+            }
             // Add to epoch key hash chain map
             for (let leaf of epochTreeLeaves) {
                 assert_1.default(leaf.epochKey < BigInt(2 ** this.epochTreeDepth), `Epoch key(${leaf.epochKey}) greater than max leaf value(2**epochTreeDepth)`);
-                if (this.epochKeyToHashchainMap[leaf.epochKey.toString()] !== undefined)
-                    console.log(`The epoch key(${leaf.epochKey}) is seen before`);
-                else
-                    this.epochKeyToHashchainMap[leaf.epochKey.toString()] = leaf.hashchainResult;
+                // if (this.epochKeyToHashchainMap[leaf.epochKey.toString()] !== undefined) console.log(`The epoch key(${leaf.epochKey}) is seen before`)
+                // else this.epochKeyToHashchainMap[leaf.epochKey.toString()] = leaf.hashchainResult
                 await this.epochTree[epoch].update(leaf.epochKey, leaf.hashchainResult);
             }
             this.epochTreeLeaves[epoch] = epochTreeLeaves.slice();
             this.epochTreeRoot[epoch] = this.epochTree[epoch].getRootHash();
             this.currentEpoch++;
             this.GSTLeaves[this.currentEpoch] = [];
+            this.epochKeyInEpoch[this.currentEpoch] = new Map();
             this.globalStateTree[this.currentEpoch] = new crypto_1.IncrementalQuinTree(this.globalStateTreeDepth, this.defaultGSTLeaf, 2);
             this.epochGSTRootMap[this.currentEpoch] = new Map();
         };
@@ -252,6 +248,7 @@ class UnirepState {
         this.maxReputationBudget = _maxReputationBudget;
         this.currentEpoch = 1;
         this.GSTLeaves[this.currentEpoch] = [];
+        this.epochKeyInEpoch[this.currentEpoch] = new Map();
         this.epochTreeRoot[this.currentEpoch] = BigInt(0);
         const emptyUserStateRoot = utils_1.computeEmptyUserStateRoot(_userStateTreeDepth);
         this.defaultGSTLeaf = crypto_1.hashLeftRight(BigInt(0), emptyUserStateRoot);

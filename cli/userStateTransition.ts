@@ -97,6 +97,7 @@ const userStateTransition = async (args: any) => {
         commitment,
     )
     const results = await userState.genUserStateTransitionProofs()
+    const proofIndexes: BigInt[] = []
 
     // Start user state transition proof
     let isValid = await verifyProof('startTransition', results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
@@ -110,6 +111,13 @@ const userStateTransition = async (args: any) => {
         results.startTransitionProof.proof,
     )
     console.log('Transaction hash:', tx?.hash)
+    const proofIndex = await unirepContract.getStartTransitionProofIndex(
+        results.startTransitionProof.blindedUserState,
+        results.startTransitionProof.blindedHashChain,
+        results.startTransitionProof.globalStateTreeRoot,
+        results.startTransitionProof.proof,
+    )
+    proofIndexes.push(BigInt(proofIndex))
 
     // process attestations proof
     for (let i = 0; i < results.processAttestationProofs.length; i++) {
@@ -125,6 +133,13 @@ const userStateTransition = async (args: any) => {
             results.processAttestationProofs[i].proof,
         )
         console.log('Transaction hash:', tx?.hash)
+        const proofIndex = await unirepContract.getProcessAttestationsProofIndex(
+            results.processAttestationProofs[i].outputBlindedUserState,
+            results.processAttestationProofs[i].outputBlindedHashChain,
+            results.processAttestationProofs[i].inputBlindedUserState,
+            results.processAttestationProofs[i].proof,
+        )
+        proofIndexes.push(BigInt(proofIndex))
     }
 
     // update user state proof
@@ -179,10 +194,13 @@ const userStateTransition = async (args: any) => {
         results.finalTransitionProof.fromGSTRoot,
         results.finalTransitionProof.fromEpochTree,
         results.finalTransitionProof.proof,
+        proofIndexes,
     )
-    console.log('Transaction hash:', tx?.hash)
-    const currentEpoch = await unirepContract.currentEpoch()
-    console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
+    if(tx != undefined) {
+        console.log('Transaction hash:', tx?.hash)
+        const currentEpoch = await unirepContract.currentEpoch()
+        console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
+    }
     process.exit(0)
 }
 

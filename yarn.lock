@@ -1330,8 +1330,8 @@
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
 "@unirep/circuits@git+https://github.com/Unirep/circuits.git":
-  version "1.0.1"
-  resolved "git+https://github.com/Unirep/circuits.git#831d023a504df90de2aa89418708dc577046e3bc"
+  version "1.0.2"
+  resolved "git+https://github.com/Unirep/circuits.git#30f8971d3cffe3c7bedf9c5aca2e170931d0aa9e"
   dependencies:
     "@unirep/crypto" "git+https://github.com/Unirep/crypto.git"
     argparse "^2.0.1"
@@ -1341,8 +1341,8 @@
     typescript "^4.4.2"
 
 "@unirep/contracts@git+https://github.com/Unirep/contracts.git":
-  version "1.0.1"
-  resolved "git+https://github.com/Unirep/contracts.git#a2703ac71068ec204b98b3d719646d0bdea66211"
+  version "1.0.2"
+  resolved "git+https://github.com/Unirep/contracts.git#8514b309147e98e22bf7b88d099a0a93f1e64fd2"
   dependencies:
     "@openzeppelin/contracts" "^4.3.2"
     "@unirep/circuits" "git+https://github.com/Unirep/circuits.git"

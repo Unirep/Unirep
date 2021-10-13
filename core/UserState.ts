@@ -51,7 +51,7 @@ class Reputation implements IReputation {
         if(_graffiti != BigInt(0)){
             this.graffiti = _graffiti
         }
-        this.signUp = _signUp
+        this.signUp = this.signUp || _signUp
         return this
     }
 
@@ -741,7 +741,6 @@ class UserState {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
-
         const results = await genProofAndPublicSignals('proveUserSignUp',circuitInputs)
 
         return {

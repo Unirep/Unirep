@@ -25,6 +25,8 @@ const maxReputationBudget = 10;
 
 const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1;
 
+const maxAttesters = 2 ** circuitUserStateTreeDepth - 1;
+
 export {
     attestingFee,
     circuitGlobalStateTreeDepth,
@@ -36,6 +38,7 @@ export {
     numEpochKeyNoncePerEpoch,
     numAttestationsPerProof,
     maxUsers,
+    maxAttesters,
     userStateTreeDepth,
     maxReputationBudget,
 }

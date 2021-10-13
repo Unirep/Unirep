@@ -1,9 +1,15 @@
+import { ethers } from 'ethers'
+import { add0x } from '@unirep/crypto'
+
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { UnirepContract } from '../core'
+import { Attestation, UnirepContract } from '../core'
+import { verifyEpochKeyProof } from './verifyEpochKeyProof'
+import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
+import base64url from 'base64url'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
-        'epochTransition',
+        'setAirdropAmount',
         { add_help: true },
     )
 
@@ -17,19 +23,20 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-t', '--is-test',
-        {
-            action: 'store_true',
-            help: 'Indicate if the provider is a testing environment',
-        }
-    )
-
-    parser.add_argument(
         '-x', '--contract',
         {
             required: true,
             type: 'str',
             help: 'The Unirep contract address',
+        }
+    )
+
+    parser.add_argument(
+        '-a', '--airdrop',
+        {
+            required: true,
+            type: 'int',
+            help: 'The amount of airdrop positive reputation given by the attester'
         }
     )
 
@@ -53,7 +60,7 @@ const configureSubparser = (subparsers: any) => {
     )
 }
 
-const epochTransition = async (args: any) => {
+const setAirdropAmount = async (args: any) => {
 
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
@@ -64,21 +71,17 @@ const epochTransition = async (args: any) => {
     // Connect a signer
     await unirepContract.unlock(args.eth_privkey)
 
-    // Fast-forward to end of epoch if in test environment
-    if (args.is_test) {
-        await unirepContract.fastForward()
-    }
+    // Parse input
+    const airdropPosRep = args.airdrop
+    const attesterId = await unirepContract.getAttesterId()
+    console.log(`Attester ${attesterId} sets its airdrop amount to ${airdropPosRep}`)
 
-    const currentEpoch = await unirepContract.currentEpoch()
-    const tx = await unirepContract.epochTransition()
-
-    if(tx != undefined) {
-        console.log('Transaction hash:', tx.hash)
-        console.log('End of epoch:', currentEpoch.toString())
-    }
+    // Submit attestation
+    const tx = await unirepContract.setAirdropAmount(airdropPosRep)
+    if (tx != undefined) console.log('Transaction hash:', tx?.hash)
 }
 
 export {
-    epochTransition,
+    setAirdropAmount,
     configureSubparser,
 }
