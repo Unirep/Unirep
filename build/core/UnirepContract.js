@@ -13,16 +13,7 @@ const utils_1 = require("../cli/utils");
 class UnirepContract {
     constructor(unirepAddress, providerUrl) {
         this.unlock = async (eth_privkey) => {
-            let ethSk;
-            // The deployer's Ethereum private key
-            // The user may either enter it as a command-line option or via the
-            // standard input
-            if (eth_privkey) {
-                ethSk = eth_privkey;
-            }
-            else {
-                ethSk = await utils_1.promptPwd('Your Ethereum private key');
-            }
+            const ethSk = eth_privkey;
             if (!utils_1.validateEthSk(ethSk)) {
                 console.error('Error: invalid Ethereum private key');
                 return '';

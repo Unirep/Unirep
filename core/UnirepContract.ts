@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { getUnirepContract } from '@unirep/contracts'
 import { formatProofForVerifierContract } from '@unirep/circuits'
 import { DEFAULT_ETH_PROVIDER, } from '../cli/defaults';
-import { checkDeployerProviderConnection, promptPwd, validateEthAddress, validateEthSk } from '../cli/utils';
+import { checkDeployerProviderConnection, validateEthAddress, validateEthSk } from '../cli/utils';
 import { IAttestation } from '.';
 
 /**
@@ -26,16 +26,8 @@ export class UnirepContract {
         this.contract = getUnirepContract(unirepAddress, this.provider)
     }
 
-    public unlock = async (eth_privkey?: string): Promise<string> => {
-        let ethSk
-        // The deployer's Ethereum private key
-        // The user may either enter it as a command-line option or via the
-        // standard input
-        if (eth_privkey) {
-            ethSk = eth_privkey
-        } else {
-            ethSk = await promptPwd('Your Ethereum private key')
-        }
+    public unlock = async (eth_privkey: string): Promise<string> => {
+        const ethSk = eth_privkey
 
         if (!validateEthSk(ethSk)) {
             console.error('Error: invalid Ethereum private key')

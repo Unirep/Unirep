@@ -33,17 +33,7 @@ const configureSubparser = (subparsers: any) => {
         }
     )
 
-    const privkeyGroup = parser.add_mutually_exclusive_group({ required: true })
-
-    privkeyGroup.add_argument(
-        '-dp', '--prompt-for-eth-privkey',
-        {
-            action: 'store_true',
-            help: 'Whether to prompt for the user\'s Ethereum private key and ignore -d / --eth-privkey',
-        }
-    )
-
-    privkeyGroup.add_argument(
+    parser.add_argument(
         '-d', '--eth-privkey',
         {
             action: 'store',

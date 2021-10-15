@@ -1,13 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateEthSk = exports.validateEthAddress = exports.genJsonRpcDeployer = exports.promptPwd = exports.contractExists = exports.checkDeployerProviderConnection = void 0;
-const prompt_async_1 = __importDefault(require("prompt-async"));
+exports.validateEthSk = exports.validateEthAddress = exports.genJsonRpcDeployer = exports.contractExists = exports.checkDeployerProviderConnection = void 0;
 const ethers_1 = require("ethers");
-prompt_async_1.default.colors = false;
-prompt_async_1.default.message = '';
 class JSONRPCDeployer {
     constructor(privateKey, providerUrl, options) {
         this.provider = new ethers_1.ethers.providers.JsonRpcProvider(providerUrl);
@@ -23,17 +17,6 @@ const genJsonRpcDeployer = (privateKey, url) => {
     return new JSONRPCDeployer(privateKey, url);
 };
 exports.genJsonRpcDeployer = genJsonRpcDeployer;
-const promptPwd = async (name) => {
-    prompt_async_1.default.start();
-    const input = await prompt_async_1.default.get([
-        {
-            name,
-            hidden: true,
-        }
-    ]);
-    return input[name];
-};
-exports.promptPwd = promptPwd;
 const checkDeployerProviderConnection = async (sk, ethProvider) => {
     const deployer = genJsonRpcDeployer(sk, ethProvider);
     try {

@@ -28,6 +28,7 @@
         "chai": "^4.2.0",
         "ethereum-waffle": "^3.4.0",
         "hardhat": "^2.6.4",
+        "shelljs": "^0.8.3",
         "keyv": "^4.0.3",
         "ts-node": "^10.2.1"
     },
@@ -38,9 +39,6 @@
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "ethers": "^5.4.6",
-        "prompt-async": "^0.9.9",
-        "shelljs": "^0.8.3",
-        "typescript": "^4.0.5",
-        "utf-8-validate": "5.0.4"
+        "typescript": "^4.0.5"
     }
 }

@@ -7,9 +7,9 @@ import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
 import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, verifyNewGSTProofByIndex } from '../../core/utils'
-import { computeEpochKeyProofHash, toCompleteHexString, verifyNewGSTLeafEvents, verifyProcessAttestationEvents } from '../utils'
+import { toCompleteHexString, verifyNewGSTLeafEvents } from '../utils'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxReputationBudget, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
-import { Attestation, IAttestation, IEpochTreeLeaf, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
+import { Attestation, IAttestation, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
 
 
 describe('Integration', function () {

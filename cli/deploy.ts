@@ -4,7 +4,7 @@ import { deployUnirep } from '@unirep/contracts'
 import { maxAttesters, maxReputationBudget, maxUsers } from '../config/testLocal'
 import { getTreeDepthsForTesting } from '../core'
 import { DEFAULT_ATTESTING_FEE, DEFAULT_EPOCH_LENGTH, DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_TREE_DEPTHS_CONFIG } from './defaults'
-import { checkDeployerProviderConnection, genJsonRpcDeployer, promptPwd, validateEthSk, } from './utils'
+import { checkDeployerProviderConnection, genJsonRpcDeployer, validateEthSk, } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const deployParser = subparsers.add_parser(
@@ -12,17 +12,7 @@ const configureSubparser = (subparsers: any) => {
         { add_help: true },
     )
 
-    const deployerPrivkeyGroup = deployParser.add_mutually_exclusive_group({ required: true })
-
-    deployerPrivkeyGroup.add_argument(
-        '-dp', '--prompt-for-deployer-privkey',
-        {
-            action: 'store_true',
-            help: 'Whether to prompt for the deployer\'s Ethereum private key and ignore -d / --deployer-privkey',
-        }
-    )
-
-    deployerPrivkeyGroup.add_argument(
+    deployParser.add_argument(
         '-d', '--deployer-privkey',
         {
             action: 'store',
@@ -74,12 +64,7 @@ const deploy = async (args: any) => {
     // The deployer's Ethereum private key
     // They may either enter it as a command-line option or via the
     // standard input
-    let deployerPrivkey
-    if (args.prompt_for_deployer_privkey) {
-        deployerPrivkey = await promptPwd('Deployer\'s Ethereum private key')
-    } else {
-        deployerPrivkey = args.deployer_privkey
-    }
+    const deployerPrivkey = args.deployer_privkey
 
     if (!validateEthSk(deployerPrivkey)) {
         console.error('Error: invalid Ethereum private key')

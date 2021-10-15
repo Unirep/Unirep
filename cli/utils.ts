@@ -1,8 +1,4 @@
-import prompt from 'prompt-async'
 import { ethers } from 'ethers'
-
-prompt.colors = false
-prompt.message = ''
 
 class JSONRPCDeployer {
 
@@ -31,18 +27,6 @@ const genJsonRpcDeployer = (
         privateKey,
         url,
     )
-}
-
-const promptPwd = async (name: string) => {
-    prompt.start()
-    const input = await prompt.get([
-        {
-            name,
-            hidden: true,
-        }
-    ])
-
-    return input[name]
 }
 
 const checkDeployerProviderConnection = async (
@@ -84,7 +68,6 @@ const contractExists = async (
 export {
     checkDeployerProviderConnection,
     contractExists,
-    promptPwd,
     genJsonRpcDeployer,
     validateEthAddress,
     validateEthSk,
