@@ -533,7 +533,6 @@ describe('Integration', function () {
         })
 
         it('submit first user\'s first epoch key', async () => {
-            console.log(epochKeyProof)
             const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
