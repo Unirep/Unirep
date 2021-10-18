@@ -10,7 +10,7 @@ export declare class UnirepContract {
     private signer?;
     contract: ethers.Contract;
     constructor(unirepAddress?: any, providerUrl?: any);
-    unlock: (eth_privkey?: string | undefined) => Promise<string>;
+    unlock: (eth_privkey: string) => Promise<string>;
     currentEpoch: () => Promise<any>;
     epochLength: () => Promise<any>;
     latestEpochTransitionTime: () => Promise<any>;
