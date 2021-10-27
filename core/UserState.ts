@@ -105,10 +105,6 @@ class UserState {
         _id,
         _commitment,
         _hasSignedUp: boolean,
-        _transitionedPosRep?: number,
-        _transitionedNegRep?: number,
-        _currentEpochPosRep?: number,
-        _currentEpochNegRep?: number,
         _latestTransitionedEpoch?: number,
         _latestGSTLeafIndex?: number,
         _latestUserStateLeaves?: IUserStateLeaf[],
@@ -124,10 +120,6 @@ class UserState {
         if (_hasSignedUp) {
             assert(_latestTransitionedEpoch !== undefined, "User has signed up but missing latestTransitionedEpoch")
             assert(_latestGSTLeafIndex !== undefined, "User has signed up but missing latestTransitionedEpoch")
-            assert(_transitionedPosRep !== undefined, "User has signed up but missing transitionedPosRep")
-            assert(_transitionedNegRep !== undefined, "User has signed up but missing transitionedNegRep")
-            assert(_currentEpochPosRep !== undefined, "User has signed up but missing currentEpochPosRep")
-            assert(_currentEpochNegRep !== undefined, "User has signed up but missing currentEpochNegRep")
 
             this.latestTransitionedEpoch = _latestTransitionedEpoch
             this.latestGSTLeafIndex = _latestGSTLeafIndex
@@ -616,15 +608,17 @@ class UserState {
 
     public genProveReputationProof = async (
         attesterId: BigInt,
-        repNullifiersAmount: number,
         epkNonce: number,
         minRep: BigInt,
         proveGraffiti: BigInt,
         graffitiPreImage: BigInt,
+        nonceList?: BigInt[],
     ) => {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
         assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
+        if (nonceList == undefined) nonceList = new Array(this.unirepState.maxReputationBudget).fill(BigInt(-1))
+        assert(nonceList.length == this.unirepState.maxReputationBudget, `Length of nonce list should be ${this.unirepState.maxReputationBudget}`)
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epkNonce)
         const rep = this.getRepByAttester(attesterId)
@@ -638,28 +632,32 @@ class UserState {
         const GSTreeRoot = GSTree.root
         const USTPathElements = await userStateTree.getMerkleProof(attesterId)
         const selectors: BigInt[] = []
-        const nonceList: BigInt[] = []
+        const nonceExist = {}
+        let repNullifiersAmount = 0
+        for (let i = 0; i < this.unirepState.maxReputationBudget; i++) {
+            if (nonceList[i] != BigInt(-1)) {
+                assert(nonceExist[nonceList[i].toString()] == undefined, "cannot submit duplicated nonce to compute reputation nullifiers")
+                repNullifiersAmount ++
+                selectors[i] = BigInt(1)
+                nonceExist[nonceList[i].toString()] = 1
+            } else {
+                selectors[i] = BigInt(0)
+            }
+        }
+
+        // check if the nullifiers are submitted before
         let nonceStarter = -1
         if(repNullifiersAmount > 0) {
             // find valid nonce starter
             for (let n = 0; n < Number(posRep) - Number(negRep); n++) {
-                const reputationNullifier = genReputationNullifier(this.id.identityNullifier, epoch, n)
+                const reputationNullifier = genReputationNullifier(this.id.identityNullifier, epoch, n, attesterId)
                 if(!this.unirepState.nullifierExist(reputationNullifier)) {
                     nonceStarter = n
                     break
                 }
             }
-            assert(nonceStarter != -1, "Cannot find valid nonce")
+            assert(nonceStarter != -1, "All nullifiers are spent")
             assert((nonceStarter + repNullifiersAmount) <= Number(posRep) - Number(negRep), "Not enough reputation to spend")
-            for (let i = 0; i < repNullifiersAmount; i++) {
-                nonceList.push( BigInt(nonceStarter + i) )
-                selectors.push(BigInt(1));
-            }
-        }
-        
-        for (let i = repNullifiersAmount ; i < maxReputationBudget ; i++) {
-            nonceList.push(BigInt(0))
-            selectors.push(BigInt(0))
         }
 
         const circuitInputs = stringifyBigInts({

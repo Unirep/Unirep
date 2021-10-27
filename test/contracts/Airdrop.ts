@@ -25,7 +25,6 @@ describe('Airdrop', function () {
     let attester2, attester2Address, attester2Id, unirepContractCalledByAttester2
 
     const airdropPosRep = 20
-    const repNullifiersAmount = 0
     const epkNonce = 0
     const proofIndexes: BigInt[] = []
 
@@ -129,7 +128,13 @@ describe('Airdrop', function () {
         userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, attesterId, airdropPosRep)
         const proveGraffiti = 0
         const minPosRep = 19, graffitiPreImage = 0
-        const results = await userState.genProveReputationProof(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
+        const nonceList = [BigInt(0), BigInt(1)]
+        const initLength = nonceList.length
+        for (let i = 0; i < maxReputationBudget -  initLength; i++) {
+            nonceList.push(BigInt(-1))
+        }
+        console.log(nonceList)
+        const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage, nonceList)
         const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
     })
@@ -400,7 +405,7 @@ describe('Airdrop', function () {
         // generate reputation proof should success
         const proveGraffiti = 0
         const minPosRep = 30, graffitiPreImage = 0
-        const results = await userState.genProveReputationProof(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
+        const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
         const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
     })
@@ -440,7 +445,7 @@ describe('Airdrop', function () {
         userState.signUp(latestTransitionedToEpoch, GSTreeLeafIndex, attester2Id, airdropAmount)
         const proveGraffiti = 0
         const minPosRep = 19, graffitiPreImage = 0
-        const results = await userState.genProveReputationProof(BigInt(attesterId), repNullifiersAmount, epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
+        const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
         const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.false
     })

@@ -14,10 +14,10 @@ declare const getTreeDepthsForTesting: (deployEnv?: string) => {
 };
 declare const genEpochKey: (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth?: number) => SnarkBigInt;
 declare const genEpochKeyNullifier: (identityNullifier: SnarkBigInt, epoch: number, nonce: number) => SnarkBigInt;
-declare const genReputationNullifier: (identityNullifier: SnarkBigInt, epoch: number, nonce: number) => SnarkBigInt;
+declare const genReputationNullifier: (identityNullifier: SnarkBigInt, epoch: number, nonce: number, attesterId: BigInt) => SnarkBigInt;
 declare const genNewSMT: (treeDepth: number, defaultLeafHash: BigInt) => Promise<SparseMerkleTreeImpl>;
 declare const verifyNewGSTProofByIndex: (unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber) => Promise<ethers.Event | void>;
 declare const genUnirepStateFromContract: (provider: ethers.providers.Provider, address: string, startBlock: number) => Promise<UnirepState>;
-declare const genUserStateFromParams: (provider: ethers.providers.Provider, address: string, startBlock: number, userIdentity: any, userIdentityCommitment: any, transitionedPosRep: number, transitionedNegRep: number, currentEpochPosRep: number, currentEpochNegRep: number, latestTransitionedEpoch: number, latestGSTLeafIndex: number, latestUserStateLeaves?: IUserStateLeaf[] | undefined) => Promise<UserState>;
+declare const genUserStateFromParams: (provider: ethers.providers.Provider, address: string, startBlock: number, userIdentity: any, userIdentityCommitment: any, latestTransitionedEpoch: number, latestGSTLeafIndex: number, latestUserStateLeaves?: IUserStateLeaf[] | undefined) => Promise<UserState>;
 declare const genUserStateFromContract: (provider: ethers.providers.Provider, address: string, startBlock: number, userIdentity: any, userIdentityCommitment: any) => Promise<UserState>;
 export { defaultUserStateLeaf, SMT_ONE_LEAF, SMT_ZERO_LEAF, computeEmptyUserStateRoot, computeInitUserStateRoot, getTreeDepthsForTesting, genEpochKey, genEpochKeyNullifier, genReputationNullifier, genNewSMT, genUnirepStateFromContract, genUserStateFromContract, genUserStateFromParams, verifyNewGSTProofByIndex, };

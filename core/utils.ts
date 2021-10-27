@@ -62,7 +62,7 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
         BigInt(0),
         BigInt(0),
     ]
-    let epochKey = hash5(values)
+    let epochKey = hash5(values).toString()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed
@@ -72,8 +72,8 @@ const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, non
     return hash5([EPOCH_KEY_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
 }
 
-const genReputationNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): SnarkBigInt => {
-    return hash5([REPUTATION_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)])
+const genReputationNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, attesterId: BigInt): SnarkBigInt => {
+    return hash5([REPUTATION_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), attesterId])
 }
 
 const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTreeImpl> => {
@@ -379,10 +379,6 @@ const genUserStateFromParams = async (
     startBlock: number,
     userIdentity: any,
     userIdentityCommitment: any,
-    transitionedPosRep: number,
-    transitionedNegRep: number,
-    currentEpochPosRep: number,
-    currentEpochNegRep: number,
     latestTransitionedEpoch: number,
     latestGSTLeafIndex: number,
     latestUserStateLeaves?: IUserStateLeaf[],
@@ -397,10 +393,6 @@ const genUserStateFromParams = async (
         userIdentity,
         userIdentityCommitment,
         true,
-        transitionedPosRep,
-        transitionedNegRep,
-        currentEpochPosRep,
-        currentEpochNegRep,
         latestTransitionedEpoch,
         latestGSTLeafIndex,
         latestUserStateLeaves,

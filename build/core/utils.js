@@ -62,7 +62,7 @@ const genEpochKey = (identityNullifier, epoch, nonce, _epochTreeDepth = testLoca
         BigInt(0),
         BigInt(0),
     ];
-    let epochKey = crypto_1.hash5(values);
+    let epochKey = crypto_1.hash5(values).toString();
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth);
     return epochKeyModed;
@@ -72,8 +72,8 @@ const genEpochKeyNullifier = (identityNullifier, epoch, nonce) => {
     return crypto_1.hash5([nullifierDomainSeparator_1.EPOCH_KEY_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)]);
 };
 exports.genEpochKeyNullifier = genEpochKeyNullifier;
-const genReputationNullifier = (identityNullifier, epoch, nonce) => {
-    return crypto_1.hash5([nullifierDomainSeparator_1.REPUTATION_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), BigInt(0)]);
+const genReputationNullifier = (identityNullifier, epoch, nonce, attesterId) => {
+    return crypto_1.hash5([nullifierDomainSeparator_1.REPUTATION_NULLIFIER_DOMAIN, identityNullifier, BigInt(epoch), BigInt(nonce), attesterId]);
 };
 exports.genReputationNullifier = genReputationNullifier;
 const genNewSMT = async (treeDepth, defaultLeafHash) => {
@@ -293,9 +293,9 @@ exports.genUnirepStateFromContract = genUnirepStateFromContract;
  * @param latestUserStateLeaves User state leaves (empty if no attestations received)
  * @param latestEpochKeys User's epoch keys of the epoch user has transitioned to
  */
-const genUserStateFromParams = async (provider, address, startBlock, userIdentity, userIdentityCommitment, transitionedPosRep, transitionedNegRep, currentEpochPosRep, currentEpochNegRep, latestTransitionedEpoch, latestGSTLeafIndex, latestUserStateLeaves) => {
+const genUserStateFromParams = async (provider, address, startBlock, userIdentity, userIdentityCommitment, latestTransitionedEpoch, latestGSTLeafIndex, latestUserStateLeaves) => {
     const unirepState = await genUnirepStateFromContract(provider, address, startBlock);
-    const userState = new UserState_1.UserState(unirepState, userIdentity, userIdentityCommitment, true, transitionedPosRep, transitionedNegRep, currentEpochPosRep, currentEpochNegRep, latestTransitionedEpoch, latestGSTLeafIndex, latestUserStateLeaves);
+    const userState = new UserState_1.UserState(unirepState, userIdentity, userIdentityCommitment, true, latestTransitionedEpoch, latestGSTLeafIndex, latestUserStateLeaves);
     return userState;
 };
 exports.genUserStateFromParams = genUserStateFromParams;

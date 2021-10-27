@@ -7,7 +7,7 @@ import { genIdentityCommitment, unSerialiseIdentity, hashOne } from '@unirep/cry
 import { getUnirepContract } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
-import { genUnirepStateFromContract, UnirepState } from '../../core'
+import { genUnirepStateFromContract, maxReputationBudget, UnirepState } from '../../core'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 
@@ -34,6 +34,7 @@ describe('test all CLI subcommands', function() {
     const airdropPosRep = 30
     const posRep = 5, negRep = 4, graffitiPreimage = 0, graffiti = hashOne(BigInt(graffitiPreimage)), signUpFlag = 1
     const minPosRep = 0, maxNegRep = 10
+    const repNullifierAmount = 1
     let userRepProof, signUpProof
     let repPublicSignals, signUpPublicSignals
 
@@ -268,7 +269,8 @@ describe('test all CLI subcommands', function() {
                 ` -id ${userIdentity} ` +
                 ` -a ${attesterId} ` +
                 ` -mr ${minPosRep} ` +
-                ` -n ${epochKeyNonce}`
+                ` -n ${epochKeyNonce}` +
+                ` -r ${repNullifierAmount}`
                 // ` -mn ${maxNegRep} ` +
                 // ` -gp ${graffitiPreimage} `
 

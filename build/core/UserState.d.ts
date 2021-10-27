@@ -34,7 +34,7 @@ declare class UserState {
     latestTransitionedEpoch: number;
     latestGSTLeafIndex: number;
     private latestUserStateLeaves;
-    constructor(_unirepState: UnirepState, _id: any, _commitment: any, _hasSignedUp: boolean, _transitionedPosRep?: number, _transitionedNegRep?: number, _currentEpochPosRep?: number, _currentEpochNegRep?: number, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[]);
+    constructor(_unirepState: UnirepState, _id: any, _commitment: any, _hasSignedUp: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[]);
     toJSON: (space?: number) => string;
     getUnirepStateCurrentEpoch: () => number;
     getUnirepStateGSTree: (epoch: number) => IncrementalQuinTree;
@@ -81,7 +81,7 @@ declare class UserState {
         };
     }>;
     transition: (latestStateLeaves: IUserStateLeaf[]) => void;
-    genProveReputationProof: (attesterId: BigInt, repNullifiersAmount: number, epkNonce: number, minRep: BigInt, proveGraffiti: BigInt, graffitiPreImage: BigInt) => Promise<{
+    genProveReputationProof: (attesterId: BigInt, epkNonce: number, minRep: BigInt, proveGraffiti: BigInt, graffitiPreImage: BigInt, nonceList?: BigInt[] | undefined) => Promise<{
         proof: any;
         publicSignals: any;
         reputationNullifiers: any;

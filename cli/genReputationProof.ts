@@ -4,7 +4,7 @@ import { genIdentityCommitment, unSerialiseIdentity, add0x } from '@unirep/crypt
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genUserStateFromContract } from '../core'
+import { genReputationNullifier, genUserStateFromContract, maxReputationBudget } from '../core'
 import { identityPrefix, reputationPublicSignalsPrefix, reputationProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
@@ -114,14 +114,44 @@ const genReputationProof = async (args: any) => {
         id,
         commitment,
     )
+    const epoch = userState.getUnirepStateCurrentEpoch()
     const attesterId = BigInt(add0x(args.attester_id))
     const epkNonce = args.epoch_key_nonce
     // Proving content
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
     const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
     const repNullifiersAmount = args.reputation_nullifier != null ? args.reputation_nullifier : 0
+    const nonceList: BigInt[] = []
+    const rep = userState.getRepByAttester(attesterId)
+    console.log(rep)
+    let nonceStarter: number = -1
+    if(repNullifiersAmount > 0) {
+        // find valid nonce starter
+        for (let n = 0; n < Number(rep.posRep) - Number(rep.negRep); n++) {
+            const reputationNullifier = genReputationNullifier(id.identityNullifier, epoch, n, attesterId)
+            if(!userState.nullifierExist(reputationNullifier)) {
+                nonceStarter = n
+                break
+            }
+        }
+        if(nonceStarter == -1) {
+            console.error('Error: All nullifiers are spent')
+            process.exit(0)
+        }
+        if((nonceStarter + repNullifiersAmount) > Number(rep.posRep) - Number(rep.negRep)){
+            console.error('Error: Not enough reputation to spend')
+            process.exit(0)
+        }
+        for (let i = 0; i < repNullifiersAmount; i++) {
+            nonceList.push( BigInt(nonceStarter + i) )
+        }
+    }
+    
+    for (let i = repNullifiersAmount ; i < maxReputationBudget ; i++) {
+        nonceList.push(BigInt(-1))
+    }
     const graffitiPreImage = args.graffiti_preimage != null ? BigInt(add0x(args.graffiti_preimage)) : BigInt(0)
-    const results = await userState.genProveReputationProof(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
+    const results = await userState.genProveReputationProof(attesterId, epkNonce, minRep, proveGraffiti, graffitiPreImage, nonceList)
 
     console.log('repnullifier amount', repNullifiersAmount)
 

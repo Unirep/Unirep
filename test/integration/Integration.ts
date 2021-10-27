@@ -6,7 +6,7 @@ import { IncrementalQuinTree, genRandomSalt, hashLeftRight, hashOne, genIdentity
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
-import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, verifyNewGSTProofByIndex } from '../../core/utils'
+import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, verifyNewGSTProofByIndex, genReputationNullifier } from '../../core/utils'
 import { toCompleteHexString, verifyNewGSTLeafEvents } from '../utils'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxReputationBudget, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 import { Attestation, IAttestation, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
@@ -369,13 +369,12 @@ describe('Integration', function () {
 
         it('Second user can generate a reputation proof with the airdropped amount', async () => {
             const secondAttesterId = attesters[secondAttester].id
-            const repNullifiersAmount = 0
             const epkNonce = 1
             const epochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), epkNonce)
             const minRep = BigInt(secondAttesterAirdropAmount)
             const proveGraffiti = BigInt(0)
             const graffitiPreImage = genRandomSalt()
-            const results = await users[secondUser].genProveReputationProof(secondAttesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
+            const results = await users[secondUser].genProveReputationProof(secondAttesterId, epkNonce, minRep, proveGraffiti, graffitiPreImage)
             const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
             expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
 
@@ -419,13 +418,22 @@ describe('Integration', function () {
 
         it('Second user can generate reputation nullifiers proof and should be submitted successfully', async () => {
             const secondAttesterId = attesters[secondAttester].id
-            const repNullifiersAmount = 5
             const epkNonce = 1
             const epochKey = genEpochKey(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), epkNonce)
             const minRep = BigInt(secondAttesterAirdropAmount)
             const proveGraffiti = BigInt(0)
             const graffitiPreImage = genRandomSalt()
-            const results = await users[secondUser].genProveReputationProof(secondAttesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
+            const repNullifiersAmount = 5
+            const nonceList: BigInt[] = []
+            for (let i = 0; i < maxReputationBudget; i++) {
+                if(i < repNullifiersAmount){
+                    if(!unirepState.nullifierExist(genReputationNullifier(users[secondUser].id.identityNullifier, currentEpoch.toNumber(), i, secondAttesterId)))
+                        nonceList.push(BigInt(i))
+                } else 
+                    nonceList.push(BigInt(-1))
+                
+            }
+            const results = await users[secondUser].genProveReputationProof(secondAttesterId, epkNonce, minRep, proveGraffiti, graffitiPreImage, nonceList)
             const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
             expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
 
@@ -954,11 +962,10 @@ describe('Integration', function () {
             const attesterId = attesters[firstAttester].id  // Prove reputation received from first attester
             const proveGraffiti = BigInt(1)
             const minRep = BigInt(0)
-            const repNullifiersAmount = 0
             const epkNonce = 0
             const graffitiPreImage = graffitiPreImageMap[firstUser][attesterId.toString()]
             console.log(`Proving reputation from attester ${attesterId} with minRep ${minRep} and graffitiPreimage ${graffitiPreImage}`)
-            const results = await users[firstUser].genProveReputationProof(attesterId, repNullifiersAmount, epkNonce, minRep, proveGraffiti, graffitiPreImage)
+            const results = await users[firstUser].genProveReputationProof(attesterId, epkNonce, minRep, proveGraffiti, graffitiPreImage)
             const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
             expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
 
