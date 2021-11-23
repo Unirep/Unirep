@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
+import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { maxReputationBudget } from '../config/testLocal'

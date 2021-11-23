@@ -1,11 +1,10 @@
-import * as fs from 'fs'
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity, add0x } from '@unirep/crypto'
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK, DEFAULT_USER_STATE_FILE } from './defaults'
-import { genReputationNullifier, genUserStateFromContract, genUserStateFromParams, maxReputationBudget, UserState } from '../core'
+import { DEFAULT_ETH_PROVIDER } from './defaults'
+import { genReputationNullifier, genUserStateFromContract, maxReputationBudget } from '../core'
 import { identityPrefix, reputationPublicSignalsPrefix, reputationProofPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {

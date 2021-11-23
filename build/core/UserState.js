@@ -57,13 +57,17 @@ class UserState {
     constructor(_unirepState, _id, _commitment, _hasSignedUp, _latestTransitionedEpoch, _latestGSTLeafIndex, _latestUserStateLeaves) {
         this.hasSignedUp = false;
         this.toJSON = (space = 0) => {
+            const userStateLeavesMapToString = {};
+            for (const l of this.latestUserStateLeaves) {
+                userStateLeavesMapToString[l.attesterId.toString()] = l.reputation.toJSON();
+            }
             return JSON.stringify({
                 idNullifier: this.id.identityNullifier.toString(),
                 idCommitment: this.commitment.toString(),
                 hasSignedUp: this.hasSignedUp,
                 latestTransitionedEpoch: this.latestTransitionedEpoch,
                 latestGSTLeafIndex: this.latestGSTLeafIndex,
-                latestUserStateLeaves: this.latestUserStateLeaves.map((l) => `${l.attesterId.toString()}: ${l.reputation.toJSON()}`),
+                latestUserStateLeaves: userStateLeavesMapToString,
                 unirepState: JSON.parse(this.unirepState.toJSON())
             }, null, space);
         };
@@ -78,6 +82,9 @@ class UserState {
         };
         this.getUnirepStateEpochTree = async (epoch) => {
             return this.unirepState.genEpochTree(epoch);
+        };
+        this.getUnirepState = () => {
+            return this.unirepState;
         };
         /*
          * Get the attestations of given epoch key
@@ -143,11 +150,23 @@ class UserState {
             const leaves = this.latestUserStateLeaves;
             return (await this._genUserStateTreeFromLeaves(leaves));
         };
+        /*
+         * Check if the root is one of the Global state tree roots in the given epoch
+         */
+        this.GSTRootExists = (GSTRoot, epoch) => {
+            return this.unirepState.GSTRootExists(GSTRoot, epoch);
+        };
+        /*
+         * Check if the root is one of the epoch tree roots in the given epoch
+         */
+        this.epochTreeRootExists = async (_epochTreeRoot, epoch) => {
+            return this.unirepState.epochTreeRootExists(_epochTreeRoot, epoch);
+        };
         this.genVerifyEpochKeyProof = async (epochKeyNonce) => {
             assert_1.default(this.hasSignedUp, "User has not signed up yet");
             assert_1.default(epochKeyNonce < this.numEpochKeyNoncePerEpoch, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`);
             const epoch = this.latestTransitionedEpoch;
-            const epochKey = utils_1.genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth);
+            const epochKey = utils_1.genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.setting.epochTreeDepth);
             const userStateTree = await this.genUserStateTree();
             const GSTree = this.unirepState.genGSTree(epoch);
             const GSTProof = GSTree.genMerklePath(this.latestGSTLeafIndex);
@@ -196,7 +215,7 @@ class UserState {
             for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
                 const epkNullifier = utils_1.genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, nonce);
                 assert_1.default(!this.unirepState.nullifierExist(epkNullifier), `Epoch key with nonce ${nonce} is already processed, it's nullifier: ${epkNullifier}`);
-                const epochKey = utils_1.genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.epochTreeDepth);
+                const epochKey = utils_1.genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth);
                 const attestations = this.unirepState.getAttestations(epochKey.toString());
                 for (let i = 0; i < attestations.length; i++) {
                     const attestation = attestations[i];
@@ -283,7 +302,7 @@ class UserState {
             const finalUserState = [intermediateUserStateTreeRoots[0]];
             const finalHashChain = [];
             for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
-                const epochKey = utils_1.genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.epochTreeDepth);
+                const epochKey = utils_1.genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth);
                 let currentHashChain = BigInt(0);
                 // Blinded user state and hash chain of the epoch key
                 toNonces.push(nonce);
@@ -459,8 +478,8 @@ class UserState {
             assert_1.default(attesterId > BigInt(0), `attesterId must be greater than zero`);
             assert_1.default(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`);
             if (nonceList == undefined)
-                nonceList = new Array(this.unirepState.maxReputationBudget).fill(BigInt(-1));
-            assert_1.default(nonceList.length == this.unirepState.maxReputationBudget, `Length of nonce list should be ${this.unirepState.maxReputationBudget}`);
+                nonceList = new Array(this.unirepState.setting.maxReputationBudget).fill(BigInt(-1));
+            assert_1.default(nonceList.length == this.unirepState.setting.maxReputationBudget, `Length of nonce list should be ${this.unirepState.setting.maxReputationBudget}`);
             const epoch = this.latestTransitionedEpoch;
             const epochKey = utils_1.genEpochKey(this.id.identityNullifier, epoch, epkNonce);
             const rep = this.getRepByAttester(attesterId);
@@ -476,7 +495,7 @@ class UserState {
             const selectors = [];
             const nonceExist = {};
             let repNullifiersAmount = 0;
-            for (let i = 0; i < this.unirepState.maxReputationBudget; i++) {
+            for (let i = 0; i < this.unirepState.setting.maxReputationBudget; i++) {
                 if (nonceList[i] != BigInt(-1)) {
                     assert_1.default(nonceExist[nonceList[i].toString()] == undefined, "cannot submit duplicated nonce to compute reputation nullifiers");
                     repNullifiersAmount++;
@@ -586,8 +605,8 @@ class UserState {
         };
         assert_1.default(_unirepState !== undefined, "UnirepState is undefined");
         this.unirepState = _unirepState;
-        this.userStateTreeDepth = this.unirepState.userStateTreeDepth;
-        this.numEpochKeyNoncePerEpoch = this.unirepState.numEpochKeyNoncePerEpoch;
+        this.userStateTreeDepth = this.unirepState.setting.userStateTreeDepth;
+        this.numEpochKeyNoncePerEpoch = this.unirepState.setting.numEpochKeyNoncePerEpoch;
         this.numAttestationsPerProof = testLocal_1.numAttestationsPerProof;
         this.id = _id;
         this.commitment = _commitment;

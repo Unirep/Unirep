@@ -36,45 +36,49 @@ class Attestation {
 }
 exports.Attestation = Attestation;
 class UnirepState {
-    constructor(_globalStateTreeDepth, _userStateTreeDepth, _epochTreeDepth, _attestingFee, _epochLength, _numEpochKeyNoncePerEpoch, _maxReputationBudget) {
+    constructor(_setting, _currentEpoch, _latestBlock, _GSTLeaves, _epochTreeLeaves, _epochKeyToAttestationsMap, _nullifiers) {
         this.epochTreeRoot = {};
         this.GSTLeaves = {};
         this.epochTreeLeaves = {};
         this.nullifiers = {};
         this.globalStateTree = {};
         this.epochTree = {};
+        this.latestProcessedBlock = 0;
         this.epochKeyInEpoch = {};
-        this.epochKeyToHashchainMap = {};
         this.epochKeyToAttestationsMap = {};
         this.epochGSTRootMap = {};
         this.toJSON = (space = 0) => {
-            let latestEpochTreeLeaves;
-            let latestEpothTreeRoot;
-            if (this.currentEpoch == 1) {
-                latestEpochTreeLeaves = [];
-                latestEpothTreeRoot = BigInt(0).toString();
+            const epochKeys = this.getEpochKeys(this.currentEpoch);
+            const attestationsMapToString = {};
+            for (const key of epochKeys) {
+                attestationsMapToString[key] = this.epochKeyToAttestationsMap[key].map((n) => (n.toJSON()));
             }
-            else {
-                latestEpochTreeLeaves = this.epochTreeLeaves[this.currentEpoch - 1].map((l) => `${l.epochKey.toString()}: ${l.hashchainResult.toString()}`);
-                latestEpothTreeRoot = this.epochTreeRoot[this.currentEpoch - 1].toString();
+            const epochTreeLeavesToString = {};
+            const GSTRootsToString = {};
+            for (let index in this.epochTreeLeaves) {
+                epochTreeLeavesToString[index] = this.epochTreeLeaves[index].map((l) => `${l.epochKey.toString()}: ${l.hashchainResult.toString()}`);
+            }
+            for (let index in this.epochGSTRootMap) {
+                GSTRootsToString[index] = Array.from(this.epochGSTRootMap[index].keys());
             }
             return JSON.stringify({
                 settings: {
-                    globalStateTreeDepth: this.globalStateTreeDepth,
-                    userStateTreeDepth: this.userStateTreeDepth,
-                    epochTreeDepth: this.epochTreeDepth,
-                    attestingFee: this.attestingFee.toString(),
-                    epochLength: this.epochLength,
-                    numEpochKeyNoncePerEpoch: this.numEpochKeyNoncePerEpoch,
-                    maxReputationBudget: this.maxReputationBudget,
-                    defaultGSTLeaf: this.defaultGSTLeaf.toString(),
+                    globalStateTreeDepth: this.setting.globalStateTreeDepth,
+                    userStateTreeDepth: this.setting.userStateTreeDepth,
+                    epochTreeDepth: this.setting.epochTreeDepth,
+                    attestingFee: this.setting.attestingFee.toString(),
+                    epochLength: this.setting.epochLength,
+                    numEpochKeyNoncePerEpoch: this.setting.numEpochKeyNoncePerEpoch,
+                    maxReputationBudget: this.setting.maxReputationBudget,
+                    defaultGSTLeaf: this.setting.defaultGSTLeaf.toString(),
                 },
                 currentEpoch: this.currentEpoch,
-                latestEpochGSTLeaves: this.GSTLeaves[this.currentEpoch].map((l) => l.toString()),
-                latestEpochTreeLeaves: latestEpochTreeLeaves,
-                latestEpochTreeRoot: latestEpothTreeRoot,
-                globalStateTreeRoots: Array.from(this.epochGSTRootMap[this.currentEpoch].keys()),
-                nullifiers: this.nullifiers
+                latestProcessedBlock: this.latestProcessedBlock,
+                GSTLeaves: Object(crypto_1.stringifyBigInts(this.GSTLeaves)),
+                epochTreeLeaves: Object(epochTreeLeavesToString),
+                latestEpochKeyToAttestationsMap: attestationsMapToString,
+                globalStateTreeRoots: GSTRootsToString,
+                nullifiers: Object.keys(this.nullifiers)
             }, null, space);
         };
         /*
@@ -85,17 +89,15 @@ class UnirepState {
                 return 0;
             return this.GSTLeaves[epoch].length;
         };
-        /*
-         * Get the hash chain result of given epoch key
-         */
-        this.getHashchain = (epochKey) => {
-            const DefaultHashchainResult = utils_1.SMT_ONE_LEAF;
-            const hashchain = this.epochKeyToHashchainMap[epochKey];
-            if (!hashchain)
-                return DefaultHashchainResult;
-            else
-                return hashchain;
-        };
+        // /*
+        //  * Get the hash chain result of given epoch key
+        //  */
+        // public getHashchain = (epochKey: string): BigInt => {
+        //     const DefaultHashchainResult = SMT_ONE_LEAF
+        //     const hashchain = this.epochKeyToHashchainMap[epochKey]
+        //     if (!hashchain) return DefaultHashchainResult
+        //     else return hashchain
+        // }
         /*
          * Get the attestations of given epoch key
          */
@@ -125,21 +127,25 @@ class UnirepState {
         /*
          * Add a new attestation to the list of attestations to the epoch key.
          */
-        this.addAttestation = (epochKey, attestation) => {
+        this.addAttestation = (epochKey, attestation, blockNumber) => {
+            if (blockNumber !== undefined && blockNumber < this.latestProcessedBlock)
+                return;
+            else
+                this.latestProcessedBlock = blockNumber ? blockNumber : this.latestProcessedBlock;
             const attestations = this.epochKeyToAttestationsMap[epochKey];
             if (!attestations)
                 this.epochKeyToAttestationsMap[epochKey] = [];
             this.epochKeyToAttestationsMap[epochKey].push(attestation);
             this.epochKeyInEpoch[this.currentEpoch].set(epochKey, true);
-            if (this.epochKeyToHashchainMap[epochKey] == undefined) {
-                this.epochKeyToHashchainMap[epochKey] = BigInt(0);
-            }
-            this.epochKeyToHashchainMap[epochKey] = crypto_1.hashLeftRight(attestation.hash(), this.epochKeyToHashchainMap[epochKey]);
         };
         /*
         * Add reputation nullifiers to the map state
         */
-        this.addReputationNullifiers = (nullifier) => {
+        this.addReputationNullifiers = (nullifier, blockNumber) => {
+            if (blockNumber !== undefined && blockNumber < this.latestProcessedBlock)
+                return;
+            else
+                this.latestProcessedBlock = blockNumber ? blockNumber : this.latestProcessedBlock;
             if (nullifier > BigInt(0)) {
                 this.nullifiers[nullifier.toString()] = true;
             }
@@ -153,14 +159,27 @@ class UnirepState {
         /*
          * Computes the epoch tree of given epoch
          */
-        this.genEpochTree = (epoch) => {
-            return this.epochTree[epoch];
+        this.genEpochTree = async (epoch) => {
+            const epochTree = await utils_1.genNewSMT(this.setting.epochTreeDepth, utils_1.SMT_ONE_LEAF);
+            const leaves = this.epochTreeLeaves[epoch];
+            if (!leaves)
+                return epochTree;
+            else {
+                for (const leaf of leaves) {
+                    await epochTree.update(leaf.epochKey, leaf.hashchainResult);
+                }
+                return epochTree;
+            }
         };
         /*
          * Add a new state leaf to the list of GST leaves of given epoch.
          */
-        this.signUp = (epoch, GSTLeaf) => {
+        this.signUp = (epoch, GSTLeaf, blockNumber) => {
             assert_1.default(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`);
+            if (blockNumber !== undefined && blockNumber < this.latestProcessedBlock)
+                return;
+            else
+                this.latestProcessedBlock = blockNumber ? blockNumber : this.latestProcessedBlock;
             // Note that we do not insert a state leaf to any state tree here. This
             // is because we want to keep the state minimal, and only compute what
             // is necessary when it is needed. This may change if we run into
@@ -174,23 +193,30 @@ class UnirepState {
         /*
          * Add the leaves of epoch tree of given epoch and increment current epoch number
          */
-        this.epochTransition = async (epoch) => {
+        this.epochTransition = async (epoch, blockNumber) => {
             assert_1.default(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`);
-            this.epochTree[epoch] = await utils_1.genNewSMT(this.epochTreeDepth, utils_1.SMT_ONE_LEAF);
+            if (blockNumber !== undefined && blockNumber < this.latestProcessedBlock)
+                return;
+            else
+                this.latestProcessedBlock = blockNumber ? blockNumber : this.latestProcessedBlock;
+            this.epochTree[epoch] = await utils_1.genNewSMT(this.setting.epochTreeDepth, utils_1.SMT_ONE_LEAF);
             const epochTreeLeaves = [];
             // seal all epoch keys in current epoch
-            const epochKeys = this.getEpochKeys(epoch);
-            for (let epochKey of epochKeys) {
-                this.epochKeyToHashchainMap[epochKey] = crypto_1.hashLeftRight(BigInt(1), this.epochKeyToHashchainMap[epochKey]);
+            for (let epochKey of this.epochKeyInEpoch[epoch].keys()) {
+                let hashChain = BigInt(0);
+                for (let i = 0; i < this.epochKeyToAttestationsMap[epochKey].length; i++) {
+                    hashChain = crypto_1.hashLeftRight(this.epochKeyToAttestationsMap[epochKey][i].hash(), hashChain);
+                }
+                const sealedHashChainResult = crypto_1.hashLeftRight(BigInt(1), hashChain);
                 const epochTreeLeaf = {
                     epochKey: BigInt(epochKey),
-                    hashchainResult: this.epochKeyToHashchainMap[epochKey]
+                    hashchainResult: sealedHashChainResult
                 };
                 epochTreeLeaves.push(epochTreeLeaf);
             }
             // Add to epoch key hash chain map
             for (let leaf of epochTreeLeaves) {
-                assert_1.default(leaf.epochKey < BigInt(2 ** this.epochTreeDepth), `Epoch key(${leaf.epochKey}) greater than max leaf value(2**epochTreeDepth)`);
+                assert_1.default(leaf.epochKey < BigInt(2 ** this.setting.epochTreeDepth), `Epoch key(${leaf.epochKey}) greater than max leaf value(2**epochTreeDepth)`);
                 // if (this.epochKeyToHashchainMap[leaf.epochKey.toString()] !== undefined) console.log(`The epoch key(${leaf.epochKey}) is seen before`)
                 // else this.epochKeyToHashchainMap[leaf.epochKey.toString()] = leaf.hashchainResult
                 await this.epochTree[epoch].update(leaf.epochKey, leaf.hashchainResult);
@@ -200,14 +226,18 @@ class UnirepState {
             this.currentEpoch++;
             this.GSTLeaves[this.currentEpoch] = [];
             this.epochKeyInEpoch[this.currentEpoch] = new Map();
-            this.globalStateTree[this.currentEpoch] = new crypto_1.IncrementalQuinTree(this.globalStateTreeDepth, this.defaultGSTLeaf, 2);
+            this.globalStateTree[this.currentEpoch] = new crypto_1.IncrementalQuinTree(this.setting.globalStateTreeDepth, this.setting.defaultGSTLeaf, 2);
             this.epochGSTRootMap[this.currentEpoch] = new Map();
         };
         /*
          * Add a new state leaf to the list of GST leaves of given epoch.
          */
-        this.userStateTransition = (epoch, GSTLeaf, nullifiers) => {
+        this.userStateTransition = (epoch, GSTLeaf, nullifiers, blockNumber) => {
             assert_1.default(epoch == this.currentEpoch, `Epoch(${epoch}) must be the same as current epoch`);
+            if (blockNumber !== undefined && blockNumber < this.latestProcessedBlock)
+                return;
+            else
+                this.latestProcessedBlock = blockNumber ? blockNumber : this.latestProcessedBlock;
             // Check if all nullifiers are not duplicated then update Unirep state
             for (let nullifier of nullifiers) {
                 if (nullifier > BigInt(0)) {
@@ -236,24 +266,54 @@ class UnirepState {
         /*
          * Check if the root is one of the epoch tree roots in the given epoch
          */
-        this.epochTreeRootExists = (_epochTreeRoot, epoch) => {
+        this.epochTreeRootExists = async (_epochTreeRoot, epoch) => {
+            if (this.epochTreeRoot[epoch] == undefined) {
+                const epochTree = await this.genEpochTree(epoch);
+                this.epochTreeRoot[epoch] = epochTree.getRootHash();
+            }
             return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString();
         };
-        this.globalStateTreeDepth = _globalStateTreeDepth;
-        this.userStateTreeDepth = _userStateTreeDepth;
-        this.epochTreeDepth = _epochTreeDepth;
-        this.attestingFee = _attestingFee;
-        this.epochLength = _epochLength;
-        this.numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
-        this.maxReputationBudget = _maxReputationBudget;
-        this.currentEpoch = 1;
-        this.GSTLeaves[this.currentEpoch] = [];
+        this.setting = _setting;
+        if (_currentEpoch !== undefined)
+            this.currentEpoch = _currentEpoch;
+        else
+            this.currentEpoch = 1;
+        if (_latestBlock !== undefined)
+            this.latestProcessedBlock = _latestBlock;
         this.epochKeyInEpoch[this.currentEpoch] = new Map();
         this.epochTreeRoot[this.currentEpoch] = BigInt(0);
-        const emptyUserStateRoot = utils_1.computeEmptyUserStateRoot(_userStateTreeDepth);
-        this.defaultGSTLeaf = crypto_1.hashLeftRight(BigInt(0), emptyUserStateRoot);
-        this.globalStateTree[this.currentEpoch] = new crypto_1.IncrementalQuinTree(this.globalStateTreeDepth, this.defaultGSTLeaf, 2);
-        this.epochGSTRootMap[this.currentEpoch] = new Map();
+        if (_GSTLeaves !== undefined) {
+            this.GSTLeaves = _GSTLeaves;
+            for (let key in this.GSTLeaves) {
+                this.globalStateTree[key] = new crypto_1.IncrementalQuinTree(this.setting.globalStateTreeDepth, this.setting.defaultGSTLeaf, 2);
+                this.epochGSTRootMap[key] = new Map();
+                this.GSTLeaves[key].map(n => {
+                    this.globalStateTree[key].insert(n);
+                    this.epochGSTRootMap[key].set(this.globalStateTree[key].root.toString(), true);
+                });
+            }
+        }
+        else {
+            this.GSTLeaves[this.currentEpoch] = [];
+            this.globalStateTree[this.currentEpoch] = new crypto_1.IncrementalQuinTree(this.setting.globalStateTreeDepth, this.setting.defaultGSTLeaf, 2);
+            this.epochGSTRootMap[this.currentEpoch] = new Map();
+        }
+        if (_epochTreeLeaves !== undefined)
+            this.epochTreeLeaves = _epochTreeLeaves;
+        else
+            this.epochTreeLeaves = {};
+        if (_epochKeyToAttestationsMap !== undefined) {
+            this.epochKeyToAttestationsMap = _epochKeyToAttestationsMap;
+            for (const key in this.epochKeyToAttestationsMap) {
+                this.epochKeyInEpoch[this.currentEpoch].set(key, true);
+            }
+        }
+        else
+            this.epochKeyToAttestationsMap = {};
+        if (_nullifiers != undefined)
+            this.nullifiers = _nullifiers;
+        else
+            this.nullifiers = {};
     }
 }
 exports.UnirepState = UnirepState;

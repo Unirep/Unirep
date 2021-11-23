@@ -3,8 +3,8 @@ import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
 import { verifyProof } from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_START_BLOCK } from './defaults'
-import { genUnirepStateFromContract, genUserStateFromContract, UnirepContract } from '../core'
+import { DEFAULT_ETH_PROVIDER } from './defaults'
+import { genUserStateFromContract, UnirepContract } from '../core'
 import { identityPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {

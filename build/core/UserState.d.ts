@@ -39,6 +39,7 @@ declare class UserState {
     getUnirepStateCurrentEpoch: () => number;
     getUnirepStateGSTree: (epoch: number) => IncrementalQuinTree;
     getUnirepStateEpochTree: (epoch: number) => Promise<SparseMerkleTreeImpl>;
+    getUnirepState: () => UnirepState;
     getAttestations: (epochKey: string) => IAttestation[];
     getEpochKeyNullifiers: (epoch: number) => BigInt[];
     getRepByAttester: (attesterId: BigInt) => Reputation;
@@ -46,6 +47,8 @@ declare class UserState {
     signUp: (_latestTransitionedEpoch: number, _latestGSTLeafIndex: number, _attesterId: number, _airdropAmount: number) => void;
     private _genUserStateTreeFromLeaves;
     genUserStateTree: () => Promise<SparseMerkleTreeImpl>;
+    GSTRootExists: (GSTRoot: BigInt | string, epoch: number) => boolean;
+    epochTreeRootExists: (_epochTreeRoot: BigInt | string, epoch: number) => Promise<boolean>;
     genVerifyEpochKeyProof: (epochKeyNonce: number) => Promise<{
         proof: any;
         publicSignals: any;

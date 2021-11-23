@@ -3,8 +3,8 @@ import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE, DEFAULT_START_BLOCK } from './defaults'
-import { genUserStateFromContract, genEpochKey, UnirepContract, numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, UserState, genUserStateFromParams } from '../core'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE } from './defaults'
+import { genUserStateFromContract, genEpochKey, circuitEpochTreeDepth} from '../core'
 import { epkProofPrefix, epkPublicSignalsPrefix, identityPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {

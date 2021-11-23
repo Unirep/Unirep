@@ -14,14 +14,14 @@ class UnirepContract {
     constructor(unirepAddress, providerUrl) {
         this.unlock = async (eth_privkey) => {
             const ethSk = eth_privkey;
-            if (!utils_1.validateEthSk(ethSk)) {
-                console.error('Error: invalid Ethereum private key');
-                return '';
-            }
-            if (!(await utils_1.checkDeployerProviderConnection(ethSk, this.url))) {
-                console.error('Error: unable to connect to the Ethereum provider at', this.url);
-                return '';
-            }
+            // if (!validateEthSk(ethSk)) {
+            //     console.error('Error: invalid Ethereum private key')
+            //     return ''
+            // }
+            // if (! (await checkDeployerProviderConnection(ethSk, this.url))) {
+            //     console.error('Error: unable to connect to the Ethereum provider at', this.url)
+            //     return ''
+            // }
             this.signer = new ethers_1.ethers.Wallet(ethSk, this.provider);
             return ethSk;
         };
