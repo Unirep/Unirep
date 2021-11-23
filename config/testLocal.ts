@@ -6,7 +6,7 @@ const userStateTreeDepth = 16;
 
 const epochTreeDepth = 64;
 
-const attestingFee = ethers.utils.parseEther("0.01")
+const attestingFee = ethers.utils.parseEther("0")
 
 const numEpochKeyNoncePerEpoch = 3;
 

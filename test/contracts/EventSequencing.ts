@@ -5,7 +5,7 @@ import { genRandomSalt, genIdentity, genIdentityCommitment } from '@unirep/crypt
 import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
 import { genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
-import { attestingFee, epochLength, maxReputationBudget, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { attestingFee, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { Attestation } from "../../core"
 import { computeEpochKeyProofHash } from '../utils'
 
@@ -27,7 +27,15 @@ describe('EventSequencing', () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
+        const _settings = {
+            maxUsers: maxUsers,
+            maxAttesters: maxAttesters,
+            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
+            epochLength: epochLength,
+            attestingFee: attestingFee
+        }
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths, _settings)
 
         // 1. Fisrt user sign up
         let userId = genIdentity()

@@ -32,15 +32,6 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-b', '--start-block',
-        {
-            action: 'store',
-            type: 'int',
-            help: 'The block the Unirep contract is deployed. Default: 0',
-        }
-    )
-
-    parser.add_argument(
         '-x', '--contract',
         {
             required: true,
@@ -70,7 +61,6 @@ const userStateTransition = async (args: any) => {
 
     // Connect a signer
     await unirepContract.unlock(args.eth_privkey)
-    const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
     // Parse inputs
     const encodedIdentity = args.identity.slice(identityPrefix.length)
@@ -82,7 +72,6 @@ const userStateTransition = async (args: any) => {
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
-        startBlock,
         id,
         commitment,
     )
@@ -155,16 +144,11 @@ const userStateTransition = async (args: any) => {
     }
 
     // Check if Global state tree root and epoch tree root exist
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        args.contract,
-        startBlock,
-    )
     const GSTRoot = results.finalTransitionProof.fromGSTRoot
     const inputEpoch = results.finalTransitionProof.transitionedFromEpoch
     const epochTreeRoot= results.finalTransitionProof.fromEpochTree
-    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, inputEpoch)
-    const isEpochTreeExisted = unirepState.epochTreeRootExists(epochTreeRoot, inputEpoch)
+    const isGSTRootExisted = userState.GSTRootExists(GSTRoot, inputEpoch)
+    const isEpochTreeExisted = await userState.epochTreeRootExists(epochTreeRoot, inputEpoch)
     if(!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
         return
@@ -191,7 +175,6 @@ const userStateTransition = async (args: any) => {
         const currentEpoch = await unirepContract.currentEpoch()
         console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)
     }
-    process.exit(0)
 }
 
 export {

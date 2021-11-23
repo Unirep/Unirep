@@ -111,8 +111,8 @@ class UserState {
     ) {
         assert(_unirepState !== undefined, "UnirepState is undefined")
         this.unirepState = _unirepState
-        this.userStateTreeDepth = this.unirepState.userStateTreeDepth
-        this.numEpochKeyNoncePerEpoch = this.unirepState.numEpochKeyNoncePerEpoch
+        this.userStateTreeDepth = this.unirepState.setting.userStateTreeDepth
+        this.numEpochKeyNoncePerEpoch = this.unirepState.setting.numEpochKeyNoncePerEpoch
         this.numAttestationsPerProof = numAttestationsPerProof
 
         this.id = _id
@@ -134,6 +134,10 @@ class UserState {
     }
 
     public toJSON = (space = 0): string => {
+        const userStateLeavesMapToString: {[key: string]: string} = {}
+        for (const l of this.latestUserStateLeaves) {
+            userStateLeavesMapToString[l.attesterId.toString()] = l.reputation.toJSON()
+        }
         return JSON.stringify(
             {
                 idNullifier: this.id.identityNullifier.toString(),
@@ -141,7 +145,7 @@ class UserState {
                 hasSignedUp: this.hasSignedUp,
                 latestTransitionedEpoch: this.latestTransitionedEpoch,
                 latestGSTLeafIndex: this.latestGSTLeafIndex,
-                latestUserStateLeaves: this.latestUserStateLeaves.map((l) => `${l.attesterId.toString()}: ${l.reputation.toJSON()}`),
+                latestUserStateLeaves: userStateLeavesMapToString,
                 unirepState: JSON.parse(this.unirepState.toJSON())
             },
             null,
@@ -162,6 +166,10 @@ class UserState {
 
     public getUnirepStateEpochTree = async (epoch: number) => {
         return this.unirepState.genEpochTree(epoch)
+    }
+
+    public getUnirepState = () => {
+        return this.unirepState
     }
 
     /*
@@ -234,6 +242,26 @@ class UserState {
         return (await this._genUserStateTreeFromLeaves(leaves))
     }
 
+    /*
+     * Check if the root is one of the Global state tree roots in the given epoch
+     */
+    public GSTRootExists = (
+        GSTRoot: BigInt | string,
+        epoch: number,
+    ): boolean => {
+        return this.unirepState.GSTRootExists(GSTRoot, epoch)
+    }
+
+    /*
+     * Check if the root is one of the epoch tree roots in the given epoch
+     */
+    public epochTreeRootExists = async (
+        _epochTreeRoot: BigInt | string,
+        epoch: number,
+    ): Promise<boolean> => {
+        return this.unirepState.epochTreeRootExists(_epochTreeRoot, epoch)
+    }
+
 
     public genVerifyEpochKeyProof = async (
         epochKeyNonce: number,
@@ -241,7 +269,7 @@ class UserState {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(epochKeyNonce < this.numEpochKeyNoncePerEpoch, `epochKeyNonce(${epochKeyNonce}) must be less than max epoch nonce`)
         const epoch = this.latestTransitionedEpoch
-        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.epochTreeDepth)
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epochKeyNonce, this.unirepState.setting.epochTreeDepth)
         const userStateTree = await this.genUserStateTree()
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTProof = GSTree.genMerklePath(this.latestGSTLeafIndex)
@@ -303,7 +331,7 @@ class UserState {
             const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, nonce)
             assert(! this.unirepState.nullifierExist(epkNullifier), `Epoch key with nonce ${nonce} is already processed, it's nullifier: ${epkNullifier}`)
 
-            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.epochTreeDepth)
+            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth)
             const attestations = this.unirepState.getAttestations(epochKey.toString())
             for (let i = 0; i < attestations.length; i++) {
                 const attestation = attestations[i]
@@ -400,7 +428,7 @@ class UserState {
         const finalHashChain: BigInt[] = []
 
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
-            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.epochTreeDepth)
+            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth)
             let currentHashChain: BigInt = BigInt(0)
 
             // Blinded user state and hash chain of the epoch key
@@ -617,8 +645,8 @@ class UserState {
         assert(this.hasSignedUp, "User has not signed up yet")
         assert(attesterId > BigInt(0), `attesterId must be greater than zero`)
         assert(attesterId < BigInt(2 ** this.userStateTreeDepth), `attesterId exceeds total number of attesters`)
-        if (nonceList == undefined) nonceList = new Array(this.unirepState.maxReputationBudget).fill(BigInt(-1))
-        assert(nonceList.length == this.unirepState.maxReputationBudget, `Length of nonce list should be ${this.unirepState.maxReputationBudget}`)
+        if (nonceList == undefined) nonceList = new Array(this.unirepState.setting.maxReputationBudget).fill(BigInt(-1))
+        assert(nonceList.length == this.unirepState.setting.maxReputationBudget, `Length of nonce list should be ${this.unirepState.setting.maxReputationBudget}`)
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epkNonce)
         const rep = this.getRepByAttester(attesterId)
@@ -634,7 +662,7 @@ class UserState {
         const selectors: BigInt[] = []
         const nonceExist = {}
         let repNullifiersAmount = 0
-        for (let i = 0; i < this.unirepState.maxReputationBudget; i++) {
+        for (let i = 0; i < this.unirepState.setting.maxReputationBudget; i++) {
             if (nonceList[i] != BigInt(-1)) {
                 assert(nonceExist[nonceList[i].toString()] == undefined, "cannot submit duplicated nonce to compute reputation nullifiers")
                 repNullifiersAmount ++

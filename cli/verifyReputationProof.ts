@@ -49,15 +49,6 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-b', '--start-block',
-        {
-            action: 'store',
-            type: 'int',
-            help: 'The block the Unirep contract is deployed. Default: 0',
-        }
-    )
-
-    parser.add_argument(
         '-x', '--contract',
         {
             required: true,
@@ -76,11 +67,9 @@ const verifyReputationProof = async (args: any) => {
     // Unirep contract
     const unirepContract = new UnirepContract(args.contract, ethProvider)
 
-    const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
     const unirepState = await genUnirepStateFromContract(
         provider,
         args.contract,
-        startBlock,
     )
 
     // Parse Inputs

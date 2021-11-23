@@ -21,7 +21,6 @@ describe('test all CLI subcommands', function() {
     let userPrivKey
     let userAddr
     
-    const startBlock = 0
     const attestingFee = ethers.BigNumber.from(10).pow(18)
     const epochKeyNonce = 0
     const epochLength = 5
@@ -73,11 +72,10 @@ describe('test all CLI subcommands', function() {
             unirepState = await genUnirepStateFromContract(
                 provider,
                 unirepAddress,
-                startBlock,
             )
 
-            expect(unirepState.epochLength).equal(epochLength)
-            expect(unirepState.attestingFee).equal(attestingFee)
+            expect(unirepState.setting.epochLength).equal(epochLength)
+            expect(unirepState.setting.attestingFee).equal(attestingFee)
         })
     })
 

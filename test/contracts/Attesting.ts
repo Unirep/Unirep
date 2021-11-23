@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { genRandomSalt, hashLeftRight, SNARK_FIELD_SIZE, genIdentity, genIdentityCommitment } from '@unirep/crypto'
 import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import { attestingFee, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
 import { Attestation } from "../../core"
 import { computeEpochKeyProofHash } from '../utils'
@@ -30,6 +30,7 @@ describe('Attesting', () => {
     const epochKey = genEpochKey(genRandomSalt(), epoch, nonce)
     const epochKeyProof = [genRandomSalt(), epoch, epochKey, proof]
     let epochKeyProofIndex
+    const attestingFee = ethers.utils.parseEther("0.1") // Test attesting fee
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()

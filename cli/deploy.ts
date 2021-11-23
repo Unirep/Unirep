@@ -26,7 +26,7 @@ const configureSubparser = (subparsers: any) => {
         {
             action: 'store',
             type: 'str',
-            help: 'A connection string to an Ethereum provider. Default: http://localhost:8545',
+            help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
         }
     )
 

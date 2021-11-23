@@ -6,9 +6,9 @@ import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
 import { attestingFee, circuitUserStateTreeDepth, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { getTreeDepthsForTesting } from '../../core/utils'
+import { getTreeDepthsForTesting, ISettings } from '../../core/utils'
 import { Attestation, IEpochTreeLeaf, UnirepState, UserState } from '../../core'
-import { genNewSMT } from '../utils'
+import { computeEmptyUserStateRoot, genNewSMT } from '../utils'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -41,14 +41,21 @@ describe('Airdrop', function () {
             attestingFee: attestingFee
         }
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths, _settings)
+        const emptyUserStateRoot = computeEmptyUserStateRoot(_treeDepths.userStateTreeDepth)
+        const blankGSLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
+
+        const setting: ISettings = {
+            globalStateTreeDepth: _treeDepths.globalStateTreeDepth,
+            userStateTreeDepth: _treeDepths.userStateTreeDepth,
+            epochTreeDepth: _treeDepths.epochTreeDepth,
+            attestingFee: attestingFee,
+            epochLength: epochLength,
+            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
+            defaultGSTLeaf: blankGSLeaf
+        }
         unirepState = new UnirepState(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth,
-            _treeDepths.epochTreeDepth,
-            attestingFee,
-            epochLength,
-            numEpochKeyNoncePerEpoch,
-            maxReputationBudget,
+            setting
         )
     })
 

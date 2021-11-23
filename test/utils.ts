@@ -65,16 +65,16 @@ const computeEpochKeyProofHash = (epochKeyProof: any) => {
     return ethers.utils.keccak256(abiEncoder)
 }
 
-const verifyNewGSTProofByIndex = async(unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber): Promise<boolean> => {
+const verifyNewGSTProofByIndex = async(unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber): Promise<ethers.Event | undefined> => {
     const signUpFilter = unirepContract.filters.UserSignUp(proofIndex)
     const signUpEvents = await unirepContract.queryFilter(signUpFilter)
     // found user sign up event, then continue
-    if (signUpEvents.length == 1) return true
+    if (signUpEvents.length == 1) return signUpEvents[0]
 
     // 2. verify user state transition proof
     const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex)
     const transitionEvents = await unirepContract.queryFilter(transitionFilter)
-    if(transitionEvents.length == 0) return false
+    if(transitionEvents.length == 0) return
     // proof index is supposed to be unique, therefore it should be only one event found
     const transitionArgs = transitionEvents[0]?.args?.userTransitionedData
     // backward verification
@@ -88,13 +88,13 @@ const verifyNewGSTProofByIndex = async(unirepContract: ethers.Contract, proofInd
         transitionArgs.fromEpochTree,
         transitionArgs.proof,
     )
-    if(!isValid) return false
+    if(!isValid) return
     
     const _proofIndexes = transitionEvents[0]?.args?._proofIndexRecords
     // Proof index 0 should be the start transition proof
     const startTransitionFilter = unirepContract.filters.StartedTransitionProof(_proofIndexes[0], transitionArgs.blindedUserStates[0], transitionArgs.fromGlobalStateTree)
     const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
-    if(startTransitionEvents.length == 0) return false
+    if(startTransitionEvents.length == 0) return
 
     const startTransitionArgs = startTransitionEvents[0]?.args
     const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(
@@ -103,13 +103,13 @@ const verifyNewGSTProofByIndex = async(unirepContract: ethers.Contract, proofInd
         startTransitionArgs?._globalStateTree,
         startTransitionArgs?._proof,
     )
-    if(!isStartTransitionProofValid) return false
+    if(!isStartTransitionProofValid) return
 
     // process attestations proofs
     const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1], _proofIndexes)
-    if(!isProcessAttestationValid) return false
+    if(!isProcessAttestationValid) return
 
-    return true
+    return transitionEvents[0]
 }
 
 

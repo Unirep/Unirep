@@ -6,9 +6,9 @@ import { IncrementalQuinTree, genRandomSalt, hashLeftRight, hashOne, genIdentity
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
-import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, verifyNewGSTProofByIndex, genReputationNullifier } from '../../core/utils'
-import { toCompleteHexString, verifyNewGSTLeafEvents } from '../utils'
-import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxReputationBudget, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
+import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, genReputationNullifier, ISettings } from '../../core/utils'
+import { toCompleteHexString, verifyNewGSTLeafEvents, verifyNewGSTProofByIndex } from '../utils'
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 import { Attestation, IAttestation, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
 
 
@@ -51,20 +51,32 @@ describe('Integration', function () {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting("circuit")
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
+        const _settings = {
+            maxUsers: maxUsers,
+            maxAttesters: maxAttesters,
+            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
+            epochLength: epochLength,
+            attestingFee: attestingFee
+        }
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths, _settings)
 
         currentEpoch = await unirepContract.currentEpoch()
         emptyUserStateRoot = computeEmptyUserStateRoot(circuitUserStateTreeDepth)
         blankGSLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
 
+        const setting: ISettings = {
+            globalStateTreeDepth: _treeDepths.globalStateTreeDepth,
+            userStateTreeDepth: _treeDepths.userStateTreeDepth,
+            epochTreeDepth: _treeDepths.epochTreeDepth,
+            attestingFee: attestingFee,
+            epochLength: epochLength,
+            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
+            defaultGSTLeaf: blankGSLeaf
+        }
         unirepState = new UnirepState(
-            circuitGlobalStateTreeDepth,
-            circuitUserStateTreeDepth,
-            circuitEpochTreeDepth,
-            attestingFee,
-            epochLength,
-            numEpochKeyNoncePerEpoch,
-            maxReputationBudget,
+            setting
         )
     })
 
@@ -267,12 +279,12 @@ describe('Integration', function () {
             const proofIndex = newLeafEvents[0]?.args?._proofIndex
             const isValidEvent = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
             expect(isValidEvent).not.equal(undefined)
-            expect(isValidEvent['event']).equal("UserStateTransitionProof")
+            expect(isValidEvent?.event).equal("UserStateTransitionProof")
             const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
             validProofIndex[proofIndex.toNumber()] = true
             
-            const epkNullifiers = isValidEvent['args']['userTransitionedData']['epkNullifiers']
-            const _newGlobalStateTreeLeaf = isValidEvent['args']['userTransitionedData']['newGlobalStateTreeLeaf']
+            const epkNullifiers = isValidEvent?.args?.userTransitionedData?.epkNullifiers
+            const _newGlobalStateTreeLeaf = isValidEvent?.args?.userTransitionedData?.newGlobalStateTreeLeaf
             expect(newLeaf).equal(_newGlobalStateTreeLeaf)
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]  // Leaves should be empty as no reputations are given yet
@@ -937,12 +949,12 @@ describe('Integration', function () {
             const proofIndex = newLeafEvents[0]?.args?._proofIndex
             const isValidEvent = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
             expect(isValidEvent).not.equal(undefined)
-            expect(isValidEvent['event']).equal("UserStateTransitionProof")
+            expect(isValidEvent?.event).equal("UserStateTransitionProof")
             const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
             validProofIndex[proofIndex.toNumber()] = true
             
-            const epkNullifiers = isValidEvent['args']['userTransitionedData']['epkNullifiers']
-            const _newGlobalStateTreeLeaf = isValidEvent['args']['userTransitionedData']['newGlobalStateTreeLeaf']
+            const epkNullifiers = isValidEvent?.args?.userTransitionedData?.epkNullifiers
+            const _newGlobalStateTreeLeaf = isValidEvent?.args?.userTransitionedData?.newGlobalStateTreeLeaf
             expect(newLeaf).equal(_newGlobalStateTreeLeaf)
 
             const latestUserStateLeaves = userStateLeavesAfterTransition[firstUser]  // Leaves should be empty as no reputations are given yet
@@ -1003,7 +1015,6 @@ describe('Integration', function () {
             const userStateFromContract = await genUserStateFromContract(
                 hardhatEthers.provider,
                 unirepContract.address,
-                0,
                 users[firstUser].id,
                 users[firstUser].commitment,
             )
@@ -1022,7 +1033,7 @@ describe('Integration', function () {
                 const _GST = userStateFromContract.getUnirepStateGSTree(epoch)
                 expect(GST.root, `Epoch ${epoch} GST root mismatch`).to.equal(_GST.root)
 
-                const epochTree = unirepState.genEpochTree(epoch)
+                const epochTree = await unirepState.genEpochTree(epoch)
                 const _epochTree = await userStateFromContract.getUnirepStateEpochTree(epoch)
                 expect(epochTree.getRootHash(), `Epoch ${epoch} epoch tree root mismatch`).to.equal(_epochTree.getRootHash())
             }
@@ -1102,7 +1113,6 @@ describe('Integration', function () {
             const userStateFromContract = await genUserStateFromContract(
                 hardhatEthers.provider,
                 unirepContract.address,
-                0,
                 users[firstUser].id,
                 users[firstUser].commitment,
             )
@@ -1121,7 +1131,7 @@ describe('Integration', function () {
                 const _GST = userStateFromContract.getUnirepStateGSTree(epoch)
                 expect(GST.root, `Epoch ${epoch} GST root mismatch`).to.equal(_GST.root)
 
-                const epochTree = unirepState.genEpochTree(epoch)
+                const epochTree = await unirepState.genEpochTree(epoch)
                 const _epochTree = await userStateFromContract.getUnirepStateEpochTree(epoch)
                 expect(epochTree.getRootHash(), `Epoch ${epoch} epoch tree root mismatch`).to.equal(_epochTree.getRootHash())
             }

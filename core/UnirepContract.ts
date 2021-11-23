@@ -29,15 +29,15 @@ export class UnirepContract {
     public unlock = async (eth_privkey: string): Promise<string> => {
         const ethSk = eth_privkey
 
-        if (!validateEthSk(ethSk)) {
-            console.error('Error: invalid Ethereum private key')
-            return ''
-        }
+        // if (!validateEthSk(ethSk)) {
+        //     console.error('Error: invalid Ethereum private key')
+        //     return ''
+        // }
 
-        if (! (await checkDeployerProviderConnection(ethSk, this.url))) {
-            console.error('Error: unable to connect to the Ethereum provider at', this.url)
-            return ''
-        }
+        // if (! (await checkDeployerProviderConnection(ethSk, this.url))) {
+        //     console.error('Error: unable to connect to the Ethereum provider at', this.url)
+        //     return ''
+        // }
         this.signer = new ethers.Wallet(ethSk, this.provider)
         return ethSk
     }

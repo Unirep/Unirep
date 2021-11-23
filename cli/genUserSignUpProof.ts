@@ -41,15 +41,6 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-b', '--start-block',
-        {
-            action: 'store',
-            type: 'int',
-            help: 'The block the Unirep contract is deployed. Default: 0',
-        }
-    )
-
-    parser.add_argument(
         '-x', '--contract',
         {
             required: true,
@@ -64,8 +55,6 @@ const genUserSignUpProof = async (args: any) => {
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
     const provider = new ethers.providers.JsonRpcProvider(ethProvider)
-    
-    const startBlock = (args.start_block) ? args.start_block : DEFAULT_START_BLOCK
 
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
@@ -76,7 +65,6 @@ const genUserSignUpProof = async (args: any) => {
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
-        startBlock,
         id,
         commitment,
     )
@@ -97,7 +85,6 @@ const genUserSignUpProof = async (args: any) => {
     console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString()}`)
     console.log(signUpProofPrefix + encodedProof)
     console.log(signUpPublicSignalsPrefix + encodedPublicSignals)
-    process.exit(0)
 }
 
 export {

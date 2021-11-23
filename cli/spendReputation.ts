@@ -50,15 +50,6 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-b', '--start-block',
-        {
-            action: 'store',
-            type: 'int',
-            help: 'The block the Unirep contract is deployed. Default: 0',
-        }
-    )
-
-    parser.add_argument(
         '-x', '--contract',
         {
             required: true,

@@ -5,8 +5,8 @@ import { genRandomSalt, hashLeftRight, IncrementalQuinTree, genIdentity, genIden
 import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
 import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import { computeEmptyUserStateRoot, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
-import { attestingFee, epochLength, maxReputationBudget, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
+import { computeEmptyUserStateRoot, genEpochKey, getTreeDepthsForTesting, ISettings } from '../../core/utils'
+import { epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState, UserState } from '../../core'
 
 describe('Epoch Transition', function () {
@@ -29,20 +29,36 @@ describe('Epoch Transition', function () {
     const signedUpInLeaf = 1
     let epochKeyProofIndex
     const proofIndexes: BigInt[] = []
+    const attestingFee = ethers.utils.parseEther("0.1") // to avoid VM Exception: 'Address: insufficient balance'
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting("circuit")
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
+        const _settings = {
+            maxUsers: maxUsers,
+            maxAttesters: maxAttesters,
+            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
+            epochLength: epochLength,
+            attestingFee:attestingFee
+        }
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths, _settings)
+        const emptyUserStateRoot = computeEmptyUserStateRoot(_treeDepths.userStateTreeDepth)
+        const blankGSLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
+
+        const setting: ISettings = {
+            globalStateTreeDepth: _treeDepths.globalStateTreeDepth,
+            userStateTreeDepth: _treeDepths.userStateTreeDepth,
+            epochTreeDepth: _treeDepths.epochTreeDepth,
+            attestingFee: attestingFee,
+            epochLength: epochLength,
+            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+            maxReputationBudget: maxReputationBudget,
+            defaultGSTLeaf: blankGSLeaf
+        }
         unirepState = new UnirepState(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth,
-            _treeDepths.epochTreeDepth,
-            attestingFee,
-            epochLength,
-            numEpochKeyNoncePerEpoch,
-            maxReputationBudget,
+            setting
         )
 
         console.log('User sign up')
@@ -53,7 +69,6 @@ describe('Epoch Transition', function () {
         expect(receipt.status).equal(1)
         
         const currentEpoch = await unirepContract.currentEpoch()
-        const emptyUserStateRoot = computeEmptyUserStateRoot(_treeDepths.userStateTreeDepth)
         const hashedStateLeaf = await unirepContract.hashStateLeaf([userCommitment, emptyUserStateRoot])
 
         unirepState.signUp(currentEpoch.toNumber(), BigInt(hashedStateLeaf))

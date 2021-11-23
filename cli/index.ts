@@ -188,6 +188,7 @@ const main = async () => {
     } else if (args.subcommand === 'verifyUserSignUpProof') {
         await verifyUserSignUpProof(args)
     }
+    process.exit(0)
 }
 
 if (require.main === module) {
