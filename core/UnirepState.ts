@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
-import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, stringifyBigInts, genRandomSalt } from '@unirep/crypto'
-import { genNewSMT, ISettings, SMT_ONE_LEAF, } from './utils'
+import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, stringifyBigInts } from '@unirep/crypto'
+import { genNewSMT, SMT_ONE_LEAF, } from './utils'
 
 interface IEpochTreeLeaf {
     epochKey: BigInt;
@@ -16,6 +16,27 @@ interface IAttestation {
     signUp: BigInt;
     hash(): BigInt;
     toJSON(): string;
+}
+
+interface ISettings {
+    readonly globalStateTreeDepth: number;
+    readonly userStateTreeDepth: number;
+    readonly epochTreeDepth: number;
+    readonly attestingFee: ethers.BigNumber;
+    readonly epochLength: number;
+    readonly numEpochKeyNoncePerEpoch: number;
+    readonly maxReputationBudget: number;
+    readonly defaultGSTLeaf: BigInt;
+}
+
+interface IUnirepState {
+    readonly settings: ISettings;
+    currentEpoch: number;
+    latestProcessedBlock: number;
+    GSTLeaves: {[key: string]: string[]};
+    epochTreeLeaves: {[key: string]: string[]};
+    latestEpochKeyToAttestationsMap: {[key: string]: string[]};
+    nullifiers: string[];
 }
 
 class Attestation implements IAttestation {
@@ -406,5 +427,7 @@ export {
     Attestation,
     IAttestation,
     IEpochTreeLeaf,
+    ISettings,
+    IUnirepState,
     UnirepState,
 }

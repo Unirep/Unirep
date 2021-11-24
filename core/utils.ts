@@ -8,43 +8,12 @@ import { getUnirepContract } from '@unirep/contracts'
 import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
 
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
-import { Attestation, IEpochTreeLeaf, UnirepState } from './UnirepState'
-import { IUserStateLeaf, Reputation, UserState } from './UserState'
+import { Attestation, IEpochTreeLeaf, ISettings, IUnirepState, UnirepState } from './UnirepState'
+import { IUserState, IUserStateLeaf, Reputation, UserState } from './UserState'
 import { EPOCH_KEY_NULLIFIER_DOMAIN, REPUTATION_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
 import { verifyProof } from '@unirep/circuits'
 import { IAttestation } from '.'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
-
-export interface ISettings {
-    readonly globalStateTreeDepth: number;
-    readonly userStateTreeDepth: number;
-    readonly epochTreeDepth: number;
-    readonly attestingFee: ethers.BigNumber;
-    readonly epochLength: number;
-    readonly numEpochKeyNoncePerEpoch: number;
-    readonly maxReputationBudget: number;
-    readonly defaultGSTLeaf: BigInt;
-}
-
-export interface IUnirepState {
-    readonly settings: ISettings;
-    currentEpoch: number;
-    latestProcessedBlock: number;
-    GSTLeaves: {[key: string]: string[]};
-    epochTreeLeaves: {[key: string]: string[]};
-    latestEpochKeyToAttestationsMap: {[key: string]: string[]};
-    nullifiers: string[];
-}
-
-export interface IUserState {
-    idNullifier: BigInt;
-    idCommitment: BigInt;
-    hasSignedUp: boolean;
-    latestTransitionedEpoch: number;
-    latestGSTLeafIndex: number;
-    latestUserStateLeaves: {[key: string]: string};
-    unirepState: IUnirepState;
-}
 
 const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
@@ -263,98 +232,6 @@ const verifyProcessAttestationEvents = async(processAttestationEvents: ethers.Ev
     }
     return currentBlindedUserState.eq(finalBlindedUserState)
 }
-
-// const verifyAttestationProofsByIndex = async (unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber): Promise<any> => {
-
-//     const startTime = new Date().getTime()
-//     const epochKeyProofFilter = unirepContract.filters.EpochKeyProof(proofIndex)
-//     const epochKeyProofEvent = await unirepContract.queryFilter(epochKeyProofFilter)
-//     const repProofFilter = unirepContract.filters.ReputationNullifierProof(proofIndex)
-//     const repProofEvent = await unirepContract.queryFilter(repProofFilter)
-//     const signUpProofFilter = unirepContract.filters.UserSignedUpProof(proofIndex)
-//     const signUpProofEvent = await unirepContract.queryFilter(signUpProofFilter)
-//     const queryEndTime = new Date().getTime()
-//     console.log(`query end time: ${queryEndTime - startTime} ms (${Math.floor((queryEndTime - startTime) / 1000)} s)`)
-//     let args
-
-//     if (epochKeyProofEvent.length == 1){
-//         console.log('epoch key event')
-//         args = epochKeyProofEvent[0]?.args?.epochKeyProofData
-//         const emptyArray = []
-//         const formatPublicSignals = emptyArray.concat(
-//             args?.globalStateTree,
-//             args?.epoch,
-//             args?.epochKey,
-//             args?.proof,
-//         ).map(n => BigInt(n).toString())
-//         const formatProof = formatProofForSnarkjsVerification(args?._proof)
-//         const isProofValid = await verifyProof('verifyEpochKey', formatProof, formatPublicSignals)
-//         // const isProofValid = await unirepContract.verifyEpochKeyValidity(
-//         //     args?.globalStateTree,
-//         //     args?.epoch,
-//         //     args?.epochKey,
-//         //     args?.proof,
-//         // )
-//         const endTime = new Date().getTime()
-//     console.log(`verify attestation proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-//         if (isProofValid) return args
-//     } else if (repProofEvent.length == 1){
-//         console.log('rep nullifier event')
-//         args = repProofEvent[0]?.args?.reputationProofData
-//         const emptyArray = []
-//         const formatPublicSignals = emptyArray.concat(
-//             args?.repNullifiers,
-//             args?.epoch,
-//             args?.epochKey,
-//             args?.globalStateTree,
-//             args?.attesterId,
-//             args?.proveReputationAmount,
-//             args?.minRep,
-//             args?.proveGraffiti,
-//             args?.graffitiPreImage,
-//         ).map(n => BigInt(n).toString())
-//         const formatProof = formatProofForSnarkjsVerification(args?.proof)
-//         const isProofValid = await verifyProof('proveReputation', formatProof, formatPublicSignals)
-//         // const isProofValid = await unirepContract.verifyReputation(
-//         //     args?.repNullifiers,
-//         //     args?.epoch,
-//         //     args?.epochKey,
-//         //     args?.globalStateTree,
-//         //     args?.attesterId,
-//         //     args?.proveReputationAmount,
-//         //     args?.minRep,
-//         //     args?.proveGraffiti,
-//         //     args?.graffitiPreImage,
-//         //     args?.proof,
-//         // )
-//         const endTime = new Date().getTime()
-//     console.log(`verify attestation proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-//         if (isProofValid) return args
-//     } else if (signUpProofEvent.length == 1){
-//         console.log('sign up event')
-//         args = signUpProofEvent[0]?.args?.signUpProofData
-//         const emptyArray = []
-//         const formatPublicSignals = emptyArray.concat(
-//             args?.epoch,
-//             args?.epochKey,
-//             args?.globalStateTree,
-//             args?.attesterId,
-//         ).map(n => BigInt(n).toString())
-//         const formatProof = formatProofForSnarkjsVerification(args?.proof)
-//         const isProofValid = await verifyProof('proveUserSignUp', formatProof, formatPublicSignals)
-//         // const isProofValid = await unirepContract.verifyUserSignUp(
-//         //     args?.epoch,
-//         //     args?.epochKey,
-//         //     args?.globalStateTree,
-//         //     args?.attesterId,
-//         //     args?.proof,
-//         // )
-//         const endTime = new Date().getTime()
-//     console.log(`verify attestation proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-//         if (isProofValid) return args
-//     }
-//     return args
-// }
 
 const genUnirepStateFromParams = (
     _unirepState: IUnirepState,
@@ -812,7 +689,6 @@ const genUserStateFromContract = async (
         const sequencerEvent = sequencerEvents[i]
         const blockNumber = sequencerEvent.blockNumber
         const occurredEvent = sequencerEvent.args?._event
-        console.log(occurredEvent)
         if (occurredEvent === "NewGSTLeafInserted") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop()
             assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
@@ -996,31 +872,6 @@ const genUserStateFromContract = async (
     return userState
 }
 
-/*
- * Given user identity and userIdentityCommitment, retrieves and parses on-chain
- * Unirep contract data to create an off-chain representation as a
- * UserState object (including UnirepState object).
- * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
- * @param startBlock The block number when Unirep contract is deployed
- * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment Commitment of the userIdentity
- */
-// const genUserStateFromContract = async (
-//     provider: ethers.providers.Provider,
-//     address: string,
-//     startBlock: number,
-//     userIdentity: any,
-//     userIdentityCommitment: any,
-// ) => {
-//     return await _genUserStateFromContract(
-//         provider,
-//         address,
-//         startBlock,
-//         userIdentity,
-//         userIdentityCommitment,
-//     )
-// }
 
 export {
     defaultUserStateLeaf,
@@ -1029,12 +880,21 @@ export {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     getTreeDepthsForTesting,
+    formatProofForSnarkjsVerification,
+    verifyEpochKeyProofEvent,
+    verifyReputationProofEvent,
+    verifySignUpProofEvent,
+    verifyStartTransitionProofEvent,
+    verifyProcessAttestationEvent,
+    verifyProcessAttestationEvents,
+    verifyUserStateTransitionEvent,
+    verifyUSTEvents,
     genEpochKey,
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
     genUnirepStateFromContract,
+    genUnirepStateFromParams,
     genUserStateFromContract,
     genUserStateFromParams,
-    verifyUSTEvents,
 }

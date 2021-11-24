@@ -2,7 +2,7 @@ import assert from 'assert'
 import { IncrementalQuinTree, hash5, stringifyBigInts, hashOne, hashLeftRight, SparseMerkleTreeImpl } from '@unirep/crypto'
 import { genProofAndPublicSignals } from '@unirep/circuits'
 import { defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genReputationNullifier } from './utils'
-import { IAttestation, UnirepState } from './UnirepState'
+import { IAttestation, IUnirepState, UnirepState } from './UnirepState'
 import { maxReputationBudget, numAttestationsPerProof, numEpochKeyNoncePerEpoch } from '../config/testLocal'
 
 interface IUserStateLeaf {
@@ -15,6 +15,16 @@ interface IReputation {
     negRep: BigInt;
     graffiti: BigInt;
     signUp: BigInt;
+}
+
+interface IUserState {
+    idNullifier: BigInt;
+    idCommitment: BigInt;
+    hasSignedUp: boolean;
+    latestTransitionedEpoch: number;
+    latestGSTLeafIndex: number;
+    latestUserStateLeaves: {[key: string]: string};
+    unirepState: IUnirepState;
 }
 
 class Reputation implements IReputation {
@@ -783,6 +793,7 @@ class UserState {
 export {
     IReputation,
     IUserStateLeaf,
+    IUserState,
     Reputation,
     UserState,
 }

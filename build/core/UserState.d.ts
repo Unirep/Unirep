@@ -1,5 +1,5 @@
 import { IncrementalQuinTree, SparseMerkleTreeImpl } from '@unirep/crypto';
-import { IAttestation, UnirepState } from './UnirepState';
+import { IAttestation, IUnirepState, UnirepState } from './UnirepState';
 interface IUserStateLeaf {
     attesterId: BigInt;
     reputation: Reputation;
@@ -9,6 +9,17 @@ interface IReputation {
     negRep: BigInt;
     graffiti: BigInt;
     signUp: BigInt;
+}
+interface IUserState {
+    idNullifier: BigInt;
+    idCommitment: BigInt;
+    hasSignedUp: boolean;
+    latestTransitionedEpoch: number;
+    latestGSTLeafIndex: number;
+    latestUserStateLeaves: {
+        [key: string]: string;
+    };
+    unirepState: IUnirepState;
 }
 declare class Reputation implements IReputation {
     posRep: BigInt;
@@ -106,4 +117,4 @@ declare class UserState {
         attesterId: any;
     }>;
 }
-export { IReputation, IUserStateLeaf, Reputation, UserState, };
+export { IReputation, IUserStateLeaf, IUserState, Reputation, UserState, };

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyUSTEvents = exports.genUserStateFromParams = exports.genUserStateFromContract = exports.genUnirepStateFromContract = exports.genNewSMT = exports.genReputationNullifier = exports.genEpochKeyNullifier = exports.genEpochKey = exports.getTreeDepthsForTesting = exports.computeInitUserStateRoot = exports.computeEmptyUserStateRoot = exports.SMT_ZERO_LEAF = exports.SMT_ONE_LEAF = exports.defaultUserStateLeaf = void 0;
+exports.genUserStateFromParams = exports.genUserStateFromContract = exports.genUnirepStateFromParams = exports.genUnirepStateFromContract = exports.genNewSMT = exports.genReputationNullifier = exports.genEpochKeyNullifier = exports.genEpochKey = exports.verifyUSTEvents = exports.verifyUserStateTransitionEvent = exports.verifyProcessAttestationEvents = exports.verifyProcessAttestationEvent = exports.verifyStartTransitionProofEvent = exports.verifySignUpProofEvent = exports.verifyReputationProofEvent = exports.verifyEpochKeyProofEvent = exports.formatProofForSnarkjsVerification = exports.getTreeDepthsForTesting = exports.computeInitUserStateRoot = exports.computeEmptyUserStateRoot = exports.SMT_ZERO_LEAF = exports.SMT_ONE_LEAF = exports.defaultUserStateLeaf = void 0;
 const keyv_1 = __importDefault(require("keyv"));
 const assert_1 = __importDefault(require("assert"));
 const contracts_1 = require("@unirep/contracts");
@@ -105,6 +105,7 @@ const formatProofForSnarkjsVerification = (_proof) => {
         curve: 'bn128'
     };
 };
+exports.formatProofForSnarkjsVerification = formatProofForSnarkjsVerification;
 const verifyEpochKeyProofEvent = async (event) => {
     var _a;
     const args = (_a = event === null || event === void 0 ? void 0 : event.args) === null || _a === void 0 ? void 0 : _a.epochKeyProofData;
@@ -114,6 +115,7 @@ const verifyEpochKeyProofEvent = async (event) => {
     const isProofValid = await circuits_1.verifyProof('verifyEpochKey', formatProof, formatPublicSignals);
     return isProofValid;
 };
+exports.verifyEpochKeyProofEvent = verifyEpochKeyProofEvent;
 const verifyReputationProofEvent = async (event) => {
     var _a;
     const args = (_a = event === null || event === void 0 ? void 0 : event.args) === null || _a === void 0 ? void 0 : _a.reputationProofData;
@@ -123,6 +125,7 @@ const verifyReputationProofEvent = async (event) => {
     const isProofValid = await circuits_1.verifyProof('proveReputation', formatProof, formatPublicSignals);
     return isProofValid;
 };
+exports.verifyReputationProofEvent = verifyReputationProofEvent;
 const verifySignUpProofEvent = async (event) => {
     var _a;
     const args = (_a = event === null || event === void 0 ? void 0 : event.args) === null || _a === void 0 ? void 0 : _a.signUpProofData;
@@ -132,6 +135,7 @@ const verifySignUpProofEvent = async (event) => {
     const isProofValid = await circuits_1.verifyProof('proveUserSignUp', formatProof, formatPublicSignals);
     return isProofValid;
 };
+exports.verifySignUpProofEvent = verifySignUpProofEvent;
 const verifyStartTransitionProofEvent = async (event) => {
     const args = event === null || event === void 0 ? void 0 : event.args;
     const emptyArray = [];
@@ -140,6 +144,7 @@ const verifyStartTransitionProofEvent = async (event) => {
     const isProofValid = await circuits_1.verifyProof('startTransition', formatProof, formatPublicSignals);
     return isProofValid;
 };
+exports.verifyStartTransitionProofEvent = verifyStartTransitionProofEvent;
 const verifyProcessAttestationEvent = async (event) => {
     const args = event === null || event === void 0 ? void 0 : event.args;
     const emptyArray = [];
@@ -148,6 +153,7 @@ const verifyProcessAttestationEvent = async (event) => {
     const isProofValid = await circuits_1.verifyProof('processAttestations', formatProof, formatPublicSignals);
     return isProofValid;
 };
+exports.verifyProcessAttestationEvent = verifyProcessAttestationEvent;
 const verifyUserStateTransitionEvent = async (event) => {
     var _a;
     const transitionArgs = (_a = event === null || event === void 0 ? void 0 : event.args) === null || _a === void 0 ? void 0 : _a.userTransitionedData;
@@ -157,6 +163,7 @@ const verifyUserStateTransitionEvent = async (event) => {
     const isProofValid = await circuits_1.verifyProof('userStateTransition', formatProof, formatPublicSignals);
     return isProofValid;
 };
+exports.verifyUserStateTransitionEvent = verifyUserStateTransitionEvent;
 const verifyUSTEvents = async (transitionEvent, startTransitionEvent, processAttestationEvents) => {
     var _a;
     // verify the final UST proof
@@ -188,95 +195,7 @@ const verifyProcessAttestationEvents = async (processAttestationEvents, startBli
     }
     return currentBlindedUserState.eq(finalBlindedUserState);
 };
-// const verifyAttestationProofsByIndex = async (unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber): Promise<any> => {
-//     const startTime = new Date().getTime()
-//     const epochKeyProofFilter = unirepContract.filters.EpochKeyProof(proofIndex)
-//     const epochKeyProofEvent = await unirepContract.queryFilter(epochKeyProofFilter)
-//     const repProofFilter = unirepContract.filters.ReputationNullifierProof(proofIndex)
-//     const repProofEvent = await unirepContract.queryFilter(repProofFilter)
-//     const signUpProofFilter = unirepContract.filters.UserSignedUpProof(proofIndex)
-//     const signUpProofEvent = await unirepContract.queryFilter(signUpProofFilter)
-//     const queryEndTime = new Date().getTime()
-//     console.log(`query end time: ${queryEndTime - startTime} ms (${Math.floor((queryEndTime - startTime) / 1000)} s)`)
-//     let args
-//     if (epochKeyProofEvent.length == 1){
-//         console.log('epoch key event')
-//         args = epochKeyProofEvent[0]?.args?.epochKeyProofData
-//         const emptyArray = []
-//         const formatPublicSignals = emptyArray.concat(
-//             args?.globalStateTree,
-//             args?.epoch,
-//             args?.epochKey,
-//             args?.proof,
-//         ).map(n => BigInt(n).toString())
-//         const formatProof = formatProofForSnarkjsVerification(args?._proof)
-//         const isProofValid = await verifyProof('verifyEpochKey', formatProof, formatPublicSignals)
-//         // const isProofValid = await unirepContract.verifyEpochKeyValidity(
-//         //     args?.globalStateTree,
-//         //     args?.epoch,
-//         //     args?.epochKey,
-//         //     args?.proof,
-//         // )
-//         const endTime = new Date().getTime()
-//     console.log(`verify attestation proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-//         if (isProofValid) return args
-//     } else if (repProofEvent.length == 1){
-//         console.log('rep nullifier event')
-//         args = repProofEvent[0]?.args?.reputationProofData
-//         const emptyArray = []
-//         const formatPublicSignals = emptyArray.concat(
-//             args?.repNullifiers,
-//             args?.epoch,
-//             args?.epochKey,
-//             args?.globalStateTree,
-//             args?.attesterId,
-//             args?.proveReputationAmount,
-//             args?.minRep,
-//             args?.proveGraffiti,
-//             args?.graffitiPreImage,
-//         ).map(n => BigInt(n).toString())
-//         const formatProof = formatProofForSnarkjsVerification(args?.proof)
-//         const isProofValid = await verifyProof('proveReputation', formatProof, formatPublicSignals)
-//         // const isProofValid = await unirepContract.verifyReputation(
-//         //     args?.repNullifiers,
-//         //     args?.epoch,
-//         //     args?.epochKey,
-//         //     args?.globalStateTree,
-//         //     args?.attesterId,
-//         //     args?.proveReputationAmount,
-//         //     args?.minRep,
-//         //     args?.proveGraffiti,
-//         //     args?.graffitiPreImage,
-//         //     args?.proof,
-//         // )
-//         const endTime = new Date().getTime()
-//     console.log(`verify attestation proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-//         if (isProofValid) return args
-//     } else if (signUpProofEvent.length == 1){
-//         console.log('sign up event')
-//         args = signUpProofEvent[0]?.args?.signUpProofData
-//         const emptyArray = []
-//         const formatPublicSignals = emptyArray.concat(
-//             args?.epoch,
-//             args?.epochKey,
-//             args?.globalStateTree,
-//             args?.attesterId,
-//         ).map(n => BigInt(n).toString())
-//         const formatProof = formatProofForSnarkjsVerification(args?.proof)
-//         const isProofValid = await verifyProof('proveUserSignUp', formatProof, formatPublicSignals)
-//         // const isProofValid = await unirepContract.verifyUserSignUp(
-//         //     args?.epoch,
-//         //     args?.epochKey,
-//         //     args?.globalStateTree,
-//         //     args?.attesterId,
-//         //     args?.proof,
-//         // )
-//         const endTime = new Date().getTime()
-//     console.log(`verify attestation proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-//         if (isProofValid) return args
-//     }
-//     return args
-// }
+exports.verifyProcessAttestationEvents = verifyProcessAttestationEvents;
 const genUnirepStateFromParams = (_unirepState) => {
     const parsedGSTLeaves = {};
     const parsedEpochTreeLeaves = {};
@@ -312,6 +231,7 @@ const genUnirepStateFromParams = (_unirepState) => {
     const unirepState = new UnirepState_1.UnirepState(_unirepState.settings, _unirepState.currentEpoch, _unirepState.latestProcessedBlock, parsedGSTLeaves, parsedEpochTreeLeaves, parsedAttestationsMap, parsedNullifiers);
     return unirepState;
 };
+exports.genUnirepStateFromParams = genUnirepStateFromParams;
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UnirepState object.
@@ -611,7 +531,6 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
         const sequencerEvent = sequencerEvents[i];
         const blockNumber = sequencerEvent.blockNumber;
         const occurredEvent = (_b = sequencerEvent.args) === null || _b === void 0 ? void 0 : _b._event;
-        console.log(occurredEvent);
         if (occurredEvent === "NewGSTLeafInserted") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop();
             assert_1.default(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`);

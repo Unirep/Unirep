@@ -6,10 +6,10 @@ import { IncrementalQuinTree, genRandomSalt, hashLeftRight, hashOne, genIdentity
 import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
-import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, genReputationNullifier, ISettings } from '../../core/utils'
+import { genEpochKey, computeEmptyUserStateRoot, getTreeDepthsForTesting, genReputationNullifier } from '../../core/utils'
 import { toCompleteHexString, verifyNewGSTLeafEvents, verifyNewGSTProofByIndex } from '../utils'
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
-import { Attestation, IAttestation, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract } from "../../core"
+import { Attestation, IAttestation, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract, ISettings } from "../../core"
 
 
 describe('Integration', function () {

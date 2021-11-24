@@ -2,8 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DEFAULT_TREE_DEPTHS_CONFIG = exports.DEFAULT_ATTESTING_FEE = exports.DEFAULT_EPOCH_LENGTH = exports.DEFAULT_MAX_EPOCH_KEY_NONCE = exports.DEFAULT_START_BLOCK = exports.DEFAULT_ETH_PROVIDER = void 0;
 const testLocal_1 = require("../config/testLocal");
-// import { ALCHEMY_API_KEY } from '../privateKey'
-// import { INFURA_API_KEY } from '../privateKey'
+// import { ALCHEMY_API_KEY } from '../config/privateKey'
 // apply the api key from https://www.alchemy.com/
 // const DEFAULT_ETH_PROVIDER = `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`
 // const DEFAULT_ETH_PROVIDER = `https://goerli.infura.io/v3/${INFURA_API_KEY}`

@@ -90,6 +90,7 @@ const userStateTransition = async (args: any) => {
         results.startTransitionProof.proof,
     )
     console.log('Transaction hash:', tx?.hash)
+    await tx.wait()
     const proofIndex = await unirepContract.getStartTransitionProofIndex(
         results.startTransitionProof.blindedUserState,
         results.startTransitionProof.blindedHashChain,
@@ -112,6 +113,7 @@ const userStateTransition = async (args: any) => {
             results.processAttestationProofs[i].proof,
         )
         console.log('Transaction hash:', tx?.hash)
+        await tx.wait()
         const proofIndex = await unirepContract.getProcessAttestationsProofIndex(
             results.processAttestationProofs[i].outputBlindedUserState,
             results.processAttestationProofs[i].outputBlindedHashChain,
@@ -170,6 +172,7 @@ const userStateTransition = async (args: any) => {
         results.finalTransitionProof.proof,
         proofIndexes,
     )
+    await tx.wait()
     if(tx != undefined) {
         console.log('Transaction hash:', tx?.hash)
         const currentEpoch = await unirepContract.currentEpoch()

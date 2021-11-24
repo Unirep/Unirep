@@ -1,13 +1,14 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, hashLeftRight, IncrementalQuinTree, genIdentity, genIdentityCommitment } from '@unirep/crypto'
-import { formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
+import { genRandomSalt, hashLeftRight, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
-import { computeEmptyUserStateRoot, genEpochKey, getTreeDepthsForTesting, ISettings } from '../../core/utils'
+import { computeEmptyUserStateRoot, genEpochKey, getTreeDepthsForTesting } from '../../core/utils'
 import { epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
 import { Attestation, IEpochTreeLeaf, UnirepState, UserState } from '../../core'
+import { ISettings } from '../../core/UnirepState'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -461,10 +462,6 @@ describe('Epoch Transition', function () {
             transitionArgs.proof,
         )
         expect(isValid, 'Verify user state transition on-chain failed').to.be.true
-
-        console.log('final proof: ')
-        console.log('user state starter: ', BigInt(transitionArgs.blindedUserStates[0]))
-        console.log('user state result: ', BigInt(transitionArgs.blindedUserStates[1]))
 
         const _proofIndexes = transitionEvents[0]?.args?._proofIndexRecords
         // Proof index 0 should be the start transition proof

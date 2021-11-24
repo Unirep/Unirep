@@ -1,6 +1,5 @@
 import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../config/testLocal'
-// import { ALCHEMY_API_KEY } from '../privateKey'
-// import { INFURA_API_KEY } from '../privateKey'
+// import { ALCHEMY_API_KEY } from '../config/privateKey'
 
 // apply the api key from https://www.alchemy.com/
 // const DEFAULT_ETH_PROVIDER = `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`

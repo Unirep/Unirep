@@ -6,9 +6,10 @@ import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
 import { attestingFee, circuitUserStateTreeDepth, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
-import { getTreeDepthsForTesting, ISettings } from '../../core/utils'
+import { getTreeDepthsForTesting } from '../../core/utils'
 import { Attestation, IEpochTreeLeaf, UnirepState, UserState } from '../../core'
 import { computeEmptyUserStateRoot, genNewSMT } from '../utils'
+import { ISettings } from '../../core/UnirepState'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -99,7 +100,6 @@ describe('Airdrop', function () {
     })
 
     it('user signs up through attester should get airdrop pos rep', async() => {
-        console.log('User sign up')
         const userId = genIdentity()
         const userCommitment = genIdentityCommitment(userId)
         let tx = await unirepContractCalledByAttester.userSignUp(userCommitment)
@@ -140,7 +140,6 @@ describe('Airdrop', function () {
         for (let i = 0; i < maxReputationBudget -  initLength; i++) {
             nonceList.push(BigInt(-1))
         }
-        console.log(nonceList)
         const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage, nonceList)
         const isValid = await verifyProof('proveReputation', results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true

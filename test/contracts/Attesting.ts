@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, hashLeftRight, SNARK_FIELD_SIZE, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { genRandomSalt, SNARK_FIELD_SIZE, genIdentity, genIdentityCommitment } from '@unirep/crypto'
 import { deployUnirep, getUnirepContract } from '@unirep/contracts'
 
 import { epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
