@@ -246,6 +246,7 @@ describe('Integration', function () {
             const blindedHashChains = results.finalTransitionProof.blindedHashChains
 
             // Verify new state state outputted by circuit is the same as the one computed off-chain
+            users[firstUser].saveAttestations()
             const newState = await users[firstUser].genNewUserStateAfterTransition()
             expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf.toString())
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves
@@ -905,6 +906,7 @@ describe('Integration', function () {
                 outputEPKNullifiers.push(outputNullifier)
             }
             // Verify new state state outputted by circuit is the same as the one computed off-chain
+            users[firstUser].saveAttestations()
             const newState = await users[firstUser].genNewUserStateAfterTransition()
             expect(newGSTLeaf, 'Computed new GST leaf should match').to.equal(newState.newGSTLeaf.toString())
             userStateLeavesAfterTransition[firstUser] = newState.newUSTLeaves

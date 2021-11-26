@@ -19,6 +19,9 @@ interface IUserState {
     latestUserStateLeaves: {
         [key: string]: string;
     };
+    transitionedFromAttestations: {
+        [key: string]: string[];
+    };
     unirepState: IUnirepState;
 }
 declare class Reputation implements IReputation {
@@ -45,7 +48,10 @@ declare class UserState {
     latestTransitionedEpoch: number;
     latestGSTLeafIndex: number;
     private latestUserStateLeaves;
-    constructor(_unirepState: UnirepState, _id: any, _commitment: any, _hasSignedUp: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[]);
+    private transitionedFromAttestations;
+    constructor(_unirepState: UnirepState, _id: any, _commitment: any, _hasSignedUp: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[], _transitionedFromAttestations?: {
+        [key: string]: IAttestation[];
+    });
     toJSON: (space?: number) => string;
     getUnirepStateCurrentEpoch: () => number;
     getUnirepStateGSTree: (epoch: number) => IncrementalQuinTree;
@@ -68,6 +74,7 @@ declare class UserState {
         epochKey: any;
     }>;
     private _updateUserStateLeaf;
+    saveAttestations: () => void;
     genNewUserStateAfterTransition: () => Promise<{
         newGSTLeaf: BigInt;
         newUSTLeaves: IUserStateLeaf[];

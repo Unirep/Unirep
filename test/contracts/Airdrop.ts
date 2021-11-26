@@ -398,7 +398,8 @@ describe('Airdrop', function () {
         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
         console.log("Gas cost of submit a user state transition proof:", receipt.gasUsed.toString())
         numLeaf ++
-
+        
+        userState.saveAttestations()
         const newState = await userState.genNewUserStateAfterTransition()
         const epkNullifiers = userState.getEpochKeyNullifiers(1)
         const epoch_ = await unirepContract.currentEpoch()

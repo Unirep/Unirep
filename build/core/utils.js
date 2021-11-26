@@ -305,7 +305,10 @@ const genUnirepStateFromContract = async (provider, address, _unirepState) => {
     for (let i = 0; i < sequencerEvents.length; i++) {
         const sequencerEvent = sequencerEvents[i];
         const blockNumber = sequencerEvent.blockNumber;
+        if (blockNumber < startBlock)
+            continue;
         const occurredEvent = (_b = sequencerEvent.args) === null || _b === void 0 ? void 0 : _b._event;
+        console.log(occurredEvent);
         if (occurredEvent === "NewGSTLeafInserted") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop();
             assert_1.default(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`);
@@ -436,6 +439,7 @@ exports.genUnirepStateFromContract = genUnirepStateFromContract;
 const genUserStateFromParams = (userIdentity, userIdentityCommitment, _userState) => {
     const unirepState = genUnirepStateFromParams(_userState.unirepState);
     const userStateLeaves = [];
+    const transitionedFromAttestations = {};
     for (const key in _userState.latestUserStateLeaves) {
         const parsedLeaf = JSON.parse(_userState.latestUserStateLeaves[key]);
         const leaf = {
@@ -444,7 +448,15 @@ const genUserStateFromParams = (userIdentity, userIdentityCommitment, _userState
         };
         userStateLeaves.push(leaf);
     }
-    const userState = new UserState_1.UserState(unirepState, userIdentity, userIdentityCommitment, _userState.hasSignedUp, _userState.latestTransitionedEpoch, _userState.latestGSTLeafIndex, userStateLeaves);
+    for (const key in _userState.transitionedFromAttestations) {
+        transitionedFromAttestations[key] = [];
+        for (const attest of _userState.transitionedFromAttestations[key]) {
+            const parsedAttest = JSON.parse(attest);
+            const attestation = new UnirepState_1.Attestation(BigInt(parsedAttest.attesterId), BigInt(parsedAttest.posRep), BigInt(parsedAttest.negRep), BigInt(parsedAttest.graffiti), BigInt(parsedAttest.signUp));
+            transitionedFromAttestations[key].push(attestation);
+        }
+    }
+    const userState = new UserState_1.UserState(unirepState, userIdentity, userIdentityCommitment, _userState.hasSignedUp, _userState.latestTransitionedEpoch, _userState.latestGSTLeafIndex, userStateLeaves, transitionedFromAttestations);
     return userState;
 };
 exports.genUserStateFromParams = genUserStateFromParams;
@@ -524,13 +536,16 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
         proofIndexMap[Number((_a = event === null || event === void 0 ? void 0 : event.args) === null || _a === void 0 ? void 0 : _a._proofIndex)] = event;
     }
     // Variables used to keep track of data required for user to transition
-    let userHasSignedUp = false;
+    let userHasSignedUp = (_userState === null || _userState === void 0 ? void 0 : _userState.hasSignedUp) === undefined ? false : _userState === null || _userState === void 0 ? void 0 : _userState.hasSignedUp;
     let currentEpochGSTLeafIndexToInsert = 0;
     let epkNullifiers = [];
     for (let i = 0; i < sequencerEvents.length; i++) {
         const sequencerEvent = sequencerEvents[i];
         const blockNumber = sequencerEvent.blockNumber;
+        if (blockNumber < startBlock)
+            continue;
         const occurredEvent = (_b = sequencerEvent.args) === null || _b === void 0 ? void 0 : _b._event;
+        console.log(occurredEvent);
         if (occurredEvent === "NewGSTLeafInserted") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop();
             assert_1.default(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`);
@@ -600,6 +615,8 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
                     continue;
                 if (userHasSignedUp &&
                     ((args === null || args === void 0 ? void 0 : args.transitionFromEpoch.toNumber()) === userState.latestTransitionedEpoch)) {
+                    // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
+                    epkNullifiers = userState.getEpochKeyNullifiers(epoch);
                     let epkNullifiersMatched = 0;
                     for (const nullifier of epkNullifiers) {
                         if (epkNullifiersInEvent.indexOf(nullifier) !== -1)
@@ -613,7 +630,7 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
                         // User processed all epoch keys so non-zero GST leaf is generated.
                         if (newState.newGSTLeaf != (newLeaf)) {
                             console.log('New GST leaf mismatch');
-                            break;
+                            continue;
                         }
                         // User transition to this epoch, increment (next) GST leaf index
                         currentEpochGSTLeafIndexToInsert++;
@@ -623,7 +640,6 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
                     }
                 }
                 unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), epkNullifiersInEvent, blockNumber);
-                transitionEvents.pop();
             }
             currentEpochGSTLeafIndexToInsert++;
         }
@@ -685,9 +701,8 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
             await unirepState.epochTransition(epoch, blockNumber);
             if (userHasSignedUp) {
                 if (epoch === userState.latestTransitionedEpoch) {
-                    // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
-                    // so we can identify when user process the epoch keys.
-                    epkNullifiers = userState.getEpochKeyNullifiers(epoch);
+                    // save latest attestations in user state
+                    userState.saveAttestations();
                 }
             }
             // Epoch ends, reset (next) GST leaf index

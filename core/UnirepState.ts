@@ -223,6 +223,7 @@ class UnirepState {
      * Get all epoch keys of given epoch key
      */
     public getEpochKeys = (epoch: number): string[] => {
+        if(this.epochKeyInEpoch[epoch] == undefined) return []
         return Array.from(this.epochKeyInEpoch[epoch].keys())
     }
 

@@ -24,6 +24,7 @@ interface IUserState {
     latestTransitionedEpoch: number;
     latestGSTLeafIndex: number;
     latestUserStateLeaves: {[key: string]: string};
+    transitionedFromAttestations: {[key: string]: string[]};
     unirepState: IUnirepState;
 }
 
@@ -109,6 +110,7 @@ class UserState {
     public latestTransitionedEpoch: number  // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number  // Leaf index of the latest GST where the user has a record in
     private latestUserStateLeaves: IUserStateLeaf[]  // Latest non-default user state leaves
+    private transitionedFromAttestations: {[key: string]: IAttestation[]} = {} // attestations in the latestTransitionedEpoch
 
     constructor(
         _unirepState: UnirepState,
@@ -118,6 +120,7 @@ class UserState {
         _latestTransitionedEpoch?: number,
         _latestGSTLeafIndex?: number,
         _latestUserStateLeaves?: IUserStateLeaf[],
+        _transitionedFromAttestations?: {[key: string]: IAttestation[]},
     ) {
         assert(_unirepState !== undefined, "UnirepState is undefined")
         this.unirepState = _unirepState
@@ -127,6 +130,7 @@ class UserState {
 
         this.id = _id
         this.commitment = _commitment
+        this.latestUserStateLeaves = []
         if (_hasSignedUp) {
             assert(_latestTransitionedEpoch !== undefined, "User has signed up but missing latestTransitionedEpoch")
             assert(_latestGSTLeafIndex !== undefined, "User has signed up but missing latestTransitionedEpoch")
@@ -134,12 +138,11 @@ class UserState {
             this.latestTransitionedEpoch = _latestTransitionedEpoch
             this.latestGSTLeafIndex = _latestGSTLeafIndex
             if (_latestUserStateLeaves !== undefined) this.latestUserStateLeaves = _latestUserStateLeaves
-            else this.latestUserStateLeaves = []
+            if(_transitionedFromAttestations !== undefined) this.transitionedFromAttestations = _transitionedFromAttestations
             this.hasSignedUp = _hasSignedUp
         } else {
             this.latestTransitionedEpoch = 0
             this.latestGSTLeafIndex = 0
-            this.latestUserStateLeaves = []
         }
     }
 
@@ -147,6 +150,13 @@ class UserState {
         const userStateLeavesMapToString: {[key: string]: string} = {}
         for (const l of this.latestUserStateLeaves) {
             userStateLeavesMapToString[l.attesterId.toString()] = l.reputation.toJSON()
+        }
+        const transitionedFromAttestationsToString: {[key: string]: string[]} = {}
+        const epoch = this.latestTransitionedEpoch
+        for (let nonce = 0; nonce < this.unirepState.setting.numEpochKeyNoncePerEpoch; nonce++) {
+            const epk = genEpochKey(this.id.identityNullifier, epoch, nonce).toString()
+            const attestations = this.transitionedFromAttestations[epk]
+            if(attestations !== undefined) transitionedFromAttestationsToString[epk] = attestations.map(a => a.toJSON())
         }
         return JSON.stringify(
             {
@@ -156,6 +166,7 @@ class UserState {
                 latestTransitionedEpoch: this.latestTransitionedEpoch,
                 latestGSTLeafIndex: this.latestGSTLeafIndex,
                 latestUserStateLeaves: userStateLeavesMapToString,
+                transitionedFromAttestations: transitionedFromAttestationsToString,
                 unirepState: JSON.parse(this.unirepState.toJSON())
             },
             null,
@@ -330,6 +341,17 @@ class UserState {
         return stateLeaves
     }
 
+    public saveAttestations = () => {
+        assert(this.hasSignedUp, "User has not signed up yet")
+        const fromEpoch = this.latestTransitionedEpoch
+
+        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {    
+            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth).toString()
+            const attestations = this.unirepState.getAttestations(epochKey)
+            this.transitionedFromAttestations[epochKey] = attestations
+        }
+    }
+
     public genNewUserStateAfterTransition = async () => {
         assert(this.hasSignedUp, "User has not signed up yet")
         const fromEpoch = this.latestTransitionedEpoch
@@ -341,8 +363,8 @@ class UserState {
             const epkNullifier = genEpochKeyNullifier(this.id.identityNullifier, fromEpoch, nonce)
             assert(! this.unirepState.nullifierExist(epkNullifier), `Epoch key with nonce ${nonce} is already processed, it's nullifier: ${epkNullifier}`)
 
-            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth)
-            const attestations = this.unirepState.getAttestations(epochKey.toString())
+            const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth).toString()
+            const attestations = this.transitionedFromAttestations[epochKey]
             for (let i = 0; i < attestations.length; i++) {
                 const attestation = attestations[i]
                 stateLeaves = this._updateUserStateLeaf(attestation, stateLeaves)
