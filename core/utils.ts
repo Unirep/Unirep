@@ -397,10 +397,10 @@ const genUnirepStateFromContract = async (
 
     for (let i = 0; i < sequencerEvents.length; i++) {
         const sequencerEvent = sequencerEvents[i]
+        console.log('Generating Unirep State progress: ', i, '/', sequencerEvents.length)
         const blockNumber = sequencerEvent.blockNumber
         if(blockNumber < startBlock) continue
         const occurredEvent = sequencerEvent.args?._event
-        console.log(occurredEvent)
         if (occurredEvent === "NewGSTLeafInserted") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop()
             assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
@@ -418,7 +418,6 @@ const genUnirepStateFromContract = async (
                 const processAttestationEvents: ethers.Event[] = []
                 for (let j = 1; j < proofIndexes.length; j++) {
                     if(proofIndexes[j] == 0) break
-                    console.log(`process attestation events ${j}:`, proofIndexes[j])
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
                 }
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
@@ -462,15 +461,12 @@ const genUnirepStateFromContract = async (
             let isProofValid = false
             const event = proofIndexMap[proofIndex]
             if(event.event == "EpochKeyProof") {
-                console.log('epoch key event')
                 results = event?.args?.epochKeyProofData
                 isProofValid = await verifyEpochKeyProofEvent(event)
             } else if (event.event == "ReputationNullifierProof") {
-                console.log('reputation event')
                 results = event?.args?.reputationProofData
                 isProofValid = await verifyReputationProofEvent(event)
             } else if (event.event == "UserSignedUpProof") {
-                console.log('airdrop event')
                 results = event?.args?.signUpProofData
                 isProofValid = await verifySignUpProofEvent(event)
             } else {
@@ -517,9 +513,12 @@ const genUnirepStateFromContract = async (
             throw new Error(`Unexpected event: ${occurredEvent}`)
         }
     }
-    assert(newGSTLeafInsertedEvents.length == 0, `${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
-    assert(attestationSubmittedEvents.length == 0, `${attestationSubmittedEvents.length} attestationSubmitted events left unprocessed`)
-    assert(epochEndedEvents.length == 0, `${epochEndedEvents.length} newGSTLeafInsert events left unprocessed`)
+    if(newGSTLeafInsertedEvents.length !== 0) {
+        console.log(`${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
+    }
+    if(attestationSubmittedEvents.length !== 0) {
+        console.log(`${attestationSubmittedEvents.length} attestationSubmitted events left unprocessed`)
+    }
     return unirepState
 }
 
@@ -704,11 +703,11 @@ const genUserStateFromContract = async (
     let currentEpochGSTLeafIndexToInsert = 0
     let epkNullifiers: BigInt[] = []
     for (let i = 0; i < sequencerEvents.length; i++) {
+        console.log('Generating User State progress: ', i, '/', sequencerEvents.length)
         const sequencerEvent = sequencerEvents[i]
         const blockNumber = sequencerEvent.blockNumber
         if(blockNumber < startBlock) continue
         const occurredEvent = sequencerEvent.args?._event
-        console.log(occurredEvent)
         if (occurredEvent === "NewGSTLeafInserted") {
             const newLeafEvent = newGSTLeafInsertedEvents.pop()
             assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
@@ -736,7 +735,6 @@ const genUserStateFromContract = async (
                 const processAttestationEvents: ethers.Event[] = []
                 for (let j = 1; j < proofIndexes.length; j++) {
                     if(proofIndexes[j] == 0) break
-                    console.log(`process attestation events ${j}:`, proofIndexes[j])
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
                 }
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
@@ -823,15 +821,12 @@ const genUserStateFromContract = async (
             let isProofValid = false
             const event = proofIndexMap[proofIndex]
             if(event.event == "EpochKeyProof") {
-                console.log('epoch key event')
                 results = event?.args?.epochKeyProofData
                 isProofValid = await verifyEpochKeyProofEvent(event)
             } else if (event.event == "ReputationNullifierProof") {
-                console.log('reputation event')
                 results = event?.args?.reputationProofData
                 isProofValid = await verifyReputationProofEvent(event)
             } else if (event.event == "UserSignedUpProof") {
-                console.log('airdrop event')
                 results = event?.args?.signUpProofData
                 isProofValid = await verifySignUpProofEvent(event)
             } else {
@@ -887,8 +882,12 @@ const genUserStateFromContract = async (
             throw new Error(`Unexpected event: ${occurredEvent}`)
         }
     }
-    assert(newGSTLeafInsertedEvents.length == 0, `${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
-    assert(attestationSubmittedEvents.length == 0, `${attestationSubmittedEvents.length} attestationSubmitted events left unprocessed`)
+    if(newGSTLeafInsertedEvents.length !== 0) {
+        console.log(`${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
+    }
+    if(attestationSubmittedEvents.length !== 0) {
+        console.log(`${attestationSubmittedEvents.length} attestationSubmitted events left unprocessed`)
+    }
     return userState
 }
 

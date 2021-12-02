@@ -9,8 +9,21 @@ For more information, refer to the [documentation](https://vivi432.gitbook.io/un
 yarn install
 ```
 
+## Goerli Testnet
 
-## Test
+- The address of Unirep smart contract on goerli testnet
+    ```
+    0x05984c0A17495Ee88Ffea04440DDF9A548bE4Ac3
+    ```
+    See [Etherscan](https://goerli.etherscan.io/address/0x05984c0A17495Ee88Ffea04440DDF9A548bE4Ac3)
+- Apply for an account from [Alchemy](https://www.alchemy.com/) or [Infura](https://infura.io/), change the `DEFAULT_ETH_PROVIDER` to the given provider url
+    For example
+    ```
+    const DEFAULT_ETH_PROVIDER = https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}
+    ```
+- Get ether on the goerli testnet from [Goerli Faucet](https://faucet.goerli.mudit.blog/)
+
+## Local Test
 
 ```
 yarn test && yarn test-cli
