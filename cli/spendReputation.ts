@@ -111,6 +111,8 @@ const spendReputation = async (args: any) => {
         graffitiPreImage,
         proof
     )
+    await tx.wait()
+    
     const proofIndex = await unirepContract.getReputationProofIndex([outputNullifiers, epoch, epk, GSTRoot, attesterId, repNullifiersAmount, minRep, proveGraffiti, graffitiPreImage, proof])
     if(tx != undefined){
         console.log('Transaction hash:', tx?.hash)

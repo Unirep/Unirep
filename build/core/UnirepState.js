@@ -124,7 +124,9 @@ class UnirepState {
                 console.log("Nullifier 0 exists because it is reserved");
                 return true;
             }
-            return this.nullifiers[nullifier.toString()];
+            if (this.nullifiers[nullifier.toString()])
+                return true;
+            return false;
         };
         /*
          * Add a new attestation to the list of attestations to the epoch key.

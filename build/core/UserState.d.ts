@@ -49,7 +49,7 @@ declare class UserState {
     latestGSTLeafIndex: number;
     private latestUserStateLeaves;
     private transitionedFromAttestations;
-    constructor(_unirepState: UnirepState, _id: any, _commitment: any, _hasSignedUp: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[], _transitionedFromAttestations?: {
+    constructor(_unirepState: UnirepState, _id: any, _hasSignedUp: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[], _transitionedFromAttestations?: {
         [key: string]: IAttestation[];
     });
     toJSON: (space?: number) => string;

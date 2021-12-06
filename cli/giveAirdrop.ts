@@ -82,6 +82,7 @@ const giveAirdrop = async (args: any) => {
 
     // Submit attestation
     const tx = await unirepContract.airdropEpochKey(epoch, epk, GSTRoot, attesterId, proof)
+    await tx.wait()
     const proofIndex = await unirepContract.getSignUpProofIndex([epoch, epk, GSTRoot, attesterId, proof])
     if(tx != undefined){
         console.log('Transaction hash:', tx?.hash)

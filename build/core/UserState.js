@@ -54,7 +54,7 @@ class Reputation {
 }
 exports.Reputation = Reputation;
 class UserState {
-    constructor(_unirepState, _id, _commitment, _hasSignedUp, _latestTransitionedEpoch, _latestGSTLeafIndex, _latestUserStateLeaves, _transitionedFromAttestations) {
+    constructor(_unirepState, _id, _hasSignedUp, _latestTransitionedEpoch, _latestGSTLeafIndex, _latestUserStateLeaves, _transitionedFromAttestations) {
         this.hasSignedUp = false;
         this.transitionedFromAttestations = {}; // attestations in the latestTransitionedEpoch
         this.toJSON = (space = 0) => {
@@ -236,7 +236,7 @@ class UserState {
                 assert_1.default(!this.unirepState.nullifierExist(epkNullifier), `Epoch key with nonce ${nonce} is already processed, it's nullifier: ${epkNullifier}`);
                 const epochKey = utils_1.genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth).toString();
                 const attestations = this.transitionedFromAttestations[epochKey];
-                for (let i = 0; i < attestations.length; i++) {
+                for (let i = 0; i < (attestations === null || attestations === void 0 ? void 0 : attestations.length); i++) {
                     const attestation = attestations[i];
                     stateLeaves = this._updateUserStateLeaf(attestation, stateLeaves);
                 }
@@ -628,7 +628,7 @@ class UserState {
         this.numEpochKeyNoncePerEpoch = this.unirepState.setting.numEpochKeyNoncePerEpoch;
         this.numAttestationsPerProof = testLocal_1.numAttestationsPerProof;
         this.id = _id;
-        this.commitment = _commitment;
+        this.commitment = crypto_1.genIdentityCommitment(this.id);
         this.latestUserStateLeaves = [];
         if (_hasSignedUp) {
             assert_1.default(_latestTransitionedEpoch !== undefined, "User has signed up but missing latestTransitionedEpoch");

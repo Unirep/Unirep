@@ -33,6 +33,6 @@ declare const verifyUSTEvents: (transitionEvent: ethers.Event, startTransitionEv
 declare const verifyProcessAttestationEvents: (processAttestationEvents: ethers.Event[], startBlindedUserState: ethers.BigNumber, finalBlindedUserState: ethers.BigNumber) => Promise<boolean>;
 declare const genUnirepStateFromParams: (_unirepState: IUnirepState) => UnirepState;
 declare const genUnirepStateFromContract: (provider: ethers.providers.Provider, address: string, _unirepState?: IUnirepState | undefined) => Promise<UnirepState>;
-declare const genUserStateFromParams: (userIdentity: any, userIdentityCommitment: any, _userState: IUserState) => UserState;
-declare const genUserStateFromContract: (provider: ethers.providers.Provider, address: string, userIdentity: any, userIdentityCommitment: any, _userState?: IUserState | undefined) => Promise<UserState>;
+declare const genUserStateFromParams: (userIdentity: any, _userState: IUserState) => UserState;
+declare const genUserStateFromContract: (provider: ethers.providers.Provider, address: string, userIdentity: any, _userState?: IUserState | undefined) => Promise<UserState>;
 export { defaultUserStateLeaf, SMT_ONE_LEAF, SMT_ZERO_LEAF, computeEmptyUserStateRoot, computeInitUserStateRoot, getTreeDepthsForTesting, formatProofForSnarkjsVerification, verifyEpochKeyProofEvent, verifyReputationProofEvent, verifySignUpProofEvent, verifyStartTransitionProofEvent, verifyProcessAttestationEvent, verifyProcessAttestationEvents, verifyUserStateTransitionEvent, verifyUSTEvents, genEpochKey, genEpochKeyNullifier, genReputationNullifier, genNewSMT, genUnirepStateFromContract, genUnirepStateFromParams, genUserStateFromContract, genUserStateFromParams, };

@@ -49,6 +49,7 @@ const attesterSignUp = async (args: any) => {
 
     // Submit the user sign up transaction
     const tx = await unirepContract.attesterSignUp()
+    await tx.wait()
 
     const ethAddr = ethers.utils.computeAddress(ehtSk)
     const attesterId = await unirepContract.attesters(ethAddr)

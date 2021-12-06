@@ -5,7 +5,7 @@ import { ethers } from 'ethers'
 import Keyv from "keyv"
 import assert from 'assert'
 import { getUnirepContract } from '@unirep/contracts'
-import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
+import { genIdentityCommitment, hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
 
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, ISettings, IUnirepState, UnirepState } from './UnirepState'
@@ -494,11 +494,18 @@ const genUnirepStateFromContract = async (
             )
             const epochKey = args?._epochKey
             if (epochKey.eq(results?.epochKey)){
-                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
-                if (results?.repNullifiers == undefined) continue
-                for (let nullifier of results?.repNullifiers) {
-                    unirepState.addReputationNullifiers(nullifier, blockNumber)
+                if(args?._event === "spendReputation") {
+                    for (let nullifier of results?.repNullifiers) {
+                        if(unirepState.nullifierExist(nullifier)) {
+                            console.log('duplicated nullifier', BigInt(nullifier).toString())
+                            continue
+                        }
+                    }
+                    for (let nullifier of results?.repNullifiers) {
+                        unirepState.addReputationNullifiers(nullifier, blockNumber)
+                    }
                 }
+                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
@@ -527,19 +534,11 @@ const genUnirepStateFromContract = async (
  * retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UserState object (including UnirepState object).
  * (This assumes user has already signed up in the Unirep contract)
- * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
- * @param startBlock The block number when Unirep contract is deployed
  * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment Commitment of the userIdentity
- * @param latestTransitionedEpoch Latest epoch user has transitioned to
- * @param latestGSTLeafIndex Leaf index in the global state tree of the latest epoch user has transitioned to
- * @param latestUserStateLeaves User state leaves (empty if no attestations received)
- * @param latestEpochKeys User's epoch keys of the epoch user has transitioned to
+ * @param _userState The stored user state that the function start with
  */
 const genUserStateFromParams = (
     userIdentity: any,
-    userIdentityCommitment: any,
     _userState: IUserState,
 ) => {
     const unirepState = genUnirepStateFromParams(_userState.unirepState)
@@ -575,7 +574,6 @@ const genUserStateFromParams = (
     const userState = new UserState(
         unirepState, 
         userIdentity,
-        userIdentityCommitment,
         _userState.hasSignedUp,
         _userState.latestTransitionedEpoch,
         _userState.latestGSTLeafIndex,
@@ -590,15 +588,13 @@ const genUserStateFromParams = (
  * except that it also updates the user's state during events processing.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
- * @param startBlock The block number when Unirep contract is deployed
  * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment Commitment of the userIdentity
+ * @param _userState The stored user state that the function start with
  */
 const genUserStateFromContract = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: any,
-    userIdentityCommitment: any,
     _userState?: IUserState,
 ) => {
 
@@ -606,6 +602,7 @@ const genUserStateFromContract = async (
 
     let unirepState: UnirepState
     let userState: UserState
+    const userIdentityCommitment = genIdentityCommitment(userIdentity)
 
     if(_userState === undefined) {
         const treeDepths_ = await unirepContract.treeDepths()
@@ -635,11 +632,10 @@ const genUserStateFromContract = async (
         userState = new UserState(
             unirepState,
             userIdentity,
-            userIdentityCommitment,
             false,
         )
     } else {
-        userState = genUserStateFromParams(userIdentity, userIdentityCommitment, _userState)
+        userState = genUserStateFromParams(userIdentity, _userState)
         unirepState = userState.getUnirepState()
     }
 
@@ -854,11 +850,18 @@ const genUserStateFromContract = async (
             )
             const epochKey = args?._epochKey
             if (epochKey.eq(results?.epochKey)){
-                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
-                if (results?.repNullifiers == undefined) continue
-                for (let nullifier of results?.repNullifiers) {
-                    unirepState.addReputationNullifiers(nullifier, blockNumber)
+                if(args?._event === "spendReputation") {
+                    for (let nullifier of results?.repNullifiers) {
+                        if(unirepState.nullifierExist(nullifier)) {
+                            console.log('duplicated nullifier', BigInt(nullifier).toString())
+                            continue
+                        }
+                    }
+                    for (let nullifier of results?.repNullifiers) {
+                        unirepState.addReputationNullifiers(nullifier, blockNumber)
+                    }
                 }
+                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()

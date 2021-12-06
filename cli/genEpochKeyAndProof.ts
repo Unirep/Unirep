@@ -67,7 +67,6 @@ const genEpochKeyAndProof = async (args: any) => {
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
-    const commitment = genIdentityCommitment(id)
     const epochTreeDepth = circuitEpochTreeDepth
 
     // Gen User State
@@ -75,7 +74,6 @@ const genEpochKeyAndProof = async (args: any) => {
         provider,
         args.contract,
         id,
-        commitment
     )
     const results = await userState.genVerifyEpochKeyProof(epkNonce)
     const currentEpoch = userState.getUnirepStateCurrentEpoch()

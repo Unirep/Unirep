@@ -235,7 +235,8 @@ class UnirepState {
             console.log("Nullifier 0 exists because it is reserved")
             return true
         }
-        return this.nullifiers[nullifier.toString()]
+        if (this.nullifiers[nullifier.toString()]) return true
+        return false
     }
 
 

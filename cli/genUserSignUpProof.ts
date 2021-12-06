@@ -59,14 +59,12 @@ const genUserSignUpProof = async (args: any) => {
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
-    const commitment = genIdentityCommitment(id)
 
     // Gen user sign up proof
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
         id,
-        commitment,
     )
     const attesterId = BigInt(add0x(args.attester_id))
     const results = await userState.genUserSignUpProof(attesterId)

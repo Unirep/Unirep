@@ -127,7 +127,6 @@ describe('Airdrop', function () {
         userState = new UserState(
             unirepState,
             userId,
-            userCommitment,
             false,
         )
         const latestTransitionedToEpoch = currentEpoch.toNumber()
@@ -443,7 +442,6 @@ describe('Airdrop', function () {
         userState = new UserState(
             unirepState,
             userId,
-            userCommitment,
             false,
         )
         const latestTransitionedToEpoch = currentEpoch.toNumber()

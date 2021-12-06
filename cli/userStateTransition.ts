@@ -66,14 +66,12 @@ const userStateTransition = async (args: any) => {
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
-    const commitment = genIdentityCommitment(id)
 
     // Generate user state transition proofs
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
         id,
-        commitment,
     )
     const results = await userState.genUserStateTransitionProofs()
     const proofIndexes: BigInt[] = []
@@ -159,6 +157,13 @@ const userStateTransition = async (args: any) => {
         console.error('Error: invalid epoch tree root')
         return
     }
+    // Check if nullifiers submitted before
+    for (const nullifier of epkNullifiers) {
+        if(userState.nullifierExist(nullifier)){
+            console.error('Error: nullifier submitted before')
+            return
+        }
+    }
 
     // Submit the user state transition transaction
     tx = await unirepContract.updateUserStateRoot(
@@ -172,8 +177,8 @@ const userStateTransition = async (args: any) => {
         results.finalTransitionProof.proof,
         proofIndexes,
     )
-    await tx.wait()
     if(tx != undefined) {
+        await tx.wait()
         console.log('Transaction hash:', tx?.hash)
         const currentEpoch = await unirepContract.currentEpoch()
         console.log(`User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`)

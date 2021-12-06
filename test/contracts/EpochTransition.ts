@@ -76,7 +76,6 @@ describe('Epoch Transition', function () {
         userState = new UserState(
             unirepState,
             userId,
-            userCommitment,
             false,
         )
         const latestTransitionedToEpoch = currentEpoch.toNumber()

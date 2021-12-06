@@ -392,12 +392,18 @@ const genUnirepStateFromContract = async (provider, address, _unirepState) => {
             const attestation = new UnirepState_1.Attestation(BigInt(_attestation.attesterId), BigInt(_attestation.posRep), BigInt(_attestation.negRep), BigInt(_attestation.graffiti), BigInt(_attestation.signUp));
             const epochKey = args === null || args === void 0 ? void 0 : args._epochKey;
             if (epochKey.eq(results === null || results === void 0 ? void 0 : results.epochKey)) {
-                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber);
-                if ((results === null || results === void 0 ? void 0 : results.repNullifiers) == undefined)
-                    continue;
-                for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
-                    unirepState.addReputationNullifiers(nullifier, blockNumber);
+                if ((args === null || args === void 0 ? void 0 : args._event) === "spendReputation") {
+                    for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                        if (unirepState.nullifierExist(nullifier)) {
+                            console.log('duplicated nullifier', BigInt(nullifier).toString());
+                            continue;
+                        }
+                    }
+                    for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                        unirepState.addReputationNullifiers(nullifier, blockNumber);
+                    }
                 }
+                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber);
             }
         }
         else if (occurredEvent === "EpochEnded") {
@@ -425,17 +431,10 @@ exports.genUnirepStateFromContract = genUnirepStateFromContract;
  * retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UserState object (including UnirepState object).
  * (This assumes user has already signed up in the Unirep contract)
- * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
- * @param startBlock The block number when Unirep contract is deployed
  * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment Commitment of the userIdentity
- * @param latestTransitionedEpoch Latest epoch user has transitioned to
- * @param latestGSTLeafIndex Leaf index in the global state tree of the latest epoch user has transitioned to
- * @param latestUserStateLeaves User state leaves (empty if no attestations received)
- * @param latestEpochKeys User's epoch keys of the epoch user has transitioned to
+ * @param _userState The stored user state that the function start with
  */
-const genUserStateFromParams = (userIdentity, userIdentityCommitment, _userState) => {
+const genUserStateFromParams = (userIdentity, _userState) => {
     const unirepState = genUnirepStateFromParams(_userState.unirepState);
     const userStateLeaves = [];
     const transitionedFromAttestations = {};
@@ -455,7 +454,7 @@ const genUserStateFromParams = (userIdentity, userIdentityCommitment, _userState
             transitionedFromAttestations[key].push(attestation);
         }
     }
-    const userState = new UserState_1.UserState(unirepState, userIdentity, userIdentityCommitment, _userState.hasSignedUp, _userState.latestTransitionedEpoch, _userState.latestGSTLeafIndex, userStateLeaves, transitionedFromAttestations);
+    const userState = new UserState_1.UserState(unirepState, userIdentity, _userState.hasSignedUp, _userState.latestTransitionedEpoch, _userState.latestGSTLeafIndex, userStateLeaves, transitionedFromAttestations);
     return userState;
 };
 exports.genUserStateFromParams = genUserStateFromParams;
@@ -464,15 +463,15 @@ exports.genUserStateFromParams = genUserStateFromParams;
  * except that it also updates the user's state during events processing.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
- * @param startBlock The block number when Unirep contract is deployed
  * @param userIdentity The semaphore identity of the user
- * @param userIdentityCommitment Commitment of the userIdentity
+ * @param _userState The stored user state that the function start with
  */
-const genUserStateFromContract = async (provider, address, userIdentity, userIdentityCommitment, _userState) => {
+const genUserStateFromContract = async (provider, address, userIdentity, _userState) => {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
     const unirepContract = await contracts_1.getUnirepContract(address, provider);
     let unirepState;
     let userState;
+    const userIdentityCommitment = crypto_1.genIdentityCommitment(userIdentity);
     if (_userState === undefined) {
         const treeDepths_ = await unirepContract.treeDepths();
         const globalStateTreeDepth = treeDepths_.globalStateTreeDepth;
@@ -494,10 +493,10 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
             defaultGSTLeaf: crypto_1.hashLeftRight(BigInt(0), emptyUserStateRoot)
         };
         unirepState = new UnirepState_1.UnirepState(setting);
-        userState = new UserState_1.UserState(unirepState, userIdentity, userIdentityCommitment, false);
+        userState = new UserState_1.UserState(unirepState, userIdentity, false);
     }
     else {
-        userState = genUserStateFromParams(userIdentity, userIdentityCommitment, _userState);
+        userState = genUserStateFromParams(userIdentity, _userState);
         unirepState = userState.getUnirepState();
     }
     const latestBlock = _userState === null || _userState === void 0 ? void 0 : _userState.unirepState.latestProcessedBlock;
@@ -680,12 +679,18 @@ const genUserStateFromContract = async (provider, address, userIdentity, userIde
             const attestation = new UnirepState_1.Attestation(BigInt(_attestation.attesterId), BigInt(_attestation.posRep), BigInt(_attestation.negRep), BigInt(_attestation.graffiti), BigInt(_attestation.signUp));
             const epochKey = args === null || args === void 0 ? void 0 : args._epochKey;
             if (epochKey.eq(results === null || results === void 0 ? void 0 : results.epochKey)) {
-                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber);
-                if ((results === null || results === void 0 ? void 0 : results.repNullifiers) == undefined)
-                    continue;
-                for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
-                    unirepState.addReputationNullifiers(nullifier, blockNumber);
+                if ((args === null || args === void 0 ? void 0 : args._event) === "spendReputation") {
+                    for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                        if (unirepState.nullifierExist(nullifier)) {
+                            console.log('duplicated nullifier', BigInt(nullifier).toString());
+                            continue;
+                        }
+                    }
+                    for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                        unirepState.addReputationNullifiers(nullifier, blockNumber);
+                    }
                 }
+                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber);
             }
         }
         else if (occurredEvent === "EpochEnded") {

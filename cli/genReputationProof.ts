@@ -94,15 +94,14 @@ const genReputationProof = async (args: any) => {
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = unSerialiseIdentity(decodedIdentity)
-    const commitment = genIdentityCommitment(id)
 
     // Gen User State
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
         id,
-        commitment
     )
+    console.log(userState.toJSON(4))
 
      // Proving content
     const epoch = userState.getUnirepStateCurrentEpoch()
@@ -126,6 +125,7 @@ const genReputationProof = async (args: any) => {
         if(nonceStarter == -1) {
             console.error('Error: All nullifiers are spent')
         }
+        console.log(nonceStarter)
         if((nonceStarter + repNullifiersAmount) > Number(rep.posRep) - Number(rep.negRep)){
             console.error('Error: Not enough reputation to spend')
         }

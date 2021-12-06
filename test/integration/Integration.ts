@@ -94,7 +94,6 @@ describe('Integration', function () {
             users[firstUser] = new UserState(
                 unirepState,
                 id,
-                commitment,
                 false,
             )
             const latestTransitionedToEpoch = currentEpoch.toNumber()
@@ -342,7 +341,6 @@ describe('Integration', function () {
             users[secondUser] = new UserState(
                 unirepState,
                 id,
-                commitment,
                 false,
             )
             const latestTransitionedToEpoch = currentEpoch.toNumber()
@@ -1018,7 +1016,6 @@ describe('Integration', function () {
                 hardhatEthers.provider,
                 unirepContract.address,
                 users[firstUser].id,
-                users[firstUser].commitment,
             )
 
             // Check user state matches
@@ -1116,7 +1113,6 @@ describe('Integration', function () {
                 hardhatEthers.provider,
                 unirepContract.address,
                 users[firstUser].id,
-                users[firstUser].commitment,
             )
 
             // Check user state matches

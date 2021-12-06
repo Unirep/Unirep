@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { IncrementalQuinTree, hash5, stringifyBigInts, hashOne, hashLeftRight, SparseMerkleTreeImpl } from '@unirep/crypto'
+import { IncrementalQuinTree, hash5, stringifyBigInts, hashOne, hashLeftRight, SparseMerkleTreeImpl, genIdentityCommitment } from '@unirep/crypto'
 import { genProofAndPublicSignals } from '@unirep/circuits'
 import { defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genReputationNullifier } from './utils'
 import { IAttestation, IUnirepState, UnirepState } from './UnirepState'
@@ -115,7 +115,6 @@ class UserState {
     constructor(
         _unirepState: UnirepState,
         _id,
-        _commitment,
         _hasSignedUp: boolean,
         _latestTransitionedEpoch?: number,
         _latestGSTLeafIndex?: number,
@@ -129,7 +128,7 @@ class UserState {
         this.numAttestationsPerProof = numAttestationsPerProof
 
         this.id = _id
-        this.commitment = _commitment
+        this.commitment = genIdentityCommitment(this.id)
         this.latestUserStateLeaves = []
         if (_hasSignedUp) {
             assert(_latestTransitionedEpoch !== undefined, "User has signed up but missing latestTransitionedEpoch")
@@ -365,7 +364,7 @@ class UserState {
 
             const epochKey = genEpochKey(this.id.identityNullifier, fromEpoch, nonce, this.unirepState.setting.epochTreeDepth).toString()
             const attestations = this.transitionedFromAttestations[epochKey]
-            for (let i = 0; i < attestations.length; i++) {
+            for (let i = 0; i < attestations?.length; i++) {
                 const attestation = attestations[i]
                 stateLeaves = this._updateUserStateLeaf(attestation, stateLeaves)
             }
