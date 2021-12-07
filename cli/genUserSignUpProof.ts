@@ -1,6 +1,6 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
-import { genIdentityCommitment, unSerialiseIdentity, add0x } from '@unirep/crypto'
+import { unSerialiseIdentity, add0x } from '@unirep/crypto'
 import { CircuitName, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'

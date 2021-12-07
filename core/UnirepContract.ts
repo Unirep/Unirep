@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { getUnirepContract } from '@unirep/contracts'
 import { formatProofForVerifierContract } from '@unirep/circuits'
 import { DEFAULT_ETH_PROVIDER, } from '../cli/defaults';
-import { checkDeployerProviderConnection, validateEthAddress, validateEthSk } from '../cli/utils';
+import { validateEthAddress } from '../cli/utils';
 import { IAttestation } from '.';
 
 /**

@@ -7,7 +7,7 @@ import { genIdentityCommitment, unSerialiseIdentity, hashOne } from '@unirep/cry
 import { getUnirepContract } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../../cli/defaults'
-import { genUnirepStateFromContract, maxReputationBudget, UnirepState } from '../../core'
+import { genUnirepStateFromContract, UnirepState } from '../../core'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 

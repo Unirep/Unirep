@@ -155,6 +155,7 @@ const verifySignUpProofEvent = async (event: ethers.Event): Promise<boolean> => 
         args?.epochKey,
         args?.globalStateTree,
         args?.attesterId,
+        args?.userHasSignedUp,
     ).map(n => BigInt(n).toString())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(CircuitName.proveUserSignUp, formatProof, formatPublicSignals)

@@ -130,7 +130,7 @@ const verifySignUpProofEvent = async (event) => {
     var _a;
     const args = (_a = event === null || event === void 0 ? void 0 : event.args) === null || _a === void 0 ? void 0 : _a.signUpProofData;
     const emptyArray = [];
-    const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.attesterId).map(n => BigInt(n).toString());
+    const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.attesterId, args === null || args === void 0 ? void 0 : args.userHasSignedUp).map(n => BigInt(n).toString());
     const formatProof = formatProofForSnarkjsVerification(args === null || args === void 0 ? void 0 : args.proof);
     const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.proveUserSignUp, formatProof, formatPublicSignals);
     return isProofValid;
