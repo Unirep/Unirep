@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
-import { formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
+import { CircuitName, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE } from './defaults'
 import { genUserStateFromContract, genEpochKey, circuitEpochTreeDepth} from '../core'
@@ -80,7 +80,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const epk = genEpochKey(id.identityNullifier, currentEpoch, epkNonce, epochTreeDepth).toString()
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof('verifyEpochKey', results.proof, results.publicSignals)
+    const isValid = await verifyProof(CircuitName.verifyEpochKey, results.proof, results.publicSignals)
     if(!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
         return

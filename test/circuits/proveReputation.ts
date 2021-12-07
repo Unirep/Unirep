@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { genRandomSalt, hashLeftRight, genIdentity, genIdentityCommitment, SparseMerkleTreeImpl, stringifyBigInts, IncrementalQuinTree, hashOne, } from "@unirep/crypto"
-import { genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
+import { CircuitName, genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, maxReputationBudget } from "../../config/testLocal"
 import { genEpochKey } from '../../core/utils'
 import { genNewUserStateTree } from '../utils'
@@ -100,10 +100,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -138,10 +138,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -181,10 +181,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -220,10 +220,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -260,10 +260,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -299,10 +299,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -338,10 +338,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -399,10 +399,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         let startTime = new Date().getTime()
-        let results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs1))
+        let results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs1))
         let endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        let isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        let isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
 
         // only prove minRep should fail
@@ -437,10 +437,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         startTime = new Date().getTime()
-        results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs2))
+        results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs2))
         endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
 
         // only prove graffiti should success
@@ -471,10 +471,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         startTime = new Date().getTime()
-        results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs3))
+        results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs3))
         endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -519,10 +519,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -565,10 +565,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -606,10 +606,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -645,10 +645,10 @@ describe('Prove reputation from attester circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveReputation',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveReputation',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveReputation,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 })

@@ -93,6 +93,7 @@ const submitEpochKeyProof = async (args: any) => {
     const tx = await unirepContract.submitEpochKeyProof(epkProofData)
     const proofIndex = await unirepContract.getEpochKeyProofIndex(epkProofData)
     if(tx != undefined){
+        await tx.wait()
         console.log('Transaction hash:', tx?.hash)
         console.log('Proof index: ', proofIndex.toNumber())
     }

@@ -11,7 +11,7 @@ import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTre
 import { Attestation, IEpochTreeLeaf, ISettings, IUnirepState, UnirepState } from './UnirepState'
 import { IUserState, IUserStateLeaf, Reputation, UserState } from './UserState'
 import { EPOCH_KEY_NULLIFIER_DOMAIN, REPUTATION_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
-import { verifyProof } from '@unirep/circuits'
+import { CircuitName, verifyProof } from '@unirep/circuits'
 import { IAttestation } from '.'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
 
@@ -124,7 +124,7 @@ const verifyEpochKeyProofEvent = async (event: ethers.Event): Promise<boolean> =
         args?.epochKey,
     ).map(n => BigInt(n).toString())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof('verifyEpochKey', formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(CircuitName.verifyEpochKey, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -143,7 +143,7 @@ const verifyReputationProofEvent = async (event: ethers.Event): Promise<boolean>
         args?.graffitiPreImage,
     ).map(n => BigInt(n).toString())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof('proveReputation', formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(CircuitName.proveReputation, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -157,7 +157,7 @@ const verifySignUpProofEvent = async (event: ethers.Event): Promise<boolean> => 
         args?.attesterId,
     ).map(n => BigInt(n).toString())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof('proveUserSignUp', formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(CircuitName.proveUserSignUp, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -170,7 +170,7 @@ const verifyStartTransitionProofEvent = async (event: ethers.Event): Promise<boo
         args?._globalStateTree,
     ).map(n => BigInt(n).toString())
     const formatProof = formatProofForSnarkjsVerification(args?._proof)
-    const isProofValid = await verifyProof('startTransition', formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(CircuitName.startTransition, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -183,7 +183,7 @@ const verifyProcessAttestationEvent = async (event: ethers.Event): Promise<boole
         args?._inputBlindedUserState,
     ).map(n => BigInt(n).toString())
     const formatProof = formatProofForSnarkjsVerification(args?._proof)
-    const isProofValid = await verifyProof('processAttestations', formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(CircuitName.processAttestations, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -200,7 +200,7 @@ const verifyUserStateTransitionEvent = async (event: ethers.Event): Promise<bool
         transitionArgs.fromEpochTree,
     ).map(n => BigInt(n).toString())
     let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof)
-    const isProofValid = await verifyProof('userStateTransition', formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(CircuitName.userStateTransition, formatProof, formatPublicSignals)
     return isProofValid
 }
 

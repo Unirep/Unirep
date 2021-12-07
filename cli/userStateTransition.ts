@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { genIdentityCommitment, unSerialiseIdentity } from '@unirep/crypto'
-import { verifyProof } from '@unirep/circuits'
+import { CircuitName, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUserStateFromContract, UnirepContract } from '../core'
@@ -77,7 +77,7 @@ const userStateTransition = async (args: any) => {
     const proofIndexes: BigInt[] = []
 
     // Start user state transition proof
-    let isValid = await verifyProof('startTransition', results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
+    let isValid = await verifyProof(CircuitName.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
     if (!isValid) {
         console.error('Error: start state transition proof generated is not valid!')
     }
@@ -99,7 +99,7 @@ const userStateTransition = async (args: any) => {
 
     // process attestations proof
     for (let i = 0; i < results.processAttestationProofs.length; i++) {
-        const isValid = await verifyProof('processAttestations', results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
+        const isValid = await verifyProof(CircuitName.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
         if (!isValid) {
             console.error('Error: process attestations proof generated is not valid!')
         }
@@ -127,7 +127,7 @@ const userStateTransition = async (args: any) => {
     if (newGSTLeaf != newState.newGSTLeaf.toString()) {
         console.error('Error: Computed new GST leaf should match')
     }
-    isValid = await verifyProof('userStateTransition', results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
+    isValid = await verifyProof(CircuitName.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
     if (!isValid) {
         console.error('Error: user state transition proof generated is not valid!')
     }

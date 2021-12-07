@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { IncrementalQuinTree, genRandomSalt, hashLeftRight, stringifyBigInts, hash5, genIdentity, genIdentityCommitment } from '@unirep/crypto'
-import { genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
+import { CircuitName, genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
 
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, numEpochKeyNoncePerEpoch } from "../../config/testLocal"
 import { genNewEpochTree, genNewUserStateTree } from "../utils"
@@ -121,10 +121,10 @@ describe('User State Transition circuits', function () {
                     epoch_tree_root: epochTreeRoot
                 }
                 const startTime = new Date().getTime()
-                const results = await genProofAndPublicSignals('userStateTransition', stringifyBigInts(circuitInputs))
+                const results = await genProofAndPublicSignals(CircuitName.userStateTransition, stringifyBigInts(circuitInputs))
                 const endTime = new Date().getTime()
                 console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-                const isValid = await verifyProof('userStateTransition', results['proof'], results['publicSignals'])
+                const isValid = await verifyProof(CircuitName.userStateTransition, results['proof'], results['publicSignals'])
                 expect(isValid).to.be.true
             })
         })

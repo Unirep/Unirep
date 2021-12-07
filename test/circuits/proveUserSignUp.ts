@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { genRandomSalt, hashLeftRight, genIdentity, genIdentityCommitment, SparseMerkleTreeImpl, stringifyBigInts, IncrementalQuinTree, hashOne, } from "@unirep/crypto"
-import { genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
+import { CircuitName, genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, } from "../../config/testLocal"
 import { genEpochKey } from '../../core/utils'
 import { genNewUserStateTree } from '../utils'
@@ -82,14 +82,14 @@ describe('Prove user has signed up circuit', function () {
             UST_path_elements: USTPathElements,
         }
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveUserSignUp',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveUserSignUp,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveUserSignUp',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveUserSignUp,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
-    it('user does not sign up should fail', async () => {
+    it('user does not sign up should success as well', async () => {
         const attesterId = nonSignedUpAttesterId
         const USTPathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
@@ -111,11 +111,11 @@ describe('Prove user has signed up circuit', function () {
             UST_path_elements: USTPathElements,
         }
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveUserSignUp',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveUserSignUp,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveUserSignUp',results['proof'], results['publicSignals'])
-        expect(isValid).to.be.false
+        const isValid = await verifyProof(CircuitName.proveUserSignUp,results['proof'], results['publicSignals'])
+        expect(isValid).to.be.true
     })
 
     it('prove with wrong attester id should fail', async () => {
@@ -141,10 +141,10 @@ describe('Prove user has signed up circuit', function () {
             UST_path_elements: USTPathElements,
         }
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveUserSignUp',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveUserSignUp,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveUserSignUp',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveUserSignUp,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -172,10 +172,10 @@ describe('Prove user has signed up circuit', function () {
             UST_path_elements: USTPathElements,
         }
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveUserSignUp',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveUserSignUp,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveUserSignUp',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveUserSignUp,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -202,10 +202,10 @@ describe('Prove user has signed up circuit', function () {
             UST_path_elements: USTPathElements,
         }
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals('proveUserSignUp',stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(CircuitName.proveUserSignUp,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof('proveUserSignUp',results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(CircuitName.proveUserSignUp,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 })

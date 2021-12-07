@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { genIdentity, genIdentityCommitment, IncrementalQuinTree, genRandomSalt, hashLeftRight, stringifyBigInts } from '@unirep/crypto'
-import { genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
+import { CircuitName, genProofAndPublicSignals,verifyProof } from '@unirep/circuits'
 
 import { circuitGlobalStateTreeDepth } from "../../config/testLocal"
 import { genNewUserStateTree } from "../utils"
@@ -66,10 +66,10 @@ describe('User State Transition circuits', function () {
                     GST_root: GSTreeRoot
                 }
                 const startTime = new Date().getTime()
-                const results = await genProofAndPublicSignals('startTransition', stringifyBigInts(circuitInputs))
+                const results = await genProofAndPublicSignals(CircuitName.startTransition, stringifyBigInts(circuitInputs))
                 const endTime = new Date().getTime()
                 console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-                const isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+                const isValid = await verifyProof(CircuitName.startTransition, results['proof'], results['publicSignals'])
                 expect(isValid).to.be.true
             })
 
@@ -87,10 +87,10 @@ describe('User State Transition circuits', function () {
                     GST_root: GSTreeRoot
                 }
                 const startTime = new Date().getTime()
-                const results = await genProofAndPublicSignals('startTransition', stringifyBigInts(circuitInputs))
+                const results = await genProofAndPublicSignals(CircuitName.startTransition, stringifyBigInts(circuitInputs))
                 const endTime = new Date().getTime()
                 console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-                const isValid = await verifyProof('startTransition', results['proof'], results['publicSignals'])
+                const isValid = await verifyProof(CircuitName.startTransition, results['proof'], results['publicSignals'])
                 expect(isValid).to.be.true
             })
         })

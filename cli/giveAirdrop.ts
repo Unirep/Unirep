@@ -77,13 +77,14 @@ const giveAirdrop = async (args: any) => {
     const epk = publicSignals[1]
     const GSTRoot = publicSignals[2]
     const attesterId = publicSignals[3]
+    const userHasSignedUp = publicSignals[4]
     const proof = JSON.parse(decodedProof)
     console.log(`Airdrop to epoch key ${epk} in attester ID ${attesterId}`)
 
     // Submit attestation
-    const tx = await unirepContract.airdropEpochKey(epoch, epk, GSTRoot, attesterId, proof)
+    const tx = await unirepContract.airdropEpochKey(epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof)
     await tx.wait()
-    const proofIndex = await unirepContract.getSignUpProofIndex([epoch, epk, GSTRoot, attesterId, proof])
+    const proofIndex = await unirepContract.getSignUpProofIndex([epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof])
     if(tx != undefined){
         console.log('Transaction hash:', tx?.hash)
         console.log('Proof index:', proofIndex.toNumber())

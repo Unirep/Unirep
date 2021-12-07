@@ -43,7 +43,7 @@ export declare class UnirepContract {
     submitAttestation: (attestation: IAttestation, epochKey: BigInt | string, proofIndex: BigInt | string) => Promise<any>;
     submitAttestationViaRelayer: (attesterAddr: string, signature: string, attestation: IAttestation, epochKeyProof: BigInt[] | string[]) => Promise<any>;
     spendReputation: (outputNullifiers: BigInt[] | string[], epoch: number | BigInt | string, epk: number | BigInt | string, GSTRoot: BigInt | string, attesterId: number | BigInt | string, repNullifiersAmount: number | BigInt | string, minRep: number | BigInt | string, proveGraffiti: number | BigInt | string, graffitiPreImage: BigInt | string, proof: any) => Promise<any>;
-    airdropEpochKey: (epoch: number | BigInt | string, epk: number | BigInt | string, GSTRoot: BigInt | string, attesterId: number | BigInt | string, proof: any) => Promise<any>;
+    airdropEpochKey: (epoch: number | BigInt | string, epk: number | BigInt | string, GSTRoot: BigInt | string, attesterId: number | BigInt | string, userHasSignedUp: number | BigInt | string, proof: any) => Promise<any>;
     fastForward: () => Promise<void>;
     epochTransition: () => Promise<any>;
     startUserStateTransition: (blindedUserState: BigInt | string, blindedHashChain: BigInt | string, GSTRoot: BigInt | string, proof: any) => Promise<any>;
@@ -54,7 +54,7 @@ export declare class UnirepContract {
     verifyProcessAttestationProof: (outputBlindedUserState: BigInt | string, outputBlindedHashChain: BigInt | string, intputBlindedUserState: BigInt | string, proof: any) => Promise<boolean>;
     verifyUserStateTransition: (newGSTLeaf: BigInt | string, epkNullifiers: BigInt[] | string[], fromEpoch: number | BigInt | string, blindedUserStates: BigInt[] | string[], fromGlobalStateTree: BigInt | string, blindedHashChains: BigInt[] | string[], fromEpochTree: BigInt | string, proof: any) => Promise<boolean>;
     verifyReputation: (outputNullifiers: BigInt[] | string[], epoch: number | BigInt | string, epk: number | BigInt | string, GSTRoot: BigInt | string, attesterId: number | BigInt | string, repNullifiersAmount: number | BigInt | string, minRep: number | BigInt | string, proveGraffiti: number | BigInt | string, graffitiPreImage: BigInt | string, proof: any) => Promise<boolean>;
-    verifyUserSignUp: (epoch: number | BigInt | string, epk: number | BigInt | string, GSTRoot: BigInt | string, attesterId: number | BigInt | string, proof: any) => Promise<boolean>;
+    verifyUserSignUp: (epoch: number | BigInt | string, epk: number | BigInt | string, GSTRoot: BigInt | string, attesterId: number | BigInt | string, userHasSignedUp: number | BigInt | string, proof: any) => Promise<boolean>;
     hashedBlankStateLeaf: () => Promise<any>;
     calcAirdropUSTRoot: (leafIndex: number | BigInt, leafValue: BigInt | string) => Promise<any>;
     burnAttestingFee: () => Promise<any>;

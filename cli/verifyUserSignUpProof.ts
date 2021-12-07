@@ -79,6 +79,7 @@ const verifyUserSignUpProof = async (args: any) => {
     const epk = publicSignals[1]
     const GSTRoot = publicSignals[2]
     const attesterId = publicSignals[3]
+    const userHasSignedUp = publicSignals[4]
     const proof = JSON.parse(decodedProof)
 
     // Check if Global state tree root exists
@@ -94,6 +95,7 @@ const verifyUserSignUpProof = async (args: any) => {
         epk,
         GSTRoot,
         attesterId,
+        userHasSignedUp,
         proof,
     )
     if (!isProofValid) {

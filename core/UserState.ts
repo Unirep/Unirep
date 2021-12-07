@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { IncrementalQuinTree, hash5, stringifyBigInts, hashOne, hashLeftRight, SparseMerkleTreeImpl, genIdentityCommitment } from '@unirep/crypto'
-import { genProofAndPublicSignals } from '@unirep/circuits'
+import { CircuitName, genProofAndPublicSignals } from '@unirep/circuits'
 import { defaultUserStateLeaf, genEpochKey, genNewSMT, genEpochKeyNullifier, genReputationNullifier } from './utils'
 import { IAttestation, IUnirepState, UnirepState } from './UnirepState'
 import { maxReputationBudget, numAttestationsPerProof, numEpochKeyNoncePerEpoch } from '../config/testLocal'
@@ -307,7 +307,7 @@ class UserState {
             epoch_key: epochKey,
         })
 
-        const results = await genProofAndPublicSignals('verifyEpochKey',circuitInputs)
+        const results = await genProofAndPublicSignals(CircuitName.verifyEpochKey,circuitInputs)
 
         return { 
             proof: results['proof'],
@@ -606,11 +606,11 @@ class UserState {
         })
 
         // Generate proofs
-        const startTransitionresults = await genProofAndPublicSignals('startTransition', startTransitionCircuitInputs.circuitInputs)
+        const startTransitionresults = await genProofAndPublicSignals(CircuitName.startTransition, startTransitionCircuitInputs.circuitInputs)
 
         const processAttestationProofs: any[] = []
         for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
-            const results = await genProofAndPublicSignals('processAttestations', processAttestationCircuitInputs[i])
+            const results = await genProofAndPublicSignals(CircuitName.processAttestations, processAttestationCircuitInputs[i])
             processAttestationProofs.push({
                 proof: results['proof'],
                 publicSignals: results['publicSignals'],
@@ -620,7 +620,7 @@ class UserState {
             })
         }
 
-        const finalProofResults = await genProofAndPublicSignals('userStateTransition', finalTransitionCircuitInputs)
+        const finalProofResults = await genProofAndPublicSignals(CircuitName.userStateTransition, finalTransitionCircuitInputs)
 
         return {
             startTransitionProof: {
@@ -744,7 +744,7 @@ class UserState {
             graffiti_pre_image: graffitiPreImage
         })
 
-        const results = await genProofAndPublicSignals('proveReputation',circuitInputs)
+        const results = await genProofAndPublicSignals(CircuitName.proveReputation,circuitInputs)
 
         return {
             proof: results['proof'],
@@ -798,7 +798,7 @@ class UserState {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
-        const results = await genProofAndPublicSignals('proveUserSignUp',circuitInputs)
+        const results = await genProofAndPublicSignals(CircuitName.proveUserSignUp,circuitInputs)
 
         return {
             proof: results['proof'],
@@ -807,6 +807,7 @@ class UserState {
             epochKey: results['publicSignals'][1],
             globalStateTreeRoot: results['publicSignals'][2],
             attesterId: results['publicSignals'][3],
+            userHasSignedUp: results['publicSignals'][4],
         }
     }
 }

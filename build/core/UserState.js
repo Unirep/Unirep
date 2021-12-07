@@ -192,7 +192,7 @@ class UserState {
                 epoch: epoch,
                 epoch_key: epochKey,
             });
-            const results = await circuits_1.genProofAndPublicSignals('verifyEpochKey', circuitInputs);
+            const results = await circuits_1.genProofAndPublicSignals(circuits_1.CircuitName.verifyEpochKey, circuitInputs);
             return {
                 proof: results['proof'],
                 publicSignals: results['publicSignals'],
@@ -443,10 +443,10 @@ class UserState {
                 epoch_tree_root: epochTreeRoot
             });
             // Generate proofs
-            const startTransitionresults = await circuits_1.genProofAndPublicSignals('startTransition', startTransitionCircuitInputs.circuitInputs);
+            const startTransitionresults = await circuits_1.genProofAndPublicSignals(circuits_1.CircuitName.startTransition, startTransitionCircuitInputs.circuitInputs);
             const processAttestationProofs = [];
             for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
-                const results = await circuits_1.genProofAndPublicSignals('processAttestations', processAttestationCircuitInputs[i]);
+                const results = await circuits_1.genProofAndPublicSignals(circuits_1.CircuitName.processAttestations, processAttestationCircuitInputs[i]);
                 processAttestationProofs.push({
                     proof: results['proof'],
                     publicSignals: results['publicSignals'],
@@ -455,7 +455,7 @@ class UserState {
                     inputBlindedUserState: results['publicSignals'][2],
                 });
             }
-            const finalProofResults = await circuits_1.genProofAndPublicSignals('userStateTransition', finalTransitionCircuitInputs);
+            const finalProofResults = await circuits_1.genProofAndPublicSignals(circuits_1.CircuitName.userStateTransition, finalTransitionCircuitInputs);
             return {
                 startTransitionProof: {
                     proof: startTransitionresults['proof'],
@@ -563,7 +563,7 @@ class UserState {
                 prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage
             });
-            const results = await circuits_1.genProofAndPublicSignals('proveReputation', circuitInputs);
+            const results = await circuits_1.genProofAndPublicSignals(circuits_1.CircuitName.proveReputation, circuitInputs);
             return {
                 proof: results['proof'],
                 publicSignals: results['publicSignals'],
@@ -612,7 +612,7 @@ class UserState {
                 sign_up: signUp,
                 UST_path_elements: USTPathElements,
             });
-            const results = await circuits_1.genProofAndPublicSignals('proveUserSignUp', circuitInputs);
+            const results = await circuits_1.genProofAndPublicSignals(circuits_1.CircuitName.proveUserSignUp, circuitInputs);
             return {
                 proof: results['proof'],
                 publicSignals: results['publicSignals'],
@@ -620,6 +620,7 @@ class UserState {
                 epochKey: results['publicSignals'][1],
                 globalStateTreeRoot: results['publicSignals'][2],
                 attesterId: results['publicSignals'][3],
+                userHasSignedUp: results['publicSignals'][4],
             };
         };
         assert_1.default(_unirepState !== undefined, "UnirepState is undefined");

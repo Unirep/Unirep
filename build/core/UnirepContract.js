@@ -311,7 +311,7 @@ class UnirepContract {
             }
             return tx;
         };
-        this.airdropEpochKey = async (epoch, epk, GSTRoot, attesterId, proof) => {
+        this.airdropEpochKey = async (epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof) => {
             if (this.signer != undefined) {
                 this.contract = this.contract.connect(this.signer);
             }
@@ -327,6 +327,7 @@ class UnirepContract {
                     epk,
                     GSTRoot,
                     attesterId,
+                    userHasSignedUp,
                     proof
                 ], { value: attestingFee, gasLimit: 1000000 });
             }
@@ -448,8 +449,8 @@ class UnirepContract {
         this.verifyReputation = async (outputNullifiers, epoch, epk, GSTRoot, attesterId, repNullifiersAmount, minRep, proveGraffiti, graffitiPreImage, proof) => {
             return this.contract.verifyReputation(outputNullifiers, epoch, epk, GSTRoot, attesterId, repNullifiersAmount, minRep, proveGraffiti, graffitiPreImage, proof);
         };
-        this.verifyUserSignUp = async (epoch, epk, GSTRoot, attesterId, proof) => {
-            return this.contract.verifyUserSignUp(epoch, epk, GSTRoot, attesterId, proof);
+        this.verifyUserSignUp = async (epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof) => {
+            return this.contract.verifyUserSignUp(epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof);
         };
         this.hashedBlankStateLeaf = async () => {
             return this.contract.hashedBlankStateLeaf();

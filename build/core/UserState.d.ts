@@ -122,6 +122,7 @@ declare class UserState {
         epochKey: any;
         globalStateTreeRoot: any;
         attesterId: any;
+        userHasSignedUp: any;
     }>;
 }
 export { IReputation, IUserStateLeaf, IUserState, Reputation, UserState, };

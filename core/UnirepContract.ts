@@ -402,6 +402,7 @@ export class UnirepContract {
         epk: number | BigInt | string,
         GSTRoot: BigInt | string,
         attesterId: number | BigInt | string,
+        userHasSignedUp: number | BigInt | string,
         proof: any,
     ): Promise<any> => {
         if(this.signer != undefined){
@@ -419,6 +420,7 @@ export class UnirepContract {
                 epk,
                 GSTRoot,
                 attesterId,
+                userHasSignedUp,
                 proof
                 ],{ value: attestingFee, gasLimit: 1000000 }
             )
@@ -642,6 +644,7 @@ export class UnirepContract {
         epk: number | BigInt | string,
         GSTRoot: BigInt | string,
         attesterId: number | BigInt | string,
+        userHasSignedUp: number | BigInt | string,
         proof: any,
     ): Promise<boolean> => {
         return this.contract.verifyUserSignUp(
@@ -649,6 +652,7 @@ export class UnirepContract {
             epk,
             GSTRoot,
             attesterId,
+            userHasSignedUp,
             proof,
         )
     }
