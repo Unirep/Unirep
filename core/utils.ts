@@ -417,9 +417,14 @@ const genUnirepStateFromContract = async (
                 const startTransitionEvent = proofIndexMap[proofIndexes[0]]
                 if(startTransitionEvent == undefined) continue
                 const processAttestationEvents: ethers.Event[] = []
+                let validAttestationEvent = true
                 for (let j = 1; j < proofIndexes.length; j++) {
-                    if(proofIndexes[j] == 0) break
+                    if(proofIndexes[j] == 0) validAttestationEvent = false
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
+                }
+                if(!validAttestationEvent) {
+                    console.log('0 proof index:', proofIndexes)
+                    continue
                 }
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
                 if(!isValid) {
@@ -730,9 +735,14 @@ const genUserStateFromContract = async (
                 const startTransitionEvent = proofIndexMap[proofIndexes[0]]
                 if(startTransitionEvent == undefined) continue
                 const processAttestationEvents: ethers.Event[] = []
+                let validAttestationEvent = true
                 for (let j = 1; j < proofIndexes.length; j++) {
-                    if(proofIndexes[j] == 0) break
+                    if(proofIndexes[j] == 0) validAttestationEvent = false
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
+                }
+                if(!validAttestationEvent) {
+                    console.log('0 proof index:', proofIndexes)
+                    continue
                 }
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
                 if(!isValid) {

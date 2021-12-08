@@ -324,10 +324,15 @@ const genUnirepStateFromContract = async (provider, address, _unirepState) => {
                 if (startTransitionEvent == undefined)
                     continue;
                 const processAttestationEvents = [];
+                let validAttestationEvent = true;
                 for (let j = 1; j < proofIndexes.length; j++) {
                     if (proofIndexes[j] == 0)
-                        break;
+                        validAttestationEvent = false;
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]]);
+                }
+                if (!validAttestationEvent) {
+                    console.log('0 proof index:', proofIndexes);
+                    continue;
                 }
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents);
                 if (!isValid) {
@@ -568,10 +573,15 @@ const genUserStateFromContract = async (provider, address, userIdentity, _userSt
                 if (startTransitionEvent == undefined)
                     continue;
                 const processAttestationEvents = [];
+                let validAttestationEvent = true;
                 for (let j = 1; j < proofIndexes.length; j++) {
                     if (proofIndexes[j] == 0)
-                        break;
+                        validAttestationEvent = false;
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]]);
+                }
+                if (!validAttestationEvent) {
+                    console.log('0 proof index:', proofIndexes);
+                    continue;
                 }
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents);
                 if (!isValid) {
