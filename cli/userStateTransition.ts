@@ -74,7 +74,6 @@ const userStateTransition = async (args: any) => {
         id,
     )
     const results = await userState.genUserStateTransitionProofs()
-    const proofIndexes: BigInt[] = []
 
     // Start user state transition proof
     let isValid = await verifyProof(CircuitName.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
@@ -89,13 +88,6 @@ const userStateTransition = async (args: any) => {
     )
     console.log('Transaction hash:', tx?.hash)
     await tx.wait()
-    const proofIndex = await unirepContract.getStartTransitionProofIndex(
-        results.startTransitionProof.blindedUserState,
-        results.startTransitionProof.blindedHashChain,
-        results.startTransitionProof.globalStateTreeRoot,
-        results.startTransitionProof.proof,
-    )
-    proofIndexes.push(BigInt(proofIndex))
 
     // process attestations proof
     for (let i = 0; i < results.processAttestationProofs.length; i++) {
@@ -112,6 +104,18 @@ const userStateTransition = async (args: any) => {
         )
         console.log('Transaction hash:', tx?.hash)
         await tx.wait()
+    }
+
+    // Record all proof indexes
+    const proofIndexes: BigInt[] = []
+    const proofIndex = await unirepContract.getStartTransitionProofIndex(
+        results.startTransitionProof.blindedUserState,
+        results.startTransitionProof.blindedHashChain,
+        results.startTransitionProof.globalStateTreeRoot,
+        results.startTransitionProof.proof,
+    )
+    proofIndexes.push(BigInt(proofIndex))
+    for (let i = 0; i < results.processAttestationProofs.length; i++) {
         const proofIndex = await unirepContract.getProcessAttestationsProofIndex(
             results.processAttestationProofs[i].outputBlindedUserState,
             results.processAttestationProofs[i].outputBlindedHashChain,

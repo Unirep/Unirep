@@ -1342,7 +1342,7 @@
 
 "@unirep/contracts@git+https://github.com/Unirep/contracts.git":
   version "1.0.4"
-  resolved "git+https://github.com/Unirep/contracts.git#8c1858992f9d8b0bfde602cf1aec75ff55d9c250"
+  resolved "git+https://github.com/Unirep/contracts.git#a535437a413c5b22d2eb9e51b46ba6cd3202c4b3"
   dependencies:
     "@openzeppelin/contracts" "^4.3.2"
     "@unirep/circuits" "git+https://github.com/Unirep/circuits.git"

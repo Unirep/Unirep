@@ -417,10 +417,12 @@ const genUnirepStateFromContract = async (
                 const startTransitionEvent = proofIndexMap[proofIndexes[0]]
                 if(startTransitionEvent == undefined) continue
                 const processAttestationEvents: ethers.Event[] = []
+                let validAttestationEvent = true
                 for (let j = 1; j < proofIndexes.length; j++) {
-                    if(proofIndexes[j] == 0) break
+                    if(proofIndexes[j] === 0) validAttestationEvent = false
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
                 }
+                if(!validAttestationEvent) continue
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
                 if(!isValid) {
                     console.log('Proof is invalid: ', event.event, ' , transaction hash: ', event.transactionHash)
@@ -730,10 +732,12 @@ const genUserStateFromContract = async (
                 const startTransitionEvent = proofIndexMap[proofIndexes[0]]
                 if(startTransitionEvent == undefined) continue
                 const processAttestationEvents: ethers.Event[] = []
+                let validAttestationEvent = true
                 for (let j = 1; j < proofIndexes.length; j++) {
-                    if(proofIndexes[j] == 0) break
+                    if(proofIndexes[j] === 0) validAttestationEvent = false
                     processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
                 }
+                if(!validAttestationEvent) continue
                 const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
                 if(!isValid) {
                     console.log('Proof is invalid: ', event.event, ' , transaction hash: ', event.transactionHash)
