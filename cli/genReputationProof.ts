@@ -124,7 +124,6 @@ const genReputationProof = async (args: any) => {
         if(nonceStarter == -1) {
             console.error('Error: All nullifiers are spent')
         }
-        console.log(nonceStarter)
         if((nonceStarter + repNullifiersAmount) > Number(rep.posRep) - Number(rep.negRep)){
             console.error('Error: Not enough reputation to spend')
         }

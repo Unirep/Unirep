@@ -315,6 +315,8 @@ const genUnirepStateFromContract = async (provider, address, _unirepState) => {
             const proofIndex = Number((_c = newLeafEvent.args) === null || _c === void 0 ? void 0 : _c._proofIndex);
             const newLeaf = BigInt((_d = newLeafEvent.args) === null || _d === void 0 ? void 0 : _d._hashedLeaf);
             const event = proofIndexMap[proofIndex];
+            if (proofIndex === 0)
+                continue;
             if (event.event == "UserSignUp") {
                 unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber);
             }
@@ -369,6 +371,8 @@ const genUnirepStateFromContract = async (provider, address, _unirepState) => {
             let results;
             let isProofValid = false;
             const event = proofIndexMap[proofIndex];
+            if (proofIndex === 0)
+                continue;
             if (event.event == "EpochKeyProof") {
                 results = (_g = event === null || event === void 0 ? void 0 : event.args) === null || _g === void 0 ? void 0 : _g.epochKeyProofData;
                 isProofValid = await verifyEpochKeyProofEvent(event);
@@ -555,6 +559,8 @@ const genUserStateFromContract = async (provider, address, userIdentity, _userSt
             const proofIndex = Number((_c = newLeafEvent.args) === null || _c === void 0 ? void 0 : _c._proofIndex);
             const newLeaf = BigInt((_d = newLeafEvent.args) === null || _d === void 0 ? void 0 : _d._hashedLeaf);
             const event = proofIndexMap[proofIndex];
+            if (proofIndex === 0)
+                continue;
             if (event.event == "UserSignUp") {
                 // update Unirep State
                 unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber);
@@ -661,6 +667,8 @@ const genUserStateFromContract = async (provider, address, userIdentity, _userSt
             let results;
             let isProofValid = false;
             const event = proofIndexMap[proofIndex];
+            if (proofIndex === 0)
+                continue;
             if (event.event == "EpochKeyProof") {
                 results = (_k = event === null || event === void 0 ? void 0 : event.args) === null || _k === void 0 ? void 0 : _k.epochKeyProofData;
                 isProofValid = await verifyEpochKeyProofEvent(event);

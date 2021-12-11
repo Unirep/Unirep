@@ -410,6 +410,7 @@ const genUnirepStateFromContract = async (
             const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
             const event = proofIndexMap[proofIndex]
 
+            if(proofIndex === 0) continue
             if (event.event == "UserSignUp"){
                 unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber)
             } else if (event.event == "UserStateTransitionProof") {
@@ -466,6 +467,7 @@ const genUnirepStateFromContract = async (
             let results
             let isProofValid = false
             const event = proofIndexMap[proofIndex]
+            if(proofIndex === 0) continue
             if(event.event == "EpochKeyProof") {
                 results = event?.args?.epochKeyProofData
                 isProofValid = await verifyEpochKeyProofEvent(event)
@@ -718,6 +720,7 @@ const genUserStateFromContract = async (
             const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
             const event = proofIndexMap[proofIndex]
 
+            if(proofIndex === 0) continue
             if (event.event == "UserSignUp"){
                 // update Unirep State
                 unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber)
@@ -827,6 +830,8 @@ const genUserStateFromContract = async (
             let results
             let isProofValid = false
             const event = proofIndexMap[proofIndex]
+
+            if(proofIndex === 0) continue
             if(event.event == "EpochKeyProof") {
                 results = event?.args?.epochKeyProofData
                 isProofValid = await verifyEpochKeyProofEvent(event)
