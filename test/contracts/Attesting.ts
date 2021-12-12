@@ -248,6 +248,49 @@ describe('Attesting', () => {
         ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
     })
 
+    it('attestation with zero proof index should fail', async () => {
+        let epoch = await unirepContract.currentEpoch()
+        // Increment nonce to get different epoch key
+        let nonce = 1
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        const zeroEpochKeyProofIndex = 0
+        let attestation: Attestation = new Attestation(
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
+            genRandomSalt(),
+            BigInt(signedUpInLeaf),
+        )
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            zeroEpochKeyProofIndex,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: invalid proof index')
+    })
+
+    it('attestation with non-existed proof index should fail', async () => {
+        let epoch = await unirepContract.currentEpoch()
+        // Increment nonce to get different epoch key
+        let nonce = 1
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        const nonExistedProofIndex = 5
+        let attestation: Attestation = new Attestation(
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
+            genRandomSalt(),
+            BigInt(signedUpInLeaf),
+        )
+        await expect(unirepContractCalledByAttester.submitAttestation(
+            attestation,
+            epochKey,
+            nonExistedProofIndex,
+            {value: attestingFee})
+        ).to.be.revertedWith('Unirep: invalid proof index')
+    })
+
+
     it('attestation from unregistered attester should fail', async () => {
         let nonAttester = accounts[5]
         let nonAttesterAddress = await nonAttester.getAddress()
