@@ -400,15 +400,21 @@ const genUnirepStateFromContract = async (provider, address, _unirepState) => {
             const epochKey = args === null || args === void 0 ? void 0 : args._epochKey;
             if (epochKey.eq(results === null || results === void 0 ? void 0 : results.epochKey)) {
                 if ((args === null || args === void 0 ? void 0 : args._event) === "spendReputation") {
+                    let validNullifier = true;
                     for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
                         if (unirepState.nullifierExist(nullifier)) {
                             console.log('duplicated nullifier', BigInt(nullifier).toString());
-                            continue;
+                            validNullifier = false;
+                            break;
                         }
                     }
-                    for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
-                        unirepState.addReputationNullifiers(nullifier, blockNumber);
+                    if (validNullifier) {
+                        for (let nullifier of results === null || results === void 0 ? void 0 : results.repNullifiers) {
+                            unirepState.addReputationNullifiers(nullifier, blockNumber);
+                        }
                     }
+                    else
+                        continue;
                 }
                 unirepState.addAttestation(epochKey.toString(), attestation, blockNumber);
             }
