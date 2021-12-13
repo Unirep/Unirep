@@ -861,15 +861,19 @@ const genUserStateFromContract = async (
             const epochKey = args?._epochKey
             if (epochKey.eq(results?.epochKey)){
                 if(args?._event === "spendReputation") {
+                    let validNullifier = true
                     for (let nullifier of results?.repNullifiers) {
                         if(unirepState.nullifierExist(nullifier)) {
                             console.log('duplicated nullifier', BigInt(nullifier).toString())
-                            continue
+                            validNullifier = false
+                            break
                         }
                     }
-                    for (let nullifier of results?.repNullifiers) {
-                        unirepState.addReputationNullifiers(nullifier, blockNumber)
-                    }
+                    if (validNullifier) {
+                        for (let nullifier of results?.repNullifiers) {
+                            unirepState.addReputationNullifiers(nullifier, blockNumber)
+                        }
+                    } else continue
                 }
                 unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
             }
