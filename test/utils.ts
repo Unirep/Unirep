@@ -3,8 +3,9 @@
 // @ts-ignore
 import { ethers } from 'ethers'
 import Keyv from "keyv"
-import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, add0x } from '@unirep/crypto'
+import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, add0x, genRandomSalt } from '@unirep/crypto'
 import { circuitEpochTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, userStateTreeDepth} from '../config/testLocal'
+import { Attestation } from '../core'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = add0x(str)
@@ -45,9 +46,20 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
         2,
     )
     return t.root
-}    
+}
 
-const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTreeImpl> => {
+const genNewGST = (GSTDepth: number, USTDepth: number): IncrementalQuinTree => {
+    const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
+    const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
+    const GST = new IncrementalQuinTree(
+        GSTDepth,
+        defaultGSTLeaf,
+        2,
+    )
+    return GST
+}
+
+const genNewUserStateTree = async (deployEnv: string = "circuit"): Promise<SparseMerkleTreeImpl> => {
     let _userStateTreeDepth
     if (deployEnv === 'contract') {
         _userStateTreeDepth = userStateTreeDepth
@@ -58,6 +70,18 @@ const genNewUserStateTree = async (deployEnv: string = "contract"): Promise<Spar
     }
 
     return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
+}
+
+const genRandomAttestation = () => {
+    const attesterId = Math.ceil(Math.random() * 10)
+    const attestation = new Attestation(
+        BigInt(attesterId),
+        BigInt(Math.floor(Math.random() * 100)),
+        BigInt(Math.floor(Math.random() * 100)),
+        genRandomSalt(),
+        BigInt(Math.floor(Math.random() * 2)),
+    )
+    return attestation
 }
 
 const computeEpochKeyProofHash = (epochKeyProof: any) => {
@@ -165,6 +189,8 @@ export {
     genNewEpochTree,
     genNewUserStateTree,
     genNewSMT,
+    genNewGST,
+    genRandomAttestation,
     toCompleteHexString,
     computeEpochKeyProofHash,
     verifyNewGSTProofByIndex,

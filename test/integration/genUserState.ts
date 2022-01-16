@@ -2,7 +2,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, genIdentity, genIdentityCommitment, } from '@unirep/crypto'
-import { CircuitName, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
+import { Circuit, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 import { Attestation, attestingFee, epochLength, genUserStateFromContract, genUserStateFromParams, getTreeDepthsForTesting, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch,  UserState } from '../../core'
 
@@ -156,7 +156,7 @@ describe('Generate user state', function () {
             )
             const epochKeyNonce = 2
             const results = await userState.genVerifyEpochKeyProof(epochKeyNonce)
-            const isValid = await verifyProof(CircuitName.verifyEpochKey, results.proof, results.publicSignals)
+            const isValid = await verifyProof(Circuit.verifyEpochKey, results.proof, results.publicSignals)
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
 
             const epochKeyProof = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
@@ -237,7 +237,7 @@ describe('Generate user state', function () {
             const graffitiPreimage = BigInt(0)
             const nonceList = [BigInt(0), BigInt(1), BigInt(-1), BigInt(-1), BigInt(-1), BigInt(-1), BigInt(-1), BigInt(-1), BigInt(-1), BigInt(-1)]
             const results = await userState.genProveReputationProof(attesterId, epochKeyNonce, minRep, proveGraffiti, graffitiPreimage, nonceList)
-            const isValid = await verifyProof(CircuitName.proveReputation, results.proof, results.publicSignals)
+            const isValid = await verifyProof(Circuit.proveReputation, results.proof, results.publicSignals)
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
 
             const reputationProof = [
@@ -308,7 +308,7 @@ describe('Generate user state', function () {
                 JSON.parse(savedUserState),
             )
             const results = await userState.genUserSignUpProof(attesterId)
-            const isValid = await verifyProof(CircuitName.proveUserSignUp, results.proof, results.publicSignals)
+            const isValid = await verifyProof(Circuit.proveUserSignUp, results.proof, results.publicSignals)
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
             const userSignUpProof = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
 
@@ -428,7 +428,7 @@ describe('Generate user state', function () {
                 userIds[firstUser],
             )
             const results = await userState.genUserStateTransitionProofs()
-            let isValid = await verifyProof(CircuitName.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
+            let isValid = await verifyProof(Circuit.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
             expect(isValid, 'Verify start transition circuit off-chain failed').to.be.true
 
             const blindedUserState = results.startTransitionProof.blindedUserState
@@ -455,7 +455,7 @@ describe('Generate user state', function () {
             proofIndexes.push(proofIndex)
 
             for (let i = 0; i < results.processAttestationProofs.length; i++) {
-                isValid = await verifyProof(CircuitName.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
+                isValid = await verifyProof(Circuit.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
                 expect(isValid, 'Verify process attestations circuit off-chain failed').to.be.true
 
                 const outputBlindedUserState = results.processAttestationProofs[i].outputBlindedUserState
@@ -493,7 +493,7 @@ describe('Generate user state', function () {
                 proofIndexes.push(proofIndex)
             }
 
-            isValid = await verifyProof(CircuitName.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
+            isValid = await verifyProof(Circuit.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
             expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
             const newGSTLeaf = results.finalTransitionProof.newGlobalStateTreeLeaf
 
@@ -630,7 +630,7 @@ describe('Generate user state', function () {
                 userIds[secondUser],
             )
             const results = await userState.genUserStateTransitionProofs()
-            let isValid = await verifyProof(CircuitName.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
+            let isValid = await verifyProof(Circuit.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
             expect(isValid, 'Verify start transition circuit off-chain failed').to.be.true
 
             const blindedUserState = results.startTransitionProof.blindedUserState
@@ -657,7 +657,7 @@ describe('Generate user state', function () {
             proofIndexes.push(proofIndex)
 
             for (let i = 0; i < results.processAttestationProofs.length; i++) {
-                isValid = await verifyProof(CircuitName.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
+                isValid = await verifyProof(Circuit.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
                 expect(isValid, 'Verify process attestations circuit off-chain failed').to.be.true
 
                 const outputBlindedUserState = results.processAttestationProofs[i].outputBlindedUserState
@@ -695,7 +695,7 @@ describe('Generate user state', function () {
                 proofIndexes.push(proofIndex)
             }
 
-            isValid = await verifyProof(CircuitName.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
+            isValid = await verifyProof(Circuit.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
             expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
             const newGSTLeaf = results.finalTransitionProof.newGlobalStateTreeLeaf
 

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { stringifyBigInts, genIdentity, genRandomSalt, hash5, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
-import { CircuitName, genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
+import { Circuit, genProofAndPublicSignals, verifyProof } from "@unirep/circuits"
 
 import { genNewUserStateTree } from '../utils'
 import { Attestation, Reputation } from "../../core"
@@ -144,10 +144,10 @@ describe('Process attestation circuit', function () {
         inputBlindedUserState = expectedUserState
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -180,10 +180,10 @@ describe('Process attestation circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -285,10 +285,10 @@ describe('Process attestation circuit', function () {
         inputBlindedUserState = expectedUserState
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -390,10 +390,10 @@ describe('Process attestation circuit', function () {
         inputBlindedUserState = expectedUserState
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -492,10 +492,10 @@ describe('Process attestation circuit', function () {
             input_blinded_user_state: inputBlindedUserState,
         }
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.true
     })
 
@@ -531,10 +531,10 @@ describe('Process attestation circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -565,10 +565,10 @@ describe('Process attestation circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
     })
 
@@ -598,10 +598,10 @@ describe('Process attestation circuit', function () {
         }
 
         const startTime = new Date().getTime()
-        const results = await genProofAndPublicSignals(CircuitName.processAttestations,stringifyBigInts(circuitInputs))
+        const results = await genProofAndPublicSignals(Circuit.processAttestations,stringifyBigInts(circuitInputs))
         const endTime = new Date().getTime()
         console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
-        const isValid = await verifyProof(CircuitName.processAttestations,results['proof'], results['publicSignals'])
+        const isValid = await verifyProof(Circuit.processAttestations,results['proof'], results['publicSignals'])
         expect(isValid).to.be.false
 
         userStateTreePathElements[indexWrongPathElements].reverse()

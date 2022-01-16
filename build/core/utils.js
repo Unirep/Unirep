@@ -112,7 +112,7 @@ const verifyEpochKeyProofEvent = async (event) => {
     const emptyArray = [];
     const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey).map(n => BigInt(n).toString());
     const formatProof = formatProofForSnarkjsVerification(args === null || args === void 0 ? void 0 : args.proof);
-    const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.verifyEpochKey, formatProof, formatPublicSignals);
+    const isProofValid = await circuits_1.verifyProof(circuits_1.Circuit.verifyEpochKey, formatProof, formatPublicSignals);
     return isProofValid;
 };
 exports.verifyEpochKeyProofEvent = verifyEpochKeyProofEvent;
@@ -122,7 +122,7 @@ const verifyReputationProofEvent = async (event) => {
     const emptyArray = [];
     const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args.repNullifiers, args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.attesterId, args === null || args === void 0 ? void 0 : args.proveReputationAmount, args === null || args === void 0 ? void 0 : args.minRep, args === null || args === void 0 ? void 0 : args.proveGraffiti, args === null || args === void 0 ? void 0 : args.graffitiPreImage).map(n => BigInt(n).toString());
     const formatProof = formatProofForSnarkjsVerification(args === null || args === void 0 ? void 0 : args.proof);
-    const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.proveReputation, formatProof, formatPublicSignals);
+    const isProofValid = await circuits_1.verifyProof(circuits_1.Circuit.proveReputation, formatProof, formatPublicSignals);
     return isProofValid;
 };
 exports.verifyReputationProofEvent = verifyReputationProofEvent;
@@ -132,7 +132,7 @@ const verifySignUpProofEvent = async (event) => {
     const emptyArray = [];
     const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args.epoch, args === null || args === void 0 ? void 0 : args.epochKey, args === null || args === void 0 ? void 0 : args.globalStateTree, args === null || args === void 0 ? void 0 : args.attesterId, args === null || args === void 0 ? void 0 : args.userHasSignedUp).map(n => BigInt(n).toString());
     const formatProof = formatProofForSnarkjsVerification(args === null || args === void 0 ? void 0 : args.proof);
-    const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.proveUserSignUp, formatProof, formatPublicSignals);
+    const isProofValid = await circuits_1.verifyProof(circuits_1.Circuit.proveUserSignUp, formatProof, formatPublicSignals);
     return isProofValid;
 };
 exports.verifySignUpProofEvent = verifySignUpProofEvent;
@@ -141,7 +141,7 @@ const verifyStartTransitionProofEvent = async (event) => {
     const emptyArray = [];
     const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args._blindedUserState, args === null || args === void 0 ? void 0 : args._blindedHashChain, args === null || args === void 0 ? void 0 : args._globalStateTree).map(n => BigInt(n).toString());
     const formatProof = formatProofForSnarkjsVerification(args === null || args === void 0 ? void 0 : args._proof);
-    const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.startTransition, formatProof, formatPublicSignals);
+    const isProofValid = await circuits_1.verifyProof(circuits_1.Circuit.startTransition, formatProof, formatPublicSignals);
     return isProofValid;
 };
 exports.verifyStartTransitionProofEvent = verifyStartTransitionProofEvent;
@@ -150,7 +150,7 @@ const verifyProcessAttestationEvent = async (event) => {
     const emptyArray = [];
     const formatPublicSignals = emptyArray.concat(args === null || args === void 0 ? void 0 : args._outputBlindedUserState, args === null || args === void 0 ? void 0 : args._outputBlindedHashChain, args === null || args === void 0 ? void 0 : args._inputBlindedUserState).map(n => BigInt(n).toString());
     const formatProof = formatProofForSnarkjsVerification(args === null || args === void 0 ? void 0 : args._proof);
-    const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.processAttestations, formatProof, formatPublicSignals);
+    const isProofValid = await circuits_1.verifyProof(circuits_1.Circuit.processAttestations, formatProof, formatPublicSignals);
     return isProofValid;
 };
 exports.verifyProcessAttestationEvent = verifyProcessAttestationEvent;
@@ -160,7 +160,7 @@ const verifyUserStateTransitionEvent = async (event) => {
     const emptyArray = [];
     let formatPublicSignals = emptyArray.concat(transitionArgs.newGlobalStateTreeLeaf, transitionArgs.epkNullifiers, transitionArgs.transitionFromEpoch, transitionArgs.blindedUserStates, transitionArgs.fromGlobalStateTree, transitionArgs.blindedHashChains, transitionArgs.fromEpochTree).map(n => BigInt(n).toString());
     let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof);
-    const isProofValid = await circuits_1.verifyProof(circuits_1.CircuitName.userStateTransition, formatProof, formatPublicSignals);
+    const isProofValid = await circuits_1.verifyProof(circuits_1.Circuit.userStateTransition, formatProof, formatPublicSignals);
     return isProofValid;
 };
 exports.verifyUserStateTransitionEvent = verifyUserStateTransitionEvent;

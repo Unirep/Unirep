@@ -2,7 +2,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, hash5, hashLeftRight, genIdentity, genIdentityCommitment } from '@unirep/crypto'
-import { CircuitName, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
+import { Circuit, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts'
 
 import { attestingFee, circuitUserStateTreeDepth, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../../config/testLocal'
@@ -53,7 +53,6 @@ describe('Airdrop', function () {
             epochLength: epochLength,
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
             maxReputationBudget: maxReputationBudget,
-            defaultGSTLeaf: blankGSLeaf
         }
         unirepState = new UnirepState(
             setting
@@ -140,13 +139,13 @@ describe('Airdrop', function () {
             nonceList.push(BigInt(-1))
         }
         const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage, nonceList)
-        const isValid = await verifyProof(CircuitName.proveReputation, results.proof, results.publicSignals)
+        const isValid = await verifyProof(Circuit.proveReputation, results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
     })
 
     it('user can get airdrop positive reputation through calling airdrop function in Unirep', async() => {
         const results = await userState.genUserSignUpProof(BigInt(attesterId))
-        const isValid = await verifyProof(CircuitName.proveUserSignUp, results.proof, results.publicSignals)
+        const isValid = await verifyProof(Circuit.proveUserSignUp, results.proof, results.publicSignals)
         expect(isValid, 'Verify user sign up proof off-chain failed').to.be.true
         const userSignUpProof = results.publicSignals.concat([formatProofForVerifierContract(results.proof)])
 
@@ -283,7 +282,7 @@ describe('Airdrop', function () {
 
     it('user should perform user state transition', async() => {
         let results = await userState.genUserStateTransitionProofs()
-        let isValid = await verifyProof(CircuitName.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
+        let isValid = await verifyProof(Circuit.startTransition, results.startTransitionProof.proof, results.startTransitionProof.publicSignals)
         expect(isValid, 'Verify start transition circuit off-chain failed').to.be.true
 
         // Verify start transition proof on-chain
@@ -320,7 +319,7 @@ describe('Airdrop', function () {
         proofIndexes.push(BigInt(proofIndex))
 
         for (let i = 0; i < results.processAttestationProofs.length; i++) {
-            const isValid = await verifyProof(CircuitName.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
+            const isValid = await verifyProof(Circuit.processAttestations, results.processAttestationProofs[i].proof, results.processAttestationProofs[i].publicSignals)
             expect(isValid, 'Verify process attestations circuit off-chain failed').to.be.true
 
             const outputBlindedUserState = results.processAttestationProofs[i].outputBlindedUserState
@@ -356,7 +355,7 @@ describe('Airdrop', function () {
             proofIndexes.push(BigInt(proofIndex))
         }
 
-        isValid = await verifyProof(CircuitName.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
+        isValid = await verifyProof(Circuit.userStateTransition, results.finalTransitionProof.proof, results.finalTransitionProof.publicSignals)
         expect(isValid, 'Verify user state transition circuit off-chain failed').to.be.true
 
         const newGSTLeaf = results.finalTransitionProof.newGlobalStateTreeLeaf
@@ -413,7 +412,7 @@ describe('Airdrop', function () {
         const proveGraffiti = 0
         const minPosRep = 30, graffitiPreImage = 0
         const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
-        const isValid = await verifyProof(CircuitName.proveReputation, results.proof, results.publicSignals)
+        const isValid = await verifyProof(Circuit.proveReputation, results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
     })
 
@@ -452,7 +451,7 @@ describe('Airdrop', function () {
         const proveGraffiti = 0
         const minPosRep = 19, graffitiPreImage = 0
         const results = await userState.genProveReputationProof(BigInt(attesterId), epkNonce, minPosRep, proveGraffiti, graffitiPreImage)
-        const isValid = await verifyProof(CircuitName.proveReputation, results.proof, results.publicSignals)
+        const isValid = await verifyProof(Circuit.proveReputation, results.proof, results.publicSignals)
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.false
     })
 

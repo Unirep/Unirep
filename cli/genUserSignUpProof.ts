@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { unSerialiseIdentity, add0x } from '@unirep/crypto'
-import { CircuitName, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
+import { Circuit, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUserStateFromContract } from '../core'
@@ -70,7 +70,7 @@ const genUserSignUpProof = async (args: any) => {
     const results = await userState.genUserSignUpProof(attesterId)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(CircuitName.proveUserSignUp,results.proof, results.publicSignals)
+    const isValid = await verifyProof(Circuit.proveUserSignUp,results.proof, results.publicSignals)
     if(!isValid) {
         console.error('Error: user sign up proof generated is not valid!')
         return

@@ -4,14 +4,14 @@
 import { ethers } from 'ethers'
 import Keyv from "keyv"
 import assert from 'assert'
-import { getUnirepContract } from '@unirep/contracts'
+import { getUnirepContract, Event } from '@unirep/contracts'
 import { genIdentityCommitment, hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
 
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, ISettings, IUnirepState, UnirepState } from './UnirepState'
 import { IUserState, IUserStateLeaf, Reputation, UserState } from './UserState'
 import { EPOCH_KEY_NULLIFIER_DOMAIN, REPUTATION_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
-import { CircuitName, verifyProof } from '@unirep/circuits'
+import { Circuit, verifyProof } from '@unirep/circuits'
 import { IAttestation } from '.'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
 
@@ -28,14 +28,16 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
     return t.root
 }
 
-const computeInitUserStateRoot = async (treeDepth: number, leafIdx: number, airdropPosRep: number): Promise<BigInt> => {
+const computeInitUserStateRoot = async (treeDepth: number, leafIdx?: number, airdropPosRep?: number): Promise<BigInt> => {
     const t = await SparseMerkleTreeImpl.create(
         new Keyv(),
         treeDepth,
         defaultUserStateLeaf,
     )
-    const leafValue = hash5([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)])
-    await t.update(BigInt(leafIdx), leafValue)
+    if (leafIdx && airdropPosRep) {
+        const leafValue = hash5([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)])
+        await t.update(BigInt(leafIdx), leafValue)
+    }
     return t.getRootHash()
 }
 
@@ -122,9 +124,9 @@ const verifyEpochKeyProofEvent = async (event: ethers.Event): Promise<boolean> =
         args?.globalStateTree,
         args?.epoch,
         args?.epochKey,
-    ).map(n => BigInt(n).toString())
+    ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(CircuitName.verifyEpochKey, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(Circuit.verifyEpochKey, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -141,9 +143,9 @@ const verifyReputationProofEvent = async (event: ethers.Event): Promise<boolean>
         args?.minRep,
         args?.proveGraffiti,
         args?.graffitiPreImage,
-    ).map(n => BigInt(n).toString())
+    ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(CircuitName.proveReputation, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(Circuit.proveReputation, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -156,9 +158,9 @@ const verifySignUpProofEvent = async (event: ethers.Event): Promise<boolean> => 
         args?.globalStateTree,
         args?.attesterId,
         args?.userHasSignedUp,
-    ).map(n => BigInt(n).toString())
+    ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(CircuitName.proveUserSignUp, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(Circuit.proveUserSignUp, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -169,9 +171,9 @@ const verifyStartTransitionProofEvent = async (event: ethers.Event): Promise<boo
         args?._blindedUserState,
         args?._blindedHashChain,
         args?._globalStateTree,
-    ).map(n => BigInt(n).toString())
+    ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?._proof)
-    const isProofValid = await verifyProof(CircuitName.startTransition, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(Circuit.startTransition, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -182,9 +184,9 @@ const verifyProcessAttestationEvent = async (event: ethers.Event): Promise<boole
         args?._outputBlindedUserState,
         args?._outputBlindedHashChain,
         args?._inputBlindedUserState,
-    ).map(n => BigInt(n).toString())
+    ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?._proof)
-    const isProofValid = await verifyProof(CircuitName.processAttestations, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(Circuit.processAttestations, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -199,9 +201,9 @@ const verifyUserStateTransitionEvent = async (event: ethers.Event): Promise<bool
         transitionArgs.fromGlobalStateTree,
         transitionArgs.blindedHashChains,
         transitionArgs.fromEpochTree,
-    ).map(n => BigInt(n).toString())
+    ).map(n => BigInt(n))
     let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof)
-    const isProofValid = await verifyProof(CircuitName.userStateTransition, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(Circuit.userStateTransition, formatProof, formatPublicSignals)
     return isProofValid
 }
 
@@ -332,7 +334,6 @@ const genUnirepStateFromContract = async (
             epochLength: epochLength.toNumber(),
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
             maxReputationBudget: maxReputationBudget,
-            defaultGSTLeaf: hashLeftRight(BigInt(0), emptyUserStateRoot)
         }
         unirepState = new UnirepState(
             setting
@@ -344,8 +345,11 @@ const genUnirepStateFromContract = async (
     const latestBlock = _unirepState?.latestProcessedBlock
     const startBlock = latestBlock != undefined ? latestBlock + 1 : DEFAULT_START_BLOCK
 
-    const newGSTLeafInsertedFilter = unirepContract.filters.NewGSTLeafInserted()
-    const newGSTLeafInsertedEvents =  await unirepContract.queryFilter(newGSTLeafInsertedFilter, startBlock)
+    const UserSignedUpFilter = unirepContract.filters.UserSignedUp()
+    const userSignedUpEvents =  await unirepContract.queryFilter(UserSignedUpFilter, startBlock)
+
+    const UserStateTransitionedFilter = unirepContract.filters.UserStateTransitioned()
+    const userStateTransitionedEvents = await unirepContract.queryFilter(UserStateTransitionedFilter, startBlock)
 
     const attestationSubmittedFilter = unirepContract.filters.AttestationSubmitted()
     const attestationSubmittedEvents =  await unirepContract.queryFilter(attestationSubmittedFilter, startBlock)
@@ -357,34 +361,32 @@ const genUnirepStateFromContract = async (
     const sequencerEvents =  await unirepContract.queryFilter(sequencerFilter, startBlock)
 
     // proof events
-    const signUpFilter = unirepContract.filters.UserSignUp()
-    const signUpEvents = await unirepContract.queryFilter(signUpFilter)
-
-    const transitionFilter = unirepContract.filters.UserStateTransitionProof()
+    const transitionFilter = unirepContract.filters.IndexedUserStateTransitionProof()
     const transitionEvents = await unirepContract.queryFilter(transitionFilter)
 
-    const startTransitionFilter = unirepContract.filters.StartedTransitionProof()
+    const startTransitionFilter = unirepContract.filters.IndexedStartedTransitionProof()
     const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
 
-    const processAttestationsFilter = unirepContract.filters.ProcessedAttestationsProof()
+    const processAttestationsFilter = unirepContract.filters.IndexedProcessedAttestationsProof()
     const processAttestationsEvents = await unirepContract.queryFilter(processAttestationsFilter)
 
-    const epochKeyProofFilter = unirepContract.filters.EpochKeyProof()
+    const epochKeyProofFilter = unirepContract.filters.IndexedEpochKeyProof()
     const epochKeyProofEvent = await unirepContract.queryFilter(epochKeyProofFilter)
 
-    const repProofFilter = unirepContract.filters.ReputationNullifierProof()
+    const repProofFilter = unirepContract.filters.IndexedReputationProof()
     const repProofEvent = await unirepContract.queryFilter(repProofFilter)
 
-    const signUpProofFilter = unirepContract.filters.UserSignedUpProof()
+    const signUpProofFilter = unirepContract.filters.IndexedUserSignedUpProof()
     const signUpProofEvent = await unirepContract.queryFilter(signUpProofFilter)
 
     // Reverse the events so pop() can start from the first event
-    newGSTLeafInsertedEvents.reverse()
+    userSignedUpEvents.reverse()
     attestationSubmittedEvents.reverse()
     epochEndedEvents.reverse()
+    userStateTransitionedEvents.reverse()
 
     const proofIndexMap = {}
-    const events = signUpEvents.concat(
+    const events = transitionEvents.concat(
         transitionEvents, 
         startTransitionEvents, 
         processAttestationsEvents, 
@@ -398,143 +400,162 @@ const genUnirepStateFromContract = async (
 
     for (let i = 0; i < sequencerEvents.length; i++) {
         const sequencerEvent = sequencerEvents[i]
-        console.log('Generating Unirep State progress: ', i, '/', sequencerEvents.length)
+        // console.log('Generating Unirep State progress: ', i, '/', sequencerEvents.length)
         const blockNumber = sequencerEvent.blockNumber
         if(blockNumber < startBlock) continue
         const occurredEvent = sequencerEvent.args?._event
-        if (occurredEvent === "NewGSTLeafInserted") {
-            const newLeafEvent = newGSTLeafInsertedEvents.pop()
-            assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
-            
-            const proofIndex = Number(newLeafEvent.args?._proofIndex)
-            const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
-            const event = proofIndexMap[proofIndex]
-
-            if(proofIndex === 0) continue
-            if (event.event == "UserSignUp"){
-                unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber)
-            } else if (event.event == "UserStateTransitionProof") {
-                const proofIndexes = event?.args?._proofIndexRecords.map(n => Number(n))
-                const startTransitionEvent = proofIndexMap[proofIndexes[0]]
-                if(startTransitionEvent == undefined) continue
-                const processAttestationEvents: ethers.Event[] = []
-                let validAttestationEvent = true
-                for (let j = 1; j < proofIndexes.length; j++) {
-                    if(proofIndexes[j] === 0) validAttestationEvent = false
-                    processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
-                }
-                if(!validAttestationEvent) continue
-                const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
-                if(!isValid) {
-                    console.log('Proof is invalid: ', event.event, ' , transaction hash: ', event.transactionHash)
-                    continue
-                }
-                const args = event?.args?.userTransitionedData
-                const GSTRoot = args?.fromGlobalStateTree
-                const epoch = args?.transitionFromEpoch
-                const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
-                if(!isGSTRootExisted) {
-                    console.log('Global state tree root does not exist')
-                    continue
-                }
-
-                // Check if epoch tree root matches
-                const epochTreeRoot = args?.fromEpochTree
-                const isEpochTreeExisted = await unirepState.epochTreeRootExists(epochTreeRoot, epoch)
-                if(!isEpochTreeExisted){
-                    console.log('Epoch tree root mismatches')
-                    continue
-                }
-
-                const epkNullifiersInEvent = args?.epkNullifiers.map(n => BigInt(n))
-                unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), epkNullifiersInEvent, blockNumber)
-            }
-        } else if (occurredEvent === "AttestationSubmitted") {
-            const attestationEvent = attestationSubmittedEvents.pop()
-            assert(attestationEvent !== undefined, `Event sequence mismatch: missing attestationSubmittedEvent`)
-            const args = attestationEvent.args
-            const epoch = args?._epoch.toNumber()
-            assert(
-                epoch === unirepState.currentEpoch,
-                `Attestation epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
-            )
-
-            const _attestation = args?.attestation
-            const proofIndex = Number(args?._proofIndex)
-            let results
-            let isProofValid = false
-            const event = proofIndexMap[proofIndex]
-            if(proofIndex === 0) continue
-            if(event.event == "EpochKeyProof") {
-                results = event?.args?.epochKeyProofData
-                isProofValid = await verifyEpochKeyProofEvent(event)
-            } else if (event.event == "ReputationNullifierProof") {
-                results = event?.args?.reputationProofData
-                isProofValid = await verifyReputationProofEvent(event)
-            } else if (event.event == "UserSignedUpProof") {
-                results = event?.args?.signUpProofData
-                isProofValid = await verifySignUpProofEvent(event)
-            } else {
-                console.log('Cannot find the attestation event')
+        if (occurredEvent === Event.UserSignedUp) {
+            const signUpEvent = userSignedUpEvents.pop()
+            if(signUpEvent === undefined) {
+                console.log(`Event sequence mismatch: missing newGSTLeafInsertedEvent`)
                 continue
             }
+            const args = signUpEvent?.args
+            const epoch = Number(args?._epoch)
+            const commitment = BigInt(args?._identityCommitment)
+            const attesterId = Number(args?._attesterId)
+            const airdrop = Number(args?._airdropAmount)
 
-            if(!isProofValid) {
-                console.log('Proof is invalid: ', attestationEvent.event, ' , transaction hash: ', attestationEvent.transactionHash)
-                continue
-            }
+            await unirepState.signUp(epoch, commitment, attesterId, airdrop, blockNumber)
+        } else if (occurredEvent === Event.AttestationSubmitted) {
 
-            const isGSTRootExisted = unirepState.GSTRootExists(results?.globalStateTree, epoch)
-            if(!isGSTRootExisted) {
-                console.log('Global state tree root does not exist')
-                continue
-            }
+        } else if (occurredEvent === Event.EpochEnded) {
 
-            const attestation = new Attestation(
-                BigInt(_attestation.attesterId),
-                BigInt(_attestation.posRep),
-                BigInt(_attestation.negRep),
-                BigInt(_attestation.graffiti),
-                BigInt(_attestation.signUp)
-            )
-            const epochKey = args?._epochKey
-            if (epochKey.eq(results?.epochKey)){
-                if(args?._event === "spendReputation") {
-                    let validNullifier = true
-                    for (let nullifier of results?.repNullifiers) {
-                        if(unirepState.nullifierExist(nullifier)) {
-                            console.log('duplicated nullifier', BigInt(nullifier).toString())
-                            validNullifier = false
-                            break
-                        }
-                    }
-                    if (validNullifier) {
-                        for (let nullifier of results?.repNullifiers) {
-                            unirepState.addReputationNullifiers(nullifier, blockNumber)
-                        }
-                    } else continue
-                }
-                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
-            }
-        } else if (occurredEvent === "EpochEnded") {
-            const epochEndedEvent = epochEndedEvents.pop()
-            assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
-            const epoch = epochEndedEvent.args?._epoch.toNumber()
-            assert(
-                epoch === unirepState.currentEpoch,
-                `Ended epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
-            )
-            await unirepState.epochTransition(epoch, blockNumber)
-        } else {
-            throw new Error(`Unexpected event: ${occurredEvent}`)
+        } else if (occurredEvent === Event.UserStateTransitioned) {
+
         }
+        //     const newLeafEvent = newGSTLeafInsertedEvents.pop()
+        //     assert(newLeafEvent !== undefined, `Event sequence mismatch: missing newGSTLeafInsertedEvent`)
+            
+        //     const proofIndex = Number(newLeafEvent.args?._proofIndex)
+        //     const newLeaf = BigInt(newLeafEvent.args?._hashedLeaf)
+        //     const event = proofIndexMap[proofIndex]
+
+        //     if(proofIndex === 0) continue
+        //     if (event.event == "UserSignUp"){
+        //         unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber)
+        //     } else if (event.event == "UserStateTransitionProof") {
+        //         const proofIndexes = event?.args?._proofIndexRecords.map(n => Number(n))
+        //         const startTransitionEvent = proofIndexMap[proofIndexes[0]]
+        //         if(startTransitionEvent == undefined) continue
+        //         const processAttestationEvents: ethers.Event[] = []
+        //         let validAttestationEvent = true
+        //         for (let j = 1; j < proofIndexes.length; j++) {
+        //             if(proofIndexes[j] === 0) validAttestationEvent = false
+        //             processAttestationEvents.push(proofIndexMap[proofIndexes[j]])
+        //         }
+        //         if(!validAttestationEvent) continue
+        //         const isValid = verifyUSTEvents(event, startTransitionEvent, processAttestationEvents)
+        //         if(!isValid) {
+        //             console.log('Proof is invalid: ', event.event, ' , transaction hash: ', event.transactionHash)
+        //             continue
+        //         }
+        //         const args = event?.args?.userTransitionedData
+        //         const GSTRoot = args?.fromGlobalStateTree
+        //         const epoch = args?.transitionFromEpoch
+        //         const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+        //         if(!isGSTRootExisted) {
+        //             console.log('Global state tree root does not exist')
+        //             continue
+        //         }
+
+        //         // Check if epoch tree root matches
+        //         const epochTreeRoot = args?.fromEpochTree
+        //         const isEpochTreeExisted = await unirepState.epochTreeRootExists(epochTreeRoot, epoch)
+        //         if(!isEpochTreeExisted){
+        //             console.log('Epoch tree root mismatches')
+        //             continue
+        //         }
+
+        //         const epkNullifiersInEvent = args?.epkNullifiers.map(n => BigInt(n))
+        //         unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), epkNullifiersInEvent, blockNumber)
+        //     }
+        // } else if (occurredEvent === "AttestationSubmitted") {
+        //     const attestationEvent = attestationSubmittedEvents.pop()
+        //     assert(attestationEvent !== undefined, `Event sequence mismatch: missing attestationSubmittedEvent`)
+        //     const args = attestationEvent.args
+        //     const epoch = args?._epoch.toNumber()
+        //     assert(
+        //         epoch === unirepState.currentEpoch,
+        //         `Attestation epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+        //     )
+
+        //     const _attestation = args?.attestation
+        //     const proofIndex = Number(args?._proofIndex)
+        //     let results
+        //     let isProofValid = false
+        //     const event = proofIndexMap[proofIndex]
+        //     if(proofIndex === 0) continue
+        //     if(event.event == "EpochKeyProof") {
+        //         results = event?.args?.epochKeyProofData
+        //         isProofValid = await verifyEpochKeyProofEvent(event)
+        //     } else if (event.event == "ReputationNullifierProof") {
+        //         results = event?.args?.reputationProofData
+        //         isProofValid = await verifyReputationProofEvent(event)
+        //     } else if (event.event == "UserSignedUpProof") {
+        //         results = event?.args?.signUpProofData
+        //         isProofValid = await verifySignUpProofEvent(event)
+        //     } else {
+        //         console.log('Cannot find the attestation event')
+        //         continue
+        //     }
+
+        //     if(!isProofValid) {
+        //         console.log('Proof is invalid: ', attestationEvent.event, ' , transaction hash: ', attestationEvent.transactionHash)
+        //         continue
+        //     }
+
+        //     const isGSTRootExisted = unirepState.GSTRootExists(results?.globalStateTree, epoch)
+        //     if(!isGSTRootExisted) {
+        //         console.log('Global state tree root does not exist')
+        //         continue
+        //     }
+
+        //     const attestation = new Attestation(
+        //         BigInt(_attestation.attesterId),
+        //         BigInt(_attestation.posRep),
+        //         BigInt(_attestation.negRep),
+        //         BigInt(_attestation.graffiti),
+        //         BigInt(_attestation.signUp)
+        //     )
+        //     const epochKey = args?._epochKey
+        //     if (epochKey.eq(results?.epochKey)){
+        //         if(args?._event === "spendReputation") {
+        //             let validNullifier = true
+        //             for (let nullifier of results?.repNullifiers) {
+        //                 if(unirepState.nullifierExist(nullifier)) {
+        //                     console.log('duplicated nullifier', BigInt(nullifier).toString())
+        //                     validNullifier = false
+        //                     break
+        //                 }
+        //             }
+        //             if (validNullifier) {
+        //                 for (let nullifier of results?.repNullifiers) {
+        //                     unirepState.addReputationNullifiers(nullifier, blockNumber)
+        //                 }
+        //             } else continue
+        //         }
+        //         unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
+        //     }
+        // } else if (occurredEvent === "EpochEnded") {
+        //     const epochEndedEvent = epochEndedEvents.pop()
+        //     assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
+        //     const epoch = epochEndedEvent.args?._epoch.toNumber()
+        //     assert(
+        //         epoch === unirepState.currentEpoch,
+        //         `Ended epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+        //     )
+        //     await unirepState.epochTransition(epoch, blockNumber)
+        // } else {
+        //     throw new Error(`Unexpected event: ${occurredEvent}`)
+        // }
     }
-    if(newGSTLeafInsertedEvents.length !== 0) {
-        console.log(`${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
-    }
-    if(attestationSubmittedEvents.length !== 0) {
-        console.log(`${attestationSubmittedEvents.length} attestationSubmitted events left unprocessed`)
-    }
+    // if(newGSTLeafInsertedEvents.length !== 0) {
+    //     console.log(`${newGSTLeafInsertedEvents.length} newGSTLeafInsert events left unprocessed`)
+    // }
+    // if(attestationSubmittedEvents.length !== 0) {
+    //     console.log(`${attestationSubmittedEvents.length} attestationSubmitted events left unprocessed`)
+    // }
     return unirepState
 }
 
@@ -623,7 +644,6 @@ const genUserStateFromContract = async (
         const epochLength = await unirepContract.epochLength()
         const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
         const maxReputationBudget = await unirepContract.maxReputationBudget()
-        const emptyUserStateRoot = computeEmptyUserStateRoot(userStateTreeDepth)
 
         const setting: ISettings = {
             globalStateTreeDepth: globalStateTreeDepth,
@@ -633,7 +653,6 @@ const genUserStateFromContract = async (
             epochLength: epochLength.toNumber(),
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
             maxReputationBudget: maxReputationBudget,
-            defaultGSTLeaf: hashLeftRight(BigInt(0), emptyUserStateRoot)
         }
         unirepState = new UnirepState(
             setting
@@ -708,7 +727,7 @@ const genUserStateFromContract = async (
     let currentEpochGSTLeafIndexToInsert = 0
     let epkNullifiers: BigInt[] = []
     for (let i = 0; i < sequencerEvents.length; i++) {
-        console.log('Generating User State progress: ', i, '/', sequencerEvents.length)
+        // console.log('Generating User State progress: ', i, '/', sequencerEvents.length)
         const sequencerEvent = sequencerEvents[i]
         const blockNumber = sequencerEvent.blockNumber
         if(blockNumber < startBlock) continue
@@ -724,14 +743,19 @@ const genUserStateFromContract = async (
             if(proofIndex === 0) continue
             if (event.event == "UserSignUp"){
                 // update Unirep State
-                unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber)
+                // unirepState.signUp(unirepState.currentEpoch, newLeaf, blockNumber)
 
                 // update User State
                 const commitment = BigInt(event?.args?._identityCommitment)
                 if(userIdentityCommitment == commitment) {
                     const attesterId = event.args?._attesterId.toNumber()
                     const airdropPosRep = event.args?._airdropAmount.toNumber()
-                    userState.signUp(unirepState.currentEpoch, currentEpochGSTLeafIndexToInsert, attesterId, airdropPosRep)
+                    await userState.signUp(
+                        unirepState.currentEpoch,
+                        commitment, 
+                        attesterId, 
+                        airdropPosRep
+                    )
                     userHasSignedUp = true
                 }
             } else if (event.event == "UserStateTransitionProof") {
@@ -752,8 +776,8 @@ const genUserStateFromContract = async (
                 }
                 const args = event?.args?.userTransitionedData
                 const GSTRoot = args?.fromGlobalStateTree
-                const epoch = args?.transitionFromEpoch
-                const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+                const fromEpoch = Number(args?.transitionFromEpoch)
+                const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, fromEpoch)
                 if(!isGSTRootExisted) {
                     console.log('Global state tree root does not exist')
                     continue
@@ -761,7 +785,7 @@ const genUserStateFromContract = async (
 
                 // Check if epoch tree root matches
                 const epochTreeRoot = args?.fromEpochTree
-                const isEpochTreeExisted = await unirepState.epochTreeRootExists(epochTreeRoot, epoch)
+                const isEpochTreeExisted = await unirepState.epochTreeRootExists(epochTreeRoot, fromEpoch)
                 if(!isEpochTreeExisted){
                     console.log('Epoch tree root mismatches')
                     continue
@@ -784,35 +808,35 @@ const genUserStateFromContract = async (
                 }
                 if (isNullifierSeen) continue
 
-                if (
-                    userHasSignedUp &&
-                    (args?.transitionFromEpoch.toNumber() === userState.latestTransitionedEpoch)
-                ) {
-                    // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
-                    epkNullifiers = userState.getEpochKeyNullifiers(epoch)
-                    let epkNullifiersMatched = 0
-                    for (const nullifier of epkNullifiers) {
-                        if (epkNullifiersInEvent.indexOf(nullifier) !== -1) epkNullifiersMatched++
-                    }
-                    // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
-                    // stand anymore, below `epkNullifiersMatched` check should be changed.
-                    if (epkNullifiersMatched == userState.numEpochKeyNoncePerEpoch) {
-                        const newState = await userState.genNewUserStateAfterTransition()
-                        userState.transition(newState.newUSTLeaves)
-                        // User processed all epoch keys so non-zero GST leaf is generated.
-                        if(newState.newGSTLeaf != (newLeaf)) {
-                            console.log('New GST leaf mismatch')
-                            continue
-                        }
-                        // User transition to this epoch, increment (next) GST leaf index
-                        currentEpochGSTLeafIndexToInsert ++
-                    } else if (epkNullifiersMatched > 0) {
-                        throw new Error(`Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${numEpochKeyNoncePerEpoch}`)
-                    }
-                }
-                unirepState.userStateTransition(unirepState.currentEpoch, BigInt(newLeaf), epkNullifiersInEvent, blockNumber)
+                // if (
+                //     userHasSignedUp &&
+                //     (args?.transitionFromEpoch.toNumber() === userState.latestTransitionedEpoch)
+                // ) {
+                //     // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
+                //     epkNullifiers = userState.getEpochKeyNullifiers(epoch)
+                //     let epkNullifiersMatched = 0
+                //     for (const nullifier of epkNullifiers) {
+                //         if (epkNullifiersInEvent.indexOf(nullifier) !== -1) epkNullifiersMatched++
+                //     }
+                //     // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
+                //     // stand anymore, below `epkNullifiersMatched` check should be changed.
+                //     if (epkNullifiersMatched == userState.numEpochKeyNoncePerEpoch) {
+                //         // const newState = await userState.genNewUserStateAfterTransition()
+                //         await userState.transition(newLeaf)
+                //         // User processed all epoch keys so non-zero GST leaf is generated.
+                //         // if(newState.newGSTLeaf != (newLeaf)) {
+                //         //     console.log('New GST leaf mismatch')
+                //         //     continue
+                //         // }
+                //         // User transition to this epoch, increment (next) GST leaf index
+                //         currentEpochGSTLeafIndexToInsert ++
+                //     } else if (epkNullifiersMatched > 0) {
+                //         throw new Error(`Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${numEpochKeyNoncePerEpoch}`)
+                //     }
+                // }
+                await userState.userStateTransition(fromEpoch, BigInt(newLeaf), epkNullifiersInEvent, blockNumber)
             }
-            currentEpochGSTLeafIndexToInsert ++
+            // currentEpochGSTLeafIndexToInsert ++
         } else if (occurredEvent === "AttestationSubmitted") {
             const attestationEvent = attestationSubmittedEvents.pop()
             assert(attestationEvent !== undefined, `Event sequence mismatch: missing attestationSubmittedEvent`)
@@ -875,27 +899,27 @@ const genUserStateFromContract = async (
                     }
                     if (validNullifier) {
                         for (let nullifier of results?.repNullifiers) {
-                            unirepState.addReputationNullifiers(nullifier, blockNumber)
+                            userState.addReputationNullifiers(nullifier, blockNumber)
                         }
                     } else continue
                 }
-                unirepState.addAttestation(epochKey.toString(), attestation, blockNumber)
+                userState.addAttestation(epochKey.toString(), attestation, blockNumber)
             }
         } else if (occurredEvent === "EpochEnded") {
             const epochEndedEvent = epochEndedEvents.pop()
             assert(epochEndedEvent !== undefined, `Event sequence mismatch: missing epochEndedEvent`)
             const epoch = epochEndedEvent.args?._epoch.toNumber()
             assert(
-                epoch === unirepState.currentEpoch,
-                `Ended epoch (${epoch}) does not match current epoch (${unirepState.currentEpoch})`
+                epoch === userState.getUnirepStateCurrentEpoch(),
+                `Ended epoch (${epoch}) does not match current epoch (${userState.getUnirepStateCurrentEpoch()})`
             )
-            await unirepState.epochTransition(epoch, blockNumber)
-            if (userHasSignedUp) {
-                if (epoch === userState.latestTransitionedEpoch) {
-                    // save latest attestations in user state
-                    userState.saveAttestations()
-                }
-            }
+            await userState.epochTransition(epoch, blockNumber)
+            // if (userHasSignedUp) {
+            //     if (epoch === userState.latestTransitionedEpoch) {
+            //         // save latest attestations in user state
+            //         userState.saveAttestations()
+            //     }
+            // }
 
             // Epoch ends, reset (next) GST leaf index
             currentEpochGSTLeafIndexToInsert = 0

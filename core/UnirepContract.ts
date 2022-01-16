@@ -4,6 +4,7 @@ import { formatProofForVerifierContract } from '@unirep/circuits'
 import { DEFAULT_ETH_PROVIDER, } from '../cli/defaults';
 import { validateEthAddress } from '../cli/utils';
 import { IAttestation } from '.';
+import { SnarkProof } from '@unirep/crypto';
 
 /**
  * An API module of Unirep contracts.
@@ -255,7 +256,7 @@ export class UnirepContract {
         blindedUserState: BigInt | string,
         blindedHashChain: BigInt | string,
         GSTreeRoot: BigInt | string,
-        proof: BigInt[] | string[]
+        proof: SnarkProof
     ): Promise<any> => {
         const proofNullifier = await this.contract.hashStartTransitionProof(
             blindedUserState,
@@ -270,7 +271,7 @@ export class UnirepContract {
         outputBlindedUserState: BigInt | string,
         outputBlindedHashChain: BigInt | string,
         inputBlindedUserState: BigInt | string,
-        proof: BigInt[] | string[]
+        proof: SnarkProof
     ): Promise<any> => {
         const proofNullifier = await this.contract.hashProcessAttestationsProof(
             outputBlindedUserState,
