@@ -49,7 +49,7 @@ declare class UserState {
     latestGSTLeafIndex: number;
     private latestUserStateLeaves;
     private transitionedFromAttestations;
-    constructor(_unirepState: UnirepState, _id: any, _hasSignedUp: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[], _transitionedFromAttestations?: {
+    constructor(_unirepState: UnirepState, _id: any, _hasSignedUp?: boolean, _latestTransitionedEpoch?: number, _latestGSTLeafIndex?: number, _latestUserStateLeaves?: IUserStateLeaf[], _transitionedFromAttestations?: {
         [key: string]: IAttestation[];
     });
     toJSON: (space?: number) => string;
@@ -58,14 +58,21 @@ declare class UserState {
     getUnirepStateEpochTree: (epoch: number) => Promise<SparseMerkleTreeImpl>;
     getUnirepState: () => UnirepState;
     getAttestations: (epochKey: string) => IAttestation[];
+    addAttestation: (epochKey: string, attestation: IAttestation, blockNumber?: number | undefined) => void;
+    addReputationNullifiers: (nullifier: BigInt, blockNumber?: number | undefined) => void;
     getEpochKeyNullifiers: (epoch: number) => BigInt[];
     getRepByAttester: (attesterId: BigInt) => Reputation;
     nullifierExist: (nullifier: BigInt) => boolean;
-    signUp: (_latestTransitionedEpoch: number, _latestGSTLeafIndex: number, _attesterId: number, _airdropAmount: number) => void;
+    private _checkUserSignUp;
+    private _checkUserNotSignUp;
+    private _checkEpkNonce;
+    private _checkAttesterId;
+    signUp: (_epoch: number, _identityCommitment: BigInt, _attesterId?: number | undefined, _airdropAmount?: number | undefined, blockNumber?: number | undefined) => Promise<void>;
     private _genUserStateTreeFromLeaves;
     genUserStateTree: () => Promise<SparseMerkleTreeImpl>;
     GSTRootExists: (GSTRoot: BigInt | string, epoch: number) => boolean;
     epochTreeRootExists: (_epochTreeRoot: BigInt | string, epoch: number) => Promise<boolean>;
+    userStateTransition: (fromEpoch: number, GSTLeaf: BigInt, nullifiers: BigInt[], blockNumber?: number | undefined) => Promise<void>;
     genVerifyEpochKeyProof: (epochKeyNonce: number) => Promise<{
         proof: any;
         publicSignals: any;
@@ -74,11 +81,9 @@ declare class UserState {
         epochKey: any;
     }>;
     private _updateUserStateLeaf;
-    saveAttestations: () => void;
-    genNewUserStateAfterTransition: () => Promise<{
-        newGSTLeaf: BigInt;
-        newUSTLeaves: IUserStateLeaf[];
-    }>;
+    private _saveAttestations;
+    epochTransition: (epoch: number, blockNumber?: number | undefined) => Promise<void>;
+    private _genNewUserStateAfterTransition;
     private _genStartTransitionCircuitInputs;
     genUserStateTransitionProofs: () => Promise<{
         startTransitionProof: {
@@ -101,8 +106,8 @@ declare class UserState {
             fromEpochTree: any;
         };
     }>;
-    transition: (latestStateLeaves: IUserStateLeaf[]) => void;
-    genProveReputationProof: (attesterId: BigInt, epkNonce: number, minRep: BigInt, proveGraffiti: BigInt, graffitiPreImage: BigInt, nonceList?: BigInt[] | undefined) => Promise<{
+    private _transition;
+    genProveReputationProof: (attesterId: BigInt, epkNonce: number, minRep?: number | undefined, proveGraffiti?: BigInt | undefined, graffitiPreImage?: BigInt | undefined, nonceList?: BigInt[] | undefined) => Promise<{
         proof: any;
         publicSignals: any;
         reputationNullifiers: any;

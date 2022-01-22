@@ -297,10 +297,17 @@ class UserState {
         _epoch: number,
         _identityCommitment: BigInt,
         _attesterId?: number, 
-        _airdropAmount?: number
+        _airdropAmount?: number,
+        blockNumber?: number,
     ) => {
         // update unirep state
-        await this.unirepState.signUp(_epoch, _identityCommitment, _attesterId, _airdropAmount)
+        await this.unirepState.signUp(
+            _epoch, 
+            _identityCommitment, 
+            _attesterId, 
+            _airdropAmount, 
+            blockNumber
+        )
 
         // if commitment matches the user's commitment, update user state
         if(_identityCommitment === this.commitment) {
@@ -832,7 +839,7 @@ class UserState {
         const nonceExist = {}
         let repNullifiersAmount = 0
         for (let i = 0; i < this.unirepState.setting.maxReputationBudget; i++) {
-            if (nonceList[i] != BigInt(-1)) {
+            if (nonceList[i] !== BigInt(-1)) {
                 assert(nonceExist[nonceList[i].toString()] == undefined, "cannot submit duplicated nonce to compute reputation nullifiers")
                 repNullifiersAmount ++
                 selectors[i] = BigInt(1)

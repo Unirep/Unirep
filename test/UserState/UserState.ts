@@ -92,7 +92,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
             
         })
 
@@ -188,7 +188,7 @@ describe('User State', async () => {
         })
 
         it('sign up twice should fail', async () => {
-            let error = null
+            let error
             try {
                 await userState.signUp(
                     epoch,
@@ -197,12 +197,12 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('sign up in wrong epoch should fail', async () => {
             const wrongEpoch = epoch + 1
-            let error = null
+            let error
             try {
                 await userState.signUp(
                     wrongEpoch,
@@ -211,7 +211,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('Query global state tree roots should success', async () => {
@@ -227,13 +227,13 @@ describe('User State', async () => {
 
             const invalidEpoch = epoch + 1
             for(let root of rootHistories) {
-                let error = null
+                let error
                 try {
                     userState.GSTRootExists(root, invalidEpoch)
                 } catch (e) {
                     error = e
                 }
-                expect(error).not.to.be.null
+                expect(error).not.to.be.undefined
             }
         })
     })
@@ -276,7 +276,7 @@ describe('User State', async () => {
         })
 
         it('wrong epoch key should throw error', async () => {
-            let error = null
+            let error
             const wrongEpochKey = genRandomSalt()
             const attestation = genRandomAttestation()
             try {
@@ -284,7 +284,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('Get attestations should success', async () => {
@@ -304,14 +304,14 @@ describe('User State', async () => {
         })
 
         it('Get attestation with invalid epoch key should throw error', async () => {
-            let error = null
+            let error
             const wrongEpochKey = genRandomSalt()
             try {
                 userState.getAttestations(wrongEpochKey.toString())
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('get epoch keys should success', async () => {
@@ -331,13 +331,13 @@ describe('User State', async () => {
                 userState.addReputationNullifiers(nullifier)
 
                 // submit the same nullifier twice should fail
-                let error = null
+                let error
                 try {
                     userState.addReputationNullifiers(nullifier)
                 } catch(e) {
                     error = e
                 } 
-                expect(error).not.to.be.null
+                expect(error).not.to.be.undefined
 
                 // query nullifier should succeed
                 const exist = userState.nullifierExist(nullifier)
@@ -379,7 +379,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('non signed up user should not generate epoch key proof', async () => {
@@ -391,7 +391,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('generate reputation proof should succeed', async () => {
@@ -500,7 +500,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('generate sign up proof should succeed', async () => {
@@ -552,7 +552,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
     })
 
@@ -573,13 +573,13 @@ describe('User State', async () => {
                 const attestation = genRandomAttestation()
                 
                 // submit the attestation to sealed epoch key should fail
-                let error = null
+                let error
                 try {
                     userState.addAttestation(epochKeys[i], attestation)
                 } catch(e) {
                     error = e
                 }
-                expect(error).not.to.be.null
+                expect(error).not.to.be.undefined
             }
         })
 
@@ -594,13 +594,13 @@ describe('User State', async () => {
 
         it('epoch transition with wrong epoch input should fail', async () => {
             const wrongEpoch = 1
-            let error = null
+            let error
             try {
                 await userState.epochTransition(wrongEpoch)
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('transition other users state should success', async () => {
@@ -821,7 +821,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('non signed up user should not generate epoch key proof', async () => {
@@ -833,7 +833,7 @@ describe('User State', async () => {
             } catch (e) {
                 error = e
             }
-            expect(error).not.to.be.null
+            expect(error).not.to.be.undefined
         })
 
         it('generate reputation proof should succeed', async () => {

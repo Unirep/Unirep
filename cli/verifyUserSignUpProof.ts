@@ -4,6 +4,8 @@ import { ethers } from 'ethers'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
+import { SignUpProof } from '@unirep/contracts'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -90,14 +92,11 @@ const verifyUserSignUpProof = async (args: any) => {
     }
 
     // Verify the proof on-chain
-    const isProofValid = await unirepContract.verifyUserSignUp(
-        epoch,
-        epk,
-        GSTRoot,
-        attesterId,
-        userHasSignedUp,
-        proof,
+    const signUpProof = new SignUpProof(
+        publicSignals,
+        formatProofForSnarkjsVerification(proof)
     )
+    const isProofValid = await unirepContract.verifyUserSignUp(signUpProof)
     if (!isProofValid) {
         console.error('Error: invalid user sign up proof')
         return

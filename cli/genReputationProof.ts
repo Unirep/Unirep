@@ -107,7 +107,7 @@ const genReputationProof = async (args: any) => {
     const attesterId = BigInt(add0x(args.attester_id))
     const epkNonce = args.epoch_key_nonce
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? BigInt(args.min_rep) : BigInt(0)
+    const minRep = args.min_rep != null ? args.min_rep : 0
     const repNullifiersAmount = args.reputation_nullifier != null ? args.reputation_nullifier : 0
     const nonceList: BigInt[] = []
     const rep = userState.getRepByAttester(attesterId)

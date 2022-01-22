@@ -5,6 +5,8 @@ import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { maxReputationBudget } from '../config/testLocal'
+import { ReputationProof } from '@unirep/contracts'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -95,18 +97,11 @@ const verifyReputationProof = async (args: any) => {
     }
 
     // Verify the proof on-chain
-    const isProofValid = await unirepContract.verifyReputation(
-        outputNullifiers,
-        epoch,
-        epk,
-        GSTRoot,
-        attesterId,
-        repNullifiersAmount,
-        minRep,
-        proveGraffiti,
-        graffitiPreImage,
-        proof,
+    const reputationProof = new ReputationProof(
+        publicSignals,
+        formatProofForSnarkjsVerification(proof)
     )
+    const isProofValid = await unirepContract.verifyReputation(reputationProof)
     if (!isProofValid) {
         console.error('Error: invalid reputation proof')
         return

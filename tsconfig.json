@@ -9,7 +9,11 @@
         "outDir": "./build",
         "declaration": true
     },
-    "include": ["./core"],
+    "include": [
+        "./core",
+        "./test",
+        "./typechain"
+    ],
     "exclude": ["**/privateKey.ts"],
     "files": ["./hardhat.config.ts"]
 }

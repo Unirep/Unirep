@@ -6,10 +6,10 @@
     "scripts": {
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "yarn contractUnitTests && yarn circuitUnitTests && yarn integrationTest",
-        "contractUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/contracts -name '*.ts')",
-        "circuitUnitTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/circuits -name '*.ts')",
-        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')"
+        "test": "yarn UnirepStateTests && yarn UserStateTests && yarn integrationTest",
+        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')",
+        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UnirepState -name '*.ts')",
+        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UserState -name '*.ts')"
     },
     "repository": "git+https://github.com/appliedzkp/UniRep.git",
     "author": "",
@@ -21,9 +21,9 @@
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
-        "@types/chai": "^4.2.14",
-        "@types/mocha": "^8.0.4",
-        "@types/node": "^14.14.7",
+        "@types/chai": "^4.3.0",
+        "@types/mocha": "^9.1.0",
+        "@types/node": "^17.0.10",
         "bigint-conversion": "^2.1.12",
         "chai": "^4.2.0",
         "ethereum-waffle": "^3.4.0",
@@ -33,12 +33,14 @@
         "ts-node": "^10.2.1"
     },
     "dependencies": {
-        "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
+        "@typechain/ethers-v5": "^9.0.0",
+        "@typechain/hardhat": "^4.0.0",
         "@unirep/circuits": "git+https://github.com/Unirep/circuits.git",
         "@unirep/contracts": "git+https://github.com/Unirep/contracts.git",
+        "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "ethers": "^5.4.6",
-        "typescript": "^4.0.5"
+        "typescript": "^4.5.4"
     }
 }

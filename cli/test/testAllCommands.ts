@@ -1,5 +1,6 @@
-import base64url from 'base64url'
+// @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
+import base64url from 'base64url'
 import { ethers } from 'ethers'
 import chai from "chai"
 const { expect } = chai
@@ -38,26 +39,26 @@ describe('test all CLI subcommands', function() {
     let repPublicSignals, signUpPublicSignals
 
     before(async() => {
-        // deployerPrivKey = ethers.utils.solidityKeccak256(['uint'], [0])
-        // deployerAddr = ethers.utils.computeAddress(deployerPrivKey)
-        // userPrivKey = ethers.utils.solidityKeccak256(['uint'], [1])
-        // userAddr = ethers.utils.computeAddress(userPrivKey)
-        // attesterPrivKey = ethers.utils.solidityKeccak256(['uint'], [2])
-        // attesterAddr = ethers.utils.computeAddress(attesterPrivKey)
+        deployerPrivKey = ethers.utils.solidityKeccak256(['uint'], [0])
+        deployerAddr = ethers.utils.computeAddress(deployerPrivKey)
+        userPrivKey = ethers.utils.solidityKeccak256(['uint'], [1])
+        userAddr = ethers.utils.computeAddress(userPrivKey)
+        attesterPrivKey = ethers.utils.solidityKeccak256(['uint'], [2])
+        attesterAddr = ethers.utils.computeAddress(attesterPrivKey)
 
         // Transfer ether so they can execute transactions
-        // const defaultAccount: ethers.Signer = (await hardhatEthers.getSigners())[0]
-        // await defaultAccount.sendTransaction({to: deployerAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
-        // await defaultAccount.sendTransaction({to: userAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
-        // await defaultAccount.sendTransaction({to: attesterAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
+        const defaultAccount: ethers.Signer = (await hardhatEthers.getSigners())[0]
+        await defaultAccount.sendTransaction({to: deployerAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
+        await defaultAccount.sendTransaction({to: userAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
+        await defaultAccount.sendTransaction({to: attesterAddr, value: ethers.utils.parseEther('10'), gasLimit: 21000})
     })
 
     describe('deploy CLI subcommand', () => {
         it('should deploy a Unirep contract', async () => {
             const command = `npx ts-node cli/index.ts deploy` +
-                ` -d ${deployerPrivKey} ` 
-                // ` -l ${epochLength} ` +
-                // ` -f ${attestingFee.toString()} `
+                ` -d ${deployerPrivKey} ` +
+                ` -l ${epochLength} ` +
+                ` -f ${attestingFee.toString()} `
 
             console.log(command)
             const output = exec(command).stdout.trim()
@@ -74,8 +75,8 @@ describe('test all CLI subcommands', function() {
                 unirepAddress,
             )
 
-            // expect(unirepState.setting.epochLength).equal(epochLength)
-            // expect(unirepState.setting.attestingFee).equal(attestingFee)
+            expect(unirepState.setting.epochLength).equal(epochLength)
+            expect(unirepState.setting.attestingFee).equal(attestingFee)
         })
     })
 

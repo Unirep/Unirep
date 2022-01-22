@@ -1,28 +1,18 @@
 import { ethers } from 'ethers';
+import { Event } from '@unirep/contracts';
 import { SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto';
 import { IUnirepState, UnirepState } from './UnirepState';
 import { IUserState, UserState } from './UserState';
+import { formatProofForSnarkjsVerification } from '@unirep/circuits';
 declare const defaultUserStateLeaf: BigInt;
 declare const SMT_ZERO_LEAF: BigInt;
 declare const SMT_ONE_LEAF: BigInt;
 declare const computeEmptyUserStateRoot: (treeDepth: number) => BigInt;
-declare const computeInitUserStateRoot: (treeDepth: number, leafIdx: number, airdropPosRep: number) => Promise<BigInt>;
-declare const getTreeDepthsForTesting: (deployEnv?: string) => {
-    userStateTreeDepth: number;
-    globalStateTreeDepth: number;
-    epochTreeDepth: number;
-};
+declare const computeInitUserStateRoot: (treeDepth: number, leafIdx?: number | undefined, airdropPosRep?: number | undefined) => Promise<BigInt>;
 declare const genEpochKey: (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth?: number) => SnarkBigInt;
 declare const genEpochKeyNullifier: (identityNullifier: SnarkBigInt, epoch: number, nonce: number) => SnarkBigInt;
 declare const genReputationNullifier: (identityNullifier: SnarkBigInt, epoch: number, nonce: number, attesterId: BigInt) => SnarkBigInt;
 declare const genNewSMT: (treeDepth: number, defaultLeafHash: BigInt) => Promise<SparseMerkleTreeImpl>;
-declare const formatProofForSnarkjsVerification: (_proof: any) => {
-    pi_a: any[];
-    pi_b: any[][];
-    pi_c: any[];
-    protocol: string;
-    curve: string;
-};
 declare const verifyEpochKeyProofEvent: (event: ethers.Event) => Promise<boolean>;
 declare const verifyReputationProofEvent: (event: ethers.Event) => Promise<boolean>;
 declare const verifySignUpProofEvent: (event: ethers.Event) => Promise<boolean>;
@@ -35,4 +25,4 @@ declare const genUnirepStateFromParams: (_unirepState: IUnirepState) => UnirepSt
 declare const genUnirepStateFromContract: (provider: ethers.providers.Provider, address: string, _unirepState?: IUnirepState | undefined) => Promise<UnirepState>;
 declare const genUserStateFromParams: (userIdentity: any, _userState: IUserState) => UserState;
 declare const genUserStateFromContract: (provider: ethers.providers.Provider, address: string, userIdentity: any, _userState?: IUserState | undefined) => Promise<UserState>;
-export { defaultUserStateLeaf, SMT_ONE_LEAF, SMT_ZERO_LEAF, computeEmptyUserStateRoot, computeInitUserStateRoot, getTreeDepthsForTesting, formatProofForSnarkjsVerification, verifyEpochKeyProofEvent, verifyReputationProofEvent, verifySignUpProofEvent, verifyStartTransitionProofEvent, verifyProcessAttestationEvent, verifyProcessAttestationEvents, verifyUserStateTransitionEvent, verifyUSTEvents, genEpochKey, genEpochKeyNullifier, genReputationNullifier, genNewSMT, genUnirepStateFromContract, genUnirepStateFromParams, genUserStateFromContract, genUserStateFromParams, };
+export { defaultUserStateLeaf, SMT_ONE_LEAF, SMT_ZERO_LEAF, computeEmptyUserStateRoot, computeInitUserStateRoot, formatProofForSnarkjsVerification, verifyEpochKeyProofEvent, verifyReputationProofEvent, verifySignUpProofEvent, verifyStartTransitionProofEvent, verifyProcessAttestationEvent, verifyProcessAttestationEvents, verifyUserStateTransitionEvent, verifyUSTEvents, genEpochKey, genEpochKeyNullifier, genReputationNullifier, genNewSMT, genUnirepStateFromContract, genUnirepStateFromParams, genUserStateFromContract, genUserStateFromParams, };

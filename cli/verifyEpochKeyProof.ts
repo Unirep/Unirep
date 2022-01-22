@@ -4,6 +4,8 @@ import { ethers } from 'ethers'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
+import { EpochKeyProof } from '@unirep/contracts'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 
 const configureSubparser = (subparsers: any) => {
@@ -84,12 +86,11 @@ const verifyEpochKeyProof = async (args: any) => {
     }
     
     // Verify the proof on-chain
-    const isProofValid = await unirepContract.verifyEpochKeyValidity(
-        GSTRoot,
-        inputEpoch,
-        epk,
-        proof,
+    const epkProof: EpochKeyProof = new EpochKeyProof(
+        publicSignals,
+        formatProofForSnarkjsVerification(proof),
     )
+    const isProofValid = await unirepContract.verifyEpochKeyValidity(epkProof)
     if (!isProofValid) {
         console.error('Error: invalid epoch key proof')
         return

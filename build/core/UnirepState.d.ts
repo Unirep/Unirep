@@ -21,7 +21,6 @@ interface ISettings {
     readonly epochLength: number;
     readonly numEpochKeyNoncePerEpoch: number;
     readonly maxReputationBudget: number;
-    readonly defaultGSTLeaf: BigInt;
 }
 interface IUnirepState {
     readonly settings: ISettings;
@@ -49,7 +48,7 @@ declare class Attestation implements IAttestation {
     toJSON: (space?: number) => string;
 }
 declare class UnirepState {
-    setting: ISettings;
+    readonly setting: ISettings;
     currentEpoch: number;
     private epochTreeRoot;
     private GSTLeaves;
@@ -57,7 +56,10 @@ declare class UnirepState {
     private nullifiers;
     private globalStateTree;
     private epochTree;
-    private latestProcessedBlock;
+    private defaultGSTLeaf;
+    private userNum;
+    latestProcessedBlock: number;
+    private sealedEpochKey;
     private epochKeyInEpoch;
     private epochKeyToAttestationsMap;
     private epochGSTRootMap;
@@ -75,14 +77,23 @@ declare class UnirepState {
     getAttestations: (epochKey: string) => IAttestation[];
     getEpochKeys: (epoch: number) => string[];
     nullifierExist: (nullifier: BigInt) => boolean;
-    addAttestation: (epochKey: string, attestation: IAttestation, blockNumber?: number | undefined) => void;
-    addReputationNullifiers: (nullifier: BigInt, blockNumber?: number | undefined) => void;
+    nullifiersExist: (nullifiers: BigInt[]) => boolean;
+    private _checkBlockNumber;
+    private _checkCurrentEpoch;
+    private _checkValidEpoch;
+    private _checkMaxUser;
+    private _checkNullifier;
+    private _checkEpochKeyRange;
+    private _isEpochKeySealed;
+    private _updateGSTree;
     genGSTree: (epoch: number) => IncrementalQuinTree;
     genEpochTree: (epoch: number) => Promise<SparseMerkleTreeImpl>;
-    signUp: (epoch: number, GSTLeaf: BigInt, blockNumber?: number | undefined) => void;
-    epochTransition: (epoch: number, blockNumber?: number | undefined) => Promise<void>;
-    userStateTransition: (epoch: number, GSTLeaf: BigInt, nullifiers: BigInt[], blockNumber?: number | undefined) => void;
     GSTRootExists: (GSTRoot: BigInt | string, epoch: number) => boolean;
     epochTreeRootExists: (_epochTreeRoot: BigInt | string, epoch: number) => Promise<boolean>;
+    signUp: (epoch: number, idCommitment: BigInt, attesterId?: number | undefined, airdropAmount?: number | undefined, blockNumber?: number | undefined) => Promise<void>;
+    addAttestation: (epochKey: string, attestation: IAttestation, blockNumber?: number | undefined) => void;
+    addReputationNullifiers: (nullifier: BigInt, blockNumber?: number | undefined) => void;
+    epochTransition: (epoch: number, blockNumber?: number | undefined) => Promise<void>;
+    userStateTransition: (fromEpoch: number, GSTLeaf: BigInt, nullifiers: BigInt[], blockNumber?: number | undefined) => void;
 }
 export { Attestation, IAttestation, IEpochTreeLeaf, ISettings, IUnirepState, UnirepState, };

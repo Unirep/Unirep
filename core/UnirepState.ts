@@ -249,6 +249,17 @@ class UnirepState {
         if (this.nullifiers[nullifier.toString()]) return true
         return false
     }
+    
+    /*
+     * If one of the nullifiers exist in Unirep state, return true
+     */
+    public nullifiersExist = (nullifiers: BigInt[]): boolean => {
+        let exist = false
+        for (let nullifier of nullifiers) {
+            exist = this.nullifierExist(nullifier)
+        }
+        return exist
+    }
 
     /*
     * Check if the block has been processed
@@ -286,8 +297,8 @@ class UnirepState {
     */
     private _checkMaxUser = () => {
         assert(
-            this.userNum < 2** this.setting.globalStateTreeDepth,
-            `UnirepState: users number reaches the Unirep capacity, it should be less than ${2** this.setting.globalStateTreeDepth}`
+            this.userNum < 2 ** this.setting.globalStateTreeDepth,
+            `UnirepState: users number reaches the Unirep capacity, it should be less than ${2 ** this.setting.globalStateTreeDepth}`
         )
     }
 
