@@ -4,7 +4,9 @@ import { genIdentity, genIdentityCommitment, genRandomSalt, hashLeftRight, Ident
 import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, computeInitUserStateRoot, epochLength, genEpochKey, ISettings, maxReputationBudget, numEpochKeyNoncePerEpoch, Reputation, UnirepState, UserState } from "../../core"
 import { genNewGST, genRandomAttestation } from "../utils"
 
-describe('User State', async () => {
+describe('User State', async function () {
+    this.timeout(500000)
+    
     let unirepState: UnirepState
     let userState: UserState
     const setting: ISettings = {
