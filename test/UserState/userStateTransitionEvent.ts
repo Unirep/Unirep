@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genIdentity, genIdentityCommitment, genRandomSalt, hashLeftRight, } from '@unirep/crypto'
-import { deployUnirep, EpochKeyProof, UserTransitionProof} from '@unirep/contracts'
+import { deployUnirep, EpochKeyProof, UserTransitionProof, computeStartTransitionProofHash, computeProcessAttestationsProofHash} from '@unirep/contracts'
 import { attestingFee, computeInitUserStateRoot, epochLength, genUnirepStateFromContract, genUserStateFromContract, ISettings, maxAttesters, maxReputationBudget,  numEpochKeyNoncePerEpoch,  Reputation, UnirepState, UserState } from '../../core'
 import { genNewGST, genRandomAttestation, genRandomList, getTreeDepthsForTesting, verifyProcessAttestationsProof, verifyStartTransitionProof } from '../utils'
 import { formatProofForVerifierContract } from '@unirep/circuits'
@@ -278,7 +278,7 @@ describe('User state transition events in Unirep User State', async function () 
                 let receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
             
-                let hashedProof = await unirepContract.hashStartTransitionProof(
+                let hashedProof = computeStartTransitionProofHash(
                     startTransitionProof.blindedUserState,
                     startTransitionProof.blindedHashChain,
                     startTransitionProof.globalStateTreeRoot,
@@ -299,7 +299,7 @@ describe('User state transition events in Unirep User State', async function () 
                     receipt = await tx.wait()
                     expect(receipt.status).to.equal(1)
                 
-                    let hashedProof = await unirepContract.hashProcessAttestationsProof(
+                    let hashedProof = computeProcessAttestationsProofHash(
                         processAttestationProofs[i].outputBlindedUserState,
                         processAttestationProofs[i].outputBlindedHashChain,
                         processAttestationProofs[i].inputBlindedUserState,
@@ -394,7 +394,7 @@ describe('User state transition events in Unirep User State', async function () 
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            let hashedProof = await unirepContract.hashStartTransitionProof(
+            let hashedProof = computeStartTransitionProofHash(
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
@@ -415,7 +415,7 @@ describe('User state transition events in Unirep User State', async function () 
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
                 
-                let hashedProof = await unirepContract.hashProcessAttestationsProof(
+                let hashedProof = computeProcessAttestationsProofHash(
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
@@ -462,7 +462,7 @@ describe('User state transition events in Unirep User State', async function () 
             )
             expect(userState.toJSON()).equal(storedUserState)
 
-            let hashedProof = await unirepContract.hashStartTransitionProof(
+            let hashedProof = computeStartTransitionProofHash(
                 randomBlindedUserState,
                 randomBlindedHashChain,
                 randomGSTRoot,
@@ -492,7 +492,7 @@ describe('User state transition events in Unirep User State', async function () 
             )
             expect(userState.toJSON()).equal(storedUserState)
 
-            let hashedProof = await unirepContract.hashProcessAttestationsProof(
+            let hashedProof = computeProcessAttestationsProofHash(
                 randomOutputBlindedUserState,
                 randomOutputBlindedHashChain,
                 randomInputBlindedUserState,
@@ -563,7 +563,7 @@ describe('User state transition events in Unirep User State', async function () 
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            let hashedProof = await unirepContract.hashStartTransitionProof(
+            let hashedProof = computeStartTransitionProofHash(
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
@@ -584,7 +584,7 @@ describe('User state transition events in Unirep User State', async function () 
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
 
-                let hashedProof = await unirepContract.hashProcessAttestationsProof(
+                let hashedProof = computeProcessAttestationsProofHash(
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
@@ -642,7 +642,7 @@ describe('User state transition events in Unirep User State', async function () 
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
             
-            let hashedProof = await unirepContract.hashStartTransitionProof(
+            let hashedProof = computeStartTransitionProofHash(
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
@@ -663,7 +663,7 @@ describe('User state transition events in Unirep User State', async function () 
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
                 
-                let hashedProof = await unirepContract.hashProcessAttestationsProof(
+                let hashedProof = computeProcessAttestationsProofHash(
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
@@ -813,7 +813,7 @@ describe('User state transition events in Unirep User State', async function () 
                 let receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
 
-                let hashedProof = await unirepContract.hashStartTransitionProof(
+                let hashedProof = computeStartTransitionProofHash(
                     startTransitionProof.blindedUserState,
                     startTransitionProof.blindedHashChain,
                     startTransitionProof.globalStateTreeRoot,
@@ -834,7 +834,7 @@ describe('User state transition events in Unirep User State', async function () 
                     receipt = await tx.wait()
                     expect(receipt.status).to.equal(1)
 
-                    let hashedProof = await unirepContract.hashProcessAttestationsProof(
+                    let hashedProof = computeProcessAttestationsProofHash(
                         processAttestationProofs[i].outputBlindedUserState,
                         processAttestationProofs[i].outputBlindedHashChain,
                         processAttestationProofs[i].inputBlindedUserState,

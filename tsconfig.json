@@ -10,9 +10,7 @@
         "declaration": true
     },
     "include": [
-        "./core",
-        "./test",
-        "./typechain"
+        "./core"
     ],
     "exclude": ["**/privateKey.ts"],
     "files": ["./hardhat.config.ts"]

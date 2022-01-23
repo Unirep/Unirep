@@ -247,8 +247,7 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = repProofInput.epochKey
-            const hashedProof = await unirepContract.hashReputationProof(repProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(repProofInput.hash()))
 
             await expect(unirepContractCalledByAttester.spendReputation(repProofInput))
                 .to.be.revertedWith('Unirep: the proof has been submitted before')
@@ -328,8 +327,7 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = repProofInput.epochKey
-            const hashedProof = await unirepContract.hashReputationProof(repProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(repProofInput.hash()))
         })
 
         it('duplicated nullifier should not update User state', async () => {
@@ -400,8 +398,7 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = repProofInput.epochKey
-            const hashedProof = await unirepContract.hashReputationProof(repProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(repProofInput.hash()))
         })
 
         it('spendReputation event should not update User state', async () => {
@@ -476,8 +473,7 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = repProofInput.epochKey
-            const hashedProof = await unirepContract.hashReputationProof(repProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(repProofInput.hash()))
         })
 
         it('spendReputation event should not update Unirep state', async () => {

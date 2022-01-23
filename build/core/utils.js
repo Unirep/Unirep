@@ -28,7 +28,8 @@ exports.computeEmptyUserStateRoot = computeEmptyUserStateRoot;
 const computeInitUserStateRoot = async (treeDepth, leafIdx, airdropPosRep) => {
     const t = await crypto_1.SparseMerkleTreeImpl.create(new keyv_1.default(), treeDepth, defaultUserStateLeaf);
     if (leafIdx && airdropPosRep) {
-        const leafValue = (0, crypto_1.hash5)([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)]);
+        const airdropReputation = new UserState_1.Reputation(BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1));
+        const leafValue = airdropReputation.hash();
         await t.update(BigInt(leafIdx), leafValue);
     }
     return t.getRootHash();

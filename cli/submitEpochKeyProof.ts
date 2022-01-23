@@ -1,10 +1,11 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { EpochKeyProof } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepStateFromContract, UnirepContract } from '../core'
 import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
-
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -62,26 +63,21 @@ const submitEpochKeyProof = async (args: any) => {
     
     // Ethereum provider
     const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
-    const provider = new ethers.providers.JsonRpcProvider(ethProvider)
 
     // Unirep contract
     const unirepContract = new UnirepContract(args.contract, ethProvider)
-    
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        args.contract,
-    )
+    const currentEpoch = Number(await unirepContract.currentEpoch())
     
     const decodedProof = base64url.decode(args.proof.slice(epkProofPrefix.length))
     const decodedPublicSignals = base64url.decode(args.public_signals.slice(epkPublicSignalsPrefix.length))
     const proof = JSON.parse(decodedProof)
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const currentEpoch = unirepState.currentEpoch
-    const epk = publicSignals[2]
-    const inputEpoch = publicSignals[1]
-    const GSTRoot = publicSignals[0]
-    const epkProofData = publicSignals.concat([proof])
-    console.log(`Submit epoch key ${epk} with GSTRoot ${GSTRoot} in epoch ${inputEpoch}`)
+    const epochKeyProof = new EpochKeyProof(
+        publicSignals,
+        formatProofForSnarkjsVerification(proof)
+    )
+    const inputEpoch = epochKeyProof.epoch
+    console.log(`Submit epoch key ${epochKeyProof.epochKey} with GSTRoot ${epochKeyProof.globalStateTree} in epoch ${inputEpoch}`)
     if(inputEpoch != currentEpoch) {
         console.log(`Warning: the epoch key is expired. Epoch key is in epoch ${inputEpoch}, but the current epoch is ${currentEpoch}`)
     }
@@ -90,8 +86,8 @@ const submitEpochKeyProof = async (args: any) => {
     await unirepContract.unlock(args.eth_privkey)
 
     // Submit epoch key proof
-    const tx = await unirepContract.submitEpochKeyProof(epkProofData)
-    const proofIndex = await unirepContract.getEpochKeyProofIndex(epkProofData)
+    const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+    const proofIndex = await unirepContract.getEpochKeyProofIndex(epochKeyProof)
     if(tx != undefined){
         await tx.wait()
         console.log('Transaction hash:', tx?.hash)

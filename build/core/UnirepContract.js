@@ -201,16 +201,13 @@ class UnirepContract {
             return tx;
         };
         this.getEpochKeyProofIndex = async (epochKeyProof) => {
-            const proofNullifier = await this.contract.hashEpochKeyProof(epochKeyProof);
-            return this.contract.getProofIndex(proofNullifier);
+            return this.contract.getProofIndex(epochKeyProof.hash());
         };
         this.getReputationProofIndex = async (reputationProof) => {
-            const proofNullifier = await this.contract.hashReputationProof(reputationProof);
-            return this.contract.getProofIndex(proofNullifier);
+            return this.contract.getProofIndex(reputationProof.hash());
         };
         this.getSignUpProofIndex = async (signUpProof) => {
-            const proofNullifier = await this.contract.hashSignUpProof(signUpProof);
-            return this.contract.getProofIndex(proofNullifier);
+            return this.contract.getProofIndex(signUpProof.hash());
         };
         this.getStartTransitionProofIndex = async (blindedUserState, blindedHashChain, GSTreeRoot, proof) => {
             const proofNullifier = await this.contract.hashStartTransitionProof(blindedUserState, blindedHashChain, GSTreeRoot, (0, circuits_1.formatProofForVerifierContract)(proof));
@@ -276,7 +273,7 @@ class UnirepContract {
             }
             return tx;
         };
-        this.spendReputation = async (outputNullifiers, epoch, epk, GSTRoot, attesterId, repNullifiersAmount, minRep, proveGraffiti, graffitiPreImage, proof) => {
+        this.spendReputation = async (reputationProof) => {
             if (this.signer != undefined) {
                 this.contract = this.contract.connect(this.signer);
             }
@@ -285,25 +282,14 @@ class UnirepContract {
                 return;
             }
             const signerAttesterId = await this.getAttesterId();
-            if (signerAttesterId != attesterId) {
+            if (signerAttesterId != reputationProof.attesterId) {
                 console.log("Error: wrong attester ID proof");
                 return;
             }
             const attestingFee = await this.contract.attestingFee();
             let tx;
             try {
-                tx = await this.contract.spendReputation([
-                    outputNullifiers,
-                    epoch,
-                    epk,
-                    GSTRoot,
-                    attesterId,
-                    repNullifiersAmount,
-                    minRep,
-                    proveGraffiti,
-                    graffitiPreImage,
-                    proof
-                ], { value: attestingFee, gasLimit: 1000000 });
+                tx = await this.contract.spendReputation(reputationProof, { value: attestingFee, gasLimit: 1000000 });
             }
             catch (e) {
                 console.error('Error: the transaction failed');
@@ -314,7 +300,7 @@ class UnirepContract {
             }
             return tx;
         };
-        this.airdropEpochKey = async (epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof) => {
+        this.airdropEpochKey = async (userSignUpProof) => {
             if (this.signer != undefined) {
                 this.contract = this.contract.connect(this.signer);
             }
@@ -325,14 +311,7 @@ class UnirepContract {
             const attestingFee = await this.contract.attestingFee();
             let tx;
             try {
-                tx = await this.contract.airdropEpochKey([
-                    epoch,
-                    epk,
-                    GSTRoot,
-                    attesterId,
-                    userHasSignedUp,
-                    proof
-                ], { value: attestingFee, gasLimit: 1000000 });
+                tx = await this.contract.airdropEpochKey(userSignUpProof, { value: attestingFee, gasLimit: 1000000 });
             }
             catch (e) {
                 console.error('Error: the transaction failed');

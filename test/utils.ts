@@ -3,13 +3,10 @@
 // @ts-ignore
 import { ethers } from 'ethers'
 import Keyv from "keyv"
-import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, add0x, genRandomSalt } from '@unirep/crypto'
+import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, add0x, genRandomSalt, stringifyBigInts, Identity } from '@unirep/crypto'
+import { Circuit, verifyProof } from '@unirep/circuits'
 import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, maxReputationBudget, userStateTreeDepth} from '../config/testLocal'
 import { Attestation, genEpochKey, Reputation, UnirepState } from '../core'
-import { Identity } from '@unirep/crypto'
-import { stringifyBigInts } from '@unirep/crypto'
-import { genIdentityCommitment } from '@unirep/crypto'
-import { Circuit, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = add0x(str)
@@ -19,7 +16,6 @@ const toCompleteHexString = (str: string, len?: number): string => {
 
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
-const GSTZERO_VALUE = 0
 
 const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTreeImpl> => {
     return SparseMerkleTreeImpl.create(

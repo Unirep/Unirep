@@ -227,8 +227,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             expect(receipt.status).to.equal(1)
 
             epochKey = airdropProofInput.epochKey
-            const hashedProof = await unirepContract.hashSignUpProof(airdropProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(airdropProofInput.hash()))
 
             await expect(unirepContractCalledByAttester.airdropEpochKey(airdropProofInput))
                 .to.be.revertedWith('Unirep: the proof has been submitted before')
@@ -286,8 +285,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             expect(receipt.status).to.equal(1)
 
             epochKey = airdropProofInput.epochKey
-            const hashedProof = await unirepContract.hashSignUpProof(airdropProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(airdropProofInput.hash()))
         })
 
         it('airdropEpochKey event should not update User state', async () => {
@@ -360,8 +358,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             expect(receipt.status).to.equal(1)
 
             epochKey = airdropProofInput.epochKey
-            const hashedProof = await unirepContract.hashSignUpProof(airdropProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(airdropProofInput.hash()))
         })
 
         it('airdropEpochKey event should not update User state', async () => {

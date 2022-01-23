@@ -184,7 +184,7 @@
 //     //         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
 //     //         console.log("Gas cost of submit a start transition proof:", receipt.gasUsed.toString())
 
-//     //         let proofNullifier = await unirepContract.hashStartTransitionProof(
+//     //         let proofNullifier = computeStartTransitionProofHash(
 //     //             blindedUserState,
 //     //             blindedHashChain,
 //     //             GSTreeRoot,
@@ -222,7 +222,7 @@
 //     //             expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
 //     //             console.log("Gas cost of submit a process attestations proof:", receipt.gasUsed.toString())
 
-//     //             const proofNullifier = await unirepContract.hashProcessAttestationsProof(
+//     //             const proofNullifier = computeProcessAttestationsProofHash(
 //     //                 outputBlindedUserState,
 //     //                 outputBlindedHashChain,
 //     //                 inputBlindedUserState,
@@ -849,7 +849,7 @@
 //     //         let receipt = await tx.wait()
 //     //         expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
 
-//     //         let proofNullifier = await unirepContract.hashStartTransitionProof(
+//     //         let proofNullifier = computeStartTransitionProofHash(
 //     //             blindedUserState,
 //     //             blindedHashChain,
 //     //             GSTreeRoot,
@@ -875,7 +875,7 @@
 //     //             receipt = await tx.wait()
 //     //             expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
 
-//     //             const proofNullifier = await unirepContract.hashProcessAttestationsProof(
+//     //             const proofNullifier = computeProcessAttestationsProofHash(
 //     //                 outputBlindedUserState,
 //     //                 outputBlindedHashChain,
 //     //                 inputBlindedUserState,

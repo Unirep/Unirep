@@ -1,8 +1,10 @@
+import base64url from 'base64url'
+import { SignUpProof } from '@unirep/contracts'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { UnirepContract } from '../core'
 import { verifyUserSignUpProof } from './verifyUserSignUpProof'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
-import base64url from 'base64url'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser(
@@ -71,20 +73,20 @@ const giveAirdrop = async (args: any) => {
     
     // Parse input
     const decodedProof = base64url.decode(args.proof.slice(signUpProofPrefix.length))
+    const proof = JSON.parse(decodedProof)
     const decodedPublicSignals = base64url.decode(args.public_signals.slice(signUpPublicSignalsPrefix.length))
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const epoch = publicSignals[0]
-    const epk = publicSignals[1]
-    const GSTRoot = publicSignals[2]
-    const attesterId = publicSignals[3]
-    const userHasSignedUp = publicSignals[4]
-    const proof = JSON.parse(decodedProof)
-    console.log(`Airdrop to epoch key ${epk} in attester ID ${attesterId}`)
+    const userSignUpProof = new SignUpProof(
+        publicSignals,
+        formatProofForSnarkjsVerification(proof)
+    )
+    
+    console.log(`Airdrop to epoch key ${userSignUpProof.epochKey} in attester ID ${userSignUpProof.attesterId}`)
 
     // Submit attestation
-    const tx = await unirepContract.airdropEpochKey(epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof)
+    const tx = await unirepContract.airdropEpochKey(userSignUpProof)
     await tx.wait()
-    const proofIndex = await unirepContract.getSignUpProofIndex([epoch, epk, GSTRoot, attesterId, userHasSignedUp, proof])
+    const proofIndex = await unirepContract.getSignUpProofIndex(userSignUpProof)
     if(tx != undefined){
         console.log('Transaction hash:', tx?.hash)
         console.log('Proof index:', proofIndex.toNumber())

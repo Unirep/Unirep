@@ -3,7 +3,7 @@ import Keyv from "keyv"
 import { getUnirepContract, Event, AttestationEvent } from '@unirep/contracts'
 import { hash5, hashLeftRight, IncrementalQuinTree, SnarkBigInt, SparseMerkleTreeImpl } from '@unirep/crypto'
 
-import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, userStateTreeDepth } from '../config/testLocal'
+import { circuitEpochTreeDepth} from '../config/testLocal'
 import { Attestation, IEpochTreeLeaf, ISettings, IUnirepState, UnirepState } from './UnirepState'
 import { IUserState, IUserStateLeaf, Reputation, UserState } from './UserState'
 import { EPOCH_KEY_NULLIFIER_DOMAIN, REPUTATION_NULLIFIER_DOMAIN } from '../config/nullifierDomainSeparator'
@@ -31,13 +31,24 @@ const computeInitUserStateRoot = async (treeDepth: number, leafIdx?: number, air
         defaultUserStateLeaf,
     )
     if (leafIdx && airdropPosRep) {
-        const leafValue = hash5([BigInt(airdropPosRep), BigInt(0), BigInt(0), BigInt(1)])
+        const airdropReputation = new Reputation(
+            BigInt(airdropPosRep),
+            BigInt(0),
+            BigInt(0),
+            BigInt(1)
+        )
+        const leafValue = airdropReputation.hash()
         await t.update(BigInt(leafIdx), leafValue)
     }
     return t.getRootHash()
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = circuitEpochTreeDepth): SnarkBigInt => {
+const genEpochKey = (
+    identityNullifier: SnarkBigInt, 
+    epoch: number, 
+    nonce: number, 
+    _epochTreeDepth: number = circuitEpochTreeDepth
+): SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
         epoch,
@@ -51,7 +62,11 @@ const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: numbe
     return epochKeyModed
 }
 
-const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number): SnarkBigInt => {
+const genEpochKeyNullifier = (
+    identityNullifier: SnarkBigInt, 
+    epoch: number, 
+    nonce: number
+): SnarkBigInt => {
     return hash5([
         EPOCH_KEY_NULLIFIER_DOMAIN, 
         identityNullifier, 
@@ -61,7 +76,12 @@ const genEpochKeyNullifier = (identityNullifier: SnarkBigInt, epoch: number, non
     ])
 }
 
-const genReputationNullifier = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, attesterId: BigInt): SnarkBigInt => {
+const genReputationNullifier = (
+    identityNullifier: SnarkBigInt, 
+    epoch: number, 
+    nonce: number, 
+    attesterId: BigInt
+): SnarkBigInt => {
     return hash5([
         REPUTATION_NULLIFIER_DOMAIN, 
         identityNullifier, 
@@ -71,7 +91,10 @@ const genReputationNullifier = (identityNullifier: SnarkBigInt, epoch: number, n
     ])
 }
 
-const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTreeImpl> => {
+const genNewSMT = async (
+    treeDepth: number, 
+    defaultLeafHash: BigInt
+): Promise<SparseMerkleTreeImpl> => {
     return SparseMerkleTreeImpl.create(
         new Keyv(),
         treeDepth,
@@ -88,7 +111,11 @@ const verifyEpochKeyProofEvent = async (event: ethers.Event): Promise<boolean> =
         args?.epochKey,
     ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(Circuit.verifyEpochKey, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(
+        Circuit.verifyEpochKey, 
+        formatProof, 
+        formatPublicSignals
+    )
     return isProofValid
 }
 
@@ -107,7 +134,11 @@ const verifyReputationProofEvent = async (event: ethers.Event): Promise<boolean>
         args?.graffitiPreImage,
     ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(Circuit.proveReputation, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(
+        Circuit.proveReputation, 
+        formatProof, 
+        formatPublicSignals
+    )
     return isProofValid
 }
 
@@ -122,7 +153,11 @@ const verifySignUpProofEvent = async (event: ethers.Event): Promise<boolean> => 
         args?.userHasSignedUp,
     ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(Circuit.proveUserSignUp, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(
+        Circuit.proveUserSignUp, 
+        formatProof, 
+        formatPublicSignals
+    )
     return isProofValid
 }
 
@@ -135,7 +170,11 @@ const verifyStartTransitionProofEvent = async (event: ethers.Event): Promise<boo
         args?._globalStateTree,
     ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?._proof)
-    const isProofValid = await verifyProof(Circuit.startTransition, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(
+        Circuit.startTransition, 
+        formatProof, 
+        formatPublicSignals
+    )
     return isProofValid
 }
 
@@ -148,7 +187,11 @@ const verifyProcessAttestationEvent = async (event: ethers.Event): Promise<boole
         args?._inputBlindedUserState,
     ).map(n => BigInt(n))
     const formatProof = formatProofForSnarkjsVerification(args?._proof)
-    const isProofValid = await verifyProof(Circuit.processAttestations, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(
+        Circuit.processAttestations, 
+        formatProof, 
+        formatPublicSignals
+    )
     return isProofValid
 }
 
@@ -165,11 +208,19 @@ const verifyUserStateTransitionEvent = async (event: ethers.Event): Promise<bool
         transitionArgs.fromEpochTree,
     ).map(n => BigInt(n))
     let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof)
-    const isProofValid = await verifyProof(Circuit.userStateTransition, formatProof, formatPublicSignals)
+    const isProofValid = await verifyProof(
+        Circuit.userStateTransition, 
+        formatProof, 
+        formatPublicSignals
+    )
     return isProofValid
 }
 
-const verifyUSTEvents = async(transitionEvent: ethers.Event, startTransitionEvent: ethers.Event, processAttestationEvents: ethers.Event[]): Promise<boolean> => {
+const verifyUSTEvents = async (
+    transitionEvent: ethers.Event, 
+    startTransitionEvent: ethers.Event, 
+    processAttestationEvents: ethers.Event[]
+): Promise<boolean> => {
     // verify the final UST proof
     const isValid = await verifyUserStateTransitionEvent(transitionEvent)
     if(!isValid) return false
@@ -189,7 +240,11 @@ const verifyUSTEvents = async(transitionEvent: ethers.Event, startTransitionEven
     return true
 }
 
-const verifyProcessAttestationEvents = async(processAttestationEvents: ethers.Event[], startBlindedUserState: ethers.BigNumber, finalBlindedUserState: ethers.BigNumber): Promise<boolean> => {
+const verifyProcessAttestationEvents = async (
+    processAttestationEvents: ethers.Event[], 
+    startBlindedUserState: ethers.BigNumber, 
+    finalBlindedUserState: ethers.BigNumber
+): Promise<boolean> => {
 
     let currentBlindedUserState = startBlindedUserState
     // The rest are process attestations proofs

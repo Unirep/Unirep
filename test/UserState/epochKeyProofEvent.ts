@@ -229,8 +229,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = epkProofInput.epochKey
-            const hashedProof = await unirepContract.hashEpochKeyProof(epkProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(epkProofInput.hash()))
 
             // submit the same proof twice should fail
             await expect(unirepContract.submitEpochKeyProof(epkProofInput))
@@ -279,8 +278,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = epkProofInput.epochKey
-            const hashedProof = await unirepContract.hashEpochKeyProof(epkProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(epkProofInput.hash()))
         })
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {            
@@ -339,8 +337,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = epkProofInput.epochKey
-            const hashedProof = await unirepContract.hashEpochKeyProof(epkProofInput)
-            proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
+            proofIndex = Number(await unirepContract.getProofIndex(epkProofInput.hash()))
         })
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {          

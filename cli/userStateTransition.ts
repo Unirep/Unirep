@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { unSerialiseIdentity } from '@unirep/crypto'
-import { Circuit, formatProofForSnarkjsVerification, verifyProof } from '@unirep/circuits'
+import { Circuit, verifyProof } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUserStateFromContract, UnirepContract } from '../core'
