@@ -245,14 +245,17 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+            const tx = await unirepContractCalledByAttester.spendReputation(
+                repProofInput,
+                { value: attestingFee }
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
             epochKey = repProofInput.epochKey
             proofIndex = Number(await unirepContract.getProofIndex(repProofInput.hash()))
 
-            await expect(unirepContractCalledByAttester.spendReputation(repProofInput))
+            await expect(unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee }))
                 .to.be.revertedWith('Unirep: the proof has been submitted before')
         })
 
@@ -274,7 +277,8 @@ describe('Reputation proof events in Unirep State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -323,7 +327,7 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -346,7 +350,8 @@ describe('Reputation proof events in Unirep State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -392,7 +397,7 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -415,7 +420,8 @@ describe('Reputation proof events in Unirep State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -465,7 +471,7 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+            const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -488,7 +494,8 @@ describe('Reputation proof events in Unirep State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -533,7 +540,7 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
 
-            await expect(unirepContractCalledByAttester.spendReputation(repProofInput))
+            await expect(unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee }))
                 .to.be.revertedWith('Unirep: submit a reputation proof with incorrect epoch')
         })
     })

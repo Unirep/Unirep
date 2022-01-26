@@ -464,7 +464,7 @@
 //             const isValid = await repProofInput.verify()
 //             expect(isValid).to.be.true
 
-//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
 //             const receipt = await tx.wait()
 //             expect(receipt.status).to.equal(1)
 
@@ -472,7 +472,7 @@
 //             const hashedProof = await unirepContract.hashReputationProof(repProofInput)
 //             proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
 
-//             await expect(unirepContractCalledByAttester.spendReputation(repProofInput))
+//             await expect(unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee }))
 //                 .to.be.revertedWith('Unirep: the proof has been submitted before')
 //         })
 
@@ -543,7 +543,7 @@
 //             const isValid = await repProofInput.verify()
 //             expect(isValid).to.be.true
 
-//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
 //             const receipt = await tx.wait()
 //             expect(receipt.status).to.equal(1)
 
@@ -613,7 +613,7 @@
 //             const isValid = await repProofInput.verify()
 //             expect(isValid).to.be.false
 
-//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
 //             const receipt = await tx.wait()
 //             expect(receipt.status).to.equal(1)
 
@@ -688,7 +688,7 @@
 //             const isValid = await repProofInput.verify()
 //             expect(isValid).to.be.true
 
-//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput)
+//             const tx = await unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee })
 //             const receipt = await tx.wait()
 //             expect(receipt.status).to.equal(1)
 
@@ -757,7 +757,7 @@
 //             const isValid = await repProofInput.verify()
 //             expect(isValid).to.be.true
 
-//             await expect(unirepContractCalledByAttester.spendReputation(repProofInput))
+//             await expect(unirepContractCalledByAttester.spendReputation(repProofInput, { value: attestingFee }))
 //                 .to.be.revertedWith('Unirep: submit a reputation proof with incorrect epoch')
 //         })
 //     })

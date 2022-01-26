@@ -242,7 +242,8 @@ describe('Epoch key proof events in Unirep User State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -287,7 +288,8 @@ describe('Epoch key proof events in Unirep User State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -346,7 +348,8 @@ describe('Epoch key proof events in Unirep User State', function () {
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex
+                proofIndex,
+                { value: attestingFee }
             )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)

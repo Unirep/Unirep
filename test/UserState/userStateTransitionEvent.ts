@@ -721,7 +721,8 @@ describe('User state transition events in Unirep User State', async function () 
                 tx = await unirepContractCalledByAttester.submitAttestation(
                     attestation,
                     epochKey,
-                    proofIndex
+                    proofIndex,
+                    { value: attestingFee }
                 )
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
