@@ -20,11 +20,19 @@ const configureSubparser = (subparsers: any) => {
     )
 
     parser.add_argument(
-        '-i', '--proof-index',
+        '-toi', '--to-proof-index',
         {
             required: true,
             type: 'int',
-            help: 'The proof index of the user\'s epoch key ',
+            help: 'The proof index of the receiver\'s epoch key ',
+        }
+    )
+
+    parser.add_argument(
+        '-fromi', '--from-proof-index',
+        {
+            type: 'int',
+            help: 'The proof index of the sender\'s epoch key ',
         }
     )
 
@@ -102,7 +110,8 @@ const attest = async (args: any) => {
     await unirepContract.unlock(args.eth_privkey)
     
     // Parse input
-    const index = args.proof_index
+    const index = args.to_proof_index
+    const fromIndex = args.from_proof_index != undefined ? args.from_proof_index : 0 
     const epochKey = args.epoch_key
     const posRep = args.pos_rep != undefined ? args.pos_rep : 0
     const negRep = args.neg_rep != undefined ? args.neg_rep : 0
@@ -120,7 +129,7 @@ const attest = async (args: any) => {
     console.log(`Attesting to epoch key ${epochKey} with pos rep ${posRep}, neg rep ${negRep}, graffiti ${graffiti.toString(16)} and sign up flag ${signUp}`)
 
     // Submit attestation
-    const tx = await unirepContract.submitAttestation(attestation, epochKey, index)
+    const tx = await unirepContract.submitAttestation(attestation, epochKey, index, fromIndex)
     console.log('Transaction hash:', tx?.hash)
 }
 

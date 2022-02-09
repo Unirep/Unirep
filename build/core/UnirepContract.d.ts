@@ -42,8 +42,8 @@ export declare class UnirepContract {
     getSignUpProofIndex: (signUpProof: SignUpProof) => Promise<any>;
     getStartTransitionProofIndex: (blindedUserState: BigInt | string, blindedHashChain: BigInt | string, GSTreeRoot: BigInt | string, proof: SnarkProof) => Promise<any>;
     getProcessAttestationsProofIndex: (outputBlindedUserState: BigInt | string, outputBlindedHashChain: BigInt | string, inputBlindedUserState: BigInt | string, proof: SnarkProof) => Promise<any>;
-    submitAttestation: (attestation: IAttestation, epochKey: BigInt | string, proofIndex: BigInt | string) => Promise<any>;
-    submitAttestationViaRelayer: (attesterAddr: string, signature: string, attestation: IAttestation, epochKeyProof: BigInt[] | string[]) => Promise<any>;
+    submitAttestation: (attestation: IAttestation, epochKey: BigInt | string, toProofIndex: BigInt | string | number, fromProofIndex: BigInt | string | number) => Promise<any>;
+    submitAttestationViaRelayer: (attesterAddr: string, signature: string, attestation: IAttestation, epochKey: BigInt | string, toProofIndex: BigInt | string | number, fromProofIndex: BigInt | string | number) => Promise<any>;
     spendReputation: (reputationProof: ReputationProof) => Promise<any>;
     airdropEpochKey: (userSignUpProof: SignUpProof) => Promise<any>;
     fastForward: () => Promise<void>;

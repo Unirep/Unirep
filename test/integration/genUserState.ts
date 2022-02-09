@@ -168,6 +168,7 @@ describe('Generate user state', function () {
 
             const proofIndex = await unirepContract.getProofIndex(epochKeyProof.hash())
             expect(proofIndex.toNumber()).not.equal(0)
+            const fromProofIndex = 0
 
             attesterId = BigInt(await unirepContract.attesters(attester['addr']))
             const attestation: Attestation = genRandomAttestation()
@@ -176,6 +177,7 @@ describe('Generate user state', function () {
                 attestation,
                 epochKeyProof.epochKey,
                 proofIndex,
+                fromProofIndex,
                 { value: attestingFee }
             )
             receipt = await tx.wait()

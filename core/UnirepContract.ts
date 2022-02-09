@@ -283,7 +283,12 @@ export class UnirepContract {
         return this.contract.getProofIndex(proofNullifier)
     }
 
-    public submitAttestation = async (attestation: IAttestation, epochKey: BigInt | string, proofIndex: BigInt | string): Promise<any> => {
+    public submitAttestation = async (
+        attestation: IAttestation, 
+        epochKey: BigInt | string, 
+        toProofIndex: BigInt | string | number,
+        fromProofIndex: BigInt | string | number
+    ): Promise<any> => {
         if(this.signer != undefined){
             const attesterAddr = await this.signer?.getAddress()
             const attesterExist = await this.attesters(attesterAddr)
@@ -303,7 +308,8 @@ export class UnirepContract {
             tx = await this.contract.submitAttestation(
                 attestation,
                 epochKey,
-                proofIndex,
+                toProofIndex,
+                fromProofIndex,
                 { value: attestingFee, gasLimit: 1000000 }
             )
         } catch(e) {
@@ -316,7 +322,13 @@ export class UnirepContract {
         return tx
     }
 
-    public submitAttestationViaRelayer = async (attesterAddr: string, signature: string, attestation: IAttestation, epochKeyProof: BigInt[] | string[]): Promise<any> => {
+    public submitAttestationViaRelayer = async (
+        attesterAddr: string, 
+        signature: string, 
+        attestation: IAttestation, 
+        epochKey: BigInt | string, 
+        toProofIndex: BigInt | string | number,
+        fromProofIndex: BigInt | string | number): Promise<any> => {
         if(this.signer != undefined){
             const attesterExist = await this.attesters(attesterAddr)
             if(attesterExist.toNumber() == 0){
@@ -336,7 +348,9 @@ export class UnirepContract {
                 attesterAddr,
                 signature,
                 attestation,
-                epochKeyProof,
+                epochKey,
+                toProofIndex,
+                fromProofIndex,
                 { value: attestingFee, gasLimit: 1000000 }
             )
         } catch(e) {

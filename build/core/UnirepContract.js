@@ -217,7 +217,7 @@ class UnirepContract {
             const proofNullifier = await this.contract.hashProcessAttestationsProof(outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, (0, circuits_1.formatProofForVerifierContract)(proof));
             return this.contract.getProofIndex(proofNullifier);
         };
-        this.submitAttestation = async (attestation, epochKey, proofIndex) => {
+        this.submitAttestation = async (attestation, epochKey, toProofIndex, fromProofIndex) => {
             var _a;
             if (this.signer != undefined) {
                 const attesterAddr = await ((_a = this.signer) === null || _a === void 0 ? void 0 : _a.getAddress());
@@ -235,7 +235,7 @@ class UnirepContract {
             const attestingFee = await this.contract.attestingFee();
             let tx;
             try {
-                tx = await this.contract.submitAttestation(attestation, epochKey, proofIndex, { value: attestingFee, gasLimit: 1000000 });
+                tx = await this.contract.submitAttestation(attestation, epochKey, toProofIndex, fromProofIndex, { value: attestingFee, gasLimit: 1000000 });
             }
             catch (e) {
                 console.error('Error: the transaction failed');
@@ -246,7 +246,7 @@ class UnirepContract {
             }
             return tx;
         };
-        this.submitAttestationViaRelayer = async (attesterAddr, signature, attestation, epochKeyProof) => {
+        this.submitAttestationViaRelayer = async (attesterAddr, signature, attestation, epochKey, toProofIndex, fromProofIndex) => {
             if (this.signer != undefined) {
                 const attesterExist = await this.attesters(attesterAddr);
                 if (attesterExist.toNumber() == 0) {
@@ -262,7 +262,7 @@ class UnirepContract {
             const attestingFee = await this.contract.attestingFee();
             let tx;
             try {
-                tx = await this.contract.submitAttestationViaRelayer(attesterAddr, signature, attestation, epochKeyProof, { value: attestingFee, gasLimit: 1000000 });
+                tx = await this.contract.submitAttestationViaRelayer(attesterAddr, signature, attestation, epochKey, toProofIndex, fromProofIndex, { value: attestingFee, gasLimit: 1000000 });
             }
             catch (e) {
                 console.error('Error: the transaction failed');

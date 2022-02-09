@@ -25,6 +25,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
     let attesterId
     const maxUsers = (2 ** circuitGlobalStateTreeDepth) - 1
     const userNum = Math.ceil(Math.random() * maxUsers)
+    const fromProofIndex = 0
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -269,6 +270,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 attestation,
                 epochKey,
                 proofIndex,
+                fromProofIndex,
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -337,6 +339,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 attestation,
                 epochKey,
                 proofIndex,
+                fromProofIndex,
                 { value: attestingFee }
             )
             const receipt = await tx.wait()
@@ -409,6 +412,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 attestation,
                 epochKey,
                 proofIndex,
+                fromProofIndex,
                 { value: attestingFee }
             )
             const receipt = await tx.wait()

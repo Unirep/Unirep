@@ -214,7 +214,7 @@ describe('test all CLI subcommands', function() {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
-                ` -i ${proofIdx} ` +
+                ` -toi ${proofIdx} ` +
                 ` -pr ${posRep} ` +
                 ` -nr ${negRep} ` +
                 ` -gf ${graffiti.toString(16)} ` +
