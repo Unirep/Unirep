@@ -61,6 +61,7 @@ const configureSubparser = (subparsers: any) => {
     parser.add_argument(
         '-d', '--eth-privkey',
         {
+            required: true,
             action: 'store',
             type: 'str',
             help: 'The attester\'s Ethereum private key',

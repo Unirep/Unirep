@@ -1,10 +1,9 @@
 import base64url from 'base64url'
-import { ethers } from 'ethers'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { EpochKeyProof } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepStateFromContract, UnirepContract } from '../core'
+import { UnirepContract } from '../core'
 import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
 
 const configureSubparser = (subparsers: any) => {
@@ -52,6 +51,7 @@ const configureSubparser = (subparsers: any) => {
     parser.add_argument(
         '-d', '--eth-privkey',
         {
+            required: true,
             action: 'store',
             type: 'str',
             help: 'The attester\'s Ethereum private key',
