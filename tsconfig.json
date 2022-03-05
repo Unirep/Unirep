@@ -1,17 +1,15 @@
 {
-    "compilerOptions": {
-        "target": "es2018",
-        "module": "commonjs",
-        "strict": true,
-        "esModuleInterop": true,
-        "resolveJsonModule": true,
-        "noImplicitAny": false,
-        "outDir": "./build",
-        "declaration": true
-    },
-    "include": [
-        "./core"
-    ],
-    "exclude": ["**/privateKey.ts"],
-    "files": ["./hardhat.config.ts"]
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": false,
+    "declaration": true
+  },
+  "exclude": [
+    "**/node_modules",
+    "**/webpack"
+  ]
 }
