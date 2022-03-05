@@ -5,7 +5,7 @@ import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circu
 import { genNewGST, genRandomAttestation } from "../utils"
 
 describe('User State', async function () {
-    this.timeout(500000)
+    this.timeout(0);
     
     let unirepState: UnirepState
     let userState: UserState

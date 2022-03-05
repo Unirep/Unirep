@@ -13,7 +13,7 @@ import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 
 describe('test all CLI subcommands', function() {
-    this.timeout(500000)
+    this.timeout(0)
 
     let deployerPrivKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     let deployerAddr

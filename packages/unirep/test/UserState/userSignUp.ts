@@ -8,7 +8,7 @@ import { attestingFee, circuitGlobalStateTreeDepth, computeInitUserStateRoot, ep
 import { genNewGST, getTreeDepthsForTesting } from '../utils'
 
 describe('User sign up events in Unirep User State', function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     let userIds: any[] = []
     let userCommitments: BigInt[] = []

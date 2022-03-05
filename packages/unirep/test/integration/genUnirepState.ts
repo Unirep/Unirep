@@ -11,7 +11,7 @@
 // import { SignUpProof } from '@unirep/contracts'
 
 // describe('Generate Unirep state', function () {
-//     this.timeout(500000)
+//     this.timeout(0)
 
 //     let users: UserState[] = new Array(2)
 //     const firstUser = 0

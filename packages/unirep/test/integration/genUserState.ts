@@ -9,7 +9,7 @@ import { Attestation, attestingFee, epochLength, genUserStateFromContract, genUs
 import { genRandomAttestation, getTreeDepthsForTesting } from '../utils'
 
 describe('Generate user state', function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     let users: UserState[] = new Array(2)
     const firstUser = 0

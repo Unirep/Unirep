@@ -9,7 +9,7 @@ import { attestingFee, circuitGlobalStateTreeDepth, computeInitUserStateRoot, ep
 import { genNewGST, genNewUserStateTree, genRandomAttestation, genReputationCircuitInput, getTreeDepthsForTesting } from '../utils'
 
 describe('Reputation proof events in Unirep User State', function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     let userIds: any[] = []
     let userCommitments: BigInt[] = []

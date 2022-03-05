@@ -9,7 +9,7 @@ import { attestingFee, circuitGlobalStateTreeDepth, computeInitUserStateRoot, ep
 import { genNewGST, genNewUserStateTree, genProveSignUpCircuitInput, genRandomAttestation, getTreeDepthsForTesting } from '../utils'
 
 describe('User sign up proof (Airdrop proof) events in Unirep User State', function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     let userIds: any[] = []
     let userCommitments: BigInt[] = []

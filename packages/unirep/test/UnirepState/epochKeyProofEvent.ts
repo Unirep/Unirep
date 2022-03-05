@@ -10,7 +10,7 @@ import { genEpochKeyCircuitInput, genNewGST,genRandomAttestation, getTreeDepthsF
 import { IncrementalQuinTree } from '@unirep/crypto'
 
 describe('Epoch key proof events in Unirep State', function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     let users: UserState[] = new Array(2)
     let userIds: any[] = []

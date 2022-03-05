@@ -9,7 +9,7 @@ import { genNewGST, genRandomAttestation, genRandomList, getTreeDepthsForTesting
 import { formatProofForVerifierContract } from '@unirep/circuits'
 
 describe('User state transition events in Unirep User State', async function () {
-    this.timeout(500000)
+    this.timeout(0);
 
     let userIds: any[] = []
     let userCommitments: BigInt[] = []

@@ -9,7 +9,7 @@ import { genEpochKeyCircuitInput, genNewGST, genRandomAttestation, genRandomList
 import { Circuit, formatProofForVerifierContract, genProofAndPublicSignals } from '@unirep/circuits'
 
 describe('User state transition events in Unirep State', async function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     let userIds: any[] = []
     let userCommitments: BigInt[] = []
