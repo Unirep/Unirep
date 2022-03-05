@@ -1,0 +1,12 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./build",
+    },
+    "include": [
+        "./core",
+        "../../@type",
+    ],
+    "exclude": ["**/privateKey.ts"],
+    "files": ["./hardhat.config.ts"]
+}

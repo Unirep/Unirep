@@ -1,0 +1,5 @@
+*.dbg.json
+cache
+build-info
+node_modules
+.DS_Store
