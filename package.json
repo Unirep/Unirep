@@ -9,7 +9,10 @@
   "scripts": {
     "contract": "yarn --silent workspace @unirep/contracts",
     "unirep": "yarn --silent workspace @unirep/unirep",
-    "circuits": "yarn --silent workspace @unirep/circuits"
+    "circuits": "yarn --silent workspace @unirep/circuits",
+    "crypto": "yarn --silent workspace @unirep/crypto",
+    "build": "yarn workspaces run build",
+    "test": "yarn workspaces run test"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",

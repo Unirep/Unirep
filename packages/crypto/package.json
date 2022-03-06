@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "build/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "echo 'No test for crypto!!!'"
   },
   "repository": "https://github.com/Unirep/crypto.git",
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
