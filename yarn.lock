@@ -862,17 +862,6 @@
   resolved "https://registry.yarnpkg.com/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
-"@unirep/circuits@git+https://github.com/Unirep/circuits.git":
-  version "1.0.4"
-  resolved "git+https://github.com/Unirep/circuits.git#7d83677d07d7f71994214561ef5921eb9ff41b62"
-  dependencies:
-    "@unirep/crypto" "git+https://github.com/Unirep/crypto.git"
-    argparse "^2.0.1"
-    circom "^0.5.45"
-    circomlib "^0.5.3"
-    snarkjs "^0.4.7"
-    typescript "^4.4.2"
-
 "@unirep/crypto@git+https://github.com/Unirep/crypto.git":
   version "1.0.0"
   resolved "git+https://github.com/Unirep/crypto.git#43a23e961c9b69be68a503bcaf9025a5152f78e0"
@@ -2267,6 +2256,22 @@ circom@0.5.33:
     tmp-promise "^2.0.2"
     wasmbuilder "0.0.10"
 
+circom@0.5.45:
+  version "0.5.45"
+  resolved "https://registry.yarnpkg.com/circom/-/circom-0.5.45.tgz#82931882c5d38022ccb8be9c4a6314ea94bc511e"
+  integrity sha512-5Ixp6UjwrhBWnnFBO/mTns+eeEDOpi5UoN4znAUWy5rklCUWYt2Ezl9QVUswBXjMP5kpfEtGUY2XSsYRAp6uMg==
+  dependencies:
+    chai "^4.2.0"
+    circom_runtime "0.1.12"
+    fastfile "0.0.18"
+    ffiasm "0.1.1"
+    ffjavascript "0.2.22"
+    ffwasm "0.0.7"
+    fnv-plus "^1.3.1"
+    r1csfile "0.0.16"
+    tmp-promise "^2.0.2"
+    wasmbuilder "0.0.10"
+
 circom@^0.5.45:
   version "0.5.46"
   resolved "https://registry.yarnpkg.com/circom/-/circom-0.5.46.tgz#031e96b1d83744103c0054eb1561bf191c6e8cdd"
@@ -2317,10 +2322,10 @@ circomlib@0.5.1:
     ffjavascript "0.1.0"
     web3-utils "^1.3.0"
 
-circomlib@^0.5.3:
-  version "0.5.5"
-  resolved "https://registry.yarnpkg.com/circomlib/-/circomlib-0.5.5.tgz#aa2f91100b2bbc5208201f381e2c04b843f73890"
-  integrity sha512-5FUw6AnEw+65suAgEQCucVepxOm96wnIo89vBldeX1DjeSV8zpP88Tje3BLBTLz0C1U6SkRnwqULrtiA5IVtZQ==
+circomlib@0.5.3:
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/circomlib/-/circomlib-0.5.3.tgz#88eec8a3bf9e3f6284efb623cd577c8634ebf6a8"
+  integrity sha512-xfUWcbo1gq7ETkia5woEdlC6GlQHYFW1a65TIFLeu3o/s75CprMsmDu34vJ+w/ELxfF+bJfHckEDu8luXCnhrw==
   dependencies:
     blake-hash "^1.1.0"
     blake2b "^2.1.3"
@@ -5790,7 +5795,7 @@ mocha@^8.2.1:
     yargs-parser "20.2.4"
     yargs-unparser "2.0.0"
 
-mocha@^9.2.0:
+mocha@^9.1.1, mocha@^9.2.0:
   version "9.2.1"
   resolved "https://registry.yarnpkg.com/mocha/-/mocha-9.2.1.tgz#a1abb675aa9a8490798503af57e8782a78f1338e"
   integrity sha512-T7uscqjJVS46Pq1XDXyo9Uvey9gd3huT/DD9cYBb4K2Xc/vbKRPUWK067bxDQRK0yIz6Jxk73IrnimvASzBNAQ==

@@ -35,7 +35,6 @@
     "dependencies": {
         "@typechain/ethers-v5": "^9.0.0",
         "@typechain/hardhat": "^4.0.0",
-        "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "ethers": "^5.4.6",
