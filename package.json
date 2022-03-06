@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "contract": "yarn --silent workspace @unirep/contracts",
-    "unirep": "yarn --silent workspace @unirep/unirep"
+    "unirep": "yarn --silent workspace @unirep/unirep",
+    "circuits": "yarn --silent workspace @unirep/circuits"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -27,7 +28,6 @@
   "dependencies": {
     "@typechain/ethers-v5": "^9.0.0",
     "@typechain/hardhat": "^4.0.0",
-    "@unirep/circuits": "git+https://github.com/Unirep/circuits.git",
     "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
     "argparse": "^2.0.1",
     "base64url": "^3.0.1",

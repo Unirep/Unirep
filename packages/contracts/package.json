@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.4.2",
-    "@unirep/circuits": "git+https://github.com/Unirep/circuits.git",
     "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
     "argparse": "^2.0.1",
     "ethers": "^5.5.3",
