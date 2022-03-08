@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "contract": "yarn --silent workspace @unirep/contracts",
+    "contracts": "yarn --silent workspace @unirep/contracts",
     "unirep": "yarn --silent workspace @unirep/unirep",
     "circuits": "yarn --silent workspace @unirep/circuits",
     "crypto": "yarn --silent workspace @unirep/crypto",

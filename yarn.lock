@@ -862,15 +862,6 @@
   resolved "https://registry.yarnpkg.com/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
-"@unirep/crypto@git+https://github.com/Unirep/crypto.git":
-  version "1.0.0"
-  resolved "git+https://github.com/Unirep/crypto.git#43a23e961c9b69be68a503bcaf9025a5152f78e0"
-  dependencies:
-    bigint-conversion "^2.1.12"
-    maci-config "^0.9.1"
-    maci-crypto "^0.9.1"
-    typescript "^4.4.2"
-
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@yarnpkg/lockfile/-/lockfile-1.1.0.tgz#e77a97fbd345b76d83245edcd17d393b1b41fb31"

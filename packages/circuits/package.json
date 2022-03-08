@@ -16,7 +16,7 @@
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
   "license": "MIT",
   "dependencies": {
-    "@unirep/crypto": "git+https://github.com/Unirep/crypto.git",
+    "@unirep/crypto": "^1.0.0",
     "argparse": "^2.0.1",
     "circom": "0.5.45",
     "circomlib": "0.5.3",
