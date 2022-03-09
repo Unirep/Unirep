@@ -1,0 +1,5 @@
+.DS_Store
+*.ptau
+*.r1cs
+
+node_modules/

@@ -1,0 +1,415 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const chai_1 = require("chai");
+const crypto_1 = require("@unirep/crypto");
+const core_1 = require("../../core");
+const utils_1 = require("../utils");
+describe('Unirep State', function () {
+    let unirepState;
+    const setting = {
+        globalStateTreeDepth: core_1.circuitGlobalStateTreeDepth,
+        userStateTreeDepth: core_1.circuitUserStateTreeDepth,
+        epochTreeDepth: core_1.circuitEpochTreeDepth,
+        attestingFee: core_1.attestingFee,
+        epochLength: core_1.epochLength,
+        numEpochKeyNoncePerEpoch: core_1.numEpochKeyNoncePerEpoch,
+        maxReputationBudget: core_1.maxReputationBudget,
+    };
+    const epochKeys = [];
+    const maxUsers = 2 ** setting.globalStateTreeDepth;
+    const userNum = Math.ceil(Math.random() * maxUsers);
+    let epoch = 1;
+    before(async () => {
+        unirepState = new core_1.UnirepState(setting);
+    });
+    describe('Users sign up', async () => {
+        const GSTree = (0, utils_1.genNewGST)(setting.globalStateTreeDepth, setting.userStateTreeDepth);
+        const rootHistories = [];
+        it('update Unirep state should success', async () => {
+            for (let i = 0; i < userNum; i++) {
+                const commitment = (0, crypto_1.genRandomSalt)();
+                const randomAttesterId = Math.ceil(Math.random() * 10);
+                const randomAirdropAmount = Math.ceil(Math.random() * 10);
+                await unirepState.signUp(epoch, commitment, randomAttesterId, randomAirdropAmount);
+                const USTRoot = await (0, core_1.computeInitUserStateRoot)(setting.userStateTreeDepth, randomAttesterId, randomAirdropAmount);
+                const GSTLeaf = (0, crypto_1.hashLeftRight)(commitment, USTRoot);
+                const unirepGSTree = unirepState.genGSTree(epoch);
+                GSTree.insert(GSTLeaf);
+                (0, chai_1.expect)(GSTree.root, `Global state tree root from Unirep state mismatches current global state tree`).equal(unirepGSTree.root);
+                rootHistories.push(GSTree.root);
+                const GSTLeafNum = unirepState.getNumGSTLeaves(epoch);
+                (0, chai_1.expect)(GSTLeafNum, `Global state tree leaves should match`).equal(i + 1);
+            }
+        });
+        it('Get GST leaf number should fail if input an invalid epoch', async () => {
+            const wrongEpoch = epoch + 1;
+            let error;
+            try {
+                unirepState.getNumGSTLeaves(wrongEpoch);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('Update user sign up with wrong epoch should fail', async () => {
+            const wrongEpoch = epoch + 1;
+            const commitment = (0, crypto_1.genRandomSalt)();
+            const randomAttesterId = Math.ceil(Math.random() * 10);
+            const randomAirdropAmount = Math.ceil(Math.random() * 10);
+            let error;
+            try {
+                await unirepState.signUp(wrongEpoch, commitment, randomAttesterId, randomAirdropAmount);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('Query GST root should success', async () => {
+            for (let root of rootHistories) {
+                const exist = unirepState.GSTRootExists(root, epoch);
+                (0, chai_1.expect)(exist, 'Query global state tree root from Unirep state failed').to.be.true;
+            }
+        });
+        it('Query global state tree roots with wrong input should success', async () => {
+            const notExist = unirepState.GSTRootExists((0, crypto_1.genRandomSalt)(), epoch);
+            (0, chai_1.expect)(notExist, 'Query non-exist root from User state should fail').to.be.false;
+            const invalidEpoch = epoch + 1;
+            for (let root of rootHistories) {
+                let error;
+                try {
+                    unirepState.GSTRootExists(root, invalidEpoch);
+                }
+                catch (e) {
+                    error = e;
+                }
+                (0, chai_1.expect)(error).not.to.be.undefined;
+            }
+        });
+    });
+    describe('Add attestations', async () => {
+        const attestationsToEpochKey = {};
+        it('update Unirep state should success', async () => {
+            const maxEpochKeyNum = 10;
+            const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum);
+            for (let i = 0; i < epochKeyNum; i++) {
+                const maxAttestPerEpochKeyNum = 10;
+                const attestNum = Math.ceil(Math.random() * maxAttestPerEpochKeyNum);
+                const epochKey = BigInt((0, crypto_1.genRandomSalt)().toString()) % BigInt(2 ** setting.epochLength);
+                epochKeys.push(epochKey.toString());
+                attestationsToEpochKey[epochKey.toString()] = [];
+                for (let j = 0; j < attestNum; j++) {
+                    const attestation = (0, utils_1.genRandomAttestation)();
+                    unirepState.addAttestation(epochKey.toString(), attestation);
+                    attestationsToEpochKey[epochKey.toString()].push(attestation.toJSON());
+                }
+            }
+        });
+        it('wrong epoch key should throw error', async () => {
+            let error;
+            const wrongEpochKey = (0, crypto_1.genRandomSalt)();
+            const attestation = (0, utils_1.genRandomAttestation)();
+            try {
+                unirepState.addAttestation(wrongEpochKey.toString(), attestation);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('Get attestations should success', async () => {
+            for (let i = 0; i < epochKeys.length; i++) {
+                const unirepAttestations = unirepState.getAttestations(epochKeys[i]);
+                for (let j = 0; j < unirepAttestations.length; j++) {
+                    (0, chai_1.expect)(unirepAttestations[j].toJSON(), 'Query attestations from Unirep state failed')
+                        .equal(attestationsToEpochKey[epochKeys[i]][j]);
+                }
+            }
+        });
+        it('Get attestation with non exist epoch key should return an empty array', async () => {
+            const epochKey = BigInt((0, crypto_1.genRandomSalt)().toString()) % BigInt(2 ** setting.epochLength);
+            const unirepAttestations = unirepState.getAttestations(epochKey.toString());
+            (0, chai_1.expect)(unirepAttestations.length).equal(0);
+        });
+        it('Get attestation with invalid epoch key should throw error', async () => {
+            let error;
+            const wrongEpochKey = (0, crypto_1.genRandomSalt)();
+            try {
+                unirepState.getAttestations(wrongEpochKey.toString());
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('get epoch keys should success', async () => {
+            const unirepEpochKeys = unirepState.getEpochKeys(epoch);
+            (0, chai_1.expect)(unirepEpochKeys.length).equal(epochKeys.length);
+            for (let epk of unirepEpochKeys) {
+                (0, chai_1.expect)(epochKeys.indexOf(epk)).not.equal(-1);
+            }
+        });
+        it('get epoch keys with invalid epoch should fail', async () => {
+            let error;
+            try {
+                unirepState.getEpochKeys(epoch + 1);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('add reputation nullifiers', async () => {
+            const nullifierNum = Math.ceil(Math.random() * 10);
+            for (let i = 0; i < nullifierNum; i++) {
+                const nullifier = (0, crypto_1.genRandomSalt)();
+                unirepState.addReputationNullifiers(nullifier);
+                // submit the same nullifier twice should fail
+                let error;
+                try {
+                    unirepState.addReputationNullifiers(nullifier);
+                }
+                catch (e) {
+                    error = e;
+                }
+                (0, chai_1.expect)(error).not.to.be.undefined;
+                // query nullifier should succeed
+                const exist = unirepState.nullifierExist(nullifier);
+                (0, chai_1.expect)(exist, 'Query reputation nullifier from Unirep state failed').to.be.true;
+            }
+        });
+        it('non exist nullifier should return false', async () => {
+            const notExist = unirepState.nullifierExist((0, crypto_1.genRandomSalt)());
+            (0, chai_1.expect)(notExist, 'Query non exist nullifier from Unirep state with wrong result').to.be.false;
+        });
+    });
+    describe('1st Epoch transition', async () => {
+        const GSTree = (0, utils_1.genNewGST)(setting.globalStateTreeDepth, setting.userStateTreeDepth);
+        const rootHistories = [];
+        it('epoch transition', async () => {
+            await unirepState.epochTransition(epoch);
+            (0, chai_1.expect)(unirepState.currentEpoch, 'Unirep epoch should increase by 1').equal(epoch + 1);
+            epoch = unirepState.currentEpoch;
+            // sealed epoch key should not add attestations
+            for (let i = 0; i < epochKeys.length; i++) {
+                const attestation = (0, utils_1.genRandomAttestation)();
+                // submit the attestation to sealed epoch key should fail
+                let error;
+                try {
+                    unirepState.addAttestation(epochKeys[i], attestation);
+                }
+                catch (e) {
+                    error = e;
+                }
+                (0, chai_1.expect)(error).not.to.be.undefined;
+            }
+        });
+        it('epoch transition with wrong epoch input should fail', async () => {
+            const wrongEpoch = 1;
+            let error;
+            try {
+                await unirepState.epochTransition(wrongEpoch);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('update Unirep state should success', async () => {
+            for (let i = 0; i < userNum; i++) {
+                const GSTLeaf = (0, crypto_1.genRandomSalt)();
+                const nullifiers = [];
+                for (let j = 0; j < core_1.numEpochKeyNoncePerEpoch; j++) {
+                    nullifiers.push((0, crypto_1.genRandomSalt)());
+                }
+                unirepState.userStateTransition(epoch, GSTLeaf, nullifiers);
+                const unirepGSTree = unirepState.genGSTree(epoch);
+                GSTree.insert(GSTLeaf);
+                (0, chai_1.expect)(GSTree.root, `Global state tree root from Unirep state mismatches current global state tree`).equal(unirepGSTree.root);
+                rootHistories.push(GSTree.root);
+                const GSTLeafNum = unirepState.getNumGSTLeaves(epoch);
+                (0, chai_1.expect)(GSTLeafNum, `Global state tree leaves should match`).equal(i + 1);
+            }
+        });
+        it('Query GST root should success', async () => {
+            for (let root of rootHistories) {
+                const exist = unirepState.GSTRootExists(root, epoch);
+                (0, chai_1.expect)(exist, 'Query global state tree root from Unirep state failed').to.be.true;
+            }
+        });
+        it('Query global state tree roots with wrong input should success', async () => {
+            const notExist = unirepState.GSTRootExists((0, crypto_1.genRandomSalt)(), epoch);
+            (0, chai_1.expect)(notExist, 'Query non-exist root from User state should fail').to.be.false;
+            const invalidEpoch = epoch + 1;
+            for (let root of rootHistories) {
+                let error;
+                try {
+                    unirepState.GSTRootExists(root, invalidEpoch);
+                }
+                catch (e) {
+                    error = e;
+                }
+                (0, chai_1.expect)(error).not.to.be.undefined;
+            }
+        });
+        it('user state transition with wrong epoch should fail', async () => {
+            const wrongEpoch = epoch + 1;
+            const GSTLeaf = (0, crypto_1.genRandomSalt)();
+            const nullifiers = [];
+            for (let i = 0; i < core_1.numEpochKeyNoncePerEpoch; i++) {
+                nullifiers.push((0, crypto_1.genRandomSalt)());
+            }
+            let error;
+            try {
+                await unirepState.userStateTransition(wrongEpoch, GSTLeaf, nullifiers);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('user state transition with wrong nullifiers amount should fail', async () => {
+            const GSTLeaf = (0, crypto_1.genRandomSalt)();
+            const nullifiers = [];
+            const wrongEpkNullifierAmount = core_1.numEpochKeyNoncePerEpoch + 1;
+            for (let i = 0; i < wrongEpkNullifierAmount; i++) {
+                nullifiers.push((0, crypto_1.genRandomSalt)());
+            }
+            let error;
+            try {
+                unirepState.userStateTransition(epoch, GSTLeaf, nullifiers);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('generate epoch tree should succeed', async () => {
+            const prevEpoch = 1;
+            const epochTree = await unirepState.genEpochTree(prevEpoch);
+            const root = epochTree.getRootHash();
+            const exist = await unirepState.epochTreeRootExists(root, prevEpoch);
+            (0, chai_1.expect)(exist).to.be.true;
+        });
+        it('query wrong epoch tree root should fail', async () => {
+            const prevEpoch = 1;
+            const wrongRoot = (0, crypto_1.genRandomSalt)();
+            const notExist = await unirepState.epochTreeRootExists(wrongRoot, prevEpoch);
+            (0, chai_1.expect)(notExist).to.be.false;
+        });
+        it('query epoch tree root with wrong epoch should throw error', async () => {
+            const wrongEpoch = epoch + 1;
+            const root = (0, crypto_1.genRandomSalt)();
+            let error;
+            try {
+                await unirepState.epochTreeRootExists(root, wrongEpoch);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+    });
+    describe('Add attestations in the next epoch', async () => {
+        const attestationsToEpochKey = {};
+        it('update Unirep state should success', async () => {
+            const maxEpochKeyNum = 10;
+            const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum);
+            for (let i = 0; i < epochKeyNum; i++) {
+                const maxAttestPerEpochKeyNum = 10;
+                const attestNum = Math.ceil(Math.random() * maxAttestPerEpochKeyNum);
+                const epochKey = BigInt((0, crypto_1.genRandomSalt)().toString()) % BigInt(2 ** setting.epochLength);
+                attestationsToEpochKey[epochKey.toString()] = [];
+                for (let j = 0; j < attestNum; j++) {
+                    const attestation = (0, utils_1.genRandomAttestation)();
+                    unirepState.addAttestation(epochKey.toString(), attestation);
+                    attestationsToEpochKey[epochKey.toString()].push(attestation.toJSON());
+                }
+            }
+        });
+        it('add reputation nullifiers', async () => {
+            const nullifierNum = Math.ceil(Math.random() * 10);
+            for (let i = 0; i < nullifierNum; i++) {
+                const nullifier = (0, crypto_1.genRandomSalt)();
+                unirepState.addReputationNullifiers(nullifier);
+                // submit the same nullifier twice should fail
+                let error;
+                try {
+                    unirepState.addReputationNullifiers(nullifier);
+                }
+                catch (e) {
+                    error = e;
+                }
+                (0, chai_1.expect)(error).not.to.be.undefined;
+                // query nullifier should succeed
+                const exist = unirepState.nullifierExist(nullifier);
+                (0, chai_1.expect)(exist, 'Query reputation nullifier from Unirep state failed').to.be.true;
+            }
+        });
+    });
+    describe('2nd Epoch transition', async () => {
+        const GSTree = (0, utils_1.genNewGST)(setting.globalStateTreeDepth, setting.userStateTreeDepth);
+        const rootHistories = [];
+        it('epoch transition', async () => {
+            await unirepState.epochTransition(epoch);
+            (0, chai_1.expect)(unirepState.currentEpoch, 'Unirep epoch should increase by 1').equal(epoch + 1);
+            epoch = unirepState.currentEpoch;
+        });
+        it('epoch transition with wrong epoch input should fail', async () => {
+            const wrongEpoch = 1;
+            let error;
+            try {
+                await unirepState.epochTransition(wrongEpoch);
+            }
+            catch (e) {
+                error = e;
+            }
+            (0, chai_1.expect)(error).not.to.be.undefined;
+        });
+        it('update Unirep state should success', async () => {
+            for (let i = 0; i < userNum; i++) {
+                const GSTLeaf = (0, crypto_1.genRandomSalt)();
+                const nullifiers = [];
+                for (let j = 0; j < core_1.numEpochKeyNoncePerEpoch; j++) {
+                    nullifiers.push((0, crypto_1.genRandomSalt)());
+                }
+                unirepState.userStateTransition(epoch, GSTLeaf, nullifiers);
+                const unirepGSTree = unirepState.genGSTree(epoch);
+                GSTree.insert(GSTLeaf);
+                (0, chai_1.expect)(GSTree.root, `Global state tree root from Unirep state mismatches current global state tree`).equal(unirepGSTree.root);
+                rootHistories.push(GSTree.root);
+                const GSTLeafNum = unirepState.getNumGSTLeaves(epoch);
+                (0, chai_1.expect)(GSTLeafNum, `Global state tree leaves should match`).equal(i + 1);
+            }
+        });
+        it('Query GST root should success', async () => {
+            for (let root of rootHistories) {
+                const exist = unirepState.GSTRootExists(root, epoch);
+                (0, chai_1.expect)(exist, 'Query global state tree root from Unirep state failed').to.be.true;
+            }
+        });
+        it('Query global state tree roots with wrong input should success', async () => {
+            const notExist = unirepState.GSTRootExists((0, crypto_1.genRandomSalt)(), epoch);
+            (0, chai_1.expect)(notExist, 'Query non-exist root from User state should fail').to.be.false;
+            const invalidEpoch = epoch + 1;
+            for (let root of rootHistories) {
+                let error;
+                try {
+                    unirepState.GSTRootExists(root, invalidEpoch);
+                }
+                catch (e) {
+                    error = e;
+                }
+                (0, chai_1.expect)(error).not.to.be.undefined;
+            }
+        });
+        it('generate epoch tree should succeed', async () => {
+            const prevEpoch = 1;
+            const epochTree = await unirepState.genEpochTree(prevEpoch);
+            const root = epochTree.getRootHash();
+            const exist = await unirepState.epochTreeRootExists(root, prevEpoch);
+            (0, chai_1.expect)(exist).to.be.true;
+        });
+    });
+});
