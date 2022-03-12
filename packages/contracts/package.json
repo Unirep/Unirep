@@ -28,7 +28,7 @@
     "chai": "^4.3.4",
     "circom": "^0.5.45",
     "ethereum-waffle": "^3.4.0",
-    "hardhat": "^2.9.1",
+    "hardhat": "^2.8.3",
     "keyv": "^4.0.3",
     "ts-node": "^10.2.1",
     "typechain": "^7.0.1"

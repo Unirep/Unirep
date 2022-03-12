@@ -27,14 +27,13 @@
         "bigint-conversion": "^2.1.12",
         "chai": "^4.2.0",
         "ethereum-waffle": "^3.4.0",
-        "hardhat": "^2.9.1",
+        "hardhat": "^2.8.3",
         "shelljs": "^0.8.3",
         "keyv": "^4.0.3",
         "ts-node": "^10.2.1"
     },
     "dependencies": {
         "@typechain/ethers-v5": "^9.0.0",
-        "@typechain/hardhat": "^4.0.0",
         "@unirep/circuits": "^1.0.4",
         "@unirep/crypto": "^1.0.0",
         "@unirep/contracts": "^1.0.6", 
