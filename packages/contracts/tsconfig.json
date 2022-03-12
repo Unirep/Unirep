@@ -5,7 +5,7 @@
     },
     "include": [
         "./src", 
-        "../../@type"
+        "./typechain"
     ],
     "files": ["./hardhat.config.ts"],
 }

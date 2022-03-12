@@ -1,4 +1,5 @@
 import { HardhatUserConfig } from "hardhat/config"
+import '@typechain/hardhat'
 import "@nomiclabs/hardhat-ethers"
 import "@nomiclabs/hardhat-waffle"
 
@@ -28,6 +29,10 @@ const config: HardhatUserConfig = {
       }
     ]
   },
+
+  typechain: {
+    outDir: './typechain',
+  }
 }
 
 export default config;

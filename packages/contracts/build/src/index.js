@@ -1,21 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Unirep = exports.getUnirepContract = exports.deployUnirep = exports.computeProcessAttestationsProofHash = exports.computeStartTransitionProofHash = exports.UserTransitionProof = exports.SignUpProof = exports.ReputationProof = exports.EpochKeyProof = exports.Attestation = exports.AttestationEvent = exports.Event = void 0;
+exports.getUnirepContract = exports.deployUnirep = exports.computeProcessAttestationsProofHash = exports.computeStartTransitionProofHash = exports.UserTransitionProof = exports.SignUpProof = exports.ReputationProof = exports.EpochKeyProof = exports.Attestation = exports.AttestationEvent = exports.Event = void 0;
 const ethers_1 = require("ethers");
 const crypto_1 = require("@unirep/crypto");
 const circuits_1 = require("@unirep/circuits");
 const config_1 = require("../config");
-const Unirep_json_1 = __importDefault(require("../artifacts/contracts/Unirep.sol/Unirep.json"));
-exports.Unirep = Unirep_json_1.default;
-const EpochKeyValidityVerifier_json_1 = __importDefault(require("../artifacts/contracts/EpochKeyValidityVerifier.sol/EpochKeyValidityVerifier.json"));
-const ReputationVerifier_json_1 = __importDefault(require("../artifacts/contracts/ReputationVerifier.sol/ReputationVerifier.json"));
-const UserSignUpVerifier_json_1 = __importDefault(require("../artifacts/contracts/UserSignUpVerifier.sol/UserSignUpVerifier.json"));
-const StartTransitionVerifier_json_1 = __importDefault(require("../artifacts/contracts/StartTransitionVerifier.sol/StartTransitionVerifier.json"));
-const UserStateTransitionVerifier_json_1 = __importDefault(require("../artifacts/contracts/UserStateTransitionVerifier.sol/UserStateTransitionVerifier.json"));
-const ProcessAttestationsVerifier_json_1 = __importDefault(require("../artifacts/contracts/ProcessAttestationsVerifier.sol/ProcessAttestationsVerifier.json"));
+const typechain_1 = require("../typechain");
 var Event;
 (function (Event) {
     Event[Event["UserSignedUp"] = 0] = "UserSignedUp";
@@ -35,18 +25,18 @@ class Attestation {
     constructor(_attesterId, _posRep, _negRep, _graffiti, _signUp) {
         this.hash = () => {
             return (0, crypto_1.hash5)([
-                this.attesterId,
-                this.posRep,
-                this.negRep,
-                this.graffiti,
-                this.signUp,
+                this.attesterId.toBigInt(),
+                this.posRep.toBigInt(),
+                this.negRep.toBigInt(),
+                this.graffiti.toBigInt(),
+                this.signUp.toBigInt(),
             ]);
         };
-        this.attesterId = _attesterId;
-        this.posRep = _posRep;
-        this.negRep = _negRep;
-        this.graffiti = _graffiti;
-        this.signUp = _signUp;
+        this.attesterId = ethers_1.ethers.BigNumber.from(_attesterId);
+        this.posRep = ethers_1.ethers.BigNumber.from(_posRep);
+        this.negRep = ethers_1.ethers.BigNumber.from(_negRep);
+        this.graffiti = ethers_1.ethers.BigNumber.from(_graffiti);
+        this.signUp = ethers_1.ethers.BigNumber.from(_signUp);
     }
 }
 exports.Attestation = Attestation;
@@ -58,7 +48,7 @@ class EpochKeyProof {
             return (0, circuits_1.verifyProof)(circuits_1.Circuit.verifyEpochKey, proof_, this.publicSignals.map(n => BigInt(n.toString())));
         };
         this.hash = () => {
-            const iface = new ethers_1.ethers.utils.Interface(Unirep_json_1.default.abi);
+            const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
             const abiEncoder = iface.encodeFunctionData('hashEpochKeyProof', [this]);
             return ethers_1.ethers.utils.keccak256(rmFuncSigHash(abiEncoder));
         };
@@ -114,7 +104,7 @@ class SignUpProof {
             return (0, circuits_1.verifyProof)(circuits_1.Circuit.proveUserSignUp, proof_, this.publicSignals.map(n => BigInt(n.toString())));
         };
         this.hash = () => {
-            const iface = new ethers_1.ethers.utils.Interface(Unirep_json_1.default.abi);
+            const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
             const abiEncoder = iface.encodeFunctionData('hashSignUpProof', [this]);
             return ethers_1.ethers.utils.keccak256(rmFuncSigHash(abiEncoder));
         };
@@ -170,7 +160,7 @@ class UserTransitionProof {
 }
 exports.UserTransitionProof = UserTransitionProof;
 const computeStartTransitionProofHash = (blindedUserState, blindedHashChain, globalStateTree, proof) => {
-    const iface = new ethers_1.ethers.utils.Interface(Unirep_json_1.default.abi);
+    const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
     const abiEncoder = iface.encodeFunctionData('hashStartTransitionProof', [
         blindedUserState,
         blindedHashChain,
@@ -181,7 +171,7 @@ const computeStartTransitionProofHash = (blindedUserState, blindedHashChain, glo
 };
 exports.computeStartTransitionProofHash = computeStartTransitionProofHash;
 const computeProcessAttestationsProofHash = (outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof) => {
-    const iface = new ethers_1.ethers.utils.Interface(Unirep_json_1.default.abi);
+    const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
     const abiEncoder = iface.encodeFunctionData('hashProcessAttestationsProof', [
         outputBlindedUserState,
         outputBlindedHashChain,
@@ -195,30 +185,29 @@ const rmFuncSigHash = (abiEncoder) => {
     return (0, crypto_1.add0x)(abiEncoder.slice(10));
 };
 const deployUnirep = async (deployer, _treeDepths, _settings) => {
-    let EpochKeyValidityVerifierContract, StartTransitionVerifierContract, ProcessAttestationsVerifierContract, UserStateTransitionVerifierContract, ReputationVerifierContract, UserSignUpVerifierContract;
+    let EpochKeyValidityVerifierContract;
+    let StartTransitionVerifierContract;
+    let ProcessAttestationsVerifierContract;
+    let UserStateTransitionVerifierContract;
+    let ReputationVerifierContract;
+    let UserSignUpVerifierContract;
     console.log('Deploying EpochKeyValidityVerifier');
-    const EpochKeyValidityVerifierFactory = new ethers_1.ethers.ContractFactory(EpochKeyValidityVerifier_json_1.default.abi, EpochKeyValidityVerifier_json_1.default.bytecode, deployer);
-    EpochKeyValidityVerifierContract = await EpochKeyValidityVerifierFactory.deploy();
+    EpochKeyValidityVerifierContract = await (new typechain_1.EpochKeyValidityVerifier__factory(deployer)).deploy();
     await EpochKeyValidityVerifierContract.deployTransaction.wait();
     console.log('Deploying StartTransitionVerifier');
-    const StartTransitionVerifierFactory = new ethers_1.ethers.ContractFactory(StartTransitionVerifier_json_1.default.abi, StartTransitionVerifier_json_1.default.bytecode, deployer);
-    StartTransitionVerifierContract = await StartTransitionVerifierFactory.deploy();
+    StartTransitionVerifierContract = await (new typechain_1.StartTransitionVerifier__factory(deployer)).deploy();
     await StartTransitionVerifierContract.deployTransaction.wait();
     console.log('Deploying ProcessAttestationsVerifier');
-    const ProcessAttestationsVerifierFactory = new ethers_1.ethers.ContractFactory(ProcessAttestationsVerifier_json_1.default.abi, ProcessAttestationsVerifier_json_1.default.bytecode, deployer);
-    ProcessAttestationsVerifierContract = await ProcessAttestationsVerifierFactory.deploy();
+    ProcessAttestationsVerifierContract = await (new typechain_1.ProcessAttestationsVerifier__factory(deployer)).deploy();
     await ProcessAttestationsVerifierContract.deployTransaction.wait();
     console.log('Deploying UserStateTransitionVerifier');
-    const UserStateTransitionVerifierFactory = new ethers_1.ethers.ContractFactory(UserStateTransitionVerifier_json_1.default.abi, UserStateTransitionVerifier_json_1.default.bytecode, deployer);
-    UserStateTransitionVerifierContract = await UserStateTransitionVerifierFactory.deploy();
+    UserStateTransitionVerifierContract = await (new typechain_1.UserStateTransitionVerifier__factory(deployer)).deploy();
     await UserStateTransitionVerifierContract.deployTransaction.wait();
     console.log('Deploying ReputationVerifier');
-    const ReputationVerifierFactory = new ethers_1.ethers.ContractFactory(ReputationVerifier_json_1.default.abi, ReputationVerifier_json_1.default.bytecode, deployer);
-    ReputationVerifierContract = await ReputationVerifierFactory.deploy();
+    ReputationVerifierContract = await (new typechain_1.ReputationVerifier__factory(deployer)).deploy();
     await ReputationVerifierContract.deployTransaction.wait();
     console.log('Deploying UserSignUpVerifier');
-    const UserSignUpVerifierFactory = new ethers_1.ethers.ContractFactory(UserSignUpVerifier_json_1.default.abi, UserSignUpVerifier_json_1.default.bytecode, deployer);
-    UserSignUpVerifierContract = await UserSignUpVerifierFactory.deploy();
+    UserSignUpVerifierContract = await (new typechain_1.UserSignUpVerifier__factory(deployer)).deploy();
     await UserSignUpVerifierContract.deployTransaction.wait();
     console.log('Deploying Unirep');
     let _maxUsers, _maxAttesters, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee;
@@ -238,17 +227,14 @@ const deployUnirep = async (deployer, _treeDepths, _settings) => {
             _epochLength = config_1.epochLength;
         _attestingFee = config_1.attestingFee;
     }
-    const f = new ethers_1.ethers.ContractFactory(Unirep_json_1.default.abi, Unirep_json_1.default.bytecode, deployer);
-    const c = await f.deploy(_treeDepths, {
+    const c = await (new typechain_1.Unirep__factory(deployer)).deploy(_treeDepths, {
         "maxUsers": _maxUsers,
         "maxAttesters": _maxAttesters,
-    }, EpochKeyValidityVerifierContract.address, StartTransitionVerifierContract.address, ProcessAttestationsVerifierContract.address, UserStateTransitionVerifierContract.address, ReputationVerifierContract.address, UserSignUpVerifierContract.address, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee, {
-        gasLimit: 9000000,
-    });
+    }, EpochKeyValidityVerifierContract.address, StartTransitionVerifierContract.address, ProcessAttestationsVerifierContract.address, UserStateTransitionVerifierContract.address, ReputationVerifierContract.address, UserSignUpVerifierContract.address, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee);
     await c.deployTransaction.wait();
     // Print out deployment info
     console.log("-----------------------------------------------------------------");
-    console.log("Bytecode size of Unirep:", Math.floor(Unirep_json_1.default.bytecode.length / 2), "bytes");
+    console.log("Bytecode size of Unirep:", Math.floor(typechain_1.Unirep__factory.bytecode.length / 2), "bytes");
     let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash);
     console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString());
     console.log("-----------------------------------------------------------------");
@@ -256,6 +242,6 @@ const deployUnirep = async (deployer, _treeDepths, _settings) => {
 };
 exports.deployUnirep = deployUnirep;
 const getUnirepContract = (addressOrName, signerOrProvider) => {
-    return new ethers_1.ethers.Contract(addressOrName, Unirep_json_1.default.abi, signerOrProvider);
+    return new ethers_1.ethers.Contract(addressOrName, typechain_1.Unirep__factory.abi, signerOrProvider);
 };
 exports.getUnirepContract = getUnirepContract;

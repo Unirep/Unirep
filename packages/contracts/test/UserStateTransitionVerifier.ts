@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import { expect } from "chai"
 import { genIdentity, genRandomSalt} from "@unirep/crypto"
 import { Circuit } from "@unirep/circuits"
@@ -59,7 +59,7 @@ describe('User State Transition', function () {
     })
 
     it('Proof with wrong global state tree root should fail', async () => {
-        const wrongGlobalStateTreeRoot = genRandomSalt()
+        const wrongGlobalStateTreeRoot = genRandomSalt() as BigNumberish;
         const circuitInputs = await genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(Circuit.userStateTransition, circuitInputs)
         input.fromGlobalStateTree = wrongGlobalStateTreeRoot
@@ -71,7 +71,7 @@ describe('User State Transition', function () {
         const wrongEpochTreeRoot = genRandomSalt()
         const circuitInputs = await genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(Circuit.userStateTransition, circuitInputs)
-        input.fromEpochTree = wrongEpochTreeRoot
+        input.fromEpochTree = wrongEpochTreeRoot as BigNumberish;
         const isProofValid = await unirepContract.verifyUserStateTransition(input)
         expect(isProofValid).to.be.false
     })
@@ -79,7 +79,7 @@ describe('User State Transition', function () {
     it('Proof with wrong blinded user states should fail', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(Circuit.userStateTransition, circuitInputs)
-        input.blindedUserStates[0] = genRandomSalt()
+        input.blindedUserStates[0] = genRandomSalt() as BigNumberish;
         const isProofValid = await unirepContract.verifyUserStateTransition(input)
         expect(isProofValid).to.be.false
     })
@@ -87,7 +87,7 @@ describe('User State Transition', function () {
     it('Proof with wrong blinded hash chain should fail', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(Circuit.userStateTransition, circuitInputs)
-        input.blindedHashChains[0] = genRandomSalt()
+        input.blindedHashChains[0] = genRandomSalt() as BigNumberish;
         const isProofValid = await unirepContract.verifyUserStateTransition(input)
         expect(isProofValid).to.be.false
     })
@@ -95,7 +95,7 @@ describe('User State Transition', function () {
     it('Proof with wrong global state tree leaf should fail', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(Circuit.userStateTransition, circuitInputs)
-        input.newGlobalStateTreeLeaf = genRandomSalt()
+        input.newGlobalStateTreeLeaf = genRandomSalt() as BigNumberish;
         const isProofValid = await unirepContract.verifyUserStateTransition(input)
         expect(isProofValid).to.be.false
     })
