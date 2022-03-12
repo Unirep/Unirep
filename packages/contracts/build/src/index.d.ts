@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { SnarkProof } from '@unirep/crypto';
 import { Unirep } from '../typechain';
-export declare type Field = BigNumberish;
+export declare type Field = BigNumberish | BigInt;
 declare enum Event {
     UserSignedUp = 0,
     UserStateTransitioned = 1,
