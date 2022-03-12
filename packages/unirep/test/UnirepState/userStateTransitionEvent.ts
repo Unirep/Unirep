@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genIdentity, genIdentityCommitment, genRandomSalt, hashLeftRight, } from '@unirep/crypto'
 import { deployUnirep, EpochKeyProof, UserTransitionProof, computeStartTransitionProofHash, computeProcessAttestationsProofHash} from '@unirep/contracts'
@@ -489,10 +489,10 @@ describe('User state transition events in Unirep State', async function () {
             expect(unirepState.toJSON()).equal(storedUnirepState)
 
             let hashedProof = computeStartTransitionProofHash(
-                randomBlindedUserState,
-                randomBlindedHashChain,
-                randomGSTRoot,
-                randomProof
+                BigNumber.from(randomBlindedUserState),
+                BigNumber.from(randomBlindedHashChain),
+                BigNumber.from(randomGSTRoot),
+                randomProof.map(p => BigNumber.from(p))
             )
             invalidProofIndexes.push(Number(await unirepContract.getProofIndex(hashedProof)))
         })
@@ -518,10 +518,10 @@ describe('User state transition events in Unirep State', async function () {
             expect(unirepState.toJSON()).equal(storedUnirepState)
 
             let hashedProof = computeProcessAttestationsProofHash(
-                randomOutputBlindedUserState,
-                randomOutputBlindedHashChain,
-                randomInputBlindedUserState,
-                randomProof,
+                BigNumber.from(randomOutputBlindedUserState),
+                BigNumber.from(randomOutputBlindedHashChain),
+                BigNumber.from(randomInputBlindedUserState),
+                randomProof.map(p => BigNumber.from(p)),
             )
             invalidProofIndexes.push(Number(await unirepContract.getProofIndex(hashedProof)))
         })

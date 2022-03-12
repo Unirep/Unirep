@@ -5,7 +5,7 @@ import { maxUsers, maxAttesters, numEpochKeyNoncePerEpoch, epochLength, attestin
 
 import { EpochKeyValidityVerifier, EpochKeyValidityVerifier__factory, ProcessAttestationsVerifier, ProcessAttestationsVerifier__factory, ReputationVerifier, ReputationVerifier__factory, StartTransitionVerifier, StartTransitionVerifier__factory, Unirep, Unirep__factory, UserSignUpVerifier, UserSignUpVerifier__factory, UserStateTransitionVerifier, UserStateTransitionVerifier__factory } from '../typechain'
 
-export type Field = BigNumberish | BigInt
+export type Field = BigNumberish
 
 enum Event {
     UserSignedUp,
