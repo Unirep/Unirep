@@ -1,6 +1,6 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { SnarkProof } from '@unirep/crypto';
-import { Unirep } from '../typechain';
+import { Unirep, Unirep__factory as UnirepFactory } from '../typechain';
 export declare type Field = BigNumberish;
 declare enum Event {
     UserSignedUp = 0,
@@ -122,4 +122,4 @@ declare const computeStartTransitionProofHash: (blindedUserState: Field, blinded
 declare const computeProcessAttestationsProofHash: (outputBlindedUserState: Field, outputBlindedHashChain: Field, inputBlindedUserState: Field, proof: Field[]) => string;
 declare const deployUnirep: (deployer: ethers.Signer, _treeDepths: any, _settings?: any) => Promise<Unirep>;
 declare const getUnirepContract: (addressOrName: string, signerOrProvider: ethers.Signer | ethers.providers.Provider | undefined) => ethers.Contract;
-export { Event, AttestationEvent, IAttestation, IEpochKeyProof, IReputationProof, ISignUpProof, IUserTransitionProof, Attestation, EpochKeyProof, ReputationProof, SignUpProof, UserTransitionProof, computeStartTransitionProofHash, computeProcessAttestationsProofHash, deployUnirep, getUnirepContract, };
+export { Event, AttestationEvent, IAttestation, IEpochKeyProof, IReputationProof, ISignUpProof, IUserTransitionProof, Attestation, EpochKeyProof, ReputationProof, SignUpProof, UserTransitionProof, computeStartTransitionProofHash, computeProcessAttestationsProofHash, deployUnirep, getUnirepContract, UnirepFactory, Unirep };

@@ -1,15 +1,15 @@
-import { ethers } from 'ethers';
+import { BigNumberish, ethers } from 'ethers';
 import { IncrementalQuinTree, SparseMerkleTreeImpl } from '@unirep/crypto';
 interface IEpochTreeLeaf {
     epochKey: BigInt;
     hashchainResult: BigInt;
 }
 interface IAttestation {
-    attesterId: BigInt;
-    posRep: BigInt;
-    negRep: BigInt;
-    graffiti: BigInt;
-    signUp: BigInt;
+    attesterId: BigNumberish;
+    posRep: BigNumberish;
+    negRep: BigNumberish;
+    graffiti: BigNumberish;
+    signUp: BigNumberish;
     hash(): BigInt;
     toJSON(): string;
 }
@@ -38,12 +38,12 @@ interface IUnirepState {
     nullifiers: string[];
 }
 declare class Attestation implements IAttestation {
-    attesterId: BigInt;
-    posRep: BigInt;
-    negRep: BigInt;
-    graffiti: BigInt;
-    signUp: BigInt;
-    constructor(_attesterId: BigInt, _posRep: BigInt, _negRep: BigInt, _graffiti: BigInt, _signUp: BigInt);
+    attesterId: BigNumberish;
+    posRep: BigNumberish;
+    negRep: BigNumberish;
+    graffiti: BigNumberish;
+    signUp: BigNumberish;
+    constructor(_attesterId: BigNumberish, _posRep: BigNumberish, _negRep: BigNumberish, _graffiti: BigNumberish, _signUp: BigNumberish);
     hash: () => BigInt;
     toJSON: (space?: number) => string;
 }

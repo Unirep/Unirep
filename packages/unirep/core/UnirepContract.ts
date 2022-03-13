@@ -1,5 +1,5 @@
-import { ethers } from 'ethers';
-import { EpochKeyProof, getUnirepContract, ReputationProof, SignUpProof, UserTransitionProof } from '@unirep/contracts'
+import { ethers, BigNumberish } from 'ethers';
+import { EpochKeyProof, UnirepFactory, ReputationProof, SignUpProof, UserTransitionProof, Unirep } from '@unirep/contracts'
 import { formatProofForVerifierContract } from '@unirep/circuits'
 import { DEFAULT_ETH_PROVIDER, } from '../cli/defaults';
 import { validateEthAddress } from '../cli/utils';
@@ -16,7 +16,7 @@ export class UnirepContract {
     private signer?: ethers.Signer;
     
     // Unirep contract
-    public contract: ethers.Contract;
+    public contract: Unirep;
 
     constructor(unirepAddress?, providerUrl?) {
         this.url = providerUrl? providerUrl : DEFAULT_ETH_PROVIDER;
@@ -24,7 +24,7 @@ export class UnirepContract {
          if (!validateEthAddress(unirepAddress)) {
             console.error('Error: invalid Unirep contract address')
         }
-        this.contract = getUnirepContract(unirepAddress, this.provider)
+        this.contract = UnirepFactory.connect(unirepAddress, this.provider);
     }
 
     public unlock = async (eth_privkey: string): Promise<string> => {
@@ -56,14 +56,6 @@ export class UnirepContract {
         return this.contract.latestEpochTransitionTime()
     }
 
-    public emptyUserStateRoot = async (): Promise<any> => {
-        return this.contract.emptyUserStateRoot()
-    }
-
-    public emptyGlobalStateTreeRoot = async (): Promise<any> => {
-        return this.contract.emptyGlobalStateTreeRoot()
-    }
-
     public numEpochKeyNoncePerEpoch = async (): Promise<any> => {
         return this.contract.numEpochKeyNoncePerEpoch()
     }
@@ -84,7 +76,7 @@ export class UnirepContract {
         return this.contract.numUserSignUps()
     }
 
-    public hasUserSignedUp = async (idCommitment: BigInt | string): Promise<boolean> => {
+    public hasUserSignedUp = async (idCommitment: BigNumberish): Promise<boolean> => {
         return this.contract.hasUserSignedUp(idCommitment)
     }
 
@@ -200,7 +192,7 @@ export class UnirepContract {
         return tx
     }
 
-    public setAirdropAmount = async (airdropAmount: number | BigInt): Promise<any> => {
+    public setAirdropAmount = async (airdropAmount: BigNumberish): Promise<any> => {
         if(this.signer != undefined){
             this.contract = this.contract.connect(this.signer)
         }
@@ -254,9 +246,9 @@ export class UnirepContract {
     }
 
     public getStartTransitionProofIndex = async (
-        blindedUserState: BigInt | string,
-        blindedHashChain: BigInt | string,
-        GSTreeRoot: BigInt | string,
+        blindedUserState: BigNumberish,
+        blindedHashChain: BigNumberish,
+        GSTreeRoot: BigNumberish,
         proof: SnarkProof
     ): Promise<any> => {
         const proofNullifier = await this.contract.hashStartTransitionProof(
@@ -269,9 +261,9 @@ export class UnirepContract {
     }
 
     public getProcessAttestationsProofIndex = async (
-        outputBlindedUserState: BigInt | string,
-        outputBlindedHashChain: BigInt | string,
-        inputBlindedUserState: BigInt | string,
+        outputBlindedUserState: BigNumberish,
+        outputBlindedHashChain: BigNumberish,
+        inputBlindedUserState: BigNumberish,
         proof: SnarkProof
     ): Promise<any> => {
         const proofNullifier = await this.contract.hashProcessAttestationsProof(
@@ -285,9 +277,9 @@ export class UnirepContract {
 
     public submitAttestation = async (
         attestation: IAttestation, 
-        epochKey: BigInt | string, 
-        toProofIndex: BigInt | string | number,
-        fromProofIndex: BigInt | string | number
+        epochKey: BigNumberish, 
+        toProofIndex: BigNumberish | number,
+        fromProofIndex: BigNumberish | number
     ): Promise<any> => {
         if(this.signer != undefined){
             const attesterAddr = await this.signer?.getAddress()
@@ -326,9 +318,9 @@ export class UnirepContract {
         attesterAddr: string, 
         signature: string, 
         attestation: IAttestation, 
-        epochKey: BigInt | string, 
-        toProofIndex: BigInt | string | number,
-        fromProofIndex: BigInt | string | number): Promise<any> => {
+        epochKey: BigNumberish, 
+        toProofIndex: BigNumberish | number,
+        fromProofIndex: BigNumberish | number): Promise<any> => {
         if(this.signer != undefined){
             const attesterExist = await this.attesters(attesterAddr)
             if(attesterExist.toNumber() == 0){
@@ -447,9 +439,9 @@ export class UnirepContract {
     }
 
     public startUserStateTransition = async (
-        blindedUserState: BigInt | string, 
-        blindedHashChain: BigInt | string, GSTRoot: 
-        BigInt | string, proof: any
+        blindedUserState: BigNumberish, 
+        blindedHashChain: BigNumberish, GSTRoot: 
+        BigNumberish, proof: any
     ): Promise<any> => {
         if(this.signer != undefined){
             this.contract = this.contract.connect(this.signer)
@@ -476,9 +468,9 @@ export class UnirepContract {
     }
 
     public processAttestations = async (
-        outputBlindedUserState: BigInt | string, 
-        outputBlindedHashChain: BigInt | string, inputBlindedUserState: 
-        BigInt | string, 
+        outputBlindedUserState: BigNumberish, 
+        outputBlindedHashChain: BigNumberish, inputBlindedUserState: 
+        BigNumberish, 
         proof: any
     ): Promise<any> => {
         if(this.signer != undefined){
@@ -507,7 +499,7 @@ export class UnirepContract {
 
     public updateUserStateRoot = async ( 
         USTProof: UserTransitionProof,
-        proofIndexes: BigInt[] | string [],
+        proofIndexes: BigNumberish[],
     ): Promise<any> => {
         if(this.signer != undefined){
             this.contract = this.contract.connect(this.signer)
@@ -538,9 +530,9 @@ export class UnirepContract {
     }
 
     public verifyStartTransitionProof = async (
-        blindedUserState: BigInt | string,
-        blindedHashChain: BigInt | string,
-        GSTRoot: BigInt | string,
+        blindedUserState: BigNumberish,
+        blindedHashChain: BigNumberish,
+        GSTRoot: BigNumberish,
         proof: any,
     ): Promise<boolean> => {
         return this.contract.verifyStartTransitionProof(
@@ -552,9 +544,9 @@ export class UnirepContract {
     }
 
     public verifyProcessAttestationProof = async (
-        outputBlindedUserState: BigInt | string,
-        outputBlindedHashChain: BigInt | string,
-        intputBlindedUserState: BigInt | string,
+        outputBlindedUserState: BigNumberish,
+        outputBlindedHashChain: BigNumberish,
+        intputBlindedUserState: BigNumberish,
         proof: any,
     ): Promise<boolean> => {
         return this.contract.verifyProcessAttestationProof(
@@ -583,13 +575,6 @@ export class UnirepContract {
         return this.contract.verifyUserSignUp(signUpProof)
     }
 
-    public hashedBlankStateLeaf = async (): Promise<any> => {
-        return this.contract.hashedBlankStateLeaf()
-    }
-
-    public calcAirdropUSTRoot = async (leafIndex: number | BigInt, leafValue: BigInt | string): Promise<any> => {
-        return this.contract.calcAirdropUSTRoot(leafIndex, leafValue)
-    }
 
     public burnAttestingFee = async (): Promise<any> => {
         if(this.signer != undefined){
@@ -631,8 +616,8 @@ export class UnirepContract {
         return tx
     }
 
-    public verifyProcessAttestationEvents = async (startBlindedUserState: BigInt | string, currentBlindedUserState: BigInt | string): Promise<boolean> => {
-        const processAttestationFilter = this.contract.filter.ProcessedAttestationsProof(currentBlindedUserState)
+    public verifyProcessAttestationEvents = async (startBlindedUserState: BigNumberish, currentBlindedUserState: BigNumberish): Promise<boolean> => {
+        const processAttestationFilter = this.contract.filters.IndexedProcessedAttestationsProof(currentBlindedUserState)
         const processAttestationEvents = await this.contract.queryFilter(processAttestationFilter)
         if(processAttestationEvents.length == 0) return false
 

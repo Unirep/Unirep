@@ -1,7 +1,7 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import Keyv from "keyv"
 import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, add0x, genRandomSalt, stringifyBigInts, Identity } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
@@ -97,7 +97,7 @@ const genRandomAttestation = () => {
         BigInt(attesterId),
         BigInt(Math.floor(Math.random() * 100)),
         BigInt(Math.floor(Math.random() * 100)),
-        genRandomSalt(),
+        BigNumber.from(genRandomSalt()),
         BigInt(Math.floor(Math.random() * 2)),
     )
     return attestation
@@ -235,17 +235,17 @@ const getReputationRecords = (id: Identity, unirepState: UnirepState) => {
                 const attesterId = attestation.attesterId.toString()
                 if(reputaitonRecord[attesterId] === undefined) {
                     reputaitonRecord[attesterId] = new Reputation (
-                        attestation.posRep,
-                        attestation.negRep,
-                        attestation.graffiti,
-                        attestation.signUp
+                        attestation.posRep as BigInt,
+                        attestation.negRep as BigInt,
+                        attestation.graffiti as BigInt,
+                        attestation.signUp as BigInt
                     )
                 } else {
                     reputaitonRecord[attesterId].update(
-                        attestation.posRep,
-                        attestation.negRep,
-                        attestation.graffiti,
-                        attestation.signUp
+                        attestation.posRep as BigInt,
+                        attestation.negRep as BigInt,
+                        attestation.graffiti as BigInt,
+                        attestation.signUp as BigInt
                     )
                 }
             }

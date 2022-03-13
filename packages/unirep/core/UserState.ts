@@ -448,18 +448,18 @@ class UserState {
         for (const leaf of stateLeaves) {
             if (leaf.attesterId === attesterId) {
                 leaf.reputation = leaf.reputation.update(
-                    attestation.posRep,
-                    attestation.negRep,
-                    attestation.graffiti,
-                    attestation.signUp,
+                    attestation.posRep as BigInt,
+                    attestation.negRep as BigInt,
+                    attestation.graffiti as BigInt,
+                    attestation.signUp as BigInt,
                 )
                 return stateLeaves
             }
         }
         // If no matching state leaf, insert new one
         const newLeaf: IUserStateLeaf = {
-            attesterId: attesterId,
-            reputation: Reputation.default().update(attestation.posRep, attestation.negRep, attestation.graffiti, attestation.signUp)
+            attesterId: attesterId as BigInt,
+            reputation: Reputation.default().update(attestation.posRep as BigInt, attestation.negRep as BigInt, attestation.graffiti as BigInt, attestation.signUp as BigInt)
         }
         stateLeaves.push(newLeaf)
         return stateLeaves
@@ -618,8 +618,8 @@ class UserState {
                 }
 
                 const attestation = attestations[i]
-                const attesterId = attestation.attesterId
-                const rep = this.getRepByAttester(attesterId)
+                const attesterId: BigInt = attestation.attesterId as BigInt;
+                const rep = this.getRepByAttester(attesterId as BigInt)
 
                 if (reputationRecords[attesterId.toString()] === undefined) {
                     reputationRecords[attesterId.toString()] = new Reputation(
@@ -654,11 +654,11 @@ class UserState {
                 
                 selectors.push(1)
                 attesterIds.push(attesterId)
-                posReps.push(attestation['posRep'])
-                negReps.push(attestation['negRep'])
-                graffities.push(attestation['graffiti'])
+                posReps.push(attestation['posRep'] as BigInt)
+                negReps.push(attestation['negRep'] as BigInt)
+                graffities.push(attestation['graffiti'] as BigInt)
                 overwriteGraffities.push(attestation['graffiti'] != BigInt(0))
-                signUps.push(attestation['signUp'])
+                signUps.push(attestation['signUp'] as BigInt)
 
                 // Update current hashchain result
                 const attestationHash = attestation.hash()

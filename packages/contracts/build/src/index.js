@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUnirepContract = exports.deployUnirep = exports.computeProcessAttestationsProofHash = exports.computeStartTransitionProofHash = exports.UserTransitionProof = exports.SignUpProof = exports.ReputationProof = exports.EpochKeyProof = exports.Attestation = exports.AttestationEvent = exports.Event = void 0;
+exports.UnirepFactory = exports.getUnirepContract = exports.deployUnirep = exports.computeProcessAttestationsProofHash = exports.computeStartTransitionProofHash = exports.UserTransitionProof = exports.SignUpProof = exports.ReputationProof = exports.EpochKeyProof = exports.Attestation = exports.AttestationEvent = exports.Event = void 0;
 const ethers_1 = require("ethers");
 const crypto_1 = require("@unirep/crypto");
 const circuits_1 = require("@unirep/circuits");
 const config_1 = require("../config");
 const typechain_1 = require("../typechain");
+Object.defineProperty(exports, "UnirepFactory", { enumerable: true, get: function () { return typechain_1.Unirep__factory; } });
 var Event;
 (function (Event) {
     Event[Event["UserSignedUp"] = 0] = "UserSignedUp";

@@ -5,17 +5,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnirepState = exports.Attestation = void 0;
 const assert_1 = __importDefault(require("assert"));
+const ethers_1 = require("ethers");
 const crypto_1 = require("@unirep/crypto");
 const utils_1 = require("./utils");
 class Attestation {
     constructor(_attesterId, _posRep, _negRep, _graffiti, _signUp) {
         this.hash = () => {
             return (0, crypto_1.hash5)([
-                this.attesterId,
-                this.posRep,
-                this.negRep,
-                this.graffiti,
-                this.signUp,
+                ethers_1.BigNumber.from(this.attesterId).toBigInt(),
+                ethers_1.BigNumber.from(this.posRep).toBigInt(),
+                ethers_1.BigNumber.from(this.negRep).toBigInt(),
+                ethers_1.BigNumber.from(this.graffiti).toBigInt(),
+                ethers_1.BigNumber.from(this.signUp).toBigInt(),
             ]);
         };
         this.toJSON = (space = 0) => {
@@ -275,7 +276,7 @@ class UnirepState {
                 this._isEpochKeySealed(epochKey);
                 let hashChain = BigInt(0);
                 for (let i = 0; i < this.epochKeyToAttestationsMap[epochKey].length; i++) {
-                    hashChain = (0, crypto_1.hashLeftRight)(this.epochKeyToAttestationsMap[epochKey][i].hash(), hashChain);
+                    hashChain = (0, crypto_1.hashLeftRight)(ethers_1.BigNumber.from(this.epochKeyToAttestationsMap[epochKey][i].hash()).toBigInt(), hashChain);
                 }
                 const sealedHashChainResult = (0, crypto_1.hashLeftRight)(BigInt(1), hashChain);
                 const epochTreeLeaf = {

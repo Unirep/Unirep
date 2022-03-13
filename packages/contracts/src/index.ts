@@ -3,7 +3,22 @@ import { add0x, hash5, SnarkProof } from '@unirep/crypto'
 import { Circuit, formatProofForSnarkjsVerification, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
 import { maxUsers, maxAttesters, numEpochKeyNoncePerEpoch, epochLength, attestingFee, maxReputationBudget } from '../config'
 
-import { EpochKeyValidityVerifier, EpochKeyValidityVerifier__factory, ProcessAttestationsVerifier, ProcessAttestationsVerifier__factory, ReputationVerifier, ReputationVerifier__factory, StartTransitionVerifier, StartTransitionVerifier__factory, Unirep, Unirep__factory, UserSignUpVerifier, UserSignUpVerifier__factory, UserStateTransitionVerifier, UserStateTransitionVerifier__factory } from '../typechain'
+import {
+    EpochKeyValidityVerifier,
+    EpochKeyValidityVerifier__factory,
+    ProcessAttestationsVerifier,
+    ProcessAttestationsVerifier__factory,
+    ReputationVerifier,
+    ReputationVerifier__factory,
+    StartTransitionVerifier,
+    StartTransitionVerifier__factory,
+    Unirep,
+    Unirep__factory as UnirepFactory,
+    UserSignUpVerifier,
+    UserSignUpVerifier__factory,
+    UserStateTransitionVerifier,
+    UserStateTransitionVerifier__factory
+} from '../typechain'
 
 export type Field = BigNumberish
 
@@ -71,9 +86,9 @@ interface IUserTransitionProof {
 
 class Attestation implements IAttestation {
     public attesterId: BigNumber
-    public posRep: BigNumber 
-    public negRep: BigNumber 
-    public graffiti: BigNumber 
+    public posRep: BigNumber
+    public negRep: BigNumber
+    public graffiti: BigNumber
     public signUp: BigNumber
 
     constructor(
@@ -127,7 +142,7 @@ class EpochKeyProof implements IEpochKeyProof {
     }
 
     public hash = () => {
-        const iface = new ethers.utils.Interface(Unirep__factory.abi)
+        const iface = new ethers.utils.Interface(UnirepFactory.abi)
         const abiEncoder = iface.encodeFunctionData('hashEpochKeyProof', [this])
         return ethers.utils.keccak256(rmFuncSigHash(abiEncoder))
     }
@@ -218,7 +233,7 @@ class SignUpProof implements ISignUpProof {
     }
 
     public hash = () => {
-        const iface = new ethers.utils.Interface(Unirep__factory.abi)
+        const iface = new ethers.utils.Interface(UnirepFactory.abi)
         const abiEncoder = iface.encodeFunctionData('hashSignUpProof', [this])
         return ethers.utils.keccak256(rmFuncSigHash(abiEncoder))
     }
@@ -288,7 +303,7 @@ const computeStartTransitionProofHash = (
     globalStateTree: Field,
     proof: Field[]
 ) => {
-    const iface = new ethers.utils.Interface(Unirep__factory.abi)
+    const iface = new ethers.utils.Interface(UnirepFactory.abi)
     const abiEncoder = iface.encodeFunctionData(
         'hashStartTransitionProof',
         [
@@ -307,7 +322,7 @@ const computeProcessAttestationsProofHash = (
     inputBlindedUserState: Field,
     proof: Field[]
 ) => {
-    const iface = new ethers.utils.Interface(Unirep__factory.abi)
+    const iface = new ethers.utils.Interface(UnirepFactory.abi)
     const abiEncoder = iface.encodeFunctionData(
         'hashProcessAttestationsProof',
         [
@@ -377,7 +392,7 @@ const deployUnirep = async (
         _attestingFee = attestingFee
     }
 
-    const c: Unirep = await (new Unirep__factory(deployer)).deploy(
+    const c: Unirep = await (new UnirepFactory(deployer)).deploy(
         _treeDepths,
         {
             "maxUsers": _maxUsers,
@@ -399,7 +414,7 @@ const deployUnirep = async (
 
     // Print out deployment info
     console.log("-----------------------------------------------------------------")
-    console.log("Bytecode size of Unirep:", Math.floor(Unirep__factory.bytecode.length / 2), "bytes")
+    console.log("Bytecode size of Unirep:", Math.floor(UnirepFactory.bytecode.length / 2), "bytes")
     let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash)
     console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString())
     console.log("-----------------------------------------------------------------")
@@ -410,10 +425,11 @@ const deployUnirep = async (
 const getUnirepContract = (addressOrName: string, signerOrProvider: ethers.Signer | ethers.providers.Provider | undefined) => {
     return new ethers.Contract(
         addressOrName,
-        Unirep__factory.abi,
+        UnirepFactory.abi,
         signerOrProvider,
     )
 }
+
 
 export {
     Event,
@@ -432,5 +448,7 @@ export {
     computeProcessAttestationsProofHash,
     deployUnirep,
     getUnirepContract,
+    UnirepFactory,
+    Unirep
 }
 
