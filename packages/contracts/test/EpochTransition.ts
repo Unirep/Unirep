@@ -7,7 +7,7 @@ import { Circuit } from '@unirep/circuits'
 
 import { circuitGlobalStateTreeDepth, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../config'
 import { getTreeDepthsForTesting, Attestation, genEpochKeyCircuitInput, genInputForContract, genStartTransitionCircuitInput, bootstrapRandomUSTree, GSTZERO_VALUE, genProcessAttestationsCircuitInput, genUserStateTransitionCircuitInput } from './utils'
-import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import { deployUnirep, UserTransitionProof } from '../src'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -60,7 +60,7 @@ describe('Epoch Transition', function () {
         console.log('Attester sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = await hardhatEthers.getContractAt(Unirep.abi, unirepContract.address, attester)
+        unirepContractCalledByAttester = unirepContract.connect(attester);
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

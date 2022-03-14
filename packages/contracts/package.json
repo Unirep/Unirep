@@ -5,12 +5,14 @@
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
   "license": "MIT",
   "scripts": {
-    "build": "./scripts/buildVerifiers.sh && yarn compile && tsc",
+    "build": "./scripts/buildVerifiers.sh && yarn compile && npx hardhat typechain && tsc",
     "compile": "npx hardhat compile",
     "test": "npx hardhat test --no-compile"
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.4.2",
+    "@typechain/ethers-v5": "^9.0.0",
+    "@typechain/hardhat": "^5.0.0",
     "@unirep/circuits": "^1.0.4",
     "@unirep/crypto": "^1.0.0",
     "argparse": "^2.0.1",
@@ -24,10 +26,11 @@
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.9.1",
     "chai": "^4.3.4",
-    "circom": "^0.5.45",
+    "circom": "0.5.45",
     "ethereum-waffle": "^3.4.0",
-    "hardhat": "^2.9.1",
+    "hardhat": "^2.8.3",
+    "keyv": "^4.0.3",
     "ts-node": "^10.2.1",
-    "keyv": "^4.0.3"
+    "typechain": "^7.0.1"
   }
 }

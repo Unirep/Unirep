@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from "chai"
 import { Circuit } from "@unirep/circuits"
 import { genRandomSalt, genIdentity, hashOne, } from "@unirep/crypto"
@@ -87,7 +87,7 @@ describe('Verify user sign up verifier', function () {
         const wrongEpochKey = genEpochKey(user['identityNullifier'], epoch, nonce + 1, circuitEpochTreeDepth)
         const circuitInputs = await genProveSignUpCircuitInput(user, epoch, reputationRecords, attesterId)
         const input: SignUpProof = await genInputForContract(Circuit.proveUserSignUp, circuitInputs)
-        input.epochKey = wrongEpochKey
+        input.epochKey = wrongEpochKey as BigNumberish;
 
         const isProofValid = await unirepContract.verifyUserSignUp(input)
         expect(isProofValid, 'Verify user sign up proof on-chain should fail').to.be.false

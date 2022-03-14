@@ -39,7 +39,7 @@ describe('Airdrop', function () {
     describe('Attesters set airdrop', () => {
         it('attester signs up and attester sets airdrop amount should succeed', async() => {
             console.log('Attesters sign up')
-    
+
             for (let i = 0; i < 2; i++) {
                 unirepContractCalledByAttester = unirepContract.connect(accounts[i])
                 const tx = await unirepContractCalledByAttester.attesterSignUp()

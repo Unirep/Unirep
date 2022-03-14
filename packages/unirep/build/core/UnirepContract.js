@@ -34,12 +34,6 @@ class UnirepContract {
         this.latestEpochTransitionTime = async () => {
             return this.contract.latestEpochTransitionTime();
         };
-        this.emptyUserStateRoot = async () => {
-            return this.contract.emptyUserStateRoot();
-        };
-        this.emptyGlobalStateTreeRoot = async () => {
-            return this.contract.emptyGlobalStateTreeRoot();
-        };
         this.numEpochKeyNoncePerEpoch = async () => {
             return this.contract.numEpochKeyNoncePerEpoch();
         };
@@ -425,12 +419,6 @@ class UnirepContract {
         this.verifyUserSignUp = async (signUpProof) => {
             return this.contract.verifyUserSignUp(signUpProof);
         };
-        this.hashedBlankStateLeaf = async () => {
-            return this.contract.hashedBlankStateLeaf();
-        };
-        this.calcAirdropUSTRoot = async (leafIndex, leafValue) => {
-            return this.contract.calcAirdropUSTRoot(leafIndex, leafValue);
-        };
         this.burnAttestingFee = async () => {
             if (this.signer != undefined) {
                 this.contract = this.contract.connect(this.signer);
@@ -472,7 +460,7 @@ class UnirepContract {
             return tx;
         };
         this.verifyProcessAttestationEvents = async (startBlindedUserState, currentBlindedUserState) => {
-            const processAttestationFilter = this.contract.filter.ProcessedAttestationsProof(currentBlindedUserState);
+            const processAttestationFilter = this.contract.filters.IndexedProcessedAttestationsProof(currentBlindedUserState);
             const processAttestationEvents = await this.contract.queryFilter(processAttestationFilter);
             if (processAttestationEvents.length == 0)
                 return false;
@@ -495,7 +483,7 @@ class UnirepContract {
         if (!(0, utils_1.validateEthAddress)(unirepAddress)) {
             console.error('Error: invalid Unirep contract address');
         }
-        this.contract = (0, contracts_1.getUnirepContract)(unirepAddress, this.provider);
+        this.contract = contracts_1.UnirepFactory.connect(unirepAddress, this.provider);
     }
 }
 exports.UnirepContract = UnirepContract;

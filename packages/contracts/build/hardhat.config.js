@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+require("@typechain/hardhat");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 const config = {
@@ -28,5 +29,8 @@ const config = {
             }
         ]
     },
+    typechain: {
+        outDir: './typechain',
+    }
 };
 exports.default = config;

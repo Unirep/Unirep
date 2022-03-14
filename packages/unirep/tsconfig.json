@@ -5,7 +5,8 @@
     },
     "include": [
         "./core",
-        "../../@type",
+        "./cli",
+        "./test"
     ],
     "exclude": ["**/privateKey.ts"],
     "files": ["./hardhat.config.ts"]

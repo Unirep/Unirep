@@ -1,7 +1,7 @@
-import { ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { SnarkProof } from '@unirep/crypto';
-import Unirep from "../artifacts/contracts/Unirep.sol/Unirep.json";
-export declare type Field = BigInt | string | number | ethers.BigNumber;
+import { Unirep, Unirep__factory as UnirepFactory } from '../typechain';
+export declare type Field = BigNumberish;
 declare enum Event {
     UserSignedUp = 0,
     UserStateTransitioned = 1,
@@ -14,11 +14,11 @@ declare enum AttestationEvent {
     SpendReputation = 2
 }
 interface IAttestation {
-    attesterId: BigInt;
-    posRep: BigInt;
-    negRep: BigInt;
-    graffiti: BigInt;
-    signUp: BigInt;
+    attesterId: BigNumber;
+    posRep: BigNumber;
+    negRep: BigNumber;
+    graffiti: BigNumber;
+    signUp: BigNumber;
     hash(): BigInt;
 }
 interface IEpochKeyProof {
@@ -58,12 +58,12 @@ interface IUserTransitionProof {
     proof: Field[];
 }
 declare class Attestation implements IAttestation {
-    attesterId: BigInt;
-    posRep: BigInt;
-    negRep: BigInt;
-    graffiti: BigInt;
-    signUp: BigInt;
-    constructor(_attesterId: BigInt, _posRep: BigInt, _negRep: BigInt, _graffiti: BigInt, _signUp: BigInt);
+    attesterId: BigNumber;
+    posRep: BigNumber;
+    negRep: BigNumber;
+    graffiti: BigNumber;
+    signUp: BigNumber;
+    constructor(_attesterId: BigInt | BigNumberish, _posRep: BigInt | BigNumberish, _negRep: BigInt | BigNumberish, _graffiti: BigInt | BigNumberish, _signUp: BigInt | BigNumberish);
     hash: () => BigInt;
 }
 declare class EpochKeyProof implements IEpochKeyProof {
@@ -120,6 +120,6 @@ declare class UserTransitionProof implements IUserTransitionProof {
 }
 declare const computeStartTransitionProofHash: (blindedUserState: Field, blindedHashChain: Field, globalStateTree: Field, proof: Field[]) => string;
 declare const computeProcessAttestationsProofHash: (outputBlindedUserState: Field, outputBlindedHashChain: Field, inputBlindedUserState: Field, proof: Field[]) => string;
-declare const deployUnirep: (deployer: ethers.Signer, _treeDepths: any, _settings?: any) => Promise<ethers.Contract>;
+declare const deployUnirep: (deployer: ethers.Signer, _treeDepths: any, _settings?: any) => Promise<Unirep>;
 declare const getUnirepContract: (addressOrName: string, signerOrProvider: ethers.Signer | ethers.providers.Provider | undefined) => ethers.Contract;
-export { Event, AttestationEvent, IAttestation, IEpochKeyProof, IReputationProof, ISignUpProof, IUserTransitionProof, Attestation, EpochKeyProof, ReputationProof, SignUpProof, UserTransitionProof, computeStartTransitionProofHash, computeProcessAttestationsProofHash, deployUnirep, getUnirepContract, Unirep };
+export { Event, AttestationEvent, IAttestation, IEpochKeyProof, IReputationProof, ISignUpProof, IUserTransitionProof, Attestation, EpochKeyProof, ReputationProof, SignUpProof, UserTransitionProof, computeStartTransitionProofHash, computeProcessAttestationsProofHash, deployUnirep, getUnirepContract, UnirepFactory, Unirep };

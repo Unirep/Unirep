@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { ethers } from 'ethers'
+import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { IncrementalQuinTree, hash5, hashLeftRight, SparseMerkleTreeImpl, stringifyBigInts } from '@unirep/crypto'
 import { computeEmptyUserStateRoot, computeInitUserStateRoot, genNewSMT, SMT_ONE_LEAF, } from './utils'
 
@@ -9,11 +9,11 @@ interface IEpochTreeLeaf {
 }
 
 interface IAttestation {
-    attesterId: BigInt;
-    posRep: BigInt;
-    negRep: BigInt;
-    graffiti: BigInt;
-    signUp: BigInt;
+    attesterId: BigNumberish;
+    posRep: BigNumberish;
+    negRep: BigNumberish;
+    graffiti: BigNumberish;
+    signUp: BigNumberish;
     hash(): BigInt;
     toJSON(): string;
 }
@@ -39,18 +39,18 @@ interface IUnirepState {
 }
 
 class Attestation implements IAttestation {
-    public attesterId: BigInt
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public signUp: BigInt
+    public attesterId: BigNumberish
+    public posRep: BigNumberish
+    public negRep: BigNumberish
+    public graffiti: BigNumberish
+    public signUp: BigNumberish
 
     constructor(
-        _attesterId: BigInt,
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt,
+        _attesterId: BigNumberish,
+        _posRep: BigNumberish,
+        _negRep: BigNumberish,
+        _graffiti: BigNumberish,
+        _signUp: BigNumberish,
     ) {
         this.attesterId = _attesterId
         this.posRep = _posRep
@@ -61,11 +61,11 @@ class Attestation implements IAttestation {
 
     public hash = (): BigInt => {
         return hash5([
-            this.attesterId,
-            this.posRep,
-            this.negRep,
-            this.graffiti,
-            this.signUp,
+            BigNumber.from(this.attesterId).toBigInt(),
+            BigNumber.from(this.posRep).toBigInt(),
+            BigNumber.from(this.negRep).toBigInt(),
+            BigNumber.from(this.graffiti).toBigInt(),
+            BigNumber.from(this.signUp).toBigInt(),
         ])
     }
 
@@ -478,7 +478,7 @@ class UnirepState {
             let hashChain: BigInt = BigInt(0)
             for (let i = 0; i < this.epochKeyToAttestationsMap[epochKey].length; i++) {
                 hashChain = hashLeftRight(
-                    this.epochKeyToAttestationsMap[epochKey][i].hash(), 
+                    BigNumber.from(this.epochKeyToAttestationsMap[epochKey][i].hash()).toBigInt(), 
                     hashChain
                 )
             }

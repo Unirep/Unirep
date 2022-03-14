@@ -2,19 +2,20 @@
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
 import assert from 'assert'
-import { ethers } from 'ethers'
+import { ethers, BigNumberish } from 'ethers'
 import Keyv from "keyv"
 import { hash5, hashLeftRight, SparseMerkleTreeImpl, add0x, SnarkBigInt, hashOne, stringifyBigInts, Identity, SnarkProof, genIdentityCommitment, genRandomSalt, IncrementalQuinTree } from '@unirep/crypto'
 import { Circuit, formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from '@unirep/circuits'
 import { circuitEpochTreeDepth, circuitUserStateTreeDepth, circuitGlobalStateTreeDepth, numAttestationsPerProof, maxReputationBudget, numEpochKeyNoncePerEpoch } from '../config'
 import { Attestation, EpochKeyProof, ReputationProof, SignUpProof, UserTransitionProof } from '../src'
 
+
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
 const GSTZERO_VALUE = 0
 
-export type Field = BigInt | string | number | ethers.BigNumber
+export type Field = BigNumberish;
 
 interface IReputation {
     posRep: BigInt;
@@ -124,7 +125,7 @@ const genNewUserStateTree = async (_userStateTreeDepth: number = circuitUserStat
     return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
 }
 
-const genEpochKey = (identityNullifier: SnarkBigInt, epoch: number, nonce: number, _epochTreeDepth: number = circuitEpochTreeDepth): SnarkBigInt => {
+const genEpochKey = (identityNullifier: SnarkBigInt, epoch: BigNumberish, nonce: BigNumberish, _epochTreeDepth: number = circuitEpochTreeDepth): SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
         epoch,
@@ -266,11 +267,11 @@ const genProcessAttestationsCircuitInput = async (id: Identity, epoch: BigInt, f
         }
 
         attesterIds.push(attesterId)
-        posReps.push(attestation['posRep'])
-        negReps.push(attestation['negRep'])
-        graffities.push(attestation['graffiti'])
-        signUps.push(attestation['signUp'])
-        overwriteGraffitis.push(BigInt(attestation['graffiti'] != BigInt(0)))
+        posReps.push(attestation['posRep'].toBigInt())
+        negReps.push(attestation['negRep'].toBigInt())
+        graffities.push(attestation['graffiti'].toBigInt())
+        signUps.push(attestation['signUp'].toBigInt())
+        overwriteGraffitis.push(BigInt(attestation['graffiti'].toBigInt() != BigInt(0)))
         if(reputationRecords[attesterId.toString()] === undefined) {
             reputationRecords[attesterId.toString()] = Reputation.default()
         }
