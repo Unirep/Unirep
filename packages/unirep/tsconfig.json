@@ -5,6 +5,7 @@
     },
     "include": [
         "./core",
+        "./cli",
         "./test"
     ],
     "exclude": ["**/privateKey.ts"],

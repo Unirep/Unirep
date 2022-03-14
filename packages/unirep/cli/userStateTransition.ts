@@ -1,5 +1,5 @@
 import base64url from 'base64url'
-import { ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import { unSerialiseIdentity } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
 
@@ -174,7 +174,7 @@ const userStateTransition = async (args: any) => {
         finalTransitionProof.publicSignals,
         finalTransitionProof.proof
     )
-    tx = await unirepContract.updateUserStateRoot(USTProof,proofIndexes)
+    tx = await unirepContract.updateUserStateRoot(USTProof,proofIndexes as BigNumberish[])
     if(tx != undefined) {
         await tx.wait()
         console.log('Transaction hash:', tx?.hash)
