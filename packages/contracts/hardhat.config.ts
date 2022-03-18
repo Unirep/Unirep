@@ -1,7 +1,7 @@
-import { HardhatUserConfig } from "hardhat/config"
-import '@typechain/hardhat'
-import "@nomiclabs/hardhat-ethers"
-import "@nomiclabs/hardhat-waffle"
+import { HardhatUserConfig } from "hardhat/config";
+import "@typechain/hardhat";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-waffle";
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -10,10 +10,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      blockGasLimit: 12000000
+      blockGasLimit: 12000000,
     },
     local: {
-      url: "http://localhost:8545"
+      url: "http://localhost:8545",
     },
   },
   solidity: {
@@ -21,18 +21,18 @@ const config: HardhatUserConfig = {
       {
         version: "0.8.0",
         settings: {
-          optimizer: { enabled: true, runs: 200 }
-        }
+          optimizer: { enabled: true, runs: 200 },
+        },
       },
       {
-        version: "0.8.1"
-      }
-    ]
+        version: "0.8.1",
+      },
+    ],
   },
 
   typechain: {
-    outDir: './typechain',
-  }
-}
+    outDir: "./typechain",
+  },
+};
 
 export default config;

@@ -7,18 +7,21 @@ const unusedVarsCfg = [
     env: {
       node: true,
       es6: true,
-      es2020: true,
+      es2018: true,
       mocha: true,
     },
     plugins: ["simple-import-sort", "sonarjs"],
     extends: ["standard-with-typescript", "plugin:sonarjs/recommended"],
     parserOptions: {
       ecmaVersion: 2020,
-      // sourceType: "module"
+    //   sourceType: "module"
     },
     rules: {
       // "ter-indent": [2, {"FunctionDeclaration": {"parameters": "first"}}],
       "import/no-extraneous-dependencies": 0,
+      // not sure what happened, figure out later :)
+      "@typescript-eslint/no-unused-expressions": "off",
+      "sonarjs/no-duplicate-string": "off",
       "import/prefer-default-export": "off",
       "max-classes-per-file": 0,
       "max-len": [
@@ -37,7 +40,8 @@ const unusedVarsCfg = [
   
       "no-unused-vars": unusedVarsCfg,
       "@typescript-eslint/no-unused-vars": unusedVarsCfg,
-  
+      "@typescript-eslint/restrict-template-expressions": "off",
+
       "@typescript-eslint/consistent-type-assertions": "off",
       "@typescript-eslint/promise-function-async": "off",
       "@typescript-eslint/no-dynamic-delete": "off",

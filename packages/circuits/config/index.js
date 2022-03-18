@@ -1,14 +1,14 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.userStateTransitionCircuitPath = exports.processAttestationsCircuitPath = exports.startTransitionCircuitPath = exports.proveUserSignUpCircuitPath = exports.proveReputationCircuitPath = exports.verifyEpochKeyCircuitPath = exports.maxReputationBudget = exports.numAttestationsPerProof = exports.numEpochKeyNoncePerEpoch = exports.circuitEpochTreeDepth = exports.circuitUserStateTreeDepth = exports.circuitGlobalStateTreeDepth = exports.Circuit = void 0;
-var Circuit;
+let Circuit;
 (function (Circuit) {
-    Circuit["verifyEpochKey"] = "verifyEpochKey";
-    Circuit["proveReputation"] = "proveReputation";
-    Circuit["proveUserSignUp"] = "proveUserSignUp";
-    Circuit["startTransition"] = "startTransition";
-    Circuit["processAttestations"] = "processAttestations";
-    Circuit["userStateTransition"] = "userStateTransition";
+  Circuit.verifyEpochKey = 'verifyEpochKey';
+  Circuit.proveReputation = 'proveReputation';
+  Circuit.proveUserSignUp = 'proveUserSignUp';
+  Circuit.startTransition = 'startTransition';
+  Circuit.processAttestations = 'processAttestations';
+  Circuit.userStateTransition = 'userStateTransition';
 })(Circuit || (Circuit = {}));
 exports.Circuit = Circuit;
 const numEpochKeyNoncePerEpoch = 3;
