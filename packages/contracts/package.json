@@ -7,7 +7,8 @@
   "scripts": {
     "build": "./scripts/buildVerifiers.sh && yarn compile && npx hardhat typechain && tsc",
     "compile": "npx hardhat compile",
-    "test": "npx hardhat test --no-compile"
+    "test": "npx hardhat test --no-compile",
+    "lint": "eslint --cache --fix --ext .js,.ts"
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.4.2",

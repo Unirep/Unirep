@@ -4,7 +4,8 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "echo 'No test for crypto!!!'"
+    "test": "echo 'No test for crypto!!!'",
+    "lint": "eslint --cache --fix --ext .js,.ts"
   },
   "repository": "https://github.com/Unirep/crypto.git",
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
