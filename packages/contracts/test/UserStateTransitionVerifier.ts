@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from "chai"
-import { genIdentity, genRandomSalt} from "@unirep/crypto"
+import { ZkIdentity, genRandomSalt } from "@unirep/crypto"
 import { Circuit } from "@unirep/circuits"
 import { genUserStateTransitionCircuitInput, getTreeDepthsForTesting, genInputForContract } from './utils'
 import { deployUnirep, UserTransitionProof } from '../src'
@@ -14,7 +14,7 @@ describe('User State Transition', function () {
     let unirepContract
 
     const epoch = 1
-    const user = genIdentity()
+    const user = new ZkIdentity()
     const proofIndexes = []
 
     before(async () => {

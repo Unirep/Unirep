@@ -15,7 +15,6 @@ template ProveUserSignUp(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     signal input epoch_key;
 
     // Global state tree leaf: Identity & user state root
-    signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
     signal private input user_tree_root;
@@ -41,8 +40,6 @@ template ProveUserSignUp(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
         verify_epoch_key.GST_path_elements[i][0] <== GST_path_elements[i][0];
     }
     verify_epoch_key.GST_root <== GST_root;
-    verify_epoch_key.identity_pk[0] <== identity_pk[0];
-    verify_epoch_key.identity_pk[1] <== identity_pk[1];
     verify_epoch_key.identity_nullifier <== identity_nullifier;
     verify_epoch_key.identity_trapdoor <== identity_trapdoor;
     verify_epoch_key.user_tree_root <== user_tree_root;

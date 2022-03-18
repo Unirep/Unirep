@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { genRandomSalt, genIdentity, hashOne, } from "@unirep/crypto"
+import { genRandomSalt, ZkIdentity, hashOne, } from "@unirep/crypto"
 import { Circuit, executeCircuit, } from "../circuits/utils"
 import { Reputation, compileAndLoadCircuit, genReputationCircuitInput, throwError, genProofAndVerify } from './utils'
 import { circuitUserStateTreeDepth, maxReputationBudget, proveReputationCircuitPath } from "../config"
@@ -14,7 +14,7 @@ describe('Prove reputation from attester circuit', function () {
 
     const epoch = 1
     const nonce = 1
-    const user = genIdentity()
+    const user = new ZkIdentity()
     const NUM_ATTESTERS = 10
     let reputationRecords = {}
     const MIN_POS_REP = 20

@@ -14,7 +14,6 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
     signal private input GST_path_elements[GST_tree_depth][1];
     signal input GST_root;
     // Global state tree leaf: Identity & user state root
-    signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
     signal private input user_tree_root;
@@ -30,8 +29,6 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
         user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
     }
     user_exist.GST_root <== GST_root;
-    user_exist.identity_pk[0] <== identity_pk[0];
-    user_exist.identity_pk[1] <== identity_pk[1];
     user_exist.identity_nullifier <== identity_nullifier;
     user_exist.identity_trapdoor <== identity_trapdoor;
     user_exist.user_tree_root <== user_tree_root;

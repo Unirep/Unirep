@@ -1,9 +1,9 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import { expect } from "chai"
 import { Circuit } from "@unirep/circuits"
-import { genRandomSalt, genIdentity, hashOne, } from "@unirep/crypto"
+import { genRandomSalt, ZkIdentity, hashOne, } from "@unirep/crypto"
 import { circuitEpochTreeDepth, } from "../config"
 import { genEpochKey, genInputForContract, genProveSignUpCircuitInput, getTreeDepthsForTesting, Reputation } from './utils'
 import { deployUnirep, SignUpProof } from '../src'
@@ -15,7 +15,7 @@ describe('Verify user sign up verifier', function () {
     let accounts: ethers.Signer[]
     const epoch = 1
     const nonce = 0
-    const user = genIdentity()
+    const user = new ZkIdentity()
 
     let reputationRecords = {}
     const MIN_POS_REP = 20
@@ -84,7 +84,7 @@ describe('Verify user sign up verifier', function () {
 
     it('wrong epoch key should fail', async () => {
         const attesterId = signedUpAttesterId
-        const wrongEpochKey = genEpochKey(user['identityNullifier'], epoch, nonce + 1, circuitEpochTreeDepth)
+        const wrongEpochKey = genEpochKey(user.getNullifier(), epoch, nonce + 1, circuitEpochTreeDepth)
         const circuitInputs = await genProveSignUpCircuitInput(user, epoch, reputationRecords, attesterId)
         const input: SignUpProof = await genInputForContract(Circuit.proveUserSignUp, circuitInputs)
         input.epochKey = wrongEpochKey as BigNumberish;

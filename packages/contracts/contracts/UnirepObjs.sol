@@ -2,7 +2,7 @@
 pragma abicoder v2;
 pragma solidity ^0.8.0;
 
-contract UnirepObjs{
+contract UnirepObjs {
     struct Attestation {
         // The attester’s ID
         uint256 attesterId;
@@ -34,14 +34,14 @@ contract UnirepObjs{
         bool isValid;
     }
 
-    struct EpochKeyProof{
+    struct EpochKeyProof {
         uint256 globalStateTree;
         uint256 epoch;
         uint256 epochKey;
         uint256[8] proof;
     }
 
-    struct SignUpProof{
+    struct SignUpProof {
         uint256 epoch;
         uint256 epochKey;
         uint256 globalStateTree;
@@ -50,7 +50,7 @@ contract UnirepObjs{
         uint256[8] proof;
     }
 
-    struct UserTransitionProof{
+    struct UserTransitionProof {
         uint256 newGlobalStateTreeLeaf;
         uint256[] epkNullifiers;
         uint256 transitionFromEpoch;
@@ -61,7 +61,7 @@ contract UnirepObjs{
         uint256[8] proof;
     }
 
-    struct ReputationProof{
+    struct ReputationProof {
         uint256[] repNullifiers;
         uint256 epoch;
         uint256 epochKey;

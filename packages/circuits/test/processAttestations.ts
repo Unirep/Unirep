@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { genRandomSalt, hash5, genIdentity } from "@unirep/crypto"
+import { genRandomSalt, hash5, ZkIdentity } from "@unirep/crypto"
 import { executeCircuit, getSignalByName, Circuit } from "../circuits/utils"
 import { Attestation, compileAndLoadCircuit, genProcessAttestationsCircuitInput, genProofAndVerify, throwError } from './utils'
 import { numAttestationsPerProof, processAttestationsCircuitPath } from "../config/"
@@ -15,7 +15,7 @@ describe('Process attestation circuit', function () {
     const epoch = BigInt(1)
     const nonce = BigInt(0)
     const toNonce = BigInt(1)
-    const user = genIdentity()
+    const user = new ZkIdentity()
     const signUp = 1
 
     let hashChainStarter = genRandomSalt()
@@ -33,11 +33,11 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const outputUserStateTreeRoot = circuitInputs.intermediate_user_state_tree_roots[numAttestationsPerProof]
-        const expectedUserState = hash5([user['identityNullifier'], outputUserStateTreeRoot, epoch, nonce])
+        const expectedUserState = hash5([user.getNullifier(), outputUserStateTreeRoot, epoch, nonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, nonce])
+        const expectedHashChainResult = hash5([user.getNullifier(), hashChainResult, epoch, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
 
         const isValid = await genProofAndVerify(Circuit.processAttestations, circuitInputs)
@@ -56,11 +56,11 @@ describe('Process attestation circuit', function () {
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
-        const expectedUserState = hash5([user['identityNullifier'], outputUserStateTreeRoot, epoch, nonce])
+        const expectedUserState = hash5([user.getNullifier(), outputUserStateTreeRoot, epoch, nonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], noAttestationHashChainResult, epoch, nonce])
+        const expectedHashChainResult = hash5([user.getNullifier(), noAttestationHashChainResult, epoch, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
     })
@@ -70,11 +70,11 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const outputUserStateTreeRoot = circuitInputs.intermediate_user_state_tree_roots[numAttestationsPerProof]
-        const expectedUserState = hash5([user['identityNullifier'], outputUserStateTreeRoot, epoch, nonce])
+        const expectedUserState = hash5([user.getNullifier(), outputUserStateTreeRoot, epoch, nonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, nonce])
+        const expectedHashChainResult = hash5([user.getNullifier(), hashChainResult, epoch, nonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
     })
@@ -84,11 +84,11 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const outputUserStateTreeRoot = circuitInputs.intermediate_user_state_tree_roots[numAttestationsPerProof]
-        const expectedUserState = hash5([user['identityNullifier'], outputUserStateTreeRoot, epoch, toNonce])
+        const expectedUserState = hash5([user.getNullifier(), outputUserStateTreeRoot, epoch, toNonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
+        const expectedHashChainResult = hash5([user.getNullifier(), hashChainResult, epoch, toNonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
     })
@@ -111,11 +111,11 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const outputUserStateTreeRoot = circuitInputs.intermediate_user_state_tree_roots[numAttestationsPerProof]
-        const expectedUserState = hash5([user['identityNullifier'], outputUserStateTreeRoot, epoch, toNonce])
+        const expectedUserState = hash5([user.getNullifier(), outputUserStateTreeRoot, epoch, toNonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
+        const expectedHashChainResult = hash5([user.getNullifier(), hashChainResult, epoch, toNonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
     })
@@ -152,11 +152,11 @@ describe('Process attestation circuit', function () {
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(circuit, witness, 'main.blinded_user_state')
         const outputUserStateTreeRoot = circuitInputs.intermediate_user_state_tree_roots[numAttestationsPerProof]
-        const expectedUserState = hash5([user['identityNullifier'], outputUserStateTreeRoot, epoch, toNonce])
+        const expectedUserState = hash5([user.getNullifier(), outputUserStateTreeRoot, epoch, toNonce])
         expect(outputUserState).to.equal(expectedUserState)
 
         const outputHashChainResult = getSignalByName(circuit, witness, 'main.blinded_hash_chain_result')
-        const expectedHashChainResult = hash5([user['identityNullifier'], hashChainResult, epoch, toNonce])
+        const expectedHashChainResult = hash5([user.getNullifier(), hashChainResult, epoch, toNonce])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })
 

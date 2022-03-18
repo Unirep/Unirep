@@ -183,7 +183,7 @@ const computeProcessAttestationsProofHash = (outputBlindedUserState, outputBlind
 };
 exports.computeProcessAttestationsProofHash = computeProcessAttestationsProofHash;
 const rmFuncSigHash = (abiEncoder) => {
-    return (0, crypto_1.add0x)(abiEncoder.slice(10));
+    return '0x' + abiEncoder.slice(10);
 };
 const deployUnirep = async (deployer, _treeDepths, _settings) => {
     let EpochKeyValidityVerifierContract;

@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { genRandomSalt, hashOne, SparseMerkleTreeImpl, } from "@unirep/crypto"
+import { genRandomSalt, hashOne, SparseMerkleTree, } from "@unirep/crypto"
 import { executeCircuit, getSignalByName, } from "../circuits/utils"
 import { genNewSMT, compileAndLoadCircuit } from "./utils"
 // circuitEpochTreeDepth too large will greatly slow down the test...
@@ -14,7 +14,7 @@ describe('Sparse Merkle Tree circuits', function () {
     describe('LeafExists', () => {
         let circuit
 
-        let tree: SparseMerkleTreeImpl, leaves, root, ZERO_VALUE
+        let tree: SparseMerkleTree, leaves, root, ZERO_VALUE
         let leafIndicesToInsert: number[], emptyLeafIndices: number[]
 
         before(async () => {

@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "contracts": "yarn --silent workspace @unirep/contracts",
-    "unirep": "yarn --silent workspace @unirep/unirep",
+    "core": "yarn --silent workspace @unirep/core",
     "circuits": "yarn --silent workspace @unirep/circuits",
     "crypto": "yarn --silent workspace @unirep/crypto",
     "build": "yarn workspaces run build",

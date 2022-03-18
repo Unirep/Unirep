@@ -1,7 +1,26 @@
-import { BigNumber, BigNumberish, ethers } from 'ethers'
-import { add0x, hash5, SnarkProof } from '@unirep/crypto'
-import { Circuit, formatProofForSnarkjsVerification, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
-import { maxUsers, maxAttesters, numEpochKeyNoncePerEpoch, epochLength, attestingFee, maxReputationBudget } from '../config'
+import {
+    BigNumber,
+    BigNumberish,
+    ethers
+} from 'ethers'
+import {
+    hash5,
+    SnarkProof
+} from '@unirep/crypto'
+import {
+    Circuit,
+    formatProofForSnarkjsVerification,
+    formatProofForVerifierContract,
+    verifyProof
+} from '@unirep/circuits'
+import {
+    maxUsers,
+    maxAttesters,
+    numEpochKeyNoncePerEpoch,
+    epochLength,
+    attestingFee,
+    maxReputationBudget
+} from '../config'
 
 import {
     EpochKeyValidityVerifier,
@@ -336,7 +355,7 @@ const computeProcessAttestationsProofHash = (
 }
 
 const rmFuncSigHash = (abiEncoder: string) => {
-    return add0x(abiEncoder.slice(10,))
+    return '0x' + abiEncoder.slice(10,)
 }
 
 const deployUnirep = async (

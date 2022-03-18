@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { genRandomSalt, hashLeftRight, genIdentity, genIdentityCommitment, SparseMerkleTreeImpl, SnarkBigInt } from "@unirep/crypto"
+import { genRandomSalt, hashLeftRight, ZkIdentity, SparseMerkleTree, SnarkBigInt } from "@unirep/crypto"
 import { executeCircuit, getSignalByName, Circuit } from "../circuits/utils"
 import { genNewEpochTree, genEpochKey, compileAndLoadCircuit, genUserStateTransitionCircuitInput, genProofAndVerify } from './utils'
 import { numEpochKeyNoncePerEpoch, userStateTransitionCircuitPath } from "../config/"
@@ -12,7 +12,7 @@ describe('User State Transition circuits', function () {
     this.timeout(600000)
 
     const epoch = 1
-    const user = genIdentity()
+    const user: ZkIdentity = new ZkIdentity()
 
     describe('Epoch key exists', () => {
 
@@ -20,9 +20,9 @@ describe('User State Transition circuits', function () {
 
         const nonce = numEpochKeyNoncePerEpoch - 1
         const testEpochTreeDepth = 32
-        const epochKey: SnarkBigInt = genEpochKey(user['identityNullifier'], epoch, nonce, testEpochTreeDepth)
+        const epochKey: SnarkBigInt = genEpochKey(user.getNullifier(), epoch, nonce, testEpochTreeDepth)
 
-        let epochTree: SparseMerkleTreeImpl, epochTreeRoot, epochTreePathElements
+        let epochTree: SparseMerkleTree, epochTreeRoot, epochTreePathElements
 
         let hashChainResult: SnarkBigInt
 
@@ -45,7 +45,7 @@ describe('User State Transition circuits', function () {
 
         it('Existed epoch key should pass check', async () => {
             const circuitInputs = {
-                identity_nullifier: user['identityNullifier'],
+                identity_nullifier: user.getNullifier(),
                 epoch: epoch,
                 nonce: nonce,
                 hash_chain_result: hashChainResult,
@@ -76,7 +76,7 @@ describe('User State Transition circuits', function () {
             it('Valid user state update inputs should work', async () => {
                 const witness = await executeCircuit(circuit, circuitInputs)
 
-                const commitment = genIdentityCommitment(user)
+                const commitment = user.genIdentityCommitment()
                 const newGSTLeaf = hashLeftRight(commitment, circuitInputs.intermediate_user_state_tree_roots[1])
                 const _newGSTLeaf = getSignalByName(circuit, witness, 'main.new_GST_leaf')
                 expect(_newGSTLeaf, 'new GST leaf mismatch').to.equal(newGSTLeaf)
