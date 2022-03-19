@@ -10,7 +10,7 @@
         "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')",
         "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UnirepState -name '*.ts')",
         "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UserState -name '*.ts')",
-        "lint": "eslint --cache --fix --ext .ts"
+        "lint": "eslint --cache --fix --ext .ts ."
     },
     "repository": "git+https://github.com/appliedzkp/UniRep.git",
     "author": "",

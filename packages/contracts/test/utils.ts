@@ -1,6 +1,5 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
-// @ts-expect-error
 import {
   Circuit,
   formatProofForVerifierContract,
@@ -710,7 +709,7 @@ const formatProofAndPublicSignals = (
   circuit: Circuit,
   proof: SnarkProof,
   publicSignals: any[]
-): boolean => {
+): any => {
   let result;
   const formattedProof: any[] = formatProofForVerifierContract(proof);
   if (circuit === Circuit.proveReputation) {
@@ -803,5 +802,5 @@ export {
   genProveSignUpCircuitInput,
   formatProofAndPublicSignals,
   genProofAndVerify,
-  genInputForContract,
+  genInputForContract
 };

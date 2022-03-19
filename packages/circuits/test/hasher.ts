@@ -1,54 +1,53 @@
-import * as path from 'path'
-import { expect } from "chai"
-import { stringifyBigInts, genRandomSalt, hashLeftRight, hash5, } from "@unirep/crypto"
-import { executeCircuit, getSignalByName, } from "../circuits/utils"
-import { compileAndLoadCircuit } from './utils'
+import { genRandomSalt, hash5, hashLeftRight, stringifyBigInts } from "@unirep/crypto";
+import { expect } from "chai";
+import * as path from 'path';
 
-const hasher5CircuitPath = path.join(__dirname, '../circuits/test/hasher5_test.circom')
-const hashleftrightCircuitPath = path.join(__dirname, '../circuits/test/hashleftright_test.circom')
+import { executeCircuit, getSignalByName } from "../circuits/utils";
+import { compileAndLoadCircuit } from './utils';
 
-describe('Poseidon hash circuits', function (){
-    this.timeout(100000)
-    let circuit
+const hasher5CircuitPath = path.join(__dirname, '../circuits/test/hasher5_test.circom');
+const hashleftrightCircuitPath = path.join(__dirname, '../circuits/test/hashleftright_test.circom');
 
-    describe('Hasher5', () => {
-        it('correctly hashes 5 random values', async () => {
-            
-            circuit = await compileAndLoadCircuit(hasher5CircuitPath)
-            const preImages: any = []
-            for (let i = 0; i < 5; i++) {
-                preImages.push(genRandomSalt())
-            }
+describe('Poseidon hash circuits', function () {
+  this.timeout(100000);
+  let circuit;
 
-            const circuitInputs = stringifyBigInts({
-                in: preImages,
-            })
+  describe('Hasher5', () => {
+    it('correctly hashes 5 random values', async () => {
+      circuit = await compileAndLoadCircuit(hasher5CircuitPath);
+      const preImages: any = [];
+      for (let i = 0; i < 5; i++) {
+        preImages.push(genRandomSalt());
+      }
 
-            const witness = await executeCircuit(circuit, circuitInputs)
-            const output = getSignalByName(circuit, witness, 'main.hash')
+      const circuitInputs = stringifyBigInts({
+        in: preImages
+      });
 
-            const outputJS = hash5(preImages)
+      const witness = await executeCircuit(circuit, circuitInputs);
+      const output = getSignalByName(circuit, witness, 'main.hash');
 
-            expect(output.toString()).equal(outputJS.toString())
-        })
-    })
+      const outputJS = hash5(preImages);
 
-    describe('HashLeftRight', () => {
+      expect(output.toString()).equal(outputJS.toString());
+    });
+  });
 
-        it('correctly hashes two random values', async () => {
-            const circuit = await compileAndLoadCircuit(hashleftrightCircuitPath)
+  describe('HashLeftRight', () => {
+    it('correctly hashes two random values', async () => {
+      const circuit = await compileAndLoadCircuit(hashleftrightCircuitPath);
 
-            const left = genRandomSalt()
-            const right = genRandomSalt()
+      const left = genRandomSalt();
+      const right = genRandomSalt();
 
-            const circuitInputs = stringifyBigInts({ left, right })
+      const circuitInputs = stringifyBigInts({ left, right });
 
-            const witness = await executeCircuit(circuit, circuitInputs)
-            const output = getSignalByName(circuit, witness, 'main.hash')
+      const witness = await executeCircuit(circuit, circuitInputs);
+      const output = getSignalByName(circuit, witness, 'main.hash');
 
-            const outputJS = hashLeftRight(left, right)
+      const outputJS = hashLeftRight(left, right);
 
-            expect(output.toString()).equal(outputJS.toString())
-        })
-    })
-})
+      expect(output.toString()).equal(outputJS.toString());
+    });
+  });
+});

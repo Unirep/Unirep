@@ -12,18 +12,4 @@ declare const epochTreeDepth = 32;
 declare const maxReputationBudget = 10;
 declare const maxUsers: number;
 declare const maxAttesters: number;
-export {
-  attestingFee,
-  circuitGlobalStateTreeDepth,
-  circuitUserStateTreeDepth,
-  circuitEpochTreeDepth,
-  epochLength,
-  epochTreeDepth,
-  globalStateTreeDepth,
-  numEpochKeyNoncePerEpoch,
-  numAttestationsPerProof,
-  maxUsers,
-  maxAttesters,
-  userStateTreeDepth,
-  maxReputationBudget,
-};
+export { attestingFee, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, circuitEpochTreeDepth, epochLength, epochTreeDepth, globalStateTreeDepth, numEpochKeyNoncePerEpoch, numAttestationsPerProof, maxUsers, maxAttesters, userStateTreeDepth, maxReputationBudget, };

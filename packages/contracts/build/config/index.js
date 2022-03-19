@@ -1,19 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.maxReputationBudget =
-  exports.userStateTreeDepth =
-  exports.maxAttesters =
-  exports.maxUsers =
-  exports.numAttestationsPerProof =
-  exports.numEpochKeyNoncePerEpoch =
-  exports.globalStateTreeDepth =
-  exports.epochTreeDepth =
-  exports.epochLength =
-  exports.circuitEpochTreeDepth =
-  exports.circuitUserStateTreeDepth =
-  exports.circuitGlobalStateTreeDepth =
-  exports.attestingFee =
-    void 0;
+exports.maxReputationBudget = exports.userStateTreeDepth = exports.maxAttesters = exports.maxUsers = exports.numAttestationsPerProof = exports.numEpochKeyNoncePerEpoch = exports.globalStateTreeDepth = exports.epochTreeDepth = exports.epochLength = exports.circuitEpochTreeDepth = exports.circuitUserStateTreeDepth = exports.circuitGlobalStateTreeDepth = exports.attestingFee = void 0;
 const ethers_1 = require("ethers");
 const attestingFee = ethers_1.ethers.utils.parseEther("0.1");
 exports.attestingFee = attestingFee;

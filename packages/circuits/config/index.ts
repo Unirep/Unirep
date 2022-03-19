@@ -46,5 +46,5 @@ export {
   proveUserSignUpCircuitPath,
   startTransitionCircuitPath,
   processAttestationsCircuitPath,
-  userStateTransitionCircuitPath,
+  userStateTransitionCircuitPath
 };

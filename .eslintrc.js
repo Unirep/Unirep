@@ -14,6 +14,7 @@ const unusedVarsCfg = [
     extends: ["standard-with-typescript", "plugin:sonarjs/recommended"],
     parserOptions: {
       ecmaVersion: 2020,
+      project: ["tsconfig.ts"]
     //   sourceType: "module"
     },
     rules: {

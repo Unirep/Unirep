@@ -7,6 +7,6 @@
         "node_modules/**"
     ],
     "include": [
-        "./circuits"
+        "./circuits", "./test"
     ]
 }

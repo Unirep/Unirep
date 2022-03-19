@@ -11,7 +11,7 @@
     "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
     "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
     "test": "mocha -r ts-node/register test/*.ts --exit",
-    "lint": "eslint --cache --fix --ext .ts"
+    "lint": "eslint --cache --fix --ext .ts ."
   },
   "repository": "https://github.com/Unirep/circuits.git",
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
