@@ -1,4 +1,3 @@
-// @ts-expect-error
 import { genIdentity, genIdentityCommitment } from "@unirep/crypto";
 import { expect } from "chai";
 import { ethers } from "ethers";

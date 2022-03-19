@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-// @ts-expect-error
+
 import { Circuit } from "@unirep/circuits";
 import {
   genIdentity,

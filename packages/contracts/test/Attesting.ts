@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-// @ts-expect-error
+
 import { formatProofForSnarkjsVerification } from "@unirep/circuits";
 import {
   genIdentity,

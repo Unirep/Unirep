@@ -3,3 +3,8 @@
 *.r1cs
 
 node_modules/
+
+**.d.ts
+*.js
+
+dist

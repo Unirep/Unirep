@@ -1,4 +1,3 @@
-// @ts-expect-error
 import { Circuit } from "@unirep/circuits";
 import { genIdentity, genRandomSalt, hashOne } from "@unirep/crypto";
 import { expect } from "chai";

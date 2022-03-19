@@ -761,7 +761,7 @@ const genProofAndVerify = async (
 const genInputForContract = async (
   circuit: Circuit,
   circuitInputs
-): Promise<boolean> => {
+): Promise<any> => {
   const startTime = new Date().getTime();
   const { proof, publicSignals } = await genProofAndPublicSignals(
     circuit,
@@ -802,5 +802,5 @@ export {
   genProveSignUpCircuitInput,
   formatProofAndPublicSignals,
   genProofAndVerify,
-  genInputForContract
+  genInputForContract,
 };
