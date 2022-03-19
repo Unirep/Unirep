@@ -22,7 +22,7 @@ const main = async (): Promise<number> => {
   let circomPath;
 
   // verifyEpochKey circuit
-  dirPath = path.join(__dirname, "../build");
+  dirPath = path.join(__dirname, "../zksnarkBuild");
   circomPath = path.join(__dirname, verifyEpochKeyCircuitPath);
 
   // create .circom file
@@ -36,7 +36,7 @@ const main = async (): Promise<number> => {
   fs.writeFileSync(circomPath, testCircuitContent);
 
   // proveRepuation circuit
-  dirPath = path.join(__dirname, "../build");
+  dirPath = path.join(__dirname, "../zksnarkBuild");
   circomPath = path.join(__dirname, proveReputationCircuitPath);
 
   // create .circom file
@@ -50,7 +50,7 @@ const main = async (): Promise<number> => {
   fs.writeFileSync(circomPath, testCircuitContent);
 
   // proveUserSignUp circuit
-  dirPath = path.join(__dirname, "../build");
+  dirPath = path.join(__dirname, "../zksnarkBuild");
   circomPath = path.join(__dirname, proveUserSignUpCircuitPath);
 
   // create .circom file
@@ -64,7 +64,7 @@ const main = async (): Promise<number> => {
   fs.writeFileSync(circomPath, testCircuitContent);
 
   // startTransition circuit
-  dirPath = path.join(__dirname, "../build");
+  dirPath = path.join(__dirname, "../zksnarkBuild");
   circomPath = path.join(__dirname, startTransitionCircuitPath);
 
   // create .circom file
@@ -78,7 +78,7 @@ const main = async (): Promise<number> => {
   fs.writeFileSync(circomPath, testCircuitContent);
 
   // processAttestations circuit
-  dirPath = path.join(__dirname, "../build");
+  dirPath = path.join(__dirname, "../zksnarkBuild");
   circomPath = path.join(__dirname, processAttestationsCircuitPath);
 
   // create .circom file
@@ -92,7 +92,7 @@ const main = async (): Promise<number> => {
   fs.writeFileSync(circomPath, testCircuitContent);
 
   // userStateTransition circuit
-  dirPath = path.join(__dirname, "../build");
+  dirPath = path.join(__dirname, "../zksnarkBuild");
   circomPath = path.join(__dirname, userStateTransitionCircuitPath);
 
   // create .circom file

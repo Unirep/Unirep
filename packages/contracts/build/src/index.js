@@ -31,7 +31,7 @@ class Attestation {
                 this.posRep.toBigInt(),
                 this.negRep.toBigInt(),
                 this.graffiti.toBigInt(),
-                this.signUp.toBigInt()
+                this.signUp.toBigInt(),
             ]);
         };
         this.attesterId = ethers_1.ethers.BigNumber.from(_attesterId);
@@ -219,7 +219,7 @@ const deployUnirep = async (deployer, _treeDepths, _settings) => {
     const _attestingFee = (_f = _settings === null || _settings === void 0 ? void 0 : _settings.attestingFee) !== null && _f !== void 0 ? _f : config_1.attestingFee;
     const c = await new typechain_1.Unirep__factory(deployer).deploy(_treeDepths, {
         maxUsers: _maxUsers,
-        maxAttesters: _maxAttesters
+        maxAttesters: _maxAttesters,
     }, EpochKeyValidityVerifierContract.address, StartTransitionVerifierContract.address, ProcessAttestationsVerifierContract.address, UserStateTransitionVerifierContract.address, ReputationVerifierContract.address, UserSignUpVerifierContract.address, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee);
     await c.deployTransaction.wait();
     // Print out deployment info

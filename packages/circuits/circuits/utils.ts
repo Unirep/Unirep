@@ -2,16 +2,16 @@
 import { SnarkProof, SnarkPublicSignals } from "@unirep/crypto";
 import * as path from "path";
 
-import processAttestationsVkey from "../build/processAttestations.vkey.json";
-import proveReputationVkey from "../build/proveReputation.vkey.json";
-import proveUserSignUpVkey from "../build/proveUserSignUp.vkey.json";
-import startTransitionVkey from "../build/startTransition.vkey.json";
-import userStateTransitionVkey from "../build/userStateTransition.vkey.json";
-import verifyEpochKeyVkey from "../build/verifyEpochKey.vkey.json";
 import { Circuit } from "../config/index";
+import processAttestationsVkey from "../zksnarkBuild/processAttestations.vkey.json";
+import proveReputationVkey from "../zksnarkBuild/proveReputation.vkey.json";
+import proveUserSignUpVkey from "../zksnarkBuild/proveUserSignUp.vkey.json";
+import startTransitionVkey from "../zksnarkBuild/startTransition.vkey.json";
+import userStateTransitionVkey from "../zksnarkBuild/userStateTransition.vkey.json";
+import verifyEpochKeyVkey from "../zksnarkBuild/verifyEpochKey.vkey.json";
 const snarkjs = require("snarkjs");
 
-const buildPath = "../build";
+const buildPath = "../zksnarkBuild";
 
 const executeCircuit = async (circuit: any, inputs: any): Promise<any> => {
   const witness = await circuit.calculateWitness(inputs, true);
