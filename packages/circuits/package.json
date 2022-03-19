@@ -10,7 +10,7 @@
     "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
     "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
     "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
-    "copyCircom": "rm -rf ./dist/build && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
+    "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
     "test": "mocha -r ts-node/register test/*.ts --exit",
     "lint": "eslint --cache --fix --ext .ts ."
   },
