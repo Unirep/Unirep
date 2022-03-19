@@ -3,13 +3,14 @@
   "version": "1.0.4",
   "main": "dist/circuits/utils.js",
   "scripts": {
-    "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && tsc",
+    "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && tsc && yarn copyCircom",
     "downloadPtau": "./scripts/downloadPtau.sh",
     "buildCircuits": "npx ts-node scripts/buildCircuits.ts",
     "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
     "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
     "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
     "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
+    "copyCircom": "cp -rf ./build ./dist/",
     "test": "mocha -r ts-node/register test/*.ts --exit",
     "lint": "eslint --cache --fix --ext .ts ."
   },

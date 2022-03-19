@@ -31,7 +31,7 @@ class Attestation {
                 this.posRep.toBigInt(),
                 this.negRep.toBigInt(),
                 this.graffiti.toBigInt(),
-                this.signUp.toBigInt(),
+                this.signUp.toBigInt()
             ]);
         };
         this.attesterId = ethers_1.ethers.BigNumber.from(_attesterId);
@@ -212,14 +212,14 @@ const deployUnirep = async (deployer, _treeDepths, _settings) => {
     await UserSignUpVerifierContract.deployTransaction.wait();
     console.log("Deploying Unirep");
     const _maxUsers = (_a = _settings === null || _settings === void 0 ? void 0 : _settings.maxUsers) !== null && _a !== void 0 ? _a : config_1.maxUsers;
-    const _maxAttesters = (_b = _settings.maxAttesters) !== null && _b !== void 0 ? _b : config_1.maxAttesters;
-    const _numEpochKeyNoncePerEpoch = (_c = _settings.numEpochKeyNoncePerEpoch) !== null && _c !== void 0 ? _c : config_1.numEpochKeyNoncePerEpoch;
-    const _maxReputationBudget = (_d = _settings.maxReputationBudget) !== null && _d !== void 0 ? _d : config_1.maxReputationBudget;
+    const _maxAttesters = (_b = _settings === null || _settings === void 0 ? void 0 : _settings.maxAttesters) !== null && _b !== void 0 ? _b : config_1.maxAttesters;
+    const _numEpochKeyNoncePerEpoch = (_c = _settings === null || _settings === void 0 ? void 0 : _settings.numEpochKeyNoncePerEpoch) !== null && _c !== void 0 ? _c : config_1.numEpochKeyNoncePerEpoch;
+    const _maxReputationBudget = (_d = _settings === null || _settings === void 0 ? void 0 : _settings.maxReputationBudget) !== null && _d !== void 0 ? _d : config_1.maxReputationBudget;
     const _epochLength = (_e = _settings === null || _settings === void 0 ? void 0 : _settings.maxUsers) !== null && _e !== void 0 ? _e : config_1.maxUsers;
-    const _attestingFee = (_f = _settings.attestingFee) !== null && _f !== void 0 ? _f : config_1.attestingFee;
+    const _attestingFee = (_f = _settings === null || _settings === void 0 ? void 0 : _settings.attestingFee) !== null && _f !== void 0 ? _f : config_1.attestingFee;
     const c = await new typechain_1.Unirep__factory(deployer).deploy(_treeDepths, {
         maxUsers: _maxUsers,
-        maxAttesters: _maxAttesters,
+        maxAttesters: _maxAttesters
     }, EpochKeyValidityVerifierContract.address, StartTransitionVerifierContract.address, ProcessAttestationsVerifierContract.address, UserStateTransitionVerifierContract.address, ReputationVerifierContract.address, UserSignUpVerifierContract.address, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee);
     await c.deployTransaction.wait();
     // Print out deployment info

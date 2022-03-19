@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable sonarjs/cognitive-complexity */
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
@@ -16,9 +17,7 @@ import {
 } from "@unirep/crypto";
 import assert from "assert";
 import { expect } from "chai";
-import circom from "circom";
 import { ethers } from "ethers";
-import Keyv from "keyv";
 
 import {
   executeCircuit,
@@ -34,6 +33,9 @@ import {
   numAttestationsPerProof,
   numEpochKeyNoncePerEpoch,
 } from "../config";
+
+const circom = require("circom");
+const Keyv = require("keyv");
 
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0));
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0));

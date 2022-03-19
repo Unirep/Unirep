@@ -396,13 +396,13 @@ const deployUnirep = async (
 
   console.log("Deploying Unirep");
   const _maxUsers = _settings?.maxUsers ?? maxUsers;
-  const _maxAttesters = _settings.maxAttesters ?? maxAttesters;
+  const _maxAttesters = _settings?.maxAttesters ?? maxAttesters;
   const _numEpochKeyNoncePerEpoch =
-    _settings.numEpochKeyNoncePerEpoch ?? numEpochKeyNoncePerEpoch;
+    _settings?.numEpochKeyNoncePerEpoch ?? numEpochKeyNoncePerEpoch;
   const _maxReputationBudget =
-    _settings.maxReputationBudget ?? maxReputationBudget;
+    _settings?.maxReputationBudget ?? maxReputationBudget;
   const _epochLength = _settings?.maxUsers ?? maxUsers;
-  const _attestingFee = _settings.attestingFee ?? attestingFee;
+  const _attestingFee = _settings?.attestingFee ?? attestingFee;
 
   const c: Unirep = await new UnirepFactory(deployer).deploy(
     _treeDepths,
