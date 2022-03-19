@@ -215,7 +215,7 @@ const deployUnirep = async (deployer, _treeDepths, _settings) => {
     const _maxAttesters = (_b = _settings === null || _settings === void 0 ? void 0 : _settings.maxAttesters) !== null && _b !== void 0 ? _b : config_1.maxAttesters;
     const _numEpochKeyNoncePerEpoch = (_c = _settings === null || _settings === void 0 ? void 0 : _settings.numEpochKeyNoncePerEpoch) !== null && _c !== void 0 ? _c : config_1.numEpochKeyNoncePerEpoch;
     const _maxReputationBudget = (_d = _settings === null || _settings === void 0 ? void 0 : _settings.maxReputationBudget) !== null && _d !== void 0 ? _d : config_1.maxReputationBudget;
-    const _epochLength = (_e = _settings === null || _settings === void 0 ? void 0 : _settings.maxUsers) !== null && _e !== void 0 ? _e : config_1.maxUsers;
+    const _epochLength = (_e = _settings === null || _settings === void 0 ? void 0 : _settings.maxUsers) !== null && _e !== void 0 ? _e : config_1.epochLength;
     const _attestingFee = (_f = _settings === null || _settings === void 0 ? void 0 : _settings.attestingFee) !== null && _f !== void 0 ? _f : config_1.attestingFee;
     const c = await new typechain_1.Unirep__factory(deployer).deploy(_treeDepths, {
         maxUsers: _maxUsers,

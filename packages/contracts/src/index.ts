@@ -10,6 +10,7 @@ import { BigNumber, BigNumberish, ethers } from "ethers";
 
 import {
   attestingFee,
+  epochLength,
   maxAttesters,
   maxReputationBudget,
   maxUsers,
@@ -401,7 +402,7 @@ const deployUnirep = async (
     _settings?.numEpochKeyNoncePerEpoch ?? numEpochKeyNoncePerEpoch;
   const _maxReputationBudget =
     _settings?.maxReputationBudget ?? maxReputationBudget;
-  const _epochLength = _settings?.maxUsers ?? maxUsers;
+  const _epochLength = _settings?.epochLength ?? epochLength;
   const _attestingFee = _settings?.attestingFee ?? attestingFee;
 
   const c: Unirep = await new UnirepFactory(deployer).deploy(
