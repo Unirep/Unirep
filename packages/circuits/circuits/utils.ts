@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { SnarkProof, SnarkPublicSignals } from "@unirep/crypto";
 import * as path from "path";
-import snarkjs from "snarkjs";
 
 import processAttestationsVkey from "../build/processAttestations.vkey.json";
 import proveReputationVkey from "../build/proveReputation.vkey.json";
@@ -9,6 +9,7 @@ import startTransitionVkey from "../build/startTransition.vkey.json";
 import userStateTransitionVkey from "../build/userStateTransition.vkey.json";
 import verifyEpochKeyVkey from "../build/verifyEpochKey.vkey.json";
 import { Circuit } from "../config/index";
+const snarkjs = require("snarkjs");
 
 const buildPath = "../build";
 
@@ -86,7 +87,7 @@ const formatProofForVerifierContract = (_proof: SnarkProof): string[] => {
     _proof.pi_b[1][1],
     _proof.pi_b[1][0],
     _proof.pi_c[0],
-    _proof.pi_c[1]
+    _proof.pi_c[1],
   ].map((x) => x.toString());
 };
 
@@ -96,9 +97,9 @@ const formatProofForSnarkjsVerification = (_proof: string[]): SnarkProof => {
     pi_b: [
       [BigInt(_proof[3]), BigInt(_proof[2])],
       [BigInt(_proof[5]), BigInt(_proof[4])],
-      [BigInt("1"), BigInt("0")]
+      [BigInt("1"), BigInt("0")],
     ],
-    pi_c: [BigInt(_proof[6]), BigInt(_proof[7]), BigInt("1")]
+    pi_c: [BigInt(_proof[6]), BigInt(_proof[7]), BigInt("1")],
   };
 };
 
@@ -110,5 +111,5 @@ export {
   getVKey,
   getSignalByName,
   genProofAndPublicSignals,
-  verifyProof
+  verifyProof,
 };
