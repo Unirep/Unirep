@@ -1,537 +1,566 @@
-import { expect } from "chai";
-import { genRandomSalt, hashLeftRight } from "@unirep/crypto";
+import { expect } from 'chai'
+import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import {
-  attestingFee,
-  circuitEpochTreeDepth,
-  circuitGlobalStateTreeDepth,
-  circuitUserStateTreeDepth,
-  computeInitUserStateRoot,
-  epochLength,
-  ISettings,
-  maxReputationBudget,
-  numEpochKeyNoncePerEpoch,
-  UnirepState,
-} from "../../src";
-import { genNewGST, genRandomAttestation } from "../utils";
+    attestingFee,
+    circuitEpochTreeDepth,
+    circuitGlobalStateTreeDepth,
+    circuitUserStateTreeDepth,
+    computeInitUserStateRoot,
+    epochLength,
+    ISettings,
+    maxReputationBudget,
+    numEpochKeyNoncePerEpoch,
+    UnirepState,
+} from '../../src'
+import { genNewGST, genRandomAttestation } from '../utils'
 
-describe("Unirep State", function () {
-  let unirepState: UnirepState;
-  const setting: ISettings = {
-    globalStateTreeDepth: circuitGlobalStateTreeDepth,
-    userStateTreeDepth: circuitUserStateTreeDepth,
-    epochTreeDepth: circuitEpochTreeDepth,
-    attestingFee: attestingFee,
-    epochLength: epochLength,
-    numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-    maxReputationBudget: maxReputationBudget,
-  };
-  const epochKeys: string[] = [];
-  const maxUsers = 2 ** setting.globalStateTreeDepth;
-  const userNum = Math.ceil(Math.random() * maxUsers);
-  let epoch = 1;
+describe('Unirep State', function () {
+    let unirepState: UnirepState
+    const setting: ISettings = {
+        globalStateTreeDepth: circuitGlobalStateTreeDepth,
+        userStateTreeDepth: circuitUserStateTreeDepth,
+        epochTreeDepth: circuitEpochTreeDepth,
+        attestingFee: attestingFee,
+        epochLength: epochLength,
+        numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+        maxReputationBudget: maxReputationBudget,
+    }
+    const epochKeys: string[] = []
+    const maxUsers = 2 ** setting.globalStateTreeDepth
+    const userNum = Math.ceil(Math.random() * maxUsers)
+    let epoch = 1
 
-  before(async () => {
-    unirepState = new UnirepState(setting);
-  });
+    before(async () => {
+        unirepState = new UnirepState(setting)
+    })
 
-  describe("Users sign up", async () => {
-    const GSTree = genNewGST(
-      setting.globalStateTreeDepth,
-      setting.userStateTreeDepth
-    );
-    const rootHistories: BigInt[] = [];
-    it("update Unirep state should success", async () => {
-      for (let i = 0; i < userNum; i++) {
-        const commitment = genRandomSalt();
-        const randomAttesterId = Math.ceil(Math.random() * 10);
-        const randomAirdropAmount = Math.ceil(Math.random() * 10);
-        await unirepState.signUp(
-          epoch,
-          commitment,
-          randomAttesterId,
-          randomAirdropAmount
-        );
-        const USTRoot = await computeInitUserStateRoot(
-          setting.userStateTreeDepth,
-          randomAttesterId,
-          randomAirdropAmount
-        );
-        const GSTLeaf = hashLeftRight(commitment, USTRoot);
+    describe('Users sign up', async () => {
+        const GSTree = genNewGST(
+            setting.globalStateTreeDepth,
+            setting.userStateTreeDepth
+        )
+        const rootHistories: BigInt[] = []
+        it('update Unirep state should success', async () => {
+            for (let i = 0; i < userNum; i++) {
+                const commitment = genRandomSalt()
+                const randomAttesterId = Math.ceil(Math.random() * 10)
+                const randomAirdropAmount = Math.ceil(Math.random() * 10)
+                await unirepState.signUp(
+                    epoch,
+                    commitment,
+                    randomAttesterId,
+                    randomAirdropAmount
+                )
+                const USTRoot = await computeInitUserStateRoot(
+                    setting.userStateTreeDepth,
+                    randomAttesterId,
+                    randomAirdropAmount
+                )
+                const GSTLeaf = hashLeftRight(commitment, USTRoot)
 
-        const unirepGSTree = unirepState.genGSTree(epoch);
-        GSTree.insert(GSTLeaf);
-        expect(
-          GSTree.root,
-          `Global state tree root from Unirep state mismatches current global state tree`
-        ).equal(unirepGSTree.root);
-        rootHistories.push(GSTree.root);
+                const unirepGSTree = unirepState.genGSTree(epoch)
+                GSTree.insert(GSTLeaf)
+                expect(
+                    GSTree.root,
+                    `Global state tree root from Unirep state mismatches current global state tree`
+                ).equal(unirepGSTree.root)
+                rootHistories.push(GSTree.root)
 
-        const GSTLeafNum = unirepState.getNumGSTLeaves(epoch);
-        expect(GSTLeafNum, `Global state tree leaves should match`).equal(
-          i + 1
-        );
-      }
-    });
+                const GSTLeafNum = unirepState.getNumGSTLeaves(epoch)
+                expect(
+                    GSTLeafNum,
+                    `Global state tree leaves should match`
+                ).equal(i + 1)
+            }
+        })
 
-    it("Get GST leaf number should fail if input an invalid epoch", async () => {
-      const wrongEpoch = epoch + 1;
-      let error;
-      try {
-        unirepState.getNumGSTLeaves(wrongEpoch);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('Get GST leaf number should fail if input an invalid epoch', async () => {
+            const wrongEpoch = epoch + 1
+            let error
+            try {
+                unirepState.getNumGSTLeaves(wrongEpoch)
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("Update user sign up with wrong epoch should fail", async () => {
-      const wrongEpoch = epoch + 1;
-      const commitment = genRandomSalt();
-      const randomAttesterId = Math.ceil(Math.random() * 10);
-      const randomAirdropAmount = Math.ceil(Math.random() * 10);
-      let error;
-      try {
-        await unirepState.signUp(
-          wrongEpoch,
-          commitment,
-          randomAttesterId,
-          randomAirdropAmount
-        );
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('Update user sign up with wrong epoch should fail', async () => {
+            const wrongEpoch = epoch + 1
+            const commitment = genRandomSalt()
+            const randomAttesterId = Math.ceil(Math.random() * 10)
+            const randomAirdropAmount = Math.ceil(Math.random() * 10)
+            let error
+            try {
+                await unirepState.signUp(
+                    wrongEpoch,
+                    commitment,
+                    randomAttesterId,
+                    randomAirdropAmount
+                )
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("Query GST root should success", async () => {
-      for (let root of rootHistories) {
-        const exist = unirepState.GSTRootExists(root, epoch);
-        expect(exist, "Query global state tree root from Unirep state failed")
-          .to.be.true;
-      }
-    });
+        it('Query GST root should success', async () => {
+            for (let root of rootHistories) {
+                const exist = unirepState.GSTRootExists(root, epoch)
+                expect(
+                    exist,
+                    'Query global state tree root from Unirep state failed'
+                ).to.be.true
+            }
+        })
 
-    it("Query global state tree roots with wrong input should success", async () => {
-      const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch);
-      expect(notExist, "Query non-exist root from User state should fail").to.be
-        .false;
+        it('Query global state tree roots with wrong input should success', async () => {
+            const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch)
+            expect(notExist, 'Query non-exist root from User state should fail')
+                .to.be.false
 
-      const invalidEpoch = epoch + 1;
-      for (let root of rootHistories) {
-        let error;
-        try {
-          unirepState.GSTRootExists(root, invalidEpoch);
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.to.be.undefined;
-      }
-    });
-  });
+            const invalidEpoch = epoch + 1
+            for (let root of rootHistories) {
+                let error
+                try {
+                    unirepState.GSTRootExists(root, invalidEpoch)
+                } catch (e) {
+                    error = e
+                }
+                expect(error).not.to.be.undefined
+            }
+        })
+    })
 
-  describe("Add attestations", async () => {
-    const attestationsToEpochKey: { [key: string]: string[] } = {};
+    describe('Add attestations', async () => {
+        const attestationsToEpochKey: { [key: string]: string[] } = {}
 
-    it("update Unirep state should success", async () => {
-      const maxEpochKeyNum = 10;
-      const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum);
-      for (let i = 0; i < epochKeyNum; i++) {
-        const maxAttestPerEpochKeyNum = 10;
-        const attestNum = Math.ceil(Math.random() * maxAttestPerEpochKeyNum);
+        it('update Unirep state should success', async () => {
+            const maxEpochKeyNum = 10
+            const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum)
+            for (let i = 0; i < epochKeyNum; i++) {
+                const maxAttestPerEpochKeyNum = 10
+                const attestNum = Math.ceil(
+                    Math.random() * maxAttestPerEpochKeyNum
+                )
 
-        const epochKey =
-          BigInt(genRandomSalt().toString()) % BigInt(2 ** setting.epochLength);
-        epochKeys.push(epochKey.toString());
-        attestationsToEpochKey[epochKey.toString()] = [];
+                const epochKey =
+                    BigInt(genRandomSalt().toString()) %
+                    BigInt(2 ** setting.epochLength)
+                epochKeys.push(epochKey.toString())
+                attestationsToEpochKey[epochKey.toString()] = []
 
-        for (let j = 0; j < attestNum; j++) {
-          const attestation = genRandomAttestation();
-          unirepState.addAttestation(epochKey.toString(), attestation);
-          attestationsToEpochKey[epochKey.toString()].push(
-            attestation.toJSON()
-          );
-        }
-      }
-    });
+                for (let j = 0; j < attestNum; j++) {
+                    const attestation = genRandomAttestation()
+                    unirepState.addAttestation(epochKey.toString(), attestation)
+                    attestationsToEpochKey[epochKey.toString()].push(
+                        attestation.toJSON()
+                    )
+                }
+            }
+        })
 
-    it("wrong epoch key should throw error", async () => {
-      let error;
-      const wrongEpochKey = genRandomSalt();
-      const attestation = genRandomAttestation();
-      try {
-        unirepState.addAttestation(wrongEpochKey.toString(), attestation);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('wrong epoch key should throw error', async () => {
+            let error
+            const wrongEpochKey = genRandomSalt()
+            const attestation = genRandomAttestation()
+            try {
+                unirepState.addAttestation(
+                    wrongEpochKey.toString(),
+                    attestation
+                )
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("Get attestations should success", async () => {
-      for (let i = 0; i < epochKeys.length; i++) {
-        const unirepAttestations = unirepState.getAttestations(epochKeys[i]);
-        for (let j = 0; j < unirepAttestations.length; j++) {
-          expect(
-            unirepAttestations[j].toJSON(),
-            "Query attestations from Unirep state failed"
-          ).equal(attestationsToEpochKey[epochKeys[i]][j]);
-        }
-      }
-    });
+        it('Get attestations should success', async () => {
+            for (let i = 0; i < epochKeys.length; i++) {
+                const unirepAttestations = unirepState.getAttestations(
+                    epochKeys[i]
+                )
+                for (let j = 0; j < unirepAttestations.length; j++) {
+                    expect(
+                        unirepAttestations[j].toJSON(),
+                        'Query attestations from Unirep state failed'
+                    ).equal(attestationsToEpochKey[epochKeys[i]][j])
+                }
+            }
+        })
 
-    it("Get attestation with non exist epoch key should return an empty array", async () => {
-      const epochKey =
-        BigInt(genRandomSalt().toString()) % BigInt(2 ** setting.epochLength);
-      const unirepAttestations = unirepState.getAttestations(
-        epochKey.toString()
-      );
-      expect(unirepAttestations.length).equal(0);
-    });
+        it('Get attestation with non exist epoch key should return an empty array', async () => {
+            const epochKey =
+                BigInt(genRandomSalt().toString()) %
+                BigInt(2 ** setting.epochLength)
+            const unirepAttestations = unirepState.getAttestations(
+                epochKey.toString()
+            )
+            expect(unirepAttestations.length).equal(0)
+        })
 
-    it("Get attestation with invalid epoch key should throw error", async () => {
-      let error;
-      const wrongEpochKey = genRandomSalt();
-      try {
-        unirepState.getAttestations(wrongEpochKey.toString());
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('Get attestation with invalid epoch key should throw error', async () => {
+            let error
+            const wrongEpochKey = genRandomSalt()
+            try {
+                unirepState.getAttestations(wrongEpochKey.toString())
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("get epoch keys should success", async () => {
-      const unirepEpochKeys = unirepState.getEpochKeys(epoch);
-      expect(unirepEpochKeys.length).equal(epochKeys.length);
+        it('get epoch keys should success', async () => {
+            const unirepEpochKeys = unirepState.getEpochKeys(epoch)
+            expect(unirepEpochKeys.length).equal(epochKeys.length)
 
-      for (let epk of unirepEpochKeys) {
-        expect(epochKeys.indexOf(epk)).not.equal(-1);
-      }
-    });
+            for (let epk of unirepEpochKeys) {
+                expect(epochKeys.indexOf(epk)).not.equal(-1)
+            }
+        })
 
-    it("get epoch keys with invalid epoch should fail", async () => {
-      let error;
-      try {
-        unirepState.getEpochKeys(epoch + 1);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('get epoch keys with invalid epoch should fail', async () => {
+            let error
+            try {
+                unirepState.getEpochKeys(epoch + 1)
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("add reputation nullifiers", async () => {
-      const nullifierNum = Math.ceil(Math.random() * 10);
-      for (let i = 0; i < nullifierNum; i++) {
-        const nullifier = genRandomSalt();
-        unirepState.addReputationNullifiers(nullifier);
+        it('add reputation nullifiers', async () => {
+            const nullifierNum = Math.ceil(Math.random() * 10)
+            for (let i = 0; i < nullifierNum; i++) {
+                const nullifier = genRandomSalt()
+                unirepState.addReputationNullifiers(nullifier)
 
-        // submit the same nullifier twice should fail
-        let error;
-        try {
-          unirepState.addReputationNullifiers(nullifier);
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.to.be.undefined;
+                // submit the same nullifier twice should fail
+                let error
+                try {
+                    unirepState.addReputationNullifiers(nullifier)
+                } catch (e) {
+                    error = e
+                }
+                expect(error).not.to.be.undefined
 
-        // query nullifier should succeed
-        const exist = unirepState.nullifierExist(nullifier);
-        expect(exist, "Query reputation nullifier from Unirep state failed").to
-          .be.true;
-      }
-    });
+                // query nullifier should succeed
+                const exist = unirepState.nullifierExist(nullifier)
+                expect(
+                    exist,
+                    'Query reputation nullifier from Unirep state failed'
+                ).to.be.true
+            }
+        })
 
-    it("non exist nullifier should return false", async () => {
-      const notExist = unirepState.nullifierExist(genRandomSalt());
-      expect(
-        notExist,
-        "Query non exist nullifier from Unirep state with wrong result"
-      ).to.be.false;
-    });
-  });
+        it('non exist nullifier should return false', async () => {
+            const notExist = unirepState.nullifierExist(genRandomSalt())
+            expect(
+                notExist,
+                'Query non exist nullifier from Unirep state with wrong result'
+            ).to.be.false
+        })
+    })
 
-  describe("1st Epoch transition", async () => {
-    const GSTree = genNewGST(
-      setting.globalStateTreeDepth,
-      setting.userStateTreeDepth
-    );
-    const rootHistories: BigInt[] = [];
+    describe('1st Epoch transition', async () => {
+        const GSTree = genNewGST(
+            setting.globalStateTreeDepth,
+            setting.userStateTreeDepth
+        )
+        const rootHistories: BigInt[] = []
 
-    it("epoch transition", async () => {
-      await unirepState.epochTransition(epoch);
-      expect(
-        unirepState.currentEpoch,
-        "Unirep epoch should increase by 1"
-      ).equal(epoch + 1);
-      epoch = unirepState.currentEpoch;
+        it('epoch transition', async () => {
+            await unirepState.epochTransition(epoch)
+            expect(
+                unirepState.currentEpoch,
+                'Unirep epoch should increase by 1'
+            ).equal(epoch + 1)
+            epoch = unirepState.currentEpoch
 
-      // sealed epoch key should not add attestations
-      for (let i = 0; i < epochKeys.length; i++) {
-        const attestation = genRandomAttestation();
+            // sealed epoch key should not add attestations
+            for (let i = 0; i < epochKeys.length; i++) {
+                const attestation = genRandomAttestation()
 
-        // submit the attestation to sealed epoch key should fail
-        let error;
-        try {
-          unirepState.addAttestation(epochKeys[i], attestation);
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.to.be.undefined;
-      }
-    });
+                // submit the attestation to sealed epoch key should fail
+                let error
+                try {
+                    unirepState.addAttestation(epochKeys[i], attestation)
+                } catch (e) {
+                    error = e
+                }
+                expect(error).not.to.be.undefined
+            }
+        })
 
-    it("epoch transition with wrong epoch input should fail", async () => {
-      const wrongEpoch = 1;
-      let error;
-      try {
-        await unirepState.epochTransition(wrongEpoch);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('epoch transition with wrong epoch input should fail', async () => {
+            const wrongEpoch = 1
+            let error
+            try {
+                await unirepState.epochTransition(wrongEpoch)
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("update Unirep state should success", async () => {
-      for (let i = 0; i < userNum; i++) {
-        const GSTLeaf = genRandomSalt();
-        const nullifiers: BigInt[] = [];
-        for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
-          nullifiers.push(genRandomSalt());
-        }
-        unirepState.userStateTransition(epoch, GSTLeaf, nullifiers);
+        it('update Unirep state should success', async () => {
+            for (let i = 0; i < userNum; i++) {
+                const GSTLeaf = genRandomSalt()
+                const nullifiers: BigInt[] = []
+                for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
+                    nullifiers.push(genRandomSalt())
+                }
+                unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
 
-        const unirepGSTree = unirepState.genGSTree(epoch);
-        GSTree.insert(GSTLeaf);
-        expect(
-          GSTree.root,
-          `Global state tree root from Unirep state mismatches current global state tree`
-        ).equal(unirepGSTree.root);
-        rootHistories.push(GSTree.root);
+                const unirepGSTree = unirepState.genGSTree(epoch)
+                GSTree.insert(GSTLeaf)
+                expect(
+                    GSTree.root,
+                    `Global state tree root from Unirep state mismatches current global state tree`
+                ).equal(unirepGSTree.root)
+                rootHistories.push(GSTree.root)
 
-        const GSTLeafNum = unirepState.getNumGSTLeaves(epoch);
-        expect(GSTLeafNum, `Global state tree leaves should match`).equal(
-          i + 1
-        );
-      }
-    });
+                const GSTLeafNum = unirepState.getNumGSTLeaves(epoch)
+                expect(
+                    GSTLeafNum,
+                    `Global state tree leaves should match`
+                ).equal(i + 1)
+            }
+        })
 
-    it("Query GST root should success", async () => {
-      for (let root of rootHistories) {
-        const exist = unirepState.GSTRootExists(root, epoch);
-        expect(exist, "Query global state tree root from Unirep state failed")
-          .to.be.true;
-      }
-    });
+        it('Query GST root should success', async () => {
+            for (let root of rootHistories) {
+                const exist = unirepState.GSTRootExists(root, epoch)
+                expect(
+                    exist,
+                    'Query global state tree root from Unirep state failed'
+                ).to.be.true
+            }
+        })
 
-    it("Query global state tree roots with wrong input should success", async () => {
-      const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch);
-      expect(notExist, "Query non-exist root from User state should fail").to.be
-        .false;
+        it('Query global state tree roots with wrong input should success', async () => {
+            const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch)
+            expect(notExist, 'Query non-exist root from User state should fail')
+                .to.be.false
 
-      const invalidEpoch = epoch + 1;
-      for (let root of rootHistories) {
-        let error;
-        try {
-          unirepState.GSTRootExists(root, invalidEpoch);
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.to.be.undefined;
-      }
-    });
+            const invalidEpoch = epoch + 1
+            for (let root of rootHistories) {
+                let error
+                try {
+                    unirepState.GSTRootExists(root, invalidEpoch)
+                } catch (e) {
+                    error = e
+                }
+                expect(error).not.to.be.undefined
+            }
+        })
 
-    it("user state transition with wrong epoch should fail", async () => {
-      const wrongEpoch = epoch + 1;
-      const GSTLeaf = genRandomSalt();
-      const nullifiers: BigInt[] = [];
-      for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-        nullifiers.push(genRandomSalt());
-      }
-      let error;
-      try {
-        await unirepState.userStateTransition(wrongEpoch, GSTLeaf, nullifiers);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('user state transition with wrong epoch should fail', async () => {
+            const wrongEpoch = epoch + 1
+            const GSTLeaf = genRandomSalt()
+            const nullifiers: BigInt[] = []
+            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+                nullifiers.push(genRandomSalt())
+            }
+            let error
+            try {
+                await unirepState.userStateTransition(
+                    wrongEpoch,
+                    GSTLeaf,
+                    nullifiers
+                )
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("user state transition with wrong nullifiers amount should fail", async () => {
-      const GSTLeaf = genRandomSalt();
-      const nullifiers: BigInt[] = [];
-      const wrongEpkNullifierAmount = numEpochKeyNoncePerEpoch + 1;
-      for (let i = 0; i < wrongEpkNullifierAmount; i++) {
-        nullifiers.push(genRandomSalt());
-      }
-      let error;
-      try {
-        unirepState.userStateTransition(epoch, GSTLeaf, nullifiers);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('user state transition with wrong nullifiers amount should fail', async () => {
+            const GSTLeaf = genRandomSalt()
+            const nullifiers: BigInt[] = []
+            const wrongEpkNullifierAmount = numEpochKeyNoncePerEpoch + 1
+            for (let i = 0; i < wrongEpkNullifierAmount; i++) {
+                nullifiers.push(genRandomSalt())
+            }
+            let error
+            try {
+                unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("generate epoch tree should succeed", async () => {
-      const prevEpoch = 1;
-      const epochTree = await unirepState.genEpochTree(prevEpoch);
-      const root = epochTree.getRootHash();
+        it('generate epoch tree should succeed', async () => {
+            const prevEpoch = 1
+            const epochTree = await unirepState.genEpochTree(prevEpoch)
+            const root = epochTree.getRootHash()
 
-      const exist = await unirepState.epochTreeRootExists(root, prevEpoch);
-      expect(exist).to.be.true;
-    });
+            const exist = await unirepState.epochTreeRootExists(root, prevEpoch)
+            expect(exist).to.be.true
+        })
 
-    it("query wrong epoch tree root should fail", async () => {
-      const prevEpoch = 1;
-      const wrongRoot = genRandomSalt();
-      const notExist = await unirepState.epochTreeRootExists(
-        wrongRoot,
-        prevEpoch
-      );
-      expect(notExist).to.be.false;
-    });
+        it('query wrong epoch tree root should fail', async () => {
+            const prevEpoch = 1
+            const wrongRoot = genRandomSalt()
+            const notExist = await unirepState.epochTreeRootExists(
+                wrongRoot,
+                prevEpoch
+            )
+            expect(notExist).to.be.false
+        })
 
-    it("query epoch tree root with wrong epoch should throw error", async () => {
-      const wrongEpoch = epoch + 1;
-      const root = genRandomSalt();
-      let error;
-      try {
-        await unirepState.epochTreeRootExists(root, wrongEpoch);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
-  });
+        it('query epoch tree root with wrong epoch should throw error', async () => {
+            const wrongEpoch = epoch + 1
+            const root = genRandomSalt()
+            let error
+            try {
+                await unirepState.epochTreeRootExists(root, wrongEpoch)
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
+    })
 
-  describe("Add attestations in the next epoch", async () => {
-    const attestationsToEpochKey: { [key: string]: string[] } = {};
+    describe('Add attestations in the next epoch', async () => {
+        const attestationsToEpochKey: { [key: string]: string[] } = {}
 
-    it("update Unirep state should success", async () => {
-      const maxEpochKeyNum = 10;
-      const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum);
-      for (let i = 0; i < epochKeyNum; i++) {
-        const maxAttestPerEpochKeyNum = 10;
-        const attestNum = Math.ceil(Math.random() * maxAttestPerEpochKeyNum);
+        it('update Unirep state should success', async () => {
+            const maxEpochKeyNum = 10
+            const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum)
+            for (let i = 0; i < epochKeyNum; i++) {
+                const maxAttestPerEpochKeyNum = 10
+                const attestNum = Math.ceil(
+                    Math.random() * maxAttestPerEpochKeyNum
+                )
 
-        const epochKey =
-          BigInt(genRandomSalt().toString()) % BigInt(2 ** setting.epochLength);
-        attestationsToEpochKey[epochKey.toString()] = [];
+                const epochKey =
+                    BigInt(genRandomSalt().toString()) %
+                    BigInt(2 ** setting.epochLength)
+                attestationsToEpochKey[epochKey.toString()] = []
 
-        for (let j = 0; j < attestNum; j++) {
-          const attestation = genRandomAttestation();
-          unirepState.addAttestation(epochKey.toString(), attestation);
-          attestationsToEpochKey[epochKey.toString()].push(
-            attestation.toJSON()
-          );
-        }
-      }
-    });
+                for (let j = 0; j < attestNum; j++) {
+                    const attestation = genRandomAttestation()
+                    unirepState.addAttestation(epochKey.toString(), attestation)
+                    attestationsToEpochKey[epochKey.toString()].push(
+                        attestation.toJSON()
+                    )
+                }
+            }
+        })
 
-    it("add reputation nullifiers", async () => {
-      const nullifierNum = Math.ceil(Math.random() * 10);
-      for (let i = 0; i < nullifierNum; i++) {
-        const nullifier = genRandomSalt();
-        unirepState.addReputationNullifiers(nullifier);
+        it('add reputation nullifiers', async () => {
+            const nullifierNum = Math.ceil(Math.random() * 10)
+            for (let i = 0; i < nullifierNum; i++) {
+                const nullifier = genRandomSalt()
+                unirepState.addReputationNullifiers(nullifier)
 
-        // submit the same nullifier twice should fail
-        let error;
-        try {
-          unirepState.addReputationNullifiers(nullifier);
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.to.be.undefined;
+                // submit the same nullifier twice should fail
+                let error
+                try {
+                    unirepState.addReputationNullifiers(nullifier)
+                } catch (e) {
+                    error = e
+                }
+                expect(error).not.to.be.undefined
 
-        // query nullifier should succeed
-        const exist = unirepState.nullifierExist(nullifier);
-        expect(exist, "Query reputation nullifier from Unirep state failed").to
-          .be.true;
-      }
-    });
-  });
+                // query nullifier should succeed
+                const exist = unirepState.nullifierExist(nullifier)
+                expect(
+                    exist,
+                    'Query reputation nullifier from Unirep state failed'
+                ).to.be.true
+            }
+        })
+    })
 
-  describe("2nd Epoch transition", async () => {
-    const GSTree = genNewGST(
-      setting.globalStateTreeDepth,
-      setting.userStateTreeDepth
-    );
-    const rootHistories: BigInt[] = [];
+    describe('2nd Epoch transition', async () => {
+        const GSTree = genNewGST(
+            setting.globalStateTreeDepth,
+            setting.userStateTreeDepth
+        )
+        const rootHistories: BigInt[] = []
 
-    it("epoch transition", async () => {
-      await unirepState.epochTransition(epoch);
-      expect(
-        unirepState.currentEpoch,
-        "Unirep epoch should increase by 1"
-      ).equal(epoch + 1);
-      epoch = unirepState.currentEpoch;
-    });
+        it('epoch transition', async () => {
+            await unirepState.epochTransition(epoch)
+            expect(
+                unirepState.currentEpoch,
+                'Unirep epoch should increase by 1'
+            ).equal(epoch + 1)
+            epoch = unirepState.currentEpoch
+        })
 
-    it("epoch transition with wrong epoch input should fail", async () => {
-      const wrongEpoch = 1;
-      let error;
-      try {
-        await unirepState.epochTransition(wrongEpoch);
-      } catch (e) {
-        error = e;
-      }
-      expect(error).not.to.be.undefined;
-    });
+        it('epoch transition with wrong epoch input should fail', async () => {
+            const wrongEpoch = 1
+            let error
+            try {
+                await unirepState.epochTransition(wrongEpoch)
+            } catch (e) {
+                error = e
+            }
+            expect(error).not.to.be.undefined
+        })
 
-    it("update Unirep state should success", async () => {
-      for (let i = 0; i < userNum; i++) {
-        const GSTLeaf = genRandomSalt();
-        const nullifiers: BigInt[] = [];
-        for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
-          nullifiers.push(genRandomSalt());
-        }
-        unirepState.userStateTransition(epoch, GSTLeaf, nullifiers);
+        it('update Unirep state should success', async () => {
+            for (let i = 0; i < userNum; i++) {
+                const GSTLeaf = genRandomSalt()
+                const nullifiers: BigInt[] = []
+                for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
+                    nullifiers.push(genRandomSalt())
+                }
+                unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
 
-        const unirepGSTree = unirepState.genGSTree(epoch);
-        GSTree.insert(GSTLeaf);
-        expect(
-          GSTree.root,
-          `Global state tree root from Unirep state mismatches current global state tree`
-        ).equal(unirepGSTree.root);
-        rootHistories.push(GSTree.root);
+                const unirepGSTree = unirepState.genGSTree(epoch)
+                GSTree.insert(GSTLeaf)
+                expect(
+                    GSTree.root,
+                    `Global state tree root from Unirep state mismatches current global state tree`
+                ).equal(unirepGSTree.root)
+                rootHistories.push(GSTree.root)
 
-        const GSTLeafNum = unirepState.getNumGSTLeaves(epoch);
-        expect(GSTLeafNum, `Global state tree leaves should match`).equal(
-          i + 1
-        );
-      }
-    });
+                const GSTLeafNum = unirepState.getNumGSTLeaves(epoch)
+                expect(
+                    GSTLeafNum,
+                    `Global state tree leaves should match`
+                ).equal(i + 1)
+            }
+        })
 
-    it("Query GST root should success", async () => {
-      for (let root of rootHistories) {
-        const exist = unirepState.GSTRootExists(root, epoch);
-        expect(exist, "Query global state tree root from Unirep state failed")
-          .to.be.true;
-      }
-    });
+        it('Query GST root should success', async () => {
+            for (let root of rootHistories) {
+                const exist = unirepState.GSTRootExists(root, epoch)
+                expect(
+                    exist,
+                    'Query global state tree root from Unirep state failed'
+                ).to.be.true
+            }
+        })
 
-    it("Query global state tree roots with wrong input should success", async () => {
-      const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch);
-      expect(notExist, "Query non-exist root from User state should fail").to.be
-        .false;
+        it('Query global state tree roots with wrong input should success', async () => {
+            const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch)
+            expect(notExist, 'Query non-exist root from User state should fail')
+                .to.be.false
 
-      const invalidEpoch = epoch + 1;
-      for (let root of rootHistories) {
-        let error;
-        try {
-          unirepState.GSTRootExists(root, invalidEpoch);
-        } catch (e) {
-          error = e;
-        }
-        expect(error).not.to.be.undefined;
-      }
-    });
+            const invalidEpoch = epoch + 1
+            for (let root of rootHistories) {
+                let error
+                try {
+                    unirepState.GSTRootExists(root, invalidEpoch)
+                } catch (e) {
+                    error = e
+                }
+                expect(error).not.to.be.undefined
+            }
+        })
 
-    it("generate epoch tree should succeed", async () => {
-      const prevEpoch = 1;
-      const epochTree = await unirepState.genEpochTree(prevEpoch);
-      const root = epochTree.getRootHash();
+        it('generate epoch tree should succeed', async () => {
+            const prevEpoch = 1
+            const epochTree = await unirepState.genEpochTree(prevEpoch)
+            const root = epochTree.getRootHash()
 
-      const exist = await unirepState.epochTreeRootExists(root, prevEpoch);
-      expect(exist).to.be.true;
-    });
-  });
-});
+            const exist = await unirepState.epochTreeRootExists(root, prevEpoch)
+            expect(exist).to.be.true
+        })
+    })
+})
