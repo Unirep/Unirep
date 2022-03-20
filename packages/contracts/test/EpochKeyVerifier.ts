@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from "chai"
 import { Circuit } from "@unirep/circuits"
-import { genRandomSalt, hashLeftRight, genIdentity, genIdentityCommitment, IncrementalQuinTree, } from "@unirep/crypto"
+import { genRandomSalt, hashLeftRight, ZkIdentity, IncrementalMerkleTree } from "@unirep/crypto"
 import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth } from "../config"
 import { genEpochKeyCircuitInput, genInputForContract, getTreeDepthsForTesting } from './utils'
 import { EpochKeyProof, deployUnirep } from '../src'
@@ -29,9 +29,13 @@ describe('Verify Epoch Key verifier', function () {
 
         const _treeDepths = getTreeDepthsForTesting()
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
-        tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
-        id = genIdentity()
-        commitment = genIdentityCommitment(id)
+        tree = new IncrementalMerkleTree(
+            circuitGlobalStateTreeDepth,
+            ZERO_VALUE,
+            2
+        )
+        id = new ZkIdentity()
+        commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
 
         const hashedStateLeaf = hashLeftRight(commitment.toString(), stateRoot.toString())
@@ -72,7 +76,7 @@ describe('Verify Epoch Key verifier', function () {
     })
 
     it('Wrong Id should not pass check', async () => {
-        const fakeId = genIdentity()
+        const fakeId = new ZkIdentity()
         const invalidCircuitInputs = genEpochKeyCircuitInput(fakeId, tree, leafIndex, stateRoot, currentEpoch, nonce)
 
         input = await genInputForContract(Circuit.verifyEpochKey, invalidCircuitInputs)

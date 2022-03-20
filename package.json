@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "contracts": "yarn --silent workspace @unirep/contracts",
-    "unirep": "yarn --silent workspace @unirep/unirep",
+    "core": "yarn --silent workspace @unirep/core",
     "circuits": "yarn --silent workspace @unirep/circuits",
     "crypto": "yarn --silent workspace @unirep/crypto",
     "build": "yarn workspaces run build",
@@ -23,8 +23,8 @@
     "bigint-conversion": "^2.1.12",
     "chai": "^4.2.0",
     "ethereum-waffle": "^3.4.0",
-    "shelljs": "^0.8.3",
     "keyv": "^4.0.3",
+    "shelljs": "^0.8.3",
     "ts-node": "^10.2.1"
   },
   "dependencies": {

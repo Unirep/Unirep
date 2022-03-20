@@ -1,0 +1,45 @@
+{
+    "name": "@unirep/core",
+    "version": "1.0.0",
+    "description": "",
+    "main": "build/core/index.js",
+    "scripts": {
+        "build": "tsc",
+        "test-cli": "./scripts/testCLI.sh",
+        "test": "yarn UnirepStateTests && yarn UserStateTests && yarn integrationTest",
+        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')",
+        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UnirepState -name '*.ts')",
+        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UserState -name '*.ts')"
+    },
+    "repository": "git+https://github.com/appliedzkp/UniRep.git",
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/appliedzkp/UniRep/issues"
+    },
+    "homepage": "https://github.com/appliedzkp/UniRep#readme",
+    "devDependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@types/chai": "^4.3.0",
+        "@types/mocha": "^9.1.0",
+        "@types/node": "^17.0.10",
+        "bigint-conversion": "^2.1.12",
+        "chai": "^4.2.0",
+        "ethereum-waffle": "^3.4.0",
+        "hardhat": "^2.8.3",
+        "shelljs": "^0.8.3",
+        "keyv": "^4.0.3",
+        "ts-node": "^10.2.1"
+    },
+    "dependencies": {
+        "@typechain/ethers-v5": "^9.0.0",
+        "@unirep/circuits": "^1.0.4",
+        "@unirep/crypto": "^1.0.0",
+        "@unirep/contracts": "^1.0.6", 
+        "argparse": "^2.0.1",
+        "base64url": "^3.0.1",
+        "ethers": "^5.4.6",
+        "typescript": "^4.5.4"
+    }
+}

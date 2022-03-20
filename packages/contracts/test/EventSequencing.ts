@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from "chai"
-import { genRandomSalt, genIdentity, genIdentityCommitment } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { attestingFee, epochLength, maxReputationBudget, numEpochKeyNoncePerEpoch } from '../config'
 import { genEpochKey, getTreeDepthsForTesting, Attestation } from './utils'
@@ -28,8 +28,8 @@ describe('EventSequencing', () => {
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
 
         // 1. Fisrt user sign up
-        let userId = genIdentity()
-        let userCommitment = genIdentityCommitment(userId)
+        let userId = new ZkIdentity()
+        let userCommitment = userId.genIdentityCommitment()
         userIds.push(userId)
         userCommitments.push(userCommitment)
         let tx = await unirepContract.userSignUp(BigNumber.from(userCommitment))
@@ -50,7 +50,7 @@ describe('EventSequencing', () => {
         // 2. Submit epoch key proof
         let currentEpoch = await unirepContract.currentEpoch()
         let epochKeyNonce = 0
-        let epochKey = genEpochKey(userIds[0].identityNullifier, currentEpoch.toNumber(), epochKeyNonce)
+        let epochKey = genEpochKey(userIds[0].getNullifier(), currentEpoch.toNumber(), epochKeyNonce)
         const proof: string[] = []
         for (let i = 0; i < 8; i++) {
             proof.push('0')
@@ -114,8 +114,8 @@ describe('EventSequencing', () => {
         expectedEventsNumber++
 
         // 4. Second user sign up
-        userId = genIdentity()
-        userCommitment = genIdentityCommitment(userId)
+        userId = new ZkIdentity()
+        userCommitment = userId.genIdentityCommitment()
         userIds.push(userId)
         userCommitments.push(userCommitment)
         tx = await unirepContract.userSignUp(BigNumber.from(userCommitment))
@@ -185,7 +185,7 @@ describe('EventSequencing', () => {
 
         // 9. Attest to second user
         epochKeyNonce = 0
-        epochKey = genEpochKey(userIds[1].identityNullifier, currentEpoch.toNumber(), epochKeyNonce)
+        epochKey = genEpochKey(userIds[1].getNullifier(), currentEpoch.toNumber(), epochKeyNonce)
         attestation = new Attestation(
             BigInt(attesterId),
             BigInt(2),
@@ -299,7 +299,7 @@ describe('EventSequencing', () => {
                 blindedHashChains: blindedHashChains as BigNumberish[],
                 fromEpochTree: genRandomSalt() as BigNumberish,
                 proof: proof as BigNumberish[]
-            }, 
+            },
             indexes as BigNumberish[]
         )
         receipt = await tx.wait()

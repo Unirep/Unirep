@@ -18,7 +18,7 @@ yarn build
 - `unSerialiseIdentity`
 
 ### Sparse Merkle Tree
-- `SparseMerkleTreeImpl`
+- `SparseMerkleTree`
 
 ### maci-crypto@^0.9.1
 - `genRandomSalt`
@@ -27,6 +27,6 @@ yarn build
 - `hashLeftRight`
 - `stringifyBigInts`
 - `unstringifyBigInts`
-- `IncrementalQuinTree`
+- `IncrementalMerkleTree`
 - `wrappedPoseidonT3Hash`
 - `newWrappedPoseidonT3Hash`

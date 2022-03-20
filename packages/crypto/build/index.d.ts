@@ -1,3 +1,4 @@
-export * from './semaphore/identity';
-export * from './SMT';
 export * from './crypto';
+export * from './identity';
+export * from './IncrementalMerkleTree';
+export * from './SparseMerkleTree';

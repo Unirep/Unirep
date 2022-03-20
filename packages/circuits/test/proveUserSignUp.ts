@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { genRandomSalt, genIdentity, hashOne, } from "@unirep/crypto"
+import { genRandomSalt, ZkIdentity, hashOne, } from "@unirep/crypto"
 import { Circuit, executeCircuit, } from "../circuits/utils"
 import { genEpochKey, Reputation, compileAndLoadCircuit, genProveSignUpCircuitInput, throwError, genProofAndVerify } from './utils'
 import { circuitEpochTreeDepth, proveUserSignUpCircuitPath } from "../config"
@@ -13,7 +13,7 @@ describe('Prove user has signed up circuit', function () {
     let circuit
 
     const epoch = 1
-    const user = genIdentity()
+    const user = new ZkIdentity()
 
     let reputationRecords = {}
     const MIN_POS_REP = 20
@@ -83,7 +83,7 @@ describe('Prove user has signed up circuit', function () {
     it('prove with differnt epoch key should fail', async () => {
         const attesterId = signedUpAttesterId
         const wrongNonce = 1
-        const wrongEpochKey = genEpochKey(user['identityNullifier'], epoch, wrongNonce, circuitEpochTreeDepth)
+        const wrongEpochKey = genEpochKey(user.getNullifier(), epoch, wrongNonce, circuitEpochTreeDepth)
         const circuitInputs = await genProveSignUpCircuitInput(user, epoch, reputationRecords, attesterId)
         circuitInputs.epoch_key = wrongEpochKey
 

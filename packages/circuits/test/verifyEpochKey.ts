@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { genRandomSalt, hashLeftRight, genIdentity, genIdentityCommitment, IncrementalQuinTree, } from "@unirep/crypto"
+import { genRandomSalt, hashLeftRight, IncrementalMerkleTree, ZkIdentity } from "@unirep/crypto"
 import { Circuit, executeCircuit, formatProofForSnarkjsVerification, formatProofForVerifierContract, genProofAndPublicSignals, verifyProof } from "../circuits/utils"
 import { numEpochKeyNoncePerEpoch, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, verifyEpochKeyCircuitPath } from "../config"
 import { compileAndLoadCircuit, genEpochKeyCircuitInput, throwError } from './utils'
@@ -15,7 +15,7 @@ describe('Verify Epoch Key circuits', function () {
 
     const maxEPK = BigInt(2 ** circuitEpochTreeDepth)
 
-    let id, commitment, stateRoot
+    let id: ZkIdentity, commitment, stateRoot
     let tree, leafIndex
     let nonce, currentEpoch
     let circuitInputs
@@ -26,9 +26,9 @@ describe('Verify Epoch Key circuits', function () {
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(`Compile time: ${endCompileTime - startCompileTime} seconds`)
 
-        tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
-        id = genIdentity()
-        commitment = genIdentityCommitment(id)
+        tree = new IncrementalMerkleTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2)
+        id = new ZkIdentity()
+        commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
 
         const hashedStateLeaf = hashLeftRight(commitment.toString(), stateRoot.toString())
@@ -70,7 +70,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Wrong Id should not pass check', async () => {
-        const fakeId = genIdentity()
+        const fakeId = new ZkIdentity()
         const invalidCircuitInputs = circuitInputs = genEpochKeyCircuitInput(fakeId, tree, leafIndex, stateRoot, currentEpoch, nonce)
         
         await throwError(circuit, invalidCircuitInputs, "Wrong Id should throw error")

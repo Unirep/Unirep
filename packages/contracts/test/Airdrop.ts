@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from "chai"
-import { genIdentity, genIdentityCommitment, genRandomSalt } from '@unirep/crypto'
+import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 
 import { attestingFee, epochLength, maxUsers, numEpochKeyNoncePerEpoch, maxReputationBudget, maxAttesters } from '../config'
@@ -37,7 +37,7 @@ describe('Airdrop', function () {
     })
 
     describe('Attesters set airdrop', () => {
-        it('attester signs up and attester sets airdrop amount should succeed', async() => {
+        it('attester signs up and attester sets airdrop amount should succeed', async () => {
             console.log('Attesters sign up')
 
             for (let i = 0; i < 2; i++) {
@@ -46,7 +46,7 @@ describe('Airdrop', function () {
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
             }
-    
+
             console.log('attesters set airdrop amount')
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
             attesterAddress = await accounts[0].getAddress()
@@ -56,28 +56,28 @@ describe('Airdrop', function () {
             const airdroppedAmount = await unirepContractCalledByAttester.airdropAmount(attesterAddress)
             expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
-    
-        it('non-signup attester cannot set airdrop amount', async() => {
+
+        it('non-signup attester cannot set airdrop amount', async () => {
             unirepContractCalledByAttester = unirepContract.connect(accounts[2])
             await expect(unirepContractCalledByAttester.setAirdropAmount(airdropPosRep))
                 .to.be.revertedWith('Unirep: attester has not signed up yet')
         })
 
-        it('user signs up through a signed up attester with 0 airdrop should not get airdrop', async() => {
+        it('user signs up through a signed up attester with 0 airdrop should not get airdrop', async () => {
             console.log('User sign up')
-            const userId = genIdentity()
-            const userCommitment = genIdentityCommitment(userId)
+            const userId = new ZkIdentity()
+            const userCommitment = userId.genIdentityCommitment()
             unirepContractCalledByAttester = unirepContract.connect(accounts[1])
             let tx = await unirepContractCalledByAttester.userSignUp(userCommitment)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
-    
+
             const signUpFilter = unirepContract.filters.UserSignedUp()
-            const signUpEvents =  await unirepContract.queryFilter(signUpFilter)
+            const signUpEvents = await unirepContract.queryFilter(signUpFilter)
             const commitment_ = signUpEvents[numUsers].args._identityCommitment
             expect(commitment_).equal(userCommitment)
-            numUsers ++
-    
+            numUsers++
+
             // user can prove airdrop pos rep
             const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             const reputationRecords = {}
@@ -96,42 +96,42 @@ describe('Airdrop', function () {
             const isValid = await genProofAndVerify(Circuit.proveReputation, circuitInputs)
             expect(isValid, 'Verify reputation proof off-chain failed').to.be.false
         })
-    
-        it('user signs up through a non-signed up attester should succeed and gets no airdrop', async() => {
+
+        it('user signs up through a non-signed up attester should succeed and gets no airdrop', async () => {
             console.log('User sign up')
-            const userId = genIdentity()
-            const userCommitment = genIdentityCommitment(userId)
+            const userId = new ZkIdentity()
+            const userCommitment = userId.genIdentityCommitment()
             unirepContractCalledByAttester = unirepContract.connect(accounts[2])
             let tx = await unirepContractCalledByAttester.userSignUp(userCommitment)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
-    
+
             const signUpFilter = unirepContract.filters.UserSignedUp()
-            const signUpEvents =  await unirepContract.queryFilter(signUpFilter)
+            const signUpEvents = await unirepContract.queryFilter(signUpFilter)
             const commitment_ = signUpEvents[numUsers].args._identityCommitment
             expect(commitment_).equal(userCommitment)
-            numUsers ++
+            numUsers++
         })
     })
 
     describe('Users get airdrop', () => {
         console.log('User sign up')
-        const userId = genIdentity()
-        const userCommitment = genIdentityCommitment(userId)
+        const userId = new ZkIdentity()
+        const userCommitment = userId.genIdentityCommitment()
         let currentEpoch
         let reputationRecords = {}
         let attesterId_
 
-        it('user signs up through attester should get airdrop pos rep', async() => {
+        it('user signs up through attester should get airdrop pos rep', async () => {
             let tx = await unirepContract.userSignUp(userCommitment)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const signUpFilter = unirepContract.filters.UserSignedUp()
-            const signUpEvents =  await unirepContract.queryFilter(signUpFilter)
+            const signUpEvents = await unirepContract.queryFilter(signUpFilter)
             const commitment_ = signUpEvents[numUsers].args._identityCommitment
             expect(commitment_).equal(userCommitment)
-            numUsers ++
-    
+            numUsers++
+
             currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             reputationRecords = {}
             for (const event of signUpEvents) {
@@ -145,15 +145,15 @@ describe('Airdrop', function () {
             }
         })
 
-        it('user can prove airdrop pos rep',async () => {
+        it('user can prove airdrop pos rep', async () => {
             const minPosRep = 19
             const repProofCircuitInputs = await genReputationCircuitInput(userId, currentEpoch, epkNonce, reputationRecords, attesterId_, undefined, minPosRep)
             const isRepProofValid = await genProofAndVerify(Circuit.proveReputation, repProofCircuitInputs)
             expect(isRepProofValid, 'Verify reputation proof off-chain failed').to.be.true
         })
 
-        
-        it('user can prove sign up flag',async () => {
+
+        it('user can prove sign up flag', async () => {
             const signUpCircuitInputs = await genProveSignUpCircuitInput(userId, currentEpoch, reputationRecords, attesterId_)
             const isSignUpProofValid = await genProofAndVerify(Circuit.proveUserSignUp, signUpCircuitInputs)
             expect(isSignUpProofValid, 'Verify user sign up proof off-chain failed').to.be.true
@@ -174,7 +174,7 @@ describe('Airdrop', function () {
                 .to.be.revertedWith('Unirep: the proof has been submitted before')
         })
 
-        it('get airdrop through a non-signup attester should fail',async () => {
+        it('get airdrop through a non-signup attester should fail', async () => {
             const signUpCircuitInputs = await genProveSignUpCircuitInput(userId, currentEpoch, reputationRecords, attesterId_)
             const input = await genInputForContract(Circuit.proveUserSignUp, signUpCircuitInputs)
             unirepContractCalledByAttester = unirepContract.connect(accounts[2])
@@ -183,7 +183,7 @@ describe('Airdrop', function () {
                 .to.be.revertedWith('Unirep: attester has not signed up yet')
         })
 
-        it('get airdrop through a wrong attester should fail',async () => {
+        it('get airdrop through a wrong attester should fail', async () => {
             const signUpCircuitInputs = await genProveSignUpCircuitInput(userId, currentEpoch, reputationRecords, attesterId_)
             const input = await genInputForContract(Circuit.proveUserSignUp, signUpCircuitInputs)
             unirepContractCalledByAttester = unirepContract.connect(accounts[1])
@@ -192,7 +192,7 @@ describe('Airdrop', function () {
                 .to.be.revertedWith('Unirep: mismatched attesterId')
         })
 
-        it('get airdrop through a wrong attester should fail',async () => {
+        it('get airdrop through a wrong attester should fail', async () => {
             const signUpCircuitInputs = await genProveSignUpCircuitInput(userId, currentEpoch, reputationRecords, attesterId_)
             const input = await genInputForContract(Circuit.proveUserSignUp, signUpCircuitInputs)
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
@@ -204,7 +204,7 @@ describe('Airdrop', function () {
                 .to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
         })
 
-        it('get airdrop through a wrong epoch should fail',async () => {
+        it('get airdrop through a wrong epoch should fail', async () => {
             const wrongEpoch = currentEpoch + 1
             const signUpCircuitInputs = await genProveSignUpCircuitInput(userId, wrongEpoch, reputationRecords, attesterId_)
             const input = await genInputForContract(Circuit.proveUserSignUp, signUpCircuitInputs)
@@ -216,7 +216,7 @@ describe('Airdrop', function () {
                 .to.be.revertedWith('Unirep: submit an airdrop proof with incorrect epoch')
         })
 
-        it('submit an invalid epoch key should fail',async () => {
+        it('submit an invalid epoch key should fail', async () => {
             const signUpCircuitInputs = await genProveSignUpCircuitInput(userId, currentEpoch, reputationRecords, attesterId_)
             const input = await genInputForContract(Circuit.proveUserSignUp, signUpCircuitInputs)
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])

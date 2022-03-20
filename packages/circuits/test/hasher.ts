@@ -1,19 +1,27 @@
 import * as path from 'path'
 import { expect } from "chai"
-import { stringifyBigInts, genRandomSalt, hashLeftRight, hash5, } from "@unirep/crypto"
-import { executeCircuit, getSignalByName, } from "../circuits/utils"
+import {
+    stringifyBigInts,
+    genRandomSalt,
+    hashLeftRight,
+    hash5,
+} from "@unirep/crypto"
+import {
+    executeCircuit,
+    getSignalByName,
+} from "../circuits/utils"
 import { compileAndLoadCircuit } from './utils'
 
 const hasher5CircuitPath = path.join(__dirname, '../circuits/test/hasher5_test.circom')
 const hashleftrightCircuitPath = path.join(__dirname, '../circuits/test/hashleftright_test.circom')
 
-describe('Poseidon hash circuits', function (){
+describe('Poseidon hash circuits', function () {
     this.timeout(100000)
     let circuit
 
     describe('Hasher5', () => {
         it('correctly hashes 5 random values', async () => {
-            
+
             circuit = await compileAndLoadCircuit(hasher5CircuitPath)
             const preImages: any = []
             for (let i = 0; i < 5; i++) {
