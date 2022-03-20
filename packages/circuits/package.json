@@ -12,7 +12,7 @@
     "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
     "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
     "test": "mocha -r ts-node/register test/*.ts --exit",
-    "lint": "eslint --cache --fix --ext .ts ."
+    "lint": "prettier ."
   },
   "repository": "https://github.com/Unirep/circuits.git",
   "author": "vivianjeng <vivi432@yahoo.com.tw>",

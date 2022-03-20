@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "test": "echo 'No test for crypto!!!'",
-    "lint": "eslint --cache --fix --ext .ts ."
+    "lint": "prettier ."
   },
   "repository": "https://github.com/Unirep/crypto.git",
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
