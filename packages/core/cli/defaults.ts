@@ -1,4 +1,8 @@
-import { attestingFee, epochLength, numEpochKeyNoncePerEpoch } from '../config/testLocal'
+import {
+    attestingFee,
+    epochLength,
+    numEpochKeyNoncePerEpoch,
+} from '../config/testLocal'
 // import { ALCHEMY_API_KEY } from '../config/privateKey'
 
 // apply the api key from https://www.alchemy.com/

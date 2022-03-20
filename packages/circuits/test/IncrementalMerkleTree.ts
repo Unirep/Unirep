@@ -1,13 +1,24 @@
 import * as path from 'path'
-import { expect } from "chai"
-import { genRandomSalt, IncrementalMerkleTree, hashOne, SnarkBigInt, } from "@unirep/crypto"
-import { executeCircuit, getSignalByName, } from "../circuits/utils"
+import { expect } from 'chai'
+import {
+    genRandomSalt,
+    IncrementalMerkleTree,
+    hashOne,
+    SnarkBigInt,
+} from '@unirep/crypto'
+import { executeCircuit, getSignalByName } from '../circuits/utils'
 import { compileAndLoadCircuit } from './utils'
 
 const LEVELS = 4
 const ZERO_VALUE = 0
-const LeafExistsCircuitPath = path.join(__dirname, '../circuits/test/merkleTreeLeafExists_test.circom')
-const InclusionProofCircuitPath = path.join(__dirname, '../circuits/test/merkleTreeInclusionProof_test.circom')
+const LeafExistsCircuitPath = path.join(
+    __dirname,
+    '../circuits/test/merkleTreeLeafExists_test.circom'
+)
+const InclusionProofCircuitPath = path.join(
+    __dirname,
+    '../circuits/test/merkleTreeInclusionProof_test.circom'
+)
 
 describe('Merkle Tree circuits', function () {
     this.timeout(30000)
@@ -39,7 +50,11 @@ describe('Merkle Tree circuits', function () {
                     root,
                 }
                 const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(circuit, witness, 'main.root').toString()
+                const circuitRoot = getSignalByName(
+                    circuit,
+                    witness,
+                    'main.root'
+                ).toString()
                 expect(circuitRoot).to.be.equal(root.toString())
             }
         })
@@ -104,11 +119,15 @@ describe('Merkle Tree circuits', function () {
                 const circuitInputs = {
                     leaf: leaf.toString(),
                     path_elements: proof.siblings,
-                    path_index: proof.pathIndices
+                    path_index: proof.pathIndices,
                 }
 
                 const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(circuit, witness, 'main.root').toString()
+                const circuitRoot = getSignalByName(
+                    circuit,
+                    witness,
+                    'main.root'
+                ).toString()
                 expect(circuitRoot).to.equal(root.toString())
             }
         })
@@ -144,7 +163,11 @@ describe('Merkle Tree circuits', function () {
                 }
 
                 const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(circuit, witness, 'main.root').toString()
+                const circuitRoot = getSignalByName(
+                    circuit,
+                    witness,
+                    'main.root'
+                ).toString()
                 expect(circuitRoot).not.to.equal(tree.root.toString())
             }
         })
