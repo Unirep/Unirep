@@ -1,11 +1,10 @@
-import { Circuit } from "@unirep/circuits";
-import { genIdentity, genRandomSalt, hashOne } from "@unirep/crypto";
-import { expect } from "chai";
-import { BigNumberish, ethers } from "ethers";
+// @ts-ignore
 import { ethers as hardhatEthers } from "hardhat";
-
+import { BigNumberish, ethers } from "ethers";
+import { expect } from "chai";
+import { Circuit } from "@unirep/circuits";
+import { genRandomSalt, ZkIdentity, hashOne } from "@unirep/crypto";
 import { circuitEpochTreeDepth } from "../config";
-import { deployUnirep, SignUpProof } from "../src";
 import {
   genEpochKey,
   genInputForContract,
@@ -13,6 +12,7 @@ import {
   getTreeDepthsForTesting,
   Reputation,
 } from "./utils";
+import { deployUnirep, SignUpProof } from "../src";
 
 describe("Verify user sign up verifier", function () {
   this.timeout(30000);
@@ -20,9 +20,9 @@ describe("Verify user sign up verifier", function () {
   let accounts: ethers.Signer[];
   const epoch = 1;
   const nonce = 0;
-  const user = genIdentity();
+  const user = new ZkIdentity();
 
-  const reputationRecords = {};
+  let reputationRecords = {};
   const MIN_POS_REP = 20;
   const MAX_NEG_REP = 10;
   const signUp = 1;
@@ -121,7 +121,7 @@ describe("Verify user sign up verifier", function () {
   it("wrong epoch key should fail", async () => {
     const attesterId = signedUpAttesterId;
     const wrongEpochKey = genEpochKey(
-      user.identityNullifier,
+      user.getNullifier(),
       epoch,
       nonce + 1,
       circuitEpochTreeDepth

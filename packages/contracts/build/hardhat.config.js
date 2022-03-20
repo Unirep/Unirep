@@ -10,27 +10,24 @@ const config = {
     },
     networks: {
         hardhat: {
-            blockGasLimit: 12000000,
+            blockGasLimit: 12000000
         },
         local: {
-            url: "http://localhost:8545",
+            url: "http://localhost:8545"
         },
     },
     solidity: {
         compilers: [
             {
-                version: "0.8.0",
-                settings: {
-                    optimizer: { enabled: true, runs: 200 },
-                },
-            },
-            {
                 version: "0.8.1",
-            },
-        ],
+                settings: {
+                    optimizer: { enabled: true, runs: 200 }
+                }
+            }
+        ]
     },
     typechain: {
-        outDir: "./typechain",
-    },
+        outDir: './typechain',
+    }
 };
 exports.default = config;

@@ -1,37 +1,36 @@
+// @ts-ignore
+import { ethers as hardhatEthers } from "hardhat";
+import { ethers } from "ethers";
+import { expect } from "chai";
+import {
+  hashLeftRight,
+  ZkIdentity,
+  SparseMerkleTree,
+  IncrementalMerkleTree,
+} from "@unirep/crypto";
 import { Circuit } from "@unirep/circuits";
 import {
-  genIdentity,
-  genIdentityCommitment,
-  hashLeftRight,
-  IncrementalQuinTree,
-  SparseMerkleTreeImpl,
-} from "@unirep/crypto";
-import { expect } from "chai";
-import { ethers } from "ethers";
-import { ethers as hardhatEthers } from "hardhat";
-
-import { circuitGlobalStateTreeDepth } from "../config/";
-import { computeStartTransitionProofHash, deployUnirep } from "../src";
-import {
-  bootstrapRandomUSTree,
-  genInputForContract,
   genStartTransitionCircuitInput,
   getTreeDepthsForTesting,
+  bootstrapRandomUSTree,
+  genInputForContract,
 } from "./utils";
+import { circuitGlobalStateTreeDepth } from "../config/";
+import { computeStartTransitionProofHash, deployUnirep } from "../src";
 
 describe("User State Transition circuits", function () {
   this.timeout(60000);
 
-  const user = genIdentity();
+  const user = new ZkIdentity();
 
   describe("Start User State Transition", () => {
     let accounts;
     let unirepContract;
     const epoch = 1;
 
-    const GSTZERO_VALUE = 0;
-    let GSTree: IncrementalQuinTree;
-    let userStateTree: SparseMerkleTreeImpl;
+    let GSTZERO_VALUE = 0,
+      GSTree: IncrementalMerkleTree;
+    let userStateTree: SparseMerkleTree;
 
     let hashedLeaf;
     const nonce = 0;
@@ -51,12 +50,12 @@ describe("User State Transition circuits", function () {
       userStateTree = results.userStateTree;
 
       // Global state tree
-      GSTree = new IncrementalQuinTree(
+      GSTree = new IncrementalMerkleTree(
         circuitGlobalStateTreeDepth,
         GSTZERO_VALUE,
         2
       );
-      const commitment = genIdentityCommitment(user);
+      const commitment = user.genIdentityCommitment();
       hashedLeaf = hashLeftRight(commitment, userStateTree.getRootHash());
       GSTree.insert(hashedLeaf);
     });

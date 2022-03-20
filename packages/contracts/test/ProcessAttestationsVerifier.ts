@@ -1,16 +1,16 @@
-import { Circuit } from "@unirep/circuits";
-import { genIdentity } from "@unirep/crypto";
-import { expect } from "chai";
-import { ethers } from "ethers";
+// @ts-ignore
 import { ethers as hardhatEthers } from "hardhat";
-
-import { numAttestationsPerProof } from "../config";
-import { computeProcessAttestationsProofHash, deployUnirep } from "../src";
+import { ethers } from "ethers";
+import { expect } from "chai";
+import { ZkIdentity } from "@unirep/crypto";
+import { Circuit } from "@unirep/circuits";
 import {
   genInputForContract,
   genProcessAttestationsCircuitInput,
   getTreeDepthsForTesting,
 } from "./utils";
+import { numAttestationsPerProof } from "../config";
+import { computeProcessAttestationsProofHash, deployUnirep } from "../src";
 
 describe("Process attestation circuit", function () {
   this.timeout(300000);
@@ -20,7 +20,7 @@ describe("Process attestation circuit", function () {
 
   const epoch = BigInt(1);
   const nonce = BigInt(0);
-  const user = genIdentity();
+  const user = new ZkIdentity();
 
   before(async () => {
     accounts = await hardhatEthers.getSigners();
@@ -52,7 +52,6 @@ describe("Process attestation circuit", function () {
       inputBlindedUserState,
       proof
     );
-
     expect(isProofValid).to.be.true;
 
     const tx = await unirepContract.processAttestations(
@@ -76,7 +75,7 @@ describe("Process attestation circuit", function () {
   });
 
   it("successfully process zero attestations", async () => {
-    const zeroSelectors: number[] = [];
+    let zeroSelectors: number[] = [];
     for (let i = 0; i < numAttestationsPerProof; i++) {
       zeroSelectors.push(0);
     }

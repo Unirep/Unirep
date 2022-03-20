@@ -1,32 +1,28 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable sonarjs/no-duplicate-string */
-import { Circuit } from "@unirep/circuits";
-import {
-  genIdentity,
-  genIdentityCommitment,
-  genRandomSalt,
-} from "@unirep/crypto";
-import { expect } from "chai";
-import { ethers } from "ethers";
+// @ts-ignore
 import { ethers as hardhatEthers } from "hardhat";
+import { ethers } from "ethers";
+import { expect } from "chai";
+import { ZkIdentity, genRandomSalt } from "@unirep/crypto";
+import { Circuit } from "@unirep/circuits";
 
 import {
   attestingFee,
   epochLength,
-  maxAttesters,
-  maxReputationBudget,
   maxUsers,
   numEpochKeyNoncePerEpoch,
+  maxReputationBudget,
+  maxAttesters,
 } from "../config";
-import { deployUnirep } from "../src";
 import {
-  genInputForContract,
-  genProofAndVerify,
-  genProveSignUpCircuitInput,
-  genReputationCircuitInput,
   getTreeDepthsForTesting,
   Reputation,
+  genProofAndVerify,
+  genReputationCircuitInput,
+  genProveSignUpCircuitInput,
+  genInputForContract,
 } from "./utils";
+import { deployUnirep } from "../src";
+
 describe("Airdrop", function () {
   this.timeout(100000);
 
@@ -90,13 +86,11 @@ describe("Airdrop", function () {
 
     it("user signs up through a signed up attester with 0 airdrop should not get airdrop", async () => {
       console.log("User sign up");
-      const userId = genIdentity();
-      const userCommitment = genIdentityCommitment(userId);
+      const userId = new ZkIdentity();
+      const userCommitment = userId.genIdentityCommitment();
       unirepContractCalledByAttester = unirepContract.connect(accounts[1]);
-      const tx = await unirepContractCalledByAttester.userSignUp(
-        userCommitment
-      );
-      const receipt = await tx.wait();
+      let tx = await unirepContractCalledByAttester.userSignUp(userCommitment);
+      let receipt = await tx.wait();
       expect(receipt.status).equal(1);
 
       const signUpFilter = unirepContract.filters.UserSignedUp();
@@ -137,13 +131,11 @@ describe("Airdrop", function () {
 
     it("user signs up through a non-signed up attester should succeed and gets no airdrop", async () => {
       console.log("User sign up");
-      const userId = genIdentity();
-      const userCommitment = genIdentityCommitment(userId);
+      const userId = new ZkIdentity();
+      const userCommitment = userId.genIdentityCommitment();
       unirepContractCalledByAttester = unirepContract.connect(accounts[2]);
-      const tx = await unirepContractCalledByAttester.userSignUp(
-        userCommitment
-      );
-      const receipt = await tx.wait();
+      let tx = await unirepContractCalledByAttester.userSignUp(userCommitment);
+      let receipt = await tx.wait();
       expect(receipt.status).equal(1);
 
       const signUpFilter = unirepContract.filters.UserSignedUp();
@@ -156,15 +148,15 @@ describe("Airdrop", function () {
 
   describe("Users get airdrop", () => {
     console.log("User sign up");
-    const userId = genIdentity();
-    const userCommitment = genIdentityCommitment(userId);
+    const userId = new ZkIdentity();
+    const userCommitment = userId.genIdentityCommitment();
     let currentEpoch;
     let reputationRecords = {};
     let attesterId_;
 
     it("user signs up through attester should get airdrop pos rep", async () => {
-      const tx = await unirepContract.userSignUp(userCommitment);
-      const receipt = await tx.wait();
+      let tx = await unirepContract.userSignUp(userCommitment);
+      let receipt = await tx.wait();
       expect(receipt.status).equal(1);
       const signUpFilter = unirepContract.filters.UserSignedUp();
       const signUpEvents = await unirepContract.queryFilter(signUpFilter);
@@ -309,7 +301,7 @@ describe("Airdrop", function () {
     });
 
     it("get airdrop through a wrong epoch should fail", async () => {
-      const wrongEpoch = Number(currentEpoch) + 1;
+      const wrongEpoch = currentEpoch + 1;
       const signUpCircuitInputs = await genProveSignUpCircuitInput(
         userId,
         wrongEpoch,

@@ -1,14 +1,14 @@
+// @ts-ignore
+import { ethers as hardhatEthers } from "hardhat";
+import { ethers } from "ethers";
+import { expect } from "chai";
 import { Circuit } from "@unirep/circuits";
 import {
-  genIdentity,
-  genIdentityCommitment,
   genRandomSalt,
+  ZkIdentity,
   hashLeftRight,
-  IncrementalQuinTree,
+  IncrementalMerkleTree,
 } from "@unirep/crypto";
-import { expect } from "chai";
-import { ethers } from "ethers";
-import { ethers as hardhatEthers } from "hardhat";
 
 import {
   attestingFee,
@@ -20,6 +20,19 @@ import {
   numEpochKeyNoncePerEpoch,
 } from "../config";
 import {
+  getTreeDepthsForTesting,
+  Attestation,
+  genEpochKeyCircuitInput,
+  genInputForContract,
+  GSTZERO_VALUE,
+  genReputationCircuitInput,
+  bootstrapRandomUSTree,
+  genProveSignUpCircuitInput,
+  genStartTransitionCircuitInput,
+  genProcessAttestationsCircuitInput,
+  genUserStateTransitionCircuitInput,
+} from "./utils";
+import {
   computeProcessAttestationsProofHash,
   computeStartTransitionProofHash,
   deployUnirep,
@@ -27,19 +40,6 @@ import {
   SignUpProof,
   UserTransitionProof,
 } from "../src";
-import {
-  Attestation,
-  bootstrapRandomUSTree,
-  genEpochKeyCircuitInput,
-  genInputForContract,
-  genProcessAttestationsCircuitInput,
-  genProveSignUpCircuitInput,
-  genReputationCircuitInput,
-  genStartTransitionCircuitInput,
-  genUserStateTransitionCircuitInput,
-  getTreeDepthsForTesting,
-  GSTZERO_VALUE,
-} from "./utils";
 
 describe("Attesting", () => {
   let unirepContract;
@@ -80,8 +80,8 @@ describe("Attesting", () => {
     );
 
     console.log("User sign up");
-    userId = genIdentity();
-    userCommitment = genIdentityCommitment(userId);
+    userId = new ZkIdentity();
+    userCommitment = userId.genIdentityCommitment();
     let tx = await unirepContract.userSignUp(userCommitment);
     let receipt = await tx.wait();
     expect(receipt.status).equal(1);
@@ -95,7 +95,7 @@ describe("Attesting", () => {
     expect(receipt.status).equal(1);
     attesterId = await unirepContract.attesters(attesterAddress);
 
-    tree = new IncrementalQuinTree(
+    tree = new IncrementalMerkleTree(
       circuitGlobalStateTreeDepth,
       GSTZERO_VALUE,
       2
@@ -130,7 +130,7 @@ describe("Attesting", () => {
   });
 
   it("submit attestation should succeed", async () => {
-    const attestation: Attestation = new Attestation(
+    let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       BigInt(1),
       BigInt(0),
@@ -188,7 +188,7 @@ describe("Attesting", () => {
       circuitInputs
     );
 
-    const tx = await unirepContractCalledByAttester.airdropEpochKey(input, {
+    let tx = await unirepContractCalledByAttester.airdropEpochKey(input, {
       value: attestingFee,
     });
     const receipt = await tx.wait();
@@ -328,18 +328,18 @@ describe("Attesting", () => {
         signUpProofFilter
       );
 
-      if (epochKeyProofEvent.length === 1) {
+      if (epochKeyProofEvent.length == 1) {
         console.log("epoch key proof event");
         const args = epochKeyProofEvent[0]?.args?._proof;
         const isValid = await unirepContract.verifyEpochKeyValidity(args);
         expect(isValid).equal(true);
-      } else if (repProofEvent.length === 1) {
+      } else if (repProofEvent.length == 1) {
         console.log("reputation proof event");
         const args = repProofEvent[0]?.args?._proof;
         expect(args?.repNullifiers.length).to.equal(maxReputationBudget);
         const isValid = await unirepContract.verifyReputation(args);
         expect(isValid).equal(true);
-      } else if (signUpProofEvent.length === 1) {
+      } else if (signUpProofEvent.length == 1) {
         console.log("sign up proof event");
         const args = signUpProofEvent[0]?.args?._proof;
         const isValid = await unirepContract.verifyUserSignUp(args);

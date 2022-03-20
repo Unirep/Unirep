@@ -1,15 +1,9 @@
-/* eslint-disable sonarjs/no-duplicate-string */
-
-import { formatProofForSnarkjsVerification } from "@unirep/circuits";
-import {
-  genIdentity,
-  genIdentityCommitment,
-  genRandomSalt,
-  SNARK_FIELD_SIZE,
-} from "@unirep/crypto";
-import { expect } from "chai";
-import { BigNumberish, ethers } from "ethers";
+// @ts-ignore
 import { ethers as hardhatEthers } from "hardhat";
+import { BigNumberish, ethers } from "ethers";
+import { expect } from "chai";
+import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from "@unirep/crypto";
+import { formatProofForSnarkjsVerification } from "@unirep/circuits";
 
 import {
   epochLength,
@@ -18,9 +12,9 @@ import {
   maxUsers,
   numEpochKeyNoncePerEpoch,
 } from "../config";
+import { genEpochKey, getTreeDepthsForTesting, Attestation } from "./utils";
 import { deployUnirep, EpochKeyProof } from "../src";
 import { Unirep } from "../typechain";
-import { Attestation, genEpochKey, getTreeDepthsForTesting } from "./utils";
 
 describe("Attesting", () => {
   let unirepContract: Unirep;
@@ -66,8 +60,8 @@ describe("Attesting", () => {
     );
 
     console.log("User sign up");
-    userId = genIdentity();
-    userCommitment = genIdentityCommitment(userId);
+    userId = new ZkIdentity();
+    userCommitment = userId.genIdentityCommitment();
     let tx = await unirepContract.userSignUp(userCommitment);
     let receipt = await tx.wait();
     expect(receipt.status).equal(1);
@@ -134,10 +128,10 @@ describe("Attesting", () => {
   });
 
   it("submit attestation should succeed", async () => {
-    const epoch = await unirepContract.currentEpoch();
-    const nonce = 0;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
-    const attestation: Attestation = new Attestation(
+    let epoch = await unirepContract.currentEpoch();
+    let nonce = 0;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
+    let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       BigInt(1),
       BigInt(0),
@@ -164,11 +158,11 @@ describe("Attesting", () => {
   });
 
   it("attest to same epoch key again should succeed", async () => {
-    const epoch = await unirepContract.currentEpoch();
-    const nonce = 0;
+    let epoch = await unirepContract.currentEpoch();
+    let nonce = 0;
     // Same identity nullifier, epoch and nonce will result in the same epoch key
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
-    const attestation: Attestation = new Attestation(
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
+    let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       BigInt(0),
       BigInt(1000),
@@ -187,11 +181,11 @@ describe("Attesting", () => {
   });
 
   it("attestation with incorrect attesterId should fail", async () => {
-    const epoch = await unirepContract.currentEpoch();
+    let epoch = await unirepContract.currentEpoch();
     // Increment nonce to get different epoch key
-    const nonce = 1;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
-    const attestation: Attestation = new Attestation(
+    let nonce = 1;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
+    let attestation: Attestation = new Attestation(
       BigInt(999),
       BigInt(1),
       BigInt(0),
@@ -210,10 +204,10 @@ describe("Attesting", () => {
   });
 
   it("attestation with invalid repuation should fail", async () => {
-    const epoch = await unirepContract.currentEpoch();
+    let epoch = await unirepContract.currentEpoch();
     // Increment nonce to get different epoch key
-    const nonce = 1;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
+    let nonce = 1;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
     let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       SNARK_FIELD_SIZE,
@@ -284,12 +278,12 @@ describe("Attesting", () => {
   });
 
   it("attestation with zero proof index should fail", async () => {
-    const epoch = await unirepContract.currentEpoch();
+    let epoch = await unirepContract.currentEpoch();
     // Increment nonce to get different epoch key
-    const nonce = 1;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
+    let nonce = 1;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
     const zeroEpochKeyProofIndex = 0;
-    const attestation: Attestation = new Attestation(
+    let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       BigInt(1),
       BigInt(0),
@@ -308,12 +302,12 @@ describe("Attesting", () => {
   });
 
   it("attestation with non-existed proof index should fail", async () => {
-    const epoch = await unirepContract.currentEpoch();
+    let epoch = await unirepContract.currentEpoch();
     // Increment nonce to get different epoch key
-    const nonce = 1;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
+    let nonce = 1;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
     const nonExistedProofIndex = 5;
-    const attestation: Attestation = new Attestation(
+    let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       BigInt(1),
       BigInt(0),
@@ -332,11 +326,11 @@ describe("Attesting", () => {
   });
 
   it("submit attestation with incorrect fee amount should fail", async () => {
-    const epoch = await unirepContract.currentEpoch();
+    let epoch = await unirepContract.currentEpoch();
     // Increment nonce to get different epoch key
-    const nonce = 1;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
-    const attestation: Attestation = new Attestation(
+    let nonce = 1;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
+    let attestation: Attestation = new Attestation(
       BigInt(attesterId),
       BigInt(1),
       BigInt(0),
@@ -372,19 +366,18 @@ describe("Attesting", () => {
   });
 
   it("attestation from unregistered attester should fail", async () => {
-    const nonAttester = accounts[5];
-    const nonAttesterAddress = await nonAttester.getAddress();
-    const nonAttesterId = (
+    let nonAttester = accounts[5];
+    let nonAttesterAddress = await nonAttester.getAddress();
+    let nonAttesterId = (
       await unirepContract.attesters(nonAttesterAddress)
     ).toBigInt();
     expect((0).toString()).equal(nonAttesterId.toString());
 
-    const unirepContractCalledByNonAttester =
-      unirepContract.connect(nonAttester);
-    const epoch = await unirepContract.currentEpoch();
-    const nonce = 0;
-    const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce);
-    const attestation: Attestation = new Attestation(
+    let unirepContractCalledByNonAttester = unirepContract.connect(nonAttester);
+    let epoch = await unirepContract.currentEpoch();
+    let nonce = 0;
+    let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce);
+    let attestation: Attestation = new Attestation(
       BigInt(nonAttesterId),
       BigInt(0),
       BigInt(1),

@@ -1,34 +1,30 @@
-/* eslint-disable sonarjs/no-duplicate-string */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-
+// @ts-ignore
+import { ethers as hardhatEthers } from "hardhat";
+import { ethers } from "ethers";
+import { expect } from "chai";
 import { Circuit } from "@unirep/circuits";
 import {
-  genIdentity,
-  genIdentityCommitment,
   genRandomSalt,
   hashLeftRight,
-  IncrementalQuinTree,
+  ZkIdentity,
+  IncrementalMerkleTree,
 } from "@unirep/crypto";
-import { expect } from "chai";
-import { ethers } from "ethers";
-import { ethers as hardhatEthers } from "hardhat";
-
 import {
+  numEpochKeyNoncePerEpoch,
   circuitEpochTreeDepth,
   circuitGlobalStateTreeDepth,
-  numEpochKeyNoncePerEpoch,
 } from "../config";
-import { deployUnirep, EpochKeyProof } from "../src";
 import {
   genEpochKeyCircuitInput,
   genInputForContract,
   getTreeDepthsForTesting,
 } from "./utils";
+import { EpochKeyProof, deployUnirep } from "../src";
 
 describe("Verify Epoch Key verifier", function () {
   this.timeout(30000);
 
-  const ZERO_VALUE = 0;
+  let ZERO_VALUE = 0;
 
   const maxEPK = BigInt(2 ** circuitEpochTreeDepth);
 
@@ -37,7 +33,7 @@ describe("Verify Epoch Key verifier", function () {
   let id, commitment, stateRoot;
   let tree;
   let nonce, currentEpoch;
-  const leafIndex = 0;
+  let leafIndex = 0;
   let input: EpochKeyProof;
 
   before(async () => {
@@ -48,9 +44,13 @@ describe("Verify Epoch Key verifier", function () {
       <ethers.Wallet>accounts[0],
       _treeDepths
     );
-    tree = new IncrementalQuinTree(circuitGlobalStateTreeDepth, ZERO_VALUE, 2);
-    id = genIdentity();
-    commitment = genIdentityCommitment(id);
+    tree = new IncrementalMerkleTree(
+      circuitGlobalStateTreeDepth,
+      ZERO_VALUE,
+      2
+    );
+    id = new ZkIdentity();
+    commitment = id.genIdentityCommitment();
     stateRoot = genRandomSalt();
 
     const hashedStateLeaf = hashLeftRight(
@@ -78,7 +78,7 @@ describe("Verify Epoch Key verifier", function () {
       input = await genInputForContract(Circuit.verifyEpochKey, circuitInputs);
       const isValid = await input.verify();
       expect(isValid, "Verify epoch key proof off-chain failed").to.be.true;
-      const tx = await unirepContract.submitEpochKeyProof(input);
+      let tx = await unirepContract.submitEpochKeyProof(input);
       const receipt = await tx.wait();
       expect(receipt.status).equal(1);
       const isProofValid = await unirepContract.verifyEpochKeyValidity(input);
@@ -111,7 +111,7 @@ describe("Verify Epoch Key verifier", function () {
   });
 
   it("Wrong Id should not pass check", async () => {
-    const fakeId = genIdentity();
+    const fakeId = new ZkIdentity();
     const invalidCircuitInputs = genEpochKeyCircuitInput(
       fakeId,
       tree,

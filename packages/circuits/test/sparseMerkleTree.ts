@@ -1,21 +1,26 @@
-import { genRandomSalt, hashOne, SparseMerkleTreeImpl } from "@unirep/crypto";
+import * as path from "path";
 import { expect } from "chai";
-import * as path from 'path';
-
+import { genRandomSalt, hashOne, SparseMerkleTree } from "@unirep/crypto";
 import { executeCircuit, getSignalByName } from "../circuits/utils";
-import { compileAndLoadCircuit, genNewSMT } from "./utils";
+import { genNewSMT, compileAndLoadCircuit } from "./utils";
 // circuitEpochTreeDepth too large will greatly slow down the test...
 const circuitEpochTreeDepth = 8;
-const circuitPath = path.join(__dirname, '../circuits/test/smtLeafExists_test.circom');
-const InclusionProofCircuitPath = path.join(__dirname, '../circuits/test/smtInclusionProof_test.circom');
+const circuitPath = path.join(
+  __dirname,
+  "../circuits/test/smtLeafExists_test.circom"
+);
+const InclusionProofCircuitPath = path.join(
+  __dirname,
+  "../circuits/test/smtInclusionProof_test.circom"
+);
 
-describe('Sparse Merkle Tree circuits', function () {
+describe("Sparse Merkle Tree circuits", function () {
   this.timeout(500000);
 
-  describe('LeafExists', () => {
+  describe("LeafExists", () => {
     let circuit;
 
-    let tree: SparseMerkleTreeImpl, leaves, root, ZERO_VALUE;
+    let tree: SparseMerkleTree, leaves, root, ZERO_VALUE;
     let leafIndicesToInsert: number[], emptyLeafIndices: number[];
 
     before(async () => {
@@ -27,19 +32,19 @@ describe('Sparse Merkle Tree circuits', function () {
       ZERO_VALUE = tree.getZeroHash(0);
     });
 
-    it('Valid LeafExists inputs should work', async () => {
+    it("Valid LeafExists inputs should work", async () => {
       const half = 2 ** (circuitEpochTreeDepth - 1);
 
       // Insert half of the leaves
       leafIndicesToInsert = [];
       for (let i = 0; i < half; i++) {
-        let ind = Math.floor(Math.random() * (2 ** circuitEpochTreeDepth));
-        while (leafIndicesToInsert.includes(ind)) {
-          ind = Math.floor(Math.random() * (2 ** circuitEpochTreeDepth));
+        let ind = Math.floor(Math.random() * 2 ** circuitEpochTreeDepth);
+        while (leafIndicesToInsert.indexOf(ind) >= 0) {
+          ind = Math.floor(Math.random() * 2 ** circuitEpochTreeDepth);
         }
         leafIndicesToInsert.push(ind);
       }
-      for (const ind of leafIndicesToInsert) {
+      for (let ind of leafIndicesToInsert) {
         const leaf = genRandomSalt();
         await tree.update(BigInt(ind), leaf);
         leaves[ind] = leaf;
@@ -48,14 +53,14 @@ describe('Sparse Merkle Tree circuits', function () {
       root = tree.getRootHash();
 
       // Prove first half of existent leaves
-      for (const ind of leafIndicesToInsert) {
+      for (let ind of leafIndicesToInsert) {
         const leaf = leaves[ind];
         const pathElements = await tree.getMerkleProof(BigInt(ind));
         const circuitInputs = {
           leaf: leaf,
           leaf_index: ind,
           path_elements: pathElements,
-          root
+          root,
         };
         const witness = await executeCircuit(circuit, circuitInputs);
       }
@@ -63,23 +68,23 @@ describe('Sparse Merkle Tree circuits', function () {
       // Prove second half of empty leaves
       emptyLeafIndices = [];
       for (let i = 0; i < 2 ** circuitEpochTreeDepth; i++) {
-        if (leafIndicesToInsert.includes(i)) continue;
+        if (leafIndicesToInsert.indexOf(i) >= 0) continue;
         else emptyLeafIndices.push(i);
       }
-      for (const ind of emptyLeafIndices) {
+      for (let ind of emptyLeafIndices) {
         const pathElements = await tree.getMerkleProof(BigInt(ind));
         const circuitInputs = {
           leaf: ZERO_VALUE,
           leaf_index: ind,
           path_elements: pathElements,
-          root
+          root,
         };
         const witness = await executeCircuit(circuit, circuitInputs);
       }
     });
 
-    it('Invalid LeafExists inputs should not work', async () => {
-      for (const ind of leafIndicesToInsert) {
+    it("Invalid LeafExists inputs should not work", async () => {
+      for (let ind of leafIndicesToInsert) {
         const leaf = leaves[ind];
         const pathElements = await tree.getMerkleProof(BigInt(ind));
 
@@ -90,7 +95,7 @@ describe('Sparse Merkle Tree circuits', function () {
           leaf: wrongLeaf,
           leaf_index: ind,
           path_elements: pathElements,
-          root
+          root,
         };
 
         let error;
@@ -100,15 +105,18 @@ describe('Sparse Merkle Tree circuits', function () {
           error = e;
           expect(true).to.be.true;
         } finally {
-          if (!error) throw Error("Root mismatch results from wrong leaf should throw error");
+          if (!error)
+            throw Error(
+              "Root mismatch results from wrong leaf should throw error"
+            );
         }
 
         // Check against wrong leaf index
         circuitInputs = {
           leaf: leaf,
-          leaf_index: ind < 15 ? (ind + 1) : (ind - 1),
+          leaf_index: ind < 15 ? ind + 1 : ind - 1,
           path_elements: pathElements,
-          root
+          root,
         };
 
         error = undefined;
@@ -118,7 +126,10 @@ describe('Sparse Merkle Tree circuits', function () {
           error = e;
           expect(true).to.be.true;
         } finally {
-          if (!error) throw Error("Root mismatch results from wrong leaf should throw error");
+          if (!error)
+            throw Error(
+              "Root mismatch results from wrong leaf should throw error"
+            );
         }
 
         // Check against wrong path elements
@@ -128,7 +139,7 @@ describe('Sparse Merkle Tree circuits', function () {
           leaf: leaf,
           leaf_index: ind,
           path_elements: wrongPathElements,
-          root
+          root,
         };
 
         error = undefined;
@@ -138,20 +149,23 @@ describe('Sparse Merkle Tree circuits', function () {
           error = e;
           expect(true).to.be.true;
         } finally {
-          if (!error) throw Error("Root mismatch results from wrong path elements should throw error");
+          if (!error)
+            throw Error(
+              "Root mismatch results from wrong path elements should throw error"
+            );
         }
       }
     });
   });
 
-  describe('MerkleTreeInclusionProof', () => {
+  describe("MerkleTreeInclusionProof", () => {
     let circuit;
 
     before(async () => {
       circuit = await compileAndLoadCircuit(InclusionProofCircuitPath);
     });
 
-    it('Valid update proofs should work', async () => {
+    it("Valid update proofs should work", async () => {
       const defaultLeafHash = hashOne(BigInt(0));
       const tree = await genNewSMT(circuitEpochTreeDepth, defaultLeafHash);
       const leaves = {};
@@ -176,12 +190,16 @@ describe('Sparse Merkle Tree circuits', function () {
         const circuitInputs = {
           leaf: leaf,
           leaf_index: ind,
-          path_elements: pathElements
+          path_elements: pathElements,
         };
 
         const witness = await executeCircuit(circuit, circuitInputs);
 
-        const circuitRoot = getSignalByName(circuit, witness, 'main.root').toString();
+        const circuitRoot = getSignalByName(
+          circuit,
+          witness,
+          "main.root"
+        ).toString();
         expect(circuitRoot).equal(root.toString());
       }
     });

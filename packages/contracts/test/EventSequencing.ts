@@ -1,41 +1,35 @@
-/* eslint-disable sonarjs/no-unused-collection */
-
-import { formatProofForSnarkjsVerification } from "@unirep/circuits";
-import {
-  genIdentity,
-  genIdentityCommitment,
-  genRandomSalt,
-} from "@unirep/crypto";
-import { expect } from "chai";
-import { BigNumber, BigNumberish, ethers } from "ethers";
+// @ts-ignore
 import { ethers as hardhatEthers } from "hardhat";
-
+import { BigNumber, BigNumberish, ethers } from "ethers";
+import { expect } from "chai";
+import { genRandomSalt, ZkIdentity } from "@unirep/crypto";
+import { formatProofForSnarkjsVerification } from "@unirep/circuits";
 import {
   attestingFee,
   epochLength,
   maxReputationBudget,
   numEpochKeyNoncePerEpoch,
 } from "../config";
+import { genEpochKey, getTreeDepthsForTesting, Attestation } from "./utils";
 import { deployUnirep, EpochKeyProof, Event } from "../src";
 import { Unirep } from "../typechain";
-import { Attestation, genEpochKey, getTreeDepthsForTesting } from "./utils";
 
 describe("EventSequencing", () => {
-  const expectedEventsInOrder: Event[] = [];
+  let expectedEventsInOrder: Event[] = [];
   let expectedEventsNumber: number = 0;
 
   let unirepContract: Unirep;
 
   let accounts: ethers.Signer[];
 
-  const userIds: any[] = [];
+  let userIds: any[] = [],
+    userCommitments: any[] = [];
 
   let attester, attesterAddress, attesterId, unirepContractCalledByAttester;
 
   before(async () => {
     accounts = await hardhatEthers.getSigners();
 
-    const userCommitments: any[] = [];
     const _treeDepths = getTreeDepthsForTesting();
     unirepContract = await deployUnirep(
       <ethers.Wallet>accounts[0],
@@ -43,8 +37,8 @@ describe("EventSequencing", () => {
     );
 
     // 1. Fisrt user sign up
-    let userId = genIdentity();
-    let userCommitment = genIdentityCommitment(userId);
+    let userId = new ZkIdentity();
+    let userCommitment = userId.genIdentityCommitment();
     userIds.push(userId);
     userCommitments.push(userCommitment);
     let tx = await unirepContract.userSignUp(BigNumber.from(userCommitment));
@@ -66,7 +60,7 @@ describe("EventSequencing", () => {
     let currentEpoch = await unirepContract.currentEpoch();
     let epochKeyNonce = 0;
     let epochKey = genEpochKey(
-      userIds[0].identityNullifier,
+      userIds[0].getNullifier(),
       currentEpoch.toNumber(),
       epochKeyNonce
     );
@@ -137,8 +131,8 @@ describe("EventSequencing", () => {
     expectedEventsNumber++;
 
     // 4. Second user sign up
-    userId = genIdentity();
-    userCommitment = genIdentityCommitment(userId);
+    userId = new ZkIdentity();
+    userCommitment = userId.genIdentityCommitment();
     userIds.push(userId);
     userCommitments.push(userCommitment);
     tx = await unirepContract.userSignUp(BigNumber.from(userCommitment));
@@ -211,7 +205,7 @@ describe("EventSequencing", () => {
     // 9. Attest to second user
     epochKeyNonce = 0;
     epochKey = genEpochKey(
-      userIds[1].identityNullifier,
+      userIds[1].getNullifier(),
       currentEpoch.toNumber(),
       epochKeyNonce
     );

@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnirepFactory = exports.getUnirepContract = exports.deployUnirep = exports.computeProcessAttestationsProofHash = exports.computeStartTransitionProofHash = exports.UserTransitionProof = exports.SignUpProof = exports.ReputationProof = exports.EpochKeyProof = exports.Attestation = exports.AttestationEvent = exports.Event = void 0;
-/* eslint-disable @typescript-eslint/no-base-to-string */
-const circuits_1 = require("@unirep/circuits");
-const crypto_1 = require("@unirep/crypto");
 const ethers_1 = require("ethers");
+const crypto_1 = require("@unirep/crypto");
+const circuits_1 = require("@unirep/circuits");
 const config_1 = require("../config");
 const typechain_1 = require("../typechain");
 Object.defineProperty(exports, "UnirepFactory", { enumerable: true, get: function () { return typechain_1.Unirep__factory; } });
@@ -46,12 +45,12 @@ exports.Attestation = Attestation;
 class EpochKeyProof {
     constructor(_publicSignals, _proof) {
         this.verify = () => {
-            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map((n) => n.toString()));
-            return (0, circuits_1.verifyProof)(circuits_1.Circuit.verifyEpochKey, proof_, this.publicSignals.map((n) => BigInt(n.toString())));
+            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map(n => n.toString()));
+            return (0, circuits_1.verifyProof)(circuits_1.Circuit.verifyEpochKey, proof_, this.publicSignals.map(n => BigInt(n.toString())));
         };
         this.hash = () => {
             const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
-            const abiEncoder = iface.encodeFunctionData("hashEpochKeyProof", [this]);
+            const abiEncoder = iface.encodeFunctionData('hashEpochKeyProof', [this]);
             return ethers_1.ethers.utils.keccak256(rmFuncSigHash(abiEncoder));
         };
         const formattedProof = (0, circuits_1.formatProofForVerifierContract)(_proof);
@@ -66,13 +65,12 @@ exports.EpochKeyProof = EpochKeyProof;
 class ReputationProof {
     constructor(_publicSignals, _proof) {
         this.verify = () => {
-            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map((n) => n.toString()));
-            return (0, circuits_1.verifyProof)(circuits_1.Circuit.proveReputation, proof_, this.publicSignals.map((n) => BigInt(n.toString())));
+            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map(n => n.toString()));
+            return (0, circuits_1.verifyProof)(circuits_1.Circuit.proveReputation, proof_, this.publicSignals.map(n => BigInt(n.toString())));
         };
         this.hash = () => {
             // array length should be fixed
-            const abiEncoder = ethers_1.ethers.utils.defaultAbiCoder.encode([
-                `tuple(uint256[${config_1.maxReputationBudget}] repNullifiers,
+            const abiEncoder = ethers_1.ethers.utils.defaultAbiCoder.encode([`tuple(uint256[${config_1.maxReputationBudget}] repNullifiers,
                     uint256 epoch,
                     uint256 epochKey, 
                     uint256 globalStateTree,
@@ -82,8 +80,7 @@ class ReputationProof {
                     uint256 proveGraffiti,
                     uint256 graffitiPreImage,
                     uint256[8] proof)
-            `,
-            ], [this]);
+            `], [this]);
             return ethers_1.ethers.utils.keccak256(abiEncoder);
         };
         const formattedProof = (0, circuits_1.formatProofForVerifierContract)(_proof);
@@ -104,12 +101,12 @@ exports.ReputationProof = ReputationProof;
 class SignUpProof {
     constructor(_publicSignals, _proof) {
         this.verify = () => {
-            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map((n) => n.toString()));
-            return (0, circuits_1.verifyProof)(circuits_1.Circuit.proveUserSignUp, proof_, this.publicSignals.map((n) => BigInt(n.toString())));
+            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map(n => n.toString()));
+            return (0, circuits_1.verifyProof)(circuits_1.Circuit.proveUserSignUp, proof_, this.publicSignals.map(n => BigInt(n.toString())));
         };
         this.hash = () => {
             const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
-            const abiEncoder = iface.encodeFunctionData("hashSignUpProof", [this]);
+            const abiEncoder = iface.encodeFunctionData('hashSignUpProof', [this]);
             return ethers_1.ethers.utils.keccak256(rmFuncSigHash(abiEncoder));
         };
         const formattedProof = (0, circuits_1.formatProofForVerifierContract)(_proof);
@@ -126,13 +123,12 @@ exports.SignUpProof = SignUpProof;
 class UserTransitionProof {
     constructor(_publicSignals, _proof) {
         this.verify = () => {
-            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map((n) => n.toString()));
-            return (0, circuits_1.verifyProof)(circuits_1.Circuit.userStateTransition, proof_, this.publicSignals.map((n) => BigInt(n.toString())));
+            const proof_ = (0, circuits_1.formatProofForSnarkjsVerification)(this.proof.map(n => n.toString()));
+            return (0, circuits_1.verifyProof)(circuits_1.Circuit.userStateTransition, proof_, this.publicSignals.map(n => BigInt(n.toString())));
         };
         this.hash = () => {
             // array length should be fixed
-            const abiEncoder = ethers_1.ethers.utils.defaultAbiCoder.encode([
-                `tuple(uint256 newGlobalStateTreeLeaf,
+            const abiEncoder = ethers_1.ethers.utils.defaultAbiCoder.encode([`tuple(uint256 newGlobalStateTreeLeaf,
                     uint256[${config_1.numEpochKeyNoncePerEpoch}] epkNullifiers,
                     uint256 transitionFromEpoch,
                     uint256[2] blindedUserStates,
@@ -140,8 +136,7 @@ class UserTransitionProof {
                     uint256[${config_1.numEpochKeyNoncePerEpoch}] blindedHashChains,
                     uint256 fromEpochTree,
                     uint256[8] proof)
-            `,
-            ], [this]);
+            `], [this]);
             return ethers_1.ethers.utils.keccak256(abiEncoder);
         };
         const formattedProof = (0, circuits_1.formatProofForVerifierContract)(_proof);
@@ -167,65 +162,81 @@ class UserTransitionProof {
 exports.UserTransitionProof = UserTransitionProof;
 const computeStartTransitionProofHash = (blindedUserState, blindedHashChain, globalStateTree, proof) => {
     const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
-    const abiEncoder = iface.encodeFunctionData("hashStartTransitionProof", [
+    const abiEncoder = iface.encodeFunctionData('hashStartTransitionProof', [
         blindedUserState,
         blindedHashChain,
         globalStateTree,
-        proof,
+        proof
     ]);
     return ethers_1.ethers.utils.keccak256(rmFuncSigHash(abiEncoder));
 };
 exports.computeStartTransitionProofHash = computeStartTransitionProofHash;
 const computeProcessAttestationsProofHash = (outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof) => {
     const iface = new ethers_1.ethers.utils.Interface(typechain_1.Unirep__factory.abi);
-    const abiEncoder = iface.encodeFunctionData("hashProcessAttestationsProof", [
+    const abiEncoder = iface.encodeFunctionData('hashProcessAttestationsProof', [
         outputBlindedUserState,
         outputBlindedHashChain,
         inputBlindedUserState,
-        proof,
+        proof
     ]);
     return ethers_1.ethers.utils.keccak256(rmFuncSigHash(abiEncoder));
 };
 exports.computeProcessAttestationsProofHash = computeProcessAttestationsProofHash;
 const rmFuncSigHash = (abiEncoder) => {
-    return (0, crypto_1.add0x)(abiEncoder.slice(10));
+    return '0x' + abiEncoder.slice(10);
 };
 const deployUnirep = async (deployer, _treeDepths, _settings) => {
-    var _a, _b, _c, _d, _e, _f;
-    console.log("Deploying EpochKeyValidityVerifier");
-    const EpochKeyValidityVerifierContract = await new typechain_1.EpochKeyValidityVerifier__factory(deployer).deploy();
+    let EpochKeyValidityVerifierContract;
+    let StartTransitionVerifierContract;
+    let ProcessAttestationsVerifierContract;
+    let UserStateTransitionVerifierContract;
+    let ReputationVerifierContract;
+    let UserSignUpVerifierContract;
+    console.log('Deploying EpochKeyValidityVerifier');
+    EpochKeyValidityVerifierContract = await (new typechain_1.EpochKeyValidityVerifier__factory(deployer)).deploy();
     await EpochKeyValidityVerifierContract.deployTransaction.wait();
-    console.log("Deploying StartTransitionVerifier");
-    const StartTransitionVerifierContract = await new typechain_1.StartTransitionVerifier__factory(deployer).deploy();
+    console.log('Deploying StartTransitionVerifier');
+    StartTransitionVerifierContract = await (new typechain_1.StartTransitionVerifier__factory(deployer)).deploy();
     await StartTransitionVerifierContract.deployTransaction.wait();
-    console.log("Deploying ProcessAttestationsVerifier");
-    const ProcessAttestationsVerifierContract = await new typechain_1.ProcessAttestationsVerifier__factory(deployer).deploy();
+    console.log('Deploying ProcessAttestationsVerifier');
+    ProcessAttestationsVerifierContract = await (new typechain_1.ProcessAttestationsVerifier__factory(deployer)).deploy();
     await ProcessAttestationsVerifierContract.deployTransaction.wait();
-    console.log("Deploying UserStateTransitionVerifier");
-    const UserStateTransitionVerifierContract = await new typechain_1.UserStateTransitionVerifier__factory(deployer).deploy();
+    console.log('Deploying UserStateTransitionVerifier');
+    UserStateTransitionVerifierContract = await (new typechain_1.UserStateTransitionVerifier__factory(deployer)).deploy();
     await UserStateTransitionVerifierContract.deployTransaction.wait();
-    console.log("Deploying ReputationVerifier");
-    const ReputationVerifierContract = await new typechain_1.ReputationVerifier__factory(deployer).deploy();
+    console.log('Deploying ReputationVerifier');
+    ReputationVerifierContract = await (new typechain_1.ReputationVerifier__factory(deployer)).deploy();
     await ReputationVerifierContract.deployTransaction.wait();
-    console.log("Deploying UserSignUpVerifier");
-    const UserSignUpVerifierContract = await new typechain_1.UserSignUpVerifier__factory(deployer).deploy();
+    console.log('Deploying UserSignUpVerifier');
+    UserSignUpVerifierContract = await (new typechain_1.UserSignUpVerifier__factory(deployer)).deploy();
     await UserSignUpVerifierContract.deployTransaction.wait();
-    console.log("Deploying Unirep");
-    const _maxUsers = (_a = _settings === null || _settings === void 0 ? void 0 : _settings.maxUsers) !== null && _a !== void 0 ? _a : config_1.maxUsers;
-    const _maxAttesters = (_b = _settings === null || _settings === void 0 ? void 0 : _settings.maxAttesters) !== null && _b !== void 0 ? _b : config_1.maxAttesters;
-    const _numEpochKeyNoncePerEpoch = (_c = _settings === null || _settings === void 0 ? void 0 : _settings.numEpochKeyNoncePerEpoch) !== null && _c !== void 0 ? _c : config_1.numEpochKeyNoncePerEpoch;
-    const _maxReputationBudget = (_d = _settings === null || _settings === void 0 ? void 0 : _settings.maxReputationBudget) !== null && _d !== void 0 ? _d : config_1.maxReputationBudget;
-    const _epochLength = (_e = _settings === null || _settings === void 0 ? void 0 : _settings.maxUsers) !== null && _e !== void 0 ? _e : config_1.epochLength;
-    const _attestingFee = (_f = _settings === null || _settings === void 0 ? void 0 : _settings.attestingFee) !== null && _f !== void 0 ? _f : config_1.attestingFee;
-    const c = await new typechain_1.Unirep__factory(deployer).deploy(_treeDepths, {
-        maxUsers: _maxUsers,
-        maxAttesters: _maxAttesters,
+    console.log('Deploying Unirep');
+    let _maxUsers, _maxAttesters, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee;
+    if (_settings) {
+        _maxUsers = _settings.maxUsers;
+        _maxAttesters = _settings.maxAttesters,
+            _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch;
+        _maxReputationBudget = _settings.maxReputationBudget;
+        _epochLength = _settings.epochLength;
+        _attestingFee = _settings.attestingFee;
+    }
+    else {
+        _maxUsers = config_1.maxUsers;
+        _maxAttesters = config_1.maxAttesters;
+        _numEpochKeyNoncePerEpoch = config_1.numEpochKeyNoncePerEpoch;
+        _maxReputationBudget = config_1.maxReputationBudget,
+            _epochLength = config_1.epochLength;
+        _attestingFee = config_1.attestingFee;
+    }
+    const c = await (new typechain_1.Unirep__factory(deployer)).deploy(_treeDepths, {
+        "maxUsers": _maxUsers,
+        "maxAttesters": _maxAttesters,
     }, EpochKeyValidityVerifierContract.address, StartTransitionVerifierContract.address, ProcessAttestationsVerifierContract.address, UserStateTransitionVerifierContract.address, ReputationVerifierContract.address, UserSignUpVerifierContract.address, _numEpochKeyNoncePerEpoch, _maxReputationBudget, _epochLength, _attestingFee);
     await c.deployTransaction.wait();
     // Print out deployment info
     console.log("-----------------------------------------------------------------");
     console.log("Bytecode size of Unirep:", Math.floor(typechain_1.Unirep__factory.bytecode.length / 2), "bytes");
-    const receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash);
+    let receipt = await c.provider.getTransactionReceipt(c.deployTransaction.hash);
     console.log("Gas cost of deploying Unirep:", receipt.gasUsed.toString());
     console.log("-----------------------------------------------------------------");
     return c;

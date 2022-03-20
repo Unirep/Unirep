@@ -11,6 +11,9 @@
   "author": "vivianjeng <vivi432@yahoo.com.tw>",
   "license": "MIT",
   "dependencies": {
+    "@zk-kit/identity": "^1.4.1",
+    "@zk-kit/incremental-merkle-tree": "^0.4.3",
+    "@zk-kit/sparse-merkle-tree": "^0.2.0",
     "bigint-conversion": "^2.1.12",
     "maci-config": "^0.9.1",
     "maci-crypto": "^0.9.1",

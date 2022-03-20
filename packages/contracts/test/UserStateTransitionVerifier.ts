@@ -1,16 +1,16 @@
-import { Circuit } from "@unirep/circuits";
-import { genIdentity, genRandomSalt } from "@unirep/crypto";
-import { expect } from "chai";
-import { BigNumberish, ethers } from "ethers";
+// @ts-ignore
 import { ethers as hardhatEthers } from "hardhat";
-
-import { epochLength } from "../config";
-import { deployUnirep, UserTransitionProof } from "../src";
+import { BigNumberish, ethers } from "ethers";
+import { expect } from "chai";
+import { ZkIdentity, genRandomSalt } from "@unirep/crypto";
+import { Circuit } from "@unirep/circuits";
 import {
-  genInputForContract,
   genUserStateTransitionCircuitInput,
   getTreeDepthsForTesting,
+  genInputForContract,
 } from "./utils";
+import { deployUnirep, UserTransitionProof } from "../src";
+import { epochLength } from "../config";
 
 describe("User State Transition", function () {
   this.timeout(600000);
@@ -18,7 +18,7 @@ describe("User State Transition", function () {
   let unirepContract;
 
   const epoch = 1;
-  const user = genIdentity();
+  const user = new ZkIdentity();
   const proofIndexes = [];
 
   before(async () => {
