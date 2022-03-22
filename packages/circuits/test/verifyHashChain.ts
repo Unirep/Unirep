@@ -1,17 +1,23 @@
+import { genRandomSalt, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
 import * as path from 'path'
-import { genRandomSalt, hashLeftRight, SnarkBigInt, } from "@unirep/crypto"
-import { executeCircuit, } from "../circuits/utils"
+
+import { executeCircuit } from '../circuits/utils'
 import { compileAndLoadCircuit, throwError } from './utils'
 
-const sealedHashChainCircuitPath = path.join(__dirname, '../circuits/test/verifyHashChain_test.circom')
+const sealedHashChainCircuitPath = path.join(
+    __dirname,
+    '../circuits/test/verifyHashChain_test.circom'
+)
 
 describe('Hash chain circuit', function () {
     this.timeout(30000)
     let circuit
 
     const NUM_ELEMENT = 10
-    let elements: SnarkBigInt[] = []
-    let cur: BigInt = BigInt(0), result, selectors: number[] = []
+    const elements: SnarkBigInt[] = []
+    let cur: BigInt = BigInt(0)
+    let result
+    const selectors: number[] = []
 
     before(async () => {
         circuit = await compileAndLoadCircuit(sealedHashChainCircuitPath)
@@ -21,7 +27,7 @@ describe('Hash chain circuit', function () {
             const sel = Math.floor(Math.random() * 2)
             selectors.push(sel)
             elements.push(element)
-            if ( sel == 1) {
+            if (sel == 1) {
                 cur = hashLeftRight(element, cur)
             }
         }
@@ -32,7 +38,7 @@ describe('Hash chain circuit', function () {
         const circuitInputs = {
             hashes: elements,
             selectors: selectors,
-            result: result
+            result: result,
         }
 
         await executeCircuit(circuit, circuitInputs)
@@ -43,10 +49,14 @@ describe('Hash chain circuit', function () {
         const circuitInputs = {
             hashes: elements,
             selectors: selectors,
-            result: result
+            result: result,
         }
 
-        await throwError(circuit, circuitInputs, "Wrong hashes should throw error")
+        await throwError(
+            circuit,
+            circuitInputs,
+            'Wrong hashes should throw error'
+        )
         elements.reverse()
     })
 
@@ -54,24 +64,34 @@ describe('Hash chain circuit', function () {
         const wrongSelectors = selectors.slice()
         // Flip one of the selector
         const indexWrongSelector = Math.floor(Math.random() * NUM_ELEMENT)
-        wrongSelectors[indexWrongSelector] = wrongSelectors[indexWrongSelector] ? 0 : 1
+        wrongSelectors[indexWrongSelector] = wrongSelectors[indexWrongSelector]
+            ? 0
+            : 1
         const circuitInputs = {
             hashes: elements,
             selectors: wrongSelectors,
-            result: result
+            result: result,
         }
 
-        await throwError(circuit, circuitInputs, "Wrong selectors should throw error")
+        await throwError(
+            circuit,
+            circuitInputs,
+            'Wrong selectors should throw error'
+        )
     })
 
     it('verify incorrect number of elements should fail', async () => {
         const circuitInputs = {
             hashes: elements.slice(1),
             selectors: selectors,
-            result: result
+            result: result,
         }
 
-        await throwError(circuit, circuitInputs, "Wrong number of hashes should throw error")
+        await throwError(
+            circuit,
+            circuitInputs,
+            'Wrong number of hashes should throw error'
+        )
     })
 
     it('verify incorrect result should fail', async () => {
@@ -79,9 +99,13 @@ describe('Hash chain circuit', function () {
         const circuitInputs = {
             hashes: elements,
             selectors: selectors,
-            result: incorrectResult
+            result: incorrectResult,
         }
 
-        await throwError(circuit, circuitInputs, "Wrong hash chain result should throw error")
+        await throwError(
+            circuit,
+            circuitInputs,
+            'Wrong hash chain result should throw error'
+        )
     })
 })

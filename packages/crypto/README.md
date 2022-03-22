@@ -12,21 +12,24 @@ yarn build
 ## Functions
 
 ### semaphore with poseidon hash
-- `genIdentity`
-- `genIdentityCommitment`
-- `serialiseIdentity`
-- `unSerialiseIdentity`
+
+-   `genIdentity`
+-   `genIdentityCommitment`
+-   `serialiseIdentity`
+-   `unSerialiseIdentity`
 
 ### Sparse Merkle Tree
-- `SparseMerkleTree`
+
+-   `SparseMerkleTree`
 
 ### maci-crypto@^0.9.1
-- `genRandomSalt`
-- `hash5`
-- `hashOne`
-- `hashLeftRight`
-- `stringifyBigInts`
-- `unstringifyBigInts`
-- `IncrementalMerkleTree`
-- `wrappedPoseidonT3Hash`
-- `newWrappedPoseidonT3Hash`
+
+-   `genRandomSalt`
+-   `hash5`
+-   `hashOne`
+-   `hashLeftRight`
+-   `stringifyBigInts`
+-   `unstringifyBigInts`
+-   `IncrementalMerkleTree`
+-   `wrappedPoseidonT3Hash`
+-   `newWrappedPoseidonT3Hash`

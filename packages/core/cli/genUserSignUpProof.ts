@@ -1,59 +1,55 @@
 import base64url from 'base64url'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import { Circuit, formatProofForVerifierContract, verifyProof } from '@unirep/circuits'
+import {
+    Circuit,
+    formatProofForVerifierContract,
+    verifyProof,
+} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUserStateFromContract } from '../src'
-import { identityPrefix, signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
+import {
+    identityPrefix,
+    signUpProofPrefix,
+    signUpPublicSignalsPrefix,
+} from './prefix'
 import { getProvider } from './utils'
 
 const configureSubparser = (subparsers: any) => {
-    const parser = subparsers.add_parser(
-        'genUserSignUpProof',
-        { add_help: true },
-    )
+    const parser = subparsers.add_parser('genUserSignUpProof', {
+        add_help: true,
+    })
 
-    parser.add_argument(
-        '-e', '--eth-provider',
-        {
-            action: 'store',
-            type: 'str',
-            help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
-        }
-    )
+    parser.add_argument('-e', '--eth-provider', {
+        action: 'store',
+        type: 'str',
+        help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
+    })
 
-    parser.add_argument(
-        '-id', '--identity',
-        {
-            required: true,
-            type: 'str',
-            help: 'The (serialized) user\'s identity',
-        }
-    )
+    parser.add_argument('-id', '--identity', {
+        required: true,
+        type: 'str',
+        help: "The (serialized) user's identity",
+    })
 
-    parser.add_argument(
-        '-a', '--attester-id',
-        {
-            required: true,
-            type: 'str',
-            help: 'The attester id (in hex representation)',
-        }
-    )
+    parser.add_argument('-a', '--attester-id', {
+        required: true,
+        type: 'str',
+        help: 'The attester id (in hex representation)',
+    })
 
-    parser.add_argument(
-        '-x', '--contract',
-        {
-            required: true,
-            type: 'str',
-            help: 'The Unirep contract address',
-        }
-    )
+    parser.add_argument('-x', '--contract', {
+        required: true,
+        type: 'str',
+        help: 'The Unirep contract address',
+    })
 }
 
 const genUserSignUpProof = async (args: any) => {
-
     // Ethereum provider
-    const ethProvider = args.eth_provider ? args.eth_provider : DEFAULT_ETH_PROVIDER
+    const ethProvider = args.eth_provider
+        ? args.eth_provider
+        : DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
     const encodedIdentity = args.identity.slice(identityPrefix.length)
@@ -64,7 +60,7 @@ const genUserSignUpProof = async (args: any) => {
     const userState = await genUserStateFromContract(
         provider,
         args.contract,
-        id,
+        id
     )
     const attesterId = BigInt(args.attester_id)
     const results = await userState.genUserSignUpProof(attesterId)
@@ -82,14 +78,13 @@ const genUserSignUpProof = async (args: any) => {
 
     const formattedProof = formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
-    const encodedPublicSignals = base64url.encode(JSON.stringify(results.publicSignals))
+    const encodedPublicSignals = base64url.encode(
+        JSON.stringify(results.publicSignals)
+    )
     console.log(`Proof of user sign up from attester ${results.attesterId}:`)
     console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString()}`)
     console.log(signUpProofPrefix + encodedProof)
     console.log(signUpPublicSignalsPrefix + encodedPublicSignals)
 }
 
-export {
-    genUserSignUpProof,
-    configureSubparser,
-}
+export { genUserSignUpProof, configureSubparser }

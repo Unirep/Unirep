@@ -1,13 +1,9 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "./build",
+        "outDir": "./build"
     },
-    "include": [
-        "./src",
-        "./cli",
-        "./test"
-    ],
+    "include": ["./src", "./cli", "./test"],
     "exclude": ["**/privateKey.ts"],
     "files": ["./hardhat.config.ts"]
 }
