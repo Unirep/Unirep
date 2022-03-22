@@ -7,9 +7,9 @@
 
 pragma solidity ^0.8.0;
 
-import { UnirepObjs } from "./UnirepObjs.sol";
+import { UnirepTypes } from "./types/UnirepTypes.sol";
 
-contract Hasher is UnirepObjs {
+contract Hasher is UnirepTypes {
     function hashEpochKeyProof(EpochKeyProof memory _input)
         public
         pure
