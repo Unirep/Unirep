@@ -94,4 +94,19 @@ interface IUnirep is UnirepTypes {
         UserTransitionProof _proof,
         uint256[] _proofIndexRecords
     );
+
+    /*
+     * Sign up an attester using the address who sends the transaction
+     */
+    function attesterSignUp() external;
+
+    /*
+     * Sign up an attester using the claimed address and the signature
+     * @param attester The address of the attester who wants to sign up
+     * @param signature The signature of the attester
+     */
+    function attesterSignUpViaRelayer(
+        address attester,
+        bytes calldata signature
+    ) external;
 }

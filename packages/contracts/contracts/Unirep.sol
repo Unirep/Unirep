@@ -181,12 +181,9 @@ contract Unirep is IUnirep, SnarkConstants, Hasher {
         );
     }
 
-    /*
-     * Sign up an attester using the address who sends the transaction
-     */
-    function attesterSignUp() external {
+    function _attesterSignUp(address attester) private {
         require(
-            attesters[msg.sender] == 0,
+            attesters[attester] == 0,
             "Unirep: attester has already signed up"
         );
         require(
@@ -194,8 +191,15 @@ contract Unirep is IUnirep, SnarkConstants, Hasher {
             "Unirep: maximum number of attester signups reached"
         );
 
-        attesters[msg.sender] = nextAttesterId;
+        attesters[attester] = nextAttesterId;
         nextAttesterId++;
+    }
+
+    /*
+     * Sign up an attester using the address who sends the transaction
+     */
+    function attesterSignUp() external override {
+        _attesterSignUp(msg.sender);
     }
 
     /*
@@ -206,19 +210,9 @@ contract Unirep is IUnirep, SnarkConstants, Hasher {
     function attesterSignUpViaRelayer(
         address attester,
         bytes calldata signature
-    ) external {
-        require(
-            attesters[attester] == 0,
-            "Unirep: attester has already signed up"
-        );
-        require(
-            nextAttesterId < maxAttesters,
-            "Unirep: maximum number of attester signups reached"
-        );
+    ) external override {
         verifySignature(attester, signature);
-
-        attesters[attester] = nextAttesterId;
-        nextAttesterId++;
+        _attesterSignUp(attester);
     }
 
     /*
