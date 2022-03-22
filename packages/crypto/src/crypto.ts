@@ -6,7 +6,7 @@ import {
     hashOne,
     hashLeftRight,
     stringifyBigInts,
-    unstringifyBigInts,
+    unstringifyBigInts
 } from 'maci-crypto'
 
 export {

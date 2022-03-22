@@ -1,8 +1,12 @@
-{
+{   
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "./build"
+        "outDir": "./build",
     },
-    "include": ["./src", "./typechain", "./test"],
-    "files": ["./hardhat.config.ts"]
+    "include": [
+        "./src", 
+        "./typechain",
+        "./test"
+    ],
+    "files": ["./hardhat.config.ts"],
 }

@@ -9,8 +9,7 @@
         "test": "yarn UnirepStateTests && yarn UserStateTests && yarn integrationTest",
         "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')",
         "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UnirepState -name '*.ts')",
-        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UserState -name '*.ts')",
-        "lint": "prettier --write ."
+        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UserState -name '*.ts')"
     },
     "repository": "git+https://github.com/appliedzkp/UniRep.git",
     "author": "",
@@ -37,7 +36,7 @@
         "@typechain/ethers-v5": "^9.0.0",
         "@unirep/circuits": "^1.0.4",
         "@unirep/crypto": "^1.0.0",
-        "@unirep/contracts": "^1.0.6",
+        "@unirep/contracts": "^1.0.6", 
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "ethers": "^5.4.6",

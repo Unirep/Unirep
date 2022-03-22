@@ -2,26 +2,10 @@
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
 import { BigNumber, ethers } from 'ethers'
-import Keyv from 'keyv'
-import {
-    IncrementalMerkleTree,
-    hash5,
-    hashLeftRight,
-    SparseMerkleTree,
-    genRandomSalt,
-    stringifyBigInts,
-    ZkIdentity,
-} from '@unirep/crypto'
+import Keyv from "keyv"
+import { IncrementalMerkleTree, hash5, hashLeftRight, SparseMerkleTree, genRandomSalt, stringifyBigInts, ZkIdentity } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
-import {
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    epochTreeDepth,
-    globalStateTreeDepth,
-    maxReputationBudget,
-    userStateTreeDepth,
-} from '../config/testLocal'
+import { circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochTreeDepth, globalStateTreeDepth, maxReputationBudget, userStateTreeDepth } from '../config/testLocal'
 import { Attestation, genEpochKey, Reputation, UnirepState } from '../src'
 
 const toCompleteHexString = (str: string, len?: number): string => {
@@ -33,16 +17,15 @@ const toCompleteHexString = (str: string, len?: number): string => {
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
-const genNewSMT = async (
-    treeDepth: number,
-    defaultLeafHash: BigInt
-): Promise<SparseMerkleTree> => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt): Promise<SparseMerkleTree> => {
+    return SparseMerkleTree.create(
+        new Keyv(),
+        treeDepth,
+        defaultLeafHash,
+    )
 }
 
-const genNewEpochTree = async (
-    deployEnv: string = 'contract'
-): Promise<SparseMerkleTree> => {
+const genNewEpochTree = async (deployEnv: string = "contract"): Promise<SparseMerkleTree> => {
     let _epochTreeDepth
     if (deployEnv === 'contract') {
         _epochTreeDepth = epochTreeDepth
@@ -55,50 +38,47 @@ const genNewEpochTree = async (
     return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
 
-const getTreeDepthsForTesting = (deployEnv: string = 'circuit') => {
+const getTreeDepthsForTesting = (deployEnv: string = "circuit") => {
     if (deployEnv === 'contract') {
         return {
-            userStateTreeDepth: userStateTreeDepth,
-            globalStateTreeDepth: globalStateTreeDepth,
-            epochTreeDepth: epochTreeDepth,
+            "userStateTreeDepth": userStateTreeDepth,
+            "globalStateTreeDepth": globalStateTreeDepth,
+            "epochTreeDepth": epochTreeDepth,
         }
     } else if (deployEnv === 'circuit') {
         return {
-            userStateTreeDepth: circuitUserStateTreeDepth,
-            globalStateTreeDepth: circuitGlobalStateTreeDepth,
-            epochTreeDepth: circuitEpochTreeDepth,
+            "userStateTreeDepth": circuitUserStateTreeDepth,
+            "globalStateTreeDepth": circuitGlobalStateTreeDepth,
+            "epochTreeDepth": circuitEpochTreeDepth,
         }
     } else {
         throw new Error('Only contract and circuit testing env are supported')
     }
 }
 
-const defaultUserStateLeaf = hash5([
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-])
+const defaultUserStateLeaf = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
+    const t = new IncrementalMerkleTree(
+        treeDepth,
+        defaultUserStateLeaf,
+        2,
+    )
     return t.root
 }
 
-const genNewGST = (
-    GSTDepth: number,
-    USTDepth: number
-): IncrementalMerkleTree => {
+const genNewGST = (GSTDepth: number, USTDepth: number): IncrementalMerkleTree => {
     const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
     const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
-    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf, 2)
+    const GST = new IncrementalMerkleTree(
+        GSTDepth,
+        defaultGSTLeaf,
+        2,
+    )
     return GST
 }
 
-const genNewUserStateTree = async (
-    deployEnv: string = 'circuit'
-): Promise<SparseMerkleTree> => {
+const genNewUserStateTree = async (deployEnv: string = "circuit"): Promise<SparseMerkleTree> => {
     let _userStateTreeDepth
     if (deployEnv === 'contract') {
         _userStateTreeDepth = userStateTreeDepth
@@ -118,7 +98,7 @@ const genRandomAttestation = () => {
         BigInt(Math.floor(Math.random() * 100)),
         BigInt(Math.floor(Math.random() * 100)),
         BigNumber.from(genRandomSalt()),
-        BigInt(Math.floor(Math.random() * 2))
+        BigInt(Math.floor(Math.random() * 2)),
     )
     return attestation
 }
@@ -132,25 +112,18 @@ const genRandomList = (length): BigInt[] => {
 }
 
 const computeEpochKeyProofHash = (epochKeyProof: any) => {
-    const abiEncoder = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256', 'uint256', 'uint256[8]'],
-        epochKeyProof
-    )
+    const abiEncoder = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256", "uint256", "uint256[8]"], epochKeyProof)
     return ethers.utils.keccak256(abiEncoder)
 }
 
-const verifyNewGSTProofByIndex = async (
-    unirepContract: ethers.Contract,
-    proofIndex: number | ethers.BigNumber
-): Promise<ethers.Event | undefined> => {
+const verifyNewGSTProofByIndex = async (unirepContract: ethers.Contract, proofIndex: number | ethers.BigNumber): Promise<ethers.Event | undefined> => {
     const signUpFilter = unirepContract.filters.UserSignUp(proofIndex)
     const signUpEvents = await unirepContract.queryFilter(signUpFilter)
     // found user sign up event, then continue
     if (signUpEvents.length == 1) return signUpEvents[0]
 
     // 2. verify user state transition proof
-    const transitionFilter =
-        unirepContract.filters.UserStateTransitionProof(proofIndex)
+    const transitionFilter = unirepContract.filters.UserStateTransitionProof(proofIndex)
     const transitionEvents = await unirepContract.queryFilter(transitionFilter)
     if (transitionEvents.length == 0) return
     // proof index is supposed to be unique, therefore it should be only one event found
@@ -164,50 +137,35 @@ const verifyNewGSTProofByIndex = async (
         transitionArgs.fromGlobalStateTree,
         transitionArgs.blindedHashChains,
         transitionArgs.fromEpochTree,
-        transitionArgs.proof
+        transitionArgs.proof,
     )
     if (!isValid) return
 
     const _proofIndexes = transitionEvents[0]?.args?._proofIndexRecords
     // Proof index 0 should be the start transition proof
-    const startTransitionFilter = unirepContract.filters.StartedTransitionProof(
-        _proofIndexes[0],
-        transitionArgs.blindedUserStates[0],
-        transitionArgs.fromGlobalStateTree
-    )
-    const startTransitionEvents = await unirepContract.queryFilter(
-        startTransitionFilter
-    )
+    const startTransitionFilter = unirepContract.filters.StartedTransitionProof(_proofIndexes[0], transitionArgs.blindedUserStates[0], transitionArgs.fromGlobalStateTree)
+    const startTransitionEvents = await unirepContract.queryFilter(startTransitionFilter)
     if (startTransitionEvents.length == 0) return
 
     const startTransitionArgs = startTransitionEvents[0]?.args
-    const isStartTransitionProofValid =
-        await unirepContract.verifyStartTransitionProof(
-            startTransitionArgs?._blindedUserState,
-            startTransitionArgs?._blindedHashChain,
-            startTransitionArgs?._globalStateTree,
-            startTransitionArgs?._proof
-        )
+    const isStartTransitionProofValid = await unirepContract.verifyStartTransitionProof(
+        startTransitionArgs?._blindedUserState,
+        startTransitionArgs?._blindedHashChain,
+        startTransitionArgs?._globalStateTree,
+        startTransitionArgs?._proof,
+    )
     if (!isStartTransitionProofValid) return
 
     // process attestations proofs
-    const isProcessAttestationValid = await verifyProcessAttestationEvents(
-        unirepContract,
-        transitionArgs.blindedUserStates[0],
-        transitionArgs.blindedUserStates[1],
-        _proofIndexes
-    )
+    const isProcessAttestationValid = await verifyProcessAttestationEvents(unirepContract, transitionArgs.blindedUserStates[0], transitionArgs.blindedUserStates[1], _proofIndexes)
     if (!isProcessAttestationValid) return
 
     return transitionEvents[0]
 }
 
-const verifyNewGSTLeafEvents = async (
-    unirepContract: ethers.Contract,
-    currentEpoch: number | ethers.BigNumber
-): Promise<BigInt[]> => {
-    const newLeafFilter =
-        unirepContract.filters.NewGSTLeafInserted(currentEpoch)
+
+const verifyNewGSTLeafEvents = async (unirepContract: ethers.Contract, currentEpoch: number | ethers.BigNumber): Promise<BigInt[]> => {
+    const newLeafFilter = unirepContract.filters.NewGSTLeafInserted(currentEpoch)
     const newLeafEvents = await unirepContract.queryFilter(newLeafFilter)
 
     const newLeaves: BigInt[] = []
@@ -217,10 +175,7 @@ const verifyNewGSTLeafEvents = async (
 
         // New leaf events are from user sign up and user state transition
         // 1. check user sign up
-        const isProofValid = await verifyNewGSTProofByIndex(
-            unirepContract,
-            proofIndex
-        )
+        const isProofValid = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
 
         // all verification is done
         if (isProofValid) {
@@ -231,23 +186,13 @@ const verifyNewGSTLeafEvents = async (
     return newLeaves
 }
 
-const verifyProcessAttestationEvents = async (
-    unirepContract: ethers.Contract,
-    startBlindedUserState: ethers.BigNumber,
-    finalBlindedUserState: ethers.BigNumber,
-    _proofIndexes: ethers.BigNumber[]
-): Promise<boolean> => {
+const verifyProcessAttestationEvents = async (unirepContract: ethers.Contract, startBlindedUserState: ethers.BigNumber, finalBlindedUserState: ethers.BigNumber, _proofIndexes: ethers.BigNumber[]): Promise<boolean> => {
+
     let currentBlindedUserState = startBlindedUserState
     // The rest are process attestations proofs
     for (let i = 1; i < _proofIndexes.length; i++) {
-        const processAttestationsFilter =
-            unirepContract.filters.ProcessedAttestationsProof(
-                _proofIndexes[i],
-                currentBlindedUserState
-            )
-        const processAttestationsEvents = await unirepContract.queryFilter(
-            processAttestationsFilter
-        )
+        const processAttestationsFilter = unirepContract.filters.ProcessedAttestationsProof(_proofIndexes[i], currentBlindedUserState)
+        const processAttestationsEvents = await unirepContract.queryFilter(processAttestationsFilter)
         if (processAttestationsEvents.length == 0) return false
 
         const args = processAttestationsEvents[0]?.args
@@ -263,9 +208,7 @@ const verifyProcessAttestationEvents = async (
     return currentBlindedUserState.eq(finalBlindedUserState)
 }
 
-const verifyStartTransitionProof = async (
-    startTransitionProof
-): Promise<boolean> => {
+const verifyStartTransitionProof = async (startTransitionProof): Promise<boolean> => {
     return await verifyProof(
         Circuit.startTransition,
         startTransitionProof.proof,
@@ -273,9 +216,7 @@ const verifyStartTransitionProof = async (
     )
 }
 
-const verifyProcessAttestationsProof = async (
-    processAttestationProof
-): Promise<boolean> => {
+const verifyProcessAttestationsProof = async (processAttestationProof): Promise<boolean> => {
     return await verifyProof(
         Circuit.processAttestations,
         processAttestationProof.proof,
@@ -354,8 +295,7 @@ const genReputationCircuitInput = async (
     _graffitiPreImage?
 ) => {
     const epk = genEpochKey(id.getNullifier(), epoch, nonce)
-    const repNullifiersAmount =
-        _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
+    const repNullifiersAmount = _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
     const minRep = _minRep === undefined ? 0 : _minRep
     const proveGraffiti = _proveGraffiti === undefined ? 0 : _proveGraffiti
     let graffitiPreImage
@@ -370,15 +310,10 @@ const genReputationCircuitInput = async (
     // User state tree
     const userStateTree = await genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
-        await userStateTree.update(
-            BigInt(attester),
-            reputationRecords[attester].hash()
-        )
+        await userStateTree.update(BigInt(attester), reputationRecords[attester].hash())
     }
     const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
@@ -390,7 +325,7 @@ const genReputationCircuitInput = async (
     const nonceList: BigInt[] = []
     for (let i = 0; i < repNullifiersAmount; i++) {
         nonceList.push(BigInt(nonceStarter + i))
-        selectors.push(BigInt(1))
+        selectors.push(BigInt(1));
     }
     for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
         nonceList.push(BigInt(0))
@@ -419,7 +354,7 @@ const genReputationCircuitInput = async (
         rep_nonce: nonceList,
         min_rep: minRep,
         prove_graffiti: proveGraffiti,
-        graffiti_pre_image: graffitiPreImage,
+        graffiti_pre_image: graffitiPreImage
     }
     return stringifyBigInts(circuitInputs)
 }
@@ -442,15 +377,10 @@ const genProveSignUpCircuitInput = async (
     // User state tree
     const userStateTree = await genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
-        await userStateTree.update(
-            BigInt(attester),
-            reputationRecords[attester].hash()
-        )
+        await userStateTree.update(BigInt(attester), reputationRecords[attester].hash())
     }
     const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0

@@ -1,34 +1,12 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
-import { expect } from 'chai'
-import {
-    genRandomSalt,
-    hashLeftRight,
-    IncrementalMerkleTree,
-    ZkIdentity,
-} from '@unirep/crypto'
+import { expect } from "chai"
+import { genRandomSalt, hashLeftRight, IncrementalMerkleTree, ZkIdentity } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 
-import {
-    circuitGlobalStateTreeDepth,
-    epochLength,
-    maxAttesters,
-    maxReputationBudget,
-    maxUsers,
-    numEpochKeyNoncePerEpoch,
-} from '../config'
-import {
-    getTreeDepthsForTesting,
-    Attestation,
-    genEpochKeyCircuitInput,
-    genInputForContract,
-    genStartTransitionCircuitInput,
-    bootstrapRandomUSTree,
-    GSTZERO_VALUE,
-    genProcessAttestationsCircuitInput,
-    genUserStateTransitionCircuitInput,
-} from './utils'
+import { circuitGlobalStateTreeDepth, epochLength, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch } from '../config'
+import { getTreeDepthsForTesting, Attestation, genEpochKeyCircuitInput, genInputForContract, genStartTransitionCircuitInput, bootstrapRandomUSTree, GSTZERO_VALUE, genProcessAttestationsCircuitInput, genUserStateTransitionCircuitInput } from './utils'
 import { deployUnirep, UserTransitionProof } from '../src'
 
 describe('Epoch Transition', function () {
@@ -46,7 +24,7 @@ describe('Epoch Transition', function () {
     const signedUpInLeaf = 1
     let epochKeyProofIndex
     const proofIndexes: BigInt[] = []
-    const attestingFee = ethers.utils.parseEther('0.1')
+    const attestingFee = ethers.utils.parseEther("0.1")
 
     let fromEpoch
     let GSTree
@@ -63,13 +41,9 @@ describe('Epoch Transition', function () {
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
             maxReputationBudget: maxReputationBudget,
             epochLength: epochLength,
-            attestingFee: attestingFee,
+            attestingFee: attestingFee
         }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths, _settings)
 
         console.log('User sign up')
         userId = new ZkIdentity()
@@ -90,7 +64,7 @@ describe('Epoch Transition', function () {
         console.log('Attester sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
+        unirepContractCalledByAttester = unirepContract.connect(attester);
         tx = await unirepContractCalledByAttester.attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -100,18 +74,8 @@ describe('Epoch Transition', function () {
         let epoch = (await unirepContract.currentEpoch()).toNumber()
 
         let nonce = 1
-        let circuitInputs = genEpochKeyCircuitInput(
-            userId,
-            tree,
-            leafIndex,
-            stateRoot,
-            epoch,
-            nonce
-        )
-        let input = await genInputForContract(
-            Circuit.verifyEpochKey,
-            circuitInputs
-        )
+        let circuitInputs = genEpochKeyCircuitInput(userId, tree, leafIndex, stateRoot, epoch, nonce)
+        let input = await genInputForContract(Circuit.verifyEpochKey, circuitInputs)
         let epochKey = input.epochKey
 
         // Submit epoch key proof
@@ -130,7 +94,7 @@ describe('Epoch Transition', function () {
                 BigInt(i),
                 BigInt(0),
                 genRandomSalt(),
-                BigInt(signedUpInLeaf)
+                BigInt(signedUpInLeaf),
             )
             tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
@@ -145,9 +109,8 @@ describe('Epoch Transition', function () {
     })
 
     it('premature epoch transition should fail', async () => {
-        await expect(unirepContract.beginEpochTransition()).to.be.revertedWith(
-            'Unirep: epoch not yet ended'
-        )
+        await expect(unirepContract.beginEpochTransition()
+        ).to.be.revertedWith('Unirep: epoch not yet ended')
     })
 
     it('epoch transition should succeed', async () => {
@@ -155,33 +118,22 @@ describe('Epoch Transition', function () {
         let epoch = await unirepContract.currentEpoch()
 
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+        await hardhatEthers.provider.send("evm_increaseTime", [epochLength])
         // Assert no epoch transition compensation is dispensed to volunteer
-        expect(
-            await unirepContract.epochTransitionCompensation(attesterAddress)
-        ).to.be.equal(0)
-        // Begin epoch transition
+        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.be.equal(0)
+        // Begin epoch transition 
         let tx = await unirepContractCalledByAttester.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        console.log(
-            'Gas cost of sealing one epoch key:',
-            receipt.gasUsed.toString()
-        )
+        console.log("Gas cost of sealing one epoch key:", receipt.gasUsed.toString())
         // Verify compensation to the volunteer increased
-        expect(
-            await unirepContract.epochTransitionCompensation(attesterAddress)
-        ).to.gt(0)
+        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.gt(0)
 
         // Complete epoch transition
         expect(await unirepContract.currentEpoch()).to.be.equal(epoch.add(1))
         // Verify latestEpochTransitionTime and currentEpoch
-        let latestEpochTransitionTime =
-            await unirepContract.latestEpochTransitionTime()
-        expect(latestEpochTransitionTime).equal(
-            (await hardhatEthers.provider.getBlock(receipt.blockNumber))
-                .timestamp
-        )
+        let latestEpochTransitionTime = await unirepContract.latestEpochTransitionTime()
+        expect(latestEpochTransitionTime).equal((await hardhatEthers.provider.getBlock(receipt.blockNumber)).timestamp)
 
         let epoch_ = await unirepContract.currentEpoch()
         expect(epoch_).equal(epoch.add(1))
@@ -192,16 +144,9 @@ describe('Epoch Transition', function () {
         userStateTree = results.userStateTree
 
         // Global state tree
-        GSTree = new IncrementalMerkleTree(
-            circuitGlobalStateTreeDepth,
-            GSTZERO_VALUE,
-            2
-        )
+        GSTree = new IncrementalMerkleTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
         const commitment = userId.genIdentityCommitment()
-        const hashedLeaf = hashLeftRight(
-            commitment,
-            userStateTree.getRootHash()
-        )
+        const hashedLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
         GSTree.insert(hashedLeaf)
         leafIndex = 0
     })
@@ -209,42 +154,23 @@ describe('Epoch Transition', function () {
     it('start user state transition should succeed', async () => {
         fromEpoch = 1
         const nonce = 0
-        const circuitInputs = genStartTransitionCircuitInput(
-            userId,
-            GSTree,
-            leafIndex,
-            userStateTree.getRootHash(),
-            fromEpoch,
-            nonce
-        )
-        const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(Circuit.startTransition, circuitInputs)
-        const isProofValid = await unirepContract.verifyStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
-        )
+        const circuitInputs = genStartTransitionCircuitInput(userId, GSTree, leafIndex, userStateTree.getRootHash(), fromEpoch, nonce)
+        const { blindedUserState, blindedHashChain, GSTRoot, proof } = await genInputForContract(Circuit.startTransition, circuitInputs)
+        const isProofValid = await unirepContract.verifyStartTransitionProof(blindedUserState, blindedHashChain, GSTRoot, proof)
         expect(isProofValid).to.be.true
 
         const tx = await unirepContract.startUserStateTransition(
             blindedUserState,
             blindedHashChain,
             GSTRoot,
-            proof
+            proof,
         )
         console.log('start transition')
         console.log('start blinded user state: ', blindedUserState)
         console.log('start blinded hash chain: ', blindedHashChain)
         const receipt = await tx.wait()
-        expect(
-            receipt.status,
-            'Submit user state transition proof failed'
-        ).to.equal(1)
-        console.log(
-            'Gas cost of submit a start transition proof:',
-            receipt.gasUsed.toString()
-        )
+        expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+        console.log("Gas cost of submit a start transition proof:", receipt.gasUsed.toString())
 
         let proofNullifier = await unirepContract.hashStartTransitionProof(
             blindedUserState,
@@ -262,120 +188,73 @@ describe('Epoch Transition', function () {
             let toNonce = i
             for (let j = 0; j < prooftNum; j++) {
                 // If it is the end of attestations of the epoch key, then the next epoch key nonce increased by one
-                if (j == prooftNum - 1) toNonce = i + 1
+                if (j == (prooftNum - 1)) toNonce = i + 1
                 // If it it the maximum epoch key nonce, then the next epoch key nonce should not increase
-                if (i == numEpochKeyNoncePerEpoch - 1) toNonce = i
-                const { circuitInputs } =
-                    await genProcessAttestationsCircuitInput(
-                        userId,
-                        fromEpoch,
-                        BigInt(i),
-                        BigInt(toNonce)
-                    )
+                if (i == (numEpochKeyNoncePerEpoch - 1)) toNonce = i
+                const { circuitInputs } = await genProcessAttestationsCircuitInput(userId, fromEpoch, BigInt(i), BigInt(toNonce))
 
-                const {
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    proof,
-                } = await genInputForContract(
-                    Circuit.processAttestations,
-                    circuitInputs
-                )
+                const { outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof } = await genInputForContract(Circuit.processAttestations, circuitInputs)
                 const tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,
                     inputBlindedUserState,
-                    proof
+                    proof,
                 )
                 console.log('input blinded user state: ', inputBlindedUserState)
-                console.log(
-                    'output blinded user state: ',
-                    outputBlindedUserState
-                )
-                console.log(
-                    'output blinded hash chain: ',
-                    outputBlindedHashChain
-                )
+                console.log('output blinded user state: ', outputBlindedUserState)
+                console.log('output blinded hash chain: ', outputBlindedHashChain)
                 const receipt = await tx.wait()
-                expect(
-                    receipt.status,
-                    'Submit process attestations proof failed'
-                ).to.equal(1)
-                console.log(
-                    'Gas cost of submit a process attestations proof:',
-                    receipt.gasUsed.toString()
-                )
+                expect(receipt.status, 'Submit process attestations proof failed').to.equal(1)
+                console.log("Gas cost of submit a process attestations proof:", receipt.gasUsed.toString())
 
-                const proofNullifier =
-                    await unirepContract.hashProcessAttestationsProof(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        inputBlindedUserState,
-                        proof
-                    )
-                const proofIndex = await unirepContract.getProofIndex(
-                    proofNullifier
+                const proofNullifier = await unirepContract.hashProcessAttestationsProof(
+                    outputBlindedUserState,
+                    outputBlindedHashChain,
+                    inputBlindedUserState,
+                    proof,
                 )
+                const proofIndex = await unirepContract.getProofIndex(proofNullifier)
                 proofIndexes.push(BigInt(proofIndex))
             }
         }
     })
 
     it('submit user state transition proofs should succeed', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            userId,
-            fromEpoch
+        const circuitInputs = await genUserStateTransitionCircuitInput(userId, fromEpoch)
+        const input: UserTransitionProof = await genInputForContract(Circuit.userStateTransition, circuitInputs)
+        const tx = await unirepContract.updateUserStateRoot(
+            input,
+            proofIndexes
         )
-        const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
-            circuitInputs
-        )
-        const tx = await unirepContract.updateUserStateRoot(input, proofIndexes)
         const receipt = await tx.wait()
-        expect(
-            receipt.status,
-            'Submit user state transition proof failed'
-        ).to.equal(1)
-        console.log(
-            'Gas cost of submit a user state transition proof:',
-            receipt.gasUsed.toString()
-        )
+        expect(receipt.status, 'Submit user state transition proof failed').to.equal(1)
+        console.log("Gas cost of submit a user state transition proof:", receipt.gasUsed.toString())
     })
 
     it('epoch transition with no attestations and epoch keys should also succeed', async () => {
         let epoch = await unirepContract.currentEpoch()
 
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+        await hardhatEthers.provider.send("evm_increaseTime", [epochLength])
         // Begin epoch transition
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // Verify latestEpochTransitionTime and currentEpoch
-        let latestEpochTransitionTime =
-            await unirepContract.latestEpochTransitionTime()
-        expect(latestEpochTransitionTime).equal(
-            (await hardhatEthers.provider.getBlock(receipt.blockNumber))
-                .timestamp
-        )
+        let latestEpochTransitionTime = await unirepContract.latestEpochTransitionTime()
+        expect(latestEpochTransitionTime).equal((await hardhatEthers.provider.getBlock(receipt.blockNumber)).timestamp)
 
         let epoch_ = await unirepContract.currentEpoch()
         expect(epoch_).equal(epoch.add(1))
     })
 
     it('collecting epoch transition compensation should succeed', async () => {
-        const compensation = await unirepContract.epochTransitionCompensation(
-            attesterAddress
-        )
+        const compensation = await unirepContract.epochTransitionCompensation(attesterAddress)
         expect(compensation).to.gt(0)
         // Set gas price to 0 so attester will not be charged transaction fee
-        await expect(() =>
-            unirepContractCalledByAttester.collectEpochTransitionCompensation()
-        ).to.changeEtherBalance(attester, compensation)
-        expect(
-            await unirepContract.epochTransitionCompensation(attesterAddress)
-        ).to.equal(0)
+        await expect(() => unirepContractCalledByAttester.collectEpochTransitionCompensation())
+            .to.changeEtherBalance(attester, compensation)
+        expect(await unirepContract.epochTransitionCompensation(attesterAddress)).to.equal(0)
     })
 })

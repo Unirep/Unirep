@@ -4,6 +4,6 @@ set -e
 
 cd "$(dirname "$0")"
 cd ..
-mkdir -p zksnarkBuild
+mkdir -p build
 
-NODE_OPTIONS=--max-old-space-size=8192 npx ts-node scripts/buildSnarks.ts -i zksnarkBuild/proveUserSignUp_main.circom -j zksnarkBuild/proveUserSignUpCircuit.r1cs -w zksnarkBuild/proveUserSignUp.wasm -y zksnarkBuild/proveUserSignUp.sym -pt zksnarkBuild/powersOfTau28_hez_final_17.ptau -zk zksnarkBuild/proveUserSignUp.zkey -vk zksnarkBuild/proveUserSignUp.vkey.json
+NODE_OPTIONS=--max-old-space-size=8192 npx ts-node scripts/buildSnarks.ts -i build/proveUserSignUp_main.circom -j build/proveUserSignUpCircuit.r1cs -w build/proveUserSignUp.wasm -y build/proveUserSignUp.sym -pt build/powersOfTau28_hez_final_17.ptau -zk build/proveUserSignUp.zkey -vk build/proveUserSignUp.vkey.json

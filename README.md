@@ -1,29 +1,28 @@
-# Unirep monorepo
+# Unirep monorepo 
 
-## About Unirep
+## About Unirep 
 
 UniRep is a private and nonrepudiable repuation system. Users can receive positive and negative reputation from attesters, and voluntarily prove that they have at least certain amount of reputation without revealing the exact amount. Moreover, users cannot refuse to receive reputation from an attester.
 
 For more information, refer to the [documentation](https://vivi432.gitbook.io/unirep/)
 
-## Project Structure
+## Project Structure 
 
--   Composed by 4 packages:
-    -   [`unirep`](./packages/unirep/) - main package.
-    -   [`contract`](./packages/contracts/) - Unirep smart contracts.
-    -   [`circuits`](./packages/circuits/) - Circom libaries.
-    -   [`crypto`](./packages/crypto) - Crypto utils.
+- Composed by 4 packages: 
+    - [`unirep`](./packages/unirep/) - main package.
+    - [`contract`](./packages/contracts/) - Unirep smart contracts.
+    - [`circuits`](./packages/circuits/) - Circom libaries.
+    - [`crypto`](./packages/crypto) - Crypto utils. 
 
 ## Install and test
 
 Install
 
-```bash
+``` bash
 yarn && yarn build
 ```
 
-Run test
-
-```bash
+Run test 
+``` bash
 yarn test
 ```

@@ -54,7 +54,7 @@ import {
 
 import {
     submitEpochKeyProof,
-    configureSubparser as configureSubparserForSubmitEpochKeyProof,
+    configureSubparser as configureSubparserForSubmitEpochKeyProof
 } from './submitEpochKeyProof'
 
 import {
@@ -86,6 +86,8 @@ import {
     verifyUserSignUpProof,
     configureSubparser as configureSubparserForVerifyUserSignUpProof,
 } from './verifyUserSignUpProof'
+
+
 
 const main = async () => {
     const parser = new argparse.ArgumentParser({

@@ -4,29 +4,30 @@
 name: Unirep core cli CI
 
 on:
-    push:
-        branches:
-            - master
-            - develop
-    pull_request:
-        branches:
-            - master
-            - develop
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
 
-        strategy:
-            matrix:
-                node-version: [12.x]
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v2
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v1
-              with:
-                  node-version: ${{ matrix.node-version }}
-            - run: yarn install
-            - run: yarn build
-            - run: yarn core test-cli
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn install
+    - run: yarn build
+    - run: yarn core test-cli

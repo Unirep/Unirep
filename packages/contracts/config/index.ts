@@ -1,30 +1,31 @@
 import { ethers } from 'ethers'
 
-const attestingFee = ethers.utils.parseEther('0.1')
+const attestingFee = ethers.utils.parseEther("0.1")
 
-const numEpochKeyNoncePerEpoch = 3
+const numEpochKeyNoncePerEpoch = 3;
 
-const numAttestationsPerProof = 5
+const numAttestationsPerProof = 5;
 
-const epochLength = 30 // 30 seconds
+const epochLength = 30;  // 30 seconds
 
-const circuitGlobalStateTreeDepth = 4
 
-const circuitUserStateTreeDepth = 4
+const circuitGlobalStateTreeDepth = 4;
 
-const circuitEpochTreeDepth = 32
+const circuitUserStateTreeDepth = 4;
 
-const globalStateTreeDepth = circuitGlobalStateTreeDepth
+const circuitEpochTreeDepth = 32;
 
-const userStateTreeDepth = circuitUserStateTreeDepth
+const globalStateTreeDepth = circuitGlobalStateTreeDepth;
 
-const epochTreeDepth = circuitEpochTreeDepth
+const userStateTreeDepth = circuitUserStateTreeDepth;
 
-const maxReputationBudget = 10
+const epochTreeDepth = circuitEpochTreeDepth;
 
-const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1
+const maxReputationBudget = 10;
 
-const maxAttesters = 2 ** circuitUserStateTreeDepth - 1
+const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1;
+
+const maxAttesters = 2 ** circuitUserStateTreeDepth - 1;
 
 export {
     attestingFee,

@@ -82,7 +82,7 @@
 
 //             const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
 //             const defaultGSTree = genNewGST(
-//                 _treeDepths.globalStateTreeDepth,
+//                 _treeDepths.globalStateTreeDepth, 
 //                 _treeDepths.userStateTreeDepth
 //             )
 //             expect(unirepGSTree.root).equal(defaultGSTree.root)
@@ -91,7 +91,7 @@
 
 //     describe('User Sign Up event', async () => {
 //         const GSTree = genNewGST(
-//             _treeDepths.globalStateTreeDepth,
+//             _treeDepths.globalStateTreeDepth, 
 //             _treeDepths.userStateTreeDepth
 //         )
 //         const rootHistories: BigInt[] = []
@@ -109,6 +109,7 @@
 
 //                 await expect(unirepContractCalledByAttester.userSignUp(commitment))
 //                     .to.be.revertedWith('Unirep: the user has already signed up')
+                
 
 //                 const unirepState = await genUnirepStateFromContract(
 //                     hardhatEthers.provider,
@@ -223,15 +224,15 @@
 //             const epkNonce = 0
 //             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
 //             const circuitInputs = genEpochKeyCircuitInput(
-//                 userIds[userIdx],
-//                 GSTree,
-//                 userIdx,
-//                 userStateTreeRoots[userIdx],
-//                 epoch,
+//                 userIds[userIdx], 
+//                 GSTree, 
+//                 userIdx, 
+//                 userStateTreeRoots[userIdx], 
+//                 epoch, 
 //                 epkNonce
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.verifyEpochKey,
+//                 Circuit.verifyEpochKey, 
 //                 circuitInputs
 //             )
 //             const epkProofInput = new EpochKeyProof(
@@ -254,7 +255,7 @@
 //                 .to.be.revertedWith('Unirep: the proof has been submitted before')
 //         })
 
-//         it('submit attestations to the epoch key should update Unirep state', async () => {
+//         it('submit attestations to the epoch key should update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -283,16 +284,16 @@
 //             const epkNonce = 1
 //             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
 //             const circuitInputs = genEpochKeyCircuitInput(
-//                 userIds[userIdx],
-//                 GSTree,
-//                 userIdx,
-//                 userStateTreeRoots[userIdx],
-//                 epoch,
+//                 userIds[userIdx], 
+//                 GSTree, 
+//                 userIdx, 
+//                 userStateTreeRoots[userIdx], 
+//                 epoch, 
 //                 epkNonce
 //             )
 //             circuitInputs.GST_root = genRandomSalt().toString()
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.verifyEpochKey,
+//                 Circuit.verifyEpochKey, 
 //                 circuitInputs
 //             )
 //             const epkProofInput = new EpochKeyProof(
@@ -311,7 +312,7 @@
 //             proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
 //         })
 
-//         it('submit attestations to the epoch key should not update Unirep state', async () => {
+//         it('submit attestations to the epoch key should not update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -344,15 +345,15 @@
 //             const epoch = 1
 
 //             const circuitInputs = genEpochKeyCircuitInput(
-//                 id,
-//                 GSTree,
-//                 leafIndex,
-//                 stateRoot,
-//                 epoch,
+//                 id, 
+//                 GSTree, 
+//                 leafIndex, 
+//                 stateRoot, 
+//                 epoch, 
 //                 epkNonce
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.verifyEpochKey,
+//                 Circuit.verifyEpochKey, 
 //                 circuitInputs
 //             )
 //             const epkProofInput = new EpochKeyProof(
@@ -371,7 +372,7 @@
 //             proofIndex = Number(await unirepContract.getProofIndex(hashedProof))
 //         })
 
-//         it('submit attestations to the epoch key should not update Unirep state', async () => {
+//         it('submit attestations to the epoch key should not update Unirep state', async () => {          
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -400,15 +401,15 @@
 //             const epkNonce = Math.floor(Math.random() * numEpochKeyNoncePerEpoch)
 //             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
 //             const circuitInputs = genEpochKeyCircuitInput(
-//                 userIds[userIdx],
-//                 GSTree,
-//                 userIdx,
-//                 userStateTreeRoots[userIdx],
-//                 wrongEpoch,
+//                 userIds[userIdx], 
+//                 GSTree, 
+//                 userIdx, 
+//                 userStateTreeRoots[userIdx], 
+//                 wrongEpoch, 
 //                 epkNonce
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.verifyEpochKey,
+//                 Circuit.verifyEpochKey, 
 //                 circuitInputs
 //             )
 //             const epkProofInput = new EpochKeyProof(
@@ -453,7 +454,7 @@
 //                 spendReputation,
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.proveReputation,
+//                 Circuit.proveReputation, 
 //                 circuitInputs
 //             )
 //             const repProofInput = new ReputationProof(
@@ -487,7 +488,7 @@
 //             expect(unirepState.nullifierExist(repNullifier)).to.be.true
 //         })
 
-//         it('submit attestations to the epoch key should update Unirep state', async () => {
+//         it('submit attestations to the epoch key should update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -531,7 +532,7 @@
 //                 spendReputation,
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.proveReputation,
+//                 Circuit.proveReputation, 
 //                 circuitInputs
 //             )
 //             expect(publicSignals[0]).equal(repNullifier.toString())
@@ -560,7 +561,7 @@
 //             expect(attestations.length).equal(0)
 //         })
 
-//         it('submit attestations to the epoch key should not update Unirep state', async () => {
+//         it('submit attestations to the epoch key should not update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -602,7 +603,7 @@
 //             )
 //             circuitInputs.GST_root = genRandomSalt().toString()
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.proveReputation,
+//                 Circuit.proveReputation, 
 //                 circuitInputs
 //             )
 //             const repProofInput = new ReputationProof(
@@ -631,7 +632,7 @@
 //             expect(attestations.length).equal(0)
 //         })
 
-//         it('submit attestations to the epoch key should not update Unirep state', async () => {
+//         it('submit attestations to the epoch key should not update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -666,9 +667,9 @@
 //             const leafIndex = 0
 //             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
 //             GSTree.insert(BigInt(hashedStateLeaf.toString()))
-
+            
 //             const circuitInputs = await genReputationCircuitInput(
-//                 id,
+//                 id, 
 //                 epoch,
 //                 epkNonce,
 //                 GSTree,
@@ -677,7 +678,7 @@
 //                 BigInt(attesterId),
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.proveReputation,
+//                 Circuit.proveReputation, 
 //                 circuitInputs
 //             )
 //             const repProofInput = new ReputationProof(
@@ -705,7 +706,7 @@
 //             expect(attestations.length).equal(0)
 //         })
 
-//         it('submit attestations to the epoch key should not update Unirep state', async () => {
+//         it('submit attestations to the epoch key should not update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -746,7 +747,7 @@
 //                 spendReputation,
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.proveReputation,
+//                 Circuit.proveReputation, 
 //                 circuitInputs
 //             )
 //             const repProofInput = new ReputationProof(
@@ -777,7 +778,7 @@
 //             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
 //             const circuitInputs = await genProveSignUpCircuitInput(
-//                 userIds[userIdx],
+//                 userIds[userIdx], 
 //                 epoch,
 //                 GSTree,
 //                 userIdx,
@@ -785,7 +786,7 @@
 //                 BigInt(attesterId),
 //             )
 //             const { proof, publicSignals } = await genProofAndPublicSignals(
-//                 Circuit.proveUserSignUp,
+//                 Circuit.proveUserSignUp, 
 //                 circuitInputs
 //             )
 //             const airdropProofInput = new SignUpProof(
@@ -816,7 +817,7 @@
 //             expect(attestations.length).equal(1)
 //         })
 
-//         it('submit attestations to the epoch key should update Unirep state', async () => {
+//         it('submit attestations to the epoch key should update Unirep state', async () => {            
 //             const attestation = genRandomAttestation()
 //             attestation.attesterId = BigInt(attesterId)
 //             const tx = await unirepContractCalledByAttester.submitAttestation(

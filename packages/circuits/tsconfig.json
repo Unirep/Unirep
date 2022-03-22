@@ -1,8 +1,12 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "./dist"
+        "outDir": "./",
     },
-    "exclude": ["node_modules/**"],
-    "include": ["./circuits", "./test", "./config", "./scripts"]
+    "exclude": [
+        "node_modules/**"
+    ],
+    "include": [
+        "./circuits"
+    ]
 }

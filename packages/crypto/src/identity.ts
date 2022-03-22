@@ -1,5 +1,5 @@
-import { ZkIdentity, Strategy } from '@zk-kit/identity'
-import { SnarkBigInt } from './crypto'
+import { ZkIdentity, Strategy } from "@zk-kit/identity"
+import { SnarkBigInt } from "./crypto"
 
 type EddsaPrivateKey = Buffer
 type EddsaPublicKey = SnarkBigInt[]
@@ -20,5 +20,5 @@ export {
     SnarkProof,
     SnarkBigInt,
     ZkIdentity,
-    Strategy,
+    Strategy
 }

@@ -11,6 +11,7 @@
 // import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, epochLength, epochTreeDepth, maxAttesters, maxReputationBudget, maxUsers, numEpochKeyNoncePerEpoch} from '../../config/testLocal'
 // import { Attestation, IAttestation, IUserStateLeaf, UnirepState, UserState, genUserStateFromContract, ISettings } from "../../core"
 
+
 // describe('Integration', function () {
 //     this.timeout(1000000)
 
@@ -109,7 +110,7 @@
 //     //         const tx = await unirepContractCalledByFirstAttester.attesterSignUp()
 //     //         const receipt = await tx.wait()
 //     //         expect(receipt.status, 'Attester sign up failed').to.equal(1)
-
+            
 //     //         attesters[firstAttester].id = BigInt(await unirepContract.attesters(attesters[firstAttester]['addr']))
 //     //         console.log(`First attester signs up, attester id: ${attesters[firstAttester].id}`)
 //     //     })
@@ -258,7 +259,7 @@
 //     //         ]
 
 //     //         tx = await unirepContract.updateUserStateRoot(
-//     //             transitionProof,
+//     //             transitionProof, 
 //     //             proofIndexes,
 //     //         )
 //     //         receipt = await tx.wait()
@@ -277,7 +278,7 @@
 //     //         expect(isValidEvent?.event).equal("UserStateTransitionProof")
 //     //         const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
 //     //         validProofIndex[proofIndex.toNumber()] = true
-
+            
 //     //         const epkNullifiers = isValidEvent?.args?.userTransitionedData?.epkNullifiers
 //     //         const _newGlobalStateTreeLeaf = isValidEvent?.args?.userTransitionedData?.newGlobalStateTreeLeaf
 //     //         expect(newLeaf).equal(_newGlobalStateTreeLeaf)
@@ -347,7 +348,7 @@
 //     //             const args = event?.args
 //     //             const proofIndex = args?._proofIndex
 //     //             if (validProofIndex[proofIndex.toNumber()]) GSTreeLeafIndex ++
-
+                
 //     //             // New leaf events are from user sign up and user state transition
 //     //             // 1. check user sign up
 //     //             const signUpFilter = unirepContract.filters.UserSignUp(proofIndex)
@@ -436,9 +437,9 @@
 //     //             if(i < repNullifiersAmount){
 //     //                 if(!unirepState.nullifierExist(genReputationNullifier(users[secondUser].id.getNullifier(), currentEpoch.toNumber(), i, secondAttesterId)))
 //     //                     nonceList.push(BigInt(i))
-//     //             } else
+//     //             } else 
 //     //                 nonceList.push(BigInt(-1))
-
+                
 //     //         }
 //     //         const results = await users[secondUser].genProveReputationProof(secondAttesterId, epkNonce, minRep, proveGraffiti, graffitiPreImage, nonceList)
 //     //         const isValid = await verifyProof(Circuit.proveReputation, results.proof, results.publicSignals)
@@ -505,7 +506,7 @@
 //     //             repNullifiersArgs.proof,
 //     //         )
 //     //         expect(isProofValid, 'Verify reputation proof on-chain failed').to.be.true
-
+            
 //     //         for (let nullifier of repNullifiersArgs.repNullifiers) {
 //     //             unirepState.addReputationNullifiers(BigInt(nullifier))
 //     //         }
@@ -532,7 +533,7 @@
 //     //         const results = await users[firstUser].genVerifyEpochKeyProof(epochKeyNonce)
 //     //         const isValid = await verifyProof(Circuit.verifyEpochKey, results.proof, results.publicSignals)
 //     //         expect(isValid, 'Verify epk proof off-chain failed').to.be.true
-
+            
 //     //         // Verify on-chain
 //     //         const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
 //     //         const firstUserEpochKey = genEpochKey(users[firstUser].id.getNullifier(), currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
@@ -631,7 +632,7 @@
 //     //     it('Second attester attest to first user', async () => {
 //     //         const nonce = 0
 //     //         const firstUserEpochKey = genEpochKey(users[firstUser].id.getNullifier(), currentEpoch.toNumber(), nonce, circuitEpochTreeDepth)
-
+            
 //     //         const graffitiPreImage = genRandomSalt()
 //     //         const attestation: Attestation = new Attestation(
 //     //             attesters[secondAttester].id,
@@ -662,7 +663,7 @@
 //     //         const results = await users[secondUser].genVerifyEpochKeyProof(epochKeyNonce)
 //     //         const isValid = await verifyProof(Circuit.verifyEpochKey, results.proof, results.publicSignals)
 //     //         expect(isValid, 'Verify epk proof off-chain failed').to.be.true
-
+            
 //     //         // Verify on-chain
 //     //         const GSTree = unirepState.genGSTree(currentEpoch.toNumber())
 //     //         const secondUserEpochKey = genEpochKey(users[secondUser].id.getNullifier(), currentEpoch.toNumber(), epochKeyNonce, circuitEpochTreeDepth)
@@ -838,7 +839,7 @@
 //     //         const blindedHashChain = results.startTransitionProof.blindedHashChain
 //     //         // const GSTreeRoot = results.startTransitionProof.globalStateTreeRoot
 //     //         const proof = formatProofForVerifierContract(results.startTransitionProof.proof)
-
+    
 //     //         let tx = await unirepContract.startUserStateTransition(
 //     //             blindedUserState,
 //     //             blindedHashChain,
@@ -948,7 +949,7 @@
 //     //         expect(isValidEvent?.event).equal("UserStateTransitionProof")
 //     //         const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
 //     //         validProofIndex[proofIndex.toNumber()] = true
-
+            
 //     //         const epkNullifiers = isValidEvent?.args?.userTransitionedData?.epkNullifiers
 //     //         const _newGlobalStateTreeLeaf = isValidEvent?.args?.userTransitionedData?.newGlobalStateTreeLeaf
 //     //         expect(newLeaf).equal(_newGlobalStateTreeLeaf)

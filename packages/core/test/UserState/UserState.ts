@@ -1,25 +1,11 @@
-import { expect } from 'chai'
-import { Circuit, verifyProof } from '@unirep/circuits'
-import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
-import {
-    attestingFee,
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    computeInitUserStateRoot,
-    epochLength,
-    genEpochKey,
-    ISettings,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
-    Reputation,
-    UnirepState,
-    UserState,
-} from '../../src'
-import { genNewGST, genRandomAttestation } from '../utils'
+import { expect } from "chai"
+import { Circuit, verifyProof } from "@unirep/circuits"
+import { ZkIdentity, genRandomSalt, hashLeftRight } from "@unirep/crypto"
+import { attestingFee, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, computeInitUserStateRoot, epochLength, genEpochKey, ISettings, maxReputationBudget, numEpochKeyNoncePerEpoch, Reputation, UnirepState, UserState } from "../../src"
+import { genNewGST, genRandomAttestation } from "../utils"
 
 describe('User State', async function () {
-    this.timeout(0)
+    this.timeout(0);
 
     let unirepState: UnirepState
     let userState: UserState
@@ -34,7 +20,7 @@ describe('User State', async function () {
     }
     const user: ZkIdentity = new ZkIdentity()
     const epochKeys: string[] = []
-    const maxUsers = 2 ** setting.globalStateTreeDepth - 1
+    const maxUsers = (2 ** setting.globalStateTreeDepth) - 1
     const userNum = Math.ceil(Math.random() * maxUsers)
     let epoch = 1
     const signedUpAttesterId = Math.ceil(Math.random() * 10)
@@ -92,9 +78,10 @@ describe('User State', async function () {
                 const GSTLeaf = hashLeftRight(randomCommitment, USTRoot)
                 GSTree.insert(GSTLeaf)
                 const unirepGSTree = userState.getUnirepStateGSTree(epoch)
-                expect(GSTree.root, 'GST root mismatches').equal(
-                    unirepGSTree.root
-                )
+                expect(
+                    GSTree.root,
+                    'GST root mismatches'
+                ).equal(unirepGSTree.root)
                 rootHistories.push(GSTree.root)
             }
         })
@@ -108,6 +95,7 @@ describe('User State', async function () {
                 error = e
             }
             expect(error).not.to.be.undefined
+
         })
 
         it('sign up the user himself', async () => {
@@ -149,14 +137,20 @@ describe('User State', async function () {
             const GSTLeaf = hashLeftRight(user.genIdentityCommitment(), USTRoot)
             GSTree.insert(GSTLeaf)
             const unirepGSTree = userState.getUnirepStateGSTree(epoch)
-            expect(GSTree.root, 'GST root mismatches').equal(unirepGSTree.root)
+            expect(
+                GSTree.root,
+                'GST root mismatches'
+            ).equal(unirepGSTree.root)
             rootHistories.push(GSTree.root)
         })
 
         it('continue sign up other users', async () => {
-            for (let i = 0; i < maxUsers - userNum - 3; i++) {
+            for (let i = 0; i < (maxUsers - userNum) - 3; i++) {
                 const randomCommitment = genRandomSalt()
-                await userState.signUp(epoch, randomCommitment)
+                await userState.signUp(
+                    epoch,
+                    randomCommitment,
+                )
 
                 const userObj = JSON.parse(userState.toJSON())
                 expect(
@@ -182,14 +176,15 @@ describe('User State', async function () {
 
                 // GST should match
                 const USTRoot = await computeInitUserStateRoot(
-                    setting.userStateTreeDepth
+                    setting.userStateTreeDepth,
                 )
                 const GSTLeaf = hashLeftRight(randomCommitment, USTRoot)
                 GSTree.insert(GSTLeaf)
                 const unirepGSTree = userState.getUnirepStateGSTree(epoch)
-                expect(GSTree.root, 'GST root mismatches').equal(
-                    unirepGSTree.root
-                )
+                expect(
+                    GSTree.root,
+                    'GST root mismatches'
+                ).equal(unirepGSTree.root)
                 rootHistories.push(GSTree.root)
             }
         })
@@ -197,7 +192,10 @@ describe('User State', async function () {
         it('sign up twice should fail', async () => {
             let error
             try {
-                await userState.signUp(epoch, user.genIdentityCommitment())
+                await userState.signUp(
+                    epoch,
+                    user.genIdentityCommitment(),
+                )
             } catch (e) {
                 error = e
             }
@@ -208,7 +206,10 @@ describe('User State', async function () {
             const wrongEpoch = epoch + 1
             let error
             try {
-                await userState.signUp(wrongEpoch, genRandomSalt())
+                await userState.signUp(
+                    wrongEpoch,
+                    genRandomSalt(),
+                )
             } catch (e) {
                 error = e
             }
@@ -218,17 +219,13 @@ describe('User State', async function () {
         it('Query global state tree roots should success', async () => {
             for (let root of rootHistories) {
                 const exist = userState.GSTRootExists(root, epoch)
-                expect(
-                    exist,
-                    'Query global state tree root from User state failed'
-                ).to.be.true
+                expect(exist, 'Query global state tree root from User state failed').to.be.true
             }
         })
 
         it('Query global state tree roots with wrong input should success', async () => {
             const notExist = userState.GSTRootExists(genRandomSalt(), epoch)
-            expect(notExist, 'Query non-exist root from User state should fail')
-                .to.be.false
+            expect(notExist, 'Query non-exist root from User state should fail').to.be.false
 
             const invalidEpoch = epoch + 1
             for (let root of rootHistories) {
@@ -249,47 +246,33 @@ describe('User State', async function () {
             const epochKeyNum = Math.ceil(Math.random() * maxEpochKeyNum)
             for (let i = 0; i < epochKeyNum; i++) {
                 const maxAttestPerEpochKeyNum = 20
-                const attestNum = Math.ceil(
-                    Math.random() * maxAttestPerEpochKeyNum
-                )
+                const attestNum = Math.ceil(Math.random() * maxAttestPerEpochKeyNum)
 
-                const epochKey =
-                    BigInt(genRandomSalt().toString()) %
-                    BigInt(2 ** setting.epochLength)
+                const epochKey = BigInt(genRandomSalt().toString()) % BigInt(2 ** setting.epochLength)
                 epochKeys.push(epochKey.toString())
                 attestationsToEpochKey[epochKey.toString()] = []
 
                 for (let j = 0; j < attestNum; j++) {
                     const attestation = genRandomAttestation()
                     userState.addAttestation(epochKey.toString(), attestation)
-                    attestationsToEpochKey[epochKey.toString()].push(
-                        attestation.toJSON()
-                    )
+                    attestationsToEpochKey[epochKey.toString()].push(attestation.toJSON())
                 }
             }
         })
 
         it('add attestations to user himself', async () => {
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                const userEpk = genEpochKey(
-                    user.getNullifier(),
-                    epoch,
-                    i
-                ).toString()
+                const userEpk = genEpochKey(user.getNullifier(), epoch, i).toString()
                 epochKeys.push(userEpk.toString())
                 attestationsToEpochKey[userEpk.toString()] = []
 
                 const maxAttestPerEpochKeyNum = 10
-                const attestNum = Math.ceil(
-                    Math.random() * maxAttestPerEpochKeyNum
-                )
+                const attestNum = Math.ceil(Math.random() * maxAttestPerEpochKeyNum)
 
                 for (let j = 0; j < attestNum; j++) {
                     const attestation = genRandomAttestation()
                     userState.addAttestation(userEpk.toString(), attestation)
-                    attestationsToEpochKey[userEpk.toString()].push(
-                        attestation.toJSON()
-                    )
+                    attestationsToEpochKey[userEpk.toString()].push(attestation.toJSON())
                 }
             }
         })
@@ -308,25 +291,17 @@ describe('User State', async function () {
 
         it('Get attestations should success', async () => {
             for (let i = 0; i < epochKeys.length; i++) {
-                const unirepAttestations = userState.getAttestations(
-                    epochKeys[i]
-                )
+                const unirepAttestations = userState.getAttestations(epochKeys[i])
                 for (let j = 0; j < unirepAttestations.length; j++) {
-                    expect(
-                        unirepAttestations[j].toJSON(),
-                        'Query attestations from Unirep state failed'
-                    ).equal(attestationsToEpochKey[epochKeys[i]][j])
+                    expect(unirepAttestations[j].toJSON(), 'Query attestations from Unirep state failed')
+                        .equal(attestationsToEpochKey[epochKeys[i]][j])
                 }
             }
         })
 
         it('Get attestation with non exist epoch key should return an empty array', async () => {
-            const epochKey =
-                BigInt(genRandomSalt().toString()) %
-                BigInt(2 ** setting.epochLength)
-            const unirepAttestations = userState.getAttestations(
-                epochKey.toString()
-            )
+            const epochKey = BigInt(genRandomSalt().toString()) % BigInt(2 ** setting.epochLength)
+            const unirepAttestations = userState.getAttestations(epochKey.toString())
             expect(unirepAttestations.length).equal(0)
         })
 
@@ -368,19 +343,13 @@ describe('User State', async function () {
 
                 // query nullifier should succeed
                 const exist = userState.nullifierExist(nullifier)
-                expect(
-                    exist,
-                    'Query reputation nullifier from Unirep state failed'
-                ).to.be.true
+                expect(exist, 'Query reputation nullifier from Unirep state failed').to.be.true
             }
         })
 
         it('non exist nullifier should return false', async () => {
             const notExist = unirepState.nullifierExist(genRandomSalt())
-            expect(
-                notExist,
-                'Query non exist nullifier from Unirep state with wrong result'
-            ).to.be.false
+            expect(notExist, 'Query non exist nullifier from Unirep state with wrong result').to.be.false
         })
     })
 
@@ -388,11 +357,7 @@ describe('User State', async function () {
         it('generate epoch key proof should succeed', async () => {
             for (let i = 0; i < setting.numEpochKeyNoncePerEpoch; i++) {
                 const results = await userState.genVerifyEpochKeyProof(i)
-                const expectedEpk = genEpochKey(
-                    user.getNullifier(),
-                    epoch,
-                    i
-                ).toString()
+                const expectedEpk = genEpochKey(user.getNullifier(), epoch, i).toString()
                 const isValid = await verifyProof(
                     Circuit.verifyEpochKey,
                     results.proof,
@@ -421,10 +386,7 @@ describe('User State', async function () {
 
         it('non signed up user should not generate epoch key proof', async () => {
             let error
-            const invalidUserState = new UserState(
-                unirepState,
-                new ZkIdentity()
-            )
+            const invalidUserState = new UserState(unirepState, new ZkIdentity())
             const epkNonce = 0
             try {
                 await invalidUserState.genVerifyEpochKeyProof(epkNonce)
@@ -435,20 +397,14 @@ describe('User State', async function () {
         })
 
         it('generate reputation proof should succeed', async () => {
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
+            const epkNonce = Math.floor(Math.random() * setting.numEpochKeyNoncePerEpoch)
             const proveMinRep = Math.floor(Math.random() * signedUpAirdrop)
             const results = await userState.genProveReputationProof(
                 BigInt(signedUpAttesterId),
                 epkNonce,
-                proveMinRep
+                proveMinRep,
             )
-            const expectedEpk = genEpochKey(
-                user.getNullifier(),
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = genEpochKey(user.getNullifier(), epoch, epkNonce).toString()
             const isValid = await verifyProof(
                 Circuit.proveReputation,
                 results.proof,
@@ -465,14 +421,14 @@ describe('User State', async function () {
         })
 
         it('generate reputation proof with nullifiers nonces should succeed', async () => {
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
+            const epkNonce = Math.floor(Math.random() * setting.numEpochKeyNoncePerEpoch)
             const proveNullifiers = Math.floor(Math.random() * signedUpAirdrop)
             const nonceList: BigInt[] = []
             for (let i = 0; i < setting.maxReputationBudget; i++) {
-                if (i < proveNullifiers) nonceList.push(BigInt(i))
-                else nonceList.push(BigInt(-1))
+                if (i < proveNullifiers)
+                    nonceList.push(BigInt(i))
+                else
+                    nonceList.push(BigInt(-1))
             }
             const results = await userState.genProveReputationProof(
                 BigInt(signedUpAttesterId),
@@ -482,11 +438,7 @@ describe('User State', async function () {
                 undefined,
                 nonceList
             )
-            const expectedEpk = genEpochKey(
-                user.getNullifier(),
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = genEpochKey(user.getNullifier(), epoch, epkNonce).toString()
             const isValid = await verifyProof(
                 Circuit.proveReputation,
                 results.proof,
@@ -503,14 +455,12 @@ describe('User State', async function () {
         })
 
         it('generate reputation proof with invalid min rep should fail', async () => {
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
+            const epkNonce = Math.floor(Math.random() * setting.numEpochKeyNoncePerEpoch)
             const proveMinRep = signedUpAirdrop + 1
             const results = await userState.genProveReputationProof(
                 BigInt(signedUpAttesterId),
                 epkNonce,
-                proveMinRep
+                proveMinRep,
             )
             const isValid = await verifyProof(
                 Circuit.proveReputation,
@@ -521,15 +471,13 @@ describe('User State', async function () {
         })
 
         it('generate reputation proof with not exist attester ID should fail', async () => {
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
+            const epkNonce = Math.floor(Math.random() * setting.numEpochKeyNoncePerEpoch)
             const nonSignUpAttesterId = signedUpAttesterId + 1
             const proveMinRep = 1
             const results = await userState.genProveReputationProof(
                 BigInt(nonSignUpAttesterId),
                 epkNonce,
-                proveMinRep
+                proveMinRep,
             )
             const isValid = await verifyProof(
                 Circuit.proveReputation,
@@ -540,16 +488,11 @@ describe('User State', async function () {
         })
 
         it('non signed up user should not generate reputation proof', async () => {
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
+            const epkNonce = Math.floor(Math.random() * setting.numEpochKeyNoncePerEpoch)
             const proveMinRep = Math.floor(Math.random() * signedUpAirdrop)
 
             let error
-            const invalidUserState = new UserState(
-                unirepState,
-                new ZkIdentity()
-            )
+            const invalidUserState = new UserState(unirepState, new ZkIdentity())
             try {
                 await invalidUserState.genProveReputationProof(
                     BigInt(signedUpAttesterId),
@@ -564,14 +507,8 @@ describe('User State', async function () {
 
         it('generate sign up proof should succeed', async () => {
             const epkNonce = 0
-            const results = await userState.genUserSignUpProof(
-                BigInt(signedUpAttesterId)
-            )
-            const expectedEpk = genEpochKey(
-                user.getNullifier(),
-                epoch,
-                epkNonce
-            ).toString()
+            const results = await userState.genUserSignUpProof(BigInt(signedUpAttesterId))
+            const expectedEpk = genEpochKey(user.getNullifier(), epoch, epkNonce).toString()
             const isValid = await verifyProof(
                 Circuit.proveUserSignUp,
                 results.proof,
@@ -590,14 +527,8 @@ describe('User State', async function () {
         it('generate sign up proof with other attester ID should succeed', async () => {
             const epkNonce = 0
             const nonSignUpAttesterId = signedUpAttesterId + 1
-            const results = await userState.genUserSignUpProof(
-                BigInt(nonSignUpAttesterId)
-            )
-            const expectedEpk = genEpochKey(
-                user.getNullifier(),
-                epoch,
-                epkNonce
-            ).toString()
+            const results = await userState.genUserSignUpProof(BigInt(nonSignUpAttesterId))
+            const expectedEpk = genEpochKey(user.getNullifier(), epoch, epkNonce).toString()
             const isValid = await verifyProof(
                 Circuit.proveUserSignUp,
                 results.proof,
@@ -615,10 +546,7 @@ describe('User State', async function () {
 
         it('non signed up user should not generate user sign up proof', async () => {
             let error
-            const invalidUserState = new UserState(
-                unirepState,
-                new ZkIdentity()
-            )
+            const invalidUserState = new UserState(unirepState, new ZkIdentity())
             try {
                 await invalidUserState.genUserSignUpProof(
                     BigInt(signedUpAttesterId)
@@ -639,10 +567,7 @@ describe('User State', async function () {
 
         it('epoch transition', async () => {
             await userState.epochTransition(epoch)
-            expect(
-                userState.getUnirepStateCurrentEpoch(),
-                'Unirep epoch should increase by 1'
-            ).equal(epoch + 1)
+            expect(userState.getUnirepStateCurrentEpoch(), 'Unirep epoch should increase by 1').equal(epoch + 1)
             epoch = userState.getUnirepStateCurrentEpoch()
 
             // sealed epoch key should not add attestations
@@ -688,11 +613,7 @@ describe('User State', async function () {
                 for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
                     epkNullifiers.push(genRandomSalt())
                 }
-                await userState.userStateTransition(
-                    fromEpoch,
-                    newGSTLeaf,
-                    epkNullifiers
-                )
+                await userState.userStateTransition(fromEpoch, newGSTLeaf, epkNullifiers)
 
                 const userObj = JSON.parse(userState.toJSON())
                 expect(
@@ -710,9 +631,10 @@ describe('User State', async function () {
 
                 GSTree.insert(newGSTLeaf)
                 const unirepGSTree = userState.getUnirepStateGSTree(epoch)
-                expect(GSTree.root, 'GST root mismatches').equal(
-                    unirepGSTree.root
-                )
+                expect(
+                    GSTree.root,
+                    'GST root mismatches'
+                ).equal(unirepGSTree.root)
                 rootHistories.push(GSTree.root)
             }
         })
@@ -721,7 +643,7 @@ describe('User State', async function () {
             const {
                 startTransitionProof,
                 processAttestationProofs,
-                finalTransitionProof,
+                finalTransitionProof
             } = await userState.genUserStateTransitionProofs()
 
             const isStartProofValid = await verifyProof(
@@ -739,7 +661,7 @@ describe('User State', async function () {
                 const isProcessAttestationValid = await verifyProof(
                     Circuit.processAttestations,
                     processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
+                    processAttestationProofs[i].publicSignals,
                 )
                 expect(isProcessAttestationValid).to.be.true
             }
@@ -750,41 +672,27 @@ describe('User State', async function () {
                 finalTransitionProof.publicSignals
             )
             expect(isUSTProofValid).to.be.true
-            expect(finalTransitionProof.fromGSTRoot).equal(
-                startTransitionProof.globalStateTreeRoot
-            )
+            expect(finalTransitionProof.fromGSTRoot)
+                .equal(startTransitionProof.globalStateTreeRoot)
 
             // epoch tree
             const fromEpochTree = finalTransitionProof.fromEpochTree
-            const epochTreeExist = await userState.epochTreeRootExists(
-                fromEpochTree,
-                fromEpoch
-            )
+            const epochTreeExist = await userState.epochTreeRootExists(fromEpochTree, fromEpoch)
             expect(epochTreeExist).to.be.true
 
-            const unirepEpochTree = await userState.getUnirepStateEpochTree(
-                fromEpoch
-            )
-            expect(unirepEpochTree.getRootHash().toString()).equal(
-                fromEpochTree
-            )
+            const unirepEpochTree = await userState.getUnirepStateEpochTree(fromEpoch)
+            expect(unirepEpochTree.getRootHash().toString())
+                .equal(fromEpochTree)
 
             // epoch key nullifiers
             const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
             for (let nullifier of epkNullifiers) {
-                expect(
-                    finalTransitionProof.epochKeyNullifiers.indexOf(
-                        nullifier.toString()
-                    )
-                ).not.equal(-1)
+                expect(finalTransitionProof.epochKeyNullifiers.indexOf(nullifier.toString()))
+                    .not.equal(-1)
             }
 
             const GSTLeaf = BigInt(finalTransitionProof.newGlobalStateTreeLeaf)
-            await userState.userStateTransition(
-                fromEpoch,
-                GSTLeaf,
-                epkNullifiers
-            )
+            await userState.userStateTransition(fromEpoch, GSTLeaf, epkNullifiers)
             const userObj = JSON.parse(userState.toJSON())
             expect(
                 Number(userObj.latestTransitionedEpoch),
@@ -797,9 +705,9 @@ describe('User State', async function () {
                 user.genIdentityCommitment(),
                 USTree_.getRootHash()
             )
-            expect(GSTLeaf_.toString()).equal(
-                finalTransitionProof.newGlobalStateTreeLeaf
-            )
+            expect(
+                GSTLeaf_.toString()
+            ).equal(finalTransitionProof.newGlobalStateTreeLeaf)
 
             GSTree.insert(GSTLeaf_)
             const unirepGSTree = userState.getUnirepStateGSTree(epoch)
@@ -814,35 +722,26 @@ describe('User State', async function () {
                 BigInt(signedUpAirdrop),
                 BigInt(0),
                 BigInt(0),
-                BigInt(1)
+                BigInt(1),
             )
             for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-                const userEpk = genEpochKey(
-                    user.getNullifier(),
-                    prevEpoch,
-                    i
-                ).toString()
+                const userEpk = genEpochKey(user.getNullifier(), prevEpoch, i).toString()
                 const attestations = attestationsToEpochKey[userEpk.toString()]
                 for (const attestation of attestations) {
-                    const attesterId_ = BigInt(
-                        JSON.parse(attestation).attesterId
-                    )
-                    if (
-                        reputationRecord[attesterId_.toString()] === undefined
-                    ) {
-                        reputationRecord[attesterId_.toString()] =
-                            new Reputation(
-                                BigInt(JSON.parse(attestation).posRep),
-                                BigInt(JSON.parse(attestation).negRep),
-                                BigInt(JSON.parse(attestation).graffiti),
-                                BigInt(JSON.parse(attestation).signUp)
-                            )
+                    const attesterId_ = BigInt(JSON.parse(attestation).attesterId)
+                    if (reputationRecord[attesterId_.toString()] === undefined) {
+                        reputationRecord[attesterId_.toString()] = new Reputation(
+                            BigInt(JSON.parse(attestation).posRep),
+                            BigInt(JSON.parse(attestation).negRep),
+                            BigInt(JSON.parse(attestation).graffiti),
+                            BigInt(JSON.parse(attestation).signUp),
+                        )
                     } else {
                         reputationRecord[attesterId_.toString()].update(
                             BigInt(JSON.parse(attestation).posRep),
                             BigInt(JSON.parse(attestation).negRep),
                             BigInt(JSON.parse(attestation).graffiti),
-                            BigInt(JSON.parse(attestation).signUp)
+                            BigInt(JSON.parse(attestation).signUp),
                         )
                     }
                 }
@@ -850,23 +749,23 @@ describe('User State', async function () {
 
             for (const attester in reputationRecord) {
                 const rep_ = userState.getRepByAttester(BigInt(attester))
-                expect(reputationRecord[attester].toJSON()).equal(rep_.toJSON())
+                expect(
+                    reputationRecord[attester].toJSON()
+                ).equal(
+                    rep_.toJSON()
+                )
             }
         })
 
         it('continue transition other users state should success', async () => {
-            for (let i = 0; i < maxUsers - userNum - 3; i++) {
+            for (let i = 0; i < (maxUsers - userNum) - 3; i++) {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
                 const epkNullifiers: BigInt[] = []
                 for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
                     epkNullifiers.push(genRandomSalt())
                 }
-                await userState.userStateTransition(
-                    fromEpoch,
-                    newGSTLeaf,
-                    epkNullifiers
-                )
+                await userState.userStateTransition(fromEpoch, newGSTLeaf, epkNullifiers)
 
                 const userObj = JSON.parse(userState.toJSON())
 
@@ -887,9 +786,10 @@ describe('User State', async function () {
 
                 GSTree.insert(newGSTLeaf)
                 const unirepGSTree = userState.getUnirepStateGSTree(epoch)
-                expect(GSTree.root, 'GST root mismatches').equal(
-                    unirepGSTree.root
-                )
+                expect(
+                    GSTree.root,
+                    'GST root mismatches'
+                ).equal(unirepGSTree.root)
                 rootHistories.push(GSTree.root)
             }
         })
@@ -899,11 +799,7 @@ describe('User State', async function () {
         it('generate epoch key proof should succeed', async () => {
             for (let i = 0; i < setting.numEpochKeyNoncePerEpoch; i++) {
                 const results = await userState.genVerifyEpochKeyProof(i)
-                const expectedEpk = genEpochKey(
-                    user.getNullifier(),
-                    epoch,
-                    i
-                ).toString()
+                const expectedEpk = genEpochKey(user.getNullifier(), epoch, i).toString()
                 const isValid = await verifyProof(
                     Circuit.verifyEpochKey,
                     results.proof,
@@ -932,10 +828,7 @@ describe('User State', async function () {
 
         it('non signed up user should not generate epoch key proof', async () => {
             let error
-            const invalidUserState = new UserState(
-                unirepState,
-                new ZkIdentity()
-            )
+            const invalidUserState = new UserState(unirepState, new ZkIdentity())
             const epkNonce = 0
             try {
                 await invalidUserState.genVerifyEpochKeyProof(epkNonce)
@@ -946,12 +839,10 @@ describe('User State', async function () {
         })
 
         it('generate reputation proof should succeed', async () => {
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
+            const epkNonce = Math.floor(Math.random() * setting.numEpochKeyNoncePerEpoch)
             const rep = userState.getRepByAttester(BigInt(signedUpAttesterId))
             let proveMinRep
-            if (Number(rep.posRep) - Number(rep.negRep) > 0) {
+            if ((Number(rep.posRep) - Number(rep.negRep)) > 0) {
                 proveMinRep = Number(rep.posRep) - Number(rep.negRep)
             } else {
                 proveMinRep = 0
@@ -959,18 +850,10 @@ describe('User State', async function () {
             const results = await userState.genProveReputationProof(
                 BigInt(signedUpAttesterId),
                 epkNonce,
-                proveMinRep
+                proveMinRep,
             )
-            const expectedEpk = genEpochKey(
-                user.getNullifier(),
-                epoch,
-                epkNonce
-            ).toString()
-            const isValid = await verifyProof(
-                Circuit.proveReputation,
-                results.proof,
-                results.publicSignals
-            )
+            const expectedEpk = genEpochKey(user.getNullifier(), epoch, epkNonce).toString()
+            const isValid = await verifyProof(Circuit.proveReputation, results.proof, results.publicSignals)
 
             expect(isValid).to.be.true
             expect(results.epochKey).equal(expectedEpk)
@@ -983,19 +866,9 @@ describe('User State', async function () {
 
         it('generate sign up proof should succeed', async () => {
             const epkNonce = 0
-            const results = await userState.genUserSignUpProof(
-                BigInt(signedUpAttesterId)
-            )
-            const expectedEpk = genEpochKey(
-                user.getNullifier(),
-                epoch,
-                epkNonce
-            ).toString()
-            const isValid = await verifyProof(
-                Circuit.proveUserSignUp,
-                results.proof,
-                results.publicSignals
-            )
+            const results = await userState.genUserSignUpProof(BigInt(signedUpAttesterId))
+            const expectedEpk = genEpochKey(user.getNullifier(), epoch, epkNonce).toString()
+            const isValid = await verifyProof(Circuit.proveUserSignUp, results.proof, results.publicSignals)
 
             expect(isValid).to.be.true
             expect(results.epochKey).equal(expectedEpk)

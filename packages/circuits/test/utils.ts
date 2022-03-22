@@ -4,22 +4,10 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 const circom = require('circom')
-import Keyv from 'keyv'
+import Keyv from "keyv"
 import * as crypto from '@unirep/crypto'
-import {
-    Circuit,
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    maxReputationBudget,
-    numAttestationsPerProof,
-    numEpochKeyNoncePerEpoch,
-} from '../config'
-import {
-    executeCircuit,
-    genProofAndPublicSignals,
-    verifyProof,
-} from '../circuits/utils'
+import { Circuit, circuitEpochTreeDepth, circuitGlobalStateTreeDepth, circuitUserStateTreeDepth, maxReputationBudget, numAttestationsPerProof, numEpochKeyNoncePerEpoch, } from '../config'
+import { executeCircuit, genProofAndPublicSignals, verifyProof } from '../circuits/utils'
 import { expect } from 'chai'
 import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
 
@@ -29,12 +17,12 @@ const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
 const GSTZERO_VALUE = 0
 
 interface IAttestation {
-    attesterId: BigInt
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
-    signUp: BigInt
-    hash(): BigInt
+    attesterId: BigInt;
+    posRep: BigInt;
+    negRep: BigInt;
+    graffiti: BigInt;
+    signUp: BigInt;
+    hash(): BigInt;
 }
 
 class Attestation implements IAttestation {
@@ -49,7 +37,7 @@ class Attestation implements IAttestation {
         _posRep: BigInt,
         _negRep: BigInt,
         _graffiti: BigInt,
-        _signUp: BigInt
+        _signUp: BigInt,
     ) {
         this.attesterId = _attesterId
         this.posRep = _posRep
@@ -84,9 +72,9 @@ class Attestation implements IAttestation {
 }
 
 interface IReputation {
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
+    posRep: BigInt;
+    negRep: BigInt;
+    graffiti: BigInt;
 }
 
 class Reputation implements IReputation {
@@ -100,7 +88,7 @@ class Reputation implements IReputation {
         _posRep: BigInt,
         _negRep: BigInt,
         _graffiti: BigInt,
-        _signUp: BigInt
+        _signUp: BigInt,
     ) {
         this.posRep = _posRep
         this.negRep = _negRep
@@ -116,7 +104,7 @@ class Reputation implements IReputation {
         _posRep: BigInt,
         _negRep: BigInt,
         _graffiti: BigInt,
-        _signUp: BigInt
+        _signUp: BigInt,
     ): Reputation => {
         this.posRep = BigInt(Number(this.posRep) + Number(_posRep))
         this.negRep = BigInt(Number(this.negRep) + Number(_negRep))
@@ -128,10 +116,7 @@ class Reputation implements IReputation {
     }
 
     public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
-        assert(
-            crypto.hashOne(_graffitiPreImage) === this.graffiti,
-            'Graffiti pre-image does not match'
-        )
+        assert(crypto.hashOne(_graffitiPreImage) === this.graffiti, 'Graffiti pre-image does not match')
         this.graffitiPreImage = _graffitiPreImage
     }
 
@@ -152,7 +137,7 @@ class Reputation implements IReputation {
                 negRep: this.negRep.toString(),
                 graffiti: this.graffiti.toString(),
                 graffitiPreImage: this.graffitiPreImage.toString(),
-                signUp: this.signUp.toString(),
+                signUp: this.signUp.toString()
             },
             null,
             space
@@ -167,33 +152,37 @@ const toCompleteHexString = (str: string, len?: number): string => {
 }
 
 const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt) => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+    return SparseMerkleTree.create(
+        new Keyv(),
+        treeDepth,
+        defaultLeafHash,
+    )
 }
 
-const genNewEpochTree = async (
-    _epochTreeDepth: number = circuitEpochTreeDepth
-) => {
+const genNewEpochTree = async (_epochTreeDepth: number = circuitEpochTreeDepth) => {
     const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
+    return genNewSMT(
+        _epochTreeDepth,
+        defaultOTSMTHash
+    )
 }
 
-const defaultUserStateLeaf = crypto.hash5([
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-])
+const defaultUserStateLeaf = crypto.hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
+    const t = new IncrementalMerkleTree(
+        treeDepth,
+        defaultUserStateLeaf,
+        2,
+    )
     return t.root
 }
 
-const genNewUserStateTree = async (
-    _userStateTreeDepth: number = circuitUserStateTreeDepth
-) => {
-    return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
+const genNewUserStateTree = async (_userStateTreeDepth: number = circuitUserStateTreeDepth) => {
+    return genNewSMT(
+        _userStateTreeDepth,
+        defaultUserStateLeaf
+    )
 }
 
 const genEpochKey = (
@@ -260,7 +249,7 @@ const genStartTransitionCircuitInput = (
         identity_trapdoor: id.getTrapdoor(),
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        GST_root: root,
+        GST_root: root
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -271,9 +260,7 @@ const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
     let reputationRecords = {}
     // Bootstrap user state for the first `expectedNumAttestationsMade` attesters
     for (let i = 1; i < expectedNumAttestationsMade; i++) {
-        const attesterId = BigInt(
-            Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))
-        )
+        const attesterId = BigInt(Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1)))
         if (reputationRecords[attesterId.toString()] === undefined) {
             const signUp = Math.floor(Math.random() * 2)
             reputationRecords[attesterId.toString()] = new Reputation(
@@ -283,10 +270,7 @@ const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
                 BigInt(signUp)
             )
         }
-        await userStateTree.update(
-            BigInt(attesterId),
-            reputationRecords[attesterId.toString()].hash()
-        )
+        await userStateTree.update(BigInt(attesterId), reputationRecords[attesterId.toString()].hash())
     }
     return userStateTree
 }
@@ -311,10 +295,7 @@ const genProcessAttestationsCircuitInput = async (
     const graffities: BigInt[] = []
     const signUps: BigInt[] = []
     let selectors: number[] = []
-    const hashChainStarter =
-        _hashChainStarter === undefined
-            ? crypto.genRandomSalt()
-            : _hashChainStarter
+    const hashChainStarter = _hashChainStarter === undefined ? crypto.genRandomSalt() : _hashChainStarter
     const intermediateUserStateTreeRoots: BigInt[] = []
     const userStateTreePathElements: BigInt[][] = []
 
@@ -324,9 +305,7 @@ const genProcessAttestationsCircuitInput = async (
     // Bootstrap user state
     for (let i = 0; i < numAttestationsPerProof; i++) {
         // attester ID cannot be 0
-        const attesterId = BigInt(
-            Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))
-        )
+        const attesterId = BigInt(Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1)))
         if (reputationRecords[attesterId.toString()] === undefined) {
             const signUp = Math.floor(Math.random() * 2)
             reputationRecords[attesterId.toString()] = new Reputation(
@@ -336,10 +315,7 @@ const genProcessAttestationsCircuitInput = async (
                 BigInt(signUp)
             )
         }
-        await userStateTree.update(
-            attesterId,
-            reputationRecords[attesterId.toString()].hash()
-        )
+        await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
     }
     intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
 
@@ -357,16 +333,14 @@ const genProcessAttestationsCircuitInput = async (
         let attestation: Attestation
         if (_attestations === undefined) {
             // attester ID cannot be 0
-            attesterId = BigInt(
-                Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1))
-            )
+            attesterId = BigInt(Math.ceil(Math.random() * (2 ** circuitUserStateTreeDepth - 1)))
             const signUp = Math.floor(Math.random() * 2)
             attestation = new Attestation(
                 attesterId,
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(0),
-                BigInt(signUp)
+                BigInt(signUp),
             )
         } else {
             attesterId = _attestations[i].attesterId
@@ -386,15 +360,11 @@ const genProcessAttestationsCircuitInput = async (
         if (selectors[i] == 1) {
             oldPosReps.push(reputationRecords[attesterId.toString()]['posRep'])
             oldNegReps.push(reputationRecords[attesterId.toString()]['negRep'])
-            oldGraffities.push(
-                reputationRecords[attesterId.toString()]['graffiti']
-            )
+            oldGraffities.push(reputationRecords[attesterId.toString()]['graffiti'])
             oldSignUps.push(reputationRecords[attesterId.toString()]['signUp'])
 
             // Get old reputation record proof
-            const oldReputationRecordProof = await userStateTree.getMerkleProof(
-                attesterId
-            )
+            const oldReputationRecordProof = await userStateTree.getMerkleProof(attesterId)
             userStateTreePathElements.push(oldReputationRecordProof)
 
             // Update reputation record
@@ -405,36 +375,23 @@ const genProcessAttestationsCircuitInput = async (
                 attestation['signUp']
             )
 
-            await userStateTree.update(
-                attesterId,
-                reputationRecords[attesterId.toString()].hash()
-            )
+            await userStateTree.update(attesterId, reputationRecords[attesterId.toString()].hash())
 
             const attestation_hash = attestation.hash()
-            hashChainResult = crypto.hashLeftRight(
-                attestation_hash,
-                hashChainResult
-            )
+            hashChainResult = crypto.hashLeftRight(attestation_hash, hashChainResult)
         } else {
             oldPosReps.push(BigInt(0))
             oldNegReps.push(BigInt(0))
             oldGraffities.push(BigInt(0))
             oldSignUps.push(BigInt(0))
 
-            const leafZeroPathElements = await userStateTree.getMerkleProof(
-                BigInt(0)
-            )
+            const leafZeroPathElements = await userStateTree.getMerkleProof(BigInt(0))
             userStateTreePathElements.push(leafZeroPathElements)
         }
 
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
     }
-    const inputBlindedUserState = crypto.hash5([
-        id.getNullifier(),
-        intermediateUserStateTreeRoots[0],
-        epoch,
-        fromNonce,
-    ])
+    const inputBlindedUserState = crypto.hash5([id.getNullifier(), intermediateUserStateTreeRoots[0], epoch, fromNonce])
 
     const circuitInputs = {
         epoch: epoch,
@@ -459,7 +416,7 @@ const genProcessAttestationsCircuitInput = async (
     }
     return {
         circuitInputs: crypto.stringifyBigInts(circuitInputs),
-        hashChainResult: hashChainResult,
+        hashChainResult: hashChainResult
     }
 }
 
@@ -468,12 +425,8 @@ const genUserStateTransitionCircuitInput = async (
     epoch: number
 ) => {
     // config
-    const startEpochKeyNonce = Math.floor(
-        Math.random() * numEpochKeyNoncePerEpoch
-    )
-    const endEpochKeyNonce =
-        (startEpochKeyNonce + numEpochKeyNoncePerEpoch - 1) %
-        numEpochKeyNoncePerEpoch
+    const startEpochKeyNonce = Math.floor(Math.random() * numEpochKeyNoncePerEpoch)
+    const endEpochKeyNonce = (startEpochKeyNonce + numEpochKeyNoncePerEpoch - 1) % numEpochKeyNoncePerEpoch
 
     // Epoch tree
     const epochTree = await genNewEpochTree()
@@ -486,26 +439,17 @@ const genUserStateTransitionCircuitInput = async (
     const epochTreePathElements: BigInt[][] = []
 
     intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
-    blindedUserState.push(
-        crypto.hash5([
-            id.getNullifier(),
-            userStateTree.getRootHash(),
-            BigInt(epoch),
-            BigInt(startEpochKeyNonce),
-        ])
-    )
+    blindedUserState.push(crypto.hash5([
+        id.getNullifier(),
+        userStateTree.getRootHash(),
+        BigInt(epoch),
+        BigInt(startEpochKeyNonce)
+    ]))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        circuitGlobalStateTreeDepth,
-        GSTZERO_VALUE,
-        2
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(circuitGlobalStateTreeDepth, GSTZERO_VALUE, 2)
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = crypto.hashLeftRight(
-        commitment,
-        userStateTree.getRootHash()
-    )
+    const hashedLeaf = crypto.hashLeftRight(commitment, userStateTree.getRootHash())
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0)
     const GSTreeRoot = GSTree.root
@@ -515,30 +459,20 @@ const genUserStateTransitionCircuitInput = async (
     for (let nonce = 0; nonce < numEpochKeyNoncePerEpoch; nonce++) {
         // Each epoch key has `ATTESTATIONS_PER_EPOCH_KEY` of attestations so
         // interval between starting index of each epoch key is `ATTESTATIONS_PER_EPOCH_KEY`.
-        const epochKey = genEpochKey(
-            id.getNullifier(),
-            epoch,
-            nonce,
-            circuitEpochTreeDepth
-        )
+        const epochKey = genEpochKey(id.getNullifier(), epoch, nonce, circuitEpochTreeDepth)
         const hashChainResult = crypto.genRandomSalt()
 
         // Blinded hash chain result
         hashChainResults.push(hashChainResult)
-        blindedHashChain.push(
-            crypto.hash5([
-                id.getNullifier(),
-                hashChainResult,
-                BigInt(epoch),
-                BigInt(nonce),
-            ])
-        )
+        blindedHashChain.push(crypto.hash5([
+            id.getNullifier(),
+            hashChainResult,
+            BigInt(epoch),
+            BigInt(nonce)
+        ]))
 
         // Seal hash chain of this epoch key
-        const sealedHashChainResult = crypto.hashLeftRight(
-            BigInt(1),
-            hashChainResult
-        )
+        const sealedHashChainResult = crypto.hashLeftRight(BigInt(1), hashChainResult)
 
         // Update epoch tree
         await epochTree.update(epochKey, sealedHashChainResult)
@@ -546,22 +480,15 @@ const genUserStateTransitionCircuitInput = async (
 
     const intermediateUserStateTreeRoot = crypto.genRandomSalt()
     intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
-    blindedUserState.push(
-        crypto.hash5([
-            id.getNullifier(),
-            intermediateUserStateTreeRoot,
-            BigInt(epoch),
-            BigInt(endEpochKeyNonce),
-        ])
-    )
+    blindedUserState.push(crypto.hash5([
+        id.getNullifier(),
+        intermediateUserStateTreeRoot,
+        BigInt(epoch),
+        BigInt(endEpochKeyNonce)
+    ]))
 
     for (let nonce = 0; nonce < numEpochKeyNoncePerEpoch; nonce++) {
-        const epochKey = genEpochKey(
-            id.getNullifier(),
-            epoch,
-            nonce,
-            circuitEpochTreeDepth
-        )
+        const epochKey = genEpochKey(id.getNullifier(), epoch, nonce, circuitEpochTreeDepth)
         // Get epoch tree root and merkle proof for this epoch key
         epochTreePathElements.push(await epochTree.getMerkleProof(epochKey))
     }
@@ -581,7 +508,7 @@ const genUserStateTransitionCircuitInput = async (
         epk_path_elements: epochTreePathElements,
         hash_chain_results: hashChainResults,
         blinded_hash_chain_results: blindedHashChain,
-        epoch_tree_root: epochTreeRoot,
+        epoch_tree_root: epochTreeRoot
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -598,25 +525,18 @@ const genReputationCircuitInput = async (
     _graffitiPreImage?
 ) => {
     const epk = genEpochKey(id.getNullifier(), epoch, nonce)
-    const repNullifiersAmount =
-        _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
+    const repNullifiersAmount = _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
     const minRep = _minRep === undefined ? 0 : _minRep
     const proveGraffiti = _proveGraffiti === undefined ? 0 : _proveGraffiti
-    const graffitiPreImage =
-        _graffitiPreImage === undefined ? 0 : _graffitiPreImage
+    const graffitiPreImage = _graffitiPreImage === undefined ? 0 : _graffitiPreImage
 
     // User state tree
     const userStateTree = await genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
-        await userStateTree.update(
-            BigInt(attester),
-            reputationRecords[attester].hash()
-        )
+        await userStateTree.update(BigInt(attester), reputationRecords[attester].hash())
     }
     const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
@@ -636,7 +556,7 @@ const genReputationCircuitInput = async (
     const nonceList: BigInt[] = []
     for (let i = 0; i < repNullifiersAmount; i++) {
         nonceList.push(BigInt(nonceStarter + i))
-        selectors.push(BigInt(1))
+        selectors.push(BigInt(1));
     }
     for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
         nonceList.push(BigInt(0))
@@ -665,7 +585,7 @@ const genReputationCircuitInput = async (
         rep_nonce: nonceList,
         min_rep: minRep,
         prove_graffiti: proveGraffiti,
-        graffiti_pre_image: graffitiPreImage,
+        graffiti_pre_image: graffitiPreImage
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -683,15 +603,10 @@ const genProveSignUpCircuitInput = async (
     // User state tree
     const userStateTree = await genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
-        await userStateTree.update(
-            BigInt(attester),
-            reputationRecords[attester].hash()
-        )
+        await userStateTree.update(BigInt(attester), reputationRecords[attester].hash())
     }
     const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.getMerkleProof(BigInt(attesterId))
 
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
@@ -725,18 +640,14 @@ const genProveSignUpCircuitInput = async (
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
+const genProofAndVerify = async (
+    circuit: Circuit,
+    circuitInputs
+) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
-        circuit,
-        circuitInputs
-    )
+    const { proof, publicSignals } = await genProofAndPublicSignals(circuit, circuitInputs)
     const endTime = new Date().getTime()
-    console.log(
-        `Gen Proof time: ${endTime - startTime} ms (${Math.floor(
-            (endTime - startTime) / 1000
-        )} s)`
-    )
+    console.log(`Gen Proof time: ${endTime - startTime} ms (${Math.floor((endTime - startTime) / 1000)} s)`)
     const isValid = await verifyProof(circuit, proof, publicSignals)
     return isValid
 }
@@ -751,7 +662,7 @@ const genEpochKeyNullifier = (
         identityNullifier,
         BigInt(epoch),
         BigInt(nonce),
-        BigInt(0),
+        BigInt(0)
     ])
 }
 
@@ -759,7 +670,9 @@ const genEpochKeyNullifier = (
  * @param circuitPath The subpath to the circuit file (e.g.
  *     test/userStateTransition_test.circom)
  */
-const compileAndLoadCircuit = async (circuitPath: string) => {
+const compileAndLoadCircuit = async (
+    circuitPath: string
+) => {
     const circuit = await circom.tester(circuitPath)
 
     await circuit.loadSymbols()
@@ -767,11 +680,7 @@ const compileAndLoadCircuit = async (circuitPath: string) => {
     return circuit
 }
 
-const throwError = async (
-    circuit: any,
-    circuitInputs: any,
-    errorMsg: string
-) => {
+const throwError = async (circuit: any, circuitInputs: any, errorMsg: string) => {
     let error
     try {
         await executeCircuit(circuit, circuitInputs)
