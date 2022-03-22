@@ -1,11 +1,15 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
-import { expect } from "chai"
-import { genIdentity } from "@unirep/crypto"
-import { Circuit } from "@unirep/circuits"
-import { genInputForContract,genProcessAttestationsCircuitInput, getTreeDepthsForTesting } from './utils'
-import { numAttestationsPerProof } from "../config"
+import { expect } from 'chai'
+import { ZkIdentity } from '@unirep/crypto'
+import { Circuit } from '@unirep/circuits'
+import {
+    genInputForContract,
+    genProcessAttestationsCircuitInput,
+    getTreeDepthsForTesting,
+} from './utils'
+import { numAttestationsPerProof } from '../config'
 import { computeProcessAttestationsProofHash, deployUnirep } from '../src'
 
 describe('Process attestation circuit', function () {
@@ -16,26 +20,47 @@ describe('Process attestation circuit', function () {
 
     const epoch = BigInt(1)
     const nonce = BigInt(0)
-    const user = genIdentity()
+    const user = new ZkIdentity()
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], _treeDepths)
+        unirepContract = await deployUnirep(
+            <ethers.Wallet>accounts[0],
+            _treeDepths
+        )
     })
 
     it('successfully process attestations', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(user, epoch, nonce, nonce)
+        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+            user,
+            epoch,
+            nonce,
+            nonce
+        )
 
-        const { outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof } = await genInputForContract(Circuit.processAttestations, circuitInputs)
-        const isProofValid = await unirepContract.verifyProcessAttestationProof( outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof)
+        const {
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof,
+        } = await genInputForContract(
+            Circuit.processAttestations,
+            circuitInputs
+        )
+        const isProofValid = await unirepContract.verifyProcessAttestationProof(
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof
+        )
         expect(isProofValid).to.be.true
 
         const tx = await unirepContract.processAttestations(
-            outputBlindedUserState, 
-            outputBlindedHashChain, 
-            inputBlindedUserState, 
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
             proof
         )
         const receipt = await tx.wait()
@@ -43,9 +68,9 @@ describe('Process attestation circuit', function () {
 
         const pfIdx = await unirepContract.getProofIndex(
             computeProcessAttestationsProofHash(
-                outputBlindedUserState, 
-                outputBlindedHashChain, 
-                inputBlindedUserState, 
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
                 proof
             )
         )
@@ -57,15 +82,34 @@ describe('Process attestation circuit', function () {
         for (let i = 0; i < numAttestationsPerProof; i++) {
             zeroSelectors.push(0)
         }
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(user, epoch, nonce, nonce, zeroSelectors)
-        const { outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof } = await genInputForContract(Circuit.processAttestations, circuitInputs)
-        const isProofValid = await unirepContract.verifyProcessAttestationProof( outputBlindedUserState, outputBlindedHashChain, inputBlindedUserState, proof)
+        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+            user,
+            epoch,
+            nonce,
+            nonce,
+            zeroSelectors
+        )
+        const {
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof,
+        } = await genInputForContract(
+            Circuit.processAttestations,
+            circuitInputs
+        )
+        const isProofValid = await unirepContract.verifyProcessAttestationProof(
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof
+        )
         expect(isProofValid).to.be.true
 
         const tx = await unirepContract.processAttestations(
-            outputBlindedUserState, 
-            outputBlindedHashChain, 
-            inputBlindedUserState, 
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
             proof
         )
         const receipt = await tx.wait()
@@ -73,9 +117,9 @@ describe('Process attestation circuit', function () {
 
         const pfIdx = await unirepContract.getProofIndex(
             computeProcessAttestationsProofHash(
-                outputBlindedUserState, 
-                outputBlindedHashChain, 
-                inputBlindedUserState, 
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
                 proof
             )
         )

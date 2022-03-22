@@ -66,7 +66,6 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     signal private input end_epoch_key_nonce;
 
     // Global state tree leaf: Identity & user state root
-    signal private input identity_pk[2];
     signal private input identity_nullifier;
     signal private input identity_trapdoor;
 
@@ -91,8 +90,6 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
         user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
     }
     user_exist.GST_root <== GST_root;
-    user_exist.identity_pk[0] <== identity_pk[0];
-    user_exist.identity_pk[1] <== identity_pk[1];
     user_exist.identity_nullifier <== identity_nullifier;
     user_exist.identity_trapdoor <== identity_trapdoor;
     user_exist.user_tree_root <== intermediate_user_state_tree_roots[0];

@@ -1,0 +1,8 @@
+**/build
+**/zksnarkBuild
+**/dist
+**/artifacts
+**/cache
+**/typechain
+
+yarn.lock

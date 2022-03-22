@@ -1,89 +1,65 @@
-import * as argparse from 'argparse' 
+/* eslint-disable @typescript-eslint/no-var-requires */
+import { stringifyBigInts } from '@unirep/crypto'
+import * as argparse from 'argparse'
 import * as fs from 'fs'
 import * as path from 'path'
-import { stringifyBigInts } from '@unirep/crypto';
 const compiler = require('circom').compiler
 const snarkjs = require('snarkjs')
-const fastFile = require("fastfile")
+const fastFile = require('fastfile')
 
 const fileExists = (filepath: string): boolean => {
     const currentPath = path.join(__dirname, '..')
     const inputFilePath = path.join(currentPath, filepath)
-    const inputFileExists = fs.existsSync(inputFilePath)
-
-    return inputFileExists
+    return fs.existsSync(inputFilePath)
 }
 
-const main = async () => {
-    const parser = new argparse.ArgumentParser({ 
-        description: 'Compile a circom circuit and generate its proving key, verification key, and Solidity verifier'
+const main = async (): Promise<number> => {
+    const parser = new argparse.ArgumentParser({
+        description:
+            'Compile a circom circuit and generate its proving key, verification key, and Solidity verifier',
     })
 
-    parser.add_argument(
-        '-i', '--input',
-        {
-            help: 'The filepath of the circom file',
-            required: true
-        }
-    )
+    parser.add_argument('-i', '--input', {
+        help: 'The filepath of the circom file',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-j', '--r1cs-out',
-        {
-            help: 'The filepath to save the compiled circom file',
-            required: true
-        }
-    )
+    parser.add_argument('-j', '--r1cs-out', {
+        help: 'The filepath to save the compiled circom file',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-w', '--wasm-out',
-        {
-            help: 'The filepath to save the WASM file',
-            required: true
-        }
-    )
+    parser.add_argument('-w', '--wasm-out', {
+        help: 'The filepath to save the WASM file',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-y', '--sym-out',
-        {
-            help: 'The filepath to save the SYM file',
-            required: true
-        }
-    )
+    parser.add_argument('-y', '--sym-out', {
+        help: 'The filepath to save the SYM file',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-pt', '--ptau',
-        {
-            help: 'The filepath of existed ptau',
-            required: true
-        }
-    )
+    parser.add_argument('-pt', '--ptau', {
+        help: 'The filepath of existed ptau',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-zk', '--zkey-out',
-        {
-            help: 'The filepath to save the zkey',
-            required: true
-        }
-    )
+    parser.add_argument('-zk', '--zkey-out', {
+        help: 'The filepath to save the zkey',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-vk', '--vkey-out',
-        {
-            help: 'The filepath to save the vkey',
-            required: true
-        }
-    )
+    parser.add_argument('-vk', '--vkey-out', {
+        help: 'The filepath to save the vkey',
+        required: true,
+    })
 
-    parser.add_argument(
-        '-r', '--override',
-        {
-            help: 'Override an existing compiled circuit, proving key, and verifying key if set to true; otherwise (and by default), skip generation if a file already exists',
-            action: 'store_true',
-            required: false,
-            default: false,
-        }
-    )
+    parser.add_argument('-r', '--override', {
+        help: 'Override an existing compiled circuit, proving key, and verifying key if set to true; otherwise (and by default), skip generation if a file already exists',
+        action: 'store_true',
+        required: false,
+        default: false,
+    })
 
     const args = parser.parse_args()
     const inputFile = args.input
@@ -116,7 +92,7 @@ const main = async () => {
             wasmFile: await fastFile.createOverride(wasmOut),
             r1csFileName: circuitOut,
             symWriteStream: fs.createWriteStream(symOut),
-        };
+        }
         await compiler(inputFile, options)
         console.log('Generated', circuitOut, 'and', wasmOut)
     }
@@ -128,21 +104,21 @@ const main = async () => {
         console.log('Exporting verification key...')
         await snarkjs.zKey.newZKey(circuitOut, ptau, zkey)
         const vkeyJson = await snarkjs.zKey.exportVerificationKey(zkey)
-        const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1);
-        await fs.promises.writeFile(vkOut, S);
+        const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1)
+        await fs.promises.writeFile(vkOut, S)
         console.log(`Generated ${zkey} and ${vkOut}`)
     }
 
     return 0
 }
 
-(async () => {
-    let exitCode;
+void (async () => {
+    let exitCode
     try {
-        exitCode = await main();
+        exitCode = await main()
     } catch (err) {
         console.error(err)
         exitCode = 1
     }
     process.exit(exitCode)
-})();
+})()
