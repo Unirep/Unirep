@@ -15,17 +15,18 @@ import { ReputationVerifier } from './ReputationVerifier.sol';
 import { UserSignUpVerifier } from './UserSignUpVerifier.sol';
 
 import { IUnirep } from './interfaces/IUnirep.sol';
+import { IVerifier } from './interfaces/IVerifier.sol';
 
 contract Unirep is IUnirep, SnarkConstants, Hasher {
     using SafeMath for uint256;
 
     // Verifier Contracts
-    EpochKeyValidityVerifier internal epkValidityVerifier;
-    StartTransitionVerifier internal startTransitionVerifier;
-    ProcessAttestationsVerifier internal processAttestationsVerifier;
-    UserStateTransitionVerifier internal userStateTransitionVerifier;
-    ReputationVerifier internal reputationVerifier;
-    UserSignUpVerifier internal userSignUpVerifier;
+    IVerifier internal epkValidityVerifier;
+    IVerifier internal startTransitionVerifier;
+    IVerifier internal processAttestationsVerifier;
+    IVerifier internal userStateTransitionVerifier;
+    IVerifier internal reputationVerifier;
+    IVerifier internal userSignUpVerifier;
 
     uint256 public currentEpoch = 1;
 
@@ -80,12 +81,12 @@ contract Unirep is IUnirep, SnarkConstants, Hasher {
     constructor(
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
-        EpochKeyValidityVerifier _epkValidityVerifier,
-        StartTransitionVerifier _startTransitionVerifier,
-        ProcessAttestationsVerifier _processAttestationsVerifier,
-        UserStateTransitionVerifier _userStateTransitionVerifier,
-        ReputationVerifier _reputationVerifier,
-        UserSignUpVerifier _userSignUpVerifier,
+        IVerifier _epkValidityVerifier,
+        IVerifier _startTransitionVerifier,
+        IVerifier _processAttestationsVerifier,
+        IVerifier _userStateTransitionVerifier,
+        IVerifier _reputationVerifier,
+        IVerifier _userSignUpVerifier,
         uint8 _numEpochKeyNoncePerEpoch,
         uint8 _maxReputationBudget,
         uint256 _epochLength,
