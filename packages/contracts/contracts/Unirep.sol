@@ -186,7 +186,7 @@ contract Unirep is IUnirep, SnarkConstants, Hasher, VerifySignature {
         address attester,
         bytes calldata signature
     ) external override {
-        verifySignature(attester, signature);
+        require(verifySignature(attester, signature), "Unirep: invalid attester sign up signature");
         _attesterSignUp(attester);
     }
 

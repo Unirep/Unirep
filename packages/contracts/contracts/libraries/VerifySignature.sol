@@ -14,6 +14,7 @@ contract VerifySignature {
     function verifySignature(address signer, bytes memory signature)
         internal
         view 
+        returns (bool)
     {
         // Attester signs over it's own address concatenated with this contract address
         bytes32 messageHash = keccak256(
@@ -22,9 +23,6 @@ contract VerifySignature {
                 keccak256(abi.encodePacked(signer, this))
             )
         );
-        require(
-            ECDSA.recover(messageHash, signature) == signer,
-            "Unirep: invalid signer sign up signature"
-        );
+        return ECDSA.recover(messageHash, signature) == signer;
     }
 }
