@@ -1,6 +1,7 @@
 pragma solidity ^0.8.0;
 
-// Verifier interface Verifier should follow IVerifer interface. 
+// Verifier interface
+// Verifier should follow IVerifer interface. 
 interface IVerifier {
     /*
      * @returns Whether the proof is valid given the hardcoded verifying key

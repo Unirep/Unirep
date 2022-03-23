@@ -4,7 +4,10 @@
     "description": "UniRep is a private and nonrepudiable repuation system based on ZKP",
     "private": "true",
     "workspaces": [
-        "packages/*"
+        "packages/crypto",
+        "packages/circuits",
+        "packages/contracts",
+        "packages/core"
     ],
     "scripts": {
         "contracts": "yarn --silent workspace @unirep/contracts",
