@@ -5,8 +5,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import { Hasher } from './Hasher.sol';
-import { SnarkConstants } from './SnarkConstants.sol';
+
+import { Hasher } from './libraries/Hasher.sol';
+import { SnarkConstants } from './libraries/SnarkConstants.sol';
 
 import { IUnirep } from './interfaces/IUnirep.sol';
 import { IVerifier } from './interfaces/IVerifier.sol';
