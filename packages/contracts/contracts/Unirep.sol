@@ -7,12 +7,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import { Hasher } from './Hasher.sol';
 import { SnarkConstants } from './SnarkConstants.sol';
-import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
-import { StartTransitionVerifier } from './StartTransitionVerifier.sol';
-import { ProcessAttestationsVerifier } from './ProcessAttestationsVerifier.sol';
-import { UserStateTransitionVerifier } from './UserStateTransitionVerifier.sol';
-import { ReputationVerifier } from './ReputationVerifier.sol';
-import { UserSignUpVerifier } from './UserSignUpVerifier.sol';
 
 import { IUnirep } from './interfaces/IUnirep.sol';
 import { IVerifier } from './interfaces/IVerifier.sol';
