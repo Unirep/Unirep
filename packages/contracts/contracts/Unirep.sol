@@ -2,17 +2,17 @@
 pragma abicoder v2;
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import { Hasher } from './libraries/Hasher.sol';
 import { SnarkConstants } from './libraries/SnarkConstants.sol';
+import { VerifySignature } from './libraries/VerifySignature.sol';
 
 import { IUnirep } from './interfaces/IUnirep.sol';
 import { IVerifier } from './interfaces/IVerifier.sol';
 
-contract Unirep is IUnirep, SnarkConstants, Hasher {
+contract Unirep is IUnirep, SnarkConstants, Hasher, VerifySignature {
     using SafeMath for uint256;
 
     // Verifier Contracts
@@ -155,27 +155,6 @@ contract Unirep is IUnirep, SnarkConstants, Hasher {
         );
     }
 
-    /*
-     * Verify if the attester has a valid signature as claimed
-     * @param attester The address of user who wants to perform an action
-     * @param siganture The signature signed by the attester
-     */
-    function verifySignature(address attester, bytes memory signature)
-        internal
-        view
-    {
-        // Attester signs over it's own address concatenated with this contract address
-        bytes32 messageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(attester, this))
-            )
-        );
-        require(
-            ECDSA.recover(messageHash, signature) == attester,
-            "Unirep: invalid attester sign up signature"
-        );
-    }
 
     function _attesterSignUp(address attester) private {
         require(
