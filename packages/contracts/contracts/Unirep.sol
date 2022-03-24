@@ -124,9 +124,9 @@ contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
         attestingFee = _attestingFee;
     }
 
-    //
-    // Verify astester sign up
-    //
+    
+    // Verify input data - Should found better way to handle it.
+
     function verifyAstesterSignUp(address _attester) private view {
         require(attesters[_attester] > 0, "Unirep: attester has not signed up yet");
     }
@@ -137,7 +137,21 @@ contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
             "Unirep: the proof has been submitted before"
         ); 
     }
+    
+    function verifyAttesterFee() private view {
+        require(
+            msg.value == attestingFee,
+            "Unirep: no attesting fee or incorrect amount"
+        );    
+    }
 
+    function verifyAttesterIndex(address attester, uint256 attesterId) private view {
+        require(
+            attesters[attester] == attesterId,
+            "Unirep: mismatched attesterId"
+        );
+
+    }
     /*
      * User signs up by providing an identity commitment. It also inserts a fresh state
      * leaf into the state tree.
@@ -229,14 +243,9 @@ contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
         uint256 fromProofIndex
     ) private {
         verifyAstesterSignUp(attester);
-        require(
-            attesters[attester] == attestation.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
+        verifyAttesterIndex(attester, attestation.attesterId);
+        verifyAttesterFee();
+
         require(
             toProofIndex != 0 &&
             toProofIndex < proofIndex &&
@@ -335,18 +344,12 @@ contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
      */
     function airdropEpochKey(SignUpProof memory _input) external payable {
         bytes32 proofNullifier = Hasher.hashSignUpProof(_input);
-
+        address sender = msg.sender;
         verifyProofNullilier(proofNullifier);
-        verifyAstesterSignUp(msg.sender);
+        verifyAstesterSignUp(sender);
+        verifyAttesterIndex(sender, _input.attesterId);
+        verifyAttesterFee();
 
-        require(
-            attesters[msg.sender] == _input.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
         require(
             _input.epoch == currentEpoch,
             "Unirep: submit an airdrop proof with incorrect epoch"
@@ -395,15 +398,9 @@ contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
 
         verifyProofNullilier(proofNullifier); 
         verifyAstesterSignUp(msg.sender);
+        verifyAttesterIndex(msg.sender, _input.attesterId);
+        verifyAttesterFee();
 
-        require(
-            attesters[msg.sender] == _input.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
         require(
             _input.repNullifiers.length == maxReputationBudget,
             "Unirep: invalid number of reputation nullifiers"
