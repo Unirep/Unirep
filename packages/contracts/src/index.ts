@@ -6,14 +6,15 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
+
 import {
-    maxUsers,
-    maxAttesters,
-    numEpochKeyNoncePerEpoch,
-    epochLength,
-    attestingFee,
-    maxReputationBudget,
-} from '../config'
+    MAX_USERS,
+    MAX_ATTESTERS,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    MAX_REPUTATION_BUDGET,
+    EPOCH_LENGTH,
+    ATTESTTING_FEE,
+} from '@unirep/config'
 
 import {
     EpochKeyValidityVerifier,
@@ -178,15 +179,15 @@ class ReputationProof implements IReputationProof {
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
         const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.repNullifiers = _publicSignals.slice(0, maxReputationBudget)
-        this.epoch = _publicSignals[maxReputationBudget]
-        this.epochKey = _publicSignals[maxReputationBudget + 1]
-        this.globalStateTree = _publicSignals[maxReputationBudget + 2]
-        this.attesterId = _publicSignals[maxReputationBudget + 3]
-        this.proveReputationAmount = _publicSignals[maxReputationBudget + 4]
-        this.minRep = _publicSignals[maxReputationBudget + 5]
-        this.proveGraffiti = _publicSignals[maxReputationBudget + 6]
-        this.graffitiPreImage = _publicSignals[maxReputationBudget + 7]
+        this.repNullifiers = _publicSignals.slice(0, MAX_REPUTATION_BUDGET)
+        this.epoch = _publicSignals[MAX_REPUTATION_BUDGET]
+        this.epochKey = _publicSignals[MAX_REPUTATION_BUDGET + 1]
+        this.globalStateTree = _publicSignals[MAX_REPUTATION_BUDGET + 2]
+        this.attesterId = _publicSignals[MAX_REPUTATION_BUDGET + 3]
+        this.proveReputationAmount = _publicSignals[MAX_REPUTATION_BUDGET + 4]
+        this.minRep = _publicSignals[MAX_REPUTATION_BUDGET + 5]
+        this.proveGraffiti = _publicSignals[MAX_REPUTATION_BUDGET + 6]
+        this.graffitiPreImage = _publicSignals[MAX_REPUTATION_BUDGET + 7]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
     }
@@ -206,7 +207,7 @@ class ReputationProof implements IReputationProof {
         // array length should be fixed
         const abiEncoder = ethers.utils.defaultAbiCoder.encode(
             [
-                `tuple(uint256[${maxReputationBudget}] repNullifiers,
+                `tuple(uint256[${MAX_REPUTATION_BUDGET}] repNullifiers,
                     uint256 epoch,
                     uint256 epochKey, 
                     uint256 globalStateTree,
@@ -279,23 +280,26 @@ class UserTransitionProof implements IUserTransitionProof {
         this.epkNullifiers = []
         this.blindedUserStates = []
         this.blindedHashChains = []
-        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             this.epkNullifiers.push(_publicSignals[1 + i])
         }
-        this.transitionFromEpoch = _publicSignals[1 + numEpochKeyNoncePerEpoch]
+        this.transitionFromEpoch =
+            _publicSignals[1 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
         this.blindedUserStates.push(
-            _publicSignals[2 + numEpochKeyNoncePerEpoch]
+            _publicSignals[2 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
         )
         this.blindedUserStates.push(
-            _publicSignals[3 + numEpochKeyNoncePerEpoch]
+            _publicSignals[3 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
         )
-        this.fromGlobalStateTree = _publicSignals[4 + numEpochKeyNoncePerEpoch]
-        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+        this.fromGlobalStateTree =
+            _publicSignals[4 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
+        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             this.blindedHashChains.push(
-                _publicSignals[5 + numEpochKeyNoncePerEpoch + i]
+                _publicSignals[5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH + i]
             )
         }
-        this.fromEpochTree = _publicSignals[5 + numEpochKeyNoncePerEpoch * 2]
+        this.fromEpochTree =
+            _publicSignals[5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 2]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
     }
@@ -316,11 +320,11 @@ class UserTransitionProof implements IUserTransitionProof {
         const abiEncoder = ethers.utils.defaultAbiCoder.encode(
             [
                 `tuple(uint256 newGlobalStateTreeLeaf,
-                    uint256[${numEpochKeyNoncePerEpoch}] epkNullifiers,
+                    uint256[${NUM_EPOCH_KEY_NONCE_PER_EPOCH}] epkNullifiers,
                     uint256 transitionFromEpoch,
                     uint256[2] blindedUserStates,
                     uint256 fromGlobalStateTree,
-                    uint256[${numEpochKeyNoncePerEpoch}] blindedHashChains,
+                    uint256[${NUM_EPOCH_KEY_NONCE_PER_EPOCH}] blindedHashChains,
                     uint256 fromEpochTree,
                     uint256[8] proof)
             `,
@@ -429,12 +433,12 @@ const deployUnirep = async (
         _epochLength = _settings.epochLength
         _attestingFee = _settings.attestingFee
     } else {
-        _maxUsers = maxUsers
-        _maxAttesters = maxAttesters
-        _numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
-        ;(_maxReputationBudget = maxReputationBudget),
-            (_epochLength = epochLength)
-        _attestingFee = attestingFee
+        _maxUsers = MAX_USERS
+        _maxAttesters = MAX_ATTESTERS
+        _numEpochKeyNoncePerEpoch = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        _maxReputationBudget = MAX_REPUTATION_BUDGET
+        _epochLength = EPOCH_LENGTH
+        _attestingFee = ATTESTTING_FEE
     }
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(

@@ -14,12 +14,14 @@ import {
     genProofAndPublicSignals,
     verifyProof,
 } from '../circuits/utils'
+
 import {
-    numEpochKeyNoncePerEpoch,
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    verifyEpochKeyCircuitPath,
-} from '../config'
+    CIRCUIT_EPOCH_TREE_DEPTH,
+    CIRCUIT_GLOBAL_STATE_TREE_DEPTH,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '@unirep/config'
+
+import { verifyEpochKeyCircuitPath } from '../config'
 import {
     compileAndLoadCircuit,
     genEpochKeyCircuitInput,
@@ -34,7 +36,7 @@ describe('Verify Epoch Key circuits', function () {
     let circuit
     let ZERO_VALUE = 0
 
-    const maxEPK = BigInt(2 ** circuitEpochTreeDepth)
+    const maxEPK = BigInt(2 ** CIRCUIT_EPOCH_TREE_DEPTH)
 
     let id: ZkIdentity, commitment, stateRoot
     let tree, leafIndex
@@ -50,7 +52,7 @@ describe('Verify Epoch Key circuits', function () {
         )
 
         tree = new IncrementalMerkleTree(
-            circuitGlobalStateTreeDepth,
+            CIRCUIT_GLOBAL_STATE_TREE_DEPTH,
             ZERO_VALUE,
             2
         )
@@ -71,7 +73,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('Valid epoch key should pass check', async () => {
         // Check if every valid nonce works
-        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             const n = i
             circuitInputs = genEpochKeyCircuitInput(
                 id,
@@ -169,7 +171,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Invalid nonce should not pass check', async () => {
-        const invalidNonce = numEpochKeyNoncePerEpoch
+        const invalidNonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
         const invalidCircuitInputs = (circuitInputs = genEpochKeyCircuitInput(
             id,
             tree,

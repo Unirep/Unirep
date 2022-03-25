@@ -7,17 +7,17 @@ enum Circuit {
     userStateTransition = 'userStateTransition',
 }
 
-const numEpochKeyNoncePerEpoch = 3
+// const numEpochKeyNoncePerEpoch = 3
 
-const numAttestationsPerProof = 5
+// const numAttestationsPerProof = 5
 
-const circuitGlobalStateTreeDepth = 4
+// const circuitGlobalStateTreeDepth = 4
 
-const circuitUserStateTreeDepth = 4
+// const circuitUserStateTreeDepth = 4
 
-const circuitEpochTreeDepth = 32
+// const circuitEpochTreeDepth = 32
 
-const maxReputationBudget = 10
+// const maxReputationBudget = 10
 
 const verifyEpochKeyCircuitPath = '../zksnarkBuild/verifyEpochKey_main.circom'
 
@@ -35,12 +35,12 @@ const userStateTransitionCircuitPath =
 
 export {
     Circuit,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    circuitEpochTreeDepth,
-    numEpochKeyNoncePerEpoch,
-    numAttestationsPerProof,
-    maxReputationBudget,
+    // circuitGlobalStateTreeDepth,
+    // circuitUserStateTreeDepth,
+    // circuitEpochTreeDepth,
+    // numEpochKeyNoncePerEpoch,
+    // numAttestationsPerProof,
+    // maxReputationBudget,
     verifyEpochKeyCircuitPath,
     proveReputationCircuitPath,
     proveUserSignUpCircuitPath,

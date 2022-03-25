@@ -1,4 +1,4 @@
-import { IncrementalMerkleTree as zkIncrementalMerkleTree } from '@zk-kit/incremental-merkle-tree'
+import { IncrementalMerkleTree as zkIncrementalMerkleTree } from '@zk-kit/incremental-merkle-tree';
 export declare class IncrementalMerkleTree extends zkIncrementalMerkleTree {
     /**
      * Initializes the tree with the hash function, the depth, the zero value to use for zeroes
@@ -8,5 +8,5 @@ export declare class IncrementalMerkleTree extends zkIncrementalMerkleTree {
      * @param zeroValue Zero values for zeroes.
      * @param arity The number of children for each node.
      */
-    constructor(depth: number, zeroValue: any, arity?: number)
+    constructor(depth: number, zeroValue: any, arity?: number);
 }

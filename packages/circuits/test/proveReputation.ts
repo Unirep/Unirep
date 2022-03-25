@@ -9,12 +9,12 @@ import {
     throwError,
     genProofAndVerify,
 } from './utils'
-import {
-    circuitUserStateTreeDepth,
-    maxReputationBudget,
-    proveReputationCircuitPath,
-} from '../config'
+import { proveReputationCircuitPath } from '../config'
 
+import {
+    CIRCUIT_USER_STATE_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+} from '@unirep/config'
 const circuitPath = path.join(__dirname, proveReputationCircuitPath)
 
 describe('Prove reputation from attester circuit', function () {
@@ -46,11 +46,11 @@ describe('Prove reputation from attester circuit', function () {
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(
-                Math.random() * (2 ** circuitUserStateTreeDepth - 1)
+                Math.random() * (2 ** CIRCUIT_USER_STATE_TREE_DEPTH - 1)
             )
             while (reputationRecords[attesterId] !== undefined)
                 attesterId = Math.floor(
-                    Math.random() * 2 ** circuitUserStateTreeDepth
+                    Math.random() * 2 ** CIRCUIT_USER_STATE_TREE_DEPTH
                 )
             const graffitiPreImage = genRandomSalt()
             reputationRecords[attesterId] = new Reputation(
@@ -250,11 +250,11 @@ describe('Prove reputation from attester circuit', function () {
     it('prove reputation nullifiers with insufficient rep score', async () => {
         // Bootstrap user state
         let insufficientAttesterId = Math.ceil(
-            Math.random() * (2 ** circuitUserStateTreeDepth - 1)
+            Math.random() * (2 ** CIRCUIT_USER_STATE_TREE_DEPTH - 1)
         )
         while (reputationRecords[insufficientAttesterId] !== undefined)
             insufficientAttesterId = Math.floor(
-                Math.random() * 2 ** circuitUserStateTreeDepth
+                Math.random() * 2 ** CIRCUIT_USER_STATE_TREE_DEPTH
             )
         const insufficientPosRep = 5
         const insufficientNegRep = 10
@@ -293,7 +293,7 @@ describe('Prove reputation from attester circuit', function () {
         // only prove minRep should fail
         const zeroRepNullifiersAmount = 0
         const zeroSelector: number[] = []
-        for (let i = 0; i < maxReputationBudget; i++) {
+        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
             zeroSelector.push(0)
         }
         const circuitInputs2 = await genReputationCircuitInput(
@@ -357,7 +357,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = 0; i < repNullifiersAmount; i++) {
             wrongNonceList.push(wrongNonceStarter + i)
         }
-        for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
+        for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
             wrongNonceList.push(0)
         }
         const circuitInputs = await genReputationCircuitInput(
@@ -396,7 +396,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = 0; i < repNullifiersAmount; i++) {
             wrongNonceList.push(nonceStarter + i)
         }
-        for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
+        for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
             wrongNonceList.push(0)
         }
         const circuitInputs = await genReputationCircuitInput(
