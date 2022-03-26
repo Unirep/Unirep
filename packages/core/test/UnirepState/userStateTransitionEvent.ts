@@ -10,6 +10,7 @@ import {
     computeStartTransitionProofHash,
     computeProcessAttestationsProofHash,
 } from '@unirep/contracts'
+
 import {
     Attestation,
     attestingFee,
@@ -24,6 +25,7 @@ import {
     UnirepState,
     UserState,
 } from '../../src'
+
 import {
     genEpochKeyCircuitInput,
     genNewGST,
@@ -352,10 +354,10 @@ describe('User state transition events in Unirep State', async function () {
 
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
-                    const epoch = Number(args?._epoch)
-                    const commitment = BigInt(args?._identityCommitment)
-                    const attesterId = Number(args?._attesterId)
-                    const airdrop = Number(args?._airdropAmount)
+                    const epoch = Number(args?.epoch)
+                    const commitment = BigInt(args?.identityCommitment)
+                    const attesterId = Number(args?.attesterId)
+                    const airdrop = Number(args?.airdropAmount)
 
                     await userState.signUp(
                         epoch,
@@ -511,10 +513,10 @@ describe('User state transition events in Unirep State', async function () {
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
-                const epoch = Number(args?._epoch)
-                const commitment = BigInt(args?._identityCommitment)
-                const attesterId = Number(args?._attesterId)
-                const airdrop = Number(args?._airdropAmount)
+                const epoch = Number(args?.epoch)
+                const commitment = BigInt(args?.identityCommitment)
+                const attesterId = Number(args?.attesterId)
+                const airdrop = Number(args?.airdropAmount)
 
                 await userState.signUp(epoch, commitment, attesterId, airdrop)
             }
@@ -806,10 +808,10 @@ describe('User state transition events in Unirep State', async function () {
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
-                const epoch = Number(args?._epoch)
-                const commitment = BigInt(args?._identityCommitment)
-                const attesterId = Number(args?._attesterId)
-                const airdrop = Number(args?._airdropAmount)
+                const epoch = Number(args?.epoch)
+                const commitment = BigInt(args?.identityCommitment)
+                const attesterId = Number(args?.attesterId)
+                const airdrop = Number(args?.airdropAmount)
 
                 await userState1.signUp(epoch, commitment, attesterId, airdrop)
                 await userState2.signUp(epoch, commitment, attesterId, airdrop)
@@ -1055,10 +1057,10 @@ describe('User state transition events in Unirep State', async function () {
 
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
-                    const epoch = Number(args?._epoch)
-                    const commitment = BigInt(args?._identityCommitment)
-                    const attesterId = Number(args?._attesterId)
-                    const airdrop = Number(args?._airdropAmount)
+                    const epoch = Number(args?.epoch)
+                    const commitment = BigInt(args?.identityCommitment)
+                    const attesterId = Number(args?.attesterId)
+                    const airdrop = Number(args?.airdropAmount)
 
                     await userState.signUp(
                         epoch,
@@ -1070,7 +1072,7 @@ describe('User state transition events in Unirep State', async function () {
 
                 await userState.epochTransition(1)
                 for (let USTEvent of USTProofEvents) {
-                    const args = USTEvent?.args?._proof
+                    const args = USTEvent?.args?.proof
                     const fromEpoch = Number(args?.transitionFromEpoch)
                     const newGSTLeaf = BigInt(args?.newGlobalStateTreeLeaf)
                     const nullifiers = args?.epkNullifiers.map((n) => BigInt(n))
@@ -1088,8 +1090,8 @@ describe('User state transition events in Unirep State', async function () {
 
                 for (let attestaionEvent of attestationSubmittedEvents) {
                     const args = attestaionEvent?.args
-                    const epochKey = (args?._epochKey).toString()
-                    const attestation_ = args?._attestation
+                    const epochKey = (args?.epochKey).toString()
+                    const attestation_ = args?.attestation
                     const attestation = new Attestation(
                         BigInt(attestation_.attesterId),
                         BigInt(attestation_.posRep),

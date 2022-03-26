@@ -341,7 +341,7 @@ describe('EventSequencing', () => {
 
         for (let i = 0; i < sequencerEvents.length; i++) {
             const event = sequencerEvents[i]
-            expect(event.args._event).equal(expectedEventsInOrder[i])
+            expect(event.args.userEvent).equal(expectedEventsInOrder[i])
         }
     })
 })

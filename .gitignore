@@ -5,3 +5,5 @@ node_modules
 **/build/cli
 
 **.eslintcache
+
+.vscode

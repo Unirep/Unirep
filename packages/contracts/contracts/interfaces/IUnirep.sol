@@ -19,7 +19,7 @@ interface IUnirep is UnirepTypes {
       // Events
     event Sequencer(
         uint256 indexed epoch, 
-        Event event
+        Event userEvent 
     );
 
     // Two global state tree leaf inserted events in Unirep
@@ -42,7 +42,7 @@ interface IUnirep is UnirepTypes {
         uint256 indexed epoch,
         uint256 indexed epochKey,
         address indexed attester,
-        AttestationEvent event,
+        AttestationEvent attestationEvent,
         Attestation attestation,
         uint256 toProofIndex,
         uint256 fromProofIndex
