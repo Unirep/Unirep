@@ -125,7 +125,7 @@ class UserState {
     private unirepState: UnirepState
 
     public id: ZkIdentity
-    public commitment
+    public commitment: bigint
     private hasSignedUp: boolean = false
 
     public latestTransitionedEpoch: number // Latest epoch where the user has a record in the GST of that epoch
@@ -337,31 +337,31 @@ class UserState {
      * Add a new epoch key to the list of epoch key of current epoch.
      */
     public signUp = async (
-        _epoch: number,
-        _identityCommitment: BigInt,
-        _attesterId?: number,
-        _airdropAmount?: number,
+        epoch: number,
+        identityCommitment: BigInt,
+        attesterId?: number,
+        airdropAmount?: number,
         blockNumber?: number
     ) => {
         // update unirep state
         await this.unirepState.signUp(
-            _epoch,
-            _identityCommitment,
-            _attesterId,
-            _airdropAmount,
+            epoch,
+            identityCommitment,
+            attesterId,
+            airdropAmount,
             blockNumber
         )
 
         // if commitment matches the user's commitment, update user state
-        if (_identityCommitment === this.commitment) {
+        if (identityCommitment === this.commitment) {
             this._checkUserNotSignUp()
 
             const signUpInLeaf = 1
-            if (_attesterId && _airdropAmount) {
+            if (attesterId && airdropAmount) {
                 const stateLeave: IUserStateLeaf = {
-                    attesterId: BigInt(_attesterId),
+                    attesterId: BigInt(attesterId),
                     reputation: Reputation.default().update(
-                        BigInt(_airdropAmount),
+                        BigInt(airdropAmount),
                         BigInt(0),
                         BigInt(0),
                         BigInt(signUpInLeaf)
@@ -369,9 +369,9 @@ class UserState {
                 }
                 this.latestUserStateLeaves = [stateLeave]
             }
-            this.latestTransitionedEpoch = _epoch
+            this.latestTransitionedEpoch = epoch
             this.latestGSTLeafIndex =
-                this.unirepState.getNumGSTLeaves(_epoch) - 1
+                this.unirepState.getNumGSTLeaves(epoch) - 1
             this.hasSignedUp = true
         }
     }

@@ -316,7 +316,7 @@ describe('Attesting', () => {
 
         // compute hash chain of valid epoch key
         for (let i = 0; i < attestationSubmittedEvents.length; i++) {
-            const proofIndex = attestationSubmittedEvents[i].args?._proofIndex
+            const proofIndex = attestationSubmittedEvents[i].args?.proofIndex
             const epochKeyProofFilter =
                 unirepContract.filters.IndexedEpochKeyProof(proofIndex)
             const epochKeyProofEvent = await unirepContract.queryFilter(
@@ -335,20 +335,20 @@ describe('Attesting', () => {
 
             if (epochKeyProofEvent.length == 1) {
                 console.log('epoch key proof event')
-                const args = epochKeyProofEvent[0]?.args?._proof
+                const args = epochKeyProofEvent[0]?.args?.proof
                 const isValid = await unirepContract.verifyEpochKeyValidity(
                     args
                 )
                 expect(isValid).equal(true)
             } else if (repProofEvent.length == 1) {
                 console.log('reputation proof event')
-                const args = repProofEvent[0]?.args?._proof
+                const args = repProofEvent[0]?.args?.proof
                 expect(args?.repNullifiers.length).to.equal(maxReputationBudget)
                 const isValid = await unirepContract.verifyReputation(args)
                 expect(isValid).equal(true)
             } else if (signUpProofEvent.length == 1) {
                 console.log('sign up proof event')
-                const args = signUpProofEvent[0]?.args?._proof
+                const args = signUpProofEvent[0]?.args?.proof
                 const isValid = await unirepContract.verifyUserSignUp(args)
                 expect(isValid).equal(true)
             }
@@ -364,10 +364,10 @@ describe('Attesting', () => {
         expect(startTransitionEvents.length).to.equal(1)
         let args = startTransitionEvents[0]?.args
         let isValid = await unirepContract.verifyStartTransitionProof(
-            args?._blindedUserState,
-            args?._blindedHashChain,
-            args?._globalStateTree,
-            args?._proof
+            args?.blindedUserState,
+            args?.blindedHashChain,
+            args?.globalStateTree,
+            args?.proof
         )
         expect(isValid).equal(true)
 
@@ -379,10 +379,10 @@ describe('Attesting', () => {
         expect(processAttestationEvents.length).to.equal(1)
         args = processAttestationEvents[0]?.args
         isValid = await unirepContract.verifyProcessAttestationProof(
-            args?._outputBlindedUserState,
-            args?._outputBlindedHashChain,
-            args?._inputBlindedUserState,
-            args?._proof
+            args?.outputBlindedUserState,
+            args?.outputBlindedHashChain,
+            args?.inputBlindedUserState,
+            args?.proof
         )
         expect(isValid).equal(true)
 
@@ -392,7 +392,7 @@ describe('Attesting', () => {
             userStateTransitionFilter
         )
         expect(userStateTransitionEvents.length).to.equal(1)
-        args = userStateTransitionEvents[0]?.args?._proof
+        args = userStateTransitionEvents[0]?.args?.proof
         isValid = await unirepContract.verifyUserStateTransition(args)
         expect(isValid).equal(true)
     })

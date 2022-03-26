@@ -168,7 +168,7 @@ const verifyNewGSTProofByIndex = async (
     )
     if (!isValid) return
 
-    const _proofIndexes = transitionEvents[0]?.args?._proofIndexRecords
+    const _proofIndexes = transitionEvents[0]?.args?.proofIndexRecords
     // Proof index 0 should be the start transition proof
     const startTransitionFilter = unirepContract.filters.StartedTransitionProof(
         _proofIndexes[0],
@@ -183,10 +183,10 @@ const verifyNewGSTProofByIndex = async (
     const startTransitionArgs = startTransitionEvents[0]?.args
     const isStartTransitionProofValid =
         await unirepContract.verifyStartTransitionProof(
-            startTransitionArgs?._blindedUserState,
-            startTransitionArgs?._blindedHashChain,
-            startTransitionArgs?._globalStateTree,
-            startTransitionArgs?._proof
+            startTransitionArgs?.blindedUserState,
+            startTransitionArgs?.blindedHashChain,
+            startTransitionArgs?.globalStateTree,
+            startTransitionArgs?.proof
         )
     if (!isStartTransitionProofValid) return
 
@@ -213,7 +213,7 @@ const verifyNewGSTLeafEvents = async (
     const newLeaves: BigInt[] = []
     for (const event of newLeafEvents) {
         const args = event?.args
-        const proofIndex = args?._proofIndex
+        const proofIndex = args?.proofIndex
 
         // New leaf events are from user sign up and user state transition
         // 1. check user sign up
@@ -224,7 +224,7 @@ const verifyNewGSTLeafEvents = async (
 
         // all verification is done
         if (isProofValid) {
-            newLeaves.push(BigInt(args?._hashedLeaf))
+            newLeaves.push(BigInt(args?.hashedLeaf))
         }
     }
 
@@ -252,13 +252,13 @@ const verifyProcessAttestationEvents = async (
 
         const args = processAttestationsEvents[0]?.args
         const isValid = await unirepContract.verifyProcessAttestationProof(
-            args?._outputBlindedUserState,
-            args?._outputBlindedHashChain,
-            args?._inputBlindedUserState,
-            args?._proof
+            args?.outputBlindedUserState,
+            args?.outputBlindedHashChain,
+            args?.inputBlindedUserState,
+            args?.proof
         )
         if (!isValid) return false
-        currentBlindedUserState = args?._outputBlindedUserState
+        currentBlindedUserState = args?.outputBlindedUserState
     }
     return currentBlindedUserState.eq(finalBlindedUserState)
 }

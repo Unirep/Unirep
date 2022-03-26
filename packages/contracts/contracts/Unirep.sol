@@ -2,46 +2,26 @@
 pragma abicoder v2;
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import { Hasher } from './Hasher.sol';
-import { SnarkConstants } from './SnarkConstants.sol';
-import { EpochKeyValidityVerifier } from './EpochKeyValidityVerifier.sol';
-import { StartTransitionVerifier } from './StartTransitionVerifier.sol';
-import { ProcessAttestationsVerifier } from './ProcessAttestationsVerifier.sol';
-import { UserStateTransitionVerifier } from './UserStateTransitionVerifier.sol';
-import { ReputationVerifier } from './ReputationVerifier.sol';
-import { UserSignUpVerifier } from './UserSignUpVerifier.sol';
 
-contract Unirep is SnarkConstants, Hasher {
+import { Hasher } from './libraries/Hasher.sol';
+import { zkSNARKHelper } from './libraries/zkSNARKHelper.sol';
+import { VerifySignature } from './libraries/VerifySignature.sol';
+
+import { IUnirep } from './interfaces/IUnirep.sol';
+import { IVerifier } from './interfaces/IVerifier.sol';
+
+contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
     using SafeMath for uint256;
 
-    enum Event {
-        UserSignedUp,
-        UserStateTransitioned,
-        AttestationSubmitted,
-        EpochEnded
-    }
-
-    enum AttestationEvent {
-        SendAttestation,
-        Airdrop,
-        SpendReputation
-    }
-
-    // A nothing-up-my-sleeve zero value
-    // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
-    uint256 ZERO_VALUE =
-        uint256(keccak256(abi.encodePacked("Unirep"))) % SNARK_SCALAR_FIELD;
-
     // Verifier Contracts
-    EpochKeyValidityVerifier internal epkValidityVerifier;
-    StartTransitionVerifier internal startTransitionVerifier;
-    ProcessAttestationsVerifier internal processAttestationsVerifier;
-    UserStateTransitionVerifier internal userStateTransitionVerifier;
-    ReputationVerifier internal reputationVerifier;
-    UserSignUpVerifier internal userSignUpVerifier;
+    IVerifier internal epkValidityVerifier;
+    IVerifier internal startTransitionVerifier;
+    IVerifier internal processAttestationsVerifier;
+    IVerifier internal userStateTransitionVerifier;
+    IVerifier internal reputationVerifier;
+    IVerifier internal userSignUpVerifier;
 
     uint256 public currentEpoch = 1;
 
@@ -93,94 +73,15 @@ contract Unirep is SnarkConstants, Hasher {
 
     TreeDepths public treeDepths;
 
-    // Events
-    event Sequencer(
-        uint256 indexed _epoch, 
-        Event _event
-    );
-
-    // Two global state tree leaf inserted events in Unirep
-    // 1. UserSignUp
-    // 2. UserStateTransition
-    event UserSignedUp(
-        uint256 indexed _epoch,
-        uint256 indexed _identityCommitment,
-        uint256 _attesterId,
-        uint256 _airdropAmount
-    );
-
-    event UserStateTransitioned(
-        uint256 indexed _epoch,
-        uint256 indexed _hashedLeaf,
-        uint256 _proofIndex
-    );
-
-    event AttestationSubmitted(
-        uint256 indexed _epoch,
-        uint256 indexed _epochKey,
-        address indexed _attester,
-        AttestationEvent _event,
-        Attestation _attestation,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
-    );
-
-    event EpochEnded(uint256 indexed _epoch);
-
-    // Proof index events
-    event IndexedEpochKeyProof(
-        uint256 indexed _proofIndex,
-        uint256 indexed _epoch,
-        uint256 indexed _epochKey,
-        EpochKeyProof _proof
-    );
-
-    event IndexedReputationProof(
-        uint256 indexed _proofIndex,
-        uint256 indexed _epoch,
-        uint256 indexed _epochKey,
-        ReputationProof _proof
-    );
-
-    // This event is emitted if a user wants to prove that he has a signup flag in an attester ID
-    event IndexedUserSignedUpProof(
-        uint256 indexed _proofIndex,
-        uint256 indexed _epoch,
-        uint256 indexed _epochKey,
-        SignUpProof _proof
-    );
-
-    event IndexedStartedTransitionProof(
-        uint256 indexed _proofIndex,
-        uint256 indexed _blindedUserState,
-        uint256 indexed _globalStateTree,
-        uint256 _blindedHashChain,
-        uint256[8] _proof
-    );
-
-    event IndexedProcessedAttestationsProof(
-        uint256 indexed _proofIndex,
-        uint256 indexed _inputBlindedUserState,
-        uint256 _outputBlindedUserState,
-        uint256 _outputBlindedHashChain,
-        uint256[8] _proof
-    );
-
-    event IndexedUserStateTransitionProof(
-        uint256 indexed _proofIndex,
-        UserTransitionProof _proof,
-        uint256[] _proofIndexRecords
-    );
-
     constructor(
         TreeDepths memory _treeDepths,
         MaxValues memory _maxValues,
-        EpochKeyValidityVerifier _epkValidityVerifier,
-        StartTransitionVerifier _startTransitionVerifier,
-        ProcessAttestationsVerifier _processAttestationsVerifier,
-        UserStateTransitionVerifier _userStateTransitionVerifier,
-        ReputationVerifier _reputationVerifier,
-        UserSignUpVerifier _userSignUpVerifier,
+        IVerifier _epkValidityVerifier,
+        IVerifier _startTransitionVerifier,
+        IVerifier _processAttestationsVerifier,
+        IVerifier _userStateTransitionVerifier,
+        IVerifier _reputationVerifier,
+        IVerifier _userSignUpVerifier,
         uint8 _numEpochKeyNoncePerEpoch,
         uint8 _maxReputationBudget,
         uint256 _epochLength,
@@ -223,6 +124,34 @@ contract Unirep is SnarkConstants, Hasher {
         attestingFee = _attestingFee;
     }
 
+    
+    // Verify input data - Should found better way to handle it.
+
+    function verifyAstesterSignUp(address _attester) private view {
+        require(attesters[_attester] > 0, "Unirep: attester has not signed up yet");
+    }
+
+    function verifyProofNullilier(bytes32 proofNullifier) private view {
+        require(
+            getProofIndex[proofNullifier] == 0,
+            "Unirep: the proof has been submitted before"
+        ); 
+    }
+    
+    function verifyAttesterFee() private view {
+        require(
+            msg.value == attestingFee,
+            "Unirep: no attesting fee or incorrect amount"
+        );    
+    }
+
+    function verifyAttesterIndex(address attester, uint256 attesterId) private view {
+        require(
+            attesters[attester] == attesterId,
+            "Unirep: mismatched attesterId"
+        );
+
+    }
     /*
      * User signs up by providing an identity commitment. It also inserts a fresh state
      * leaf into the state tree.
@@ -254,34 +183,10 @@ contract Unirep is SnarkConstants, Hasher {
         );
     }
 
-    /*
-     * Verify if the attester has a valid signature as claimed
-     * @param attester The address of user who wants to perform an action
-     * @param siganture The signature signed by the attester
-     */
-    function verifySignature(address attester, bytes memory signature)
-        internal
-        view
-    {
-        // Attester signs over it's own address concatenated with this contract address
-        bytes32 messageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(attester, this))
-            )
-        );
-        require(
-            ECDSA.recover(messageHash, signature) == attester,
-            "Unirep: invalid attester sign up signature"
-        );
-    }
 
-    /*
-     * Sign up an attester using the address who sends the transaction
-     */
-    function attesterSignUp() external {
+    function _attesterSignUp(address attester) private {
         require(
-            attesters[msg.sender] == 0,
+            attesters[attester] == 0,
             "Unirep: attester has already signed up"
         );
         require(
@@ -289,8 +194,15 @@ contract Unirep is SnarkConstants, Hasher {
             "Unirep: maximum number of attester signups reached"
         );
 
-        attesters[msg.sender] = nextAttesterId;
+        attesters[attester] = nextAttesterId;
         nextAttesterId++;
+    }
+
+    /*
+     * Sign up an attester using the address who sends the transaction
+     */
+    function attesterSignUp() external override {
+        _attesterSignUp(msg.sender);
     }
 
     /*
@@ -301,19 +213,9 @@ contract Unirep is SnarkConstants, Hasher {
     function attesterSignUpViaRelayer(
         address attester,
         bytes calldata signature
-    ) external {
-        require(
-            attesters[attester] == 0,
-            "Unirep: attester has already signed up"
-        );
-        require(
-            nextAttesterId < maxAttesters,
-            "Unirep: maximum number of attester signups reached"
-        );
-        verifySignature(attester, signature);
-
-        attesters[attester] = nextAttesterId;
-        nextAttesterId++;
+    ) external override {
+        require(verifySignature(attester, signature), "Unirep: invalid attester sign up signature");
+        _attesterSignUp(attester);
     }
 
     /*
@@ -322,94 +224,28 @@ contract Unirep is SnarkConstants, Hasher {
      * @param _airdropAmount how much pos rep add to user's leaf
      */
     function setAirdropAmount(uint256 _airdropAmount) external {
-        require(
-            attesters[msg.sender] > 0,
-            "Unirep: attester has not signed up yet"
-        );
+        verifyAstesterSignUp(msg.sender);
         airdropAmount[msg.sender] = _airdropAmount;
     }
 
-    /*
-     * An attester submit the attestation with a proof index
-     * @param attestation The attestation that the attester wants to send to the epoch key
-     * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
-     */
-    function submitAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
-    ) external payable {
-        require(
-            attesters[msg.sender] > 0,
-            "Unirep: attester has not signed up yet"
-        );
-        require(
-            attesters[msg.sender] == attestation.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
-        require(
-            toProofIndex != 0 &&
-            toProofIndex < proofIndex &&
-            fromProofIndex < proofIndex,
-            "Unirep: invalid proof index"
-        );
-        require(
-            attestation.signUp == 0 || attestation.signUp == 1,
-            "Unirep: invalid sign up flag"
-        );
-        require(epochKey <= maxEpochKey, "Unirep: invalid epoch key range");
-
-        // Add to the cumulated attesting fee
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-        // Process attestation
-        emitAttestationEvent(
-            msg.sender,
-            attestation,
-            epochKey,
-            toProofIndex,
-            fromProofIndex,
-            AttestationEvent.SendAttestation
-        );
-    }
-
-    /*
-     * An attester submit the attestation with an epoch key proof via a relayer
+    /** 
      * @param attester The address of the attester
-     * @param signature The signature of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
      * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
      * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
      */
-    function submitAttestationViaRelayer(
+    function _submitAttestation(
         address attester,
-        bytes calldata signature,
         Attestation calldata attestation,
         uint256 epochKey,
         uint256 toProofIndex,
         uint256 fromProofIndex
-    ) external payable {
-        verifySignature(attester, signature);
-        require(
-            attesters[attester] > 0,
-            "Unirep: attester has not signed up yet"
-        );
-        require(
-            attesters[attester] == attestation.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
+    ) private {
+        verifyAstesterSignUp(attester);
+        verifyAttesterIndex(attester, attestation.attesterId);
+        verifyAttesterFee();
+
         require(
             toProofIndex != 0 &&
             toProofIndex < proofIndex &&
@@ -434,6 +270,43 @@ contract Unirep is SnarkConstants, Hasher {
             fromProofIndex,
             AttestationEvent.SendAttestation
         );
+    } 
+
+    /*
+     * An attester submit the attestation with a proof index
+     * @param attestation The attestation that the attester wants to send to the epoch key
+     * @param epochKey The epoch key which receives attestation
+     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
+     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
+     */
+    function submitAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey,
+        uint256 toProofIndex,
+        uint256 fromProofIndex
+    ) external payable {
+      _submitAttestation(msg.sender, attestation, epochKey, toProofIndex, fromProofIndex);
+    }
+
+    /*
+     * An attester submit the attestation with an epoch key proof via a relayer
+     * @param attester The address of the attester
+     * @param signature The signature of the attester
+     * @param attestation The attestation including positive reputation, negative reputation or graffiti
+     * @param epochKey The epoch key which receives attestation
+     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
+     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
+     */
+    function submitAttestationViaRelayer(
+        address attester,
+        bytes calldata signature,
+        Attestation calldata attestation,
+        uint256 epochKey,
+        uint256 toProofIndex,
+        uint256 fromProofIndex
+    ) external payable {
+        verifySignature(attester, signature);
+        _submitAttestation(attester, attestation, epochKey, toProofIndex, fromProofIndex);
     }
 
     /*
@@ -442,10 +315,7 @@ contract Unirep is SnarkConstants, Hasher {
      */
     function submitEpochKeyProof(EpochKeyProof memory _input) external {
         bytes32 proofNullifier = Hasher.hashEpochKeyProof(_input);
-        require(
-            getProofIndex[proofNullifier] == 0,
-            "Unirep: the proof has been submitted before"
-        );
+        verifyProofNullilier(proofNullifier);
         require(
             _input.epoch == currentEpoch,
             "Unirep: submit an epoch key proof with incorrect epoch"
@@ -474,22 +344,12 @@ contract Unirep is SnarkConstants, Hasher {
      */
     function airdropEpochKey(SignUpProof memory _input) external payable {
         bytes32 proofNullifier = Hasher.hashSignUpProof(_input);
-        require(
-            getProofIndex[proofNullifier] == 0,
-            "Unirep: the proof has been submitted before"
-        );
-        require(
-            attesters[msg.sender] > 0,
-            "Unirep: attester has not signed up yet"
-        );
-        require(
-            attesters[msg.sender] == _input.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
+        address sender = msg.sender;
+        verifyProofNullilier(proofNullifier);
+        verifyAstesterSignUp(sender);
+        verifyAttesterIndex(sender, _input.attesterId);
+        verifyAttesterFee();
+
         require(
             _input.epoch == currentEpoch,
             "Unirep: submit an airdrop proof with incorrect epoch"
@@ -535,22 +395,12 @@ contract Unirep is SnarkConstants, Hasher {
      */
     function spendReputation(ReputationProof memory _input) external payable {
         bytes32 proofNullifier = Hasher.hashReputationProof(_input);
-        require(
-            getProofIndex[proofNullifier] == 0,
-            "Unirep: the proof has been submitted before"
-        );
-        require(
-            attesters[msg.sender] > 0,
-            "Unirep: attester has not signed up yet"
-        );
-        require(
-            attesters[msg.sender] == _input.attesterId,
-            "Unirep: mismatched attesterId"
-        );
-        require(
-            msg.value == attestingFee,
-            "Unirep: no attesting fee or incorrect amount"
-        );
+
+        verifyProofNullilier(proofNullifier); 
+        verifyAstesterSignUp(msg.sender);
+        verifyAttesterIndex(msg.sender, _input.attesterId);
+        verifyAttesterFee();
+
         require(
             _input.repNullifiers.length == maxReputationBudget,
             "Unirep: invalid number of reputation nullifiers"
@@ -607,15 +457,15 @@ contract Unirep is SnarkConstants, Hasher {
     ) internal {
         // Validate attestation data
         require(
-            attestation.posRep < SNARK_SCALAR_FIELD,
+            isSNARKField(attestation.posRep),
             "Unirep: invalid attestation posRep"
         );
         require(
-            attestation.negRep < SNARK_SCALAR_FIELD,
+            isSNARKField(attestation.negRep),
             "Unirep: invalid attestation negRep"
         );
         require(
-            attestation.graffiti < SNARK_SCALAR_FIELD,
+            isSNARKField(attestation.graffiti),
             "Unirep: invalid attestation graffiti"
         );
 
@@ -666,10 +516,8 @@ contract Unirep is SnarkConstants, Hasher {
             _globalStateTree,
             _proof
         );
-        require(
-            getProofIndex[proofNullifier] == 0,
-            "Unirep: the proof has been submitted before"
-        );
+
+        verifyProofNullilier(proofNullifier); 
 
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
@@ -695,11 +543,8 @@ contract Unirep is SnarkConstants, Hasher {
             _inputBlindedUserState,
             _proof
         );
-        require(
-            getProofIndex[proofNullifier] == 0,
-            "Unirep: the proof has been submitted before"
-        );
 
+        verifyProofNullilier(proofNullifier);
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
@@ -717,10 +562,8 @@ contract Unirep is SnarkConstants, Hasher {
         uint256[] memory proofIndexRecords
     ) external {
         bytes32 proofNullifier = Hasher.hashUserStateTransitionProof(_proof);
-        require(
-            getProofIndex[proofNullifier] == 0,
-            "Unirep: the proof has been submitted before"
-        );
+        
+        verifyProofNullilier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
         require(
             _proof.transitionFromEpoch < currentEpoch,
@@ -782,12 +625,10 @@ contract Unirep is SnarkConstants, Hasher {
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < _publicSignals.length; i++) {
-            require(
-                _publicSignals[i] < SNARK_SCALAR_FIELD,
-                "Unirep: each public signal must be lt the snark scalar field"
-            );
-        }
+         require(
+            isValidSignals(_publicSignals), 
+            "Unirep: invalid public signals when verifyEpochKeyValidity"
+        ); 
 
         ProofsRelated memory proof;
         // Unpack the snark proof
@@ -817,12 +658,10 @@ contract Unirep is SnarkConstants, Hasher {
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < _publicSignals.length; i++) {
-            require(
-                _publicSignals[i] < SNARK_SCALAR_FIELD,
-                "Unirep: each public signal must be lt the snark scalar field"
-            );
-        }
+        require(
+            isValidSignals(_publicSignals), 
+            "Unirep: invalid public signals when verify StartTransition Proof"
+        );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
@@ -851,13 +690,10 @@ contract Unirep is SnarkConstants, Hasher {
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-        // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < _publicSignals.length; i++) {
-            require(
-                _publicSignals[i] < SNARK_SCALAR_FIELD,
-                "Unirep: each public signal must be lt the snark scalar field"
-            );
-        }
+       require(
+            isValidSignals(_publicSignals), 
+            "Unirep: invalid public signals when verify ProcessAttestation Proof"
+        );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
@@ -900,13 +736,12 @@ contract Unirep is SnarkConstants, Hasher {
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-        // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < _publicSignals.length; i++) {
-            require(
-                _publicSignals[i] < SNARK_SCALAR_FIELD,
-                "Unirep: each public signal must be lt the snark scalar field"
-            );
-        }
+     
+        require(
+            isValidSignals(_publicSignals), 
+            "Unirep: invalid public signals when verify UserStateTransition"
+        );
+        
         ProofsRelated memory proof;
         // Unpack the snark proof
         (proof.a, proof.b, proof.c) = unpackProof(_input.proof);
@@ -947,14 +782,12 @@ contract Unirep is SnarkConstants, Hasher {
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-        // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < _publicSignals.length; i++) {
-            require(
-                _publicSignals[i] < SNARK_SCALAR_FIELD,
-                "Unirep: each public signal must be lt the snark scalar field"
-            );
-        }
 
+        require(
+            isValidSignals(_publicSignals), 
+            "Unirep: invalid public signals when verify Reputation"
+        );
+        
         ProofsRelated memory proof;
         // Unpack the snark proof
         (proof.a, proof.b, proof.c) = unpackProof(_input.proof);
@@ -987,13 +820,10 @@ contract Unirep is SnarkConstants, Hasher {
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-        // TODO: consider having more granular revert reasons
-        for (uint8 i = 0; i < _publicSignals.length; i++) {
-            require(
-                _publicSignals[i] < SNARK_SCALAR_FIELD,
-                "Unirep: each public signal must be lt the snark scalar field"
-            );
-        }
+        require(
+            isValidSignals(_publicSignals), 
+            "Unirep: invalid public signals when verify UserSignUp"
+        );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
@@ -1008,15 +838,7 @@ contract Unirep is SnarkConstants, Hasher {
         );
         return proof.isValid;
     }
-
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a > b) {
-            return b;
-        } else {
-            return a;
-        }
-    }
-
+ 
     /*
      * A helper function to convert an array of 8 uint256 values into the a, b,
      * and c array values that the zk-SNARK verifier's verifyProof accepts.
@@ -1039,6 +861,7 @@ contract Unirep is SnarkConstants, Hasher {
 
     /*
      * Functions to burn fee and collect compenstation.
+     * TODO: Should use attester fee, shouldn't burn like this.
      */
     function burnAttestingFee() external {
         uint256 amount = collectedAttestingFee;
