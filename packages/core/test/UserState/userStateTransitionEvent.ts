@@ -449,10 +449,10 @@ describe('User state transition events in Unirep User State', async function () 
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
-                const epoch = Number(args?._epoch)
-                const commitment = BigInt(args?._identityCommitment)
-                const attesterId = Number(args?._attesterId)
-                const airdrop = Number(args?._airdropAmount)
+                const epoch = Number(args?.epoch)
+                const commitment = BigInt(args?.identityCommitment)
+                const attesterId = Number(args?.attesterId)
+                const airdrop = Number(args?.airdropAmount)
 
                 await userState.signUp(epoch, commitment, attesterId, airdrop)
             }

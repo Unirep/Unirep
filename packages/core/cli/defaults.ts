@@ -3,6 +3,8 @@ import {
     epochLength,
     numEpochKeyNoncePerEpoch,
 } from '../config/testLocal'
+
+//  TODO: better setup for cli Ethereum client.
 // import { ALCHEMY_API_KEY } from '../config/privateKey'
 
 // apply the api key from https://www.alchemy.com/

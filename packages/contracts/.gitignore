@@ -4,4 +4,6 @@ build-info
 node_modules
 .DS_Store
 typechain
-build/*
+build
+contracts/verifiers
+artifacts

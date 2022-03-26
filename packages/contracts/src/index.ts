@@ -129,7 +129,7 @@ class Attestation implements IAttestation {
     }
 }
 
-// the struct EpochKeyProof in UnirepObjs
+// the struct EpochKeyProof in UnirepTypes
 class EpochKeyProof implements IEpochKeyProof {
     public globalStateTree: Field
     public epoch: Field

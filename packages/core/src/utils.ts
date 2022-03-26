@@ -126,7 +126,7 @@ const genNewSMT = async (
 const verifyEpochKeyProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
-    const args = event?.args?._proof
+    const args = event?.args?.proof
     const emptyArray = []
     const formatPublicSignals = emptyArray
         .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
@@ -143,7 +143,7 @@ const verifyEpochKeyProofEvent = async (
 const verifyReputationProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
-    const args = event?.args?._proof
+    const args = event?.args?.proof
     const emptyArray = []
     const formatPublicSignals = emptyArray
         .concat(
@@ -170,7 +170,7 @@ const verifyReputationProofEvent = async (
 const verifySignUpProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
-    const args = event?.args?._proof
+    const args = event?.args?.proof
     const emptyArray = []
     const formatPublicSignals = emptyArray
         .concat(
@@ -197,12 +197,12 @@ const verifyStartTransitionProofEvent = async (
     const emptyArray = []
     const formatPublicSignals = emptyArray
         .concat(
-            args?._blindedUserState,
-            args?._blindedHashChain,
-            args?._globalStateTree
+            args?.blindedUserState,
+            args?.blindedHashChain,
+            args?.globalStateTree
         )
         .map((n) => BigInt(n))
-    const formatProof = formatProofForSnarkjsVerification(args?._proof)
+    const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.startTransition,
         formatProof,
@@ -218,12 +218,12 @@ const verifyProcessAttestationEvent = async (
     const emptyArray = []
     const formatPublicSignals = emptyArray
         .concat(
-            args?._outputBlindedUserState,
-            args?._outputBlindedHashChain,
-            args?._inputBlindedUserState
+            args?.outputBlindedUserState,
+            args?.outputBlindedHashChain,
+            args?.inputBlindedUserState
         )
         .map((n) => BigInt(n))
-    const formatProof = formatProofForSnarkjsVerification(args?._proof)
+    const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.processAttestations,
         formatProof,
@@ -235,7 +235,7 @@ const verifyProcessAttestationEvent = async (
 const verifyUserStateTransitionEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
-    const transitionArgs = event?.args?._proof
+    const transitionArgs = event?.args?.proof
     const emptyArray = []
     let formatPublicSignals = emptyArray
         .concat(
@@ -273,7 +273,7 @@ const verifyUSTEvents = async (
     if (!isStartTransitionProofValid) return false
 
     // verify process attestations proofs
-    const transitionArgs = transitionEvent?.args?._proof
+    const transitionArgs = transitionEvent?.args?.proof
     const isProcessAttestationValid = await verifyProcessAttestationEvents(
         processAttestationEvents,
         transitionArgs.blindedUserStates[0],
@@ -296,7 +296,7 @@ const verifyProcessAttestationEvents = async (
             processAttestationEvents[i]
         )
         if (!isValid) return false
-        currentBlindedUserState = args?._outputBlindedUserState
+        currentBlindedUserState = args?.outputBlindedUserState
     }
     return currentBlindedUserState.eq(finalBlindedUserState)
 }
@@ -481,7 +481,7 @@ const genUnirepStateFromContract = async (
         signUpProofEvent
     )
     for (const event of events) {
-        const proofIndex = Number(event?.args?._proofIndex)
+        const proofIndex = Number(event?.args?.proofIndex)
         proofIndexMap[proofIndex] = event
     }
 
@@ -490,7 +490,7 @@ const genUnirepStateFromContract = async (
         // console.log('Generating Unirep State progress: ', i, '/', sequencerEvents.length)
         const blockNumber = sequencerEvent.blockNumber
         if (blockNumber < startBlock) continue
-        const occurredEvent = sequencerEvent.args?._event
+        const occurredEvent = sequencerEvent.args?.userEvent
         if (occurredEvent === Event.UserSignedUp) {
             const signUpEvent = userSignedUpEvents.pop()
             if (signUpEvent === undefined) {
@@ -500,10 +500,10 @@ const genUnirepStateFromContract = async (
                 continue
             }
             const args = signUpEvent?.args
-            const epoch = Number(args?._epoch)
-            const commitment = BigInt(args?._identityCommitment)
-            const attesterId = Number(args?._attesterId)
-            const airdrop = Number(args?._airdropAmount)
+            const epoch = Number(args?.epoch)
+            const commitment = BigInt(args?.identityCommitment)
+            const attesterId = Number(args?.attesterId)
+            const airdrop = Number(args?.airdropAmount)
 
             await unirepState.signUp(
                 epoch,
@@ -521,12 +521,12 @@ const genUnirepStateFromContract = async (
                 continue
             }
             const args = attestationSubmittedEvent?.args
-            const epoch = Number(args?._epoch)
+            const epoch = Number(args?.epoch)
             const toProofIndex = Number(args?.toProofIndex)
             const fromProofIndex = Number(args?.fromProofIndex)
-            const attestation_ = args?._attestation
+            const attestation_ = args?.attestation
             const event = proofIndexMap[toProofIndex]
-            const results = event?.args?._proof
+            const results = event?.args?.proof
 
             if (isProofIndexValid[toProofIndex] === undefined) {
                 let isValid
@@ -565,7 +565,9 @@ const genUnirepStateFromContract = async (
                 }
 
                 // if it is SpendRepuation event, check the reputation nullifiers
-                if (args?._event === AttestationEvent.SpendReputation) {
+                if (
+                    args?.attestationEvent === AttestationEvent.SpendReputation
+                ) {
                     let validNullifier = true
                     const nullifiers = results?.repNullifiers.map((n) =>
                         BigInt(n)
@@ -608,7 +610,7 @@ const genUnirepStateFromContract = async (
                 }
 
                 const proveReputationAmount = Number(
-                    fromEvent?.args?._proof?.proveReputationAmount
+                    fromEvent?.args?.proof?.proveReputationAmount
                 )
                 const repInAttestation =
                     Number(attestation_.posRep) + Number(attestation_.negRep)
@@ -637,7 +639,7 @@ const genUnirepStateFromContract = async (
                     BigInt(attestation_.graffiti),
                     BigInt(attestation_.signUp)
                 )
-                const epochKey = args?._epochKey
+                const epochKey = args?.epochKey
                 if (epochKey.eq(results?.epochKey)) {
                     unirepState.addAttestation(
                         epochKey.toString(),
@@ -653,7 +655,7 @@ const genUnirepStateFromContract = async (
                 console.log(`Event sequence mismatch: missing epochEndedEvent`)
                 continue
             }
-            const epoch = epochEndedEvent.args?._epoch.toNumber()
+            const epoch = epochEndedEvent.args?.epoch.toNumber()
 
             await unirepState.epochTransition(epoch, blockNumber)
         } else if (occurredEvent === Event.UserStateTransitioned) {
@@ -665,11 +667,11 @@ const genUnirepStateFromContract = async (
                 continue
             }
             const args = userStateTransitionedEvent?.args
-            const epoch = Number(args?._epoch)
-            const newLeaf = BigInt(args?._hashedLeaf)
-            const proofIndex = Number(args?._proofIndex)
+            const epoch = Number(args?.epoch)
+            const newLeaf = BigInt(args?.hashedLeaf)
+            const proofIndex = Number(args?.proofIndex)
             const event = proofIndexMap[proofIndex]
-            const proofArgs = event?.args?._proof
+            const proofArgs = event?.args?.proof
             const fromEpoch = Number(proofArgs?.transitionFromEpoch)
 
             if (isProofIndexValid[proofIndex] === undefined) {
@@ -679,7 +681,7 @@ const genUnirepStateFromContract = async (
                     continue
                 }
 
-                const proofIndexes = event?.args?._proofIndexRecords.map((n) =>
+                const proofIndexes = event?.args?.proofIndexRecords.map((n) =>
                     Number(n)
                 )
                 const startTransitionEvent = proofIndexMap[proofIndexes[0]]
@@ -961,7 +963,7 @@ const genUserStateFromContract = async (
         signUpProofEvent
     )
     for (const event of events) {
-        const proofIndex = Number(event?.args?._proofIndex)
+        const proofIndex = Number(event?.args?.proofIndex)
         proofIndexMap[proofIndex] = event
     }
 
@@ -970,7 +972,7 @@ const genUserStateFromContract = async (
         const sequencerEvent = sequencerEvents[i]
         const blockNumber = sequencerEvent.blockNumber
         if (blockNumber < startBlock) continue
-        const occurredEvent = sequencerEvent.args?._event
+        const occurredEvent = sequencerEvent.args?.userEvent
         if (occurredEvent === Event.UserSignedUp) {
             const signUpEvent = userSignedUpEvents.pop()
             if (signUpEvent === undefined) {
@@ -980,10 +982,10 @@ const genUserStateFromContract = async (
                 continue
             }
             const args = signUpEvent?.args
-            const epoch = Number(args?._epoch)
-            const commitment = BigInt(args?._identityCommitment)
-            const attesterId = Number(args?._attesterId)
-            const airdrop = Number(args?._airdropAmount)
+            const epoch = Number(args?.epoch)
+            const commitment = BigInt(args?.identityCommitment)
+            const attesterId = Number(args?.attesterId)
+            const airdrop = Number(args?.airdropAmount)
 
             await userState.signUp(
                 epoch,
@@ -1001,12 +1003,12 @@ const genUserStateFromContract = async (
                 continue
             }
             const args = attestationSubmittedEvent?.args
-            const epoch = Number(args?._epoch)
+            const epoch = Number(args?.epoch)
             const toProofIndex = Number(args?.toProofIndex)
             const fromProofIndex = Number(args?.fromProofIndex)
-            const attestation_ = args?._attestation
+            const attestation_ = args?.attestation
             const event = proofIndexMap[toProofIndex]
-            const results = event?.args?._proof
+            const results = event?.args?.proof
 
             if (isProofIndexValid[toProofIndex] === undefined) {
                 let isValid
@@ -1045,7 +1047,9 @@ const genUserStateFromContract = async (
                 }
 
                 // if it is SpendRepuation event, check the reputation nullifiers
-                if (args?._event === AttestationEvent.SpendReputation) {
+                if (
+                    args?.attestationEvent === AttestationEvent.SpendReputation
+                ) {
                     let validNullifier = true
                     const nullifiers = results?.repNullifiers.map((n) =>
                         BigInt(n)
@@ -1088,7 +1092,7 @@ const genUserStateFromContract = async (
                 }
 
                 const proveReputationAmount = Number(
-                    fromEvent?.args?._proof?.proveReputationAmount
+                    fromEvent?.args?.proof?.proveReputationAmount
                 )
                 const repInAttestation =
                     Number(attestation_.posRep) + Number(attestation_.negRep)
@@ -1117,7 +1121,7 @@ const genUserStateFromContract = async (
                     BigInt(attestation_.graffiti),
                     BigInt(attestation_.signUp)
                 )
-                const epochKey = args?._epochKey
+                const epochKey = args?.epochKey
                 if (epochKey.eq(results?.epochKey)) {
                     userState.addAttestation(
                         epochKey.toString(),
@@ -1133,7 +1137,7 @@ const genUserStateFromContract = async (
                 console.log(`Event sequence mismatch: missing epochEndedEvent`)
                 continue
             }
-            const epoch = epochEndedEvent.args?._epoch.toNumber()
+            const epoch = epochEndedEvent.args?.epoch.toNumber()
 
             await userState.epochTransition(epoch, blockNumber)
         } else if (occurredEvent === Event.UserStateTransitioned) {
@@ -1145,11 +1149,11 @@ const genUserStateFromContract = async (
                 continue
             }
             const args = userStateTransitionedEvent?.args
-            const epoch = Number(args?._epoch)
-            const newLeaf = BigInt(args?._hashedLeaf)
-            const proofIndex = Number(args?._proofIndex)
+            const epoch = Number(args?.epoch)
+            const newLeaf = BigInt(args?.hashedLeaf)
+            const proofIndex = Number(args?.proofIndex)
             const event = proofIndexMap[proofIndex]
-            const proofArgs = event?.args?._proof
+            const proofArgs = event?.args?.proof
             const fromEpoch = Number(proofArgs?.transitionFromEpoch)
 
             if (isProofIndexValid[proofIndex] === undefined) {
@@ -1159,7 +1163,7 @@ const genUserStateFromContract = async (
                     continue
                 }
 
-                const proofIndexes = event?.args?._proofIndexRecords.map((n) =>
+                const proofIndexes = event?.args?.proofIndexRecords.map((n) =>
                     Number(n)
                 )
                 const startTransitionEvent = proofIndexMap[proofIndexes[0]]

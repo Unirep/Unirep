@@ -271,11 +271,11 @@
 //     //         const newLeafEvents = await unirepContract.queryFilter(newLeafFilter)
 //     //         expect(newLeafEvents.length, `Number of state transition events current epoch should be ${userStateTransitionedNum[currentEpoch.toNumber()].length}`).to.equal(userStateTransitionedNum[currentEpoch.toNumber()].length)
 
-//     //         const proofIndex = newLeafEvents[0]?.args?._proofIndex
+//     //         const proofIndex = newLeafEvents[0]?.args?.proofIndex
 //     //         const isValidEvent = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
 //     //         expect(isValidEvent).not.equal(undefined)
 //     //         expect(isValidEvent?.event).equal("UserStateTransitionProof")
-//     //         const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
+//     //         const newLeaf = BigInt(newLeafEvents[0].args?.hashedLeaf)
 //     //         validProofIndex[proofIndex.toNumber()] = true
 
 //     //         const epkNullifiers = isValidEvent?.args?.userTransitionedData?.epkNullifiers
@@ -345,7 +345,7 @@
 
 //     //         for(const event of newLeafEvents){
 //     //             const args = event?.args
-//     //             const proofIndex = args?._proofIndex
+//     //             const proofIndex = args?.proofIndex
 //     //             if (validProofIndex[proofIndex.toNumber()]) GSTreeLeafIndex ++
 
 //     //             // New leaf events are from user sign up and user state transition
@@ -355,9 +355,9 @@
 //     //             // found user sign up event, then continue
 //     //             if (signUpEvents.length == 1) {
 //     //                 GSTreeLeafIndex ++
-//     //                 if(BigInt(signUpEvents[0]?.args?._identityCommitment) == commitment) {
-//     //                     expect(signUpEvents[0]?.args?._attesterId.toNumber()).equal(secondAttesterId)
-//     //                     expect(signUpEvents[0]?.args?._airdropAmount.toNumber()).equal(secondAttesterAirdropAmount)
+//     //                 if(BigInt(signUpEvents[0]?.args?.identityCommitment) == commitment) {
+//     //                     expect(signUpEvents[0]?.args?.attesterId.toNumber()).equal(secondAttesterId)
+//     //                     expect(signUpEvents[0]?.args?.airdropAmount.toNumber()).equal(secondAttesterAirdropAmount)
 //     //                     break
 //     //                 }
 //     //                 validProofIndex[proofIndex.toNumber()] = true
@@ -942,11 +942,11 @@
 //     //         const newLeafEvents = await unirepContract.queryFilter(newLeafFilter)
 //     //         expect(newLeafEvents.length, `Number of state transition events current epoch should be ${userStateTransitionedNum[currentEpoch.toNumber()].length}`).to.equal(userStateTransitionedNum[currentEpoch.toNumber()].length)
 
-//     //         const proofIndex = newLeafEvents[0]?.args?._proofIndex
+//     //         const proofIndex = newLeafEvents[0]?.args?.proofIndex
 //     //         const isValidEvent = await verifyNewGSTProofByIndex(unirepContract, proofIndex)
 //     //         expect(isValidEvent).not.equal(undefined)
 //     //         expect(isValidEvent?.event).equal("UserStateTransitionProof")
-//     //         const newLeaf = BigInt(newLeafEvents[0].args?._hashedLeaf)
+//     //         const newLeaf = BigInt(newLeafEvents[0].args?.hashedLeaf)
 //     //         validProofIndex[proofIndex.toNumber()] = true
 
 //     //         const epkNullifiers = isValidEvent?.args?.userTransitionedData?.epkNullifiers

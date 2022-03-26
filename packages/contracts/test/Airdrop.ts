@@ -101,7 +101,7 @@ describe('Airdrop', function () {
 
             const signUpFilter = unirepContract.filters.UserSignedUp()
             const signUpEvents = await unirepContract.queryFilter(signUpFilter)
-            const commitment_ = signUpEvents[numUsers].args._identityCommitment
+            const commitment_ = signUpEvents[numUsers].args.identityCommitment
             expect(commitment_).equal(userCommitment)
             numUsers++
 
@@ -112,9 +112,9 @@ describe('Airdrop', function () {
             const reputationRecords = {}
             let attesterId_
             for (const event of signUpEvents) {
-                attesterId_ = event.args._attesterId.toNumber()
+                attesterId_ = event.args.attesterId.toNumber()
                 reputationRecords[attesterId_] = new Reputation(
-                    BigInt(event.args._airdropAmount),
+                    BigInt(event.args.airdropAmount),
                     BigInt(0),
                     BigInt(0),
                     BigInt(0) // airdrop amount == 0
@@ -151,7 +151,7 @@ describe('Airdrop', function () {
 
             const signUpFilter = unirepContract.filters.UserSignedUp()
             const signUpEvents = await unirepContract.queryFilter(signUpFilter)
-            const commitment_ = signUpEvents[numUsers].args._identityCommitment
+            const commitment_ = signUpEvents[numUsers].args.identityCommitment
             expect(commitment_).equal(userCommitment)
             numUsers++
         })
@@ -171,16 +171,16 @@ describe('Airdrop', function () {
             expect(receipt.status).equal(1)
             const signUpFilter = unirepContract.filters.UserSignedUp()
             const signUpEvents = await unirepContract.queryFilter(signUpFilter)
-            const commitment_ = signUpEvents[numUsers].args._identityCommitment
+            const commitment_ = signUpEvents[numUsers].args.identityCommitment
             expect(commitment_).equal(userCommitment)
             numUsers++
 
             currentEpoch = (await unirepContract.currentEpoch()).toNumber()
             reputationRecords = {}
             for (const event of signUpEvents) {
-                attesterId_ = event.args._attesterId.toNumber()
+                attesterId_ = event.args.attesterId.toNumber()
                 reputationRecords[attesterId_] = new Reputation(
-                    BigInt(event.args._airdropAmount),
+                    BigInt(event.args.airdropAmount),
                     BigInt(0),
                     BigInt(0),
                     BigInt(1) // airdrop amount != 0

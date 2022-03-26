@@ -124,7 +124,7 @@ describe('Generate user state', function () {
 
             expect(userSignedUpEvents.length).equal(1)
             const args = userSignedUpEvents[0]?.args
-            const _commitment = BigInt(args?._identityCommitment)
+            const _commitment = BigInt(args?.identityCommitment)
             expect(_commitment).equal(userCommitments[firstUser])
 
             let startTime = new Date().getTime()

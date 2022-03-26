@@ -2,36 +2,42 @@
 
 set -e
 
+
 cd "$(dirname "$0")"
 cd ..
-mkdir -p build
 
-npx ts-node scripts/buildVerifiers.ts -s build/EpochKeyValidityVerifier.sol -vs EpochKeyValidityVerifier -cn verifyEpochKey
+BUILD_FOLDER=./build
+VERIFIER_CONTRACT_FOLDER=./contracts/verifiers
 
-echo 'Copying EpochKeyValidityVerifier.sol to contracts/'
-cp ./build/EpochKeyValidityVerifier.sol ./contracts/
+mkdir -p $BUILD_FOLDER
+mkdir -p  $VERIFIER_CONTRACT_FOLDER
 
-npx ts-node scripts/buildVerifiers.ts -s build/ReputationVerifier.sol -vs ReputationVerifier -cn proveReputation
+npx ts-node scripts/buildVerifiers.ts -s $BUILD_FOLDER/EpochKeyValidityVerifier.sol -vs EpochKeyValidityVerifier -cn verifyEpochKey
 
-echo 'Copying ReputationVerifier.sol to contracts/'
-cp ./build/ReputationVerifier.sol ./contracts/
+echo 'Copying EpochKeyValidityVerifier.sol to verifiers folder'
+cp $BUILD_FOLDER/EpochKeyValidityVerifier.sol  $VERIFIER_CONTRACT_FOLDER
 
-npx ts-node scripts/buildVerifiers.ts -s build/UserSignUpVerifier.sol -vs UserSignUpVerifier -cn proveUserSignUp
+npx ts-node scripts/buildVerifiers.ts -s $BUILD_FOLDER/ReputationVerifier.sol -vs ReputationVerifier -cn proveReputation
 
-echo 'Copying UserSignUpVerifier.sol to contracts/'
-cp ./build/UserSignUpVerifier.sol ./contracts/
+echo 'Copying ReputationVerifier.sol to verifers folders'
+cp $BUILD_FOLDER/ReputationVerifier.sol  $VERIFIER_CONTRACT_FOLDER
 
-npx ts-node scripts/buildVerifiers.ts -s build/StartTransitionVerifier.sol -vs StartTransitionVerifier -cn startTransition
+npx ts-node scripts/buildVerifiers.ts -s $BUILD_FOLDER/UserSignUpVerifier.sol -vs UserSignUpVerifier -cn proveUserSignUp
 
-echo 'Copying StartTransitionVerifier.sol to contracts/'
-cp ./build/StartTransitionVerifier.sol ./contracts/
+echo 'Copying UserSignUpVerifier.sol to verifers folders'
+cp $BUILD_FOLDER/UserSignUpVerifier.sol  $VERIFIER_CONTRACT_FOLDER
 
-npx ts-node scripts/buildVerifiers.ts -s build/ProcessAttestationsVerifier.sol -vs ProcessAttestationsVerifier -cn processAttestations
+npx ts-node scripts/buildVerifiers.ts -s $BUILD_FOLDER/StartTransitionVerifier.sol -vs StartTransitionVerifier -cn startTransition
 
-echo 'Copying ProcessAttestationsVerifier.sol to contracts/'
-cp ./build/ProcessAttestationsVerifier.sol ./contracts/
+echo 'Copying StartTransitionVerifier.sol to verifers folders'
+cp $BUILD_FOLDER/StartTransitionVerifier.sol  $VERIFIER_CONTRACT_FOLDER
 
-npx ts-node scripts/buildVerifiers.ts -s build/UserStateTransitionVerifier.sol -vs UserStateTransitionVerifier -cn userStateTransition
+npx ts-node scripts/buildVerifiers.ts -s $BUILD_FOLDER/ProcessAttestationsVerifier.sol -vs ProcessAttestationsVerifier -cn processAttestations
 
-echo 'Copying UserStateTransitionVerifier.sol to contracts/'
-cp ./build/UserStateTransitionVerifier.sol ./contracts/
+echo 'Copying ProcessAttestationsVerifier.sol to verifers folders'
+cp $BUILD_FOLDER/ProcessAttestationsVerifier.sol  $VERIFIER_CONTRACT_FOLDER
+
+npx ts-node scripts/buildVerifiers.ts -s $BUILD_FOLDER/UserStateTransitionVerifier.sol -vs UserStateTransitionVerifier -cn userStateTransition
+
+echo 'Copying UserStateTransitionVerifier.sol to verifers folders'
+cp $BUILD_FOLDER/UserStateTransitionVerifier.sol  $VERIFIER_CONTRACT_FOLDER
