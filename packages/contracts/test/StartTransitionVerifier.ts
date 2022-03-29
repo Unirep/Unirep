@@ -15,8 +15,8 @@ import {
     bootstrapRandomUSTree,
     genInputForContract,
 } from './utils'
-import { circuitGlobalStateTreeDepth } from '../config/'
 import { computeStartTransitionProofHash, deployUnirep } from '../src'
+import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -51,7 +51,7 @@ describe('User State Transition circuits', function () {
 
             // Global state tree
             GSTree = new IncrementalMerkleTree(
-                circuitGlobalStateTreeDepth,
+                GLOBAL_STATE_TREE_DEPTH,
                 GSTZERO_VALUE,
                 2
             )

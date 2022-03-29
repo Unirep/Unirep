@@ -6,14 +6,6 @@ import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 
 import {
-    attestingFee,
-    epochLength,
-    maxUsers,
-    numEpochKeyNoncePerEpoch,
-    maxReputationBudget,
-    maxAttesters,
-} from '../config'
-import {
     getTreeDepthsForTesting,
     Reputation,
     genProofAndVerify,
@@ -22,6 +14,14 @@ import {
     genInputForContract,
 } from './utils'
 import { deployUnirep } from '../src'
+import {
+    ATTESTTING_FEE,
+    EPOCH_LENGTH,
+    MAX_ATTESTERS,
+    MAX_REPUTATION_BUDGET,
+    MAX_USERS,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '@unirep/config'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -39,13 +39,14 @@ describe('Airdrop', function () {
 
         const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers: MAX_USERS,
+            maxAttesters: MAX_ATTESTERS,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            epochLength: EPOCH_LENGTH,
+            attestingFee: ATTESTTING_FEE,
         }
+
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
             _treeDepths,
@@ -239,7 +240,7 @@ describe('Airdrop', function () {
             const tx = await unirepContractCalledByAttester.airdropEpochKey(
                 input,
                 {
-                    value: attestingFee,
+                    value: ATTESTTING_FEE,
                 }
             )
             const receipt = await tx.wait()
@@ -268,7 +269,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
+                    value: ATTESTTING_FEE,
                 })
             ).to.be.revertedWith('Unirep: attester has not signed up yet')
         })
@@ -288,7 +289,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
+                    value: ATTESTTING_FEE,
                 })
             ).to.be.revertedWith('Unirep: mismatched attesterId')
         })
@@ -334,7 +335,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
+                    value: ATTESTTING_FEE,
                 })
             ).to.be.revertedWith(
                 'Unirep: submit an airdrop proof with incorrect epoch'
@@ -357,7 +358,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
+                    value: ATTESTTING_FEE,
                 })
             ).to.be.revertedWith('Unirep: invalid epoch key range')
         })

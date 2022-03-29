@@ -4,17 +4,17 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 
-import {
-    attestingFee,
-    epochLength,
-    globalStateTreeDepth,
-    numEpochKeyNoncePerEpoch,
-    userStateTreeDepth,
-    epochTreeDepth,
-    maxReputationBudget,
-} from '../config'
 import { deployUnirep } from '../src'
 import { getTreeDepthsForTesting } from './utils'
+import {
+    ATTESTTING_FEE,
+    EPOCH_LENGTH,
+    EPOCH_TREE_DEPTH,
+    GLOBAL_STATE_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    USER_STATE_TREE_DEPTH,
+} from '@unirep/config'
 
 describe('Signup', () => {
     const testMaxUser = 5
@@ -32,10 +32,10 @@ describe('Signup', () => {
         const _settings = {
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            epochLength: EPOCH_LENGTH,
+            attestingFee: ATTESTTING_FEE,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -46,19 +46,19 @@ describe('Signup', () => {
 
     it('should have the correct config value', async () => {
         const attestingFee_ = await unirepContract.attestingFee()
-        expect(attestingFee).equal(attestingFee_)
+        expect(ATTESTTING_FEE).equal(attestingFee_)
         const epochLength_ = await unirepContract.epochLength()
-        expect(epochLength).equal(epochLength_)
+        expect(EPOCH_LENGTH).equal(epochLength_)
         const numEpochKeyNoncePerEpoch_ =
             await unirepContract.numEpochKeyNoncePerEpoch()
-        expect(numEpochKeyNoncePerEpoch).equal(numEpochKeyNoncePerEpoch_)
+        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(numEpochKeyNoncePerEpoch_)
         const maxUsers_ = await unirepContract.maxUsers()
         expect(testMaxUser).equal(maxUsers_)
 
         const treeDepths_ = await unirepContract.treeDepths()
-        expect(epochTreeDepth).equal(treeDepths_.epochTreeDepth)
-        expect(globalStateTreeDepth).equal(treeDepths_.globalStateTreeDepth)
-        expect(userStateTreeDepth).equal(treeDepths_.userStateTreeDepth)
+        expect(EPOCH_TREE_DEPTH).equal(treeDepths_.epochTreeDepth)
+        expect(GLOBAL_STATE_TREE_DEPTH).equal(treeDepths_.globalStateTreeDepth)
+        expect(USER_STATE_TREE_DEPTH).equal(treeDepths_.userStateTreeDepth)
     })
 
     describe('User sign-ups', () => {

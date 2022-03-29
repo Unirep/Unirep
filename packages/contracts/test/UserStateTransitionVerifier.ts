@@ -10,7 +10,7 @@ import {
     genInputForContract,
 } from './utils'
 import { deployUnirep, UserTransitionProof } from '../src'
-import { epochLength } from '../config'
+import { EPOCH_LENGTH } from '@unirep/config'
 
 describe('User State Transition', function () {
     this.timeout(600000)
@@ -50,7 +50,7 @@ describe('User State Transition', function () {
 
         // UST should be performed after epoch transition
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)

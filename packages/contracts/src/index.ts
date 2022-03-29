@@ -427,8 +427,8 @@ const deployUnirep = async (
         _attestingFee
     if (_settings) {
         _maxUsers = _settings.maxUsers
-        ;(_maxAttesters = _settings.maxAttesters),
-            (_numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch)
+        _maxAttesters = _settings.maxAttesters
+        _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
         _maxReputationBudget = _settings.maxReputationBudget
         _epochLength = _settings.epochLength
         _attestingFee = _settings.attestingFee
