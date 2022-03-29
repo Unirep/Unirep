@@ -6,12 +6,13 @@ import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 import {
-    epochLength,
-    maxAttesters,
-    maxReputationBudget,
-    maxUsers,
-    numEpochKeyNoncePerEpoch,
-} from '../config'
+    MAX_USERS,
+    MAX_ATTESTERS,
+    MAX_REPUTATION_BUDGET,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    EPOCH_LENGTH,
+    ATTESTTING_FEE,
+} from '@unirep/config'
 import { genEpochKey, getTreeDepthsForTesting, Attestation } from './utils'
 import { deployUnirep, EpochKeyProof } from '../src'
 import { Unirep } from '../typechain'
@@ -46,12 +47,12 @@ describe('Attesting', () => {
 
         const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers: MAX_USERS,
+            maxAttesters: MAX_ATTESTERS,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            epochLength: EPOCH_LENGTH,
+            attestingFee: ATTESTTING_FEE,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],

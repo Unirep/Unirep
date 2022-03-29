@@ -11,14 +11,14 @@ import {
 } from '@unirep/crypto'
 
 import {
-    attestingFee,
-    circuitGlobalStateTreeDepth,
-    epochLength,
-    maxAttesters,
-    maxReputationBudget,
-    maxUsers,
-    numEpochKeyNoncePerEpoch,
-} from '../config'
+    ATTESTTING_FEE,
+    GLOBAL_STATE_TREE_DEPTH,
+    EPOCH_LENGTH,
+    MAX_ATTESTERS,
+    MAX_REPUTATION_BUDGET,
+    MAX_USERS,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '@unirep/config'
 import {
     getTreeDepthsForTesting,
     Attestation,
@@ -66,12 +66,12 @@ describe('Attesting', () => {
 
         const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers: MAX_USERS,
+            maxAttesters: MAX_ATTESTERS,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            epochLength: EPOCH_LENGTH,
+            attestingFee: ATTESTTING_FEE,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -96,7 +96,7 @@ describe('Attesting', () => {
         attesterId = await unirepContract.attesters(attesterAddress)
 
         tree = new IncrementalMerkleTree(
-            circuitGlobalStateTreeDepth,
+            GLOBAL_STATE_TREE_DEPTH,
             GSTZERO_VALUE,
             2
         )
@@ -144,7 +144,7 @@ describe('Attesting', () => {
             epochKey,
             proofIndex,
             senderPfIdx,
-            { value: attestingFee }
+            { value: ATTESTTING_FEE }
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -164,7 +164,7 @@ describe('Attesting', () => {
             circuitInputs
         )
         const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: attestingFee,
+            value: ATTESTTING_FEE,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -189,7 +189,7 @@ describe('Attesting', () => {
         )
 
         let tx = await unirepContractCalledByAttester.airdropEpochKey(input, {
-            value: attestingFee,
+            value: ATTESTTING_FEE,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -282,7 +282,7 @@ describe('Attesting', () => {
 
     it('submit user state transition proofs should success', async () => {
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         // Begin epoch transition
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
@@ -343,7 +343,9 @@ describe('Attesting', () => {
             } else if (repProofEvent.length == 1) {
                 console.log('reputation proof event')
                 const args = repProofEvent[0]?.args?.proof
-                expect(args?.repNullifiers.length).to.equal(maxReputationBudget)
+                expect(args?.repNullifiers.length).to.equal(
+                    MAX_REPUTATION_BUDGET
+                )
                 const isValid = await unirepContract.verifyReputation(args)
                 expect(isValid).equal(true)
             } else if (signUpProofEvent.length == 1) {

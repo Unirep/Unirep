@@ -5,11 +5,11 @@ import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
-    attestingFee,
-    epochLength,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
-} from '../config'
+    ATTESTTING_FEE,
+    EPOCH_LENGTH,
+    MAX_REPUTATION_BUDGET,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '@unirep/config'
 import { genEpochKey, getTreeDepthsForTesting, Attestation } from './utils'
 import { deployUnirep, EpochKeyProof, Event } from '../src'
 import { Unirep } from '../typechain'
@@ -85,7 +85,7 @@ describe('EventSequencing', () => {
         const reputationNullifiers: BigInt[] = []
         const minRep = 0
         const proveGraffiti = 1
-        for (let i = 0; i < maxReputationBudget; i++) {
+        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
             reputationNullifiers.push(BigInt(255))
         }
         tx = await unirepContractCalledByAttester.spendReputation(
@@ -101,7 +101,7 @@ describe('EventSequencing', () => {
                 genRandomSalt(),
                 proof,
             ],
-            { value: attestingFee }
+            { value: ATTESTTING_FEE }
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -123,7 +123,7 @@ describe('EventSequencing', () => {
             epochKey,
             epochKeyProofIndex,
             senderPfIdx,
-            { value: attestingFee }
+            { value: ATTESTTING_FEE }
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -144,7 +144,7 @@ describe('EventSequencing', () => {
         // 5. First epoch end
         // let numEpochKey = await unirepContract.getNumEpochKey(currentEpoch)
         // expect(numEpochKey).equal(1)
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength]) // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH]) // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -158,7 +158,7 @@ describe('EventSequencing', () => {
         const blindedHashChains: BigInt[] = []
         const blindedUserStates: BigInt[] = []
         const indexes: BigInt[] = []
-        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             epkNullifiers.push(BigInt(255))
             blindedHashChains.push(BigInt(255))
         }
@@ -226,7 +226,7 @@ describe('EventSequencing', () => {
             epochKey,
             epochKeyProofIndex,
             senderPfIdx,
-            { value: attestingFee }
+            { value: ATTESTTING_FEE }
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -234,7 +234,7 @@ describe('EventSequencing', () => {
         expectedEventsNumber++
 
         // 10. Second epoch end
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength]) // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH]) // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -243,7 +243,7 @@ describe('EventSequencing', () => {
         expectedEventsNumber++
 
         // 11. Third epoch end
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength]) // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH]) // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

@@ -5,11 +5,11 @@ import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 import {
-    circuitEpochTreeDepth,
-    maxReputationBudget,
-    circuitUserStateTreeDepth,
-    attestingFee,
-} from '../config'
+    EPOCH_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+    USER_STATE_TREE_DEPTH,
+    ATTESTTING_FEE,
+} from '@unirep/config'
 import {
     genEpochKey,
     genInputForContract,
@@ -51,11 +51,11 @@ describe('Verify reputation verifier', function () {
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(
-                Math.random() * (2 ** circuitUserStateTreeDepth - 1)
+                Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
             )
             while (reputationRecords[attesterId] !== undefined)
                 attesterId = Math.floor(
-                    Math.random() * 2 ** circuitUserStateTreeDepth
+                    Math.random() * 2 ** USER_STATE_TREE_DEPTH
                 )
             const graffitiPreImage = genRandomSalt()
             reputationRecords[attesterId] = new Reputation(
@@ -130,7 +130,7 @@ describe('Verify reputation verifier', function () {
             circuitInputs
         )
         // random reputation nullifiers
-        for (let i = 0; i < maxReputationBudget; i++) {
+        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
             input.repNullifiers[i] = genRandomSalt() as BigNumberish
         }
         const isProofValid = await unirepContract.verifyReputation(input)
@@ -164,7 +164,7 @@ describe('Verify reputation verifier', function () {
             user.getNullifier(),
             epoch,
             nonce + 1,
-            circuitEpochTreeDepth
+            EPOCH_TREE_DEPTH
         )
         const circuitInputs = await genReputationCircuitInput(
             user,
@@ -279,7 +279,7 @@ describe('Verify reputation verifier', function () {
             circuitInputs
         )
         const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: attestingFee,
+            value: ATTESTTING_FEE,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -305,12 +305,12 @@ describe('Verify reputation verifier', function () {
         )
         const wrongNullifiers = input.repNullifiers.slice(
             1,
-            maxReputationBudget
+            MAX_REPUTATION_BUDGET
         )
         input.repNullifiers = wrongNullifiers
         await expect(
             unirepContractCalledByAttester.spendReputation(input, {
-                value: attestingFee,
+                value: ATTESTTING_FEE,
             })
         ).to.be.revertedWith('Unirep: invalid number of reputation nullifiers')
     })
@@ -333,7 +333,7 @@ describe('Verify reputation verifier', function () {
         input.epochKey = genRandomSalt() as BigNumberish
         await expect(
             unirepContractCalledByAttester.spendReputation(input, {
-                value: attestingFee,
+                value: ATTESTTING_FEE,
             })
         ).to.be.revertedWith('Unirep: invalid epoch key range')
     })

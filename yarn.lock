@@ -1395,6 +1395,7 @@ __metadata:
     "@types/chai": ^4.2.21
     "@types/mocha": ^9.0.0
     "@types/node": ^16.9.1
+    "@unirep/config": "workspace:*"
     "@unirep/crypto": "workspace:*"
     argparse: ^2.0.1
     chai: ^4.3.4
@@ -1405,6 +1406,14 @@ __metadata:
     snarkjs: ^0.4.7
     ts-node: ^10.2.1
     typescript: ^4.4.2
+  languageName: unknown
+  linkType: soft
+
+"@unirep/config@workspace:*, @unirep/config@workspace:packages/config":
+  version: 0.0.0-use.local
+  resolution: "@unirep/config@workspace:packages/config"
+  dependencies:
+    typescript: ^4.4.3
   languageName: unknown
   linkType: soft
 
@@ -1421,6 +1430,7 @@ __metadata:
     "@types/mocha": ^9.0.0
     "@types/node": ^16.9.1
     "@unirep/circuits": "workspace:*"
+    "@unirep/config": "workspace:*"
     "@unirep/crypto": "workspace:*"
     argparse: ^2.0.1
     chai: ^4.3.4

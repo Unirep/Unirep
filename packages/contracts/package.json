@@ -15,6 +15,7 @@
         "@typechain/ethers-v5": "^9.0.0",
         "@typechain/hardhat": "^5.0.0",
         "@unirep/circuits": "workspace:*",
+        "@unirep/config": "workspace:*",
         "@unirep/crypto": "workspace:*",
         "argparse": "^2.0.1",
         "ethers": "^5.5.3",

@@ -22,6 +22,7 @@ import {
     maxReputationBudget,
     userStateTreeDepth,
 } from '../config/testLocal'
+
 import { Attestation, genEpochKey, Reputation, UnirepState } from '../src'
 
 const toCompleteHexString = (str: string, len?: number): string => {
