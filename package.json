@@ -4,6 +4,7 @@
     "description": "UniRep is a private and nonrepudiable repuation system based on ZKP",
     "private": "true",
     "workspaces": [
+        "packages/config",
         "packages/crypto",
         "packages/circuits",
         "packages/contracts",

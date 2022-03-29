@@ -2,7 +2,7 @@
     "name": "@unirep/core",
     "version": "1.0.0",
     "description": "",
-    "main": "build/core/index.js",
+    "main": "build/src/index.js",
     "scripts": {
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",

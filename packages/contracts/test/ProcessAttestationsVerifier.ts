@@ -9,9 +9,10 @@ import {
     genProcessAttestationsCircuitInput,
     getTreeDepthsForTesting,
 } from './utils'
-import { numAttestationsPerProof } from '../config'
 import { computeProcessAttestationsProofHash, deployUnirep } from '../src'
+import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
 
+NUM_ATTESTATIONS_PER_PROOF
 describe('Process attestation circuit', function () {
     this.timeout(300000)
 
@@ -79,7 +80,7 @@ describe('Process attestation circuit', function () {
 
     it('successfully process zero attestations', async () => {
         let zeroSelectors: number[] = []
-        for (let i = 0; i < numAttestationsPerProof; i++) {
+        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
             zeroSelectors.push(0)
         }
         const { circuitInputs } = await genProcessAttestationsCircuitInput(

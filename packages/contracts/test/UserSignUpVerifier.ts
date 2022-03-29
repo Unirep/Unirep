@@ -4,7 +4,6 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
-import { circuitEpochTreeDepth } from '../config'
 import {
     genEpochKey,
     genInputForContract,
@@ -13,6 +12,7 @@ import {
     Reputation,
 } from './utils'
 import { deployUnirep, SignUpProof } from '../src'
+import { EPOCH_TREE_DEPTH } from '@unirep/config'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
@@ -127,7 +127,7 @@ describe('Verify user sign up verifier', function () {
             user.getNullifier(),
             epoch,
             nonce + 1,
-            circuitEpochTreeDepth
+            EPOCH_TREE_DEPTH
         )
         const circuitInputs = await genProveSignUpCircuitInput(
             user,
