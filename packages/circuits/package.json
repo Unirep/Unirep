@@ -18,7 +18,7 @@
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "dependencies": {
-        "@unirep/crypto": "^1.0.0",
+        "@unirep/crypto": "workspace:*",
         "argparse": "^2.0.1",
         "circom": "0.5.45",
         "circomlib": "0.5.3",
