@@ -11,10 +11,7 @@ import {
 } from './utils'
 import { proveReputationCircuitPath } from '../config'
 
-import {
-    CIRCUIT_USER_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/config'
+import { USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
 const circuitPath = path.join(__dirname, proveReputationCircuitPath)
 
 describe('Prove reputation from attester circuit', function () {
@@ -46,11 +43,11 @@ describe('Prove reputation from attester circuit', function () {
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(
-                Math.random() * (2 ** CIRCUIT_USER_STATE_TREE_DEPTH - 1)
+                Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
             )
             while (reputationRecords[attesterId] !== undefined)
                 attesterId = Math.floor(
-                    Math.random() * 2 ** CIRCUIT_USER_STATE_TREE_DEPTH
+                    Math.random() * 2 ** USER_STATE_TREE_DEPTH
                 )
             const graffitiPreImage = genRandomSalt()
             reputationRecords[attesterId] = new Reputation(
@@ -250,11 +247,11 @@ describe('Prove reputation from attester circuit', function () {
     it('prove reputation nullifiers with insufficient rep score', async () => {
         // Bootstrap user state
         let insufficientAttesterId = Math.ceil(
-            Math.random() * (2 ** CIRCUIT_USER_STATE_TREE_DEPTH - 1)
+            Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
         )
         while (reputationRecords[insufficientAttesterId] !== undefined)
             insufficientAttesterId = Math.floor(
-                Math.random() * 2 ** CIRCUIT_USER_STATE_TREE_DEPTH
+                Math.random() * 2 ** USER_STATE_TREE_DEPTH
             )
         const insufficientPosRep = 5
         const insufficientNegRep = 10

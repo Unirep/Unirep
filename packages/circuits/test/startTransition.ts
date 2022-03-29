@@ -16,7 +16,7 @@ import {
 } from './utils'
 import { startTransitionCircuitPath } from '../config/'
 
-import { CIRCUIT_GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
+import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 const circuitPath = path.join(__dirname, startTransitionCircuitPath)
 
@@ -51,7 +51,7 @@ describe('User State Transition circuits', function () {
 
             // Global state tree
             GSTree = new IncrementalMerkleTree(
-                CIRCUIT_GLOBAL_STATE_TREE_DEPTH,
+                GLOBAL_STATE_TREE_DEPTH,
                 GSTZERO_VALUE,
                 2
             )

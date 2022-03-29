@@ -16,8 +16,8 @@ import {
 } from '../circuits/utils'
 
 import {
-    CIRCUIT_EPOCH_TREE_DEPTH,
-    CIRCUIT_GLOBAL_STATE_TREE_DEPTH,
+    EPOCH_TREE_DEPTH,
+    GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/config'
 
@@ -36,7 +36,7 @@ describe('Verify Epoch Key circuits', function () {
     let circuit
     let ZERO_VALUE = 0
 
-    const maxEPK = BigInt(2 ** CIRCUIT_EPOCH_TREE_DEPTH)
+    const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
 
     let id: ZkIdentity, commitment, stateRoot
     let tree, leafIndex
@@ -51,11 +51,7 @@ describe('Verify Epoch Key circuits', function () {
             `Compile time: ${endCompileTime - startCompileTime} seconds`
         )
 
-        tree = new IncrementalMerkleTree(
-            CIRCUIT_GLOBAL_STATE_TREE_DEPTH,
-            ZERO_VALUE,
-            2
-        )
+        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH, ZERO_VALUE, 2)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
