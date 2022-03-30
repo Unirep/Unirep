@@ -3,19 +3,15 @@
     "version": "1.0.0",
     "description": "UniRep is a private and nonrepudiable repuation system based on ZKP",
     "workspaces": [
-        "packages/config",
-        "packages/crypto",
-        "packages/circuits",
-        "packages/contracts",
-        "packages/core"
+       "packages/*" 
     ],
     "scripts": {
         "contracts": "yarn workspace @unirep/contracts run",
         "core": "yarn workspace @unirep/core run",
         "circuits": "yarn workspace @unirep/circuits run",
         "crypto": "yarn workspace @unirep/crypto run",
-        "build": "yarn workspaces foreach run build",
-        "test": "yarn workspaces foreach run test",
+        "build": "yarn workspaces foreach -t run build",
+        "test": "yarn workspaces foreach -t run test",
         "lint": "prettier --write .",
         "prepare": "husky install"
     },
