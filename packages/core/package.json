@@ -6,7 +6,7 @@
     "scripts": {
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "yarn UnirepStateTests && yarn UserStateTests && yarn integrationTest",
+        "test": "yarn UnirepStateTests & yarn UserStateTests & yarn integrationTest",
         "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/integration -name '*.ts')",
         "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UnirepState -name '*.ts')",
         "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile $(find test/UserState -name '*.ts')",
