@@ -12,11 +12,11 @@ export const NUM_ATTESTATIONS_PER_PROOF = 5
 
 export const EPOCH_LENGTH = 30 // 30 seconds
 
-export const GLOBAL_STATE_TREE_DEPTH = 4
+export const GLOBAL_STATE_TREE_DEPTH = 8
 
-export const USER_STATE_TREE_DEPTH = 4
+export const USER_STATE_TREE_DEPTH = 8
 
-export const EPOCH_TREE_DEPTH = 32
+export const EPOCH_TREE_DEPTH = 64
 
 export const MAX_REPUTATION_BUDGET = 10
 

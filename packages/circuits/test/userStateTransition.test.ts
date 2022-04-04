@@ -16,7 +16,7 @@ import {
     genProofAndVerify,
 } from './utils'
 
-import { userStateTransitionCircuitPath } from '../config/'
+import { userStateTransitionCircuitPath } from '../config'
 
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 const epkExistsCircuitPath = path.join(
