@@ -45,22 +45,6 @@ import {
     REPUTATION_NULLIFIER_DOMAIN,
 } from '../config/nullifierDomainSeparator'
 
-import {
-    attestingFee,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    circuitEpochTreeDepth,
-    epochLength,
-    epochTreeDepth,
-    globalStateTreeDepth,
-    numEpochKeyNoncePerEpoch,
-    numAttestationsPerProof,
-    maxUsers,
-    maxAttesters,
-    userStateTreeDepth,
-    maxReputationBudget,
-} from '../config/testLocal'
-
 export {
     Attestation,
     IAttestation,
@@ -97,17 +81,4 @@ export {
     genUserStateFromParams,
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
-    attestingFee,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    circuitEpochTreeDepth,
-    epochLength,
-    epochTreeDepth,
-    globalStateTreeDepth,
-    numEpochKeyNoncePerEpoch,
-    numAttestationsPerProof,
-    maxUsers,
-    maxAttesters,
-    userStateTreeDepth,
-    maxReputationBudget,
 }

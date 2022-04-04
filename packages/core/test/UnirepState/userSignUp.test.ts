@@ -5,14 +5,8 @@ import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts'
 import {
-    attestingFee,
-    circuitGlobalStateTreeDepth,
     computeInitUserStateRoot,
-    epochLength,
     genUnirepStateFromContract,
-    maxAttesters,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
     Reputation,
 } from '../../src'
 import { genNewGST, getTreeDepthsForTesting } from '../utils'
@@ -27,23 +21,18 @@ describe('User sign up events in Unirep State', function () {
 
     let unirepContract: ethers.Contract
     let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting('circuit')
+    let _treeDepths = getTreeDepthsForTesting()
 
     let accounts: ethers.Signer[]
     const attester = new Object()
-    const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1
+    const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],

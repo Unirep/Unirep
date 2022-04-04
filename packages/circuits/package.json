@@ -11,7 +11,7 @@
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
-        "test": "mocha -r ts-node/register test/*.ts --exit",
+        "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/Unirep/circuits.git",

@@ -11,16 +11,10 @@ import {
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, ReputationProof } from '@unirep/contracts'
 import {
-    attestingFee,
-    circuitGlobalStateTreeDepth,
     computeInitUserStateRoot,
-    epochLength,
     genReputationNullifier,
     genUnirepStateFromContract,
     genUserStateFromContract,
-    maxAttesters,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
     Attestation,
     Reputation,
 } from '../../src'
@@ -31,6 +25,7 @@ import {
     genReputationCircuitInput,
     getTreeDepthsForTesting,
 } from '../utils'
+import { GLOBAL_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
 
 describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)
@@ -42,13 +37,14 @@ describe('Reputation proof events in Unirep User State', function () {
 
     let unirepContract: ethers.Contract
     let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting('circuit')
+    let _treeDepths = getTreeDepthsForTesting()
 
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
-    const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1
+    const maxUsers = 10
     const userNum = 5
+    const attestingFee = ethers.utils.parseEther('0.1')
     const airdropPosRep = 10
     const spendReputation = 4
     let fromProofIndex = 0
@@ -57,12 +53,8 @@ describe('Reputation proof events in Unirep User State', function () {
         accounts = await hardhatEthers.getSigners()
 
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers,
+            attestingFee,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -267,7 +259,7 @@ describe('Reputation proof events in Unirep User State', function () {
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
-            for (let i = spendReputation; i < maxReputationBudget; i++) {
+            for (let i = spendReputation; i < MAX_REPUTATION_BUDGET; i++) {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = genReputationNullifier(
@@ -359,7 +351,7 @@ describe('Reputation proof events in Unirep User State', function () {
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
-            for (let i = spendReputation; i < maxReputationBudget; i++) {
+            for (let i = spendReputation; i < MAX_REPUTATION_BUDGET; i++) {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = genReputationNullifier(
@@ -483,7 +475,7 @@ describe('Reputation proof events in Unirep User State', function () {
         it('submit invalid reputation proof event', async () => {
             const epkNonce = 1
             const spendReputation = Math.ceil(
-                Math.random() * maxReputationBudget
+                Math.random() * MAX_REPUTATION_BUDGET
             )
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
@@ -614,7 +606,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                circuitGlobalStateTreeDepth,
+                GLOBAL_STATE_TREE_DEPTH,
                 ZERO_VALUE,
                 2
             )
@@ -690,7 +682,7 @@ describe('Reputation proof events in Unirep User State', function () {
         it('submit valid reputation proof event in wrong epoch should fail', async () => {
             const epkNonce = 1
             const spendReputation = Math.floor(
-                Math.random() * maxReputationBudget
+                Math.random() * MAX_REPUTATION_BUDGET
             )
             const wrongEpoch = epoch + 1
             const reputationRecords = {}

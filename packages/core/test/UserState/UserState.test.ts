@@ -2,16 +2,19 @@ import { expect } from 'chai'
 import { Circuit, verifyProof } from '@unirep/circuits'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import {
-    attestingFee,
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
+    ATTESTTING_FEE,
+    EPOCH_LENGTH,
+    EPOCH_TREE_DEPTH,
+    GLOBAL_STATE_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    USER_STATE_TREE_DEPTH,
+} from '@unirep/config'
+
+import {
     computeInitUserStateRoot,
-    epochLength,
     genEpochKey,
     ISettings,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
     Reputation,
     UnirepState,
     UserState,
@@ -24,13 +27,13 @@ describe('User State', async function () {
     let unirepState: UnirepState
     let userState: UserState
     const setting: ISettings = {
-        globalStateTreeDepth: circuitGlobalStateTreeDepth,
-        userStateTreeDepth: circuitUserStateTreeDepth,
-        epochTreeDepth: circuitEpochTreeDepth,
-        attestingFee: attestingFee,
-        epochLength: epochLength,
-        numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-        maxReputationBudget: maxReputationBudget,
+        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
+        userStateTreeDepth: USER_STATE_TREE_DEPTH,
+        epochTreeDepth: EPOCH_TREE_DEPTH,
+        attestingFee: ATTESTTING_FEE,
+        epochLength: EPOCH_LENGTH,
+        numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+        maxReputationBudget: MAX_REPUTATION_BUDGET,
     }
     const user: ZkIdentity = new ZkIdentity()
     const epochKeys: string[] = []
@@ -270,7 +273,7 @@ describe('User State', async function () {
         })
 
         it('add attestations to user himself', async () => {
-            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
                 const userEpk = genEpochKey(
                     user.getNullifier(),
                     epoch,
@@ -685,7 +688,7 @@ describe('User State', async function () {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
                 const epkNullifiers: BigInt[] = []
-                for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
+                for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
                     epkNullifiers.push(genRandomSalt())
                 }
                 await userState.userStateTransition(
@@ -816,7 +819,7 @@ describe('User State', async function () {
                 BigInt(0),
                 BigInt(1)
             )
-            for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
                 const userEpk = genEpochKey(
                     user.getNullifier(),
                     prevEpoch,
@@ -859,7 +862,7 @@ describe('User State', async function () {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
                 const epkNullifiers: BigInt[] = []
-                for (let j = 0; j < numEpochKeyNoncePerEpoch; j++) {
+                for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
                     epkNullifiers.push(genRandomSalt())
                 }
                 await userState.userStateTransition(

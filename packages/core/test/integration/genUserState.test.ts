@@ -19,17 +19,12 @@ import {
 } from '@unirep/contracts'
 import {
     Attestation,
-    attestingFee,
-    epochLength,
     genUserStateFromContract,
     genUserStateFromParams,
-    maxAttesters,
-    maxReputationBudget,
-    maxUsers,
-    numEpochKeyNoncePerEpoch,
     UserState,
 } from '../../src'
 import { genRandomAttestation, getTreeDepthsForTesting } from '../utils'
+import { EPOCH_LENGTH } from '@unirep/config'
 
 describe('Generate user state', function () {
     this.timeout(0)
@@ -49,18 +44,14 @@ describe('Generate user state', function () {
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
+    const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        _treeDepths = getTreeDepthsForTesting('circuit')
+        _treeDepths = getTreeDepthsForTesting()
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            attestingFee,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -501,7 +492,9 @@ describe('Generate user state', function () {
     describe('Epoch transition event', () => {
         it('epoch transition', async () => {
             // Fast-forward epochLength of seconds
-            await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
             // Begin epoch transition
             const tx = await unirepContract.beginEpochTransition()
             const receipt = await tx.wait()
@@ -793,7 +786,9 @@ describe('Generate user state', function () {
 
         it('epoch transition', async () => {
             // Fast-forward epochLength of seconds
-            await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
             // Begin epoch transition
             const tx = await unirepContract.beginEpochTransition()
             const receipt = await tx.wait()
