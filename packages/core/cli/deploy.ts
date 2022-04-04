@@ -1,19 +1,17 @@
 import { ethers } from 'ethers'
 import { deployUnirep } from '@unirep/contracts'
-
 import {
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    maxAttesters,
-    maxReputationBudget,
-    maxUsers,
-} from '../config/testLocal'
+    EPOCH_TREE_DEPTH,
+    GLOBAL_STATE_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+    USER_STATE_TREE_DEPTH,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '@unirep/config'
+
 import {
     DEFAULT_ATTESTING_FEE,
     DEFAULT_EPOCH_LENGTH,
     DEFAULT_ETH_PROVIDER,
-    DEFAULT_MAX_EPOCH_KEY_NONCE,
 } from './defaults'
 import {
     checkDeployerProviderConnection,
@@ -62,10 +60,10 @@ const deploy = async (args: any) => {
     }
 
     // Max epoch key nonce
-    const _numEpochKeyNoncePerEpoch = DEFAULT_MAX_EPOCH_KEY_NONCE
+    const _numEpochKeyNoncePerEpoch = NUM_EPOCH_KEY_NONCE_PER_EPOCH
 
     // Max reputation budget
-    const _maxReputationBudget = maxReputationBudget
+    const _maxReputationBudget = MAX_REPUTATION_BUDGET
 
     // Epoch length
     const _epochLength =
@@ -80,8 +78,6 @@ const deploy = async (args: any) => {
             : DEFAULT_ATTESTING_FEE
 
     const settings = {
-        maxUsers: maxUsers,
-        maxAttesters: maxAttesters,
         numEpochKeyNoncePerEpoch: _numEpochKeyNoncePerEpoch,
         maxReputationBudget: _maxReputationBudget,
         epochLength: _epochLength,
@@ -89,9 +85,9 @@ const deploy = async (args: any) => {
     }
 
     const treeDepths = {
-        userStateTreeDepth: circuitUserStateTreeDepth,
-        globalStateTreeDepth: circuitGlobalStateTreeDepth,
-        epochTreeDepth: circuitEpochTreeDepth,
+        userStateTreeDepth: USER_STATE_TREE_DEPTH,
+        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
+        epochTreeDepth: EPOCH_TREE_DEPTH,
     }
 
     // Ethereum provider

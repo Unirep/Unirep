@@ -5,12 +5,12 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 
-import { DEFAULT_ETH_PROVIDER, DEFAULT_MAX_EPOCH_KEY_NONCE } from './defaults'
+import { DEFAULT_ETH_PROVIDER } from './defaults'
 import {
     genUserStateFromContract,
     genEpochKey,
-    circuitEpochTreeDepth,
 } from '../src'
 import {
     epkProofPrefix,
@@ -58,7 +58,7 @@ const genEpochKeyAndProof = async (args: any) => {
 
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
-    const numEpochKeyNoncePerEpoch = DEFAULT_MAX_EPOCH_KEY_NONCE
+    const numEpochKeyNoncePerEpoch = NUM_EPOCH_KEY_NONCE_PER_EPOCH
     if (epkNonce >= numEpochKeyNoncePerEpoch) {
         console.error(
             'Error: epoch key nonce must be less than max epoch key nonce'
@@ -70,7 +70,6 @@ const genEpochKeyAndProof = async (args: any) => {
     const encodedIdentity = args.identity.slice(identityPrefix.length)
     const decodedIdentity = base64url.decode(encodedIdentity)
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
-    const epochTreeDepth = circuitEpochTreeDepth
 
     // Gen User State
     const userState = await genUserStateFromContract(
@@ -84,7 +83,6 @@ const genEpochKeyAndProof = async (args: any) => {
         id.getNullifier(),
         currentEpoch,
         epkNonce,
-        epochTreeDepth
     ).toString()
 
     // TODO: Not sure if this validation is necessary
