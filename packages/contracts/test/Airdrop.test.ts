@@ -14,14 +14,6 @@ import {
     genInputForContract,
 } from './utils'
 import { deployUnirep } from '../src'
-import {
-    ATTESTTING_FEE,
-    EPOCH_LENGTH,
-    MAX_ATTESTERS,
-    MAX_REPUTATION_BUDGET,
-    MAX_USERS,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -33,19 +25,15 @@ describe('Airdrop', function () {
     let attesterAddress, unirepContractCalledByAttester
     const airdropPosRep = 20
     const epkNonce = 0
+    const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
-            maxUsers: MAX_USERS,
-            maxAttesters: MAX_ATTESTERS,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            maxReputationBudget: MAX_REPUTATION_BUDGET,
-            epochLength: EPOCH_LENGTH,
-            attestingFee: ATTESTTING_FEE,
+            attestingFee,
         }
+        const _treeDepths = getTreeDepthsForTesting()
 
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -240,7 +228,7 @@ describe('Airdrop', function () {
             const tx = await unirepContractCalledByAttester.airdropEpochKey(
                 input,
                 {
-                    value: ATTESTTING_FEE,
+                    value: attestingFee,
                 }
             )
             const receipt = await tx.wait()
@@ -269,7 +257,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: ATTESTTING_FEE,
+                    value: attestingFee,
                 })
             ).to.be.revertedWith('Unirep: attester has not signed up yet')
         })
@@ -289,7 +277,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: ATTESTTING_FEE,
+                    value: attestingFee,
                 })
             ).to.be.revertedWith('Unirep: mismatched attesterId')
         })
@@ -335,7 +323,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: ATTESTTING_FEE,
+                    value: attestingFee,
                 })
             ).to.be.revertedWith(
                 'Unirep: submit an airdrop proof with incorrect epoch'
@@ -358,7 +346,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: ATTESTTING_FEE,
+                    value: attestingFee,
                 })
             ).to.be.revertedWith('Unirep: invalid epoch key range')
         })

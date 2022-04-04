@@ -11,7 +11,6 @@ import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
@@ -32,10 +31,6 @@ describe('Signup', () => {
         const _settings = {
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            maxReputationBudget: MAX_REPUTATION_BUDGET,
-            epochLength: EPOCH_LENGTH,
-            attestingFee: ATTESTTING_FEE,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
