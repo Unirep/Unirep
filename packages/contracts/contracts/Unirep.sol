@@ -140,7 +140,7 @@ contract Unirep is IUnirep, zkSNARKHelper , Hasher, VerifySignature {
     
     function verifyAttesterFee() private view {
         require(
-            msg.value == attestingFee,
+            msg.value >= attestingFee,
             "Unirep: no attesting fee or incorrect amount"
         );    
     }

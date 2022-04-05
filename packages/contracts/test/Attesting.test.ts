@@ -342,15 +342,6 @@ describe('Attesting', () => {
                 { value: attestingFee.sub(1) }
             )
         ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
-        await expect(
-            unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                epochKeyProofIndex,
-                senderPfIdx,
-                { value: attestingFee.add(1) }
-            )
-        ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
     })
 
     it('attestation from unregistered attester should fail', async () => {
