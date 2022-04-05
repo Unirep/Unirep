@@ -648,7 +648,6 @@ const genReputationCircuitInput = async (
         epoch: epoch,
         epoch_key_nonce: nonce,
         epoch_key: epk,
-
         identity_nullifier: id.getNullifier(),
         identity_trapdoor: id.getTrapdoor(),
         user_tree_root: userStateRoot,
@@ -709,7 +708,6 @@ const genProveSignUpCircuitInput = async (
     const circuitInputs = {
         epoch: epoch,
         epoch_key: epk,
-
         identity_nullifier: id.getNullifier(),
         identity_trapdoor: id.getTrapdoor(),
         user_tree_root: userStateRoot,

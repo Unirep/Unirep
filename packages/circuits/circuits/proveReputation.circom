@@ -90,7 +90,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     var default_nullifier_zero = 0;
 
     // 3.1 if proving reputation nullifiers > 0, check if rep_nonce is valid
-    component if_prove_rep_nullifiers = GreaterThan(MAX_REPUTATION_BUDGET);
+    component if_prove_rep_nullifiers = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     if_prove_rep_nullifiers.in[0] <== rep_nullifiers_amount;
     if_prove_rep_nullifiers.in[1] <== 0;
 
@@ -128,7 +128,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
 
     /* 4. Check if user has reputation greater than min_rep */
     // 4.1 if proving min_rep > 0, check if pos_rep - neg_rep >= min_rep
-    component if_prove_min_rep = GreaterThan(MAX_REPUTATION_BUDGET);
+    component if_prove_min_rep = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     if_prove_min_rep.in[0] <== min_rep;
     if_prove_min_rep.in[1] <== 0;
 

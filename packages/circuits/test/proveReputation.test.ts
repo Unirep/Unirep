@@ -12,7 +12,10 @@ import {
 import { proveReputationCircuitPath } from '../config'
 
 import { USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
-const circuitPath = path.join(__dirname, proveReputationCircuitPath)
+const circuitPath = path.join(
+    __dirname,
+    '../zksnarkBuild/proveReputation_main.circom'
+)
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
