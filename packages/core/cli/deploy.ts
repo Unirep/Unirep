@@ -66,14 +66,11 @@ const deploy = async (args: any) => {
     const _maxReputationBudget = MAX_REPUTATION_BUDGET
 
     // Epoch length
-    const _epochLength =
-        args.epoch_length != undefined
-            ? args.epoch_length
-            : DEFAULT_EPOCH_LENGTH
+    const _epochLength = args.epoch_length ?? DEFAULT_EPOCH_LENGTH
 
     // Attesting fee
     const _attestingFee =
-        args.attesting_fee != undefined
+        args.attesting_fee
             ? ethers.BigNumber.from(args.attesting_fee)
             : DEFAULT_ATTESTING_FEE
 
