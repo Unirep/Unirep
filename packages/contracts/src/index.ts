@@ -419,22 +419,14 @@ const deployUnirep = async (
     await UserSignUpVerifierContract.deployTransaction.wait()
 
     console.log('Deploying Unirep')
-    const _maxUsers = _settings?.maxUsers ? _settings.maxUsers : MAX_USERS
-    const _maxAttesters = _settings?.maxAttesters
-        ? _settings.maxAttesters
-        : MAX_ATTESTERS
-    const _numEpochKeyNoncePerEpoch = _settings?.numEpochKeyNoncePerEpoch
-        ? _settings.numEpochKeyNoncePerEpoch
-        : NUM_EPOCH_KEY_NONCE_PER_EPOCH
-    const _maxReputationBudget = _settings?.maxReputationBudget
-        ? _settings.maxReputationBudget
-        : MAX_REPUTATION_BUDGET
-    const _epochLength = _settings?.epochLength
-        ? _settings.epochLength
-        : EPOCH_LENGTH
-    const _attestingFee = _settings?.attestingFee
-        ? _settings.attestingFee
-        : ATTESTTING_FEE
+    const _maxUsers = _settings?.maxUsers ?? MAX_USERS
+    const _maxAttesters = _settings?.maxAttesters ?? MAX_ATTESTERS
+    const _numEpochKeyNoncePerEpoch =
+        _settings?.numEpochKeyNoncePerEpoch ?? NUM_EPOCH_KEY_NONCE_PER_EPOCH
+    const _maxReputationBudget =
+        _settings?.maxReputationBudget ?? MAX_REPUTATION_BUDGET
+    const _epochLength = _settings?.epochLength ?? EPOCH_LENGTH
+    const _attestingFee = _settings?.attestingFee ?? ATTESTTING_FEE
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
         _treeDepths,
