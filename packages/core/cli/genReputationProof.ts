@@ -5,12 +5,12 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
+import { MAX_REPUTATION_BUDGET } from '@unirep/config'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import {
     genReputationNullifier,
     genUserStateFromContract,
-    maxReputationBudget,
 } from '../src'
 import {
     identityPrefix,
@@ -128,7 +128,7 @@ const genReputationProof = async (args: any) => {
         }
     }
 
-    for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
+    for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
         nonceList.push(BigInt(-1))
     }
     const graffitiPreImage =

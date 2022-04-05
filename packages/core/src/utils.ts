@@ -9,7 +9,6 @@ import {
     SparseMerkleTree,
 } from '@unirep/crypto'
 
-import { circuitEpochTreeDepth } from '../config/testLocal'
 import {
     Attestation,
     IEpochTreeLeaf,
@@ -29,6 +28,7 @@ import {
 } from '@unirep/circuits'
 import { IAttestation } from '.'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
+import { EPOCH_TREE_DEPTH } from '@unirep/config'
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),
@@ -72,7 +72,7 @@ const genEpochKey = (
     identityNullifier: SnarkBigInt,
     epoch: number,
     nonce: number,
-    _epochTreeDepth: number = circuitEpochTreeDepth
+    _epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): SnarkBigInt => {
     const values: any[] = [
         identityNullifier,

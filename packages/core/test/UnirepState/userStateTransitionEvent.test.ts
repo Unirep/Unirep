@@ -10,22 +10,26 @@ import {
     computeStartTransitionProofHash,
     computeProcessAttestationsProofHash,
 } from '@unirep/contracts'
+import {
+    Circuit,
+    formatProofForVerifierContract,
+    genProofAndPublicSignals,
+} from '@unirep/circuits'
+import {
+    EPOCH_LENGTH,
+    MAX_REPUTATION_BUDGET,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '@unirep/config'
 
 import {
     Attestation,
-    attestingFee,
     computeInitUserStateRoot,
-    epochLength,
     genUnirepStateFromContract,
     ISettings,
-    maxAttesters,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
     Reputation,
     UnirepState,
     UserState,
 } from '../../src'
-
 import {
     genEpochKeyCircuitInput,
     genNewGST,
@@ -35,11 +39,6 @@ import {
     verifyProcessAttestationsProof,
     verifyStartTransitionProof,
 } from '../utils'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    genProofAndPublicSignals,
-} from '@unirep/circuits'
 
 describe('User state transition events in Unirep State', async function () {
     this.timeout(0)
@@ -52,13 +51,14 @@ describe('User state transition events in Unirep State', async function () {
 
     let unirepContract: ethers.Contract
     let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting('circuit')
+    let _treeDepths = getTreeDepthsForTesting()
 
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
     const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
+    const attestingFee = ethers.utils.parseEther('0.1')
     const transitionedUsers: number[] = []
     const fromProofIndex = 0
 
@@ -66,12 +66,8 @@ describe('User state transition events in Unirep State', async function () {
         accounts = await hardhatEthers.getSigners()
 
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers,
+            attestingFee,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -282,7 +278,9 @@ describe('User state transition events in Unirep State', async function () {
             let epoch = await unirepContract.currentEpoch()
 
             // Fast-forward epochLength of seconds
-            await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
             // Assert no epoch transition compensation is dispensed to volunteer
             expect(
                 await unirepContract.epochTransitionCompensation(
@@ -331,9 +329,9 @@ describe('User state transition events in Unirep State', async function () {
             userStateTreeDepth: _treeDepths.userStateTreeDepth,
             epochTreeDepth: _treeDepths.epochTreeDepth,
             attestingFee: attestingFee,
-            epochLength: epochLength,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
+            epochLength: EPOCH_LENGTH,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
         }
         it('Users should successfully perform user state transition', async () => {
             // add user state manually
@@ -667,11 +665,11 @@ describe('User state transition events in Unirep State', async function () {
         it('Submit invalid user state transition proof should not affect Unirep State', async () => {
             const randomProof: BigInt[] = genRandomList(8)
             const randomNullifiers: BigInt[] = genRandomList(
-                numEpochKeyNoncePerEpoch
+                NUM_EPOCH_KEY_NONCE_PER_EPOCH
             )
             const randomBlindedStates: BigInt[] = genRandomList(2)
             const randomBlindedChains: BigInt[] = genRandomList(
-                numEpochKeyNoncePerEpoch
+                NUM_EPOCH_KEY_NONCE_PER_EPOCH
             )
 
             const randomUSTInput = {
@@ -982,7 +980,9 @@ describe('User state transition events in Unirep State', async function () {
             let epoch = await unirepContract.currentEpoch()
 
             // Fast-forward epochLength of seconds
-            await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
             // Begin epoch transition
             let tx = await unirepContractCalledByAttester.beginEpochTransition()
             let receipt = await tx.wait()
@@ -1017,9 +1017,9 @@ describe('User state transition events in Unirep State', async function () {
             userStateTreeDepth: _treeDepths.userStateTreeDepth,
             epochTreeDepth: _treeDepths.epochTreeDepth,
             attestingFee: attestingFee,
-            epochLength: epochLength,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
+            epochLength: EPOCH_LENGTH,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
         }
         it('Users should successfully perform user state transition', async () => {
             // add user state manually

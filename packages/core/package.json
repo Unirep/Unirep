@@ -7,9 +7,9 @@
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "yarn UnirepStateTests & yarn UserStateTests & yarn integrationTest",
-        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/integration -name '*.ts')",
-        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/UnirepState -name '*.ts')",
-        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/UserState -name '*.ts')",
+        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/integration -name '*.test.ts')",
+        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/UnirepState -name '*.test.ts')",
+        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/UserState -name '*.test.ts')",
         "lint": "prettier --write ."
     },
     "repository": "git+https://github.com/appliedzkp/UniRep.git",

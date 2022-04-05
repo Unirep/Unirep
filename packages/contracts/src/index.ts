@@ -419,27 +419,14 @@ const deployUnirep = async (
     await UserSignUpVerifierContract.deployTransaction.wait()
 
     console.log('Deploying Unirep')
-    let _maxUsers,
-        _maxAttesters,
-        _numEpochKeyNoncePerEpoch,
-        _maxReputationBudget,
-        _epochLength,
-        _attestingFee
-    if (_settings) {
-        _maxUsers = _settings.maxUsers
-        _maxAttesters = _settings.maxAttesters
-        _numEpochKeyNoncePerEpoch = _settings.numEpochKeyNoncePerEpoch
-        _maxReputationBudget = _settings.maxReputationBudget
-        _epochLength = _settings.epochLength
-        _attestingFee = _settings.attestingFee
-    } else {
-        _maxUsers = MAX_USERS
-        _maxAttesters = MAX_ATTESTERS
-        _numEpochKeyNoncePerEpoch = NUM_EPOCH_KEY_NONCE_PER_EPOCH
-        _maxReputationBudget = MAX_REPUTATION_BUDGET
-        _epochLength = EPOCH_LENGTH
-        _attestingFee = ATTESTTING_FEE
-    }
+    const _maxUsers = _settings?.maxUsers ?? MAX_USERS
+    const _maxAttesters = _settings?.maxAttesters ?? MAX_ATTESTERS
+    const _numEpochKeyNoncePerEpoch =
+        _settings?.numEpochKeyNoncePerEpoch ?? NUM_EPOCH_KEY_NONCE_PER_EPOCH
+    const _maxReputationBudget =
+        _settings?.maxReputationBudget ?? MAX_REPUTATION_BUDGET
+    const _epochLength = _settings?.epochLength ?? EPOCH_LENGTH
+    const _attestingFee = _settings?.attestingFee ?? ATTESTTING_FEE
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
         _treeDepths,

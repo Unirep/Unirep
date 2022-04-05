@@ -5,7 +5,6 @@ import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
-    ATTESTTING_FEE,
     EPOCH_LENGTH,
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
@@ -26,14 +25,19 @@ describe('EventSequencing', () => {
         userCommitments: any[] = []
 
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
+    const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
+        const _settings = {
+            attestingFee,
+        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths
+            _treeDepths,
+            _settings
         )
 
         // 1. Fisrt user sign up
@@ -101,7 +105,7 @@ describe('EventSequencing', () => {
                 genRandomSalt(),
                 proof,
             ],
-            { value: ATTESTTING_FEE }
+            { value: attestingFee }
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -123,7 +127,7 @@ describe('EventSequencing', () => {
             epochKey,
             epochKeyProofIndex,
             senderPfIdx,
-            { value: ATTESTTING_FEE }
+            { value: attestingFee }
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -226,7 +230,7 @@ describe('EventSequencing', () => {
             epochKey,
             epochKeyProofIndex,
             senderPfIdx,
-            { value: ATTESTTING_FEE }
+            { value: attestingFee }
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

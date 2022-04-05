@@ -17,11 +17,7 @@ import {
     genReputationNullifier,
 } from './utils'
 import { IAttestation, IUnirepState, UnirepState } from './UnirepState'
-import {
-    maxReputationBudget,
-    numAttestationsPerProof,
-    numEpochKeyNoncePerEpoch,
-} from '../config/testLocal'
+import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
 
 interface IUserStateLeaf {
     attesterId: BigInt
@@ -121,6 +117,7 @@ class UserState {
     public userStateTreeDepth: number
     public numEpochKeyNoncePerEpoch: number
     public numAttestationsPerProof: number
+    public maxReputationBudget: number
 
     private unirepState: UnirepState
 
@@ -150,7 +147,8 @@ class UserState {
         this.userStateTreeDepth = this.unirepState.setting.userStateTreeDepth
         this.numEpochKeyNoncePerEpoch =
             this.unirepState.setting.numEpochKeyNoncePerEpoch
-        this.numAttestationsPerProof = numAttestationsPerProof
+        this.numAttestationsPerProof = NUM_ATTESTATIONS_PER_PROOF
+        this.maxReputationBudget = this.unirepState.setting.maxReputationBudget
 
         this.id = _id
         this.commitment = this.id.genIdentityCommitment()
@@ -444,7 +442,7 @@ class UserState {
                 await this._transition(GSTLeaf)
             } else if (epkNullifiersMatched > 0) {
                 console.error(
-                    `Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${numEpochKeyNoncePerEpoch}`
+                    `Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${this.numEpochKeyNoncePerEpoch}`
                 )
                 return
             }
@@ -975,27 +973,27 @@ class UserState {
                 newGlobalStateTreeLeaf: finalProofResults['publicSignals'][0],
                 epochKeyNullifiers: finalProofResults['publicSignals'].slice(
                     1,
-                    1 + numEpochKeyNoncePerEpoch
+                    1 + this.numEpochKeyNoncePerEpoch
                 ),
                 transitionedFromEpoch:
                     finalProofResults['publicSignals'][
-                        1 + numEpochKeyNoncePerEpoch
+                        1 + this.numEpochKeyNoncePerEpoch
                     ],
                 blindedUserStates: finalProofResults['publicSignals'].slice(
-                    2 + numEpochKeyNoncePerEpoch,
-                    4 + numEpochKeyNoncePerEpoch
+                    2 + this.numEpochKeyNoncePerEpoch,
+                    4 + this.numEpochKeyNoncePerEpoch
                 ),
                 fromGSTRoot:
                     finalProofResults['publicSignals'][
-                        4 + numEpochKeyNoncePerEpoch
+                        4 + this.numEpochKeyNoncePerEpoch
                     ],
                 blindedHashChains: finalProofResults['publicSignals'].slice(
-                    5 + numEpochKeyNoncePerEpoch,
-                    5 + 2 * numEpochKeyNoncePerEpoch
+                    5 + this.numEpochKeyNoncePerEpoch,
+                    5 + 2 * this.numEpochKeyNoncePerEpoch
                 ),
                 fromEpochTree:
                     finalProofResults['publicSignals'][
-                        5 + 2 * numEpochKeyNoncePerEpoch
+                        5 + 2 * this.numEpochKeyNoncePerEpoch
                     ],
             },
         }
@@ -1136,18 +1134,20 @@ class UserState {
             publicSignals: results['publicSignals'],
             reputationNullifiers: results['publicSignals'].slice(
                 0,
-                maxReputationBudget
+                this.maxReputationBudget
             ),
-            epoch: results['publicSignals'][maxReputationBudget],
-            epochKey: results['publicSignals'][maxReputationBudget + 1],
+            epoch: results['publicSignals'][this.maxReputationBudget],
+            epochKey: results['publicSignals'][this.maxReputationBudget + 1],
             globalStatetreeRoot:
-                results['publicSignals'][maxReputationBudget + 2],
-            attesterId: results['publicSignals'][maxReputationBudget + 3],
+                results['publicSignals'][this.maxReputationBudget + 2],
+            attesterId: results['publicSignals'][this.maxReputationBudget + 3],
             proveReputationAmount:
-                results['publicSignals'][maxReputationBudget + 4],
-            minRep: results['publicSignals'][maxReputationBudget + 5],
-            proveGraffiti: results['publicSignals'][maxReputationBudget + 6],
-            graffitiPreImage: results['publicSignals'][maxReputationBudget + 7],
+                results['publicSignals'][this.maxReputationBudget + 4],
+            minRep: results['publicSignals'][this.maxReputationBudget + 5],
+            proveGraffiti:
+                results['publicSignals'][this.maxReputationBudget + 6],
+            graffitiPreImage:
+                results['publicSignals'][this.maxReputationBudget + 7],
         }
     }
 

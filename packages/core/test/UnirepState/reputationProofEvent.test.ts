@@ -10,16 +10,12 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, ReputationProof } from '@unirep/contracts'
+import { GLOBAL_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
+
 import {
-    attestingFee,
-    circuitGlobalStateTreeDepth,
     computeInitUserStateRoot,
-    epochLength,
     genReputationNullifier,
     genUnirepStateFromContract,
-    maxAttesters,
-    maxReputationBudget,
-    numEpochKeyNoncePerEpoch,
     Reputation,
     Attestation,
 } from '../../src'
@@ -42,13 +38,14 @@ describe('Reputation proof events in Unirep State', function () {
 
     let unirepContract: ethers.Contract
     let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting('circuit')
+    let _treeDepths = getTreeDepthsForTesting()
 
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
-    const maxUsers = 2 ** circuitGlobalStateTreeDepth - 1
+    const maxUsers = 10
     const userNum = 5
+    const attestingFee = ethers.utils.parseEther('0.1')
     const airdropPosRep = 10
     const spendReputation = 4
     let fromProofIndex = 0
@@ -57,12 +54,8 @@ describe('Reputation proof events in Unirep State', function () {
         accounts = await hardhatEthers.getSigners()
 
         const _settings = {
-            maxUsers: maxUsers,
-            maxAttesters: maxAttesters,
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-            epochLength: epochLength,
-            attestingFee: attestingFee,
+            maxUsers,
+            attestingFee,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -493,7 +486,7 @@ describe('Reputation proof events in Unirep State', function () {
         it('submit invalid reputation proof event', async () => {
             const epkNonce = 1
             const spendReputation = Math.ceil(
-                Math.random() * maxReputationBudget
+                Math.random() * MAX_REPUTATION_BUDGET
             )
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
@@ -636,7 +629,7 @@ describe('Reputation proof events in Unirep State', function () {
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                circuitGlobalStateTreeDepth,
+                GLOBAL_STATE_TREE_DEPTH,
                 ZERO_VALUE,
                 2
             )
@@ -710,7 +703,7 @@ describe('Reputation proof events in Unirep State', function () {
         it('submit valid reputation proof event in wrong epoch should fail', async () => {
             const epkNonce = 1
             const spendReputation = Math.floor(
-                Math.random() * maxReputationBudget
+                Math.random() * MAX_REPUTATION_BUDGET
             )
             const wrongEpoch = epoch + 1
             const reputationRecords = {}

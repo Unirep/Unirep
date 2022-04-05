@@ -14,7 +14,7 @@ import {
     bootstrapRandomUSTree,
     genProofAndVerify,
 } from './utils'
-import { startTransitionCircuitPath } from '../config/'
+import { startTransitionCircuitPath } from '../config'
 
 import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 

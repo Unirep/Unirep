@@ -14,14 +14,11 @@ import {
 } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
 import {
-    circuitEpochTreeDepth,
-    circuitGlobalStateTreeDepth,
-    circuitUserStateTreeDepth,
-    epochTreeDepth,
-    globalStateTreeDepth,
-    maxReputationBudget,
-    userStateTreeDepth,
-} from '../config/testLocal'
+    USER_STATE_TREE_DEPTH,
+    GLOBAL_STATE_TREE_DEPTH,
+    EPOCH_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+} from '@unirep/config'
 
 import { Attestation, genEpochKey, Reputation, UnirepState } from '../src'
 
@@ -41,36 +38,16 @@ const genNewSMT = async (
     return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
 }
 
-const genNewEpochTree = async (
-    deployEnv: string = 'contract'
-): Promise<SparseMerkleTree> => {
-    let _epochTreeDepth
-    if (deployEnv === 'contract') {
-        _epochTreeDepth = epochTreeDepth
-    } else if (deployEnv === 'circuit') {
-        _epochTreeDepth = circuitEpochTreeDepth
-    } else {
-        throw new Error('Only contract and circuit testing env are supported')
-    }
+const genNewEpochTree = async (): Promise<SparseMerkleTree> => {
     const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
+    return genNewSMT(EPOCH_TREE_DEPTH, defaultOTSMTHash)
 }
 
-const getTreeDepthsForTesting = (deployEnv: string = 'circuit') => {
-    if (deployEnv === 'contract') {
-        return {
-            userStateTreeDepth: userStateTreeDepth,
-            globalStateTreeDepth: globalStateTreeDepth,
-            epochTreeDepth: epochTreeDepth,
-        }
-    } else if (deployEnv === 'circuit') {
-        return {
-            userStateTreeDepth: circuitUserStateTreeDepth,
-            globalStateTreeDepth: circuitGlobalStateTreeDepth,
-            epochTreeDepth: circuitEpochTreeDepth,
-        }
-    } else {
-        throw new Error('Only contract and circuit testing env are supported')
+const getTreeDepthsForTesting = () => {
+    return {
+        userStateTreeDepth: USER_STATE_TREE_DEPTH,
+        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
+        epochTreeDepth: EPOCH_TREE_DEPTH,
     }
 }
 
@@ -97,19 +74,8 @@ const genNewGST = (
     return GST
 }
 
-const genNewUserStateTree = async (
-    deployEnv: string = 'circuit'
-): Promise<SparseMerkleTree> => {
-    let _userStateTreeDepth
-    if (deployEnv === 'contract') {
-        _userStateTreeDepth = userStateTreeDepth
-    } else if (deployEnv === 'circuit') {
-        _userStateTreeDepth = circuitUserStateTreeDepth
-    } else {
-        throw new Error('Only contract and circuit testing env are supported')
-    }
-
-    return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
+const genNewUserStateTree = async (): Promise<SparseMerkleTree> => {
+    return genNewSMT(USER_STATE_TREE_DEPTH, defaultUserStateLeaf)
 }
 
 const genRandomAttestation = () => {
@@ -330,7 +296,6 @@ const genEpochKeyCircuitInput = (
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
         GST_root: root,
-
         identity_nullifier: id.getNullifier(),
         identity_trapdoor: id.getTrapdoor(),
         user_tree_root: ustRoot,
@@ -393,7 +358,7 @@ const genReputationCircuitInput = async (
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))
     }
-    for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
+    for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
         nonceList.push(BigInt(0))
         selectors.push(BigInt(0))
     }
@@ -402,7 +367,6 @@ const genReputationCircuitInput = async (
         epoch: epoch,
         epoch_key_nonce: nonce,
         epoch_key: epk,
-
         identity_nullifier: id.getNullifier(),
         identity_trapdoor: id.getTrapdoor(),
         user_tree_root: userStateRoot,
@@ -460,7 +424,6 @@ const genProveSignUpCircuitInput = async (
     const circuitInputs = {
         epoch: epoch,
         epoch_key: epk,
-
         identity_nullifier: id.getNullifier(),
         identity_trapdoor: id.getTrapdoor(),
         user_tree_root: userStateRoot,

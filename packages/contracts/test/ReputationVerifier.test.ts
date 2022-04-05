@@ -38,14 +38,19 @@ describe('Verify reputation verifier', function () {
     let minRep = MIN_POS_REP - MAX_NEG_REP
     const proveGraffiti = 1
     const signUp = 1
+    const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
+        const _settings = {
+            attestingFee,
+        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths
+            _treeDepths,
+            _settings
         )
 
         // Bootstrap reputation

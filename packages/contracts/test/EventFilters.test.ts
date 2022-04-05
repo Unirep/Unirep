@@ -60,18 +60,14 @@ describe('Attesting', () => {
     let stateRoot = genRandomSalt()
     let hashedStateLeaf
     const leafIndex = 0
+    const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
-            maxUsers: MAX_USERS,
-            maxAttesters: MAX_ATTESTERS,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            maxReputationBudget: MAX_REPUTATION_BUDGET,
-            epochLength: EPOCH_LENGTH,
-            attestingFee: ATTESTTING_FEE,
+            attestingFee,
         }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],

@@ -5,8 +5,8 @@ import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepStateFromContract } from '../src'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
-import { maxReputationBudget } from '../config/testLocal'
 import { getProvider } from './utils'
+import { MAX_REPUTATION_BUDGET } from '@unirep/config'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyReputationProof', {
@@ -70,15 +70,15 @@ const verifyReputationProof = async (args: any) => {
         args.public_signals.slice(reputationPublicSignalsPrefix.length)
     )
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const outputNullifiers = publicSignals.slice(0, maxReputationBudget)
-    const epoch = publicSignals[maxReputationBudget]
-    const epk = publicSignals[maxReputationBudget + 1]
-    const GSTRoot = publicSignals[maxReputationBudget + 2]
-    const attesterId = publicSignals[maxReputationBudget + 3]
-    const repNullifiersAmount = publicSignals[maxReputationBudget + 4]
-    const minRep = publicSignals[maxReputationBudget + 5]
-    const proveGraffiti = publicSignals[maxReputationBudget + 6]
-    const graffitiPreImage = publicSignals[maxReputationBudget + 7]
+    const outputNullifiers = publicSignals.slice(0, MAX_REPUTATION_BUDGET)
+    const epoch = publicSignals[MAX_REPUTATION_BUDGET]
+    const epk = publicSignals[MAX_REPUTATION_BUDGET + 1]
+    const GSTRoot = publicSignals[MAX_REPUTATION_BUDGET + 2]
+    const attesterId = publicSignals[MAX_REPUTATION_BUDGET + 3]
+    const repNullifiersAmount = publicSignals[MAX_REPUTATION_BUDGET + 4]
+    const minRep = publicSignals[MAX_REPUTATION_BUDGET + 5]
+    const proveGraffiti = publicSignals[MAX_REPUTATION_BUDGET + 6]
+    const graffitiPreImage = publicSignals[MAX_REPUTATION_BUDGET + 7]
     const proof = JSON.parse(decodedProof)
 
     // Check if Global state tree root exists
