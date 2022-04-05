@@ -435,7 +435,6 @@ const deployUnirep = async (
     const _attestingFee = _settings?.attestingFee
         ? _settings.attestingFee
         : ATTESTTING_FEE
-    _attestingFee
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
         _treeDepths,
