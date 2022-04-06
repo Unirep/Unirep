@@ -295,9 +295,6 @@ describe('Airdrop', function () {
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
-            const attestingFee_ = await unirepContract.attestingFee()
-            const wrongAttestingFee = attestingFee_.add(2)
-            expect(wrongAttestingFee).not.equal(attestingFee_)
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input)
