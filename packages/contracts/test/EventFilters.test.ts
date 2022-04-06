@@ -11,13 +11,9 @@ import {
 } from '@unirep/crypto'
 
 import {
-    ATTESTTING_FEE,
     GLOBAL_STATE_TREE_DEPTH,
     EPOCH_LENGTH,
-    MAX_ATTESTERS,
     MAX_REPUTATION_BUDGET,
-    MAX_USERS,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/config'
 import {
     getTreeDepthsForTesting,
@@ -41,7 +37,7 @@ import {
     UserTransitionProof,
 } from '../src'
 
-describe('Attesting', () => {
+describe('EventFilters', () => {
     let unirepContract
 
     let accounts: ethers.Signer[]
@@ -140,7 +136,7 @@ describe('Attesting', () => {
             epochKey,
             proofIndex,
             senderPfIdx,
-            { value: ATTESTTING_FEE }
+            { value: attestingFee }
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -160,7 +156,7 @@ describe('Attesting', () => {
             circuitInputs
         )
         const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: ATTESTTING_FEE,
+            value: attestingFee,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -185,7 +181,7 @@ describe('Attesting', () => {
         )
 
         let tx = await unirepContractCalledByAttester.airdropEpochKey(input, {
-            value: ATTESTTING_FEE,
+            value: attestingFee,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)

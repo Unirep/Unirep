@@ -284,7 +284,7 @@ describe('Verify reputation verifier', function () {
             circuitInputs
         )
         const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: ATTESTTING_FEE,
+            value: attestingFee,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -315,7 +315,7 @@ describe('Verify reputation verifier', function () {
         input.repNullifiers = wrongNullifiers
         await expect(
             unirepContractCalledByAttester.spendReputation(input, {
-                value: ATTESTTING_FEE,
+                value: attestingFee,
             })
         ).to.be.revertedWith('Unirep: invalid number of reputation nullifiers')
     })
@@ -338,7 +338,7 @@ describe('Verify reputation verifier', function () {
         input.epochKey = genRandomSalt() as BigNumberish
         await expect(
             unirepContractCalledByAttester.spendReputation(input, {
-                value: ATTESTTING_FEE,
+                value: attestingFee,
             })
         ).to.be.revertedWith('Unirep: invalid epoch key range')
     })

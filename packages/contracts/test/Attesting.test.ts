@@ -4,10 +4,9 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
 import { genEpochKey, getTreeDepthsForTesting, Attestation } from './utils'
-import { deployUnirep, EpochKeyProof } from '../src'
-import { Unirep } from '../typechain'
 
 describe('Attesting', () => {
     let unirepContract: Unirep
@@ -32,7 +31,7 @@ describe('Attesting', () => {
     )
     let epochKeyProofIndex
     const senderPfIdx = 0
-    const attestingFee = ethers.utils.parseEther('0.1')
+    const attestingFee = ethers.utils.parseEther('1')
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -340,15 +339,6 @@ describe('Attesting', () => {
                 epochKeyProofIndex,
                 senderPfIdx,
                 { value: attestingFee.sub(1) }
-            )
-        ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
-        await expect(
-            unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                epochKeyProofIndex,
-                senderPfIdx,
-                { value: attestingFee.add(1) }
             )
         ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
     })

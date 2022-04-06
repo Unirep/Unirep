@@ -13,7 +13,7 @@ import {
     genProveSignUpCircuitInput,
     genInputForContract,
 } from './utils'
-import { deployUnirep } from '../src'
+import { deployUnirep, Unirep } from '../src'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -22,7 +22,7 @@ describe('Airdrop', function () {
     let accounts: ethers.Signer[]
 
     let numUsers = 0
-    let attesterAddress, unirepContractCalledByAttester
+    let attesterAddress, unirepContractCalledByAttester: Unirep
     const airdropPosRep = 20
     const epkNonce = 0
     const attestingFee = ethers.utils.parseEther('0.1')
@@ -30,10 +30,10 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
+        const _treeDepths = getTreeDepthsForTesting()
         const _settings = {
             attestingFee,
         }
-        const _treeDepths = getTreeDepthsForTesting()
 
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
@@ -127,23 +127,24 @@ describe('Airdrop', function () {
                 .false
         })
 
-        it('user signs up through a non-signed up attester should succeed and gets no airdrop', async () => {
-            console.log('User sign up')
-            const userId = new ZkIdentity()
-            const userCommitment = userId.genIdentityCommitment()
-            unirepContractCalledByAttester = unirepContract.connect(accounts[2])
-            let tx = await unirepContractCalledByAttester.userSignUp(
-                userCommitment
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status).equal(1)
+        // We set the admin in Alpha test, user should sign up with admin account or an attester
+        // it('user signs up through a non-signed up attester should succeed and gets no airdrop', async () => {
+        //     console.log('User sign up')
+        //     const userId = new ZkIdentity()
+        //     const userCommitment = userId.genIdentityCommitment()
+        //     unirepContractCalledByAttester = unirepContract.connect(accounts[2])
+        //     let tx = await unirepContractCalledByAttester.userSignUp(
+        //         userCommitment
+        //     )
+        //     let receipt = await tx.wait()
+        //     expect(receipt.status).equal(1)
 
-            const signUpFilter = unirepContract.filters.UserSignedUp()
-            const signUpEvents = await unirepContract.queryFilter(signUpFilter)
-            const commitment_ = signUpEvents[numUsers].args.identityCommitment
-            expect(commitment_).equal(userCommitment)
-            numUsers++
-        })
+        //     const signUpFilter = unirepContract.filters.UserSignedUp()
+        //     const signUpEvents = await unirepContract.queryFilter(signUpFilter)
+        //     const commitment_ = signUpEvents[numUsers].args.identityCommitment
+        //     expect(commitment_).equal(userCommitment)
+        //     numUsers++
+        // })
     })
 
     describe('Users get airdrop', () => {
@@ -282,7 +283,7 @@ describe('Airdrop', function () {
             ).to.be.revertedWith('Unirep: mismatched attesterId')
         })
 
-        it('get airdrop through a wrong attester should fail', async () => {
+        it('get airdrop through a wrong attesting fee should fail', async () => {
             const signUpCircuitInputs = await genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
@@ -294,14 +295,9 @@ describe('Airdrop', function () {
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
-            const attestingFee_ = await unirepContract.attestingFee()
-            const wrongAttestingFee = attestingFee_.add(2)
-            expect(wrongAttestingFee).not.equal(attestingFee_)
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: wrongAttestingFee,
-                })
+                unirepContractCalledByAttester.airdropEpochKey(input)
             ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
         })
 
