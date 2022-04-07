@@ -68,9 +68,7 @@ const configureSubparser = (subparsers: any) => {
 
 const attest = async (args: any) => {
     // Ethereum provider
-    const ethProvider = args.eth_provider
-        ? args.eth_provider
-        : DEFAULT_ETH_PROVIDER
+    const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
     // Unirep contract
@@ -85,14 +83,12 @@ const attest = async (args: any) => {
 
     // Parse input
     const index = args.to_proof_index
-    const fromIndex =
-        args.from_proof_index != undefined ? args.from_proof_index : 0
+    const fromIndex = args.from_proof_index ?? 0
     const epochKey = args.epoch_key
-    const posRep = args.pos_rep != undefined ? args.pos_rep : 0
-    const negRep = args.neg_rep != undefined ? args.neg_rep : 0
-    const graffiti =
-        args.graffiti != undefined ? BigInt(args.graffiti) : BigInt(0)
-    const signUp = args.sign_up != undefined ? args.sign_up : 0
+    const posRep = args.pos_rep ?? 0
+    const negRep = args.neg_rep ?? 0
+    const graffiti = args.graffiti ?? BigInt(0)
+    const signUp = args.sign_up ?? 0
     const ethAddr = ethers.utils.computeAddress(args.eth_privkey)
     const attesterId = await unirepContract.attesters(ethAddr)
     const attestation = new Attestation(
