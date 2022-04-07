@@ -60,12 +60,9 @@ describe('EventFilters', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                attestingFee
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            attestingFee,
+        })
 
         console.log('User sign up')
         userId = new ZkIdentity()

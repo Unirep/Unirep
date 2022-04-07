@@ -82,11 +82,9 @@ const giveAirdrop = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .airdropEpochKey(
-                userSignUpProof, {
-                value: attestingFee
-            }
-            )
+            .airdropEpochKey(userSignUpProof, {
+                value: attestingFee,
+            })
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

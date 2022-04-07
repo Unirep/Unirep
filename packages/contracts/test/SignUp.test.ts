@@ -25,13 +25,10 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers: testMaxUser,
-                maxAttesters: testMaxUser,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers: testMaxUser,
+            maxAttesters: testMaxUser,
+        })
     })
 
     it('should have the correct config value', async () => {

@@ -9,11 +9,7 @@ import {
     genUserStateTransitionCircuitInput,
     genInputForContract,
 } from './utils'
-import {
-    deployUnirep,
-    Unirep,
-    UserTransitionProof
-} from '../src'
+import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
 describe('User State Transition', function () {
     this.timeout(600000)
@@ -27,9 +23,7 @@ describe('User State Transition', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0]
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
     })
 
     it('Valid user state update inputs should work', async () => {

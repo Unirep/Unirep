@@ -5,16 +5,10 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
-import { 
-    Unirep, 
-    UnirepFactory 
-} from '@unirep/contracts'
+import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import {
-    genReputationNullifier,
-    genUserStateFromContract,
-} from '../src'
+import { genReputationNullifier, genUserStateFromContract } from '../src'
 import {
     identityPrefix,
     reputationPublicSignalsPrefix,

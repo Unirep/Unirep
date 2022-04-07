@@ -8,10 +8,7 @@ import {
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import {
-    genUserStateFromContract,
-    genEpochKey,
-} from '../src'
+import { genUserStateFromContract, genEpochKey } from '../src'
 import {
     epkProofPrefix,
     epkPublicSignalsPrefix,
@@ -60,7 +57,8 @@ const genEpochKeyAndProof = async (args: any) => {
         args.contract,
         provider
     )
-    const numEpochKeyNoncePerEpoch = await unirepContract.numEpochKeyNoncePerEpoch()
+    const numEpochKeyNoncePerEpoch =
+        await unirepContract.numEpochKeyNoncePerEpoch()
 
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
@@ -87,7 +85,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const epk = genEpochKey(
         id.getNullifier(),
         currentEpoch,
-        epkNonce,
+        epkNonce
     ).toString()
 
     // TODO: Not sure if this validation is necessary

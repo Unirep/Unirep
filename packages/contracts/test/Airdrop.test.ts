@@ -29,12 +29,9 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                attestingFee
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            attestingFee,
+        })
     })
 
     describe('Attesters set airdrop', () => {

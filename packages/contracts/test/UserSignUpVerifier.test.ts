@@ -32,9 +32,7 @@ describe('Verify user sign up verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0]
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
         // Bootstrap reputation
         const graffitiPreImage = genRandomSalt()
         reputationRecords[signedUpAttesterId] = new Reputation(
@@ -120,11 +118,7 @@ describe('Verify user sign up verifier', function () {
 
     it('wrong epoch key should fail', async () => {
         const attesterId = signedUpAttesterId
-        const wrongEpochKey = genEpochKey(
-            user.getNullifier(),
-            epoch,
-            nonce + 1,
-        )
+        const wrongEpochKey = genEpochKey(user.getNullifier(), epoch, nonce + 1)
         const circuitInputs = await genProveSignUpCircuitInput(
             user,
             epoch,

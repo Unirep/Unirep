@@ -39,9 +39,7 @@ describe('User State Transition circuits', function () {
         before(async () => {
             accounts = await hardhatEthers.getSigners()
 
-            unirepContract = await deployUnirep(
-                <ethers.Wallet>accounts[0]
-            )
+            unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
 
             // User state tree
             const results = await bootstrapRandomUSTree()

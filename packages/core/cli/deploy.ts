@@ -63,10 +63,9 @@ const deploy = async (args: any) => {
     const _epochLength = args.epoch_length ?? DEFAULT_EPOCH_LENGTH
 
     // Attesting fee
-    const _attestingFee =
-        args.attesting_fee
-            ? ethers.BigNumber.from(args.attesting_fee)
-            : DEFAULT_ATTESTING_FEE
+    const _attestingFee = args.attesting_fee
+        ? ethers.BigNumber.from(args.attesting_fee)
+        : DEFAULT_ATTESTING_FEE
 
     const settings = {
         epochLength: _epochLength,

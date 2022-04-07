@@ -33,12 +33,9 @@ describe('User sign up events in Unirep State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+        })
         _treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
             _treeDepths.globalStateTreeDepth,

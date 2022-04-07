@@ -41,12 +41,9 @@ describe('Verify reputation verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                attestingFee
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            attestingFee,
+        })
 
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {

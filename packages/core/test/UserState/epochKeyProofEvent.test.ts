@@ -51,13 +51,10 @@ describe('Epoch key proof events in Unirep User State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers,
-                attestingFee,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+            attestingFee,
+        })
 
         _treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
@@ -192,7 +189,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const newUSTRoot = await computeInitUserStateRoot(
-                _treeDepths.userStateTreeDepth
+                    _treeDepths.userStateTreeDepth
                 )
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
                 userStateTreeRoots.push(newUSTRoot)

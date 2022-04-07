@@ -65,13 +65,10 @@ describe('User state transition events in Unirep State', async function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers,
-                attestingFee,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+            attestingFee,
+        })
 
         _treeDepths = await unirepContract.treeDepths()
     })
@@ -1075,7 +1072,9 @@ describe('User state transition events in Unirep State', async function () {
                     const args = USTEvent?.args?.proof
                     const fromEpoch = Number(args?.transitionFromEpoch)
                     const newGSTLeaf = args?.newGlobalStateTreeLeaf.toBigInt()
-                    const nullifiers = args?.epkNullifiers.map((n) => (n).toBigInt())
+                    const nullifiers = args?.epkNullifiers.map((n) =>
+                        n.toBigInt()
+                    )
                     if (
                         !userState.nullifierExist(nullifiers[0]) &&
                         unirepStateBefore.nullifierExist(nullifiers[0])

@@ -25,9 +25,7 @@ describe('Process attestation circuit', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0]
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
     })
 
     it('successfully process attestations', async () => {

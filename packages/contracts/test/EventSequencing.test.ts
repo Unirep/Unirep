@@ -30,12 +30,9 @@ describe('EventSequencing', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                attestingFee
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            attestingFee,
+        })
 
         // 1. Fisrt user sign up
         let userId = new ZkIdentity()

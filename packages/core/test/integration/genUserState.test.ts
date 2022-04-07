@@ -48,13 +48,10 @@ describe('Generate user state', function () {
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
- 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                attestingFee,
-            }
-        )
+
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            attestingFee,
+        })
     })
 
     describe('Attester sign up and set airdrop', () => {
@@ -304,7 +301,8 @@ describe('Generate user state', function () {
             const proveGraffiti = BigInt(0)
             const graffitiPreimage = BigInt(0)
             const nonceList = [BigInt(0), BigInt(1)]
-            const maxReputationBudget = await unirepContract.maxReputationBudget()
+            const maxReputationBudget =
+                await unirepContract.maxReputationBudget()
             for (let i = nonceList.length; i < maxReputationBudget; i++) {
                 nonceList.push(BigInt(-1))
             }

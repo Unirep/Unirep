@@ -10,9 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof } from '@unirep/contracts'
-import {
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 import {
     computeInitUserStateRoot,
     genUnirepStateFromContract,
@@ -52,13 +50,10 @@ describe('Epoch key proof events in Unirep State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers,
-                attestingFee,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+            attestingFee,
+        })
         _treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
             _treeDepths.globalStateTreeDepth,

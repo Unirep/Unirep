@@ -50,13 +50,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers,
-                attestingFee,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+            attestingFee,
+        })
 
         _treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(

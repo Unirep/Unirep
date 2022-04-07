@@ -62,13 +62,10 @@ describe('User state transition events in Unirep User State', async function () 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers,
-                attestingFee,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+            attestingFee,
+        })
 
         _treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
@@ -87,7 +84,9 @@ describe('User state transition events in Unirep User State', async function () 
             let tx = await unirepContractCalledByAttester.attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-            attesterId = (await unirepContract.attesters(attester['addr'])).toBigInt()
+            attesterId = (
+                await unirepContract.attesters(attester['addr'])
+            ).toBigInt()
         })
 
         it('attester set airdrop amount', async () => {

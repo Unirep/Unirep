@@ -9,7 +9,12 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
-import { deployUnirep, EpochKeyProof, ReputationProof, Unirep } from '@unirep/contracts'
+import {
+    deployUnirep,
+    EpochKeyProof,
+    ReputationProof,
+    Unirep,
+} from '@unirep/contracts'
 import {
     computeInitUserStateRoot,
     genReputationNullifier,
@@ -53,13 +58,10 @@ describe('Reputation proof events in Unirep User State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            {
-                maxUsers,
-                attestingFee,
-            }
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+            maxUsers,
+            attestingFee,
+        })
 
         _treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
