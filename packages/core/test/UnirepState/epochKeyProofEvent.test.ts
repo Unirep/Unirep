@@ -11,7 +11,6 @@ import {
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof } from '@unirep/contracts'
 import {
-    GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/config'
 import {
@@ -24,8 +23,8 @@ import {
     genEpochKeyCircuitInput,
     genNewGST,
     genRandomAttestation,
-    getTreeDepthsForTesting,
 } from '../utils'
+import { Unirep } from '@unirep/contracts'
 
 describe('Epoch key proof events in Unirep State', function () {
     this.timeout(0)
@@ -36,9 +35,11 @@ describe('Epoch key proof events in Unirep State', function () {
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
-    let unirepContract: ethers.Contract
-    let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting()
+    let unirepContract: Unirep
+    let unirepContractCalledByAttester: Unirep
+    let _treeDepths: any
+    let GSTree
+    const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -51,14 +52,17 @@ describe('Epoch key proof events in Unirep State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _settings = {
-            maxUsers,
-            attestingFee,
-        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                maxUsers,
+                attestingFee,
+            }
+        )
+        _treeDepths = await unirepContract.treeDepths()
+        GSTree = genNewGST(
+            _treeDepths.globalStateTreeDepth,
+            _treeDepths.userStateTreeDepth
         )
     })
 
@@ -113,12 +117,6 @@ describe('Epoch key proof events in Unirep State', function () {
     })
 
     describe('User Sign Up event', async () => {
-        const GSTree = genNewGST(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth
-        )
-        const rootHistories: BigInt[] = []
-
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {
                 const id = new ZkIdentity()
@@ -163,7 +161,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
-                        BigInt(airdroppedAmount),
+                        airdroppedAmount.toBigInt(),
                         BigInt(0),
                         BigInt(0),
                         BigInt(1)
@@ -373,7 +371,7 @@ describe('Epoch key proof events in Unirep State', function () {
         it('submit valid epoch key proof with wrong GST root event', async () => {
             const ZERO_VALUE = 0
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                _treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )

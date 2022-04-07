@@ -3,13 +3,13 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import { deployUnirep } from '@unirep/contracts'
+import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
     computeInitUserStateRoot,
     genUnirepStateFromContract,
     Reputation,
 } from '../../src'
-import { genNewGST, getTreeDepthsForTesting } from '../utils'
+import { genNewGST } from '../utils'
 
 describe('User sign up events in Unirep State', function () {
     this.timeout(0)
@@ -19,9 +19,11 @@ describe('User sign up events in Unirep State', function () {
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
-    let unirepContract: ethers.Contract
-    let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting()
+    let unirepContract: Unirep
+    let unirepContractCalledByAttester: Unirep
+    let _treeDepths
+    let GSTree
+    const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -31,13 +33,16 @@ describe('User sign up events in Unirep State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _settings = {
-            maxUsers,
-        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                maxUsers
+            }
+        )
+        _treeDepths = await unirepContract.treeDepths()
+        GSTree = genNewGST(
+            _treeDepths.globalStateTreeDepth,
+            _treeDepths.userStateTreeDepth
         )
     })
 
@@ -91,12 +96,6 @@ describe('User sign up events in Unirep State', function () {
     })
 
     describe('User Sign Up event', async () => {
-        const GSTree = genNewGST(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth
-        )
-        const rootHistories: BigInt[] = []
-
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {
                 const id = new ZkIdentity()
@@ -141,7 +140,7 @@ describe('User sign up events in Unirep State', function () {
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
-                        BigInt(airdroppedAmount),
+                        airdroppedAmount.toBigInt(),
                         BigInt(0),
                         BigInt(0),
                         BigInt(1)

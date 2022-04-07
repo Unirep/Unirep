@@ -1,7 +1,7 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
-import { BigNumber, ethers } from 'ethers'
+import { BigNumber, BigNumberish, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
@@ -15,7 +15,6 @@ import {
 import { Circuit, verifyProof } from '@unirep/circuits'
 import {
     USER_STATE_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
 } from '@unirep/config'
@@ -41,14 +40,6 @@ const genNewSMT = async (
 const genNewEpochTree = async (): Promise<SparseMerkleTree> => {
     const defaultOTSMTHash = SMT_ONE_LEAF
     return genNewSMT(EPOCH_TREE_DEPTH, defaultOTSMTHash)
-}
-
-const getTreeDepthsForTesting = () => {
-    return {
-        userStateTreeDepth: USER_STATE_TREE_DEPTH,
-        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-        epochTreeDepth: EPOCH_TREE_DEPTH,
-    }
 }
 
 const defaultUserStateLeaf = hash5([
@@ -90,10 +81,10 @@ const genRandomAttestation = () => {
     return attestation
 }
 
-const genRandomList = (length): BigInt[] => {
-    const array: BigInt[] = []
+const genRandomList = (length): BigNumberish[] => {
+    const array: BigNumberish[] = []
     for (let i = 0; i < length; i++) {
-        array.push(genRandomSalt())
+        array.push(BigNumber.from(genRandomSalt()))
     }
     return array
 }
@@ -449,7 +440,6 @@ export {
     genNewUserStateTree,
     genNewSMT,
     genNewGST,
-    getTreeDepthsForTesting,
     genRandomAttestation,
     genRandomList,
     toCompleteHexString,

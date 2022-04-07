@@ -37,7 +37,7 @@ describe('User State', async function () {
     }
     const user: ZkIdentity = new ZkIdentity()
     const epochKeys: string[] = []
-    const maxUsers = 2 ** setting.globalStateTreeDepth - 1
+    const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
     let epoch = 1
     const signedUpAttesterId = Math.ceil(Math.random() * 10)

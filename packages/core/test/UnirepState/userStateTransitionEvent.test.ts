@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, ethers } from 'ethers'
+import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import {
@@ -9,6 +9,7 @@ import {
     UserTransitionProof,
     computeStartTransitionProofHash,
     computeProcessAttestationsProofHash,
+    Unirep,
 } from '@unirep/contracts'
 import {
     Circuit,
@@ -35,7 +36,6 @@ import {
     genNewGST,
     genRandomAttestation,
     genRandomList,
-    getTreeDepthsForTesting,
     verifyProcessAttestationsProof,
     verifyStartTransitionProof,
 } from '../utils'
@@ -49,9 +49,9 @@ describe('User state transition events in Unirep State', async function () {
     let signUpAirdrops: Reputation[] = []
     let attestations: Reputation[] = []
 
-    let unirepContract: ethers.Contract
-    let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting()
+    let unirepContract: Unirep
+    let unirepContractCalledByAttester: Unirep
+    let _treeDepths
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -65,15 +65,15 @@ describe('User state transition events in Unirep State', async function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _settings = {
-            maxUsers,
-            attestingFee,
-        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                maxUsers,
+                attestingFee,
+            }
         )
+
+        _treeDepths = await unirepContract.treeDepths()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -86,9 +86,9 @@ describe('User state transition events in Unirep State', async function () {
             let tx = await unirepContractCalledByAttester.attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-            attesterId = BigInt(
+            attesterId = (
                 await unirepContract.attesters(attester['addr'])
-            )
+            ).toBigInt()
         })
 
         it('attester set airdrop amount', async () => {
@@ -179,7 +179,7 @@ describe('User state transition events in Unirep State', async function () {
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
-                        BigInt(airdroppedAmount),
+                        airdroppedAmount.toBigInt(),
                         BigInt(0),
                         BigInt(0),
                         BigInt(1)
@@ -353,7 +353,7 @@ describe('User state transition events in Unirep State', async function () {
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
                     const epoch = Number(args?.epoch)
-                    const commitment = BigInt(args?.identityCommitment)
+                    const commitment = args?.identityCommitment.toBigInt()
                     const attesterId = Number(args?.attesterId)
                     const airdrop = Number(args?.airdropAmount)
 
@@ -512,7 +512,7 @@ describe('User state transition events in Unirep State', async function () {
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
                 const epoch = Number(args?.epoch)
-                const commitment = BigInt(args?.identityCommitment)
+                const commitment = args?.identityCommitment.toBigInt()
                 const attesterId = Number(args?.attesterId)
                 const airdrop = Number(args?.airdropAmount)
 
@@ -601,10 +601,10 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('Submit invalid start tranistion proof should not affect Unirep State', async () => {
-            const randomProof: BigInt[] = genRandomList(8)
-            const randomBlindedUserState = genRandomSalt()
-            const randomBlindedHashChain = genRandomSalt()
-            const randomGSTRoot = genRandomSalt()
+            const randomProof: BigNumberish[] = genRandomList(8)
+            const randomBlindedUserState = BigNumber.from(genRandomSalt())
+            const randomBlindedHashChain = BigNumber.from(genRandomSalt())
+            const randomGSTRoot = BigNumber.from(genRandomSalt())
             const tx = await unirepContract.startUserStateTransition(
                 randomBlindedUserState,
                 randomBlindedHashChain,
@@ -632,10 +632,10 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('Submit invalid process attestation proof should not affect Unirep State', async () => {
-            const randomProof: BigInt[] = genRandomList(8)
-            const randomOutputBlindedUserState = genRandomSalt()
-            const randomOutputBlindedHashChain = genRandomSalt()
-            const randomInputBlindedUserState = genRandomSalt()
+            const randomProof: BigNumberish[] = genRandomList(8)
+            const randomOutputBlindedUserState = BigNumber.from(genRandomSalt())
+            const randomOutputBlindedHashChain = BigNumber.from(genRandomSalt())
+            const randomInputBlindedUserState = BigNumber.from(genRandomSalt())
             const tx = await unirepContract.processAttestations(
                 randomOutputBlindedUserState,
                 randomOutputBlindedHashChain,
@@ -663,23 +663,23 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('Submit invalid user state transition proof should not affect Unirep State', async () => {
-            const randomProof: BigInt[] = genRandomList(8)
-            const randomNullifiers: BigInt[] = genRandomList(
+            const randomProof: BigNumberish[] = genRandomList(8)
+            const randomNullifiers: BigNumberish[] = genRandomList(
                 NUM_EPOCH_KEY_NONCE_PER_EPOCH
             )
-            const randomBlindedStates: BigInt[] = genRandomList(2)
-            const randomBlindedChains: BigInt[] = genRandomList(
+            const randomBlindedStates: BigNumberish[] = genRandomList(2)
+            const randomBlindedChains: BigNumberish[] = genRandomList(
                 NUM_EPOCH_KEY_NONCE_PER_EPOCH
             )
 
             const randomUSTInput = {
-                newGlobalStateTreeLeaf: genRandomSalt(),
+                newGlobalStateTreeLeaf: BigNumber.from(genRandomSalt()),
                 epkNullifiers: randomNullifiers,
                 transitionFromEpoch: 1,
                 blindedUserStates: randomBlindedStates,
-                fromGlobalStateTree: genRandomSalt(),
+                fromGlobalStateTree: BigNumber.from(genRandomSalt()),
                 blindedHashChains: randomBlindedChains,
-                fromEpochTree: genRandomSalt(),
+                fromEpochTree: BigNumber.from(genRandomSalt()),
                 proof: randomProof,
             }
             const tx = await unirepContract.updateUserStateRoot(
@@ -807,7 +807,7 @@ describe('User state transition events in Unirep State', async function () {
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
                 const epoch = Number(args?.epoch)
-                const commitment = BigInt(args?.identityCommitment)
+                const commitment = args?.identityCommitment.toBigInt()
                 const attesterId = Number(args?.attesterId)
                 const airdrop = Number(args?.airdropAmount)
 
@@ -1058,7 +1058,7 @@ describe('User state transition events in Unirep State', async function () {
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
                     const epoch = Number(args?.epoch)
-                    const commitment = BigInt(args?.identityCommitment)
+                    const commitment = args?.identityCommitment.toBigInt()
                     const attesterId = Number(args?.attesterId)
                     const airdrop = Number(args?.airdropAmount)
 
@@ -1074,8 +1074,8 @@ describe('User state transition events in Unirep State', async function () {
                 for (let USTEvent of USTProofEvents) {
                     const args = USTEvent?.args?.proof
                     const fromEpoch = Number(args?.transitionFromEpoch)
-                    const newGSTLeaf = BigInt(args?.newGlobalStateTreeLeaf)
-                    const nullifiers = args?.epkNullifiers.map((n) => BigInt(n))
+                    const newGSTLeaf = args?.newGlobalStateTreeLeaf.toBigInt()
+                    const nullifiers = args?.epkNullifiers.map((n) => (n).toBigInt())
                     if (
                         !userState.nullifierExist(nullifiers[0]) &&
                         unirepStateBefore.nullifierExist(nullifiers[0])
@@ -1093,11 +1093,11 @@ describe('User state transition events in Unirep State', async function () {
                     const epochKey = (args?.epochKey).toString()
                     const attestation_ = args?.attestation
                     const attestation = new Attestation(
-                        BigInt(attestation_.attesterId),
-                        BigInt(attestation_.posRep),
-                        BigInt(attestation_.negRep),
-                        BigInt(attestation_.graffiti),
-                        BigInt(attestation_.signUp)
+                        attestation_.attesterId,
+                        attestation_.posRep,
+                        attestation_.negRep,
+                        attestation_.graffiti,
+                        attestation_.signUp
                     )
                     userState.addAttestation(epochKey, attestation)
                 }
