@@ -3,9 +3,6 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-
-import { deployUnirep } from '../src'
-import { getTreeDepthsForTesting } from './utils'
 import {
     ATTESTTING_FEE,
     EPOCH_LENGTH,
@@ -14,6 +11,8 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
+
+import { deployUnirep } from '../src'
 
 describe('Signup', () => {
     const testMaxUser = 5
@@ -26,16 +25,12 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        // Set maxUsers to testMaxUser
-        const _settings = {
-            maxUsers: testMaxUser,
-            maxAttesters: testMaxUser,
-        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                maxUsers: testMaxUser,
+                maxAttesters: testMaxUser,
+            }
         )
     })
 

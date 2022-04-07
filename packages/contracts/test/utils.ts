@@ -97,14 +97,6 @@ class Reputation implements IReputation {
     }
 }
 
-const getTreeDepthsForTesting = () => {
-    return {
-        userStateTreeDepth: USER_STATE_TREE_DEPTH,
-        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-        epochTreeDepth: EPOCH_TREE_DEPTH,
-    }
-}
-
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
     if (len) str = ethers.utils.hexZeroPad(str, len)
@@ -783,7 +775,6 @@ export {
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     defaultGSTLeaf,
-    getTreeDepthsForTesting,
     genNewEpochTree,
     genNewUserStateTree,
     genNewSMT,

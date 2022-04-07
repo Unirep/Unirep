@@ -6,7 +6,6 @@ import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 
 import {
-    getTreeDepthsForTesting,
     Reputation,
     genProofAndVerify,
     genReputationCircuitInput,
@@ -30,15 +29,11 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
-            attestingFee,
-        }
-
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                attestingFee
+            }
         )
     })
 

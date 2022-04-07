@@ -7,7 +7,6 @@ import { Circuit } from '@unirep/circuits'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
-    getTreeDepthsForTesting,
 } from './utils'
 import { computeProcessAttestationsProofHash, deployUnirep } from '../src'
 import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
@@ -26,10 +25,8 @@ describe('Process attestation circuit', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
         unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths
+            <ethers.Wallet>accounts[0]
         )
     })
 

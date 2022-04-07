@@ -19,7 +19,6 @@ import {
 import {
     genEpochKeyCircuitInput,
     genInputForContract,
-    getTreeDepthsForTesting,
 } from './utils'
 import { EpochKeyProof, deployUnirep } from '../src'
 
@@ -41,10 +40,8 @@ describe('Verify Epoch Key verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
         unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths
+            <ethers.Wallet>accounts[0]
         )
         tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH, ZERO_VALUE, 2)
         id = new ZkIdentity()

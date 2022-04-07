@@ -14,6 +14,9 @@ import {
     MAX_REPUTATION_BUDGET,
     EPOCH_LENGTH,
     ATTESTTING_FEE,
+    GLOBAL_STATE_TREE_DEPTH,
+    USER_STATE_TREE_DEPTH,
+    EPOCH_TREE_DEPTH,
 } from '@unirep/config'
 
 import {
@@ -376,7 +379,6 @@ const rmFuncSigHash = (abiEncoder: string) => {
 
 const deployUnirep = async (
     deployer: ethers.Signer,
-    _treeDepths: any,
     _settings?: any
 ): Promise<Unirep> => {
     let EpochKeyValidityVerifierContract: EpochKeyValidityVerifier
@@ -421,15 +423,15 @@ const deployUnirep = async (
     console.log('Deploying Unirep')
     const _maxUsers = _settings?.maxUsers ?? MAX_USERS
     const _maxAttesters = _settings?.maxAttesters ?? MAX_ATTESTERS
-    const _numEpochKeyNoncePerEpoch =
-        _settings?.numEpochKeyNoncePerEpoch ?? NUM_EPOCH_KEY_NONCE_PER_EPOCH
-    const _maxReputationBudget =
-        _settings?.maxReputationBudget ?? MAX_REPUTATION_BUDGET
     const _epochLength = _settings?.epochLength ?? EPOCH_LENGTH
     const _attestingFee = _settings?.attestingFee ?? ATTESTTING_FEE
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
-        _treeDepths,
+        {
+            globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
+            userStateTreeDepth: USER_STATE_TREE_DEPTH,
+            epochTreeDepth: EPOCH_TREE_DEPTH,
+        },
         {
             maxUsers: _maxUsers,
             maxAttesters: _maxAttesters,
@@ -440,8 +442,8 @@ const deployUnirep = async (
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
         UserSignUpVerifierContract.address,
-        _numEpochKeyNoncePerEpoch,
-        _maxReputationBudget,
+        NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+        MAX_REPUTATION_BUDGET,
         _epochLength,
         _attestingFee
     )

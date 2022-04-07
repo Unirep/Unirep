@@ -4,15 +4,14 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
+
 import {
     genEpochKey,
     genInputForContract,
     genProveSignUpCircuitInput,
-    getTreeDepthsForTesting,
     Reputation,
 } from './utils'
 import { deployUnirep, SignUpProof } from '../src'
-import { EPOCH_TREE_DEPTH } from '@unirep/config'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
@@ -33,10 +32,8 @@ describe('Verify user sign up verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
         unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths
+            <ethers.Wallet>accounts[0]
         )
         // Bootstrap reputation
         const graffitiPreImage = genRandomSalt()
@@ -127,7 +124,6 @@ describe('Verify user sign up verifier', function () {
             user.getNullifier(),
             epoch,
             nonce + 1,
-            EPOCH_TREE_DEPTH
         )
         const circuitInputs = await genProveSignUpCircuitInput(
             user,

@@ -16,7 +16,6 @@ import {
     MAX_REPUTATION_BUDGET,
 } from '@unirep/config'
 import {
-    getTreeDepthsForTesting,
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
@@ -61,14 +60,11 @@ describe('EventFilters', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
-            attestingFee,
-        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                attestingFee
+            }
         )
 
         console.log('User sign up')

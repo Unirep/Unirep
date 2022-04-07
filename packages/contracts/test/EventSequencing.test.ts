@@ -9,7 +9,7 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/config'
-import { genEpochKey, getTreeDepthsForTesting, Attestation } from './utils'
+import { genEpochKey, Attestation } from './utils'
 import { deployUnirep, EpochKeyProof, Event } from '../src'
 import { Unirep } from '../typechain'
 
@@ -30,14 +30,11 @@ describe('EventSequencing', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
-            attestingFee,
-        }
         unirepContract = await deployUnirep(
             <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+            {
+                attestingFee
+            }
         )
 
         // 1. Fisrt user sign up
