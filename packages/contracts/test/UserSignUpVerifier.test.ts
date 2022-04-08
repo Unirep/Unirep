@@ -11,11 +11,11 @@ import {
     genProveSignUpCircuitInput,
     Reputation,
 } from './utils'
-import { deployUnirep, SignUpProof } from '../src'
+import { deployUnirep, SignUpProof, Unirep } from '../src'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
     const epoch = 1
     const nonce = 0

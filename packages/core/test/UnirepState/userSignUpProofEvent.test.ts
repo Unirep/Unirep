@@ -26,7 +26,7 @@ import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 describe('User sign up proof (Airdrop proof) events in Unirep State', function () {
     this.timeout(0)
 
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
@@ -34,7 +34,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let _treeDepths
-    let GSTree
+    let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]

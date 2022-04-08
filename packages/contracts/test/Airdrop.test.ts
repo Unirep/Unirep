@@ -17,7 +17,7 @@ import { deployUnirep, Unirep } from '../src'
 describe('Airdrop', function () {
     this.timeout(100000)
 
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
     let numUsers = 0
@@ -95,7 +95,7 @@ describe('Airdrop', function () {
             for (const event of signUpEvents) {
                 attesterId_ = event.args.attesterId.toNumber()
                 reputationRecords[attesterId_] = new Reputation(
-                    BigInt(event.args.airdropAmount),
+                    event.args.airdropAmount.toBigInt(),
                     BigInt(0),
                     BigInt(0),
                     BigInt(0) // airdrop amount == 0
@@ -162,7 +162,7 @@ describe('Airdrop', function () {
             for (const event of signUpEvents) {
                 attesterId_ = event.args.attesterId.toNumber()
                 reputationRecords[attesterId_] = new Reputation(
-                    BigInt(event.args.airdropAmount),
+                    event.args.airdropAmount.toBigInt(),
                     BigInt(0),
                     BigInt(0),
                     BigInt(1) // airdrop amount != 0

@@ -33,10 +33,10 @@ describe('Generate user state', function () {
     let users: UserState[] = new Array(2)
     const firstUser = 0
     const secondUser = 1
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
-    let savedUserState: any
-    let secondUserState: any
+    let savedUserState: string
+    let secondUserState: string
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep

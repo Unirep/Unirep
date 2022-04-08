@@ -17,7 +17,7 @@ import {
 } from '@unirep/config'
 
 import { genEpochKeyCircuitInput, genInputForContract } from './utils'
-import { EpochKeyProof, deployUnirep } from '../src'
+import { EpochKeyProof, deployUnirep, Unirep } from '../src'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
@@ -26,7 +26,7 @@ describe('Verify Epoch Key verifier', function () {
 
     const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
 
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
     let id, commitment, stateRoot
     let tree

@@ -5,7 +5,7 @@ import { ethers } from 'ethers'
 import chai from 'chai'
 const { expect } = chai
 import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
-import { getUnirepContract } from '@unirep/contracts'
+import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
 import { genUnirepStateFromContract, UnirepState } from '../../src'
@@ -28,7 +28,7 @@ describe('test all CLI subcommands', function () {
     const attestingFee = ethers.BigNumber.from(10).pow(18)
     const epochKeyNonce = 0
     const epochLength = 5
-    let unirepContract: ethers.Contract
+    let unirepContract: Unirep
     let unirepState: UnirepState
 
     let userIdentity, userIdentityCommitment

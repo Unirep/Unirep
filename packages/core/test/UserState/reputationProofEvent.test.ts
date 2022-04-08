@@ -34,7 +34,7 @@ import { GLOBAL_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
 describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)
 
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
@@ -42,7 +42,7 @@ describe('Reputation proof events in Unirep User State', function () {
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let _treeDepths
-    let GSTree
+    let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]

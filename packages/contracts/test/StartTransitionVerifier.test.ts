@@ -16,7 +16,7 @@ import {
     bootstrapRandomUSTree,
     genInputForContract,
 } from './utils'
-import { computeStartTransitionProofHash, deployUnirep } from '../src'
+import { computeStartTransitionProofHash, deployUnirep, Unirep } from '../src'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -24,8 +24,8 @@ describe('User State Transition circuits', function () {
     const user = new ZkIdentity()
 
     describe('Start User State Transition', () => {
-        let accounts
-        let unirepContract
+        let accounts: ethers.Signer[]
+        let unirepContract: Unirep
         const epoch = 1
 
         let GSTZERO_VALUE = 0,

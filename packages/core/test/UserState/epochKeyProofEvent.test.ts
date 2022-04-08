@@ -29,7 +29,7 @@ describe('Epoch key proof events in Unirep User State', function () {
     this.timeout(0)
 
     let users: UserState[] = new Array(2)
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
@@ -37,7 +37,7 @@ describe('Epoch key proof events in Unirep User State', function () {
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let _treeDepths
-    let GSTree
+    let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]

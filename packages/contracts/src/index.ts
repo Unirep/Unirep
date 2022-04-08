@@ -473,12 +473,12 @@ const deployUnirep = async (
 const getUnirepContract = (
     addressOrName: string,
     signerOrProvider: ethers.Signer | ethers.providers.Provider | undefined
-) => {
+): Unirep => {
     return new ethers.Contract(
         addressOrName,
         UnirepFactory.abi,
         signerOrProvider
-    )
+    ) as Unirep
 }
 
 export {

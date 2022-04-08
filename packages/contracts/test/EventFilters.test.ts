@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import {
@@ -33,12 +33,12 @@ import {
     deployUnirep,
     ReputationProof,
     SignUpProof,
+    Unirep,
     UserTransitionProof,
 } from '../src'
 
 describe('EventFilters', () => {
-    let unirepContract
-
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
     let userId, userCommitment
@@ -46,7 +46,7 @@ describe('EventFilters', () => {
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
 
     const signedUpInLeaf = 1
-    const indexes: BigInt[] = []
+    const indexes: BigNumber[] = []
     const epoch = 1
     const nonce = 0
     let epochKey
@@ -301,7 +301,7 @@ describe('EventFilters', () => {
 
         // compute hash chain of valid epoch key
         for (let i = 0; i < attestationSubmittedEvents.length; i++) {
-            const proofIndex = attestationSubmittedEvents[i].args?.proofIndex
+            const proofIndex = attestationSubmittedEvents[i].args?.toProofIndex
             const epochKeyProofFilter =
                 unirepContract.filters.IndexedEpochKeyProof(proofIndex)
             const epochKeyProofEvent = await unirepContract.queryFilter(
@@ -343,44 +343,60 @@ describe('EventFilters', () => {
     })
 
     it('user state transition proof should match and correctly emitted', async () => {
-        const startTransitionFilter =
-            unirepContract.filters.IndexedStartedTransitionProof()
-        const startTransitionEvents = await unirepContract.queryFilter(
-            startTransitionFilter
-        )
-        expect(startTransitionEvents.length).to.equal(1)
-        let args = startTransitionEvents[0]?.args
-        let isValid = await unirepContract.verifyStartTransitionProof(
-            args?.blindedUserState,
-            args?.blindedHashChain,
-            args?.globalStateTree,
-            args?.proof
-        )
-        expect(isValid).equal(true)
+        {
+            const startTransitionFilter =
+                unirepContract.filters.IndexedStartedTransitionProof()
+            const startTransitionEvents = await unirepContract.queryFilter(
+                startTransitionFilter
+            )
+            expect(startTransitionEvents.length).to.equal(1)
+            const {
+                blindedUserState,
+                blindedHashChain,
+                globalStateTree,
+                proof,
+            } = startTransitionEvents[0]?.args
+            let isValid = await unirepContract.verifyStartTransitionProof(
+                blindedUserState,
+                blindedHashChain,
+                globalStateTree,
+                proof
+            )
+            expect(isValid).equal(true)
+        }
 
-        const processAttestationFilter =
-            unirepContract.filters.IndexedProcessedAttestationsProof()
-        const processAttestationEvents = await unirepContract.queryFilter(
-            processAttestationFilter
-        )
-        expect(processAttestationEvents.length).to.equal(1)
-        args = processAttestationEvents[0]?.args
-        isValid = await unirepContract.verifyProcessAttestationProof(
-            args?.outputBlindedUserState,
-            args?.outputBlindedHashChain,
-            args?.inputBlindedUserState,
-            args?.proof
-        )
-        expect(isValid).equal(true)
+        {
+            const processAttestationFilter =
+                unirepContract.filters.IndexedProcessedAttestationsProof()
+            const processAttestationEvents = await unirepContract.queryFilter(
+                processAttestationFilter
+            )
+            expect(processAttestationEvents.length).to.equal(1)
+            const {
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
+                proof,
+            } = processAttestationEvents[0]?.args
+            const isValid = await unirepContract.verifyProcessAttestationProof(
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
+                proof
+            )
+            expect(isValid).equal(true)
+        }
 
-        const userStateTransitionFilter =
-            unirepContract.filters.IndexedUserStateTransitionProof()
-        const userStateTransitionEvents = await unirepContract.queryFilter(
-            userStateTransitionFilter
-        )
-        expect(userStateTransitionEvents.length).to.equal(1)
-        args = userStateTransitionEvents[0]?.args?.proof
-        isValid = await unirepContract.verifyUserStateTransition(args)
-        expect(isValid).equal(true)
+        {
+            const userStateTransitionFilter =
+                unirepContract.filters.IndexedUserStateTransitionProof()
+            const userStateTransitionEvents = await unirepContract.queryFilter(
+                userStateTransitionFilter
+            )
+            expect(userStateTransitionEvents.length).to.equal(1)
+            const args = userStateTransitionEvents[0]?.args?.proof
+            const isValid = await unirepContract.verifyUserStateTransition(args)
+            expect(isValid).equal(true)
+        }
     })
 })

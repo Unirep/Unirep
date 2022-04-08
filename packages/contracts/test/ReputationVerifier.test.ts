@@ -21,7 +21,7 @@ import { Unirep } from '../typechain'
 describe('Verify reputation verifier', function () {
     this.timeout(30000)
     let unirepContract: Unirep
-    let unirepContractCalledByAttester
+    let unirepContractCalledByAttester: Unirep
     let accounts: ethers.Signer[]
     const epoch = 1
     const nonce = 1

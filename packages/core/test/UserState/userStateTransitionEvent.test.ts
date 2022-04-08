@@ -2,7 +2,12 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
+import {
+    ZkIdentity,
+    genRandomSalt,
+    hashLeftRight,
+    IncrementalMerkleTree,
+} from '@unirep/crypto'
 import {
     deployUnirep,
     EpochKeyProof,
@@ -38,7 +43,7 @@ import {
 describe('User state transition events in Unirep User State', async function () {
     this.timeout(0)
 
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
@@ -47,7 +52,7 @@ describe('User state transition events in Unirep User State', async function () 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let _treeDepths
-    let GSTree
+    let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]

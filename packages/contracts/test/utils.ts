@@ -26,6 +26,8 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
+import { SparseMerkleTree } from '@unirep/crypto'
+import { IncrementalQuinTree } from 'maci-crypto'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -103,7 +105,10 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt) => {
+const genNewSMT = async (
+    treeDepth: number,
+    defaultLeafHash: BigInt
+): Promise<crypto.SparseMerkleTree> => {
     return crypto.SparseMerkleTree.create(
         new Keyv(),
         treeDepth,
@@ -111,7 +116,9 @@ const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt) => {
     )
 }
 
-const genNewEpochTree = async (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
+const genNewEpochTree = async (
+    _epochTreeDepth: number = EPOCH_TREE_DEPTH
+): Promise<crypto.SparseMerkleTree> => {
     const defaultOTSMTHash = SMT_ONE_LEAF
     return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
@@ -140,7 +147,7 @@ const defaultGSTLeaf = (treeDepth: number): BigInt => {
 
 const genNewUserStateTree = async (
     _userStateTreeDepth: number = USER_STATE_TREE_DEPTH
-) => {
+): Promise<SparseMerkleTree> => {
     return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
 }
 

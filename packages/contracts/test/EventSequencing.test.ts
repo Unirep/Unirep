@@ -18,7 +18,6 @@ describe('EventSequencing', () => {
     let expectedEventsNumber: number = 0
 
     let unirepContract: Unirep
-
     let accounts: ethers.Signer[]
 
     let userIds: any[] = [],

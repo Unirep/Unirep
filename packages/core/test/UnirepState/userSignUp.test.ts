@@ -2,7 +2,11 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
+import {
+    ZkIdentity,
+    hashLeftRight,
+    IncrementalMerkleTree,
+} from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
     computeInitUserStateRoot,
@@ -22,7 +26,7 @@ describe('User sign up events in Unirep State', function () {
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let _treeDepths
-    let GSTree
+    let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]

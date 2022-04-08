@@ -12,11 +12,11 @@ import {
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
 
-import { deployUnirep } from '../src'
+import { deployUnirep, Unirep } from '../src'
 
 describe('Signup', () => {
     const testMaxUser = 5
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
     let signedUpUsers = 0
@@ -97,7 +97,7 @@ describe('Signup', () => {
         let attester2
         let attester2Address
         let attester2Sig
-        let unirepContractCalledByAttester
+        let unirepContractCalledByAttester: Unirep
 
         it('sign up should succeed', async () => {
             attester = accounts[1]

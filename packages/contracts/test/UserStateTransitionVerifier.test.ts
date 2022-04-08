@@ -13,7 +13,7 @@ import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
 describe('User State Transition', function () {
     this.timeout(600000)
-    let accounts
+    let accounts: ethers.Signer[]
     let unirepContract: Unirep
 
     const epoch = 1
