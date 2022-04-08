@@ -20,8 +20,6 @@ import {
 } from '@unirep/config'
 
 import { Attestation, genEpochKey, Reputation, UnirepState } from '../src'
-import { Unirep, UserTransitionProof } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str

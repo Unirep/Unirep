@@ -472,13 +472,9 @@ const deployUnirep = async (
 
 const getUnirepContract = (
     addressOrName: string,
-    signerOrProvider: ethers.Signer | ethers.providers.Provider | undefined
+    signerOrProvider: ethers.Signer | ethers.providers.Provider
 ): Unirep => {
-    return new ethers.Contract(
-        addressOrName,
-        UnirepFactory.abi,
-        signerOrProvider
-    ) as Unirep
+    return UnirepFactory.connect(addressOrName, signerOrProvider)
 }
 
 export {
