@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import Keyv from 'keyv'
 import { getUnirepContract, Event, AttestationEvent } from '@unirep/contracts'
 import {
@@ -29,6 +29,7 @@ import {
 import { IAttestation } from '.'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
 import { EPOCH_TREE_DEPTH } from '@unirep/config'
+import { Unirep } from '@unirep/contracts'
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),
@@ -127,10 +128,10 @@ const verifyEpochKeyProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
     const args = event?.args?.proof
-    const emptyArray = []
+    const emptyArray: BigNumber[] = []
     const formatPublicSignals = emptyArray
         .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
-        .map((n) => BigInt(n))
+        .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.verifyEpochKey,
@@ -144,7 +145,7 @@ const verifyReputationProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
     const args = event?.args?.proof
-    const emptyArray = []
+    const emptyArray: BigNumber[] = []
     const formatPublicSignals = emptyArray
         .concat(
             args?.repNullifiers,
@@ -157,7 +158,7 @@ const verifyReputationProofEvent = async (
             args?.proveGraffiti,
             args?.graffitiPreImage
         )
-        .map((n) => BigInt(n))
+        .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.proveReputation,
@@ -171,7 +172,7 @@ const verifySignUpProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
     const args = event?.args?.proof
-    const emptyArray = []
+    const emptyArray: BigNumber[] = []
     const formatPublicSignals = emptyArray
         .concat(
             args?.epoch,
@@ -180,7 +181,7 @@ const verifySignUpProofEvent = async (
             args?.attesterId,
             args?.userHasSignedUp
         )
-        .map((n) => BigInt(n))
+        .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.proveUserSignUp,
@@ -194,14 +195,14 @@ const verifyStartTransitionProofEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
     const args = event?.args
-    const emptyArray = []
+    const emptyArray: BigNumber[] = []
     const formatPublicSignals = emptyArray
         .concat(
             args?.blindedUserState,
             args?.blindedHashChain,
             args?.globalStateTree
         )
-        .map((n) => BigInt(n))
+        .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.startTransition,
@@ -215,14 +216,14 @@ const verifyProcessAttestationEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
     const args = event?.args
-    const emptyArray = []
+    const emptyArray: BigNumber[] = []
     const formatPublicSignals = emptyArray
         .concat(
             args?.outputBlindedUserState,
             args?.outputBlindedHashChain,
             args?.inputBlindedUserState
         )
-        .map((n) => BigInt(n))
+        .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
     const isProofValid = await verifyProof(
         Circuit.processAttestations,
@@ -236,7 +237,7 @@ const verifyUserStateTransitionEvent = async (
     event: ethers.Event
 ): Promise<boolean> => {
     const transitionArgs = event?.args?.proof
-    const emptyArray = []
+    const emptyArray: BigNumber[] = []
     let formatPublicSignals = emptyArray
         .concat(
             transitionArgs.newGlobalStateTreeLeaf,
@@ -247,7 +248,7 @@ const verifyUserStateTransitionEvent = async (
             transitionArgs.blindedHashChains,
             transitionArgs.fromEpochTree
         )
-        .map((n) => BigInt(n))
+        .map((n) => n.toBigInt())
     let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof)
     const isProofValid = await verifyProof(
         Circuit.userStateTransition,
@@ -370,7 +371,7 @@ const genUnirepStateFromContract = async (
     address: string,
     _unirepState?: IUnirepState
 ) => {
-    const unirepContract = await getUnirepContract(address, provider)
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
     let unirepState: UnirepState
 
     if (_unirepState === undefined) {
@@ -436,6 +437,7 @@ const genUnirepStateFromContract = async (
     )
 
     // proof events
+    const emptyArray: ethers.Event[] = []
     const transitionFilter =
         unirepContract.filters.IndexedUserStateTransitionProof()
     const transitionEvents = await unirepContract.queryFilter(transitionFilter)
@@ -473,7 +475,8 @@ const genUnirepStateFromContract = async (
     const isProofIndexValid = {}
     const spentProofIndex = {}
     isProofIndexValid[0] = true
-    const events = transitionEvents.concat(
+    const events = emptyArray.concat(
+        transitionEvents,
         startTransitionEvents,
         processAttestationsEvents,
         epochKeyProofEvent,
@@ -501,7 +504,7 @@ const genUnirepStateFromContract = async (
             }
             const args = signUpEvent?.args
             const epoch = Number(args?.epoch)
-            const commitment = BigInt(args?.identityCommitment)
+            const commitment = args?.identityCommitment.toBigInt()
             const attesterId = Number(args?.attesterId)
             const airdrop = Number(args?.airdropAmount)
 
@@ -633,11 +636,11 @@ const genUnirepStateFromContract = async (
             ) {
                 // update attestation
                 const attestation = new Attestation(
-                    BigInt(attestation_.attesterId),
-                    BigInt(attestation_.posRep),
-                    BigInt(attestation_.negRep),
-                    BigInt(attestation_.graffiti),
-                    BigInt(attestation_.signUp)
+                    attestation_.attesterId.toBigInt(),
+                    attestation_.posRep.toBigInt(),
+                    attestation_.negRep.toBigInt(),
+                    attestation_.graffiti.toBigInt(),
+                    attestation_.signUp.toBigInt()
                 )
                 const epochKey = args?.epochKey
                 if (epochKey.eq(results?.epochKey)) {
@@ -668,7 +671,7 @@ const genUnirepStateFromContract = async (
             }
             const args = userStateTransitionedEvent?.args
             const epoch = Number(args?.epoch)
-            const newLeaf = BigInt(args?.hashedLeaf)
+            const newLeaf = args?.hashedLeaf.toBigInt()
             const proofIndex = Number(args?.proofIndex)
             const event = proofIndexMap[proofIndex]
             const proofArgs = event?.args?.proof
@@ -848,7 +851,7 @@ const genUserStateFromContract = async (
     userIdentity: any,
     _userState?: IUserState
 ) => {
-    const unirepContract = await getUnirepContract(address, provider)
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
 
     let unirepState: UnirepState
     let userState: UserState
@@ -918,6 +921,7 @@ const genUserStateFromContract = async (
     )
 
     // proof events
+    const emptyArray: ethers.Event[] = []
     const transitionFilter =
         unirepContract.filters.IndexedUserStateTransitionProof()
     const transitionEvents = await unirepContract.queryFilter(transitionFilter)
@@ -955,7 +959,8 @@ const genUserStateFromContract = async (
     const isProofIndexValid = {}
     const spentProofIndex = {}
     isProofIndexValid[0] = true
-    const events = transitionEvents.concat(
+    const events = emptyArray.concat(
+        transitionEvents,
         startTransitionEvents,
         processAttestationsEvents,
         epochKeyProofEvent,
@@ -983,7 +988,7 @@ const genUserStateFromContract = async (
             }
             const args = signUpEvent?.args
             const epoch = Number(args?.epoch)
-            const commitment = BigInt(args?.identityCommitment)
+            const commitment = args?.identityCommitment.toBigInt()
             const attesterId = Number(args?.attesterId)
             const airdrop = Number(args?.airdropAmount)
 
@@ -1115,11 +1120,11 @@ const genUserStateFromContract = async (
             ) {
                 // update attestation
                 const attestation = new Attestation(
-                    BigInt(attestation_.attesterId),
-                    BigInt(attestation_.posRep),
-                    BigInt(attestation_.negRep),
-                    BigInt(attestation_.graffiti),
-                    BigInt(attestation_.signUp)
+                    attestation_.attesterId.toBigInt(),
+                    attestation_.posRep.toBigInt(),
+                    attestation_.negRep.toBigInt(),
+                    attestation_.graffiti.toBigInt(),
+                    attestation_.signUp.toBigInt()
                 )
                 const epochKey = args?.epochKey
                 if (epochKey.eq(results?.epochKey)) {
@@ -1150,7 +1155,7 @@ const genUserStateFromContract = async (
             }
             const args = userStateTransitionedEvent?.args
             const epoch = Number(args?.epoch)
-            const newLeaf = BigInt(args?.hashedLeaf)
+            const newLeaf = args?.hashedLeaf.toBigInt()
             const proofIndex = Number(args?.proofIndex)
             const event = proofIndexMap[proofIndex]
             const proofArgs = event?.args?.proof
@@ -1235,7 +1240,7 @@ const genUserStateFromContract = async (
 
             if (isProofIndexValid[proofIndex]) {
                 const epkNullifiersInEvent = proofArgs?.epkNullifiers?.map(
-                    (n) => BigInt(n)
+                    (n) => n.toBigInt()
                 )
                 let exist = false
                 for (let nullifier of epkNullifiersInEvent) {

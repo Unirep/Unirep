@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
 import {
     genRandomSalt,
@@ -17,7 +17,6 @@ import {
 } from '@unirep/config'
 
 import {
-    getTreeDepthsForTesting,
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
@@ -27,14 +26,14 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import { deployUnirep, UserTransitionProof } from '../src'
+import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
 
     let ZERO_VALUE = 0
 
-    let unirepContract: ethers.Contract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
     let userId, userCommitment
@@ -43,7 +42,7 @@ describe('Epoch Transition', function () {
 
     const signedUpInLeaf = 1
     let epochKeyProofIndex
-    const proofIndexes: BigInt[] = []
+    const proofIndexes: BigNumber[] = []
     const attestingFee = ethers.utils.parseEther('0.1')
 
     let fromEpoch
@@ -54,15 +53,9 @@ describe('Epoch Transition', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
-        }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        })
 
         console.log('User sign up')
         userId = new ZkIdentity()
@@ -246,7 +239,7 @@ describe('Epoch Transition', function () {
             proof
         )
         let proofIndex = await unirepContract.getProofIndex(proofNullifier)
-        proofIndexes.push(BigInt(proofIndex))
+        proofIndexes.push(proofIndex)
     })
 
     it('submit process attestations proofs should succeed', async () => {
@@ -310,7 +303,7 @@ describe('Epoch Transition', function () {
                 const proofIndex = await unirepContract.getProofIndex(
                     proofNullifier
                 )
-                proofIndexes.push(BigInt(proofIndex))
+                proofIndexes.push(proofIndex)
             }
         }
     })

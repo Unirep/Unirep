@@ -6,7 +6,7 @@ import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
-import { genEpochKey, getTreeDepthsForTesting, Attestation } from './utils'
+import { genEpochKey, Attestation } from './utils'
 
 describe('Attesting', () => {
     let unirepContract: Unirep
@@ -36,15 +36,9 @@ describe('Attesting', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
-        }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        })
 
         console.log('User sign up')
         userId = new ZkIdentity()

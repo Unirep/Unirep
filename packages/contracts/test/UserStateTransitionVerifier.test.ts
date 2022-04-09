@@ -4,18 +4,17 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
+
 import {
     genUserStateTransitionCircuitInput,
-    getTreeDepthsForTesting,
     genInputForContract,
 } from './utils'
-import { deployUnirep, UserTransitionProof } from '../src'
-import { EPOCH_LENGTH } from '@unirep/config'
+import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
 describe('User State Transition', function () {
     this.timeout(600000)
-    let accounts
-    let unirepContract
+    let accounts: ethers.Signer[]
+    let unirepContract: Unirep
 
     const epoch = 1
     const user = new ZkIdentity()
@@ -24,11 +23,7 @@ describe('User State Transition', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
     })
 
     it('Valid user state update inputs should work', async () => {
@@ -50,7 +45,8 @@ describe('User State Transition', function () {
 
         // UST should be performed after epoch transition
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        const epochLength = (await unirepContract.epochLength()).toNumber()
+        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)

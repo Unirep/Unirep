@@ -4,19 +4,18 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
+
 import {
     genEpochKey,
     genInputForContract,
     genProveSignUpCircuitInput,
-    getTreeDepthsForTesting,
     Reputation,
 } from './utils'
-import { deployUnirep, SignUpProof } from '../src'
-import { EPOCH_TREE_DEPTH } from '@unirep/config'
+import { deployUnirep, SignUpProof, Unirep } from '../src'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
     const epoch = 1
     const nonce = 0
@@ -33,11 +32,7 @@ describe('Verify user sign up verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
         // Bootstrap reputation
         const graffitiPreImage = genRandomSalt()
         reputationRecords[signedUpAttesterId] = new Reputation(
@@ -123,12 +118,7 @@ describe('Verify user sign up verifier', function () {
 
     it('wrong epoch key should fail', async () => {
         const attesterId = signedUpAttesterId
-        const wrongEpochKey = genEpochKey(
-            user.getNullifier(),
-            epoch,
-            nonce + 1,
-            EPOCH_TREE_DEPTH
-        )
+        const wrongEpochKey = genEpochKey(user.getNullifier(), epoch, nonce + 1)
         const circuitInputs = await genProveSignUpCircuitInput(
             user,
             epoch,

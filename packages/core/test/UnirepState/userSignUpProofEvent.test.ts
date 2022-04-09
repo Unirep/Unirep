@@ -9,7 +9,7 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
-import { deployUnirep, SignUpProof } from '@unirep/contracts'
+import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 import {
     computeInitUserStateRoot,
     genUnirepStateFromContract,
@@ -20,21 +20,22 @@ import {
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
-    getTreeDepthsForTesting,
 } from '../utils'
 import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 describe('User sign up proof (Airdrop proof) events in Unirep State', function () {
     this.timeout(0)
 
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
     let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
-    let unirepContract: ethers.Contract
-    let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths = getTreeDepthsForTesting()
+    let unirepContract: Unirep
+    let unirepContractCalledByAttester: Unirep
+    let _treeDepths
+    let GSTree: IncrementalMerkleTree
+    const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -47,14 +48,14 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             maxUsers,
             attestingFee,
-        }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
+        })
+        _treeDepths = await unirepContract.treeDepths()
+        GSTree = genNewGST(
+            _treeDepths.globalStateTreeDepth,
+            _treeDepths.userStateTreeDepth
         )
     })
 
@@ -109,12 +110,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
     })
 
     describe('User Sign Up event', async () => {
-        const GSTree = genNewGST(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth
-        )
-        const rootHistories: BigInt[] = []
-
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {
                 const id = new ZkIdentity()
@@ -159,7 +154,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
-                        BigInt(airdroppedAmount),
+                        airdroppedAmount.toBigInt(),
                         BigInt(0),
                         BigInt(0),
                         BigInt(1)

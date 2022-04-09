@@ -44,9 +44,7 @@ const configureSubparser = (subparsers: any) => {
 
 const giveAirdrop = async (args: any) => {
     // Ethereum provider
-    const ethProvider = args.eth_provider
-        ? args.eth_provider
-        : DEFAULT_ETH_PROVIDER
+    const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
     // Unirep contract
@@ -84,7 +82,9 @@ const giveAirdrop = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .airdropEpochKey(userSignUpProof, { value: attestingFee })
+            .airdropEpochKey(userSignUpProof, {
+                value: attestingFee,
+            })
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

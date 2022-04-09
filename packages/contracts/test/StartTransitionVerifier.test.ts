@@ -9,14 +9,14 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
+import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
+
 import {
     genStartTransitionCircuitInput,
-    getTreeDepthsForTesting,
     bootstrapRandomUSTree,
     genInputForContract,
 } from './utils'
-import { computeStartTransitionProofHash, deployUnirep } from '../src'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
+import { computeStartTransitionProofHash, deployUnirep, Unirep } from '../src'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -24,8 +24,8 @@ describe('User State Transition circuits', function () {
     const user = new ZkIdentity()
 
     describe('Start User State Transition', () => {
-        let accounts
-        let unirepContract
+        let accounts: ethers.Signer[]
+        let unirepContract: Unirep
         const epoch = 1
 
         let GSTZERO_VALUE = 0,
@@ -39,11 +39,7 @@ describe('User State Transition circuits', function () {
         before(async () => {
             accounts = await hardhatEthers.getSigners()
 
-            const _treeDepths = getTreeDepthsForTesting()
-            unirepContract = await deployUnirep(
-                <ethers.Wallet>accounts[0],
-                _treeDepths
-            )
+            unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
 
             // User state tree
             const results = await bootstrapRandomUSTree()

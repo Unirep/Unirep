@@ -3,9 +3,6 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-
-import { deployUnirep } from '../src'
-import { getTreeDepthsForTesting } from './utils'
 import {
     ATTESTTING_FEE,
     EPOCH_LENGTH,
@@ -15,9 +12,11 @@ import {
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
 
+import { deployUnirep, Unirep } from '../src'
+
 describe('Signup', () => {
     const testMaxUser = 5
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
     let signedUpUsers = 0
@@ -26,17 +25,10 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        // Set maxUsers to testMaxUser
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
-        }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        })
     })
 
     it('should have the correct config value', async () => {
@@ -105,7 +97,7 @@ describe('Signup', () => {
         let attester2
         let attester2Address
         let attester2Sig
-        let unirepContractCalledByAttester
+        let unirepContractCalledByAttester: Unirep
 
         it('sign up should succeed', async () => {
             attester = accounts[1]

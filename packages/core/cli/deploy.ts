@@ -59,38 +59,21 @@ const deploy = async (args: any) => {
         return
     }
 
-    // Max epoch key nonce
-    const _numEpochKeyNoncePerEpoch = NUM_EPOCH_KEY_NONCE_PER_EPOCH
-
-    // Max reputation budget
-    const _maxReputationBudget = MAX_REPUTATION_BUDGET
-
     // Epoch length
     const _epochLength = args.epoch_length ?? DEFAULT_EPOCH_LENGTH
 
     // Attesting fee
-    const _attestingFee =
-        args.attesting_fee
-            ? ethers.BigNumber.from(args.attesting_fee)
-            : DEFAULT_ATTESTING_FEE
+    const _attestingFee = args.attesting_fee
+        ? ethers.BigNumber.from(args.attesting_fee)
+        : DEFAULT_ATTESTING_FEE
 
     const settings = {
-        numEpochKeyNoncePerEpoch: _numEpochKeyNoncePerEpoch,
-        maxReputationBudget: _maxReputationBudget,
         epochLength: _epochLength,
         attestingFee: _attestingFee,
     }
 
-    const treeDepths = {
-        userStateTreeDepth: USER_STATE_TREE_DEPTH,
-        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-        epochTreeDepth: EPOCH_TREE_DEPTH,
-    }
-
     // Ethereum provider
-    const ethProvider = args.eth_provider
-        ? args.eth_provider
-        : DEFAULT_ETH_PROVIDER
+    const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
     if (!(await checkDeployerProviderConnection(deployerPrivkey, provider))) {
@@ -103,7 +86,7 @@ const deploy = async (args: any) => {
     const deployer = genJsonRpcDeployer(deployerPrivkey, provider)
     debugger
 
-    const contract = await deployUnirep(deployer.signer, treeDepths, settings)
+    const contract = await deployUnirep(deployer.signer, settings)
 
     console.log('Unirep:', contract.address)
 }

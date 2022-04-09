@@ -8,16 +8,14 @@ import {
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import {
-    genUserStateFromContract,
-    genEpochKey,
-} from '../src'
+import { genUserStateFromContract, genEpochKey } from '../src'
 import {
     epkProofPrefix,
     epkPublicSignalsPrefix,
     identityPrefix,
 } from './prefix'
 import { getProvider } from './utils'
+import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('genEpochKeyAndProof', {
@@ -51,14 +49,19 @@ const configureSubparser = (subparsers: any) => {
 
 const genEpochKeyAndProof = async (args: any) => {
     // Ethereum provider
-    const ethProvider = args.eth_provider
-        ? args.eth_provider
-        : DEFAULT_ETH_PROVIDER
+    const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
+
+    // Unirep contract
+    const unirepContract: Unirep = UnirepFactory.connect(
+        args.contract,
+        provider
+    )
+    const numEpochKeyNoncePerEpoch =
+        await unirepContract.numEpochKeyNoncePerEpoch()
 
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
-    const numEpochKeyNoncePerEpoch = NUM_EPOCH_KEY_NONCE_PER_EPOCH
     if (epkNonce >= numEpochKeyNoncePerEpoch) {
         console.error(
             'Error: epoch key nonce must be less than max epoch key nonce'
@@ -82,7 +85,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const epk = genEpochKey(
         id.getNullifier(),
         currentEpoch,
-        epkNonce,
+        epkNonce
     ).toString()
 
     // TODO: Not sure if this validation is necessary

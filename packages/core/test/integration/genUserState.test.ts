@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
@@ -15,6 +15,7 @@ import {
     EpochKeyProof,
     ReputationProof,
     SignUpProof,
+    Unirep,
     UserTransitionProof,
 } from '@unirep/contracts'
 import {
@@ -23,8 +24,8 @@ import {
     genUserStateFromParams,
     UserState,
 } from '../../src'
-import { genRandomAttestation, getTreeDepthsForTesting } from '../utils'
-import { EPOCH_LENGTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
+import { genRandomAttestation } from '../utils'
+import { EPOCH_LENGTH } from '@unirep/config'
 
 describe('Generate user state', function () {
     this.timeout(0)
@@ -32,14 +33,13 @@ describe('Generate user state', function () {
     let users: UserState[] = new Array(2)
     const firstUser = 0
     const secondUser = 1
-    let userIds: any[] = []
+    let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
-    let savedUserState: any
-    let secondUserState: any
+    let savedUserState: string
+    let secondUserState: string
 
-    let unirepContract: ethers.Contract
-    let unirepContractCalledByAttester: ethers.Contract
-    let _treeDepths
+    let unirepContract: Unirep
+    let unirepContractCalledByAttester: Unirep
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -49,15 +49,9 @@ describe('Generate user state', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
-        }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        })
     })
 
     describe('Attester sign up and set airdrop', () => {
@@ -115,7 +109,7 @@ describe('Generate user state', function () {
 
             expect(userSignedUpEvents.length).equal(1)
             const args = userSignedUpEvents[0]?.args
-            const _commitment = BigInt(args?.identityCommitment)
+            const _commitment = (args?.identityCommitment).toBigInt()
             expect(_commitment).equal(userCommitments[firstUser])
 
             let startTime = new Date().getTime()
@@ -223,9 +217,9 @@ describe('Generate user state', function () {
             expect(proofIndex.toNumber()).not.equal(0)
             const fromProofIndex = 0
 
-            attesterId = BigInt(
+            attesterId = (
                 await unirepContract.attesters(attester['addr'])
-            )
+            ).toBigInt()
             const attestation: Attestation = genRandomAttestation()
             attestation.attesterId = attesterId
             tx = await unirepContractCalledByAttester.submitAttestation(
@@ -307,7 +301,9 @@ describe('Generate user state', function () {
             const proveGraffiti = BigInt(0)
             const graffitiPreimage = BigInt(0)
             const nonceList = [BigInt(0), BigInt(1)]
-            for (let i = nonceList.length; i < MAX_REPUTATION_BUDGET; i++) {
+            const maxReputationBudget =
+                await unirepContract.maxReputationBudget()
+            for (let i = nonceList.length; i < maxReputationBudget; i++) {
                 nonceList.push(BigInt(-1))
             }
             const { proof, publicSignals } =
@@ -631,7 +627,7 @@ describe('Generate user state', function () {
                     processAttestationProofs[i].inputBlindedUserState
 
                 // submit random process attestations should success and not affect the results
-                const falseInput = genRandomSalt()
+                const falseInput = BigNumber.from(genRandomSalt())
                 tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,
@@ -923,7 +919,7 @@ describe('Generate user state', function () {
                     processAttestationProofs[i].inputBlindedUserState
 
                 // submit random process attestations should success and not affect the results
-                const falseInput = genRandomSalt()
+                const falseInput = BigNumber.from(genRandomSalt())
                 tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,

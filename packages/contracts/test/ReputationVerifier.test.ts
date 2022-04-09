@@ -8,13 +8,11 @@ import {
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
     USER_STATE_TREE_DEPTH,
-    ATTESTTING_FEE,
 } from '@unirep/config'
 import {
     genEpochKey,
     genInputForContract,
     genReputationCircuitInput,
-    getTreeDepthsForTesting,
     Reputation,
 } from './utils'
 import { deployUnirep, ReputationProof } from '../src'
@@ -23,7 +21,7 @@ import { Unirep } from '../typechain'
 describe('Verify reputation verifier', function () {
     this.timeout(30000)
     let unirepContract: Unirep
-    let unirepContractCalledByAttester
+    let unirepContractCalledByAttester: Unirep
     let accounts: ethers.Signer[]
     const epoch = 1
     const nonce = 1
@@ -43,15 +41,9 @@ describe('Verify reputation verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
-        }
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        })
 
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {

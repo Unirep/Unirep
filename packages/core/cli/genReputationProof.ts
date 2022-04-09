@@ -5,13 +5,10 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
-import { MAX_REPUTATION_BUDGET } from '@unirep/config'
+import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import {
-    genReputationNullifier,
-    genUserStateFromContract,
-} from '../src'
+import { genReputationNullifier, genUserStateFromContract } from '../src'
 import {
     identityPrefix,
     reputationPublicSignalsPrefix,
@@ -72,9 +69,7 @@ const configureSubparser = (subparsers: any) => {
 
 const genReputationProof = async (args: any) => {
     // Ethereum provider
-    const ethProvider = args.eth_provider
-        ? args.eth_provider
-        : DEFAULT_ETH_PROVIDER
+    const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
     // User Identity
@@ -88,6 +83,13 @@ const genReputationProof = async (args: any) => {
         args.contract,
         id
     )
+
+    // Unirep contract
+    const unirepContract: Unirep = UnirepFactory.connect(
+        args.contract,
+        provider
+    )
+    const maxReputationBudget = await unirepContract.maxReputationBudget()
 
     // Proving content
     const epoch = userState.getUnirepStateCurrentEpoch()
@@ -128,7 +130,7 @@ const genReputationProof = async (args: any) => {
         }
     }
 
-    for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
+    for (let i = repNullifiersAmount; i < maxReputationBudget; i++) {
         nonceList.push(BigInt(-1))
     }
     const graffitiPreImage =

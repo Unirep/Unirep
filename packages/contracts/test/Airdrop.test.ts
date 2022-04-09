@@ -6,7 +6,6 @@ import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 
 import {
-    getTreeDepthsForTesting,
     Reputation,
     genProofAndVerify,
     genReputationCircuitInput,
@@ -18,7 +17,7 @@ import { deployUnirep, Unirep } from '../src'
 describe('Airdrop', function () {
     this.timeout(100000)
 
-    let unirepContract
+    let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
     let numUsers = 0
@@ -30,16 +29,9 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        const _settings = {
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
-        }
-
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths,
-            _settings
-        )
+        })
     })
 
     describe('Attesters set airdrop', () => {
@@ -103,7 +95,7 @@ describe('Airdrop', function () {
             for (const event of signUpEvents) {
                 attesterId_ = event.args.attesterId.toNumber()
                 reputationRecords[attesterId_] = new Reputation(
-                    BigInt(event.args.airdropAmount),
+                    event.args.airdropAmount.toBigInt(),
                     BigInt(0),
                     BigInt(0),
                     BigInt(0) // airdrop amount == 0
@@ -170,7 +162,7 @@ describe('Airdrop', function () {
             for (const event of signUpEvents) {
                 attesterId_ = event.args.attesterId.toNumber()
                 reputationRecords[attesterId_] = new Reputation(
-                    BigInt(event.args.airdropAmount),
+                    event.args.airdropAmount.toBigInt(),
                     BigInt(0),
                     BigInt(0),
                     BigInt(1) // airdrop amount != 0

@@ -7,17 +7,20 @@ import { Circuit } from '@unirep/circuits'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
-    getTreeDepthsForTesting,
 } from './utils'
-import { computeProcessAttestationsProofHash, deployUnirep } from '../src'
+import {
+    computeProcessAttestationsProofHash,
+    deployUnirep,
+    Unirep,
+} from '../src'
 import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
 
 NUM_ATTESTATIONS_PER_PROOF
 describe('Process attestation circuit', function () {
     this.timeout(300000)
 
-    let accounts
-    let unirepContract
+    let accounts: ethers.Signer[]
+    let unirepContract: Unirep
 
     const epoch = BigInt(1)
     const nonce = BigInt(0)
@@ -26,11 +29,7 @@ describe('Process attestation circuit', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        const _treeDepths = getTreeDepthsForTesting()
-        unirepContract = await deployUnirep(
-            <ethers.Wallet>accounts[0],
-            _treeDepths
-        )
+        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
     })
 
     it('successfully process attestations', async () => {
