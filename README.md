@@ -9,7 +9,8 @@ For more information, refer to the [documentation](https://unirep.gitbook.io/uni
 ## Project Structure
 
 -   Composed by 4 packages:
-    -   [`unirep`](./packages/unirep/) - main package.
+    -   [`core`](./packages/core/) - main package.
+    -   [`config`](./packages/config) - declarations of protocol constants
     -   [`contracts`](./packages/contracts/) - Unirep smart contracts.
     -   [`circuits`](./packages/circuits/) - Circom libaries.
     -   [`crypto`](./packages/crypto) - Crypto utils.
