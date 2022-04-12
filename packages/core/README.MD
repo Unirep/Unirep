@@ -31,7 +31,6 @@ yarn test && yarn test-cli
 
 ## Example flow using cli commands
 
-## Example flow using cli commands
 
 ### 1. Spin up the testing chain
 
