@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 const genSnarkVerifierSol = (contractName: string, vk: any): string => {
-    const templatePath = path.join(__dirname, './verifier_groth16_template.txt');
+    const templatePath = path.join(__dirname, './verifier_groth16_template.txt')
 
     let template = fs.readFileSync(templatePath).toString()
 

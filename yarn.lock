@@ -4422,6 +4422,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"emoji-regex@npm:^10.0.0":
+  version: 10.1.0
+  resolution: "emoji-regex@npm:10.1.0"
+  checksum: 5bc780fc4d75f89369155a87c55f7e83a0bf72bcccda7df7f2c570cde4738d8b17d112d12afdadfec16647d1faef6501307b4304f81d35c823a938fe6547df0f
+  languageName: node
+  linkType: hard
+
 "emoji-regex@npm:^8.0.0":
   version: 8.0.0
   resolution: "emoji-regex@npm:8.0.0"
@@ -9926,12 +9933,37 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^2.1.2, prettier@npm:^2.6.0":
+"prettier-plugin-solidity@npm:^1.0.0-beta.19":
+  version: 1.0.0-dev.21
+  resolution: "prettier-plugin-solidity@npm:1.0.0-dev.21"
+  dependencies:
+    "@solidity-parser/parser": ^0.14.1
+    emoji-regex: ^10.0.0
+    escape-string-regexp: ^4.0.0
+    semver: ^7.3.5
+    solidity-comments-extractor: ^0.0.7
+    string-width: ^4.2.3
+  peerDependencies:
+    prettier: ^2.3.0
+  checksum: 3c43bb7404c380091310e59be718ec0161d268e4674e5e658723f7a7bc9b0f541df9816a8e7bd93b9e73a289f1e13ea1eab58027d4ee51d25460ea6e63c0c99e
+  languageName: node
+  linkType: hard
+
+"prettier@npm:^2.1.2":
   version: 2.6.0
   resolution: "prettier@npm:2.6.0"
   bin:
     prettier: bin-prettier.js
   checksum: 3e527ad62279676778a8404d18174d7ca2365ada4caba6eebbcdd9907d1187afd3bc6ade5b4e5f5d4549bb9fb71e45ca8930d71500017635524f8fc05bc52e93
+  languageName: node
+  linkType: hard
+
+"prettier@npm:^2.6.2":
+  version: 2.6.2
+  resolution: "prettier@npm:2.6.2"
+  bin:
+    prettier: bin-prettier.js
+  checksum: 48d08dde8e9fb1f5bccdd205baa7f192e9fc8bc98f86e1b97d919de804e28c806b0e6cc685e4a88211aa7987fa9668f30baae19580d87ced3ed0f2ec6572106f
   languageName: node
   linkType: hard
 
@@ -11238,6 +11270,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"solidity-comments-extractor@npm:^0.0.7":
+  version: 0.0.7
+  resolution: "solidity-comments-extractor@npm:0.0.7"
+  checksum: a5cedf2310709969bc1783a6c336171478536f2f0ea96ad88437e0ef1e8844c0b37dd75591b0a824ec9c30640ea7e31b5f03128e871e6235bef3426617ce96c4
+  languageName: node
+  linkType: hard
+
 "source-map-resolve@npm:^0.5.0":
   version: 0.5.3
   resolution: "source-map-resolve@npm:0.5.3"
@@ -12359,7 +12398,8 @@ __metadata:
     husky: ^7.0.4
     keyv: ^4.0.3
     lint-staged: ^12.3.7
-    prettier: ^2.6.0
+    prettier: ^2.6.2
+    prettier-plugin-solidity: ^1.0.0-beta.19
     shelljs: ^0.8.3
     ts-node: ^10.2.1
     typescript: ^4.5.4
