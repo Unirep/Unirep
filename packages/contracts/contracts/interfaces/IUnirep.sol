@@ -16,11 +16,8 @@ interface IUnirep is UnirepTypes {
         SpendReputation
     }
 
-      // Events
-    event Sequencer(
-        uint256 indexed epoch, 
-        Event userEvent 
-    );
+    // Events
+    event Sequencer(uint256 indexed epoch, Event userEvent);
 
     // Two global state tree leaf inserted events in Unirep
     // 1. UserSignUp

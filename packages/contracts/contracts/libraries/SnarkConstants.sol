@@ -29,6 +29,5 @@ contract SnarkConstants {
     // A nothing-up-my-sleeve zero value
     // Should be equal to 16916383162496104613127564537688207714240750091683495371401923915264313510848
     uint256 ZERO_VALUE =
-        uint256(keccak256(abi.encodePacked("Unirep"))) % SNARK_SCALAR_FIELD;
-
+        uint256(keccak256(abi.encodePacked('Unirep'))) % SNARK_SCALAR_FIELD;
 }
