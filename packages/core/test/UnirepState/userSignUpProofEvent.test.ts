@@ -16,6 +16,7 @@ import {
     Reputation,
 } from '../../src'
 import {
+    compareObjectElements,
     genNewGST,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
@@ -303,7 +304,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -320,7 +321,8 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(attestations[1].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[1], attestation)).to.be
+                .true
         })
 
         it('submit invalid airdrop proof event', async () => {
@@ -374,7 +376,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -456,7 +458,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,

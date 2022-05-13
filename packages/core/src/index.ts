@@ -1,6 +1,4 @@
 import {
-    Attestation,
-    IAttestation,
     IEpochTreeLeaf,
     ISettings,
     IUnirepState,
@@ -35,9 +33,7 @@ import {
     genReputationNullifier,
     genNewSMT,
     genUnirepStateFromContract,
-    genUnirepStateFromParams,
     genUserStateFromContract,
-    genUserStateFromParams,
 } from './utils'
 
 import {
@@ -46,8 +42,6 @@ import {
 } from '../config/nullifierDomainSeparator'
 
 export {
-    Attestation,
-    IAttestation,
     IEpochTreeLeaf,
     ISettings,
     IUnirepState,
@@ -76,9 +70,7 @@ export {
     genReputationNullifier,
     genNewSMT,
     genUnirepStateFromContract,
-    genUnirepStateFromParams,
     genUserStateFromContract,
-    genUserStateFromParams,
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
 }

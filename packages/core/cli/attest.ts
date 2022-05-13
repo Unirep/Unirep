@@ -1,8 +1,7 @@
 import { ethers } from 'ethers'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import { Unirep, UnirepFactory, Attestation } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { Attestation } from '../src'
 import { getProvider } from './utils'
 
 const configureSubparser = (subparsers: any) => {

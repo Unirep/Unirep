@@ -10,6 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import {
+    Attestation,
     deployUnirep,
     EpochKeyProof,
     ReputationProof,
@@ -20,10 +21,10 @@ import {
     genReputationNullifier,
     genUnirepStateFromContract,
     genUserStateFromContract,
-    Attestation,
     Reputation,
 } from '../../src'
 import {
+    compareObjectElements,
     genNewGST,
     genNewUserStateTree,
     genRandomAttestation,
@@ -322,7 +323,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should update User state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -340,7 +341,8 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attestations = userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(attestations[1].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[1], attestation)).to.be
+                .true
         })
 
         it('submit valid reputation proof event with same nullifiers', async () => {
@@ -402,7 +404,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should not update User state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -470,7 +472,8 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attestations = userStateAfterAttest.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(attestations[0].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[0], attestation)).to.be
+                .true
         })
 
         it('submit invalid reputation proof event', async () => {
@@ -530,7 +533,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should not update User state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -575,7 +578,7 @@ describe('Reputation proof events in Unirep User State', function () {
             )
 
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -591,7 +594,12 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            expect(userState.toJSON()).equal(userStateAfterAttest.toJSON())
+            expect(
+                compareObjectElements(
+                    userState.toJSON(),
+                    userStateAfterAttest.toJSON()
+                )
+            ).to.be.true
         })
 
         it('submit valid reputation proof with wrong GST root event', async () => {
@@ -660,7 +668,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,

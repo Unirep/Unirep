@@ -4,6 +4,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import {
+    Attestation,
     deployUnirep,
     EpochKeyProof,
     UserTransitionProof,
@@ -23,7 +24,6 @@ import {
 } from '@unirep/config'
 
 import {
-    Attestation,
     computeInitUserStateRoot,
     genUnirepStateFromContract,
     ISettings,
@@ -905,7 +905,7 @@ describe('User state transition events in Unirep State', async function () {
             for (let i = 0; i < transitionedUsers.length; i++) {
                 const userIdx = transitionedUsers[i]
                 const UST = await computeInitUserStateRoot(
-                    unirepState.setting.userStateTreeDepth,
+                    unirepState.settings.userStateTreeDepth,
                     Number(attesterId),
                     Number(signUpAirdrops[userIdx].posRep)
                 )
@@ -951,10 +951,10 @@ describe('User state transition events in Unirep State', async function () {
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
                 attestations[userIdx].update(
-                    attestation.posRep as BigInt,
-                    attestation.negRep as BigInt,
-                    attestation.graffiti as BigInt,
-                    attestation.signUp as BigInt
+                    attestation.posRep,
+                    attestation.negRep,
+                    attestation.graffiti,
+                    attestation.signUp
                 )
             }
         })

@@ -13,13 +13,20 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
+import { Attestation } from '@unirep/contracts'
 import {
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
 } from '@unirep/config'
 
-import { Attestation, genEpochKey, Reputation, UnirepState } from '../src'
+import {
+    genEpochKey,
+    genUserStateFromContract,
+    Reputation,
+    UnirepState,
+    UserState,
+} from '../src'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
@@ -121,24 +128,28 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
     const currentEpoch = unirepState.currentEpoch
     let reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
-        for (let j = 0; j < unirepState.setting.numEpochKeyNoncePerEpoch; j++) {
+        for (
+            let j = 0;
+            j < unirepState.settings.numEpochKeyNoncePerEpoch;
+            j++
+        ) {
             const epk = genEpochKey(id.getNullifier(), i, j)
             const attestations = unirepState.getAttestations(epk.toString())
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
                 if (reputaitonRecord[attesterId] === undefined) {
                     reputaitonRecord[attesterId] = new Reputation(
-                        attestation.posRep as BigInt,
-                        attestation.negRep as BigInt,
-                        attestation.graffiti as BigInt,
-                        attestation.signUp as BigInt
+                        attestation.posRep,
+                        attestation.negRep,
+                        attestation.graffiti,
+                        attestation.signUp
                     )
                 } else {
                     reputaitonRecord[attesterId].update(
-                        attestation.posRep as BigInt,
-                        attestation.negRep as BigInt,
-                        attestation.graffiti as BigInt,
-                        attestation.signUp as BigInt
+                        attestation.posRep,
+                        attestation.negRep,
+                        attestation.graffiti,
+                        attestation.signUp
                     )
                 }
             }
@@ -307,6 +318,93 @@ const genProveSignUpCircuitInput = async (
     return stringifyBigInts(circuitInputs)
 }
 
+const compareObjectElements = (obj1: any, obj2: any) => {
+    let same = true
+    for (const key of Object.keys(obj1)) {
+        if (typeof obj1[key] === 'function') continue
+        if (key === 'unirepState') {
+            same = compareObjectElements(obj1[key], obj2[key])
+        } else {
+            same = JSON.stringify(obj1[key]) === JSON.stringify(obj2[key])
+            if (!same) console.log(key, obj1[key], obj2[key])
+        }
+        if (!same) {
+            return same
+        }
+    }
+    return same
+}
+
+const compareUserStates = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userId: ZkIdentity,
+    savedUserState: any
+) => {
+    const usWithNoStorage = await genUserStateFromContract(
+        provider,
+        address,
+        userId
+    )
+
+    const usWithStorage = await genUserStateFromContract(
+        provider,
+        address,
+        userId,
+        savedUserState
+    )
+
+    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+
+    const compare1 = compareObjectElements(
+        usWithNoStorage.toJSON(),
+        usWithStorage.toJSON()
+    )
+    const compare2 = compareObjectElements(
+        usWithNoStorage.toJSON(),
+        usFromJSON.toJSON()
+    )
+
+    return {
+        sameStates: compare1 && compare2,
+        currentUserState: usWithNoStorage.toJSON(),
+    }
+}
+
+const compareEpochTrees = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userId: ZkIdentity,
+    savedUserState: any,
+    epoch: number
+) => {
+    const usWithNoStorage = await genUserStateFromContract(
+        provider,
+        address,
+        userId
+    )
+    const epochTree1 = await usWithNoStorage.getUnirepStateEpochTree(epoch)
+
+    const usWithStorage = await genUserStateFromContract(
+        provider,
+        address,
+        userId,
+        savedUserState
+    )
+    const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
+
+    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
+
+    const compare1 = epochTree1.getRootHash() === epochTree2.getRootHash()
+    const compare2 = epochTree1.getRootHash() === epochTree3.getRootHash()
+
+    return {
+        sameStates: compare1 && compare2,
+        currentUserState: usWithNoStorage.toJSON(),
+    }
+}
+
 export {
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
@@ -326,4 +424,7 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
+    compareObjectElements,
+    compareUserStates,
+    compareEpochTrees,
 }

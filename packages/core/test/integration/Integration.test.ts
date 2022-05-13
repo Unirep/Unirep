@@ -96,7 +96,7 @@
 //             users[firstUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex, 0, 0)
 //             console.log(`First user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
 //             console.log('----------------------User State----------------------')
-//             console.log(users[firstUser].toJSON(4))
+//             console.log(users[firstUser].toJSON())
 //             console.log('------------------------------------------------------')
 //         })
 
@@ -147,7 +147,7 @@
 
 //     //         await unirepState.epochTransition(prevEpoch.toNumber())
 //     //         console.log('----------------------Unirep State----------------------')
-//     //         console.log(unirepState.toJSON(4))
+//     //         console.log(unirepState.toJSON())
 //     //         console.log('------------------------------------------------------')
 
 //     //         userStateTransitionedNum[currentEpoch.toNumber()] = []
@@ -291,7 +291,7 @@
 //     //         console.log('User state transition off-chain: ')
 //     //         console.log(`newGSTLeaf ${BigInt(_newGlobalStateTreeLeaf)} and epk nullifier ${epkNullifiers}`)
 //     //         console.log('----------------------User State----------------------')
-//     //         console.log(users[firstUser].toJSON(4))
+//     //         console.log(users[firstUser].toJSON())
 //     //         console.log('------------------------------------------------------')
 //     //     })
 
@@ -369,7 +369,7 @@
 //     //         users[secondUser].signUp(latestTransitionedToEpoch, GSTreeLeafIndex, secondAttesterId.toNumber(), secondAttesterAirdropAmount)
 //     //         console.log(`Second user signs up with commitment (${commitment}), in epoch ${latestTransitionedToEpoch} and GST leaf ${GSTreeLeafIndex}`)
 //     //         console.log('----------------------User State----------------------')
-//     //         console.log(users[secondUser].toJSON(4))
+//     //         console.log(users[secondUser].toJSON())
 //     //         console.log('------------------------------------------------------')
 //     //     })
 
@@ -523,7 +523,7 @@
 //     //         unirepState.addAttestation(epochKey.toString(), attestation)
 
 //     //         console.log('----------------------Unirep State----------------------')
-//     //         console.log(unirepState.toJSON(4))
+//     //         console.log(unirepState.toJSON())
 //     //         console.log('------------------------------------------------------')
 //     //     })
 
@@ -812,7 +812,7 @@
 
 //     //         await unirepState.epochTransition(prevEpoch.toNumber())
 //     //         console.log('----------------------Unirep State----------------------')
-//     //         console.log(unirepState.toJSON(4))
+//     //         console.log(unirepState.toJSON())
 //     //         console.log('------------------------------------------------------')
 
 //     //         userStateTransitionedNum[currentEpoch.toNumber()] = []
@@ -962,7 +962,7 @@
 //     //         console.log('User state transition off-chain: ')
 //     //         console.log(`newGSTLeaf ${BigInt(_newGlobalStateTreeLeaf)} and epk nullifier ${epkNullifiers}`)
 //     //         console.log('----------------------User State----------------------')
-//     //         console.log(users[firstUser].toJSON(4))
+//     //         console.log(users[firstUser].toJSON())
 //     //         console.log('------------------------------------------------------')
 //     //     })
 

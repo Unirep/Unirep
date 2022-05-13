@@ -99,8 +99,8 @@ describe('test all CLI subcommands', function () {
                 unirepAddress
             )
 
-            expect(unirepState.setting.epochLength).equal(epochLength)
-            expect(unirepState.setting.attestingFee).equal(attestingFee)
+            expect(unirepState.settings.epochLength).equal(epochLength)
+            expect(unirepState.settings.attestingFee).equal(attestingFee)
         })
     })
 

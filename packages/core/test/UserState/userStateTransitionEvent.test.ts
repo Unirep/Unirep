@@ -862,10 +862,10 @@ describe('User state transition events in Unirep User State', async function () 
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
                 attestations[userIdx].update(
-                    attestation.posRep as BigInt,
-                    attestation.negRep as BigInt,
-                    attestation.graffiti as BigInt,
-                    attestation.signUp as BigInt
+                    attestation.posRep,
+                    attestation.negRep,
+                    attestation.graffiti,
+                    attestation.signUp
                 )
             }
         })

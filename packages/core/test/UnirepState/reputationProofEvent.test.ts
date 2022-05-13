@@ -10,6 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import {
+    Attestation,
     deployUnirep,
     EpochKeyProof,
     ReputationProof,
@@ -22,9 +23,9 @@ import {
     genReputationNullifier,
     genUnirepStateFromContract,
     Reputation,
-    Attestation,
 } from '../../src'
 import {
+    compareObjectElements,
     genEpochKeyCircuitInput,
     genNewGST,
     genNewUserStateTree,
@@ -323,7 +324,7 @@ describe('Reputation proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -340,7 +341,8 @@ describe('Reputation proof events in Unirep State', function () {
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(attestations[1].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[1], attestation)).to.be
+                .true
         })
 
         it('spend reputation event can attest to other epoch key and update Unirep state', async () => {
@@ -401,7 +403,8 @@ describe('Reputation proof events in Unirep State', function () {
             const attestations =
                 unirepStateAfterAttest.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(attestations[0].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[0], attestation)).to.be
+                .true
         })
 
         it('submit valid reputation proof event with same nullifiers', async () => {
@@ -464,7 +467,7 @@ describe('Reputation proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -539,7 +542,7 @@ describe('Reputation proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -613,7 +616,12 @@ describe('Reputation proof events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            expect(unirepState.toJSON()).equal(unirepStateAfterAttest.toJSON())
+            expect(
+                compareObjectElements(
+                    unirepState.toJSON(),
+                    unirepStateAfterAttest.toJSON()
+                )
+            ).to.be.true
         })
 
         it('submit valid reputation proof with wrong GST root event', async () => {
@@ -681,7 +689,7 @@ describe('Reputation proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,

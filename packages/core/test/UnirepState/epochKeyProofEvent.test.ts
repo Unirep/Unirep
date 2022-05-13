@@ -9,7 +9,7 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
-import { deployUnirep, EpochKeyProof } from '@unirep/contracts'
+import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 import {
     computeInitUserStateRoot,
@@ -18,11 +18,11 @@ import {
     UserState,
 } from '../../src'
 import {
+    compareObjectElements,
     genEpochKeyCircuitInput,
     genNewGST,
     genRandomAttestation,
 } from '../utils'
-import { Unirep } from '@unirep/contracts'
 
 describe('Epoch key proof events in Unirep State', function () {
     this.timeout(0)
@@ -287,7 +287,7 @@ describe('Epoch key proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -304,7 +304,8 @@ describe('Epoch key proof events in Unirep State', function () {
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(attestations[0].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[0], attestation)).to.be
+                .true
         })
 
         it('submit invalid epoch key proof event', async () => {
@@ -344,7 +345,7 @@ describe('Epoch key proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -408,7 +409,7 @@ describe('Epoch key proof events in Unirep State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,

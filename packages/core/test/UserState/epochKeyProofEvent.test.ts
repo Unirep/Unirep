@@ -20,6 +20,7 @@ import {
     UserState,
 } from '../../src'
 import {
+    compareObjectElements,
     genEpochKeyCircuitInput,
     genNewGST,
     genRandomAttestation,
@@ -275,7 +276,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -292,7 +293,8 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(attestations[0].toJSON()).equal(attestation.toJSON())
+            expect(compareObjectElements(attestations[0], attestation)).to.be
+                .true
         })
 
         it('submit invalid epoch key proof event', async () => {
@@ -322,7 +324,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,
@@ -386,7 +388,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
-            attestation.attesterId = BigInt(attesterId)
+            attestation.attesterId = attesterId
             const tx = await unirepContractCalledByAttester.submitAttestation(
                 attestation,
                 epochKey,

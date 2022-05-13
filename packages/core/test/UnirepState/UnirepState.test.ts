@@ -1,7 +1,11 @@
 import { expect } from 'chai'
 import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
-import { genNewGST, genRandomAttestation } from '../utils'
+import {
+    compareObjectElements,
+    genNewGST,
+    genRandomAttestation,
+} from '../utils'
 import {
     ATTESTTING_FEE,
     EPOCH_LENGTH,
@@ -11,6 +15,7 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
+import { Attestation } from '@unirep/contracts'
 
 describe('Unirep State', function () {
     let unirepState: UnirepState
@@ -131,7 +136,7 @@ describe('Unirep State', function () {
     })
 
     describe('Add attestations', async () => {
-        const attestationsToEpochKey: { [key: string]: string[] } = {}
+        const attestationsToEpochKey: { [key: string]: Attestation[] } = {}
 
         it('update Unirep state should success', async () => {
             const maxEpochKeyNum = 10
@@ -152,7 +157,7 @@ describe('Unirep State', function () {
                     const attestation = genRandomAttestation()
                     unirepState.addAttestation(epochKey.toString(), attestation)
                     attestationsToEpochKey[epochKey.toString()].push(
-                        attestation.toJSON()
+                        attestation
                     )
                 }
             }
@@ -180,9 +185,12 @@ describe('Unirep State', function () {
                 )
                 for (let j = 0; j < unirepAttestations.length; j++) {
                     expect(
-                        unirepAttestations[j].toJSON(),
+                        compareObjectElements(
+                            unirepAttestations[j],
+                            attestationsToEpochKey[epochKeys[i]][j]
+                        ),
                         'Query attestations from Unirep state failed'
-                    ).equal(attestationsToEpochKey[epochKeys[i]][j])
+                    ).to.be.true
                 }
             }
         })
@@ -422,7 +430,7 @@ describe('Unirep State', function () {
     })
 
     describe('Add attestations in the next epoch', async () => {
-        const attestationsToEpochKey: { [key: string]: string[] } = {}
+        const attestationsToEpochKey: { [key: string]: Attestation[] } = {}
 
         it('update Unirep state should success', async () => {
             const maxEpochKeyNum = 10
@@ -442,7 +450,7 @@ describe('Unirep State', function () {
                     const attestation = genRandomAttestation()
                     unirepState.addAttestation(epochKey.toString(), attestation)
                     attestationsToEpochKey[epochKey.toString()].push(
-                        attestation.toJSON()
+                        attestation
                     )
                 }
             }

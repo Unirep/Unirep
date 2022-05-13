@@ -1,6 +1,12 @@
 import { BigNumber, ethers } from 'ethers'
 import Keyv from 'keyv'
-import { getUnirepContract, Event, AttestationEvent } from '@unirep/contracts'
+import {
+    Attestation,
+    IAttestation,
+    getUnirepContract,
+    Event,
+    AttestationEvent,
+} from '@unirep/contracts'
 import {
     hash5,
     hashLeftRight,
@@ -10,7 +16,6 @@ import {
 } from '@unirep/crypto'
 
 import {
-    Attestation,
     IEpochTreeLeaf,
     ISettings,
     IUnirepState,
@@ -26,7 +31,6 @@ import {
     formatProofForSnarkjsVerification,
     verifyProof,
 } from '@unirep/circuits'
-import { IAttestation } from '.'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
 import { EPOCH_TREE_DEPTH } from '@unirep/config'
 import { Unirep } from '@unirep/contracts'
@@ -122,6 +126,16 @@ const genNewSMT = async (
     defaultLeafHash: BigInt
 ): Promise<SparseMerkleTree> => {
     return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+}
+
+const stringifyAttestation = (attestation: IAttestation) => {
+    return JSON.stringify({
+        attesterId: attestation.attesterId.toString(),
+        posRep: attestation.posRep.toString(),
+        negRep: attestation.negRep.toString(),
+        graffiti: attestation.graffiti.toString(),
+        signUp: attestation.signUp.toString(),
+    })
 }
 
 const verifyEpochKeyProofEvent = async (
@@ -302,63 +316,6 @@ const verifyProcessAttestationEvents = async (
     return currentBlindedUserState.eq(finalBlindedUserState)
 }
 
-const genUnirepStateFromParams = (_unirepState: IUnirepState) => {
-    const parsedGSTLeaves = {}
-    const parsedEpochTreeLeaves = {}
-    const parsedNullifiers = {}
-    const parsedAttestationsMap = {}
-
-    for (let key in _unirepState.GSTLeaves) {
-        parsedGSTLeaves[key] = _unirepState.GSTLeaves[key].map((n) => BigInt(n))
-    }
-
-    for (let key in _unirepState.epochTreeLeaves) {
-        const leaves: IEpochTreeLeaf[] = []
-        _unirepState.epochTreeLeaves[key].map((n) => {
-            const splitStr = n.split(': ')
-            const epochTreeLeaf: IEpochTreeLeaf = {
-                epochKey: BigInt(splitStr[0]),
-                hashchainResult: BigInt(splitStr[1]),
-            }
-            leaves.push(epochTreeLeaf)
-        })
-        parsedEpochTreeLeaves[key] = leaves
-    }
-
-    for (let n of _unirepState.nullifiers) {
-        parsedNullifiers[n] = true
-    }
-
-    for (let key in _unirepState.latestEpochKeyToAttestationsMap) {
-        const parsedAttestations: IAttestation[] = []
-        for (const attestation of _unirepState.latestEpochKeyToAttestationsMap[
-            key
-        ]) {
-            const jsonAttestation = JSON.parse(attestation)
-            const attestClass = new Attestation(
-                BigInt(jsonAttestation.attesterId),
-                BigInt(jsonAttestation.posRep),
-                BigInt(jsonAttestation.negRep),
-                BigInt(jsonAttestation.graffiti),
-                BigInt(jsonAttestation.signUp)
-            )
-            parsedAttestations.push(attestClass)
-        }
-        parsedAttestationsMap[key] = parsedAttestations
-    }
-    const unirepState = new UnirepState(
-        _unirepState.settings,
-        _unirepState.currentEpoch,
-        _unirepState.latestProcessedBlock,
-        parsedGSTLeaves,
-        parsedEpochTreeLeaves,
-        parsedAttestationsMap,
-        parsedNullifiers
-    )
-
-    return unirepState
-}
-
 /*
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UnirepState object.
@@ -369,12 +326,12 @@ const genUnirepStateFromParams = (_unirepState: IUnirepState) => {
 const genUnirepStateFromContract = async (
     provider: ethers.providers.Provider,
     address: string,
-    _unirepState?: IUnirepState
+    _unirepState?: any
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
     let unirepState: UnirepState
 
-    if (_unirepState === undefined) {
+    if (!_unirepState) {
         const treeDepths_ = await unirepContract.treeDepths()
         const globalStateTreeDepth = treeDepths_.globalStateTreeDepth
         const userStateTreeDepth = treeDepths_.userStateTreeDepth
@@ -397,7 +354,7 @@ const genUnirepStateFromContract = async (
         }
         unirepState = new UnirepState(setting)
     } else {
-        unirepState = genUnirepStateFromParams(_unirepState)
+        unirepState = UnirepState.fromJSON(_unirepState)
     }
 
     const latestBlock = _unirepState?.latestProcessedBlock
@@ -787,57 +744,6 @@ const genUnirepStateFromContract = async (
 }
 
 /*
- * Create UserState object from given user state and
- * retrieves and parses on-chain Unirep contract data to create an off-chain
- * representation as a UserState object (including UnirepState object).
- * (This assumes user has already signed up in the Unirep contract)
- * @param userIdentity The semaphore identity of the user
- * @param _userState The stored user state that the function start with
- */
-const genUserStateFromParams = (userIdentity: any, _userState: IUserState) => {
-    const unirepState = genUnirepStateFromParams(_userState.unirepState)
-    const userStateLeaves: IUserStateLeaf[] = []
-    const transitionedFromAttestations: { [key: string]: IAttestation[] } = {}
-    for (const key in _userState.latestUserStateLeaves) {
-        const parsedLeaf = JSON.parse(_userState.latestUserStateLeaves[key])
-        const leaf: IUserStateLeaf = {
-            attesterId: BigInt(key),
-            reputation: new Reputation(
-                BigInt(parsedLeaf.posRep),
-                BigInt(parsedLeaf.negRep),
-                BigInt(parsedLeaf.graffiti),
-                BigInt(parsedLeaf.signUp)
-            ),
-        }
-        userStateLeaves.push(leaf)
-    }
-    for (const key in _userState.transitionedFromAttestations) {
-        transitionedFromAttestations[key] = []
-        for (const attest of _userState.transitionedFromAttestations[key]) {
-            const parsedAttest = JSON.parse(attest)
-            const attestation: IAttestation = new Attestation(
-                BigInt(parsedAttest.attesterId),
-                BigInt(parsedAttest.posRep),
-                BigInt(parsedAttest.negRep),
-                BigInt(parsedAttest.graffiti),
-                BigInt(parsedAttest.signUp)
-            )
-            transitionedFromAttestations[key].push(attestation)
-        }
-    }
-    const userState = new UserState(
-        unirepState,
-        userIdentity,
-        _userState.hasSignedUp,
-        _userState.latestTransitionedEpoch,
-        _userState.latestGSTLeafIndex,
-        userStateLeaves,
-        transitionedFromAttestations
-    )
-    return userState
-}
-
-/*
  * This function works mostly the same as genUnirepStateFromContract,
  * except that it also updates the user's state during events processing.
  * @param provider An Ethereum provider
@@ -849,14 +755,14 @@ const genUserStateFromContract = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: any,
-    _userState?: IUserState
+    _userState?: any
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
 
     let unirepState: UnirepState
     let userState: UserState
 
-    if (_userState === undefined) {
+    if (!_userState) {
         const treeDepths_ = await unirepContract.treeDepths()
         const globalStateTreeDepth = treeDepths_.globalStateTreeDepth
         const userStateTreeDepth = treeDepths_.userStateTreeDepth
@@ -868,7 +774,7 @@ const genUserStateFromContract = async (
             await unirepContract.numEpochKeyNoncePerEpoch()
         const maxReputationBudget = await unirepContract.maxReputationBudget()
 
-        const setting: ISettings = {
+        const settings: ISettings = {
             globalStateTreeDepth: globalStateTreeDepth,
             userStateTreeDepth: userStateTreeDepth,
             epochTreeDepth: epochTreeDepth,
@@ -877,10 +783,10 @@ const genUserStateFromContract = async (
             numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
             maxReputationBudget: maxReputationBudget,
         }
-        unirepState = new UnirepState(setting)
+        unirepState = new UnirepState(settings)
         userState = new UserState(unirepState, userIdentity)
     } else {
-        userState = genUserStateFromParams(userIdentity, _userState)
+        userState = UserState.fromJSON(userIdentity, _userState)
         unirepState = userState.getUnirepState()
     }
 
@@ -1288,8 +1194,7 @@ export {
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
+    stringifyAttestation,
     genUnirepStateFromContract,
-    genUnirepStateFromParams,
     genUserStateFromContract,
-    genUserStateFromParams,
 }
