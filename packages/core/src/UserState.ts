@@ -187,9 +187,9 @@ class UserState {
         }
     }
 
-    public toJSON = (): string => {
+    public toJSON = (): IUserState => {
         const userStateLeavesMapToString: { [key: string]: string } = {}
-        for (const l of (this as any).latestUserStateLeaves) {
+        for (const l of this.latestUserStateLeaves) {
             userStateLeavesMapToString[l.attesterId.toString()] =
                 l.reputation.toJSON()
         }
@@ -199,7 +199,7 @@ class UserState {
         const epoch = this.latestTransitionedEpoch
         for (
             let nonce = 0;
-            nonce < (this as any).unirepState.settings.numEpochKeyNoncePerEpoch;
+            nonce < this.unirepState.settings.numEpochKeyNoncePerEpoch;
             nonce++
         ) {
             const epk = genEpochKey(
@@ -207,25 +207,25 @@ class UserState {
                 epoch,
                 nonce
             ).toString()
-            const attestations = (this as any).transitionedFromAttestations[epk]
+            const attestations = this.transitionedFromAttestations[epk]
             if (attestations !== undefined)
                 transitionedFromAttestationsToString[epk] = attestations.map(
                     (a: any) => stringifyAttestation(a)
                 )
         }
         return {
-            idNullifier: this.id.getNullifier().toString(),
-            idCommitment: this.commitment.toString(),
-            hasSignedUp: (this as any).hasSignedUp,
+            idNullifier: this.id.getNullifier(),
+            idCommitment: this.commitment,
+            hasSignedUp: this.hasSignedUp,
             latestTransitionedEpoch: this.latestTransitionedEpoch,
             latestGSTLeafIndex: this.latestGSTLeafIndex,
             latestUserStateLeaves: userStateLeavesMapToString,
             transitionedFromAttestations: transitionedFromAttestationsToString,
-            unirepState: (this as any).unirepState.toJSON(),
-        } as unknown as string
+            unirepState: this.unirepState.toJSON(),
+        }
     }
 
-    public static fromJSON = (identity: ZkIdentity, data: string | any) => {
+    public static fromJSON = (identity: ZkIdentity, data: IUserState) => {
         const _userState = typeof data === 'string' ? JSON.parse(data) : data
         const unirepState = UnirepState.fromJSON(_userState.unirepState)
         const userStateLeaves: IUserStateLeaf[] = []

@@ -24,6 +24,7 @@ import {
     genEpochKey,
     genUnirepState,
     genUserState,
+    IUserState,
     Reputation,
     UnirepState,
     UserState,
@@ -340,7 +341,7 @@ const compareStates = async (
     provider: ethers.providers.Provider,
     address: string,
     userId: ZkIdentity,
-    savedUserState: any
+    savedUserState: IUserState
 ) => {
     const usWithNoStorage = await genUserState(provider, address, userId)
     const unirepStateWithNoStorage = await genUnirepState(provider, address)

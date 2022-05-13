@@ -21,7 +21,7 @@ import {
 } from '@unirep/contracts'
 import { EPOCH_LENGTH } from '@unirep/config'
 
-import { genUserState, UserState } from '../../src'
+import { genUserState, IUserState, UserState } from '../../src'
 import {
     compareEpochTrees,
     compareStates,
@@ -36,8 +36,8 @@ describe('Generate user state', function () {
     const secondUser = 1
     let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
-    let savedUserState: string
-    let secondUserState: string
+    let savedUserState: IUserState
+    let secondUserState: IUserState
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
@@ -120,7 +120,7 @@ describe('Generate user state', function () {
                 initUserState.toJSON()
             )
             expect(sameStates).to.be.true
-            expect((currentUserState as any).latestTransitionedEpoch).equal(
+            expect(currentUserState.latestTransitionedEpoch).equal(
                 latestTransitionedToEpoch
             )
 

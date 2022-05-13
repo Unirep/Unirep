@@ -73,7 +73,7 @@ describe('User State', async function () {
                     randomAirdropAmount
                 )
 
-                const userObj = userState.toJSON() as any
+                const userObj = userState.toJSON()
                 expect(
                     userObj.hasSignedUp,
                     'User state cannot be changed (hasSignedUp)'
@@ -126,7 +126,7 @@ describe('User State', async function () {
                 signedUpAirdrop
             )
 
-            const userObj = userState.toJSON() as any
+            const userObj = userState.toJSON()
             expect(
                 userObj.hasSignedUp,
                 'User state should be changed (hasSignedUp)'
@@ -166,7 +166,7 @@ describe('User State', async function () {
                 const randomCommitment = genRandomSalt()
                 await userState.signUp(epoch, randomCommitment)
 
-                const userObj = userState.toJSON() as any
+                const userObj = userState.toJSON()
                 expect(
                     userObj.hasSignedUp,
                     'User state should be changed (hasSignedUp)'
@@ -703,7 +703,7 @@ describe('User State', async function () {
                     epkNullifiers
                 )
 
-                const userObj = userState.toJSON() as any
+                const userObj = userState.toJSON()
                 expect(
                     userObj.latestTransitionedEpoch,
                     'User state should not be changed (latestTransitionedEpoch)'
@@ -794,7 +794,7 @@ describe('User State', async function () {
                 GSTLeaf,
                 epkNullifiers
             )
-            const userObj = userState.toJSON() as any
+            const userObj = userState.toJSON()
             expect(
                 Number(userObj.latestTransitionedEpoch),
                 `User state mismatches current epoch: ${epoch}`
@@ -875,7 +875,7 @@ describe('User State', async function () {
                     epkNullifiers
                 )
 
-                const userObj = userState.toJSON() as any
+                const userObj = userState.toJSON()
 
                 expect(
                     userObj.latestTransitionedEpoch,

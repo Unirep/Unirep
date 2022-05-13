@@ -482,7 +482,7 @@ describe('User state transition events in Unirep State', async function () {
                 unirepContract.address
             )
             storedUnirepState = unirepState.toJSON()
-            const unirepObj = JSON.parse(unirepState.toJSON())
+            const unirepObj = unirepState.toJSON()
             const currentEpoch = Number(await unirepContract.currentEpoch())
             expect(unirepObj.currentEpoch).equal(currentEpoch)
             expect(unirepObj.GSTLeaves[currentEpoch].length).equal(
@@ -964,7 +964,7 @@ describe('User state transition events in Unirep State', async function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const unirepObj = JSON.parse(unirepState.toJSON())
+            const unirepObj = unirepState.toJSON()
             expect(
                 Object.keys(unirepObj.latestEpochKeyToAttestationsMap).length
             ).equal(transitionedUsers.length)
@@ -1189,7 +1189,7 @@ describe('User state transition events in Unirep State', async function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const unirepObj = JSON.parse(unirepState.toJSON())
+            const unirepObj = unirepState.toJSON()
             const currentEpoch = Number(await unirepContract.currentEpoch())
             expect(unirepObj.currentEpoch).equal(currentEpoch)
             expect(unirepObj.GSTLeaves[currentEpoch].length).equal(USTNum)

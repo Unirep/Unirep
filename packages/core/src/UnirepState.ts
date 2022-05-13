@@ -126,21 +126,17 @@ class UnirepState {
         if (_nullifiers != undefined) this.nullifiers = _nullifiers
     }
 
-    public toJSON = (): string => {
+    public toJSON = (): IUnirepState => {
         const epochKeys = this.getEpochKeys(this.currentEpoch)
         const attestationsMapToString: { [key: string]: string[] } = {}
         for (const key of epochKeys) {
-            attestationsMapToString[key] = (
-                this as any
-            ).epochKeyToAttestationsMap[key].map((n: any) =>
-                stringifyAttestation(n)
-            )
+            attestationsMapToString[key] = this.epochKeyToAttestationsMap[
+                key
+            ].map((n: any) => stringifyAttestation(n))
         }
-        const epochTreeLeavesToString = {} as any
-        for (let index in (this as any).epochTreeLeaves) {
-            epochTreeLeavesToString[index] = (this as any).epochTreeLeaves[
-                index
-            ].map(
+        const epochTreeLeavesToString = {}
+        for (let index in this.epochTreeLeaves) {
+            epochTreeLeavesToString[index] = this.epochTreeLeaves[index].map(
                 (l: any) =>
                     `${l.epochKey.toString()}: ${l.hashchainResult.toString()}`
             )
@@ -150,28 +146,27 @@ class UnirepState {
                 globalStateTreeDepth: this.settings.globalStateTreeDepth,
                 userStateTreeDepth: this.settings.userStateTreeDepth,
                 epochTreeDepth: this.settings.epochTreeDepth,
-                attestingFee: this.settings.attestingFee.toString(),
+                attestingFee: this.settings.attestingFee,
                 epochLength: this.settings.epochLength,
                 numEpochKeyNoncePerEpoch:
                     this.settings.numEpochKeyNoncePerEpoch,
                 maxReputationBudget: this.settings.maxReputationBudget,
-                defaultGSTLeaf: (this as any).defaultGSTLeaf.toString(),
             },
             currentEpoch: this.currentEpoch,
             latestProcessedBlock: this.latestProcessedBlock,
-            GSTLeaves: stringifyBigInts((this as any).GSTLeaves),
+            GSTLeaves: stringifyBigInts(this.GSTLeaves),
             epochTreeLeaves: Object(epochTreeLeavesToString),
             latestEpochKeyToAttestationsMap: attestationsMapToString,
-            nullifiers: Object.keys((this as any).nullifiers),
-        } as unknown as string
+            nullifiers: Object.keys(this.nullifiers),
+        }
     }
 
-    public static fromJSON = (data: string) => {
+    public static fromJSON = (data: IUnirepState) => {
         const _unirepState = typeof data === 'string' ? JSON.parse(data) : data
-        const parsedGSTLeaves = {} as any
-        const parsedEpochTreeLeaves = {} as any
-        const parsedNullifiers = {} as any
-        const parsedAttestationsMap = {} as any
+        const parsedGSTLeaves = {}
+        const parsedEpochTreeLeaves = {}
+        const parsedNullifiers = {}
+        const parsedAttestationsMap = {}
 
         for (let key in _unirepState.GSTLeaves) {
             parsedGSTLeaves[key] = unstringifyBigInts(
@@ -197,9 +192,8 @@ class UnirepState {
         }
         for (let key in _unirepState.latestEpochKeyToAttestationsMap) {
             const parsedAttestations: IAttestation[] = []
-            for (const attestation of _unirepState.latestEpochKeyToAttestationsMap[
-                key
-            ]) {
+            for (const attestation of _unirepState
+                .latestEpochKeyToAttestationsMap[key]) {
                 const jsonAttestation = JSON.parse(attestation)
                 const attestClass = new Attestation(
                     BigInt(jsonAttestation.attesterId),

@@ -876,7 +876,7 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            const unirepObj = JSON.parse(userState.toJSON())
+            const unirepObj = userState.toJSON()
             expect(
                 Object.keys(
                     unirepObj.unirepState.latestEpochKeyToAttestationsMap
