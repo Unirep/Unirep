@@ -5,17 +5,16 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
+import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserStateFromContract, genEpochKey } from '../src'
+import { genUserState, genEpochKey } from '../src'
 import {
     epkProofPrefix,
     epkPublicSignalsPrefix,
     identityPrefix,
 } from './prefix'
 import { getProvider } from './utils'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('genEpochKeyAndProof', {
@@ -75,11 +74,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Gen User State
-    const userState = await genUserStateFromContract(
-        provider,
-        args.contract,
-        id
-    )
+    const userState = await genUserState(provider, args.contract, id)
     const results = await userState.genVerifyEpochKeyProof(epkNonce)
     const currentEpoch = userState.getUnirepStateCurrentEpoch()
     const epk = genEpochKey(

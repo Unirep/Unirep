@@ -9,7 +9,7 @@ import {
 import { Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserStateFromContract } from '../src'
+import { genUserState } from '../src'
 import { identityPrefix } from './prefix'
 import { getProvider } from './utils'
 
@@ -63,11 +63,7 @@ const userStateTransition = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Generate user state transition proofs
-    const userState = await genUserStateFromContract(
-        provider,
-        args.contract,
-        id
-    )
+    const userState = await genUserState(provider, args.contract, id)
     const {
         startTransitionProof,
         processAttestationProofs,

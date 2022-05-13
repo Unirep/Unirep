@@ -19,13 +19,14 @@ import {
     Unirep,
     UserTransitionProof,
 } from '@unirep/contracts'
-import { genUserStateFromContract, UserState } from '../../src'
+import { EPOCH_LENGTH } from '@unirep/config'
+
+import { genUserState, UserState } from '../../src'
 import {
     compareEpochTrees,
     compareUserStates,
     genRandomAttestation,
 } from '../utils'
-import { EPOCH_LENGTH } from '@unirep/config'
 
 describe('Generate user state', function () {
     this.timeout(0)
@@ -87,7 +88,7 @@ describe('Generate user state', function () {
             userIds.push(id)
             userCommitments.push(commitment)
 
-            const initUserState = await genUserStateFromContract(
+            const initUserState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser]
@@ -137,7 +138,7 @@ describe('Generate user state', function () {
             )
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
-            users[secondUser] = await genUserStateFromContract(
+            users[secondUser] = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser]
@@ -320,7 +321,7 @@ describe('Generate user state', function () {
 
         it('user state transition', async () => {
             const proofIndexes: ethers.BigNumber[] = []
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser]
@@ -506,7 +507,7 @@ describe('Generate user state', function () {
 
         it('user state transition', async () => {
             const proofIndexes: ethers.BigNumber[] = []
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser]

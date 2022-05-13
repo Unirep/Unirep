@@ -22,7 +22,7 @@ import {
 
 import {
     genEpochKey,
-    genUserStateFromContract,
+    genUserState,
     Reputation,
     UnirepState,
     UserState,
@@ -341,13 +341,9 @@ const compareUserStates = async (
     userId: ZkIdentity,
     savedUserState: any
 ) => {
-    const usWithNoStorage = await genUserStateFromContract(
-        provider,
-        address,
-        userId
-    )
+    const usWithNoStorage = await genUserState(provider, address, userId)
 
-    const usWithStorage = await genUserStateFromContract(
+    const usWithStorage = await genUserState(
         provider,
         address,
         userId,
@@ -378,14 +374,10 @@ const compareEpochTrees = async (
     savedUserState: any,
     epoch: number
 ) => {
-    const usWithNoStorage = await genUserStateFromContract(
-        provider,
-        address,
-        userId
-    )
+    const usWithNoStorage = await genUserState(provider, address, userId)
     const epochTree1 = await usWithNoStorage.getUnirepStateEpochTree(epoch)
 
-    const usWithStorage = await genUserStateFromContract(
+    const usWithStorage = await genUserState(
         provider,
         address,
         userId,

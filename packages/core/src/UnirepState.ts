@@ -7,6 +7,8 @@ import {
     stringifyBigInts,
     unstringifyBigInts,
 } from '@unirep/crypto'
+import { IAttestation } from '@unirep/contracts'
+
 import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
@@ -14,7 +16,6 @@ import {
     SMT_ONE_LEAF,
     stringifyAttestation,
 } from './utils'
-import { IAttestation } from '@unirep/contracts'
 
 interface IEpochTreeLeaf {
     epochKey: BigInt

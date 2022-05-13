@@ -1,11 +1,17 @@
 import { BigNumber, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
+    Circuit,
+    formatProofForSnarkjsVerification,
+    verifyProof,
+} from '@unirep/circuits'
+import {
     Attestation,
     IAttestation,
     getUnirepContract,
     Event,
     AttestationEvent,
+    Unirep,
 } from '@unirep/contracts'
 import {
     hash5,
@@ -13,27 +19,17 @@ import {
     IncrementalMerkleTree,
     SnarkBigInt,
     SparseMerkleTree,
+    ZkIdentity,
 } from '@unirep/crypto'
+import { EPOCH_TREE_DEPTH } from '@unirep/config'
 
-import {
-    IEpochTreeLeaf,
-    ISettings,
-    IUnirepState,
-    UnirepState,
-} from './UnirepState'
-import { IUserState, IUserStateLeaf, Reputation, UserState } from './UserState'
+import { ISettings, UnirepState } from './UnirepState'
+import { Reputation, UserState } from './UserState'
 import {
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
 } from '../config/nullifierDomainSeparator'
-import {
-    Circuit,
-    formatProofForSnarkjsVerification,
-    verifyProof,
-} from '@unirep/circuits'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
-import { EPOCH_TREE_DEPTH } from '@unirep/config'
-import { Unirep } from '@unirep/contracts'
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),
@@ -316,14 +312,14 @@ const verifyProcessAttestationEvents = async (
     return currentBlindedUserState.eq(finalBlindedUserState)
 }
 
-/*
+/**
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
  * @param startBlock The block number when Unirep contract is deployed
  */
-const genUnirepStateFromContract = async (
+const genUnirepState = async (
     provider: ethers.providers.Provider,
     address: string,
     _unirepState?: any
@@ -743,18 +739,18 @@ const genUnirepStateFromContract = async (
     return unirepState
 }
 
-/*
- * This function works mostly the same as genUnirepStateFromContract,
+/**
+ * This function works mostly the same as genUnirepState,
  * except that it also updates the user's state during events processing.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
  * @param userIdentity The semaphore identity of the user
  * @param _userState The stored user state that the function start with
  */
-const genUserStateFromContract = async (
+const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
-    userIdentity: any,
+    userIdentity: ZkIdentity,
     _userState?: any
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
@@ -1195,6 +1191,6 @@ export {
     genReputationNullifier,
     genNewSMT,
     stringifyAttestation,
-    genUnirepStateFromContract,
-    genUserStateFromContract,
+    genUnirepState,
+    genUserState,
 }

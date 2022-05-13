@@ -1,3 +1,4 @@
+import { BigNumber, BigNumberish } from 'ethers'
 import assert from 'assert'
 import {
     IncrementalMerkleTree,
@@ -10,6 +11,8 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { IAttestation, Attestation } from '@unirep/contracts'
+import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+
 import {
     defaultUserStateLeaf,
     genEpochKey,
@@ -19,8 +22,6 @@ import {
     stringifyAttestation,
 } from './utils'
 import { IUnirepState, UnirepState } from './UnirepState'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
-import { BigNumber, BigNumberish } from 'ethers'
 
 interface IUserStateLeaf {
     attesterId: BigInt
@@ -269,7 +270,7 @@ class UserState {
         return userState
     }
 
-    /*
+    /**
      * Proxy methods to get underlying UnirepState data
      */
     public getUnirepStateCurrentEpoch = (): number => {
@@ -288,7 +289,7 @@ class UserState {
         return this.unirepState
     }
 
-    /*
+    /**
      * Get the attestations of given epoch key
      */
     public getAttestations = (epochKey: string): IAttestation[] => {
@@ -310,7 +311,7 @@ class UserState {
         this.unirepState.addReputationNullifiers(nullifier, blockNumber)
     }
 
-    /*
+    /**
      * Get the epoch key nullifier of given epoch
      */
     public getEpochKeyNullifiers = (epoch: number): BigInt[] => {
@@ -334,28 +335,28 @@ class UserState {
         else return Reputation.default()
     }
 
-    /*
+    /**
      * Check if given nullifier exists in nullifier tree
      */
     public nullifierExist = (nullifier: BigInt): boolean => {
         return this.unirepState.nullifierExist(nullifier)
     }
 
-    /*
+    /**
      * Check if user has signed up in Unirep
      */
     private _checkUserSignUp = () => {
         assert(this.hasSignedUp, 'UserState: User has not signed up yet')
     }
 
-    /*
+    /**
      * Check if user has not signed up in Unirep
      */
     private _checkUserNotSignUp = () => {
         assert(!this.hasSignedUp, 'UserState: User has already signed up')
     }
 
-    /*
+    /**
      * Check if epoch key nonce is valid
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
@@ -365,7 +366,7 @@ class UserState {
         )
     }
 
-    /*
+    /**
      * Check if attester ID is valid
      */
     private _checkAttesterId = (attesterId: BigInt) => {
@@ -379,7 +380,7 @@ class UserState {
         )
     }
 
-    /*
+    /**
      * Add a new epoch key to the list of epoch key of current epoch.
      */
     public signUp = async (
@@ -422,7 +423,7 @@ class UserState {
         }
     }
 
-    /*
+    /**
      * Computes the user state tree with given state leaves
      */
     private _genUserStateTreeFromLeaves = async (
@@ -439,7 +440,7 @@ class UserState {
         return USTree
     }
 
-    /*
+    /**
      * Computes the user state tree of given epoch
      */
     public genUserStateTree = async (): Promise<SparseMerkleTree> => {
@@ -447,7 +448,7 @@ class UserState {
         return await this._genUserStateTreeFromLeaves(leaves)
     }
 
-    /*
+    /**
      * Check if the root is one of the Global state tree roots in the given epoch
      */
     public GSTRootExists = (
@@ -457,7 +458,7 @@ class UserState {
         return this.unirepState.GSTRootExists(GSTRoot, epoch)
     }
 
-    /*
+    /**
      * Check if the root is one of the epoch tree roots in the given epoch
      */
     public epochTreeRootExists = async (
@@ -467,7 +468,7 @@ class UserState {
         return this.unirepState.epochTreeRootExists(_epochTreeRoot, epoch)
     }
 
-    /*
+    /**
      * Update user state and unirep state according to user state transition event
      */
     public userStateTransition = async (
@@ -1041,7 +1042,7 @@ class UserState {
         }
     }
 
-    /*
+    /**
      * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
      */
     private _transition = async (newLeaf: BigInt) => {

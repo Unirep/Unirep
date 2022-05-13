@@ -32,8 +32,8 @@ import {
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
-    genUnirepStateFromContract,
-    genUserStateFromContract,
+    genUnirepState,
+    genUserState,
 } from './utils'
 
 import {
@@ -69,8 +69,8 @@ export {
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
-    genUnirepStateFromContract,
-    genUserStateFromContract,
+    genUnirepState,
+    genUserState,
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
 }

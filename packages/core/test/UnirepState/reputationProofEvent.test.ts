@@ -21,7 +21,7 @@ import { MAX_REPUTATION_BUDGET } from '@unirep/config'
 import {
     computeInitUserStateRoot,
     genReputationNullifier,
-    genUnirepStateFromContract,
+    genUnirepState,
     Reputation,
 } from '../../src'
 import {
@@ -99,7 +99,7 @@ describe('Reputation proof events in Unirep State', function () {
 
     describe('Init Unirep State', async () => {
         it('check Unirep state matches the contract', async () => {
-            const initUnirepState = await genUnirepStateFromContract(
+            const initUnirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -138,7 +138,7 @@ describe('Reputation proof events in Unirep State', function () {
                     unirepContractCalledByAttester.userSignUp(commitment)
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
-                const unirepState = await genUnirepStateFromContract(
+                const unirepState = await genUnirepState(
                     hardhatEthers.provider,
                     unirepContract.address
                 )
@@ -187,7 +187,7 @@ describe('Reputation proof events in Unirep State', function () {
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
-                const unirepState = await genUnirepStateFromContract(
+                const unirepState = await genUnirepState(
                     hardhatEthers.provider,
                     unirepContract.address
                 )
@@ -211,7 +211,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('Sign up users more than contract capacity will not affect Unirep state', async () => {
-            const unirepStateBefore = await genUnirepStateFromContract(
+            const unirepStateBefore = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -227,7 +227,7 @@ describe('Reputation proof events in Unirep State', function () {
                 'Unirep: maximum number of user signups reached'
             )
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -236,7 +236,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('Check GST roots match Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -268,7 +268,7 @@ describe('Reputation proof events in Unirep State', function () {
                 attesterId
             )
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -311,7 +311,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('spendReputation event should update Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -335,7 +335,7 @@ describe('Reputation proof events in Unirep State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -346,7 +346,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('spend reputation event can attest to other epoch key and update Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -396,7 +396,7 @@ describe('Reputation proof events in Unirep State', function () {
             receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepStateAfterAttest = await genUnirepStateFromContract(
+            const unirepStateAfterAttest = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -419,7 +419,7 @@ describe('Reputation proof events in Unirep State', function () {
                 attesterId
             )
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -457,7 +457,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('duplicated nullifier should not update Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -478,7 +478,7 @@ describe('Reputation proof events in Unirep State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -494,7 +494,7 @@ describe('Reputation proof events in Unirep State', function () {
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -532,7 +532,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('spendReputation event should not update Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -553,7 +553,7 @@ describe('Reputation proof events in Unirep State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -562,7 +562,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('invalid reputation proof with from proof index should not update Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -612,7 +612,7 @@ describe('Reputation proof events in Unirep State', function () {
             receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepStateAfterAttest = await genUnirepStateFromContract(
+            const unirepStateAfterAttest = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -679,7 +679,7 @@ describe('Reputation proof events in Unirep State', function () {
         })
 
         it('spendReputation event should not update Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -700,7 +700,7 @@ describe('Reputation proof events in Unirep State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -716,7 +716,7 @@ describe('Reputation proof events in Unirep State', function () {
             const wrongEpoch = epoch + 1
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )

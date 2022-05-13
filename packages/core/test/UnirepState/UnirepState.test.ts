@@ -1,11 +1,5 @@
 import { expect } from 'chai'
 import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
-import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
-import {
-    compareObjectElements,
-    genNewGST,
-    genRandomAttestation,
-} from '../utils'
 import {
     ATTESTTING_FEE,
     EPOCH_LENGTH,
@@ -16,6 +10,13 @@ import {
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
 import { Attestation } from '@unirep/contracts'
+
+import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
+import {
+    compareObjectElements,
+    genNewGST,
+    genRandomAttestation,
+} from '../utils'
 
 describe('Unirep State', function () {
     let unirepState: UnirepState

@@ -25,8 +25,8 @@ import {
 
 import {
     computeInitUserStateRoot,
-    genUnirepStateFromContract,
-    genUserStateFromContract,
+    genUnirepState,
+    genUserState,
     ISettings,
     Reputation,
     UnirepState,
@@ -111,7 +111,7 @@ describe('User state transition events in Unirep User State', async function () 
     describe('Init User State', async () => {
         it('check User state matches the contract', async () => {
             const id = new ZkIdentity()
-            const initUnirepState = await genUserStateFromContract(
+            const initUnirepState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -149,7 +149,7 @@ describe('User state transition events in Unirep User State', async function () 
                     unirepContractCalledByAttester.userSignUp(commitment)
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
@@ -197,7 +197,7 @@ describe('User state transition events in Unirep User State', async function () 
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
@@ -222,7 +222,7 @@ describe('User state transition events in Unirep User State', async function () 
         it('Sign up users more than contract capacity will not affect Unirep state', async () => {
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const userStateBefore = await genUserStateFromContract(
+            const userStateBefore = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -235,7 +235,7 @@ describe('User state transition events in Unirep User State', async function () 
                 'Unirep: maximum number of user signups reached'
             )
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -245,7 +245,7 @@ describe('User state transition events in Unirep User State', async function () 
         })
 
         it('Check GST roots match Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -318,7 +318,7 @@ describe('User state transition events in Unirep User State', async function () 
         }
         it('Users should successfully perform user state transition', async () => {
             for (let i = 0; i < userIds.length; i++) {
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[i]
@@ -404,7 +404,7 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Users state transition matches current Unirep state', async () => {
             for (let i = 0; i < transitionedUsers.length; i++) {
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[i]
@@ -413,12 +413,12 @@ describe('User state transition events in Unirep User State', async function () 
                     userState.latestTransitionedEpoch
                 )
             }
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -533,7 +533,7 @@ describe('User state transition events in Unirep User State', async function () 
             receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userStateAfterUST = await genUserStateFromContract(
+            const userStateAfterUST = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -555,7 +555,7 @@ describe('User state transition events in Unirep User State', async function () 
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -587,7 +587,7 @@ describe('User state transition events in Unirep User State', async function () 
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -632,7 +632,7 @@ describe('User state transition events in Unirep User State', async function () 
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -723,7 +723,7 @@ describe('User state transition events in Unirep User State', async function () 
             receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userStateAfterUST = await genUserStateFromContract(
+            const userStateAfterUST = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -733,12 +733,12 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('mismatch proof indexes will not affect Unirep state', async () => {
             if (notTransitionUsers.length < 2) return
-            const userState1 = await genUserStateFromContract(
+            const userState1 = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[notTransitionUsers[0]]
             )
-            const userState2 = await genUserStateFromContract(
+            const userState2 = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[notTransitionUsers[1]]
@@ -814,7 +814,7 @@ describe('User state transition events in Unirep User State', async function () 
             receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -826,7 +826,7 @@ describe('User state transition events in Unirep User State', async function () 
             const epkNonce = 0
             for (let i = 0; i < transitionedUsers.length; i++) {
                 const userIdx = transitionedUsers[i]
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[userIdx]
@@ -871,7 +871,7 @@ describe('User state transition events in Unirep User State', async function () 
         })
 
         it('User state should store the attestations ', async () => {
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -923,7 +923,7 @@ describe('User state transition events in Unirep User State', async function () 
 
     describe('User state transition events with attestations', async () => {
         it('Users should successfully perform user state transition', async () => {
-            const unirepStateBefore = await genUnirepStateFromContract(
+            const unirepStateBefore = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -934,7 +934,7 @@ describe('User state transition events in Unirep User State', async function () 
                 const randomUST = Math.round(Math.random())
                 if (randomUST === 0) continue
                 console.log('transition user', i)
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[i]
@@ -1021,11 +1021,11 @@ describe('User state transition events in Unirep User State', async function () 
         })
 
         it('Users state transition matches current Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]

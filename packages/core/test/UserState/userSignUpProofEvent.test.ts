@@ -14,8 +14,8 @@ import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 import {
     computeInitUserStateRoot,
-    genUnirepStateFromContract,
-    genUserStateFromContract,
+    genUnirepState,
+    genUserState,
     Reputation,
 } from '../../src'
 import {
@@ -93,7 +93,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     describe('Init User State', async () => {
         it('check User state matches the contract', async () => {
             const id = new ZkIdentity()
-            const initUnirepState = await genUserStateFromContract(
+            const initUnirepState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -131,7 +131,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     unirepContractCalledByAttester.userSignUp(commitment)
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
@@ -178,7 +178,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
@@ -202,7 +202,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         it('Sign up users more than contract capacity will not affect Unirep state', async () => {
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const userStateBefore = await genUserStateFromContract(
+            const userStateBefore = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -215,7 +215,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 'Unirep: maximum number of user signups reached'
             )
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -225,7 +225,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('Check GST roots match Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -246,7 +246,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         const userIdx = 3
         it('submit airdrop proof event', async () => {
             epoch = Number(await unirepContract.currentEpoch())
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[userIdx]
@@ -282,7 +282,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('airdropEpochKey event should update Unirep state', async () => {
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
@@ -304,7 +304,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
@@ -316,7 +316,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('submit invalid airdrop proof event', async () => {
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[userIdx]
@@ -344,7 +344,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('airdropEpochKey event should not update User state', async () => {
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
@@ -366,7 +366,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
@@ -428,7 +428,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('airdropEpochKey event should not update User state', async () => {
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
@@ -450,7 +450,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
@@ -461,7 +461,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
         it('submit valid sign up proof event in wrong epoch should fail', async () => {
             const wrongEpoch = epoch + 1
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
