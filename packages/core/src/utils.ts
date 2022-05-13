@@ -317,7 +317,7 @@ const verifyProcessAttestationEvents = async (
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
- * @param startBlock The block number when Unirep contract is deployed
+ * @param _unirepState The stored unirep state that the function start with
  */
 const genUnirepState = async (
     provider: ethers.providers.Provider,

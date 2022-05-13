@@ -24,7 +24,7 @@ import { EPOCH_LENGTH } from '@unirep/config'
 import { genUserState, UserState } from '../../src'
 import {
     compareEpochTrees,
-    compareUserStates,
+    compareStates,
     genRandomAttestation,
 } from '../utils'
 
@@ -113,7 +113,7 @@ describe('Generate user state', function () {
             const _commitment = (args?.identityCommitment).toBigInt()
             expect(_commitment).equal(userCommitments[firstUser])
 
-            const { sameStates, currentUserState } = await compareUserStates(
+            const { sameStates, currentUserState } = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
@@ -188,7 +188,7 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after epoch key proof event', async () => {
-            const { sameStates, currentUserState } = await compareUserStates(
+            const { sameStates, currentUserState } = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
@@ -244,7 +244,7 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after reputation proof event', async () => {
-            const { sameStates, currentUserState } = await compareUserStates(
+            const { sameStates, currentUserState } = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
@@ -281,7 +281,7 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after airdrop proof event', async () => {
-            const { sameStates, currentUserState } = await compareUserStates(
+            const { sameStates, currentUserState } = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],

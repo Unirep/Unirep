@@ -221,7 +221,7 @@ class UserState {
             latestGSTLeafIndex: this.latestGSTLeafIndex,
             latestUserStateLeaves: userStateLeavesMapToString,
             transitionedFromAttestations: transitionedFromAttestationsToString,
-            unirepState: (this as any).unirepState,
+            unirepState: (this as any).unirepState.toJSON(),
         } as unknown as string
     }
 

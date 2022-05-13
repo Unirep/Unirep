@@ -22,6 +22,7 @@ import {
 
 import {
     genEpochKey,
+    genUnirepState,
     genUserState,
     Reputation,
     UnirepState,
@@ -335,13 +336,14 @@ const compareObjectElements = (obj1: any, obj2: any) => {
     return same
 }
 
-const compareUserStates = async (
+const compareStates = async (
     provider: ethers.providers.Provider,
     address: string,
     userId: ZkIdentity,
     savedUserState: any
 ) => {
     const usWithNoStorage = await genUserState(provider, address, userId)
+    const unirepStateWithNoStorage = await genUnirepState(provider, address)
 
     const usWithStorage = await genUserState(
         provider,
@@ -349,8 +351,14 @@ const compareUserStates = async (
         userId,
         savedUserState
     )
+    const unirepStateWithStorage = await genUnirepState(
+        provider,
+        address,
+        savedUserState.unirepState
+    )
 
     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
 
     const compare1 = compareObjectElements(
         usWithNoStorage.toJSON(),
@@ -360,9 +368,17 @@ const compareUserStates = async (
         usWithNoStorage.toJSON(),
         usFromJSON.toJSON()
     )
+    const compare3 = compareObjectElements(
+        unirepStateWithNoStorage.toJSON(),
+        unirepStateWithStorage.toJSON()
+    )
+    const compare4 = compareObjectElements(
+        unirepStateWithNoStorage.toJSON(),
+        unirepFromJSON.toJSON()
+    )
 
     return {
-        sameStates: compare1 && compare2,
+        sameStates: compare1 && compare2 && compare3 && compare4,
         currentUserState: usWithNoStorage.toJSON(),
     }
 }
@@ -417,6 +433,6 @@ export {
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
     compareObjectElements,
-    compareUserStates,
+    compareStates,
     compareEpochTrees,
 }
