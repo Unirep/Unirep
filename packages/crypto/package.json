@@ -2,12 +2,14 @@
     "name": "@unirep/crypto",
     "version": "1.0.0",
     "main": "build/index.js",
+    "types": "index.d.ts",
     "scripts": {
+        "pre": "sh scripts/prepare.sh",
         "build": "tsc",
         "test": "echo 'No test for crypto!!!'",
         "lint": "prettier --write ."
     },
-    "repository": "https://github.com/Unirep/crypto.git",
+    "repository": "https://github.com/unirep/unirep.git",
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "dependencies": {
