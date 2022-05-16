@@ -23,8 +23,10 @@ import {
 } from '@unirep/crypto'
 import { EPOCH_TREE_DEPTH } from '@unirep/config'
 
-import { ISettings, IUnirepState, UnirepState } from './UnirepState'
-import { IUserState, Reputation, UserState } from './UserState'
+import { ISettings, IUnirepState, IUserState } from './interfaces'
+import UnirepState from './UnirepState'
+import Reputation from './Reputation'
+import UserState from './UserState'
 import {
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,

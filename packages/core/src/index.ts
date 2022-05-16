@@ -1,17 +1,15 @@
 import {
+    IReputation,
     IEpochTreeLeaf,
+    IUserStateLeaf,
     ISettings,
     IUnirepState,
-    UnirepState,
-} from './UnirepState'
-
-import {
-    IReputation,
-    IUserStateLeaf,
     IUserState,
-    Reputation,
-    UserState,
-} from './UserState'
+} from './interfaces'
+
+import Reputation from './Reputation'
+import UnirepState from './UnirepState'
+import UserState from './UserState'
 
 import {
     defaultUserStateLeaf,

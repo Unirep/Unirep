@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { BigNumber, ethers } from 'ethers'
+import { BigNumber } from 'ethers'
 import {
     IncrementalMerkleTree,
     hashLeftRight,
@@ -9,6 +9,7 @@ import {
 } from '@unirep/crypto'
 import { Attestation, IAttestation } from '@unirep/contracts'
 
+import { IEpochTreeLeaf, ISettings, IUnirepState } from './interfaces'
 import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
@@ -17,32 +18,7 @@ import {
     stringifyAttestation,
 } from './utils'
 
-interface IEpochTreeLeaf {
-    epochKey: BigInt
-    hashchainResult: BigInt
-}
-
-interface ISettings {
-    readonly globalStateTreeDepth: number
-    readonly userStateTreeDepth: number
-    readonly epochTreeDepth: number
-    readonly attestingFee: ethers.BigNumber
-    readonly epochLength: number
-    readonly numEpochKeyNoncePerEpoch: number
-    readonly maxReputationBudget: number
-}
-
-interface IUnirepState {
-    readonly settings: ISettings
-    currentEpoch: number
-    latestProcessedBlock: number
-    GSTLeaves: { [key: string]: string[] }
-    epochTreeLeaves: { [key: string]: string[] }
-    latestEpochKeyToAttestationsMap: { [key: string]: string[] }
-    nullifiers: string[]
-}
-
-class UnirepState {
+export default class UnirepState {
     public readonly settings: ISettings
 
     public currentEpoch: number = 1
@@ -549,5 +525,3 @@ class UnirepState {
         this._updateGSTree(this.currentEpoch, GSTLeaf)
     }
 }
-
-export { IEpochTreeLeaf, ISettings, IUnirepState, UnirepState }

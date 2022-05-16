@@ -1,10 +1,9 @@
-import { BigNumber, BigNumberish } from 'ethers'
+import { BigNumber } from 'ethers'
 import assert from 'assert'
 import {
     IncrementalMerkleTree,
     hash5,
     stringifyBigInts,
-    hashOne,
     hashLeftRight,
     SparseMerkleTree,
     ZkIdentity,
@@ -21,108 +20,11 @@ import {
     genReputationNullifier,
     stringifyAttestation,
 } from './utils'
-import { IUnirepState, UnirepState } from './UnirepState'
+import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
+import Reputation from './Reputation'
+import UnirepState from './UnirepState'
 
-interface IUserStateLeaf {
-    attesterId: BigInt
-    reputation: Reputation
-}
-
-interface IReputation {
-    posRep: BigNumber
-    negRep: BigNumber
-    graffiti: BigNumber
-    signUp: BigNumber
-}
-
-interface IUserState {
-    idNullifier: BigInt
-    idCommitment: BigInt
-    hasSignedUp: boolean
-    latestTransitionedEpoch: number
-    latestGSTLeafIndex: number
-    latestUserStateLeaves: { [key: string]: string }
-    transitionedFromAttestations: { [key: string]: string[] }
-    unirepState: IUnirepState
-}
-
-class Reputation implements IReputation {
-    public posRep: BigNumber
-    public negRep: BigNumber
-    public graffiti: BigNumber
-    public graffitiPreImage: BigNumber = BigNumber.from(0)
-    public signUp: BigNumber
-
-    constructor(
-        _posRep: BigInt | BigNumberish,
-        _negRep: BigInt | BigNumberish,
-        _graffiti: BigInt | BigNumberish,
-        _signUp: BigInt | BigNumberish
-    ) {
-        this.posRep = BigNumber.from(_posRep)
-        this.negRep = BigNumber.from(_negRep)
-        this.graffiti = BigNumber.from(_graffiti)
-        this.signUp = BigNumber.from(_signUp)
-    }
-
-    public static default(): Reputation {
-        return new Reputation(
-            BigNumber.from(0),
-            BigNumber.from(0),
-            BigNumber.from(0),
-            BigNumber.from(0)
-        )
-    }
-
-    public update = (
-        _posRep: BigNumber,
-        _negRep: BigNumber,
-        _graffiti: BigNumber,
-        _signUp: BigNumber
-    ): Reputation => {
-        this.posRep = this.posRep.add(_posRep)
-        this.negRep = this.negRep.add(_negRep)
-        if (_graffiti !== BigNumber.from(0)) {
-            this.graffiti = _graffiti
-        }
-        this.signUp = this.signUp.or(_signUp)
-        return this
-    }
-
-    public addGraffitiPreImage = (_graffitiPreImage: BigNumber) => {
-        assert(
-            hashOne(_graffitiPreImage.toBigInt()) === this.graffiti.toBigInt(),
-            'Graffiti pre-image does not match'
-        )
-        this.graffitiPreImage = _graffitiPreImage
-    }
-
-    public hash = (): BigInt => {
-        return hash5([
-            this.posRep.toBigInt(),
-            this.negRep.toBigInt(),
-            this.graffiti.toBigInt(),
-            this.signUp.toBigInt(),
-            BigInt(0),
-        ])
-    }
-
-    public toJSON = (space = 0): string => {
-        return JSON.stringify(
-            {
-                posRep: this.posRep.toString(),
-                negRep: this.negRep.toString(),
-                graffiti: this.graffiti.toString(),
-                graffitiPreImage: this.graffitiPreImage.toString(),
-                signUp: this.signUp.toString(),
-            },
-            null,
-            space
-        )
-    }
-}
-
-class UserState {
+export default class UserState {
     public userStateTreeDepth: number
     public numEpochKeyNoncePerEpoch: number
     public numAttestationsPerProof: number
@@ -327,7 +229,7 @@ class UserState {
         return nullifiers
     }
 
-    public getRepByAttester = (attesterId: BigInt): Reputation => {
+    public getRepByAttester = (attesterId: BigInt): IReputation => {
         const leaf = this.latestUserStateLeaves.find(
             (leaf) => leaf.attesterId == attesterId
         )
@@ -1248,4 +1150,4 @@ class UserState {
     }
 }
 
-export { IReputation, IUserStateLeaf, IUserState, Reputation, UserState }
+export { Reputation, UserState }
