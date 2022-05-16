@@ -7,7 +7,6 @@ import {
 } from '@unirep/circuits'
 import {
     Attestation,
-    IAttestation,
     getUnirepContract,
     Event,
     AttestationEvent,
@@ -124,16 +123,6 @@ const genNewSMT = async (
     defaultLeafHash: BigInt
 ): Promise<SparseMerkleTree> => {
     return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
-}
-
-const stringifyAttestation = (attestation: IAttestation) => {
-    return JSON.stringify({
-        attesterId: attestation.attesterId.toString(),
-        posRep: attestation.posRep.toString(),
-        negRep: attestation.negRep.toString(),
-        graffiti: attestation.graffiti.toString(),
-        signUp: attestation.signUp.toString(),
-    })
 }
 
 const verifyEpochKeyProofEvent = async (
@@ -1192,7 +1181,6 @@ export {
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
-    stringifyAttestation,
     genUnirepState,
     genUserState,
 }

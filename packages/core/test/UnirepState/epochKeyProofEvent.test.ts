@@ -19,7 +19,6 @@ import {
     UserState,
 } from '../../src'
 import {
-    compareObjectElements,
     genEpochKeyCircuitInput,
     genNewGST,
     genRandomAttestation,
@@ -305,8 +304,9 @@ describe('Epoch key proof events in Unirep State', function () {
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(compareObjectElements(attestations[0], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[0])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('submit invalid epoch key proof event', async () => {

@@ -26,7 +26,6 @@ import {
     Reputation,
 } from '../../src'
 import {
-    compareObjectElements,
     genNewGST,
     genNewUserStateTree,
     genRandomAttestation,
@@ -342,8 +341,9 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attestations = userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(compareObjectElements(attestations[1], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[1])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('submit valid reputation proof event with same nullifiers', async () => {
@@ -473,8 +473,9 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attestations = userStateAfterAttest.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(compareObjectElements(attestations[0], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[0])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('submit invalid reputation proof event', async () => {
@@ -595,12 +596,9 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            expect(
-                compareObjectElements(
-                    userState.toJSON(),
-                    userStateAfterAttest.toJSON()
-                )
-            ).to.be.true
+            expect(userState.toJSON()).to.deep.equal(
+                userStateAfterAttest.toJSON()
+            )
         })
 
         it('submit valid reputation proof with wrong GST root event', async () => {

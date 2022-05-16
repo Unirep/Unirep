@@ -14,7 +14,6 @@ import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 import { computeInitUserStateRoot, genUnirepState, Reputation } from '../../src'
 import {
-    compareObjectElements,
     genNewGST,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
@@ -318,8 +317,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(compareObjectElements(attestations[1], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[1])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('submit invalid airdrop proof event', async () => {

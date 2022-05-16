@@ -15,7 +15,6 @@ import {
     computeInitUserStateRoot,
     genNewSMT,
     SMT_ONE_LEAF,
-    stringifyAttestation,
 } from './utils'
 
 export default class UnirepState {
@@ -108,7 +107,7 @@ export default class UnirepState {
         for (const key of epochKeys) {
             attestationsMapToString[key] = this.epochKeyToAttestationsMap[
                 key
-            ].map((n: any) => stringifyAttestation(n))
+            ].map((n: any) => JSON.stringify(n))
         }
         const epochTreeLeavesToString = {}
         for (let index in this.epochTreeLeaves) {
@@ -172,11 +171,11 @@ export default class UnirepState {
                 .latestEpochKeyToAttestationsMap[key]) {
                 const jsonAttestation = JSON.parse(attestation)
                 const attestClass = new Attestation(
-                    BigInt(jsonAttestation.attesterId),
-                    BigInt(jsonAttestation.posRep),
-                    BigInt(jsonAttestation.negRep),
-                    BigInt(jsonAttestation.graffiti),
-                    BigInt(jsonAttestation.signUp)
+                    jsonAttestation.attesterId,
+                    jsonAttestation.posRep,
+                    jsonAttestation.negRep,
+                    jsonAttestation.graffiti,
+                    jsonAttestation.signUp
                 )
                 parsedAttestations.push(attestClass)
             }

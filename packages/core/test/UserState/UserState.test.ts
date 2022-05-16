@@ -20,11 +20,7 @@ import {
     UnirepState,
     UserState,
 } from '../../src'
-import {
-    compareObjectElements,
-    genNewGST,
-    genRandomAttestation,
-} from '../utils'
+import { genNewGST, genRandomAttestation } from '../utils'
 
 describe('User State', async function () {
     this.timeout(0)
@@ -318,13 +314,9 @@ describe('User State', async function () {
                     epochKeys[i]
                 )
                 for (let j = 0; j < unirepAttestations.length; j++) {
-                    expect(
-                        compareObjectElements(
-                            unirepAttestations[j],
-                            attestationsToEpochKey[epochKeys[i]][j]
-                        ),
-                        'Query attestations from Unirep state failed'
-                    ).to.be.true
+                    expect(JSON.stringify(unirepAttestations[j])).to.equal(
+                        JSON.stringify(attestationsToEpochKey[epochKeys[i]][j])
+                    )
                 }
             }
         })

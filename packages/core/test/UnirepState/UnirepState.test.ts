@@ -12,11 +12,7 @@ import {
 import { Attestation } from '@unirep/contracts'
 
 import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
-import {
-    compareObjectElements,
-    genNewGST,
-    genRandomAttestation,
-} from '../utils'
+import { genNewGST, genRandomAttestation } from '../utils'
 
 describe('Unirep State', function () {
     let unirepState: UnirepState
@@ -185,13 +181,9 @@ describe('Unirep State', function () {
                     epochKeys[i]
                 )
                 for (let j = 0; j < unirepAttestations.length; j++) {
-                    expect(
-                        compareObjectElements(
-                            unirepAttestations[j],
-                            attestationsToEpochKey[epochKeys[i]][j]
-                        ),
-                        'Query attestations from Unirep state failed'
-                    ).to.be.true
+                    expect(JSON.stringify(unirepAttestations[j])).to.deep.equal(
+                        JSON.stringify(attestationsToEpochKey[epochKeys[i]][j])
+                    )
                 }
             }
         })

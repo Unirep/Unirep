@@ -25,7 +25,6 @@ import {
     Reputation,
 } from '../../src'
 import {
-    compareObjectElements,
     genEpochKeyCircuitInput,
     genNewGST,
     genNewUserStateTree,
@@ -341,8 +340,9 @@ describe('Reputation proof events in Unirep State', function () {
             )
             const attestations = unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(compareObjectElements(attestations[1], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[1])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('spend reputation event can attest to other epoch key and update Unirep state', async () => {
@@ -403,8 +403,9 @@ describe('Reputation proof events in Unirep State', function () {
             const attestations =
                 unirepStateAfterAttest.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(compareObjectElements(attestations[0], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[0])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('submit valid reputation proof event with same nullifiers', async () => {
@@ -616,12 +617,9 @@ describe('Reputation proof events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            expect(
-                compareObjectElements(
-                    unirepState.toJSON(),
-                    unirepStateAfterAttest.toJSON()
-                )
-            ).to.be.true
+            expect(unirepState.toJSON()).to.deep.equal(
+                unirepStateAfterAttest.toJSON()
+            )
         })
 
         it('submit valid reputation proof with wrong GST root event', async () => {

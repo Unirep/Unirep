@@ -1,6 +1,7 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
+import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
@@ -320,23 +321,6 @@ const genProveSignUpCircuitInput = async (
     return stringifyBigInts(circuitInputs)
 }
 
-const compareObjectElements = (obj1: any, obj2: any) => {
-    let same = true
-    for (const key of Object.keys(obj1)) {
-        if (typeof obj1[key] === 'function') continue
-        if (key === 'unirepState') {
-            same = compareObjectElements(obj1[key], obj2[key])
-        } else {
-            same = JSON.stringify(obj1[key]) === JSON.stringify(obj2[key])
-            if (!same) console.log(key, obj1[key], obj2[key])
-        }
-        if (!same) {
-            return same
-        }
-    }
-    return same
-}
-
 const compareStates = async (
     provider: ethers.providers.Provider,
     address: string,
@@ -361,27 +345,16 @@ const compareStates = async (
     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
     const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
 
-    const compare1 = compareObjectElements(
-        usWithNoStorage.toJSON(),
-        usWithStorage.toJSON()
-    )
-    const compare2 = compareObjectElements(
-        usWithNoStorage.toJSON(),
-        usFromJSON.toJSON()
-    )
-    const compare3 = compareObjectElements(
-        unirepStateWithNoStorage.toJSON(),
+    expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
+    expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
+    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
         unirepStateWithStorage.toJSON()
     )
-    const compare4 = compareObjectElements(
-        unirepStateWithNoStorage.toJSON(),
+    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
         unirepFromJSON.toJSON()
     )
 
-    return {
-        sameStates: compare1 && compare2 && compare3 && compare4,
-        currentUserState: usWithNoStorage.toJSON(),
-    }
+    return usWithNoStorage.toJSON()
 }
 
 const compareEpochTrees = async (
@@ -405,13 +378,10 @@ const compareEpochTrees = async (
     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
     const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
 
-    const compare1 = epochTree1.getRootHash() === epochTree2.getRootHash()
-    const compare2 = epochTree1.getRootHash() === epochTree3.getRootHash()
+    expect(epochTree1).to.deep.equal(epochTree2)
+    expect(epochTree1).to.deep.equal(epochTree3)
 
-    return {
-        sameStates: compare1 && compare2,
-        currentUserState: usWithNoStorage.toJSON(),
-    }
+    return usWithNoStorage.toJSON()
 }
 
 export {
@@ -433,7 +403,6 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
-    compareObjectElements,
     compareStates,
     compareEpochTrees,
 }

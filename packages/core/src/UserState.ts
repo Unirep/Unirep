@@ -18,7 +18,6 @@ import {
     genNewSMT,
     genEpochKeyNullifier,
     genReputationNullifier,
-    stringifyAttestation,
 } from './utils'
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
@@ -112,7 +111,7 @@ export default class UserState {
             const attestations = this.transitionedFromAttestations[epk]
             if (attestations !== undefined)
                 transitionedFromAttestationsToString[epk] = attestations.map(
-                    (a: any) => stringifyAttestation(a)
+                    (a: any) => JSON.stringify(a)
                 )
         }
         return {
@@ -151,11 +150,11 @@ export default class UserState {
             for (const attest of _userState.transitionedFromAttestations[key]) {
                 const parsedAttest = JSON.parse(attest)
                 const attestation: IAttestation = new Attestation(
-                    BigInt(parsedAttest.attesterId),
-                    BigInt(parsedAttest.posRep),
-                    BigInt(parsedAttest.negRep),
-                    BigInt(parsedAttest.graffiti),
-                    BigInt(parsedAttest.signUp)
+                    parsedAttest.attesterId,
+                    parsedAttest.posRep,
+                    parsedAttest.negRep,
+                    parsedAttest.graffiti,
+                    parsedAttest.signUp
                 )
                 transitionedFromAttestations[key].push(attestation)
             }

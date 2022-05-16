@@ -19,7 +19,6 @@ import {
     Reputation,
 } from '../../src'
 import {
-    compareObjectElements,
     genNewGST,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
@@ -311,8 +310,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const attestations = userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(compareObjectElements(attestations[1], attestation)).to.be
-                .true
+            expect(JSON.stringify(attestations[1])).to.equal(
+                JSON.stringify(attestation)
+            )
         })
 
         it('submit invalid airdrop proof event', async () => {

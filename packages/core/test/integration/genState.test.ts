@@ -113,13 +113,12 @@ describe('Generate user state', function () {
             const _commitment = (args?.identityCommitment).toBigInt()
             expect(_commitment).equal(userCommitments[firstUser])
 
-            const { sameStates, currentUserState } = await compareStates(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
                 initUserState.toJSON()
             )
-            expect(sameStates).to.be.true
             expect(currentUserState.latestTransitionedEpoch).equal(
                 latestTransitionedToEpoch
             )
@@ -188,13 +187,12 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after epoch key proof event', async () => {
-            const { sameStates, currentUserState } = await compareStates(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
                 savedUserState
             )
-            expect(sameStates).to.be.true
 
             savedUserState = currentUserState
         })
@@ -244,13 +242,12 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after reputation proof event', async () => {
-            const { sameStates, currentUserState } = await compareStates(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
                 savedUserState
             )
-            expect(sameStates).to.be.true
 
             savedUserState = currentUserState
         })
@@ -281,13 +278,12 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after airdrop proof event', async () => {
-            const { sameStates, currentUserState } = await compareStates(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
                 savedUserState
             )
-            expect(sameStates).to.be.true
 
             savedUserState = currentUserState
         })
@@ -307,14 +303,13 @@ describe('Generate user state', function () {
 
         it('restored user state should match the user state after epoch transition', async () => {
             const epoch = 1
-            const { sameStates, currentUserState } = await compareEpochTrees(
+            const currentUserState = await compareEpochTrees(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
                 savedUserState,
                 epoch
             )
-            expect(sameStates).to.be.true
 
             savedUserState = currentUserState
         })
@@ -468,14 +463,13 @@ describe('Generate user state', function () {
 
         it('restored user state should match the user state after user state transition', async () => {
             const epoch = 1
-            const { sameStates, currentUserState } = await compareEpochTrees(
+            const currentUserState = await compareEpochTrees(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
                 savedUserState,
                 epoch
             )
-            expect(sameStates).to.be.true
 
             savedUserState = currentUserState
         })
@@ -493,14 +487,13 @@ describe('Generate user state', function () {
 
         it('restored user state should match the user state after epoch transition', async () => {
             const epoch = 2
-            const { sameStates, currentUserState } = await compareEpochTrees(
+            const currentUserState = await compareEpochTrees(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser],
                 secondUserState,
                 epoch
             )
-            expect(sameStates).to.be.true
 
             savedUserState = currentUserState
         })
@@ -654,14 +647,13 @@ describe('Generate user state', function () {
 
         it('restored user state should match the user state after user state transition', async () => {
             const epoch = 2
-            const { sameStates } = await compareEpochTrees(
+            await compareEpochTrees(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser],
                 secondUserState,
                 epoch
             )
-            expect(sameStates).to.be.true
         })
     })
 })
