@@ -1,8 +1,10 @@
 {
     "name": "@unirep/circuits",
     "version": "1.0.4",
-    "main": "dist/circuits/utils.js",
+    "main": "circuits/utils.js",
+    "types": "circuits/utils.d.ts",
     "scripts": {
+        "pre": "sh scripts/pre.sh",
         "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && tsc && yarn copyCircom",
         "downloadPtau": "./scripts/downloadPtau.sh",
         "buildCircuits": "npx ts-node scripts/buildCircuits.ts",
@@ -14,12 +16,12 @@
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
-    "repository": "https://github.com/Unirep/circuits.git",
+    "repository": "https://github.com/unirep/unirep.git",
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "dependencies": {
-        "@unirep/config": "1.0.0",
-        "@unirep/crypto": "1.0.0",
+        "@unirep/config": "1.0.0-alpha-1",
+        "@unirep/crypto": "1.0.0-alpha-1",
         "argparse": "^2.0.1",
         "circom": "0.5.45",
         "circomlib": "0.5.3",
