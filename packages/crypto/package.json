@@ -1,7 +1,7 @@
 {
     "name": "@unirep/crypto",
     "version": "1.0.0",
-    "main": "build/index.js",
+    "main": "index.js",
     "types": "index.d.ts",
     "scripts": {
         "pre": "sh scripts/prepare.sh",

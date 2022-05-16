@@ -1,10 +1,12 @@
 {
     "name": "@unirep/contracts",
     "version": "1.0.6",
-    "main": "build/src/index.js",
+    "main": "src/index.js",
+    "types": "src/index.d.ts",
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "scripts": {
+        "pre": "sh scripts/pre.sh",
         "build": "./scripts/buildVerifiers.sh && yarn compile && npx hardhat typechain && tsc",
         "compile": "npx hardhat compile",
         "test": "npx hardhat test --no-compile",
@@ -14,9 +16,9 @@
         "@openzeppelin/contracts": "4.4.2",
         "@typechain/ethers-v5": "^9.0.0",
         "@typechain/hardhat": "^5.0.0",
-        "@unirep/circuits": "1.0.4",
-        "@unirep/config": "1.0.0",
-        "@unirep/crypto": "1.0.0",
+        "@unirep/circuits": "1.0.4-alpha-1",
+        "@unirep/config": "1.0.0-alpha-1",
+        "@unirep/crypto": "1.0.0-alpha-1",
         "argparse": "^2.0.1",
         "ethers": "^5.5.3",
         "typescript": "^4.4.3"

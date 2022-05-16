@@ -1486,15 +1486,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@unirep/circuits@1.0.4, @unirep/circuits@workspace:packages/circuits":
+"@unirep/circuits@npm:1.0.4-alpha-1":
+  version: 1.0.4-alpha-1
+  resolution: "@unirep/circuits@npm:1.0.4-alpha-1"
+  dependencies:
+    "@unirep/config": 1.0.0-alpha-1
+    "@unirep/crypto": 1.0.0-alpha-1
+    argparse: ^2.0.1
+    circom: 0.5.45
+    circomlib: 0.5.3
+    snarkjs: ^0.4.7
+    typescript: ^4.4.2
+  checksum: b0def3dae24a41cd2f89823cd6fcee5300d5494629da98e68e82c8a3caf6fd00d18524e6d934f046b9b535724420683cfb405aed37bc523eb07fffbde9805192
+  languageName: node
+  linkType: hard
+
+"@unirep/circuits@workspace:packages/circuits":
   version: 0.0.0-use.local
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
     "@types/chai": ^4.2.21
     "@types/mocha": ^9.0.0
     "@types/node": ^16.9.1
-    "@unirep/config": 1.0.0
-    "@unirep/crypto": 1.0.0
+    "@unirep/config": 1.0.0-alpha-1
+    "@unirep/crypto": 1.0.0-alpha-1
     argparse: ^2.0.1
     chai: ^4.3.4
     circom: 0.5.45
@@ -1507,7 +1522,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/config@1.0.0, @unirep/config@workspace:packages/config":
+"@unirep/config@npm:1.0.0-alpha-1":
+  version: 1.0.0-alpha-1
+  resolution: "@unirep/config@npm:1.0.0-alpha-1"
+  checksum: bb2618571d64008a000e7e87dc11ce9f9e36c79bf475690b4bddf92958e3b27468f95f876f8073e3734efcf5143690787fdda1e4edc0db12351ea3f85726ed5e
+  languageName: node
+  linkType: hard
+
+"@unirep/config@workspace:packages/config":
   version: 0.0.0-use.local
   resolution: "@unirep/config@workspace:packages/config"
   dependencies:
@@ -1515,7 +1537,24 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/contracts@1.0.6, @unirep/contracts@workspace:packages/contracts":
+"@unirep/contracts@npm:1.0.6-alpha-1":
+  version: 1.0.6-alpha-1
+  resolution: "@unirep/contracts@npm:1.0.6-alpha-1"
+  dependencies:
+    "@openzeppelin/contracts": 4.4.2
+    "@typechain/ethers-v5": ^9.0.0
+    "@typechain/hardhat": ^5.0.0
+    "@unirep/circuits": 1.0.4-alpha-1
+    "@unirep/config": 1.0.0-alpha-1
+    "@unirep/crypto": 1.0.0-alpha-1
+    argparse: ^2.0.1
+    ethers: ^5.5.3
+    typescript: ^4.4.3
+  checksum: 285351b6e82ebe85e22b8e75d0b42c0f003f58c000bed3e01e8a27c2c951ddd8b2f97446d00c81d131d87e2b91021aa325b48ae3e033bdf90b86c46627eb1fb3
+  languageName: node
+  linkType: hard
+
+"@unirep/contracts@workspace:packages/contracts":
   version: 0.0.0-use.local
   resolution: "@unirep/contracts@workspace:packages/contracts"
   dependencies:
@@ -1527,9 +1566,9 @@ __metadata:
     "@types/chai": ^4.2.21
     "@types/mocha": ^9.0.0
     "@types/node": ^16.9.1
-    "@unirep/circuits": 1.0.4
-    "@unirep/config": 1.0.0
-    "@unirep/crypto": 1.0.0
+    "@unirep/circuits": 1.0.4-alpha-1
+    "@unirep/config": 1.0.0-alpha-1
+    "@unirep/crypto": 1.0.0-alpha-1
     argparse: ^2.0.1
     chai: ^4.3.4
     circom: 0.5.45
@@ -1554,9 +1593,9 @@ __metadata:
     "@types/chai": ^4.3.0
     "@types/mocha": ^9.1.0
     "@types/node": ^17.0.10
-    "@unirep/circuits": 1.0.4
-    "@unirep/contracts": 1.0.6
-    "@unirep/crypto": 1.0.0
+    "@unirep/circuits": 1.0.4-alpha-1
+    "@unirep/contracts": 1.0.6-alpha-1
+    "@unirep/crypto": 1.0.0-alpha-1
     argparse: ^2.0.1
     base64url: ^3.0.1
     bigint-conversion: ^2.1.12
@@ -1571,7 +1610,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/crypto@1.0.0, @unirep/crypto@workspace:packages/crypto":
+"@unirep/crypto@npm:1.0.0-alpha-1":
+  version: 1.0.0-alpha-1
+  resolution: "@unirep/crypto@npm:1.0.0-alpha-1"
+  dependencies:
+    "@zk-kit/incremental-merkle-tree": ^0.4.3
+    bigint-conversion: ^2.1.12
+    circomlibjs: 0.0.8
+    crypto-js: ^4.1.1
+    maci-config: ^0.9.1
+    maci-crypto: ^0.9.1
+    typescript: ^4.4.2
+  checksum: 8996b8969a2b2eb971ce6d0dfaf707f55ec1414bb8a8962536dab13f5ca4f27145209c842deb228bf457a402f72ca32ff0b02eb2b7a8601911ae4535f9a0ad54
+  languageName: node
+  linkType: hard
+
+"@unirep/crypto@workspace:packages/crypto":
   version: 0.0.0-use.local
   resolution: "@unirep/crypto@workspace:packages/crypto"
   dependencies:
