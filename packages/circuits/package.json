@@ -4,7 +4,7 @@
     "main": "dist/circuits/utils.js",
     "types": "dist/circuits/utils.d.ts",
     "scripts": {
-        "pre": "sh scripts/pre.sh",
+        "pre": "node scripts/prepare",
         "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && yarn buildTs && yarn copyCircom",
         "downloadPtau": "./scripts/downloadPtau.sh",
         "buildCircuits": "npx ts-node scripts/buildCircuits.ts",

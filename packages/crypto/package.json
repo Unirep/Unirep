@@ -1,10 +1,10 @@
 {
     "name": "@unirep/crypto",
     "version": "1.0.0",
-    "main": "index.js",
-    "types": "index.d.ts",
+    "main": "build/index.js",
+    "types": "build/index.d.ts",
     "scripts": {
-        "pre": "sh scripts/prepare.sh",
+        "pre": "node scripts/prepare",
         "build": "tsc",
         "test": "echo 'No test for crypto!!!'",
         "lint": "prettier --write ."

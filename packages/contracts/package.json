@@ -1,12 +1,12 @@
 {
     "name": "@unirep/contracts",
     "version": "1.0.0",
-    "main": "src/index.js",
+    "main": "src/index.ts",
     "types": "src/index.d.ts",
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "scripts": {
-        "pre": "sh scripts/pre.sh",
+        "pre": "node scripts/prepare",
         "build": "./scripts/buildVerifiers.sh && yarn compile && npx hardhat typechain && tsc",
         "compile": "npx hardhat compile",
         "test": "npx hardhat test --no-compile",
