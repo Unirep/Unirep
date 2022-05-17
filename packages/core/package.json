@@ -37,9 +37,9 @@
     },
     "dependencies": {
         "@typechain/ethers-v5": "^9.0.0",
-        "@unirep/circuits": "1.0.4-alpha-1",
-        "@unirep/contracts": "1.0.6-alpha-1",
-        "@unirep/crypto": "1.0.0-alpha-1",
+        "@unirep/circuits": "1.0.0",
+        "@unirep/contracts": "1.0.0",
+        "@unirep/crypto": "1.0.0",
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "ethers": "^5.4.6",

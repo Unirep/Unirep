@@ -13,9 +13,8 @@ import {
     deployUnirep,
     Unirep,
 } from '../src'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits/config'
 
-NUM_ATTESTATIONS_PER_PROOF
 describe('Process attestation circuit', function () {
     this.timeout(300000)
 

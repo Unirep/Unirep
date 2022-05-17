@@ -8,7 +8,7 @@ import {
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 import {
     genEpochKey,
     genInputForContract,

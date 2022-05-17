@@ -6,7 +6,7 @@ import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepState } from '../src'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
-import { MAX_REPUTATION_BUDGET } from '@unirep/config'
+import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyReputationProof', {

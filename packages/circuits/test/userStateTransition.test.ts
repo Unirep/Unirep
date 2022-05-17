@@ -18,7 +18,7 @@ import {
 
 import { userStateTransitionCircuitPath } from '../config'
 
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 const epkExistsCircuitPath = path.join(
     __dirname,
     '../circuits/test/epochKeyExists_test.circom'

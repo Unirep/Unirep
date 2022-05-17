@@ -13,11 +13,12 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     MAX_REPUTATION_BUDGET,
     EPOCH_LENGTH,
-    ATTESTTING_FEE,
     GLOBAL_STATE_TREE_DEPTH,
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
+
+const ATTESTING_FEE = '0'
 
 import {
     EpochKeyValidityVerifier,
@@ -212,7 +213,7 @@ class ReputationProof implements IReputationProof {
             [
                 `tuple(uint256[${MAX_REPUTATION_BUDGET}] repNullifiers,
                     uint256 epoch,
-                    uint256 epochKey, 
+                    uint256 epochKey,
                     uint256 globalStateTree,
                     uint256 attesterId,
                     uint256 proveReputationAmount,
@@ -424,7 +425,7 @@ const deployUnirep = async (
     const _maxUsers = _settings?.maxUsers ?? MAX_USERS
     const _maxAttesters = _settings?.maxAttesters ?? MAX_ATTESTERS
     const _epochLength = _settings?.epochLength ?? EPOCH_LENGTH
-    const _attestingFee = _settings?.attestingFee ?? ATTESTTING_FEE
+    const _attestingFee = _settings?.attestingFee ?? ATTESTING_FEE
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
         {

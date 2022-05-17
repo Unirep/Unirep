@@ -14,7 +14,7 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
+} from '../config'
 
 import { Circuit } from '../config'
 

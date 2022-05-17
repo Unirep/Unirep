@@ -16,7 +16,6 @@ import {
     ReputationProof,
     Unirep,
 } from '@unirep/contracts'
-import { GLOBAL_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
 
 import {
     computeInitUserStateRoot,
@@ -31,6 +30,7 @@ import {
     genRandomAttestation,
     genReputationCircuitInput,
 } from '../utils'
+import { GLOBAL_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)

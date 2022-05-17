@@ -19,7 +19,7 @@ import {
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 
 import {
     genEpochKey,

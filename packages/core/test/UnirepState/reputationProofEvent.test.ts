@@ -16,7 +16,7 @@ import {
     ReputationProof,
     Unirep,
 } from '@unirep/contracts'
-import { MAX_REPUTATION_BUDGET } from '@unirep/config'
+import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
     computeInitUserStateRoot,

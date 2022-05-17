@@ -11,7 +11,7 @@ import {
     genProofAndVerify,
 } from './utils'
 import { proveUserSignUpCircuitPath } from '../config'
-import { EPOCH_TREE_DEPTH } from '@unirep/config'
+import { EPOCH_TREE_DEPTH } from '../config'
 const circuitPath = path.join(__dirname, proveUserSignUpCircuitPath)
 
 describe('Prove user has signed up circuit', function () {

@@ -1,17 +1,18 @@
 {
     "name": "@unirep/circuits",
-    "version": "1.0.4",
-    "main": "circuits/utils.js",
-    "types": "circuits/utils.d.ts",
+    "version": "1.0.0",
+    "main": "dist/circuits/utils.js",
+    "types": "dist/circuits/utils.d.ts",
     "scripts": {
         "pre": "sh scripts/pre.sh",
-        "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && tsc && yarn copyCircom",
+        "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && yarn buildTs && yarn copyCircom",
         "downloadPtau": "./scripts/downloadPtau.sh",
         "buildCircuits": "npx ts-node scripts/buildCircuits.ts",
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
         "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
+        "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
@@ -20,8 +21,7 @@
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "dependencies": {
-        "@unirep/config": "1.0.0-alpha-1",
-        "@unirep/crypto": "1.0.0-alpha-1",
+        "@unirep/crypto": "1.0.0",
         "argparse": "^2.0.1",
         "circom": "0.5.45",
         "circomlib": "0.5.3",

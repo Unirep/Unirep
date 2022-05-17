@@ -10,7 +10,7 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 
 import {
     computeInitUserStateRoot,
