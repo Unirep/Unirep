@@ -1476,14 +1476,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@unirep/circuits@1.0.0-alpha-2, @unirep/circuits@workspace:packages/circuits":
+"@unirep/circuits@1.0.0, @unirep/circuits@workspace:packages/circuits":
   version: 0.0.0-use.local
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
     "@types/chai": ^4.2.21
     "@types/mocha": ^9.0.0
     "@types/node": ^16.9.1
-    "@unirep/crypto": 1.0.0-alpha-2
+    "@unirep/crypto": 1.0.0
     argparse: ^2.0.1
     chai: ^4.3.4
     circom: 0.5.45
@@ -1496,7 +1496,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/contracts@1.0.0-alpha-2, @unirep/contracts@workspace:packages/contracts":
+"@unirep/contracts@1.0.0, @unirep/contracts@workspace:packages/contracts":
   version: 0.0.0-use.local
   resolution: "@unirep/contracts@workspace:packages/contracts"
   dependencies:
@@ -1508,8 +1508,8 @@ __metadata:
     "@types/chai": ^4.2.21
     "@types/mocha": ^9.0.0
     "@types/node": ^16.9.1
-    "@unirep/circuits": 1.0.0-alpha-2
-    "@unirep/crypto": 1.0.0-alpha-2
+    "@unirep/circuits": 1.0.0
+    "@unirep/crypto": 1.0.0
     argparse: ^2.0.1
     chai: ^4.3.4
     circom: 0.5.45
@@ -1534,9 +1534,9 @@ __metadata:
     "@types/chai": ^4.3.0
     "@types/mocha": ^9.1.0
     "@types/node": ^17.0.10
-    "@unirep/circuits": 1.0.0-alpha-2
-    "@unirep/contracts": 1.0.0-alpha-2
-    "@unirep/crypto": 1.0.0-alpha-2
+    "@unirep/circuits": 1.0.0
+    "@unirep/contracts": 1.0.0
+    "@unirep/crypto": 1.0.0
     argparse: ^2.0.1
     base64url: ^3.0.1
     bigint-conversion: ^2.1.12
@@ -1551,7 +1551,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/crypto@1.0.0-alpha-2, @unirep/crypto@workspace:packages/crypto":
+"@unirep/crypto@1.0.0, @unirep/crypto@workspace:packages/crypto":
   version: 0.0.0-use.local
   resolution: "@unirep/crypto@workspace:packages/crypto"
   dependencies:
