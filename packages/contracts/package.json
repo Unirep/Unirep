@@ -1,8 +1,8 @@
 {
     "name": "@unirep/contracts",
     "version": "1.0.0",
-    "main": "src/index.ts",
-    "types": "src/index.d.ts",
+    "main": "build/src/index.js",
+    "types": "build/src/index.d.ts",
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "scripts": {

@@ -3,7 +3,6 @@ import { Circuit, verifyProof } from '@unirep/circuits'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import { Attestation } from '@unirep/contracts'
 import {
-    ATTESTTING_FEE,
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
@@ -11,6 +10,8 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits/config'
+
+const ATTESTING_FEE = '0' as any
 
 import {
     computeInitUserStateRoot,
@@ -31,7 +32,7 @@ describe('User State', async function () {
         globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
         userStateTreeDepth: USER_STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
-        attestingFee: ATTESTTING_FEE,
+        attestingFee: ATTESTING_FEE,
         epochLength: EPOCH_LENGTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         maxReputationBudget: MAX_REPUTATION_BUDGET,

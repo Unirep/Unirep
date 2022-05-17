@@ -21,7 +21,7 @@ describe('Unirep State', function () {
         globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
         userStateTreeDepth: USER_STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
-        attestingFee: ATTESTING_FEE,
+        attestingFee: ATTESTING_FEE as any,
         epochLength: EPOCH_LENGTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         maxReputationBudget: MAX_REPUTATION_BUDGET,
