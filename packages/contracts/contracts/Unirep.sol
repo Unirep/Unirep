@@ -128,9 +128,9 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     // Verify input data - Should found better way to handle it.
 
-    function verifyAstesterSignUp(address _attester) private view {
+    function verifyAstesterSignUp(address attester) private view {
         require(
-            attesters[_attester] > 0,
+            attesters[attester] > 0,
             'Unirep: attester has not signed up yet'
         );
     }
