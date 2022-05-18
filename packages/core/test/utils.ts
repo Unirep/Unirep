@@ -129,7 +129,7 @@ const verifyProcessAttestationsProof = async (
 
 const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
     const currentEpoch = unirepState.currentEpoch
-    let reputaitonRecord = {}
+    const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
         for (
             let j = 0;
