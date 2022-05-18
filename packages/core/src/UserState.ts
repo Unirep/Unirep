@@ -1,14 +1,17 @@
+import { BigNumber } from 'ethers'
 import assert from 'assert'
 import {
     IncrementalMerkleTree,
     hash5,
     stringifyBigInts,
-    hashOne,
     hashLeftRight,
     SparseMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { IAttestation, Attestation } from '@unirep/contracts'
+import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+
 import {
     defaultUserStateLeaf,
     genEpochKey,
@@ -16,104 +19,11 @@ import {
     genEpochKeyNullifier,
     genReputationNullifier,
 } from './utils'
-import { IAttestation, IUnirepState, UnirepState } from './UnirepState'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
+import Reputation from './Reputation'
+import UnirepState from './UnirepState'
 
-interface IUserStateLeaf {
-    attesterId: BigInt
-    reputation: Reputation
-}
-
-interface IReputation {
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
-    signUp: BigInt
-}
-
-interface IUserState {
-    idNullifier: BigInt
-    idCommitment: BigInt
-    hasSignedUp: boolean
-    latestTransitionedEpoch: number
-    latestGSTLeafIndex: number
-    latestUserStateLeaves: { [key: string]: string }
-    transitionedFromAttestations: { [key: string]: string[] }
-    unirepState: IUnirepState
-}
-
-class Reputation implements IReputation {
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public graffitiPreImage: BigInt = BigInt(0)
-    public signUp: BigInt
-
-    constructor(
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
-    ) {
-        this.posRep = _posRep
-        this.negRep = _negRep
-        this.graffiti = _graffiti
-        this.signUp = _signUp
-    }
-
-    public static default(): Reputation {
-        return new Reputation(BigInt(0), BigInt(0), BigInt(0), BigInt(0))
-    }
-
-    public update = (
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
-    ): Reputation => {
-        this.posRep = BigInt(Number(this.posRep) + Number(_posRep))
-        this.negRep = BigInt(Number(this.negRep) + Number(_negRep))
-        if (_graffiti != BigInt(0)) {
-            this.graffiti = _graffiti
-        }
-        this.signUp = this.signUp || _signUp
-        return this
-    }
-
-    public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
-        assert(
-            hashOne(_graffitiPreImage) === this.graffiti,
-            'Graffiti pre-image does not match'
-        )
-        this.graffitiPreImage = _graffitiPreImage
-    }
-
-    public hash = (): BigInt => {
-        return hash5([
-            this.posRep,
-            this.negRep,
-            this.graffiti,
-            this.signUp,
-            BigInt(0),
-        ])
-    }
-
-    public toJSON = (space = 0): string => {
-        return JSON.stringify(
-            {
-                posRep: this.posRep.toString(),
-                negRep: this.negRep.toString(),
-                graffiti: this.graffiti.toString(),
-                graffitiPreImage: this.graffitiPreImage.toString(),
-                signUp: this.signUp.toString(),
-            },
-            null,
-            space
-        )
-    }
-}
-
-class UserState {
+export default class UserState {
     public userStateTreeDepth: number
     public numEpochKeyNoncePerEpoch: number
     public numAttestationsPerProof: number
@@ -144,11 +54,11 @@ class UserState {
             'UserState: UnirepState is undefined'
         )
         this.unirepState = _unirepState
-        this.userStateTreeDepth = this.unirepState.setting.userStateTreeDepth
+        this.userStateTreeDepth = this.unirepState.settings.userStateTreeDepth
         this.numEpochKeyNoncePerEpoch =
-            this.unirepState.setting.numEpochKeyNoncePerEpoch
+            this.unirepState.settings.numEpochKeyNoncePerEpoch
         this.numAttestationsPerProof = NUM_ATTESTATIONS_PER_PROOF
-        this.maxReputationBudget = this.unirepState.setting.maxReputationBudget
+        this.maxReputationBudget = this.unirepState.settings.maxReputationBudget
 
         this.id = _id
         this.commitment = this.id.genIdentityCommitment()
@@ -178,7 +88,7 @@ class UserState {
         }
     }
 
-    public toJSON = (space = 0): string => {
+    public toJSON = (): IUserState => {
         const userStateLeavesMapToString: { [key: string]: string } = {}
         for (const l of this.latestUserStateLeaves) {
             userStateLeavesMapToString[l.attesterId.toString()] =
@@ -190,7 +100,7 @@ class UserState {
         const epoch = this.latestTransitionedEpoch
         for (
             let nonce = 0;
-            nonce < this.unirepState.setting.numEpochKeyNoncePerEpoch;
+            nonce < this.unirepState.settings.numEpochKeyNoncePerEpoch;
             nonce++
         ) {
             const epk = genEpochKey(
@@ -201,27 +111,67 @@ class UserState {
             const attestations = this.transitionedFromAttestations[epk]
             if (attestations !== undefined)
                 transitionedFromAttestationsToString[epk] = attestations.map(
-                    (a) => a.toJSON()
+                    (a: any) => JSON.stringify(a)
                 )
         }
-        return JSON.stringify(
-            {
-                idNullifier: this.id.getNullifier().toString(),
-                idCommitment: this.commitment.toString(),
-                hasSignedUp: this.hasSignedUp,
-                latestTransitionedEpoch: this.latestTransitionedEpoch,
-                latestGSTLeafIndex: this.latestGSTLeafIndex,
-                latestUserStateLeaves: userStateLeavesMapToString,
-                transitionedFromAttestations:
-                    transitionedFromAttestationsToString,
-                unirepState: JSON.parse(this.unirepState.toJSON()),
-            },
-            null,
-            space
-        )
+        return {
+            idNullifier: this.id.getNullifier(),
+            idCommitment: this.commitment,
+            hasSignedUp: this.hasSignedUp,
+            latestTransitionedEpoch: this.latestTransitionedEpoch,
+            latestGSTLeafIndex: this.latestGSTLeafIndex,
+            latestUserStateLeaves: userStateLeavesMapToString,
+            transitionedFromAttestations: transitionedFromAttestationsToString,
+            unirepState: this.unirepState.toJSON(),
+        }
     }
 
-    /*
+    public static fromJSON = (identity: ZkIdentity, data: IUserState) => {
+        const _userState = typeof data === 'string' ? JSON.parse(data) : data
+        const unirepState = UnirepState.fromJSON(_userState.unirepState)
+        const userStateLeaves: IUserStateLeaf[] = []
+        const transitionedFromAttestations: { [key: string]: IAttestation[] } =
+            {}
+        for (const key in _userState.latestUserStateLeaves) {
+            const parsedLeaf = JSON.parse(_userState.latestUserStateLeaves[key])
+            const leaf: IUserStateLeaf = {
+                attesterId: BigInt(key),
+                reputation: new Reputation(
+                    parsedLeaf.posRep,
+                    parsedLeaf.negRep,
+                    parsedLeaf.graffiti,
+                    parsedLeaf.signUp
+                ),
+            }
+            userStateLeaves.push(leaf)
+        }
+        for (const key in _userState.transitionedFromAttestations) {
+            transitionedFromAttestations[key] = []
+            for (const attest of _userState.transitionedFromAttestations[key]) {
+                const parsedAttest = JSON.parse(attest)
+                const attestation: IAttestation = new Attestation(
+                    parsedAttest.attesterId,
+                    parsedAttest.posRep,
+                    parsedAttest.negRep,
+                    parsedAttest.graffiti,
+                    parsedAttest.signUp
+                )
+                transitionedFromAttestations[key].push(attestation)
+            }
+        }
+        const userState = new this(
+            unirepState,
+            identity,
+            _userState.hasSignedUp,
+            _userState.latestTransitionedEpoch,
+            _userState.latestGSTLeafIndex,
+            userStateLeaves,
+            transitionedFromAttestations
+        )
+        return userState
+    }
+
+    /**
      * Proxy methods to get underlying UnirepState data
      */
     public getUnirepStateCurrentEpoch = (): number => {
@@ -240,7 +190,7 @@ class UserState {
         return this.unirepState
     }
 
-    /*
+    /**
      * Get the attestations of given epoch key
      */
     public getAttestations = (epochKey: string): IAttestation[] => {
@@ -262,7 +212,7 @@ class UserState {
         this.unirepState.addReputationNullifiers(nullifier, blockNumber)
     }
 
-    /*
+    /**
      * Get the epoch key nullifier of given epoch
      */
     public getEpochKeyNullifiers = (epoch: number): BigInt[] => {
@@ -278,7 +228,7 @@ class UserState {
         return nullifiers
     }
 
-    public getRepByAttester = (attesterId: BigInt): Reputation => {
+    public getRepByAttester = (attesterId: BigInt): IReputation => {
         const leaf = this.latestUserStateLeaves.find(
             (leaf) => leaf.attesterId == attesterId
         )
@@ -286,28 +236,28 @@ class UserState {
         else return Reputation.default()
     }
 
-    /*
+    /**
      * Check if given nullifier exists in nullifier tree
      */
     public nullifierExist = (nullifier: BigInt): boolean => {
         return this.unirepState.nullifierExist(nullifier)
     }
 
-    /*
+    /**
      * Check if user has signed up in Unirep
      */
     private _checkUserSignUp = () => {
         assert(this.hasSignedUp, 'UserState: User has not signed up yet')
     }
 
-    /*
+    /**
      * Check if user has not signed up in Unirep
      */
     private _checkUserNotSignUp = () => {
         assert(!this.hasSignedUp, 'UserState: User has already signed up')
     }
 
-    /*
+    /**
      * Check if epoch key nonce is valid
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
@@ -317,7 +267,7 @@ class UserState {
         )
     }
 
-    /*
+    /**
      * Check if attester ID is valid
      */
     private _checkAttesterId = (attesterId: BigInt) => {
@@ -331,7 +281,7 @@ class UserState {
         )
     }
 
-    /*
+    /**
      * Add a new epoch key to the list of epoch key of current epoch.
      */
     public signUp = async (
@@ -359,10 +309,10 @@ class UserState {
                 const stateLeave: IUserStateLeaf = {
                     attesterId: BigInt(attesterId),
                     reputation: Reputation.default().update(
-                        BigInt(airdropAmount),
-                        BigInt(0),
-                        BigInt(0),
-                        BigInt(signUpInLeaf)
+                        BigNumber.from(airdropAmount),
+                        BigNumber.from(0),
+                        BigNumber.from(0),
+                        BigNumber.from(signUpInLeaf)
                     ),
                 }
                 this.latestUserStateLeaves = [stateLeave]
@@ -374,7 +324,7 @@ class UserState {
         }
     }
 
-    /*
+    /**
      * Computes the user state tree with given state leaves
      */
     private _genUserStateTreeFromLeaves = async (
@@ -391,7 +341,7 @@ class UserState {
         return USTree
     }
 
-    /*
+    /**
      * Computes the user state tree of given epoch
      */
     public genUserStateTree = async (): Promise<SparseMerkleTree> => {
@@ -399,7 +349,7 @@ class UserState {
         return await this._genUserStateTreeFromLeaves(leaves)
     }
 
-    /*
+    /**
      * Check if the root is one of the Global state tree roots in the given epoch
      */
     public GSTRootExists = (
@@ -409,7 +359,7 @@ class UserState {
         return this.unirepState.GSTRootExists(GSTRoot, epoch)
     }
 
-    /*
+    /**
      * Check if the root is one of the epoch tree roots in the given epoch
      */
     public epochTreeRootExists = async (
@@ -419,7 +369,7 @@ class UserState {
         return this.unirepState.epochTreeRootExists(_epochTreeRoot, epoch)
     }
 
-    /*
+    /**
      * Update user state and unirep state according to user state transition event
      */
     public userStateTransition = async (
@@ -464,7 +414,7 @@ class UserState {
             this.id.getNullifier(),
             epoch,
             epochKeyNonce,
-            this.unirepState.setting.epochTreeDepth
+            this.unirepState.settings.epochTreeDepth
         )
         const userStateTree = await this.genUserStateTree()
         const GSTree = this.unirepState.genGSTree(epoch)
@@ -488,11 +438,11 @@ class UserState {
         )
 
         return {
-            proof: results['proof'],
-            publicSignals: results['publicSignals'],
-            globalStateTree: results['publicSignals'][0],
-            epoch: results['publicSignals'][1],
-            epochKey: results['publicSignals'][2],
+            proof: results.proof,
+            publicSignals: results.publicSignals,
+            globalStateTree: results.publicSignals[0],
+            epoch: results.publicSignals[1],
+            epochKey: results.publicSignals[2],
         }
     }
 
@@ -500,26 +450,26 @@ class UserState {
         attestation: IAttestation,
         stateLeaves: IUserStateLeaf[]
     ): IUserStateLeaf[] => {
-        const attesterId = attestation.attesterId
+        const attesterId = attestation.attesterId.toBigInt()
         for (const leaf of stateLeaves) {
             if (leaf.attesterId === attesterId) {
                 leaf.reputation = leaf.reputation.update(
-                    attestation.posRep as BigInt,
-                    attestation.negRep as BigInt,
-                    attestation.graffiti as BigInt,
-                    attestation.signUp as BigInt
+                    attestation.posRep,
+                    attestation.negRep,
+                    attestation.graffiti,
+                    attestation.signUp
                 )
                 return stateLeaves
             }
         }
         // If no matching state leaf, insert new one
         const newLeaf: IUserStateLeaf = {
-            attesterId: attesterId as BigInt,
+            attesterId: attesterId,
             reputation: Reputation.default().update(
-                attestation.posRep as BigInt,
-                attestation.negRep as BigInt,
-                attestation.graffiti as BigInt,
-                attestation.signUp as BigInt
+                attestation.posRep,
+                attestation.negRep,
+                attestation.graffiti,
+                attestation.signUp
             ),
         }
         stateLeaves.push(newLeaf)
@@ -535,7 +485,7 @@ class UserState {
                 this.id.getNullifier(),
                 fromEpoch,
                 nonce,
-                this.unirepState.setting.epochTreeDepth
+                this.unirepState.settings.epochTreeDepth
             ).toString()
             const attestations = this.unirepState.getAttestations(epochKey)
             this.transitionedFromAttestations[epochKey] = attestations
@@ -572,7 +522,7 @@ class UserState {
                 this.id.getNullifier(),
                 fromEpoch,
                 nonce,
-                this.unirepState.setting.epochTreeDepth
+                this.unirepState.settings.epochTreeDepth
             ).toString()
             const attestations = this.transitionedFromAttestations[epochKey]
             for (let i = 0; i < attestations?.length; i++) {
@@ -703,7 +653,7 @@ class UserState {
                 this.id.getNullifier(),
                 fromEpoch,
                 nonce,
-                this.unirepState.setting.epochTreeDepth
+                this.unirepState.settings.epochTreeDepth
             )
             let currentHashChain: BigInt = BigInt(0)
 
@@ -736,7 +686,7 @@ class UserState {
                 }
 
                 const attestation = attestations[i]
-                const attesterId: BigInt = attestation.attesterId as BigInt
+                const attesterId: BigInt = attestation.attesterId.toBigInt()
                 const rep = this.getRepByAttester(attesterId as BigInt)
 
                 if (reputationRecords[attesterId.toString()] === undefined) {
@@ -748,18 +698,12 @@ class UserState {
                     )
                 }
 
-                oldPosReps.push(
-                    reputationRecords[attesterId.toString()]['posRep']
-                )
-                oldNegReps.push(
-                    reputationRecords[attesterId.toString()]['negRep']
-                )
+                oldPosReps.push(reputationRecords[attesterId.toString()].posRep)
+                oldNegReps.push(reputationRecords[attesterId.toString()].negRep)
                 oldGraffities.push(
-                    reputationRecords[attesterId.toString()]['graffiti']
+                    reputationRecords[attesterId.toString()].graffiti
                 )
-                oldSignUps.push(
-                    reputationRecords[attesterId.toString()]['signUp']
-                )
+                oldSignUps.push(reputationRecords[attesterId.toString()].signUp)
 
                 // Add UST merkle proof to the list
                 const USTLeafPathElements =
@@ -768,10 +712,10 @@ class UserState {
 
                 // Update attestation record
                 reputationRecords[attesterId.toString()].update(
-                    attestation['posRep'],
-                    attestation['negRep'],
-                    attestation['graffiti'],
-                    attestation['signUp']
+                    attestation.posRep,
+                    attestation.negRep,
+                    attestation.graffiti,
+                    attestation.signUp
                 )
 
                 // Update UST
@@ -786,11 +730,13 @@ class UserState {
 
                 selectors.push(1)
                 attesterIds.push(attesterId)
-                posReps.push(attestation['posRep'] as BigInt)
-                negReps.push(attestation['negRep'] as BigInt)
-                graffities.push(attestation['graffiti'] as BigInt)
-                overwriteGraffities.push(attestation['graffiti'] != BigInt(0))
-                signUps.push(attestation['signUp'] as BigInt)
+                posReps.push(attestation.posRep.toBigInt())
+                negReps.push(attestation.negRep.toBigInt())
+                graffities.push(attestation.graffiti.toBigInt())
+                overwriteGraffities.push(
+                    attestation.graffiti.toBigInt() != BigInt(0)
+                )
+                signUps.push(attestation.signUp.toBigInt())
 
                 // Update current hashchain result
                 const attestationHash = attestation.hash()
@@ -843,7 +789,6 @@ class UserState {
                     BigInt(nonce),
                 ])
             )
-            // finalBlindedUserState.push(hash5([this.id.getNullifier(), fromEpochUserStateTree.getRootHash(), fromEpoch, nonce]))
             blindedHashChain.push(
                 hash5([
                     this.id.getNullifier(),
@@ -859,7 +804,6 @@ class UserState {
         for (let i = 0; i < fromNonces.length; i++) {
             const startIdx = this.numAttestationsPerProof * i
             const endIdx = this.numAttestationsPerProof * (i + 1)
-            // if(fromNonces[i] == toNonces[i] && intermediateUserStateTreeRoots[startIdx] == intermediateUserStateTreeRoots[endIdx]) continue
             processAttestationCircuitInputs.push(
                 stringifyBigInts({
                     epoch: fromEpoch,
@@ -945,11 +889,11 @@ class UserState {
                 processAttestationCircuitInputs[i]
             )
             processAttestationProofs.push({
-                proof: results['proof'],
-                publicSignals: results['publicSignals'],
-                outputBlindedUserState: results['publicSignals'][0],
-                outputBlindedHashChain: results['publicSignals'][1],
-                inputBlindedUserState: results['publicSignals'][2],
+                proof: results.proof,
+                publicSignals: results.publicSignals,
+                outputBlindedUserState: results.publicSignals[0],
+                outputBlindedHashChain: results.publicSignals[1],
+                inputBlindedUserState: results.publicSignals[2],
             })
         }
 
@@ -960,46 +904,46 @@ class UserState {
 
         return {
             startTransitionProof: {
-                proof: startTransitionresults['proof'],
-                publicSignals: startTransitionresults['publicSignals'],
-                blindedUserState: startTransitionresults['publicSignals'][0],
-                blindedHashChain: startTransitionresults['publicSignals'][1],
-                globalStateTreeRoot: startTransitionresults['publicSignals'][2],
+                proof: startTransitionresults.proof,
+                publicSignals: startTransitionresults.publicSignals,
+                blindedUserState: startTransitionresults.publicSignals[0],
+                blindedHashChain: startTransitionresults.publicSignals[1],
+                globalStateTreeRoot: startTransitionresults.publicSignals[2],
             },
             processAttestationProofs: processAttestationProofs,
             finalTransitionProof: {
-                proof: finalProofResults['proof'],
-                publicSignals: finalProofResults['publicSignals'],
-                newGlobalStateTreeLeaf: finalProofResults['publicSignals'][0],
-                epochKeyNullifiers: finalProofResults['publicSignals'].slice(
+                proof: finalProofResults.proof,
+                publicSignals: finalProofResults.publicSignals,
+                newGlobalStateTreeLeaf: finalProofResults.publicSignals[0],
+                epochKeyNullifiers: finalProofResults.publicSignals.slice(
                     1,
                     1 + this.numEpochKeyNoncePerEpoch
                 ),
                 transitionedFromEpoch:
-                    finalProofResults['publicSignals'][
+                    finalProofResults.publicSignals[
                         1 + this.numEpochKeyNoncePerEpoch
                     ],
-                blindedUserStates: finalProofResults['publicSignals'].slice(
+                blindedUserStates: finalProofResults.publicSignals.slice(
                     2 + this.numEpochKeyNoncePerEpoch,
                     4 + this.numEpochKeyNoncePerEpoch
                 ),
                 fromGSTRoot:
-                    finalProofResults['publicSignals'][
+                    finalProofResults.publicSignals[
                         4 + this.numEpochKeyNoncePerEpoch
                     ],
-                blindedHashChains: finalProofResults['publicSignals'].slice(
+                blindedHashChains: finalProofResults.publicSignals.slice(
                     5 + this.numEpochKeyNoncePerEpoch,
                     5 + 2 * this.numEpochKeyNoncePerEpoch
                 ),
                 fromEpochTree:
-                    finalProofResults['publicSignals'][
+                    finalProofResults.publicSignals[
                         5 + 2 * this.numEpochKeyNoncePerEpoch
                     ],
             },
         }
     }
 
-    /*
+    /**
      * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
      */
     private _transition = async (newLeaf: BigInt) => {
@@ -1040,11 +984,11 @@ class UserState {
 
         if (nonceList == undefined)
             nonceList = new Array(
-                this.unirepState.setting.maxReputationBudget
+                this.unirepState.settings.maxReputationBudget
             ).fill(BigInt(-1))
         assert(
-            nonceList.length == this.unirepState.setting.maxReputationBudget,
-            `Length of nonce list should be ${this.unirepState.setting.maxReputationBudget}`
+            nonceList.length == this.unirepState.settings.maxReputationBudget,
+            `Length of nonce list should be ${this.unirepState.settings.maxReputationBudget}`
         )
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(this.id.getNullifier(), epoch, epkNonce)
@@ -1061,7 +1005,11 @@ class UserState {
         const selectors: BigInt[] = []
         const nonceExist = {}
         let repNullifiersAmount = 0
-        for (let i = 0; i < this.unirepState.setting.maxReputationBudget; i++) {
+        for (
+            let i = 0;
+            i < this.unirepState.settings.maxReputationBudget;
+            i++
+        ) {
             if (nonceList[i] !== BigInt(-1)) {
                 assert(
                     nonceExist[nonceList[i].toString()] == undefined,
@@ -1201,4 +1149,4 @@ class UserState {
     }
 }
 
-export { IReputation, IUserStateLeaf, IUserState, Reputation, UserState }
+export { Reputation, UserState }

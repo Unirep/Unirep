@@ -3,7 +3,7 @@ import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepStateFromContract } from '../src'
+import { genUnirepState } from '../src'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
 import { MAX_REPUTATION_BUDGET } from '@unirep/config'
@@ -55,10 +55,7 @@ const verifyReputationProof = async (args: any) => {
         provider
     )
 
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        args.contract
-    )
+    const unirepState = await genUnirepState(provider, args.contract)
 
     // Parse Inputs
     const decodedProof = base64url.decode(

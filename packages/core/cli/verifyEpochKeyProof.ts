@@ -3,7 +3,7 @@ import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepStateFromContract } from '../src'
+import { genUnirepState } from '../src'
 import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
 
@@ -48,10 +48,7 @@ const verifyEpochKeyProof = async (args: any) => {
         provider
     )
 
-    const unirepState = await genUnirepStateFromContract(
-        provider,
-        args.contract
-    )
+    const unirepState = await genUnirepState(provider, args.contract)
 
     const decodedProof = base64url.decode(
         args.proof.slice(epkProofPrefix.length)

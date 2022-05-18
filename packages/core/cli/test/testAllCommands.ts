@@ -8,7 +8,7 @@ import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
-import { genUnirepStateFromContract, UnirepState } from '../../src'
+import { genUnirepState, UnirepState } from '../../src'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 
@@ -94,13 +94,10 @@ describe('test all CLI subcommands', function () {
             )
             unirepContract = getUnirepContract(unirepAddress, provider)
 
-            unirepState = await genUnirepStateFromContract(
-                provider,
-                unirepAddress
-            )
+            unirepState = await genUnirepState(provider, unirepAddress)
 
-            expect(unirepState.setting.epochLength).equal(epochLength)
-            expect(unirepState.setting.attestingFee).equal(attestingFee)
+            expect(unirepState.settings.epochLength).equal(epochLength)
+            expect(unirepState.settings.attestingFee).equal(attestingFee)
         })
     })
 

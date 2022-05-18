@@ -1,6 +1,7 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
+import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
@@ -13,13 +14,22 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
+import { Attestation } from '@unirep/contracts'
 import {
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
 } from '@unirep/config'
 
-import { Attestation, genEpochKey, Reputation, UnirepState } from '../src'
+import {
+    genEpochKey,
+    genUnirepState,
+    genUserState,
+    IUserState,
+    Reputation,
+    UnirepState,
+    UserState,
+} from '../src'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
@@ -119,26 +129,30 @@ const verifyProcessAttestationsProof = async (
 
 const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
     const currentEpoch = unirepState.currentEpoch
-    let reputaitonRecord = {}
+    const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
-        for (let j = 0; j < unirepState.setting.numEpochKeyNoncePerEpoch; j++) {
+        for (
+            let j = 0;
+            j < unirepState.settings.numEpochKeyNoncePerEpoch;
+            j++
+        ) {
             const epk = genEpochKey(id.getNullifier(), i, j)
             const attestations = unirepState.getAttestations(epk.toString())
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
                 if (reputaitonRecord[attesterId] === undefined) {
                     reputaitonRecord[attesterId] = new Reputation(
-                        attestation.posRep as BigInt,
-                        attestation.negRep as BigInt,
-                        attestation.graffiti as BigInt,
-                        attestation.signUp as BigInt
+                        attestation.posRep,
+                        attestation.negRep,
+                        attestation.graffiti,
+                        attestation.signUp
                     )
                 } else {
                     reputaitonRecord[attesterId].update(
-                        attestation.posRep as BigInt,
-                        attestation.negRep as BigInt,
-                        attestation.graffiti as BigInt,
-                        attestation.signUp as BigInt
+                        attestation.posRep,
+                        attestation.negRep,
+                        attestation.graffiti,
+                        attestation.signUp
                     )
                 }
             }
@@ -307,6 +321,69 @@ const genProveSignUpCircuitInput = async (
     return stringifyBigInts(circuitInputs)
 }
 
+const compareStates = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userId: ZkIdentity,
+    savedUserState: IUserState
+) => {
+    const usWithNoStorage = await genUserState(provider, address, userId)
+    const unirepStateWithNoStorage = await genUnirepState(provider, address)
+
+    const usWithStorage = await genUserState(
+        provider,
+        address,
+        userId,
+        savedUserState
+    )
+    const unirepStateWithStorage = await genUnirepState(
+        provider,
+        address,
+        savedUserState.unirepState
+    )
+
+    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
+
+    expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
+    expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
+    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
+        unirepStateWithStorage.toJSON()
+    )
+    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
+        unirepFromJSON.toJSON()
+    )
+
+    return usWithNoStorage.toJSON()
+}
+
+const compareEpochTrees = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userId: ZkIdentity,
+    savedUserState: any,
+    epoch: number
+) => {
+    const usWithNoStorage = await genUserState(provider, address, userId)
+    const epochTree1 = await usWithNoStorage.getUnirepStateEpochTree(epoch)
+
+    const usWithStorage = await genUserState(
+        provider,
+        address,
+        userId,
+        savedUserState
+    )
+    const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
+
+    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
+
+    expect(epochTree1).to.deep.equal(epochTree2)
+    expect(epochTree1).to.deep.equal(epochTree3)
+
+    return usWithNoStorage.toJSON()
+}
+
 export {
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
@@ -326,4 +403,6 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
+    compareStates,
+    compareEpochTrees,
 }
