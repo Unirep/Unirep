@@ -5,10 +5,10 @@ import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 // verify signature use for relayer
 // NOTE: This method not safe, contract may attack by signature replay.
 contract VerifySignature {
-    /*
+    /**
      * Verify if the signer has a valid signature as claimed
      * @param signer The address of user who wants to perform an action
-     * @param siganture The signature signed by the signer
+     * @param signature The signature signed by the signer
      */
     function verifySignature(address signer, bytes memory signature)
         internal

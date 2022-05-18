@@ -159,7 +159,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * User signs up by providing an identity commitment. It also inserts a fresh state
      * leaf into the state tree.
      * if user signs up through an atteser who sets airdrop, Unirep will give the user the airdrop reputation.
@@ -204,14 +204,14 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         nextAttesterId++;
     }
 
-    /*
+    /**
      * Sign up an attester using the address who sends the transaction
      */
     function attesterSignUp() external override {
         _attesterSignUp(msg.sender);
     }
 
-    /*
+    /**
      * Sign up an attester using the claimed address and the signature
      * @param attester The address of the attester who wants to sign up
      * @param signature The signature of the attester
@@ -227,7 +227,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         _attesterSignUp(attester);
     }
 
-    /*
+    /**
      * An attester can set the initial airdrop amount when user signs up through this attester
      * Then the contract inserts an airdropped leaf into the user's user state tree
      * @param amount how much pos rep add to user's leaf
@@ -281,7 +281,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * An attester submit the attestation with a proof index
      * @param attestation The attestation that the attester wants to send to the epoch key
      * @param epochKey The epoch key which receives attestation
@@ -303,7 +303,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * An attester submit the attestation with an epoch key proof via a relayer
      * @param attester The address of the attester
      * @param signature The signature of the attester
@@ -330,7 +330,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * A user should submit an epoch key proof and get a proof index
      * @param input The epoch key proof and the public signals
      */
@@ -358,9 +358,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
-    /*
+    /**
      * An attester submit the airdrop attestation to an epoch key with a sign up proof
-     * @param attestation The attestation that the attester wants to send to the epoch key
      * @param input The epoch key and its proof and the public signals
      */
     function airdropEpochKey(SignUpProof memory input) external payable {
@@ -410,7 +409,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
-    /*
+    /**
      * A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
      * @param input The epoch key and its proof and the public signals
      */
@@ -504,6 +503,9 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
+    /**
+     * Perform an epoch transition, current epoch increases by 1
+     */
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
 
@@ -525,6 +527,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         ].add(gasUsed.mul(tx.gasprice));
     }
 
+    /**
+     * User submit a start user state transition proof
+     * @param blindedUserState The blinded user state that user state transition starts with
+     * @param blindedHashChain The blinded hash chain that user state transition starts with
+     * @param globalStateTree The global state tree from the previous epoch
+     * @param proof The start user state transition proof
+     */
     function startUserStateTransition(
         uint256 blindedUserState,
         uint256 blindedHashChain,
@@ -552,6 +561,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
+    /**
+     * User submit a process attestations proof
+     * @param outputBlindedUserState The output blinded user state that the current proof processes
+     * @param outputBlindedHashChain The output blinded hash chain that the current proof processes
+     * @param inputBlindedUserState The input blinded user state that the proof starts with
+     * @param proof The process attestations proof
+     */
     function processAttestations(
         uint256 outputBlindedUserState,
         uint256 outputBlindedHashChain,
@@ -578,6 +594,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
+    /**
+     * User submit the latest user state transition proof
+     * @param proof The proof and the public signals of the user state transition proof
+     * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
+     */
     function updateUserStateRoot(
         UserTransitionProof memory proof,
         uint256[] memory proofIndexRecords
@@ -627,6 +648,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
+    /**
+     * Verify epoch transition proof
+     * @param input The proof and the public signals of the epoch key proof
+     */
     function verifyEpochKeyValidity(EpochKeyProof memory input)
         external
         view
@@ -665,6 +690,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         return proof.isValid;
     }
 
+    /**
+     * Verify start user state transition proof
+     * @param blindedUserState The blinded user state of the proof
+     * @param blindedHashChain The blinded hash chain of the proof
+     * @param GSTRoot The global state tree of the proof
+     * @param _proof The start user state transition proof
+     */
     function verifyStartTransitionProof(
         uint256 blindedUserState,
         uint256 blindedHashChain,
@@ -698,6 +730,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         return proof.isValid;
     }
 
+    /**
+     * Verify process attestations proof
+     * @param outputBlindedUserState The output blinded user state of the proof
+     * @param outputBlindedHashChain The output blinded hash chain of the proof
+     * @param inputBlindedUserState The input blinded user state of the proof
+     * @param _proof The process attestation proof
+     */
     function verifyProcessAttestationProof(
         uint256 outputBlindedUserState,
         uint256 outputBlindedHashChain,
@@ -730,6 +769,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         return proof.isValid;
     }
 
+    /**
+     * Verify user state transition proof
+     * @param input The proof and the public signals of the user state transition proof
+     */
     function verifyUserStateTransition(UserTransitionProof memory input)
         external
         view
@@ -784,6 +827,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         return proof.isValid;
     }
 
+    /**
+     * Verify reputation proof
+     * @param input The proof and the public signals of the reputation proof
+     */
     function verifyReputation(ReputationProof memory input)
         external
         view
@@ -830,6 +877,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         return proof.isValid;
     }
 
+    /**
+     * Verify user sign up proof
+     * @param input The proof and the public signals of the user sign up proof
+     */
     function verifyUserSignUp(SignUpProof memory input)
         external
         view
@@ -867,9 +918,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         return proof.isValid;
     }
 
-    /*
+    /**
      * A helper function to convert an array of 8 uint256 values into the a, b,
      * and c array values that the zk-SNARK verifier's verifyProof accepts.
+     * @param proof The 8-length array of the proof
      */
     function unpackProof(uint256[8] memory proof)
         public
@@ -887,7 +939,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * Functions to burn fee and collect compenstation.
      * TODO: Should use attester fee, shouldn't burn like this.
      */
