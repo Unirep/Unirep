@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { Circuit, verifyProof } from '@unirep/circuits'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
+import { Attestation } from '@unirep/contracts'
 import {
     ATTESTTING_FEE,
     EPOCH_LENGTH,
@@ -42,7 +43,7 @@ describe('User State', async function () {
     let epoch = 1
     const signedUpAttesterId = Math.ceil(Math.random() * 10)
     const signedUpAirdrop = Math.ceil(Math.random() * 10)
-    const attestationsToEpochKey: { [key: string]: string[] } = {}
+    const attestationsToEpochKey: { [key: string]: Attestation[] } = {}
 
     before(async () => {
         unirepState = new UnirepState(setting)
@@ -68,7 +69,7 @@ describe('User State', async function () {
                     randomAirdropAmount
                 )
 
-                const userObj = JSON.parse(userState.toJSON())
+                const userObj = userState.toJSON()
                 expect(
                     userObj.hasSignedUp,
                     'User state cannot be changed (hasSignedUp)'
@@ -121,7 +122,7 @@ describe('User State', async function () {
                 signedUpAirdrop
             )
 
-            const userObj = JSON.parse(userState.toJSON())
+            const userObj = userState.toJSON()
             expect(
                 userObj.hasSignedUp,
                 'User state should be changed (hasSignedUp)'
@@ -161,7 +162,7 @@ describe('User State', async function () {
                 const randomCommitment = genRandomSalt()
                 await userState.signUp(epoch, randomCommitment)
 
-                const userObj = JSON.parse(userState.toJSON())
+                const userObj = userState.toJSON()
                 expect(
                     userObj.hasSignedUp,
                     'User state should be changed (hasSignedUp)'
@@ -266,7 +267,7 @@ describe('User State', async function () {
                     const attestation = genRandomAttestation()
                     userState.addAttestation(epochKey.toString(), attestation)
                     attestationsToEpochKey[epochKey.toString()].push(
-                        attestation.toJSON()
+                        attestation
                     )
                 }
             }
@@ -290,9 +291,7 @@ describe('User State', async function () {
                 for (let j = 0; j < attestNum; j++) {
                     const attestation = genRandomAttestation()
                     userState.addAttestation(userEpk.toString(), attestation)
-                    attestationsToEpochKey[userEpk.toString()].push(
-                        attestation.toJSON()
-                    )
+                    attestationsToEpochKey[userEpk.toString()].push(attestation)
                 }
             }
         })
@@ -315,10 +314,9 @@ describe('User State', async function () {
                     epochKeys[i]
                 )
                 for (let j = 0; j < unirepAttestations.length; j++) {
-                    expect(
-                        unirepAttestations[j].toJSON(),
-                        'Query attestations from Unirep state failed'
-                    ).equal(attestationsToEpochKey[epochKeys[i]][j])
+                    expect(JSON.stringify(unirepAttestations[j])).to.equal(
+                        JSON.stringify(attestationsToEpochKey[epochKeys[i]][j])
+                    )
                 }
             }
         })
@@ -697,7 +695,7 @@ describe('User State', async function () {
                     epkNullifiers
                 )
 
-                const userObj = JSON.parse(userState.toJSON())
+                const userObj = userState.toJSON()
                 expect(
                     userObj.latestTransitionedEpoch,
                     'User state should not be changed (latestTransitionedEpoch)'
@@ -788,7 +786,7 @@ describe('User State', async function () {
                 GSTLeaf,
                 epkNullifiers
             )
-            const userObj = JSON.parse(userState.toJSON())
+            const userObj = userState.toJSON()
             expect(
                 Number(userObj.latestTransitionedEpoch),
                 `User state mismatches current epoch: ${epoch}`
@@ -827,25 +825,23 @@ describe('User State', async function () {
                 ).toString()
                 const attestations = attestationsToEpochKey[userEpk.toString()]
                 for (const attestation of attestations) {
-                    const attesterId_ = BigInt(
-                        JSON.parse(attestation).attesterId
-                    )
+                    const attesterId_ = attestation.attesterId
                     if (
                         reputationRecord[attesterId_.toString()] === undefined
                     ) {
                         reputationRecord[attesterId_.toString()] =
                             new Reputation(
-                                BigInt(JSON.parse(attestation).posRep),
-                                BigInt(JSON.parse(attestation).negRep),
-                                BigInt(JSON.parse(attestation).graffiti),
-                                BigInt(JSON.parse(attestation).signUp)
+                                attestation.posRep,
+                                attestation.negRep,
+                                attestation.graffiti,
+                                attestation.signUp
                             )
                     } else {
                         reputationRecord[attesterId_.toString()].update(
-                            BigInt(JSON.parse(attestation).posRep),
-                            BigInt(JSON.parse(attestation).negRep),
-                            BigInt(JSON.parse(attestation).graffiti),
-                            BigInt(JSON.parse(attestation).signUp)
+                            attestation.posRep,
+                            attestation.negRep,
+                            attestation.graffiti,
+                            attestation.signUp
                         )
                     }
                 }
@@ -871,7 +867,7 @@ describe('User State', async function () {
                     epkNullifiers
                 )
 
-                const userObj = JSON.parse(userState.toJSON())
+                const userObj = userState.toJSON()
 
                 expect(
                     userObj.latestTransitionedEpoch,

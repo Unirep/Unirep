@@ -1,12 +1,5 @@
 import { ethers } from 'ethers'
 import { deployUnirep } from '@unirep/contracts'
-import {
-    EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-    USER_STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
 
 import {
     DEFAULT_ATTESTING_FEE,

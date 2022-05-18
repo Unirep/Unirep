@@ -9,6 +9,7 @@ import {
     verifyProof,
 } from '@unirep/circuits'
 import {
+    Attestation,
     computeProcessAttestationsProofHash,
     computeStartTransitionProofHash,
     deployUnirep,
@@ -18,14 +19,14 @@ import {
     Unirep,
     UserTransitionProof,
 } from '@unirep/contracts'
-import {
-    Attestation,
-    genUserStateFromContract,
-    genUserStateFromParams,
-    UserState,
-} from '../../src'
-import { genRandomAttestation } from '../utils'
 import { EPOCH_LENGTH } from '@unirep/config'
+
+import { genUserState, IUserState, UserState } from '../../src'
+import {
+    compareEpochTrees,
+    compareStates,
+    genRandomAttestation,
+} from '../utils'
 
 describe('Generate user state', function () {
     this.timeout(0)
@@ -35,8 +36,8 @@ describe('Generate user state', function () {
     const secondUser = 1
     let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
-    let savedUserState: string
-    let secondUserState: string
+    let savedUserState: IUserState
+    let secondUserState: IUserState
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
@@ -87,7 +88,7 @@ describe('Generate user state', function () {
             userIds.push(id)
             userCommitments.push(commitment)
 
-            const initUserState = await genUserStateFromContract(
+            const initUserState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser]
@@ -112,63 +113,17 @@ describe('Generate user state', function () {
             const _commitment = (args?.identityCommitment).toBigInt()
             expect(_commitment).equal(userCommitments[firstUser])
 
-            let startTime = new Date().getTime()
-            users[firstUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
-                JSON.parse(initUserState.toJSON())
+                initUserState.toJSON()
             )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-            expect(restoredUserState.toJSON()).equal(users[firstUser].toJSON())
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
-                userIds[firstUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            expect(restoredUserStateFromParams.toJSON()).equal(
-                users[firstUser].toJSON()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            expect(users[firstUser].latestTransitionedEpoch).equal(
+            expect(currentUserState.latestTransitionedEpoch).equal(
                 latestTransitionedToEpoch
             )
-            console.log(
-                `First user signs up with commitment (${commitment}), in epoch ${users[firstUser].latestTransitionedEpoch} and GST leaf ${users[firstUser].latestGSTLeafIndex}`
-            )
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[firstUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[firstUser].toJSON(4)
+
+            savedUserState = currentUserState
         })
 
         it('users sign up events', async () => {
@@ -182,23 +137,21 @@ describe('Generate user state', function () {
             )
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
-            users[secondUser] = await genUserStateFromContract(
+            users[secondUser] = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser]
             )
-            console.log('----------- second user state ---------------')
-            console.log(users[secondUser].toJSON(4))
-            console.log('----------- end of second user state ---------------')
+
             secondUserState = users[secondUser].toJSON()
         })
     })
 
     describe('Attestation submitted event', () => {
         it('epoch key proof event', async () => {
-            const userState = genUserStateFromParams(
+            const userState = UserState.fromJSON(
                 userIds[secondUser],
-                JSON.parse(secondUserState)
+                secondUserState
             )
             const epochKeyNonce = 2
             const { proof, publicSignals } =
@@ -234,67 +187,20 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after epoch key proof event', async () => {
-            let startTime = new Date().getTime()
-            users[firstUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
-                JSON.parse(savedUserState)
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-            expect(restoredUserState.toJSON()).equal(users[firstUser].toJSON())
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
-                userIds[firstUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            expect(restoredUserStateFromParams.toJSON()).equal(
-                users[firstUser].toJSON()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
+                savedUserState
             )
 
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[firstUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[firstUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[firstUser].toJSON(4)
+            savedUserState = currentUserState
         })
 
         it('reputation proof event', async () => {
-            const userState = genUserStateFromParams(
+            const userState = UserState.fromJSON(
                 userIds[firstUser],
-                JSON.parse(savedUserState)
+                savedUserState
             )
             const epochKeyNonce = 1
             const minRep = 0
@@ -336,67 +242,20 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after reputation proof event', async () => {
-            let startTime = new Date().getTime()
-            users[firstUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
-                JSON.parse(savedUserState)
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-            expect(restoredUserState.toJSON()).equal(users[firstUser].toJSON())
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
-                userIds[firstUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            expect(restoredUserStateFromParams.toJSON()).equal(
-                users[firstUser].toJSON()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
+                savedUserState
             )
 
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[firstUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[firstUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[firstUser].toJSON(4)
+            savedUserState = currentUserState
         })
 
         it('airdrop proof event', async () => {
-            const userState = genUserStateFromParams(
+            const userState = UserState.fromJSON(
                 userIds[firstUser],
-                JSON.parse(savedUserState)
+                savedUserState
             )
             const { proof, publicSignals } = await userState.genUserSignUpProof(
                 attesterId
@@ -419,61 +278,14 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after airdrop proof event', async () => {
-            let startTime = new Date().getTime()
-            users[firstUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
+            const currentUserState = await compareStates(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser],
-                JSON.parse(savedUserState)
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-            expect(restoredUserState.toJSON()).equal(users[firstUser].toJSON())
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
-                userIds[firstUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            expect(restoredUserStateFromParams.toJSON()).equal(
-                users[firstUser].toJSON()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
+                savedUserState
             )
 
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[firstUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[firstUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[firstUser].toJSON(4)
+            savedUserState = currentUserState
         })
     })
 
@@ -490,76 +302,21 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after epoch transition', async () => {
-            let startTime = new Date().getTime()
-            users[firstUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser],
-                JSON.parse(savedUserState)
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
             const epoch = 1
-            const epochTreeRoot = await users[
-                firstUser
-            ].getUnirepStateEpochTree(epoch)
-            const restoredEpochTreeRoot =
-                await restoredUserState.getUnirepStateEpochTree(epoch)
-            expect(restoredEpochTreeRoot.toString()).equal(
-                epochTreeRoot.toString()
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
+            const currentUserState = await compareEpochTrees(
+                hardhatEthers.provider,
+                unirepContract.address,
                 userIds[firstUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            const restoredEpochTreeRootFromParams =
-                await restoredUserStateFromParams.getUnirepStateEpochTree(epoch)
-            expect(restoredEpochTreeRootFromParams.toString()).equal(
-                epochTreeRoot.toString()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
+                savedUserState,
+                epoch
             )
 
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[firstUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[firstUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[firstUser].toJSON(4)
+            savedUserState = currentUserState
         })
 
         it('user state transition', async () => {
             const proofIndexes: ethers.BigNumber[] = []
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser]
@@ -705,71 +462,16 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after user state transition', async () => {
-            let startTime = new Date().getTime()
-            users[firstUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[firstUser],
-                JSON.parse(savedUserState)
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
             const epoch = 1
-            const epochTreeRoot = await users[
-                firstUser
-            ].getUnirepStateEpochTree(epoch)
-            const restoredEpochTreeRoot =
-                await restoredUserState.getUnirepStateEpochTree(epoch)
-            expect(restoredEpochTreeRoot.toString()).equal(
-                epochTreeRoot.toString()
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
+            const currentUserState = await compareEpochTrees(
+                hardhatEthers.provider,
+                unirepContract.address,
                 userIds[firstUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            const restoredEpochTreeRootFromParams =
-                await restoredUserStateFromParams.getUnirepStateEpochTree(epoch)
-            expect(restoredEpochTreeRootFromParams.toString()).equal(
-                epochTreeRoot.toString()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
+                savedUserState,
+                epoch
             )
 
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[firstUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[firstUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[firstUser].toJSON(4)
+            savedUserState = currentUserState
         })
 
         it('epoch transition', async () => {
@@ -783,75 +485,22 @@ describe('Generate user state', function () {
             expect(receipt.status).equal(1)
         })
 
-        it('restored user state should match the user state after user state transition', async () => {
-            let startTime = new Date().getTime()
-            users[secondUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[secondUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
+        it('restored user state should match the user state after epoch transition', async () => {
+            const epoch = 2
+            const currentUserState = await compareEpochTrees(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser],
-                JSON.parse(secondUserState)
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-            const epoch = 1
-            const epochTreeRoot = await users[
-                secondUser
-            ].getUnirepStateEpochTree(epoch)
-            const restoredEpochTreeRoot =
-                await restoredUserState.getUnirepStateEpochTree(epoch)
-            expect(restoredUserState.toJSON()).equal(users[secondUser].toJSON())
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
-                userIds[secondUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            const restoredEpochTreeRootFromParams =
-                await restoredUserStateFromParams.getUnirepStateEpochTree(epoch)
-            expect(restoredUserStateFromParams.toJSON()).equal(
-                users[secondUser].toJSON()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
+                secondUserState,
+                epoch
             )
 
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[secondUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[secondUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[secondUser].toJSON(4)
+            savedUserState = currentUserState
         })
 
         it('user state transition', async () => {
             const proofIndexes: ethers.BigNumber[] = []
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser]
@@ -997,71 +646,14 @@ describe('Generate user state', function () {
         })
 
         it('restored user state should match the user state after user state transition', async () => {
-            let startTime = new Date().getTime()
-            users[secondUser] = await genUserStateFromContract(
-                hardhatEthers.provider,
-                unirepContract.address,
-                userIds[secondUser]
-            )
-            let endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserState = await genUserStateFromContract(
+            const epoch = 2
+            await compareEpochTrees(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser],
-                JSON.parse(secondUserState)
+                secondUserState,
+                epoch
             )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state from contract with a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-            const epoch = 1
-            const epochTreeRoot = await users[
-                secondUser
-            ].getUnirepStateEpochTree(epoch)
-            const restoredEpochTreeRoot =
-                await restoredUserState.getUnirepStateEpochTree(epoch)
-            expect(restoredEpochTreeRoot.toString()).equal(
-                epochTreeRoot.toString()
-            )
-
-            startTime = new Date().getTime()
-            const restoredUserStateFromParams = genUserStateFromParams(
-                userIds[secondUser],
-                JSON.parse(restoredUserState.toJSON())
-            )
-            const restoredEpochTreeRootFromParams =
-                await restoredUserStateFromParams.getUnirepStateEpochTree(epoch)
-            expect(restoredEpochTreeRootFromParams.toString()).equal(
-                epochTreeRoot.toString()
-            )
-            endTime = new Date().getTime()
-            console.log(
-                `Gen user state purely from a restored state time: ${
-                    endTime - startTime
-                } ms (${Math.floor((endTime - startTime) / 1000)} s)`
-            )
-
-            const unirepEpoch = await unirepContract.currentEpoch()
-            const currentEpoch = users[secondUser].getUnirepStateCurrentEpoch()
-            expect(currentEpoch).equal(unirepEpoch)
-            console.log(`successfully update user state`)
-            console.log(
-                '----------------------User State----------------------'
-            )
-            console.log(users[secondUser].toJSON(4))
-            console.log(
-                '------------------------------------------------------'
-            )
-            savedUserState = users[secondUser].toJSON(4)
         })
     })
 })

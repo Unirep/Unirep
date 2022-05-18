@@ -8,7 +8,7 @@ import {
 import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genReputationNullifier, genUserStateFromContract } from '../src'
+import { genReputationNullifier, genUserState } from '../src'
 import {
     identityPrefix,
     reputationPublicSignalsPrefix,
@@ -78,11 +78,7 @@ const genReputationProof = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Gen User State
-    const userState = await genUserStateFromContract(
-        provider,
-        args.contract,
-        id
-    )
+    const userState = await genUserState(provider, args.contract, id)
 
     // Unirep contract
     const unirepContract: Unirep = UnirepFactory.connect(

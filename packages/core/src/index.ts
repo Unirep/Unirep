@@ -1,19 +1,15 @@
 import {
-    Attestation,
-    IAttestation,
+    IReputation,
     IEpochTreeLeaf,
+    IUserStateLeaf,
     ISettings,
     IUnirepState,
-    UnirepState,
-} from './UnirepState'
-
-import {
-    IReputation,
-    IUserStateLeaf,
     IUserState,
-    Reputation,
-    UserState,
-} from './UserState'
+} from './interfaces'
+
+import Reputation from './Reputation'
+import UnirepState from './UnirepState'
+import UserState from './UserState'
 
 import {
     defaultUserStateLeaf,
@@ -34,10 +30,8 @@ import {
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
-    genUnirepStateFromContract,
-    genUnirepStateFromParams,
-    genUserStateFromContract,
-    genUserStateFromParams,
+    genUnirepState,
+    genUserState,
 } from './utils'
 
 import {
@@ -46,8 +40,6 @@ import {
 } from '../config/nullifierDomainSeparator'
 
 export {
-    Attestation,
-    IAttestation,
     IEpochTreeLeaf,
     ISettings,
     IUnirepState,
@@ -75,10 +67,8 @@ export {
     genEpochKeyNullifier,
     genReputationNullifier,
     genNewSMT,
-    genUnirepStateFromContract,
-    genUnirepStateFromParams,
-    genUserStateFromContract,
-    genUserStateFromParams,
+    genUnirepState,
+    genUserState,
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
 }

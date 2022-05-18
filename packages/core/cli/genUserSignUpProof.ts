@@ -7,7 +7,7 @@ import {
 } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserStateFromContract } from '../src'
+import { genUserState } from '../src'
 import {
     identityPrefix,
     signUpProofPrefix,
@@ -55,11 +55,7 @@ const genUserSignUpProof = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Gen user sign up proof
-    const userState = await genUserStateFromContract(
-        provider,
-        args.contract,
-        id
-    )
+    const userState = await genUserState(provider, args.contract, id)
     const attesterId = BigInt(args.attester_id)
     const results = await userState.genUserSignUpProof(attesterId)
 

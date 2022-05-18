@@ -8,10 +8,11 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
+
 import {
     computeInitUserStateRoot,
-    genUnirepStateFromContract,
-    genUserStateFromContract,
+    genUnirepState,
+    genUserState,
     Reputation,
 } from '../../src'
 import { genNewGST } from '../utils'
@@ -77,7 +78,7 @@ describe('User sign up events in Unirep User State', function () {
     describe('Init User State', async () => {
         it('check User state matches the contract', async () => {
             const id = new ZkIdentity()
-            const initUnirepState = await genUserStateFromContract(
+            const initUnirepState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -115,7 +116,7 @@ describe('User sign up events in Unirep User State', function () {
                     unirepContractCalledByAttester.userSignUp(commitment)
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
@@ -162,7 +163,7 @@ describe('User sign up events in Unirep User State', function () {
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
-                const userState = await genUserStateFromContract(
+                const userState = await genUserState(
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
@@ -186,7 +187,7 @@ describe('User sign up events in Unirep User State', function () {
         it('Sign up users more than contract capacity will not affect Unirep state', async () => {
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const userStateBefore = await genUserStateFromContract(
+            const userStateBefore = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -199,7 +200,7 @@ describe('User sign up events in Unirep User State', function () {
                 'Unirep: maximum number of user signups reached'
             )
 
-            const userState = await genUserStateFromContract(
+            const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
@@ -209,7 +210,7 @@ describe('User sign up events in Unirep User State', function () {
         })
 
         it('Check GST roots match Unirep state', async () => {
-            const unirepState = await genUnirepStateFromContract(
+            const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
