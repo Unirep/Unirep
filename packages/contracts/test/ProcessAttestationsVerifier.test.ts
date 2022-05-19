@@ -13,9 +13,8 @@ import {
     deployUnirep,
     Unirep,
 } from '../src'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+import config from '../src/config'
 
-NUM_ATTESTATIONS_PER_PROOF
 describe('Process attestation circuit', function () {
     this.timeout(300000)
 
@@ -79,7 +78,7 @@ describe('Process attestation circuit', function () {
 
     it('successfully process zero attestations', async () => {
         let zeroSelectors: number[] = []
-        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
+        for (let i = 0; i < config.numAttestationsPerProof; i++) {
             zeroSelectors.push(0)
         }
         const { circuitInputs } = await genProcessAttestationsCircuitInput(

@@ -11,20 +11,18 @@ import {
 } from '@unirep/crypto'
 
 import {
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
-} from '@unirep/config'
-
-import { genEpochKeyCircuitInput, genInputForContract } from './utils'
+    genEpochKeyCircuitInput,
+    genInputForContract
+} from './utils'
 import { EpochKeyProof, deployUnirep, Unirep } from '../src'
+import config from '../src/config'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
 
     let ZERO_VALUE = 0
 
-    const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
+    const maxEPK = BigInt(2 ** config.epochTreeDepth)
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
@@ -38,7 +36,7 @@ describe('Verify Epoch Key verifier', function () {
         accounts = await hardhatEthers.getSigners()
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
-        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH, ZERO_VALUE, 2)
+        tree = new IncrementalMerkleTree(config.globalStateTreeDepth, ZERO_VALUE, 2)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
@@ -54,7 +52,7 @@ describe('Verify Epoch Key verifier', function () {
 
     it('Valid epoch key should pass check', async () => {
         // Check if every valid nonce works
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
             const n = i
             const circuitInputs = genEpochKeyCircuitInput(
                 id,
@@ -148,7 +146,7 @@ describe('Verify Epoch Key verifier', function () {
     })
 
     it('Invalid epoch should not pass check', async () => {
-        const invalidNonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        const invalidNonce = config.numEpochKeyNoncePerEpoch
         const invalidCircuitInputs = genEpochKeyCircuitInput(
             id,
             tree,

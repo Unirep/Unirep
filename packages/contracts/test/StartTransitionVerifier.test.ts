@@ -9,7 +9,6 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { CircuitName } from '@unirep/circuits'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 import {
     genStartTransitionCircuitInput,
@@ -17,6 +16,7 @@ import {
     genInputForContract,
 } from './utils'
 import { computeStartTransitionProofHash, deployUnirep, Unirep } from '../src'
+import config from '../src/config'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -47,7 +47,7 @@ describe('User State Transition circuits', function () {
 
             // Global state tree
             GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                config.globalStateTreeDepth,
                 GSTZERO_VALUE,
                 2
             )

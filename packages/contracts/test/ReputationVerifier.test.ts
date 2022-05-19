@@ -4,11 +4,7 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { CircuitName } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
-import {
-    EPOCH_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-    USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+
 import {
     genEpochKey,
     genInputForContract,
@@ -17,6 +13,7 @@ import {
 } from './utils'
 import { deployUnirep, ReputationProof } from '../src'
 import { Unirep } from '../typechain'
+import config from '../src/config'
 
 describe('Verify reputation verifier', function () {
     this.timeout(30000)
@@ -48,11 +45,11 @@ describe('Verify reputation verifier', function () {
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(
-                Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
+                Math.random() * (2 ** config.userStateTreeDepth - 1)
             )
             while (reputationRecords[attesterId] !== undefined)
                 attesterId = Math.floor(
-                    Math.random() * 2 ** USER_STATE_TREE_DEPTH
+                    Math.random() * 2 ** config.userStateTreeDepth
                 )
             const graffitiPreImage = genRandomSalt()
             reputationRecords[attesterId] = new Reputation(
@@ -127,7 +124,7 @@ describe('Verify reputation verifier', function () {
             circuitInputs
         )
         // random reputation nullifiers
-        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
+        for (let i = 0; i < config.maxReputationBudget; i++) {
             input.repNullifiers[i] = genRandomSalt() as BigNumberish
         }
         const isProofValid = await unirepContract.verifyReputation(input)
@@ -160,8 +157,7 @@ describe('Verify reputation verifier', function () {
         const wrongEpochKey = genEpochKey(
             user.getNullifier(),
             epoch,
-            nonce + 1,
-            EPOCH_TREE_DEPTH
+            nonce + 1
         )
         const circuitInputs = await genReputationCircuitInput(
             user,
@@ -302,7 +298,7 @@ describe('Verify reputation verifier', function () {
         )
         const wrongNullifiers = input.repNullifiers.slice(
             1,
-            MAX_REPUTATION_BUDGET
+            config.maxReputationBudget
         )
         input.repNullifiers = wrongNullifiers
         await expect(

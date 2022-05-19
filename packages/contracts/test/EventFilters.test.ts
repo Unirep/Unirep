@@ -11,11 +11,6 @@ import {
 } from '@unirep/crypto'
 
 import {
-    GLOBAL_STATE_TREE_DEPTH,
-    EPOCH_LENGTH,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/config'
-import {
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
@@ -27,6 +22,7 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
+import config from '../src/config'
 import {
     computeProcessAttestationsProofHash,
     computeStartTransitionProofHash,
@@ -81,7 +77,7 @@ describe('EventFilters', () => {
         attesterId = await unirepContract.attesters(attesterAddress)
 
         tree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
+            config.globalStateTreeDepth,
             GSTZERO_VALUE,
             2
         )
@@ -267,7 +263,7 @@ describe('EventFilters', () => {
 
     it('submit user state transition proofs should success', async () => {
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await hardhatEthers.provider.send('evm_increaseTime', [config.epochLength])
         // Begin epoch transition
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
@@ -329,7 +325,7 @@ describe('EventFilters', () => {
                 console.log('reputation proof event')
                 const args = repProofEvent[0]?.args?.proof
                 expect(args?.repNullifiers.length).to.equal(
-                    MAX_REPUTATION_BUDGET
+                    config.maxReputationBudget
                 )
                 const isValid = await unirepContract.verifyReputation(args)
                 expect(isValid).equal(true)

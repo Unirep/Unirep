@@ -11,12 +11,6 @@ import {
 import { CircuitName } from '@unirep/circuits'
 
 import {
-    GLOBAL_STATE_TREE_DEPTH,
-    EPOCH_LENGTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
-
-import {
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
@@ -26,7 +20,9 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
+import contractConfig from '../src/config'
 import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import config from '../src/config'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -61,7 +57,7 @@ describe('Epoch Transition', function () {
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
         const tree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
+            config.globalStateTreeDepth,
             ZERO_VALUE,
             2
         )
@@ -141,7 +137,7 @@ describe('Epoch Transition', function () {
         let epoch = await unirepContract.currentEpoch()
 
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await hardhatEthers.provider.send('evm_increaseTime', [contractConfig.epochLength])
         // Assert no epoch transition compensation is dispensed to volunteer
         expect(
             await unirepContract.epochTransitionCompensation(attesterAddress)
@@ -179,7 +175,7 @@ describe('Epoch Transition', function () {
 
         // Global state tree
         GSTree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
+            config.globalStateTreeDepth,
             GSTZERO_VALUE,
             2
         )
@@ -243,14 +239,14 @@ describe('Epoch Transition', function () {
     })
 
     it('submit process attestations proofs should succeed', async () => {
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
             const prooftNum = Math.ceil(Math.random() * 5)
             let toNonce = i
             for (let j = 0; j < prooftNum; j++) {
                 // If it is the end of attestations of the epoch key, then the next epoch key nonce increased by one
                 if (j == prooftNum - 1) toNonce = i + 1
                 // If it it the maximum epoch key nonce, then the next epoch key nonce should not increase
-                if (i == NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1) toNonce = i
+                if (i == config.numEpochKeyNoncePerEpoch - 1) toNonce = i
                 const { circuitInputs } =
                     await genProcessAttestationsCircuitInput(
                         userId,
@@ -333,7 +329,7 @@ describe('Epoch Transition', function () {
         let epoch = await unirepContract.currentEpoch()
 
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await hardhatEthers.provider.send('evm_increaseTime', [contractConfig.epochLength])
         // Begin epoch transition
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()
