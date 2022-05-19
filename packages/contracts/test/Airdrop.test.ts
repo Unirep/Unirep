@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 
 import {
     Reputation,
@@ -112,7 +112,7 @@ describe('Airdrop', function () {
                 minPosRep
             )
             const isValid = await genProofAndVerify(
-                Circuit.proveReputation,
+                CircuitName.proveReputation,
                 circuitInputs
             )
             expect(isValid, 'Verify reputation proof off-chain failed').to.be
@@ -182,7 +182,7 @@ describe('Airdrop', function () {
                 minPosRep
             )
             const isRepProofValid = await genProofAndVerify(
-                Circuit.proveReputation,
+                CircuitName.proveReputation,
                 repProofCircuitInputs
             )
             expect(isRepProofValid, 'Verify reputation proof off-chain failed')
@@ -197,7 +197,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const isSignUpProofValid = await genProofAndVerify(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             expect(
@@ -214,7 +214,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const input = await genInputForContract(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
@@ -243,7 +243,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const input = await genInputForContract(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[2])
@@ -263,7 +263,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const input = await genInputForContract(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[1])
@@ -283,7 +283,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const input = await genInputForContract(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
@@ -302,7 +302,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const input = await genInputForContract(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
@@ -326,7 +326,7 @@ describe('Airdrop', function () {
                 attesterId_
             )
             const input = await genInputForContract(
-                Circuit.proveUserSignUp,
+                CircuitName.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])

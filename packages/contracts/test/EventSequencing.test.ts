@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import circuit from '@unirep/circuits'
 import {
     EPOCH_LENGTH,
     MAX_REPUTATION_BUDGET,
@@ -68,7 +68,7 @@ describe('EventSequencing', () => {
         let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         let epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            circuit.formatProofForSnarkjsVerification(proof)
         )
         tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
         receipt = await tx.wait()
@@ -216,7 +216,7 @@ describe('EventSequencing', () => {
         publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            circuit.formatProofForSnarkjsVerification(proof)
         )
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,

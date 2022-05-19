@@ -5,12 +5,7 @@ import assert from 'assert'
 import { ethers, BigNumberish } from 'ethers'
 import Keyv from 'keyv'
 import * as crypto from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    genProofAndPublicSignals,
-    verifyProof,
-} from '@unirep/circuits'
+import UnirepCircuit, { CircuitName } from '@unirep/circuits'
 import {
     Attestation,
     EpochKeyProof,
@@ -27,7 +22,7 @@ import {
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
 import { SparseMerkleTree } from '@unirep/crypto'
-import { IncrementalQuinTree } from 'maci-crypto'
+import { zkFilesPath } from '../src/config'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -706,33 +701,33 @@ const genProveSignUpCircuitInput = async (
 }
 
 const formatProofAndPublicSignals = (
-    circuit: Circuit,
+    circuit: CircuitName,
     proof: crypto.SnarkProof,
     publicSignals: any[]
 ) => {
     let result
-    const formattedProof: any[] = formatProofForVerifierContract(proof)
-    if (circuit === Circuit.proveReputation) {
+    const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(proof)
+    if (circuit === CircuitName.proveReputation) {
         result = new ReputationProof(publicSignals, proof)
-    } else if (circuit === Circuit.verifyEpochKey) {
+    } else if (circuit === CircuitName.verifyEpochKey) {
         result = new EpochKeyProof(publicSignals, proof)
-    } else if (circuit === Circuit.proveUserSignUp) {
+    } else if (circuit === CircuitName.proveUserSignUp) {
         result = new SignUpProof(publicSignals, proof)
-    } else if (circuit === Circuit.startTransition) {
+    } else if (circuit === CircuitName.startTransition) {
         result = {
             blindedUserState: publicSignals[0],
             blindedHashChain: publicSignals[1],
             GSTRoot: publicSignals[2],
             proof: formattedProof,
         }
-    } else if (circuit === Circuit.processAttestations) {
+    } else if (circuit === CircuitName.processAttestations) {
         result = {
             outputBlindedUserState: publicSignals[0],
             outputBlindedHashChain: publicSignals[1],
             inputBlindedUserState: publicSignals[2],
             proof: formattedProof,
         }
-    } else if (circuit === Circuit.userStateTransition) {
+    } else if (circuit === CircuitName.userStateTransition) {
         result = new UserTransitionProof(publicSignals, proof)
     } else {
         result = publicSignals.concat([formattedProof])
@@ -740,9 +735,11 @@ const formatProofAndPublicSignals = (
     return result
 }
 
-const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
+const genProofAndVerify = async (circuit: CircuitName, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
+    console.log(zkFilesPath)
+    const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+        zkFilesPath,
         circuit,
         circuitInputs
     )
@@ -752,13 +749,19 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
             (endTime - startTime) / 1000
         )} s)`
     )
-    const isValid = await verifyProof(circuit, proof, publicSignals)
+    const isValid = await UnirepCircuit.verifyProof(
+        zkFilesPath,
+        circuit, 
+        proof, 
+        publicSignals
+    )
     return isValid
 }
 
-const genInputForContract = async (circuit: Circuit, circuitInputs) => {
+const genInputForContract = async (circuit: CircuitName, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
+    const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+        zkFilesPath,
         circuit,
         circuitInputs
     )

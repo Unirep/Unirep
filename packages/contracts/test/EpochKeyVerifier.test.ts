@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import {
     genRandomSalt,
     hashLeftRight,
@@ -66,7 +66,7 @@ describe('Verify Epoch Key verifier', function () {
             )
 
             input = await genInputForContract(
-                Circuit.verifyEpochKey,
+                CircuitName.verifyEpochKey,
                 circuitInputs
             )
             const isValid = await input.verify()
@@ -99,7 +99,7 @@ describe('Verify Epoch Key verifier', function () {
         invalidCircuitInputs.epoch_key = invalidEpochKey1
 
         input = await genInputForContract(
-            Circuit.verifyEpochKey,
+            CircuitName.verifyEpochKey,
             invalidCircuitInputs
         )
         const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
@@ -119,7 +119,7 @@ describe('Verify Epoch Key verifier', function () {
         )
 
         input = await genInputForContract(
-            Circuit.verifyEpochKey,
+            CircuitName.verifyEpochKey,
             invalidCircuitInputs
         )
         const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
@@ -139,7 +139,7 @@ describe('Verify Epoch Key verifier', function () {
         )
 
         input = await genInputForContract(
-            Circuit.verifyEpochKey,
+            CircuitName.verifyEpochKey,
             invalidCircuitInputs
         )
         const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
@@ -159,7 +159,7 @@ describe('Verify Epoch Key verifier', function () {
         )
 
         input = await genInputForContract(
-            Circuit.verifyEpochKey,
+            CircuitName.verifyEpochKey,
             invalidCircuitInputs
         )
         const isProofValid = await unirepContract.verifyEpochKeyValidity(input)

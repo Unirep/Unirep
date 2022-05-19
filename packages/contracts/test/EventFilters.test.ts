@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import {
     genRandomSalt,
     ZkIdentity,
@@ -100,7 +100,7 @@ describe('EventFilters', () => {
             nonce
         )
         const input = await genInputForContract(
-            Circuit.verifyEpochKey,
+            CircuitName.verifyEpochKey,
             circuitInputs
         )
         epochKey = input.epochKey
@@ -145,7 +145,7 @@ describe('EventFilters', () => {
             BigInt(attesterId)
         )
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         const tx = await unirepContractCalledByAttester.spendReputation(input, {
@@ -169,7 +169,7 @@ describe('EventFilters', () => {
             BigInt(attesterId)
         )
         const input: SignUpProof = await genInputForContract(
-            Circuit.proveUserSignUp,
+            CircuitName.proveUserSignUp,
             circuitInputs
         )
 
@@ -195,7 +195,7 @@ describe('EventFilters', () => {
             nonce
         )
         const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(Circuit.startTransition, circuitInputs)
+            await genInputForContract(CircuitName.startTransition, circuitInputs)
         const tx = await unirepContract.startUserStateTransition(
             blindedUserState,
             blindedHashChain,
@@ -235,7 +235,7 @@ describe('EventFilters', () => {
             inputBlindedUserState,
             proof,
         } = await genInputForContract(
-            Circuit.processAttestations,
+            CircuitName.processAttestations,
             circuitInputs
         )
         const tx = await unirepContract.processAttestations(
@@ -278,7 +278,7 @@ describe('EventFilters', () => {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         tx = await unirepContract.updateUserStateRoot(input, indexes)

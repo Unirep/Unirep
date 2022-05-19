@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 
 import {
@@ -65,7 +65,7 @@ describe('Verify user sign up verifier', function () {
             attesterId
         )
         const input: SignUpProof = await genInputForContract(
-            Circuit.proveUserSignUp,
+            CircuitName.proveUserSignUp,
             circuitInputs
         )
 
@@ -86,7 +86,7 @@ describe('Verify user sign up verifier', function () {
             attesterId
         )
         const input: SignUpProof = await genInputForContract(
-            Circuit.proveUserSignUp,
+            CircuitName.proveUserSignUp,
             circuitInputs
         )
         input.attesterId = wrongAttesterId
@@ -106,7 +106,7 @@ describe('Verify user sign up verifier', function () {
             attesterId
         )
         const input: SignUpProof = await genInputForContract(
-            Circuit.proveUserSignUp,
+            CircuitName.proveUserSignUp,
             circuitInputs
         )
         input.epoch = wrongEpoch
@@ -126,7 +126,7 @@ describe('Verify user sign up verifier', function () {
             attesterId
         )
         const input: SignUpProof = await genInputForContract(
-            Circuit.proveUserSignUp,
+            CircuitName.proveUserSignUp,
             circuitInputs
         )
         input.epochKey = wrongEpochKey as BigNumberish

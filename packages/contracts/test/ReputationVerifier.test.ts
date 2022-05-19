@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
@@ -77,7 +77,7 @@ describe('Verify reputation verifier', function () {
         )
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         const isValid = await input.verify()
@@ -101,7 +101,7 @@ describe('Verify reputation verifier', function () {
             wrongReputationNullifierAmount
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             invalidCircuitInputs
         )
         const isValid = await input.verify()
@@ -123,7 +123,7 @@ describe('Verify reputation verifier', function () {
         )
 
         let input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         // random reputation nullifiers
@@ -147,7 +147,7 @@ describe('Verify reputation verifier', function () {
         )
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         input.epoch = wrongEpoch
@@ -173,7 +173,7 @@ describe('Verify reputation verifier', function () {
         )
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         input.epochKey = wrongEpochKey as BigNumberish
@@ -194,7 +194,7 @@ describe('Verify reputation verifier', function () {
         )
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         input.attesterId = wrongAttesterId
@@ -216,7 +216,7 @@ describe('Verify reputation verifier', function () {
         )
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         input.minRep = wrongMinRep
@@ -239,7 +239,7 @@ describe('Verify reputation verifier', function () {
         )
 
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         input.graffitiPreImage = wrongGraffitiPreimage as BigNumberish
@@ -272,7 +272,7 @@ describe('Verify reputation verifier', function () {
             proveGraffiti
         )
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         const tx = await unirepContractCalledByAttester.spendReputation(input, {
@@ -297,7 +297,7 @@ describe('Verify reputation verifier', function () {
             proveGraffiti
         )
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         const wrongNullifiers = input.repNullifiers.slice(
@@ -324,7 +324,7 @@ describe('Verify reputation verifier', function () {
             proveGraffiti
         )
         const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         input.epochKey = genRandomSalt() as BigNumberish

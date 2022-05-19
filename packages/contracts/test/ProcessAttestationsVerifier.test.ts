@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
@@ -46,7 +46,7 @@ describe('Process attestation circuit', function () {
             inputBlindedUserState,
             proof,
         } = await genInputForContract(
-            Circuit.processAttestations,
+            CircuitName.processAttestations,
             circuitInputs
         )
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
@@ -95,7 +95,7 @@ describe('Process attestation circuit', function () {
             inputBlindedUserState,
             proof,
         } = await genInputForContract(
-            Circuit.processAttestations,
+            CircuitName.processAttestations,
             circuitInputs
         )
         const isProofValid = await unirepContract.verifyProcessAttestationProof(

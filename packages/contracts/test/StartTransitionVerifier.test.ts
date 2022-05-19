@@ -8,7 +8,7 @@ import {
     SparseMerkleTree,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 import {
@@ -69,7 +69,7 @@ describe('User State Transition circuits', function () {
 
                 const { blindedUserState, blindedHashChain, GSTRoot, proof } =
                     await genInputForContract(
-                        Circuit.startTransition,
+                        CircuitName.startTransition,
                         circuitInputs
                     )
                 const isProofValid =
@@ -114,7 +114,7 @@ describe('User State Transition circuits', function () {
 
                 const { blindedUserState, blindedHashChain, GSTRoot, proof } =
                     await genInputForContract(
-                        Circuit.startTransition,
+                        CircuitName.startTransition,
                         circuitInputs
                     )
                 const isProofValid =

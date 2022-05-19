@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 
 import {
     genUserStateTransitionCircuitInput,
@@ -32,7 +32,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         const isValid = await input.verify()
@@ -66,7 +66,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         input.transitionFromEpoch = wrongEpoch
@@ -83,7 +83,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         input.fromGlobalStateTree = wrongGlobalStateTreeRoot
@@ -100,7 +100,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         input.fromEpochTree = wrongEpochTreeRoot as BigNumberish
@@ -116,7 +116,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         input.blindedUserStates[0] = genRandomSalt() as BigNumberish
@@ -132,7 +132,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         input.blindedHashChains[0] = genRandomSalt() as BigNumberish
@@ -148,7 +148,7 @@ describe('User State Transition', function () {
             epoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         input.newGlobalStateTreeLeaf = genRandomSalt() as BigNumberish

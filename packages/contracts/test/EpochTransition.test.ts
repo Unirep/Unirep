@@ -8,7 +8,7 @@ import {
     IncrementalMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 
 import {
     GLOBAL_STATE_TREE_DEPTH,
@@ -95,7 +95,7 @@ describe('Epoch Transition', function () {
             nonce
         )
         let input = await genInputForContract(
-            Circuit.verifyEpochKey,
+            CircuitName.verifyEpochKey,
             circuitInputs
         )
         let epochKey = input.epochKey
@@ -204,7 +204,7 @@ describe('Epoch Transition', function () {
             nonce
         )
         const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(Circuit.startTransition, circuitInputs)
+            await genInputForContract(CircuitName.startTransition, circuitInputs)
         const isProofValid = await unirepContract.verifyStartTransitionProof(
             blindedUserState,
             blindedHashChain,
@@ -265,7 +265,7 @@ describe('Epoch Transition', function () {
                     inputBlindedUserState,
                     proof,
                 } = await genInputForContract(
-                    Circuit.processAttestations,
+                    CircuitName.processAttestations,
                     circuitInputs
                 )
                 const tx = await unirepContract.processAttestations(
@@ -314,7 +314,7 @@ describe('Epoch Transition', function () {
             fromEpoch
         )
         const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
+            CircuitName.userStateTransition,
             circuitInputs
         )
         const tx = await unirepContract.updateUserStateRoot(input, proofIndexes)
