@@ -12,7 +12,7 @@
         "crypto": "yarn workspace @unirep/crypto run",
         "build": "yarn workspaces foreach -t run build",
         "test": "yarn workspaces foreach -t run test",
-        "lint": "prettier --write .",
+        "lint": "prettier .",
         "prepare": "husky install"
     },
     "devDependencies": {
