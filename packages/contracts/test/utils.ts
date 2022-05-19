@@ -27,7 +27,6 @@ import {
     USER_STATE_TREE_DEPTH,
 } from '@unirep/config'
 import { SparseMerkleTree } from '@unirep/crypto'
-import { IncrementalQuinTree } from 'maci-crypto'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -117,10 +116,10 @@ const genNewSMT = async (
 }
 
 const genNewEpochTree = async (
-    _epochTreeDepth: number = EPOCH_TREE_DEPTH
+    epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): Promise<crypto.SparseMerkleTree> => {
     const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
+    return genNewSMT(epochTreeDepth, defaultOTSMTHash)
 }
 
 const defaultUserStateLeaf = crypto.hash5([
@@ -146,16 +145,16 @@ const defaultGSTLeaf = (treeDepth: number): BigInt => {
 }
 
 const genNewUserStateTree = async (
-    _userStateTreeDepth: number = USER_STATE_TREE_DEPTH
+    userStateTreeDepth: number = USER_STATE_TREE_DEPTH
 ): Promise<SparseMerkleTree> => {
-    return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
+    return genNewSMT(userStateTreeDepth, defaultUserStateLeaf)
 }
 
 const genEpochKey = (
     identityNullifier: crypto.SnarkBigInt,
     epoch: BigNumberish,
     nonce: BigNumberish,
-    _epochTreeDepth: number = EPOCH_TREE_DEPTH
+    epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): crypto.SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
@@ -166,7 +165,7 @@ const genEpochKey = (
     ]
     let epochKey = crypto.hash5(values).toString()
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
+    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
 }
 

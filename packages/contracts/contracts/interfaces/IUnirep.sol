@@ -92,12 +92,12 @@ interface IUnirep is UnirepTypes {
         uint256[] proofIndexRecords
     );
 
-    /*
+    /**
      * Sign up an attester using the address who sends the transaction
      */
     function attesterSignUp() external;
 
-    /*
+    /**
      * Sign up an attester using the claimed address and the signature
      * @param attester The address of the attester who wants to sign up
      * @param signature The signature of the attester

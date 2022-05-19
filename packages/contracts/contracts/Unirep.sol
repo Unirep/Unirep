@@ -128,9 +128,9 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     // Verify input data - Should found better way to handle it.
 
-    function verifyAstesterSignUp(address _attester) private view {
+    function verifyAstesterSignUp(address attester) private view {
         require(
-            attesters[_attester] > 0,
+            attesters[attester] > 0,
             'Unirep: attester has not signed up yet'
         );
     }
@@ -159,15 +159,15 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * User signs up by providing an identity commitment. It also inserts a fresh state
      * leaf into the state tree.
      * if user signs up through an atteser who sets airdrop, Unirep will give the user the airdrop reputation.
      * @param identityCommitment Commitment of the user's identity which is a semaphore identity.
      */
-    function userSignUp(uint256 _identityCommitment) external {
+    function userSignUp(uint256 identityCommitment) external {
         require(
-            hasUserSignedUp[_identityCommitment] == false,
+            hasUserSignedUp[identityCommitment] == false,
             'Unirep: the user has already signed up'
         );
         require(
@@ -178,13 +178,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 attesterId = attesters[msg.sender];
         uint256 airdropPosRep = airdropAmount[msg.sender];
 
-        hasUserSignedUp[_identityCommitment] = true;
+        hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
 
         emit Sequencer(currentEpoch, Event.UserSignedUp);
         emit UserSignedUp(
             currentEpoch,
-            _identityCommitment,
+            identityCommitment,
             attesterId,
             airdropPosRep
         );
@@ -204,14 +204,14 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         nextAttesterId++;
     }
 
-    /*
+    /**
      * Sign up an attester using the address who sends the transaction
      */
     function attesterSignUp() external override {
         _attesterSignUp(msg.sender);
     }
 
-    /*
+    /**
      * Sign up an attester using the claimed address and the signature
      * @param attester The address of the attester who wants to sign up
      * @param signature The signature of the attester
@@ -227,14 +227,14 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         _attesterSignUp(attester);
     }
 
-    /*
+    /**
      * An attester can set the initial airdrop amount when user signs up through this attester
      * Then the contract inserts an airdropped leaf into the user's user state tree
-     * @param _airdropAmount how much pos rep add to user's leaf
+     * @param amount how much pos rep add to user's leaf
      */
-    function setAirdropAmount(uint256 _airdropAmount) external {
+    function setAirdropAmount(uint256 amount) external {
         verifyAstesterSignUp(msg.sender);
-        airdropAmount[msg.sender] = _airdropAmount;
+        airdropAmount[msg.sender] = amount;
     }
 
     /**
@@ -281,7 +281,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * An attester submit the attestation with a proof index
      * @param attestation The attestation that the attester wants to send to the epoch key
      * @param epochKey The epoch key which receives attestation
@@ -303,7 +303,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * An attester submit the attestation with an epoch key proof via a relayer
      * @param attester The address of the attester
      * @param signature The signature of the attester
@@ -330,19 +330,19 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
-    /*
+    /**
      * A user should submit an epoch key proof and get a proof index
-     * @param _input The epoch key proof and the public signals
+     * @param input The epoch key proof and the public signals
      */
-    function submitEpochKeyProof(EpochKeyProof memory _input) external {
-        bytes32 proofNullifier = Hasher.hashEpochKeyProof(_input);
+    function submitEpochKeyProof(EpochKeyProof memory input) external {
+        bytes32 proofNullifier = Hasher.hashEpochKeyProof(input);
         verifyProofNullilier(proofNullifier);
         require(
-            _input.epoch == currentEpoch,
+            input.epoch == currentEpoch,
             'Unirep: submit an epoch key proof with incorrect epoch'
         );
         require(
-            _input.epochKey <= maxEpochKey,
+            input.epochKey <= maxEpochKey,
             'Unirep: invalid epoch key range'
         );
 
@@ -351,32 +351,31 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         emit IndexedEpochKeyProof(
             _proofIndex,
             currentEpoch,
-            _input.epochKey,
-            _input
+            input.epochKey,
+            input
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
     }
 
-    /*
+    /**
      * An attester submit the airdrop attestation to an epoch key with a sign up proof
-     * @param attestation The attestation that the attester wants to send to the epoch key
-     * @param _input The epoch key and its proof and the public signals
+     * @param input The epoch key and its proof and the public signals
      */
-    function airdropEpochKey(SignUpProof memory _input) external payable {
-        bytes32 proofNullifier = Hasher.hashSignUpProof(_input);
+    function airdropEpochKey(SignUpProof memory input) external payable {
+        bytes32 proofNullifier = Hasher.hashSignUpProof(input);
         address sender = msg.sender;
         verifyProofNullilier(proofNullifier);
         verifyAstesterSignUp(sender);
-        verifyAttesterIndex(sender, _input.attesterId);
+        verifyAttesterIndex(sender, input.attesterId);
         verifyAttesterFee();
 
         require(
-            _input.epoch == currentEpoch,
+            input.epoch == currentEpoch,
             'Unirep: submit an airdrop proof with incorrect epoch'
         );
         require(
-            _input.epochKey <= maxEpochKey,
+            input.epochKey <= maxEpochKey,
             'Unirep: invalid epoch key range'
         );
 
@@ -394,14 +393,14 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         emit IndexedUserSignedUpProof(
             _proofIndex,
             currentEpoch,
-            _input.epochKey,
-            _input
+            input.epochKey,
+            input
         );
         // Process attestation
         emitAttestationEvent(
             msg.sender,
             attestation,
-            _input.epochKey,
+            input.epochKey,
             _proofIndex,
             0,
             AttestationEvent.Airdrop
@@ -410,32 +409,32 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
-    /*
+    /**
      * A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
-     * @param _input The epoch key and its proof and the public signals
+     * @param input The epoch key and its proof and the public signals
      */
-    function spendReputation(ReputationProof memory _input) external payable {
-        bytes32 proofNullifier = Hasher.hashReputationProof(_input);
+    function spendReputation(ReputationProof memory input) external payable {
+        bytes32 proofNullifier = Hasher.hashReputationProof(input);
 
         verifyProofNullilier(proofNullifier);
         verifyAstesterSignUp(msg.sender);
-        verifyAttesterIndex(msg.sender, _input.attesterId);
+        verifyAttesterIndex(msg.sender, input.attesterId);
         verifyAttesterFee();
 
         require(
-            _input.repNullifiers.length == maxReputationBudget,
+            input.repNullifiers.length == maxReputationBudget,
             'Unirep: invalid number of reputation nullifiers'
         );
         require(
-            _input.epoch == currentEpoch,
+            input.epoch == currentEpoch,
             'Unirep: submit a reputation proof with incorrect epoch'
         );
         require(
-            attesters[msg.sender] == _input.attesterId,
+            attesters[msg.sender] == input.attesterId,
             'Unirep: incorrect attester ID in the reputation proof'
         );
         require(
-            _input.epochKey <= maxEpochKey,
+            input.epochKey <= maxEpochKey,
             'Unirep: invalid epoch key range'
         );
 
@@ -445,21 +444,21 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // attestation of spending reputation
         Attestation memory attestation;
         attestation.attesterId = attesters[msg.sender];
-        attestation.negRep = _input.proveReputationAmount;
+        attestation.negRep = input.proveReputationAmount;
 
         uint256 _proofIndex = proofIndex;
         // emit proof event
         emit IndexedReputationProof(
             _proofIndex,
             currentEpoch,
-            _input.epochKey,
-            _input
+            input.epochKey,
+            input
         );
         // Process attestation
         emitAttestationEvent(
             msg.sender,
             attestation,
-            _input.epochKey,
+            input.epochKey,
             _proofIndex,
             0,
             AttestationEvent.SpendReputation
@@ -504,6 +503,9 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
     }
 
+    /**
+     * Perform an epoch transition, current epoch increases by 1
+     */
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
 
@@ -525,17 +527,24 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         ].add(gasUsed.mul(tx.gasprice));
     }
 
+    /**
+     * User submit a start user state transition proof
+     * @param blindedUserState The blinded user state that user state transition starts with
+     * @param blindedHashChain The blinded hash chain that user state transition starts with
+     * @param globalStateTree The global state tree from the previous epoch
+     * @param proof The start user state transition proof
+     */
     function startUserStateTransition(
-        uint256 _blindedUserState,
-        uint256 _blindedHashChain,
-        uint256 _globalStateTree,
-        uint256[8] calldata _proof
+        uint256 blindedUserState,
+        uint256 blindedHashChain,
+        uint256 globalStateTree,
+        uint256[8] calldata proof
     ) external {
         bytes32 proofNullifier = Hasher.hashStartTransitionProof(
-            _blindedUserState,
-            _blindedHashChain,
-            _globalStateTree,
-            _proof
+            blindedUserState,
+            blindedHashChain,
+            globalStateTree,
+            proof
         );
 
         verifyProofNullilier(proofNullifier);
@@ -543,63 +552,75 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
             _proofIndex,
-            _blindedUserState,
-            _globalStateTree,
-            _blindedHashChain,
-            _proof
+            blindedUserState,
+            globalStateTree,
+            blindedHashChain,
+            proof
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
     }
 
+    /**
+     * User submit a process attestations proof
+     * @param outputBlindedUserState The output blinded user state that the current proof processes
+     * @param outputBlindedHashChain The output blinded hash chain that the current proof processes
+     * @param inputBlindedUserState The input blinded user state that the proof starts with
+     * @param proof The process attestations proof
+     */
     function processAttestations(
-        uint256 _outputBlindedUserState,
-        uint256 _outputBlindedHashChain,
-        uint256 _inputBlindedUserState,
-        uint256[8] calldata _proof
+        uint256 outputBlindedUserState,
+        uint256 outputBlindedHashChain,
+        uint256 inputBlindedUserState,
+        uint256[8] calldata proof
     ) external {
         bytes32 proofNullifier = Hasher.hashProcessAttestationsProof(
-            _outputBlindedUserState,
-            _outputBlindedHashChain,
-            _inputBlindedUserState,
-            _proof
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof
         );
 
         verifyProofNullilier(proofNullifier);
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
-            _inputBlindedUserState,
-            _outputBlindedUserState,
-            _outputBlindedHashChain,
-            _proof
+            inputBlindedUserState,
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            proof
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
     }
 
+    /**
+     * User submit the latest user state transition proof
+     * @param proof The proof and the public signals of the user state transition proof
+     * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
+     */
     function updateUserStateRoot(
-        UserTransitionProof memory _proof,
+        UserTransitionProof memory proof,
         uint256[] memory proofIndexRecords
     ) external {
-        bytes32 proofNullifier = Hasher.hashUserStateTransitionProof(_proof);
+        bytes32 proofNullifier = Hasher.hashUserStateTransitionProof(proof);
 
         verifyProofNullilier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
         require(
-            _proof.transitionFromEpoch < currentEpoch,
+            proof.transitionFromEpoch < currentEpoch,
             "Can not transition from epoch that's greater or equal to current epoch"
         );
         require(
-            _proof.epkNullifiers.length == numEpochKeyNoncePerEpoch,
+            proof.epkNullifiers.length == numEpochKeyNoncePerEpoch,
             'Unirep: invalid number of epk nullifiers'
         );
         require(
-            _proof.blindedUserStates.length == 2,
+            proof.blindedUserStates.length == 2,
             'Unirep: invalid number of blinded user states'
         );
         require(
-            _proof.blindedHashChains.length == numEpochKeyNoncePerEpoch,
+            proof.blindedHashChains.length == numEpochKeyNoncePerEpoch,
             'Unirep: invalid number of blinded hash chains'
         );
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {
@@ -614,12 +635,12 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         emit Sequencer(currentEpoch, Event.UserStateTransitioned);
         emit IndexedUserStateTransitionProof(
             _proofIndex,
-            _proof,
+            proof,
             proofIndexRecords
         );
         emit UserStateTransitioned(
             currentEpoch,
-            _proof.newGlobalStateTreeLeaf,
+            proof.newGlobalStateTreeLeaf,
             _proofIndex
         );
 
@@ -627,7 +648,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         proofIndex++;
     }
 
-    function verifyEpochKeyValidity(EpochKeyProof memory _input)
+    /**
+     * Verify epoch transition proof
+     * @param input The proof and the public signals of the epoch key proof
+     */
+    function verifyEpochKeyValidity(EpochKeyProof memory input)
         external
         view
         returns (bool)
@@ -638,49 +663,56 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 
-        uint256[] memory _publicSignals = new uint256[](3);
-        _publicSignals[0] = _input.globalStateTree;
-        _publicSignals[1] = _input.epoch;
-        _publicSignals[2] = _input.epochKey;
+        uint256[] memory publicSignals = new uint256[](3);
+        publicSignals[0] = input.globalStateTree;
+        publicSignals[1] = input.epoch;
+        publicSignals[2] = input.epochKey;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
         require(
-            isValidSignals(_publicSignals),
+            isValidSignals(publicSignals),
             'Unirep: invalid public signals when verifyEpochKeyValidity'
         );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(_input.proof);
+        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
 
         // Verify the proof
         proof.isValid = epkValidityVerifier.verifyProof(
             proof.a,
             proof.b,
             proof.c,
-            _publicSignals
+            publicSignals
         );
         return proof.isValid;
     }
 
+    /**
+     * Verify start user state transition proof
+     * @param blindedUserState The blinded user state of the proof
+     * @param blindedHashChain The blinded hash chain of the proof
+     * @param GSTRoot The global state tree of the proof
+     * @param _proof The start user state transition proof
+     */
     function verifyStartTransitionProof(
-        uint256 _blindedUserState,
-        uint256 _blindedHashChain,
-        uint256 _GSTRoot,
+        uint256 blindedUserState,
+        uint256 blindedHashChain,
+        uint256 GSTRoot,
         uint256[8] calldata _proof
     ) external view returns (bool) {
-        uint256[] memory _publicSignals = new uint256[](3);
-        _publicSignals[0] = _blindedUserState;
-        _publicSignals[1] = _blindedHashChain;
-        _publicSignals[2] = _GSTRoot;
+        uint256[] memory publicSignals = new uint256[](3);
+        publicSignals[0] = blindedUserState;
+        publicSignals[1] = blindedHashChain;
+        publicSignals[2] = GSTRoot;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
         require(
-            isValidSignals(_publicSignals),
+            isValidSignals(publicSignals),
             'Unirep: invalid public signals when verify StartTransition Proof'
         );
 
@@ -693,26 +725,33 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             proof.a,
             proof.b,
             proof.c,
-            _publicSignals
+            publicSignals
         );
         return proof.isValid;
     }
 
+    /**
+     * Verify process attestations proof
+     * @param outputBlindedUserState The output blinded user state of the proof
+     * @param outputBlindedHashChain The output blinded hash chain of the proof
+     * @param inputBlindedUserState The input blinded user state of the proof
+     * @param _proof The process attestation proof
+     */
     function verifyProcessAttestationProof(
-        uint256 _outputBlindedUserState,
-        uint256 _outputBlindedHashChain,
-        uint256 _inputBlindedUserState,
+        uint256 outputBlindedUserState,
+        uint256 outputBlindedHashChain,
+        uint256 inputBlindedUserState,
         uint256[8] calldata _proof
     ) external view returns (bool) {
-        uint256[] memory _publicSignals = new uint256[](3);
-        _publicSignals[0] = _outputBlindedUserState;
-        _publicSignals[1] = _outputBlindedHashChain;
-        _publicSignals[2] = _inputBlindedUserState;
+        uint256[] memory publicSignals = new uint256[](3);
+        publicSignals[0] = outputBlindedUserState;
+        publicSignals[1] = outputBlindedHashChain;
+        publicSignals[2] = inputBlindedUserState;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         require(
-            isValidSignals(_publicSignals),
+            isValidSignals(publicSignals),
             'Unirep: invalid public signals when verify ProcessAttestation Proof'
         );
 
@@ -725,12 +764,16 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             proof.a,
             proof.b,
             proof.c,
-            _publicSignals
+            publicSignals
         );
         return proof.isValid;
     }
 
-    function verifyUserStateTransition(UserTransitionProof memory _input)
+    /**
+     * Verify user state transition proof
+     * @param input The proof and the public signals of the user state transition proof
+     */
+    function verifyUserStateTransition(UserTransitionProof memory input)
         external
         view
         returns (bool)
@@ -741,52 +784,54 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // 3. Attestations to each epoch key are processed and processed correctly
         // require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
-        uint256[] memory _publicSignals = new uint256[](
+        uint256[] memory publicSignals = new uint256[](
             6 + numEpochKeyNoncePerEpoch * 2
         );
-        _publicSignals[0] = _input.newGlobalStateTreeLeaf;
+        publicSignals[0] = input.newGlobalStateTreeLeaf;
         for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-            _publicSignals[i + 1] = _input.epkNullifiers[i];
+            publicSignals[i + 1] = input.epkNullifiers[i];
         }
-        _publicSignals[1 + numEpochKeyNoncePerEpoch] = _input
-            .transitionFromEpoch;
-        _publicSignals[2 + numEpochKeyNoncePerEpoch] = _input.blindedUserStates[
+        publicSignals[1 + numEpochKeyNoncePerEpoch] = input.transitionFromEpoch;
+        publicSignals[2 + numEpochKeyNoncePerEpoch] = input.blindedUserStates[
             0
         ];
-        _publicSignals[3 + numEpochKeyNoncePerEpoch] = _input.blindedUserStates[
+        publicSignals[3 + numEpochKeyNoncePerEpoch] = input.blindedUserStates[
             1
         ];
-        _publicSignals[4 + numEpochKeyNoncePerEpoch] = _input
-            .fromGlobalStateTree;
+        publicSignals[4 + numEpochKeyNoncePerEpoch] = input.fromGlobalStateTree;
         for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-            _publicSignals[5 + numEpochKeyNoncePerEpoch + i] = _input
+            publicSignals[5 + numEpochKeyNoncePerEpoch + i] = input
                 .blindedHashChains[i];
         }
-        _publicSignals[5 + numEpochKeyNoncePerEpoch * 2] = _input.fromEpochTree;
+        publicSignals[5 + numEpochKeyNoncePerEpoch * 2] = input.fromEpochTree;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
 
         require(
-            isValidSignals(_publicSignals),
+            isValidSignals(publicSignals),
             'Unirep: invalid public signals when verify UserStateTransition'
         );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(_input.proof);
+        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
 
         // Verify the proof
         proof.isValid = userStateTransitionVerifier.verifyProof(
             proof.a,
             proof.b,
             proof.c,
-            _publicSignals
+            publicSignals
         );
         return proof.isValid;
     }
 
-    function verifyReputation(ReputationProof memory _input)
+    /**
+     * Verify reputation proof
+     * @param input The proof and the public signals of the reputation proof
+     */
+    function verifyReputation(ReputationProof memory input)
         external
         view
         returns (bool)
@@ -797,42 +842,46 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // 3. (optional) different reputation nullifiers equals to prove reputation amount
         // 4. (optional) (positive reputation - negative reputation) is greater than `_minRep`
         // 5. (optional) hash of graffiti pre-image matches
-        uint256[] memory _publicSignals = new uint256[](18);
+        uint256[] memory publicSignals = new uint256[](18);
         for (uint8 i = 0; i < maxReputationBudget; i++) {
-            _publicSignals[i] = _input.repNullifiers[i];
+            publicSignals[i] = input.repNullifiers[i];
         }
-        _publicSignals[maxReputationBudget] = _input.epoch;
-        _publicSignals[maxReputationBudget + 1] = _input.epochKey;
-        _publicSignals[maxReputationBudget + 2] = _input.globalStateTree;
-        _publicSignals[maxReputationBudget + 3] = _input.attesterId;
-        _publicSignals[maxReputationBudget + 4] = _input.proveReputationAmount;
-        _publicSignals[maxReputationBudget + 5] = _input.minRep;
-        _publicSignals[maxReputationBudget + 6] = _input.proveGraffiti;
-        _publicSignals[maxReputationBudget + 7] = _input.graffitiPreImage;
+        publicSignals[maxReputationBudget] = input.epoch;
+        publicSignals[maxReputationBudget + 1] = input.epochKey;
+        publicSignals[maxReputationBudget + 2] = input.globalStateTree;
+        publicSignals[maxReputationBudget + 3] = input.attesterId;
+        publicSignals[maxReputationBudget + 4] = input.proveReputationAmount;
+        publicSignals[maxReputationBudget + 5] = input.minRep;
+        publicSignals[maxReputationBudget + 6] = input.proveGraffiti;
+        publicSignals[maxReputationBudget + 7] = input.graffitiPreImage;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
 
         require(
-            isValidSignals(_publicSignals),
+            isValidSignals(publicSignals),
             'Unirep: invalid public signals when verify Reputation'
         );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(_input.proof);
+        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
 
         // Verify the proof
         proof.isValid = reputationVerifier.verifyProof(
             proof.a,
             proof.b,
             proof.c,
-            _publicSignals
+            publicSignals
         );
         return proof.isValid;
     }
 
-    function verifyUserSignUp(SignUpProof memory _input)
+    /**
+     * Verify user sign up proof
+     * @param input The proof and the public signals of the user sign up proof
+     */
+    function verifyUserSignUp(SignUpProof memory input)
         external
         view
         returns (bool)
@@ -841,39 +890,40 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // 1. User exists in GST
         // 2. It is the latest state user transition to
         // 3. User has a signUp flag in the attester's leaf
-        uint256[] memory _publicSignals = new uint256[](5);
-        _publicSignals[0] = _input.epoch;
-        _publicSignals[1] = _input.epochKey;
-        _publicSignals[2] = _input.globalStateTree;
-        _publicSignals[3] = _input.attesterId;
-        _publicSignals[4] = _input.userHasSignedUp;
+        uint256[] memory publicSignals = new uint256[](5);
+        publicSignals[0] = input.epoch;
+        publicSignals[1] = input.epochKey;
+        publicSignals[2] = input.globalStateTree;
+        publicSignals[3] = input.attesterId;
+        publicSignals[4] = input.userHasSignedUp;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         require(
-            isValidSignals(_publicSignals),
+            isValidSignals(publicSignals),
             'Unirep: invalid public signals when verify UserSignUp'
         );
 
         ProofsRelated memory proof;
         // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(_input.proof);
+        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
 
         // Verify the proof
         proof.isValid = userSignUpVerifier.verifyProof(
             proof.a,
             proof.b,
             proof.c,
-            _publicSignals
+            publicSignals
         );
         return proof.isValid;
     }
 
-    /*
+    /**
      * A helper function to convert an array of 8 uint256 values into the a, b,
      * and c array values that the zk-SNARK verifier's verifyProof accepts.
+     * @param proof The 8-length array of the proof
      */
-    function unpackProof(uint256[8] memory _proof)
+    function unpackProof(uint256[8] memory proof)
         public
         pure
         returns (
@@ -883,13 +933,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         )
     {
         return (
-            [_proof[0], _proof[1]],
-            [[_proof[2], _proof[3]], [_proof[4], _proof[5]]],
-            [_proof[6], _proof[7]]
+            [proof[0], proof[1]],
+            [[proof[2], proof[3]], [proof[4], proof[5]]],
+            [proof[6], proof[7]]
         );
     }
 
-    /*
+    /**
      * Functions to burn fee and collect compenstation.
      * TODO: Should use attester fee, shouldn't burn like this.
      */

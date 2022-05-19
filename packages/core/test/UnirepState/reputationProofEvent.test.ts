@@ -42,7 +42,7 @@ describe('Reputation proof events in Unirep State', function () {
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-    let _treeDepths: any
+    let treeDepths: any
     let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
@@ -63,10 +63,10 @@ describe('Reputation proof events in Unirep State', function () {
             maxUsers,
             attestingFee,
         })
-        _treeDepths = await unirepContract.treeDepths()
+        treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth
+            treeDepths.globalStateTreeDepth,
+            treeDepths.userStateTreeDepth
         )
     })
 
@@ -112,8 +112,8 @@ describe('Reputation proof events in Unirep State', function () {
 
             const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = genNewGST(
-                _treeDepths.globalStateTreeDepth,
-                _treeDepths.userStateTreeDepth
+                treeDepths.globalStateTreeDepth,
+                treeDepths.userStateTreeDepth
             )
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
@@ -156,7 +156,7 @@ describe('Reputation proof events in Unirep State', function () {
                     attester['addr']
                 )
                 const newUSTRoot = await computeInitUserStateRoot(
-                    _treeDepths.userStateTreeDepth,
+                    treeDepths.userStateTreeDepth,
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
@@ -199,7 +199,7 @@ describe('Reputation proof events in Unirep State', function () {
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
                 const newUSTRoot = await computeInitUserStateRoot(
-                    _treeDepths.userStateTreeDepth
+                    treeDepths.userStateTreeDepth
                 )
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
                 userStateTreeRoots.push(newUSTRoot)
@@ -635,7 +635,7 @@ describe('Reputation proof events in Unirep State', function () {
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                _treeDepths.globalStateTreeDepth,
+                treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )
