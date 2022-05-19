@@ -17,12 +17,13 @@ export default class UnirepCircuit {
         zkFilesPath: string,
         circuitName: Circuit
     ) => {
-        return path.join(
+        const VKeyPath = path.join(
             __dirname,
             zkFilesPath,
-            circuitName,
-            '.vkey.json'
+            `${circuitName}.vkey.json`
         )
+        const vkey = require(VKeyPath)
+        return vkey
     }
 
     /**
