@@ -1,7 +1,7 @@
 {
     "name": "@unirep/circuits",
     "version": "1.0.4",
-    "main": "dist/circuits/utils.js",
+    "main": "dist/src/index.js",
     "scripts": {
         "build": "yarn downloadPtau && yarn buildCircuits && yarn buildSnarks && tsc && yarn copyCircom",
         "downloadPtau": "./scripts/downloadPtau.sh",
