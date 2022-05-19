@@ -21,3 +21,27 @@ fs.copyFileSync(
     path.join(__dirname, '../README.md'),
     path.join(__dirname, '../build/README.md')
 )
+
+fs.rmSync(path.join(__dirname, '../build/test'), { recursive: true })
+
+// copy files from contracts recursively
+function copyContracts(currentDir, outPath) {
+    if (!path.isAbsolute(currentDir)) throw new Error('Path is not absolute')
+    try {
+        fs.mkdirSync(outPath)
+    } catch (_) {}
+    const contents = fs.readdirSync(currentDir)
+    for (const c of contents) {
+        const contentPath = path.join(currentDir, c)
+        const stat = fs.statSync(contentPath)
+        if (stat.isDirectory()) {
+            copyContracts(path.join(currentDir, c), path.join(outPath, c))
+        } else {
+            fs.copyFileSync(contentPath, path.join(outPath, c))
+        }
+    }
+}
+copyContracts(
+    path.join(__dirname, '../contracts'),
+    path.join(__dirname, '../build')
+)
