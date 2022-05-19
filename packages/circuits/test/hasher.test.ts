@@ -6,8 +6,8 @@ import {
     hashLeftRight,
     hash5,
 } from '@unirep/crypto'
-import { executeCircuit, getSignalByName } from '../circuits/utils'
-import { compileAndLoadCircuit } from './utils'
+
+import UnirepCircuit from '../src'
 
 const hasher5CircuitPath = path.join(
     __dirname,
@@ -24,7 +24,7 @@ describe('Poseidon hash circuits', function () {
 
     describe('Hasher5', () => {
         it('correctly hashes 5 random values', async () => {
-            circuit = await compileAndLoadCircuit(hasher5CircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(hasher5CircuitPath)
             const preImages: any = []
             for (let i = 0; i < 5; i++) {
                 preImages.push(genRandomSalt())
@@ -34,8 +34,8 @@ describe('Poseidon hash circuits', function () {
                 in: preImages,
             })
 
-            const witness = await executeCircuit(circuit, circuitInputs)
-            const output = getSignalByName(circuit, witness, 'main.hash')
+            const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+            const output = UnirepCircuit.getSignalByName(circuit, witness, 'main.hash')
 
             const outputJS = hash5(preImages)
 
@@ -45,7 +45,7 @@ describe('Poseidon hash circuits', function () {
 
     describe('HashLeftRight', () => {
         it('correctly hashes two random values', async () => {
-            const circuit = await compileAndLoadCircuit(
+            const circuit = await UnirepCircuit.compileAndLoadCircuit(
                 hashleftrightCircuitPath
             )
 
@@ -54,8 +54,8 @@ describe('Poseidon hash circuits', function () {
 
             const circuitInputs = stringifyBigInts({ left, right })
 
-            const witness = await executeCircuit(circuit, circuitInputs)
-            const output = getSignalByName(circuit, witness, 'main.hash')
+            const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+            const output = UnirepCircuit.getSignalByName(circuit, witness, 'main.hash')
 
             const outputJS = hashLeftRight(left, right)
 

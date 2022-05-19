@@ -7,14 +7,14 @@ import {
     SparseMerkleTree,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { executeCircuit, getSignalByName, Circuit } from '../circuits/utils'
+
+import UnirepCircuit from '../src'
 import {
-    compileAndLoadCircuit,
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genProofAndVerify,
 } from './utils'
-import { startTransitionCircuitPath } from '../config'
+import { Circuit, startTransitionCircuitPath } from '../config'
 
 import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
@@ -40,7 +40,7 @@ describe('User State Transition circuits', function () {
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await compileAndLoadCircuit(circuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -71,8 +71,8 @@ describe('User State Transition circuits', function () {
                     nonce
                 )
 
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const outputUserState = getSignalByName(
+                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const outputUserState = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.blinded_user_state'
@@ -85,7 +85,7 @@ describe('User State Transition circuits', function () {
                 ])
                 expect(outputUserState).to.equal(expectedUserState)
 
-                const outputHashChainResult = getSignalByName(
+                const outputHashChainResult = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.blinded_hash_chain_result'
@@ -116,8 +116,8 @@ describe('User State Transition circuits', function () {
                     newNonce
                 )
 
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const outputUserState = getSignalByName(
+                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const outputUserState = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.blinded_user_state'
@@ -130,7 +130,7 @@ describe('User State Transition circuits', function () {
                 ])
                 expect(outputUserState).to.equal(expectedUserState)
 
-                const outputHashChainResult = getSignalByName(
+                const outputHashChainResult = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.blinded_hash_chain_result'

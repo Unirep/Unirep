@@ -1,15 +1,15 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, hash5, ZkIdentity } from '@unirep/crypto'
-import { executeCircuit, getSignalByName, Circuit } from '../circuits/utils'
+
+import UnirepCircuit from '../src'
 import {
     Attestation,
-    compileAndLoadCircuit,
     genProcessAttestationsCircuitInput,
     genProofAndVerify,
     throwError,
 } from './utils'
-import { processAttestationsCircuitPath } from '../config/'
+import { Circuit, processAttestationsCircuitPath } from '../config/'
 
 import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
 
@@ -30,7 +30,7 @@ describe('Process attestation circuit', function () {
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit(circuitPath)
+        circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(
             `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -41,8 +41,8 @@ describe('Process attestation circuit', function () {
         const { circuitInputs, hashChainResult } =
             await genProcessAttestationsCircuitInput(user, epoch, nonce, nonce)
 
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_user_state'
@@ -59,7 +59,7 @@ describe('Process attestation circuit', function () {
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
-        const outputHashChainResult = getSignalByName(
+        const outputHashChainResult = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_hash_chain_result'
@@ -97,8 +97,8 @@ describe('Process attestation circuit', function () {
             circuitInputs.intermediate_user_state_tree_roots[0]
         const outputUserStateTreeRoot = initialUserStateTreeRoot
 
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_user_state'
@@ -111,7 +111,7 @@ describe('Process attestation circuit', function () {
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
-        const outputHashChainResult = getSignalByName(
+        const outputHashChainResult = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_hash_chain_result'
@@ -136,8 +136,8 @@ describe('Process attestation circuit', function () {
                 undefined,
                 hashChainStarter
             )
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_user_state'
@@ -154,7 +154,7 @@ describe('Process attestation circuit', function () {
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
-        const outputHashChainResult = getSignalByName(
+        const outputHashChainResult = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_hash_chain_result'
@@ -179,8 +179,8 @@ describe('Process attestation circuit', function () {
                 undefined,
                 hashChainStarter
             )
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_user_state'
@@ -197,7 +197,7 @@ describe('Process attestation circuit', function () {
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
-        const outputHashChainResult = getSignalByName(
+        const outputHashChainResult = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_hash_chain_result'
@@ -236,8 +236,8 @@ describe('Process attestation circuit', function () {
                 attestations
             )
 
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_user_state'
@@ -254,7 +254,7 @@ describe('Process attestation circuit', function () {
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
-        const outputHashChainResult = getSignalByName(
+        const outputHashChainResult = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_hash_chain_result'
@@ -307,8 +307,8 @@ describe('Process attestation circuit', function () {
                 undefined,
                 attestations
             )
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const outputUserState = getSignalByName(
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_user_state'
@@ -325,7 +325,7 @@ describe('Process attestation circuit', function () {
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
-        const outputHashChainResult = getSignalByName(
+        const outputHashChainResult = UnirepCircuit.getSignalByName(
             circuit,
             witness,
             'main.blinded_hash_chain_result'

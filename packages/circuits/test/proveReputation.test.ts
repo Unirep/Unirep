@@ -1,15 +1,15 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
-import { Circuit, executeCircuit } from '../circuits/utils'
+
+import UnirepCircuit from '../src'
 import {
     Reputation,
-    compileAndLoadCircuit,
     genReputationCircuitInput,
     throwError,
     genProofAndVerify,
 } from './utils'
-import { proveReputationCircuitPath } from '../config'
+import { Circuit, proveReputationCircuitPath } from '../config'
 
 import { USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
 const circuitPath = path.join(__dirname, proveReputationCircuitPath)
@@ -34,7 +34,7 @@ describe('Prove reputation from attester circuit', function () {
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit(circuitPath)
+        circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(
             `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -72,7 +72,7 @@ describe('Prove reputation from attester circuit', function () {
             attesterId
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveReputation,
@@ -99,7 +99,7 @@ describe('Prove reputation from attester circuit', function () {
             minRep
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveReputation,
@@ -127,7 +127,7 @@ describe('Prove reputation from attester circuit', function () {
             graffitiPreImage
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveReputation,
@@ -151,7 +151,7 @@ describe('Prove reputation from attester circuit', function () {
             zeroMinRep
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveReputation,
@@ -178,7 +178,7 @@ describe('Prove reputation from attester circuit', function () {
             wrongGraffitiPreImage
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveReputation,
@@ -331,7 +331,7 @@ describe('Prove reputation from attester circuit', function () {
             insufficientGraffitiPreImage
         )
 
-        await executeCircuit(circuit, circuitInputs3)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs3)
 
         isValid = await genProofAndVerify(
             Circuit.proveReputation,

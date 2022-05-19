@@ -6,8 +6,8 @@ import {
     hashOne,
     SnarkBigInt,
 } from '@unirep/crypto'
-import { executeCircuit, getSignalByName } from '../circuits/utils'
-import { compileAndLoadCircuit } from './utils'
+
+import UnirepCircuit from '../src'
 
 const LEVELS = 4
 const ZERO_VALUE = 0
@@ -26,7 +26,7 @@ describe('Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await compileAndLoadCircuit(LeafExistsCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(LeafExistsCircuitPath)
         })
 
         it('Valid LeafExists inputs should work', async () => {
@@ -49,8 +49,8 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                     root,
                 }
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(
+                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.root'
@@ -81,7 +81,7 @@ describe('Merkle Tree circuits', function () {
                     root,
                 }
                 try {
-                    await executeCircuit(circuit, circuitInputs)
+                    await UnirepCircuit.executeCircuit(circuit, circuitInputs)
                 } catch {
                     expect(true).to.be.true
                 }
@@ -93,7 +93,7 @@ describe('Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await compileAndLoadCircuit(InclusionProofCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(InclusionProofCircuitPath)
         })
 
         it('Valid update proofs should work', async () => {
@@ -122,8 +122,8 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                 }
 
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(
+                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.root'
@@ -162,8 +162,8 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                 }
 
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(
+                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.root'

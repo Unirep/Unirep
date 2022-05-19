@@ -7,27 +7,19 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import {
-    Circuit,
-    executeCircuit,
-    formatProofForSnarkjsVerification,
-    formatProofForVerifierContract,
-    genProofAndPublicSignals,
-    verifyProof,
-} from '../circuits/utils'
-
-import {
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/config'
 
-import { verifyEpochKeyCircuitPath } from '../config'
+import UnirepCircuit from '../src'
+import { Circuit, verifyEpochKeyCircuitPath } from '../config'
 import {
-    compileAndLoadCircuit,
     genEpochKeyCircuitInput,
     throwError,
 } from './utils'
 
+const zksnarkBuild = '../zksnarkBuild/'
 const circuitPath = path.join(__dirname, verifyEpochKeyCircuitPath)
 
 describe('Verify Epoch Key circuits', function () {
@@ -45,7 +37,7 @@ describe('Verify Epoch Key circuits', function () {
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit(circuitPath)
+        circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(
             `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -80,9 +72,10 @@ describe('Verify Epoch Key circuits', function () {
                 n
             )
 
-            await executeCircuit(circuit, circuitInputs)
+            await UnirepCircuit.executeCircuit(circuit, circuitInputs)
             const startTime = new Date().getTime()
-            const { proof, publicSignals } = await genProofAndPublicSignals(
+            const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+                zksnarkBuild,
                 Circuit.verifyEpochKey,
                 circuitInputs
             )
@@ -92,16 +85,18 @@ describe('Verify Epoch Key circuits', function () {
                     (endTime - startTime) / 1000
                 )} s)`
             )
-            let isValid = await verifyProof(
+            let isValid = await UnirepCircuit.verifyProof(
+                zksnarkBuild,
                 Circuit.verifyEpochKey,
                 proof,
                 publicSignals
             )
             expect(isValid).to.be.true
 
-            const formatProof = formatProofForVerifierContract(proof)
-            const snarkjsProof = formatProofForSnarkjsVerification(formatProof)
-            isValid = await verifyProof(
+            const formatProof = UnirepCircuit.formatProofForVerifierContract(proof)
+            const snarkjsProof = UnirepCircuit.formatProofForSnarkjsVerification(formatProof)
+            isValid = await UnirepCircuit.verifyProof(
+                zksnarkBuild,
                 Circuit.verifyEpochKey,
                 snarkjsProof,
                 publicSignals

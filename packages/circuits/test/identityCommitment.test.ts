@@ -1,8 +1,8 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { executeCircuit, getSignalByName } from '../circuits/utils'
-import { compileAndLoadCircuit } from './utils'
+
+import UnirepCircuit from '../src'
 
 const circuitPath = path.join(
     __dirname,
@@ -14,7 +14,7 @@ describe('(Semaphore) identity commitment', function () {
 
     it('identity computed should match', async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        const circuit = await compileAndLoadCircuit(circuitPath)
+        const circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(
             `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -30,8 +30,8 @@ describe('(Semaphore) identity commitment', function () {
             identity_trapdoor: trapdoor,
         }
 
-        const witness = await executeCircuit(circuit, circuitInputs)
-        const output = getSignalByName(circuit, witness, 'main.out')
+        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const output = UnirepCircuit.getSignalByName(circuit, witness, 'main.out')
 
         expect(output.toString()).equal(commitment.toString())
     })

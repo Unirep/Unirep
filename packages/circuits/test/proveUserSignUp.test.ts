@@ -1,16 +1,16 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
-import { Circuit, executeCircuit } from '../circuits/utils'
+
+import UnirepCircuit from '../src'
 import {
     genEpochKey,
     Reputation,
-    compileAndLoadCircuit,
     genProveSignUpCircuitInput,
     throwError,
     genProofAndVerify,
 } from './utils'
-import { proveUserSignUpCircuitPath } from '../config'
+import { Circuit, proveUserSignUpCircuitPath } from '../config'
 import { EPOCH_TREE_DEPTH } from '@unirep/config'
 const circuitPath = path.join(__dirname, proveUserSignUpCircuitPath)
 
@@ -32,7 +32,7 @@ describe('Prove user has signed up circuit', function () {
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit(circuitPath)
+        circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
         const endCompileTime = Math.floor(new Date().getTime() / 1000)
         console.log(
             `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -70,7 +70,7 @@ describe('Prove user has signed up circuit', function () {
             attesterId
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveUserSignUp,
@@ -88,7 +88,7 @@ describe('Prove user has signed up circuit', function () {
             attesterId
         )
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
             Circuit.proveUserSignUp,

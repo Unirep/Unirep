@@ -25,7 +25,9 @@ import {
 } from '../circuits/utils'
 import { expect } from 'chai'
 import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
+import UnirepCircuit from '../src'
 
+const zksnarkBuild = '../zksnarkBuild/'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -726,7 +728,8 @@ const genProveSignUpCircuitInput = async (
 
 const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
+    const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+        zksnarkBuild,
         circuit,
         circuitInputs
     )
@@ -752,18 +755,6 @@ const genEpochKeyNullifier = (
         BigInt(nonce),
         BigInt(0),
     ])
-}
-
-/*
- * @param circuitPath The subpath to the circuit file (e.g.
- *     test/userStateTransition_test.circom)
- */
-const compileAndLoadCircuit = async (circuitPath: string) => {
-    const circuit = await circom.tester(circuitPath)
-
-    await circuit.loadSymbols()
-
-    return circuit
 }
 
 const throwError = async (
@@ -803,6 +794,5 @@ export {
     genProveSignUpCircuitInput,
     genEpochKeyNullifier,
     genProofAndVerify,
-    compileAndLoadCircuit,
     throwError,
 }

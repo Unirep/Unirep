@@ -1,8 +1,8 @@
 import { genRandomSalt, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
 import * as path from 'path'
 
-import { executeCircuit } from '../circuits/utils'
-import { compileAndLoadCircuit, throwError } from './utils'
+import UnirepCircuit from '../src'
+import { throwError } from './utils'
 
 const sealedHashChainCircuitPath = path.join(
     __dirname,
@@ -20,7 +20,7 @@ describe('Hash chain circuit', function () {
     const selectors: number[] = []
 
     before(async () => {
-        circuit = await compileAndLoadCircuit(sealedHashChainCircuitPath)
+        circuit = await UnirepCircuit.compileAndLoadCircuit(sealedHashChainCircuitPath)
 
         for (let i = 0; i < NUM_ELEMENT; i++) {
             const element = genRandomSalt()
@@ -41,7 +41,7 @@ describe('Hash chain circuit', function () {
             result: result,
         }
 
-        await executeCircuit(circuit, circuitInputs)
+        await UnirepCircuit.executeCircuit(circuit, circuitInputs)
     })
 
     it('verify incorrect elements should fail', async () => {

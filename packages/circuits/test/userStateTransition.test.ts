@@ -7,16 +7,16 @@ import {
     SparseMerkleTree,
     SnarkBigInt,
 } from '@unirep/crypto'
-import { executeCircuit, getSignalByName, Circuit } from '../circuits/utils'
+
+import UnirepCircuit from '../src'
 import {
     genNewEpochTree,
     genEpochKey,
-    compileAndLoadCircuit,
     genUserStateTransitionCircuitInput,
     genProofAndVerify,
 } from './utils'
 
-import { userStateTransitionCircuitPath } from '../config'
+import { Circuit, userStateTransitionCircuitPath } from '../config'
 
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
 const epkExistsCircuitPath = path.join(
@@ -49,7 +49,7 @@ describe('User State Transition circuits', function () {
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await compileAndLoadCircuit(epkExistsCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(epkExistsCircuitPath)
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -76,7 +76,7 @@ describe('User State Transition circuits', function () {
                 path_elements: epochTreePathElements,
             }
 
-            await executeCircuit(circuit, circuitInputs)
+            await UnirepCircuit.executeCircuit(circuit, circuitInputs)
         })
     })
 
@@ -86,7 +86,7 @@ describe('User State Transition circuits', function () {
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await compileAndLoadCircuit(USTCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(USTCircuitPath)
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -100,14 +100,14 @@ describe('User State Transition circuits', function () {
 
         describe('Process user state transition proof', () => {
             it('Valid user state update inputs should work', async () => {
-                const witness = await executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
                 const commitment = user.genIdentityCommitment()
                 const newGSTLeaf = hashLeftRight(
                     commitment,
                     circuitInputs.intermediate_user_state_tree_roots[1]
                 )
-                const _newGSTLeaf = getSignalByName(
+                const _newGSTLeaf = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
                     'main.new_GST_leaf'
