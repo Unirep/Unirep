@@ -1,42 +1,28 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { hash5, SnarkProof } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForSnarkjsVerification,
-    formatProofForVerifierContract,
-    verifyProof,
-} from '@unirep/circuits'
+import UnirepCircuit, { CircuitConfig, CircuitName } from '@unirep/circuits'
+import ContractConfig, { zkFilesPath } from './config'
 
 import {
-    MAX_USERS,
-    MAX_ATTESTERS,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    MAX_REPUTATION_BUDGET,
-    EPOCH_LENGTH,
-    ATTESTTING_FEE,
-    GLOBAL_STATE_TREE_DEPTH,
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
-} from '@unirep/config'
-
-import {
-    EpochKeyValidityVerifier,
-    EpochKeyValidityVerifier__factory,
+    VerifyEpochKeyVerifier,
+    VerifyEpochKeyVerifier__factory,
     ProcessAttestationsVerifier,
     ProcessAttestationsVerifier__factory,
-    ReputationVerifier,
-    ReputationVerifier__factory,
+    ProveReputationVerifier,
+    ProveReputationVerifier__factory,
     StartTransitionVerifier,
     StartTransitionVerifier__factory,
     Unirep,
     Unirep__factory as UnirepFactory,
-    UserSignUpVerifier,
-    UserSignUpVerifier__factory,
+    ProveUserSignUpVerifier,
+    ProveUserSignUpVerifier__factory,
     UserStateTransitionVerifier,
     UserStateTransitionVerifier__factory,
 } from '../typechain'
+import path from 'path'
 
 export type Field = BigNumberish
+const circuitConfig: CircuitConfig = require(path.join(zkFilesPath, 'config.json'))
 
 enum Event {
     UserSignedUp,
@@ -141,7 +127,7 @@ class EpochKeyProof implements IEpochKeyProof {
     private publicSignals: Field[]
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
+        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
         this.globalStateTree = _publicSignals[0]
         this.epoch = _publicSignals[1]
         this.epochKey = _publicSignals[2]
@@ -150,11 +136,12 @@ class EpochKeyProof implements IEpochKeyProof {
     }
 
     public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
+        const proof_ = UnirepCircuit.formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
-            Circuit.verifyEpochKey,
+        return UnirepCircuit.verifyProof(
+            circuitConfig.exportBuildPath,
+            CircuitName.verifyEpochKey,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))
         )
@@ -181,26 +168,27 @@ class ReputationProof implements IReputationProof {
     private publicSignals: Field[]
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.repNullifiers = _publicSignals.slice(0, MAX_REPUTATION_BUDGET)
-        this.epoch = _publicSignals[MAX_REPUTATION_BUDGET]
-        this.epochKey = _publicSignals[MAX_REPUTATION_BUDGET + 1]
-        this.globalStateTree = _publicSignals[MAX_REPUTATION_BUDGET + 2]
-        this.attesterId = _publicSignals[MAX_REPUTATION_BUDGET + 3]
-        this.proveReputationAmount = _publicSignals[MAX_REPUTATION_BUDGET + 4]
-        this.minRep = _publicSignals[MAX_REPUTATION_BUDGET + 5]
-        this.proveGraffiti = _publicSignals[MAX_REPUTATION_BUDGET + 6]
-        this.graffitiPreImage = _publicSignals[MAX_REPUTATION_BUDGET + 7]
+        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
+        this.repNullifiers = _publicSignals.slice(0, circuitConfig.maxReputationBudget)
+        this.epoch = _publicSignals[circuitConfig.maxReputationBudget]
+        this.epochKey = _publicSignals[circuitConfig.maxReputationBudget + 1]
+        this.globalStateTree = _publicSignals[circuitConfig.maxReputationBudget + 2]
+        this.attesterId = _publicSignals[circuitConfig.maxReputationBudget + 3]
+        this.proveReputationAmount = _publicSignals[circuitConfig.maxReputationBudget + 4]
+        this.minRep = _publicSignals[circuitConfig.maxReputationBudget + 5]
+        this.proveGraffiti = _publicSignals[circuitConfig.maxReputationBudget + 6]
+        this.graffitiPreImage = _publicSignals[circuitConfig.maxReputationBudget + 7]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
     }
 
     public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
+        const proof_ = UnirepCircuit.formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
-            Circuit.proveReputation,
+        return UnirepCircuit.verifyProof(
+            circuitConfig.exportBuildPath,
+            CircuitName.proveReputation,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))
         )
@@ -210,7 +198,7 @@ class ReputationProof implements IReputationProof {
         // array length should be fixed
         const abiEncoder = ethers.utils.defaultAbiCoder.encode(
             [
-                `tuple(uint256[${MAX_REPUTATION_BUDGET}] repNullifiers,
+                `tuple(uint256[${circuitConfig.maxReputationBudget}] repNullifiers,
                     uint256 epoch,
                     uint256 epochKey, 
                     uint256 globalStateTree,
@@ -238,7 +226,7 @@ class SignUpProof implements ISignUpProof {
     private publicSignals: Field[]
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
+        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
         this.epoch = _publicSignals[0]
         this.epochKey = _publicSignals[1]
         this.globalStateTree = _publicSignals[2]
@@ -249,11 +237,12 @@ class SignUpProof implements ISignUpProof {
     }
 
     public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
+        const proof_ = UnirepCircuit.formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
-            Circuit.proveUserSignUp,
+        return UnirepCircuit.verifyProof(
+            circuitConfig.exportBuildPath,
+            CircuitName.proveUserSignUp,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))
         )
@@ -278,41 +267,42 @@ class UserTransitionProof implements IUserTransitionProof {
     private publicSignals: Field[]
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
+        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
         this.newGlobalStateTreeLeaf = _publicSignals[0]
         this.epkNullifiers = []
         this.blindedUserStates = []
         this.blindedHashChains = []
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        for (let i = 0; i < circuitConfig.numEpochKeyNoncePerEpoch; i++) {
             this.epkNullifiers.push(_publicSignals[1 + i])
         }
         this.transitionFromEpoch =
-            _publicSignals[1 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
+            _publicSignals[1 + circuitConfig.numEpochKeyNoncePerEpoch]
         this.blindedUserStates.push(
-            _publicSignals[2 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
+            _publicSignals[2 + circuitConfig.numEpochKeyNoncePerEpoch]
         )
         this.blindedUserStates.push(
-            _publicSignals[3 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
+            _publicSignals[3 + circuitConfig.numEpochKeyNoncePerEpoch]
         )
         this.fromGlobalStateTree =
-            _publicSignals[4 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+            _publicSignals[4 + circuitConfig.numEpochKeyNoncePerEpoch]
+        for (let i = 0; i < circuitConfig.numEpochKeyNoncePerEpoch; i++) {
             this.blindedHashChains.push(
-                _publicSignals[5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH + i]
+                _publicSignals[5 + circuitConfig.numEpochKeyNoncePerEpoch + i]
             )
         }
         this.fromEpochTree =
-            _publicSignals[5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 2]
+            _publicSignals[5 + circuitConfig.numEpochKeyNoncePerEpoch * 2]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
     }
 
     public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
+        const proof_ = UnirepCircuit.formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
-            Circuit.userStateTransition,
+        return UnirepCircuit.verifyProof(
+            circuitConfig.exportBuildPath,
+            CircuitName.userStateTransition,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))
         )
@@ -323,11 +313,11 @@ class UserTransitionProof implements IUserTransitionProof {
         const abiEncoder = ethers.utils.defaultAbiCoder.encode(
             [
                 `tuple(uint256 newGlobalStateTreeLeaf,
-                    uint256[${NUM_EPOCH_KEY_NONCE_PER_EPOCH}] epkNullifiers,
+                    uint256[${circuitConfig.numEpochKeyNoncePerEpoch}] epkNullifiers,
                     uint256 transitionFromEpoch,
                     uint256[2] blindedUserStates,
                     uint256 fromGlobalStateTree,
-                    uint256[${NUM_EPOCH_KEY_NONCE_PER_EPOCH}] blindedHashChains,
+                    uint256[${circuitConfig.numEpochKeyNoncePerEpoch}] blindedHashChains,
                     uint256 fromEpochTree,
                     uint256[8] proof)
             `,
@@ -381,16 +371,16 @@ const deployUnirep = async (
     deployer: ethers.Signer,
     _settings?: any
 ): Promise<Unirep> => {
-    let EpochKeyValidityVerifierContract: EpochKeyValidityVerifier
+    let EpochKeyValidityVerifierContract: VerifyEpochKeyVerifier
     let StartTransitionVerifierContract: StartTransitionVerifier
     let ProcessAttestationsVerifierContract: ProcessAttestationsVerifier
     let UserStateTransitionVerifierContract: UserStateTransitionVerifier
-    let ReputationVerifierContract: ReputationVerifier
-    let UserSignUpVerifierContract: UserSignUpVerifier
+    let ReputationVerifierContract: ProveReputationVerifier
+    let UserSignUpVerifierContract: ProveUserSignUpVerifier
 
     console.log('Deploying EpochKeyValidityVerifier')
     EpochKeyValidityVerifierContract =
-        await new EpochKeyValidityVerifier__factory(deployer).deploy()
+        await new VerifyEpochKeyVerifier__factory(deployer).deploy()
     await EpochKeyValidityVerifierContract.deployTransaction.wait()
 
     console.log('Deploying StartTransitionVerifier')
@@ -409,28 +399,28 @@ const deployUnirep = async (
     await UserStateTransitionVerifierContract.deployTransaction.wait()
 
     console.log('Deploying ReputationVerifier')
-    ReputationVerifierContract = await new ReputationVerifier__factory(
+    ReputationVerifierContract = await new ProveReputationVerifier__factory(
         deployer
     ).deploy()
     await ReputationVerifierContract.deployTransaction.wait()
 
     console.log('Deploying UserSignUpVerifier')
-    UserSignUpVerifierContract = await new UserSignUpVerifier__factory(
+    UserSignUpVerifierContract = await new ProveUserSignUpVerifier__factory(
         deployer
     ).deploy()
     await UserSignUpVerifierContract.deployTransaction.wait()
 
     console.log('Deploying Unirep')
-    const _maxUsers = _settings?.maxUsers ?? MAX_USERS
-    const _maxAttesters = _settings?.maxAttesters ?? MAX_ATTESTERS
-    const _epochLength = _settings?.epochLength ?? EPOCH_LENGTH
-    const _attestingFee = _settings?.attestingFee ?? ATTESTTING_FEE
+    const _maxUsers = _settings?.maxUsers ?? ContractConfig.maxUsers
+    const _maxAttesters = _settings?.maxAttesters ?? ContractConfig.maxAttesters
+    const _epochLength = _settings?.epochLength ?? ContractConfig.epochLength
+    const _attestingFee = _settings?.attestingFee ?? ContractConfig.attestingFee
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
         {
-            globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-            userStateTreeDepth: USER_STATE_TREE_DEPTH,
-            epochTreeDepth: EPOCH_TREE_DEPTH,
+            globalStateTreeDepth: circuitConfig.globalStateTreeDepth,
+            userStateTreeDepth: circuitConfig.userStateTreeDepth,
+            epochTreeDepth: circuitConfig.epochTreeDepth,
         },
         {
             maxUsers: _maxUsers,
@@ -442,8 +432,8 @@ const deployUnirep = async (
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
         UserSignUpVerifierContract.address,
-        NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        MAX_REPUTATION_BUDGET,
+        circuitConfig.numEpochKeyNoncePerEpoch,
+        circuitConfig.maxReputationBudget,
         _epochLength,
         _attestingFee
     )
