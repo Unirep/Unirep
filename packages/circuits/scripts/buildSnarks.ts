@@ -1,112 +1,67 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { stringifyBigInts } from '@unirep/crypto'
-import * as argparse from 'argparse'
 import * as fs from 'fs'
 import * as path from 'path'
 const compiler = require('circom').compiler
 const snarkjs = require('snarkjs')
 const fastFile = require('fastfile')
 
+import config, { overrideCircuit, ptau } from '../config'
+import { CircuitName } from '../src'
+
 const fileExists = (filepath: string): boolean => {
-    const currentPath = path.join(__dirname, '..')
-    const inputFilePath = path.join(currentPath, filepath)
-    return fs.existsSync(inputFilePath)
+    return fs.existsSync(filepath)
 }
 
 const main = async (): Promise<number> => {
-    const parser = new argparse.ArgumentParser({
-        description:
-            'Compile a circom circuit and generate its proving key, verification key, and Solidity verifier',
-    })
+    const override = overrideCircuit
+    for (const circuit of Object.keys(CircuitName)) {
+        const buildPath = config.exportBuildPath
+        const circomFile = path.join(buildPath, `${circuit}_main.circom`)
+        const R1CSFile = path.join(buildPath, `${circuit}.r1cs`)
+        const symFile = path.join(buildPath, `${circuit}.sym`)
+        const wasmFile = path.join(buildPath, `${circuit}.wasm`)
+        const zkey = path.join(buildPath, `${circuit}.zkey`)
+        const vkey = path.join(buildPath, `${circuit}.vkey.json`)
 
-    parser.add_argument('-i', '--input', {
-        help: 'The filepath of the circom file',
-        required: true,
-    })
+        // Check if the input circom file exists
+        const inputFileExists = fileExists(circomFile)
 
-    parser.add_argument('-j', '--r1cs-out', {
-        help: 'The filepath to save the compiled circom file',
-        required: true,
-    })
-
-    parser.add_argument('-w', '--wasm-out', {
-        help: 'The filepath to save the WASM file',
-        required: true,
-    })
-
-    parser.add_argument('-y', '--sym-out', {
-        help: 'The filepath to save the SYM file',
-        required: true,
-    })
-
-    parser.add_argument('-pt', '--ptau', {
-        help: 'The filepath of existed ptau',
-        required: true,
-    })
-
-    parser.add_argument('-zk', '--zkey-out', {
-        help: 'The filepath to save the zkey',
-        required: true,
-    })
-
-    parser.add_argument('-vk', '--vkey-out', {
-        help: 'The filepath to save the vkey',
-        required: true,
-    })
-
-    parser.add_argument('-r', '--override', {
-        help: 'Override an existing compiled circuit, proving key, and verifying key if set to true; otherwise (and by default), skip generation if a file already exists',
-        action: 'store_true',
-        required: false,
-        default: false,
-    })
-
-    const args = parser.parse_args()
-    const inputFile = args.input
-    const override = args.override
-    const circuitOut = args.r1cs_out
-    const symOut = args.sym_out
-    const wasmOut = args.wasm_out
-    const ptau = args.ptau
-    const zkey = args.zkey_out
-    const vkOut = args.vkey_out
-
-    // Check if the input circom file exists
-    const inputFileExists = fileExists(inputFile)
-
-    // Exit if it does not
-    if (!inputFileExists) {
-        console.error('File does not exist:', inputFile)
-        return 1
-    }
-
-    // Check if the circuitOut file exists and if we should not override files
-    const circuitOutFileExists = fileExists(circuitOut)
-
-    if (!override && circuitOutFileExists) {
-        console.log(circuitOut, 'exists. Skipping compilation.')
-    } else {
-        console.log(`Compiling ${inputFile}...`)
-        // Compile the .circom file
-        const options = {
-            wasmFile: await fastFile.createOverride(wasmOut),
-            r1csFileName: circuitOut,
-            symWriteStream: fs.createWriteStream(symOut),
+        // Exit if it does not
+        if (!inputFileExists) {
+            console.error('File does not exist:', circomFile)
+            return 1
         }
-        await compiler(inputFile, options)
-        console.log('Generated', circuitOut, 'and', wasmOut)
-    }
 
-    const zkeyOutFileExists = fileExists(zkey)
-    if (!override && zkeyOutFileExists) {
-        console.log(zkey, 'exists. Skipping compilation.')
-    } else {
-        console.log('Exporting verification key...')
-        await snarkjs.zKey.newZKey(circuitOut, ptau, zkey)
-        const vkeyJson = await snarkjs.zKey.exportVerificationKey(zkey)
-        const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1)
-        await fs.promises.writeFile(vkOut, S)
-        console.log(`Generated ${zkey} and ${vkOut}`)
+        // Check if the circuitOut file exists and if we should not override files
+        const circuitOutFileExists = fileExists(R1CSFile)
+
+        if (!override && circuitOutFileExists) {
+            console.log(R1CSFile, 'exists. Skipping compilation.')
+        } else {
+            console.log(`Compiling ${circomFile}...`)
+            // Compile the .circom file
+            const options = {
+                wasmFile: await fastFile.createOverride(wasmFile),
+                r1csFileName: R1CSFile,
+                symWriteStream: fs.createWriteStream(symFile),
+            }
+            await compiler(circomFile, options)
+            console.log('Generated', R1CSFile, 'and', wasmFile)
+        }
+
+        const zkeyOutFileExists = fileExists(zkey)
+        if (!override && zkeyOutFileExists) {
+            console.log(zkey, 'exists. Skipping compilation.')
+        } else {
+            console.log('Exporting verification key...')
+            await snarkjs.zKey.newZKey(R1CSFile, ptau, zkey)
+            const vkeyJson = await snarkjs.zKey.exportVerificationKey(zkey)
+            const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1)
+            await fs.promises.writeFile(vkey, S)
+            console.log(`Generated ${zkey} and ${vkey}`)
+        }
+
     }
 
     return 0
