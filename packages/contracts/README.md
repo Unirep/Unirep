@@ -13,6 +13,11 @@ yarn build
 yarn test
 ```
 
+Run test with gas report 
+```bash 
+REPORT_GAS=true yarn test
+```
+
 ## Utils
 
 -   `computeStartTransitionProofHash`
