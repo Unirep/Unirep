@@ -35,7 +35,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-    let _treeDepths
+    let treeDepths
     let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
@@ -55,10 +55,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             attestingFee,
         })
 
-        _treeDepths = await unirepContract.treeDepths()
+        treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth
+            treeDepths.globalStateTreeDepth,
+            treeDepths.userStateTreeDepth
         )
     })
 
@@ -105,8 +105,8 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const unirepGSTree =
                 initUnirepState.getUnirepStateGSTree(unirepEpoch)
             const defaultGSTree = genNewGST(
-                _treeDepths.globalStateTreeDepth,
-                _treeDepths.userStateTreeDepth
+                treeDepths.globalStateTreeDepth,
+                treeDepths.userStateTreeDepth
             )
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
@@ -147,7 +147,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     attester['addr']
                 )
                 const newUSTRoot = await computeInitUserStateRoot(
-                    _treeDepths.userStateTreeDepth,
+                    treeDepths.userStateTreeDepth,
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
@@ -188,7 +188,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const newUSTRoot = await computeInitUserStateRoot(
-                    _treeDepths.userStateTreeDepth
+                    treeDepths.userStateTreeDepth
                 )
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
                 userStateTreeRoots.push(newUSTRoot)

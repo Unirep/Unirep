@@ -51,7 +51,7 @@ describe('User state transition events in Unirep User State', async function () 
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-    let _treeDepths
+    let treeDepths
     let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
@@ -72,10 +72,10 @@ describe('User state transition events in Unirep User State', async function () 
             attestingFee,
         })
 
-        _treeDepths = await unirepContract.treeDepths()
+        treeDepths = await unirepContract.treeDepths()
         GSTree = genNewGST(
-            _treeDepths.globalStateTreeDepth,
-            _treeDepths.userStateTreeDepth
+            treeDepths.globalStateTreeDepth,
+            treeDepths.userStateTreeDepth
         )
     })
 
@@ -124,8 +124,8 @@ describe('User state transition events in Unirep User State', async function () 
             const unirepGSTree =
                 initUnirepState.getUnirepStateGSTree(unirepEpoch)
             const defaultGSTree = genNewGST(
-                _treeDepths.globalStateTreeDepth,
-                _treeDepths.userStateTreeDepth
+                treeDepths.globalStateTreeDepth,
+                treeDepths.userStateTreeDepth
             )
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
@@ -166,7 +166,7 @@ describe('User state transition events in Unirep User State', async function () 
                     attester['addr']
                 )
                 const newUSTRoot = await computeInitUserStateRoot(
-                    _treeDepths.userStateTreeDepth,
+                    treeDepths.userStateTreeDepth,
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
@@ -208,7 +208,7 @@ describe('User state transition events in Unirep User State', async function () 
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const newUSTRoot = await computeInitUserStateRoot(
-                    _treeDepths.userStateTreeDepth
+                    treeDepths.userStateTreeDepth
                 )
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
                 userStateTreeRoots.push(newUSTRoot)
@@ -308,9 +308,9 @@ describe('User state transition events in Unirep User State', async function () 
         let invalidProofIndexes: number[] = []
         const notTransitionUsers: number[] = []
         const setting: ISettings = {
-            globalStateTreeDepth: _treeDepths.globalStateTreeDepth,
-            userStateTreeDepth: _treeDepths.userStateTreeDepth,
-            epochTreeDepth: _treeDepths.epochTreeDepth,
+            globalStateTreeDepth: treeDepths.globalStateTreeDepth,
+            userStateTreeDepth: treeDepths.userStateTreeDepth,
+            epochTreeDepth: treeDepths.epochTreeDepth,
             attestingFee: attestingFee,
             epochLength: EPOCH_LENGTH,
             numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,

@@ -104,10 +104,10 @@ const genNewSMT = async (
 }
 
 const genNewEpochTree = async (
-    _epochTreeDepth: number = config.epochTreeDepth
+    epochTreeDepth: number = config.epochTreeDepth
 ): Promise<crypto.SparseMerkleTree> => {
     const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
+    return genNewSMT(epochTreeDepth, defaultOTSMTHash)
 }
 
 const defaultUserStateLeaf = crypto.hash5([
@@ -133,16 +133,16 @@ const defaultGSTLeaf = (treeDepth: number): BigInt => {
 }
 
 const genNewUserStateTree = async (
-    _userStateTreeDepth: number = config.userStateTreeDepth
+    userStateTreeDepth: number = config.userStateTreeDepth
 ): Promise<crypto.SparseMerkleTree> => {
-    return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
+    return genNewSMT(userStateTreeDepth, defaultUserStateLeaf)
 }
 
 const genEpochKey = (
     identityNullifier: crypto.SnarkBigInt,
     epoch: BigNumberish,
     nonce: BigNumberish,
-    _epochTreeDepth: number = config.epochTreeDepth
+    epochTreeDepth: number = config.epochTreeDepth
 ): crypto.SnarkBigInt => {
     const values: any[] = [
         identityNullifier,
@@ -153,7 +153,7 @@ const genEpochKey = (
     ]
     let epochKey = crypto.hash5(values).toString()
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
+    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
 }
 

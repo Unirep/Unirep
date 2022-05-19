@@ -363,10 +363,10 @@ export default class UserState {
      * Check if the root is one of the epoch tree roots in the given epoch
      */
     public epochTreeRootExists = async (
-        _epochTreeRoot: BigInt | string,
+        epochTreeRoot: BigInt | string,
         epoch: number
     ): Promise<boolean> => {
-        return this.unirepState.epochTreeRootExists(_epochTreeRoot, epoch)
+        return this.unirepState.epochTreeRootExists(epochTreeRoot, epoch)
     }
 
     /**
