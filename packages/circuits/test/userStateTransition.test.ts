@@ -8,7 +8,7 @@ import {
     SnarkBigInt,
 } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import UnirepCircuit, { CircuitName } from '../src'
 import {
     genNewEpochTree,
     genEpochKey,
@@ -16,14 +16,16 @@ import {
     genProofAndVerify,
 } from './utils'
 
-import { Circuit, userStateTransitionCircuitPath } from '../config'
-
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
+import config from '../zksnarkBuild/config.json'
+const circuitPath = path.join(
+    config.exportBuildPath,
+    `${CircuitName.userStateTransition}_main.circom`
+)
+import testConfig from '../circuits/test/testConfig.json'
 const epkExistsCircuitPath = path.join(
     __dirname,
     '../circuits/test/epochKeyExists_test.circom'
 )
-const USTCircuitPath = path.join(__dirname, userStateTransitionCircuitPath)
 
 describe('User State Transition circuits', function () {
     this.timeout(600000)
@@ -34,13 +36,12 @@ describe('User State Transition circuits', function () {
     describe('Epoch key exists', () => {
         let circuit
 
-        const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
-        const testEpochTreeDepth = 32
+        const nonce = testConfig.numEpochKeyNoncePerEpoch - 1
         const epochKey: SnarkBigInt = genEpochKey(
             user.getNullifier(),
             epoch,
             nonce,
-            testEpochTreeDepth
+            testConfig.epochTreeDepth
         )
 
         let epochTree: SparseMerkleTree, epochTreeRoot, epochTreePathElements
@@ -56,7 +57,7 @@ describe('User State Transition circuits', function () {
             )
 
             // Epoch tree
-            epochTree = await genNewEpochTree(testEpochTreeDepth)
+            epochTree = await genNewEpochTree(testConfig.epochTreeDepth)
 
             hashChainResult = genRandomSalt()
 
@@ -86,7 +87,7 @@ describe('User State Transition circuits', function () {
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await UnirepCircuit.compileAndLoadCircuit(USTCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(circuitPath)
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -117,7 +118,7 @@ describe('User State Transition circuits', function () {
                 )
 
                 const isValid = await genProofAndVerify(
-                    Circuit.userStateTransition,
+                    CircuitName.userStateTransition,
                     circuitInputs
                 )
                 expect(isValid).to.be.true

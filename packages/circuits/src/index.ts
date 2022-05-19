@@ -3,7 +3,8 @@ const snarkjs = require('snarkjs')
 const circom = require('circom')
 import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
 
-import { Circuit } from '../config'
+import { CircuitName } from './types/circuit'
+import { CircuitConfig } from './types/config'
 
 export default class UnirepCircuit {
 
@@ -15,10 +16,9 @@ export default class UnirepCircuit {
      */
     public static getVKey = (
         zkFilesPath: string,
-        circuitName: Circuit
+        circuitName: CircuitName
     ) => {
         const VKeyPath = path.join(
-            __dirname,
             zkFilesPath,
             `${circuitName}.vkey.json`
         )
@@ -37,7 +37,7 @@ export default class UnirepCircuit {
         circuit: any,
         witness: any,
         signal: string
-    ): Promise<any> => {
+    ): any => {
         return witness[circuit.symbols[signal].varIdx]
     }
 
@@ -49,7 +49,7 @@ export default class UnirepCircuit {
     public static compileAndLoadCircuit = async (circuitPath: string) => {
         const circuit = await circom.tester(circuitPath)
         await circuit.loadSymbols()
-    
+
         return circuit
     }
 
@@ -79,16 +79,14 @@ export default class UnirepCircuit {
      */
     public static genProofAndPublicSignals = async (
         zkFilesPath: string,
-        circuitName: Circuit,
+        circuitName: CircuitName,
         inputs: any
     ) => {
         const circuitWasmPath = path.join(
-            __dirname,
             zkFilesPath,
             `${circuitName}.wasm`
         )
         const zkeyPath = path.join(
-            __dirname,
             zkFilesPath,
             `${circuitName}.zkey`
         )
@@ -111,7 +109,7 @@ export default class UnirepCircuit {
      */
     public static verifyProof = async (
         zkFilesPath: string,
-        circuitName: Circuit,
+        circuitName: CircuitName,
         proof: SnarkProof,
         publicSignals: SnarkPublicSignals
     ): Promise<boolean> => {
@@ -157,4 +155,9 @@ export default class UnirepCircuit {
             pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
         }
     }
+}
+
+export {
+    CircuitName,
+    CircuitConfig
 }

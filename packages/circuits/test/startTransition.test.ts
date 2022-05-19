@@ -8,17 +8,18 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import UnirepCircuit, { CircuitName } from '../src'
 import {
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genProofAndVerify,
 } from './utils'
-import { Circuit, startTransitionCircuitPath } from '../config'
 
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
-
-const circuitPath = path.join(__dirname, startTransitionCircuitPath)
+import config from '../zksnarkBuild/config.json'
+const circuitPath = path.join(
+    config.exportBuildPath,
+    `${CircuitName.startTransition}_main.circom`
+)
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -51,7 +52,7 @@ describe('User State Transition circuits', function () {
 
             // Global state tree
             GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                config.globalStateTreeDepth,
                 GSTZERO_VALUE,
                 2
             )
@@ -99,7 +100,7 @@ describe('User State Transition circuits', function () {
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
 
                 const isValid = await genProofAndVerify(
-                    Circuit.startTransition,
+                    CircuitName.startTransition,
                     circuitInputs
                 )
                 expect(isValid).to.be.true

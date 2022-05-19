@@ -2,17 +2,19 @@ import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import UnirepCircuit, { CircuitName } from '../src'
 import {
     Reputation,
     genReputationCircuitInput,
     throwError,
     genProofAndVerify,
 } from './utils'
-import { Circuit, proveReputationCircuitPath } from '../config'
 
-import { USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
-const circuitPath = path.join(__dirname, proveReputationCircuitPath)
+import config from '../zksnarkBuild/config.json'
+const circuitPath = path.join(
+    config.exportBuildPath,
+    `${CircuitName.proveReputation}_main.circom`
+)
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -43,11 +45,11 @@ describe('Prove reputation from attester circuit', function () {
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {
             let attesterId = Math.ceil(
-                Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
+                Math.random() * (2 ** config.userStateTreeDepth - 1)
             )
             while (reputationRecords[attesterId] !== undefined)
                 attesterId = Math.floor(
-                    Math.random() * 2 ** USER_STATE_TREE_DEPTH
+                    Math.random() * 2 ** config.userStateTreeDepth
                 )
             const graffitiPreImage = genRandomSalt()
             reputationRecords[attesterId] = new Reputation(
@@ -75,7 +77,7 @@ describe('Prove reputation from attester circuit', function () {
         await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -102,7 +104,7 @@ describe('Prove reputation from attester circuit', function () {
         await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -130,7 +132,7 @@ describe('Prove reputation from attester circuit', function () {
         await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -154,7 +156,7 @@ describe('Prove reputation from attester circuit', function () {
         await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -181,7 +183,7 @@ describe('Prove reputation from attester circuit', function () {
         await UnirepCircuit.executeCircuit(circuit, circuitInputs)
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -210,7 +212,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.false
@@ -238,7 +240,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.false
@@ -247,11 +249,11 @@ describe('Prove reputation from attester circuit', function () {
     it('prove reputation nullifiers with insufficient rep score', async () => {
         // Bootstrap user state
         let insufficientAttesterId = Math.ceil(
-            Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
+            Math.random() * (2 ** config.userStateTreeDepth - 1)
         )
         while (reputationRecords[insufficientAttesterId] !== undefined)
             insufficientAttesterId = Math.floor(
-                Math.random() * 2 ** USER_STATE_TREE_DEPTH
+                Math.random() * 2 ** config.userStateTreeDepth
             )
         const insufficientPosRep = 5
         const insufficientNegRep = 10
@@ -282,7 +284,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         let isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs1
         )
         expect(isValid).to.be.false
@@ -290,7 +292,7 @@ describe('Prove reputation from attester circuit', function () {
         // only prove minRep should fail
         const zeroRepNullifiersAmount = 0
         const zeroSelector: number[] = []
-        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
+        for (let i = 0; i < config.maxReputationBudget; i++) {
             zeroSelector.push(0)
         }
         const circuitInputs2 = await genReputationCircuitInput(
@@ -312,7 +314,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs2
         )
         expect(isValid).to.be.false
@@ -334,7 +336,7 @@ describe('Prove reputation from attester circuit', function () {
         await UnirepCircuit.executeCircuit(circuit, circuitInputs3)
 
         isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs3
         )
         expect(isValid).to.be.true
@@ -354,7 +356,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = 0; i < repNullifiersAmount; i++) {
             wrongNonceList.push(wrongNonceStarter + i)
         }
-        for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
+        for (let i = repNullifiersAmount; i < config.maxReputationBudget; i++) {
             wrongNonceList.push(0)
         }
         const circuitInputs = await genReputationCircuitInput(
@@ -377,7 +379,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.false
@@ -393,7 +395,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = 0; i < repNullifiersAmount; i++) {
             wrongNonceList.push(nonceStarter + i)
         }
-        for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
+        for (let i = repNullifiersAmount; i < config.maxReputationBudget; i++) {
             wrongNonceList.push(0)
         }
         const circuitInputs = await genReputationCircuitInput(
@@ -414,7 +416,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.false
@@ -445,7 +447,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.false
@@ -476,7 +478,7 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         const isValid = await genProofAndVerify(
-            Circuit.proveReputation,
+            CircuitName.proveReputation,
             circuitInputs
         )
         expect(isValid).to.be.false

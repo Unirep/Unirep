@@ -6,21 +6,18 @@ import {
     IncrementalMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
-import {
-    EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
 
-import UnirepCircuit from '../src'
-import { Circuit, verifyEpochKeyCircuitPath } from '../config'
+import UnirepCircuit, { CircuitName } from '../src'
 import {
     genEpochKeyCircuitInput,
     throwError,
 } from './utils'
 
-const zksnarkBuild = '../zksnarkBuild/'
-const circuitPath = path.join(__dirname, verifyEpochKeyCircuitPath)
+import config from '../zksnarkBuild/config.json'
+const circuitPath = path.join(
+    config.exportBuildPath,
+    `${CircuitName.verifyEpochKey}_main.circom`
+)
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
@@ -28,7 +25,7 @@ describe('Verify Epoch Key circuits', function () {
     let circuit
     let ZERO_VALUE = 0
 
-    const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
+    const maxEPK = BigInt(2 ** config.epochTreeDepth)
 
     let id: ZkIdentity, commitment, stateRoot
     let tree, leafIndex
@@ -43,7 +40,7 @@ describe('Verify Epoch Key circuits', function () {
             `Compile time: ${endCompileTime - startCompileTime} seconds`
         )
 
-        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH, ZERO_VALUE, 2)
+        tree = new IncrementalMerkleTree(config.globalStateTreeDepth, ZERO_VALUE, 2)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
@@ -61,7 +58,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('Valid epoch key should pass check', async () => {
         // Check if every valid nonce works
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
             const n = i
             circuitInputs = genEpochKeyCircuitInput(
                 id,
@@ -75,8 +72,8 @@ describe('Verify Epoch Key circuits', function () {
             await UnirepCircuit.executeCircuit(circuit, circuitInputs)
             const startTime = new Date().getTime()
             const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
-                zksnarkBuild,
-                Circuit.verifyEpochKey,
+                config.exportBuildPath,
+                CircuitName.verifyEpochKey,
                 circuitInputs
             )
             const endTime = new Date().getTime()
@@ -86,8 +83,8 @@ describe('Verify Epoch Key circuits', function () {
                 )} s)`
             )
             let isValid = await UnirepCircuit.verifyProof(
-                zksnarkBuild,
-                Circuit.verifyEpochKey,
+                config.exportBuildPath,
+                CircuitName.verifyEpochKey,
                 proof,
                 publicSignals
             )
@@ -96,8 +93,8 @@ describe('Verify Epoch Key circuits', function () {
             const formatProof = UnirepCircuit.formatProofForVerifierContract(proof)
             const snarkjsProof = UnirepCircuit.formatProofForSnarkjsVerification(formatProof)
             isValid = await UnirepCircuit.verifyProof(
-                zksnarkBuild,
-                Circuit.verifyEpochKey,
+                config.exportBuildPath,
+                CircuitName.verifyEpochKey,
                 snarkjsProof,
                 publicSignals
             )
@@ -162,7 +159,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Invalid nonce should not pass check', async () => {
-        const invalidNonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        const invalidNonce = config.numEpochKeyNoncePerEpoch
         const invalidCircuitInputs = (circuitInputs = genEpochKeyCircuitInput(
             id,
             tree,

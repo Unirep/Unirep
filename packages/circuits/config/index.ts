@@ -1,32 +1,16 @@
-enum Circuit {
-    verifyEpochKey = 'verifyEpochKey',
-    proveReputation = 'proveReputation',
-    proveUserSignUp = 'proveUserSignUp',
-    startTransition = 'startTransition',
-    processAttestations = 'processAttestations',
-    userStateTransition = 'userStateTransition',
-}
+import path from "path";
+import { CircuitConfig } from "../src";
 
-const verifyEpochKeyCircuitPath = '../zksnarkBuild/verifyEpochKey_main.circom'
+export default {
+    exportBuildPath: path.join(__dirname, '../zksnarkBuild'),
+    globalStateTreeDepth: 4,
+    userStateTreeDepth: 4,
+    epochTreeDepth: 32,
+    numEpochKeyNoncePerEpoch: 3,
+    maxReputationBudget: 10,
+    numAttestationsPerProof: 5,
+} as CircuitConfig
 
-const proveReputationCircuitPath = '../zksnarkBuild/proveReputation_main.circom'
-
-const proveUserSignUpCircuitPath = '../zksnarkBuild/proveUserSignUp_main.circom'
-
-const startTransitionCircuitPath = '../zksnarkBuild/startTransition_main.circom'
-
-const processAttestationsCircuitPath =
-    '../zksnarkBuild/processAttestations_main.circom'
-
-const userStateTransitionCircuitPath =
-    '../zksnarkBuild/userStateTransition_main.circom'
-
-export {
-    Circuit,
-    verifyEpochKeyCircuitPath,
-    proveReputationCircuitPath,
-    proveUserSignUpCircuitPath,
-    startTransitionCircuitPath,
-    processAttestationsCircuitPath,
-    userStateTransitionCircuitPath,
-}
+export const inputCircuitPath = path.join(__dirname, '../circuits')
+export const ptau = path.join(__dirname, '../zksnarkBuild/powersOfTau28_hez_final_17.ptau')
+export const overrideCircuit = false

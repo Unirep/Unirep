@@ -2,18 +2,19 @@ import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, hash5, ZkIdentity } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import UnirepCircuit, { CircuitName } from '../src'
 import {
     Attestation,
     genProcessAttestationsCircuitInput,
     genProofAndVerify,
     throwError,
 } from './utils'
-import { Circuit, processAttestationsCircuitPath } from '../config/'
 
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
-
-const circuitPath = path.join(__dirname, processAttestationsCircuitPath)
+import config from '../zksnarkBuild/config.json'
+const circuitPath = path.join(
+    config.exportBuildPath,
+    `${CircuitName.processAttestations}_main.circom`
+)
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -49,7 +50,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-                NUM_ATTESTATIONS_PER_PROOF
+            config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.getNullifier(),
@@ -73,7 +74,7 @@ describe('Process attestation circuit', function () {
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
 
         const isValid = await genProofAndVerify(
-            Circuit.processAttestations,
+            CircuitName.processAttestations,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -81,7 +82,7 @@ describe('Process attestation circuit', function () {
 
     it('successfully process zero attestations', async () => {
         let zeroSelectors: number[] = []
-        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
+        for (let i = 0; i < config.numAttestationsPerProof; i++) {
             zeroSelectors.push(0)
         }
         const { circuitInputs, hashChainResult } =
@@ -144,7 +145,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-                NUM_ATTESTATIONS_PER_PROOF
+                config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.getNullifier(),
@@ -187,7 +188,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-                NUM_ATTESTATIONS_PER_PROOF
+                config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.getNullifier(),
@@ -215,7 +216,7 @@ describe('Process attestation circuit', function () {
     it('Same attester give reputation to same epoch keys should work', async () => {
         const sameAttesterID = BigInt(1)
         const attestations: Attestation[] = []
-        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
+        for (let i = 0; i < config.numAttestationsPerProof; i++) {
             const attestation: Attestation = new Attestation(
                 sameAttesterID,
                 BigInt(Math.floor(Math.random() * 100)),
@@ -244,7 +245,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-                NUM_ATTESTATIONS_PER_PROOF
+                config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.getNullifier(),
@@ -271,7 +272,7 @@ describe('Process attestation circuit', function () {
 
     it('Sign up flag should not be overwritten', async () => {
         let selectors: number[] = []
-        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
+        for (let i = 0; i < config.numAttestationsPerProof; i++) {
             selectors.push(1)
         }
         const sameAttesterID = BigInt(1)
@@ -287,7 +288,7 @@ describe('Process attestation circuit', function () {
         )
         attestations.push(signUpAttestation)
         // attestations without sign up flag
-        for (let i = 1; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
+        for (let i = 1; i < config.numAttestationsPerProof; i++) {
             const attestation: Attestation = new Attestation(
                 sameAttesterID,
                 BigInt(Math.floor(Math.random() * 100)),
@@ -315,7 +316,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-                NUM_ATTESTATIONS_PER_PROOF
+            config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.getNullifier(),
@@ -341,7 +342,7 @@ describe('Process attestation circuit', function () {
 
     it('process attestations with wrong attestation record should not work', async () => {
         let selectors: number[] = []
-        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
+        for (let i = 0; i < config.numAttestationsPerProof; i++) {
             selectors.push(1)
         }
         const { circuitInputs } = await genProcessAttestationsCircuitInput(
@@ -352,11 +353,11 @@ describe('Process attestation circuit', function () {
             selectors
         )
         let indexWrongAttestationRecord = Math.floor(
-            Math.random() * NUM_ATTESTATIONS_PER_PROOF
+            Math.random() * config.numAttestationsPerProof
         )
         while (selectors[indexWrongAttestationRecord] == 0)
             indexWrongAttestationRecord =
-                (indexWrongAttestationRecord + 1) % NUM_ATTESTATIONS_PER_PROOF
+                (indexWrongAttestationRecord + 1) % config.numAttestationsPerProof
         circuitInputs.old_pos_reps[indexWrongAttestationRecord] = Math.floor(
             Math.random() * 100
         ).toString()
@@ -381,7 +382,7 @@ describe('Process attestation circuit', function () {
             toNonce
         )
         const indexWrongRoot = Math.floor(
-            Math.random() * NUM_ATTESTATIONS_PER_PROOF
+            Math.random() * config.numAttestationsPerProof
         )
         circuitInputs.intermediate_user_state_tree_roots[indexWrongRoot] =
             genRandomSalt().toString()
@@ -401,7 +402,7 @@ describe('Process attestation circuit', function () {
             toNonce
         )
         const indexWrongPathElements = Math.floor(
-            Math.random() * NUM_ATTESTATIONS_PER_PROOF
+            Math.random() * config.numAttestationsPerProof
         )
         circuitInputs.path_elements[indexWrongPathElements].reverse()
 
