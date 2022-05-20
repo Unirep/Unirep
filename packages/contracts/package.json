@@ -31,6 +31,7 @@
         "circom": "0.5.45",
         "ethereum-waffle": "^3.4.0",
         "hardhat": "^2.8.3",
+        "hardhat-gas-reporter": "^1.0.8",
         "keyv": "^4.0.3",
         "ts-node": "^10.2.1",
         "typechain": "^7.0.1"
