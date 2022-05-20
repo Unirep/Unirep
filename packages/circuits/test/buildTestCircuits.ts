@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { Path } from 'typescript'
+
 import { CircuitConfig, CircuitName } from '../src'
 
 // make the circuit size smaller
@@ -14,7 +14,7 @@ export const testConfig = {
     numAttestationsPerProof: 5,
 } as CircuitConfig
 
-const buildEpochKeyExistsCircuit = (dirPath: Path) => {
+const buildEpochKeyExistsCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `epochKeyExists_test.circom`
@@ -26,7 +26,7 @@ const buildEpochKeyExistsCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildHash5Circuit = (dirPath: Path) => {
+const buildHash5Circuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `hasher5_test.circom`
@@ -38,7 +38,7 @@ const buildHash5Circuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildHashLeftRightCircuit  = (dirPath: Path) => {
+const buildHashLeftRightCircuit  = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `hashleftright_test.circom`
@@ -50,7 +50,7 @@ const buildHashLeftRightCircuit  = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildIdCommitmentCircuit = (dirPath: Path) => {
+const buildIdCommitmentCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `identityCommitment_test.circom`
@@ -62,7 +62,7 @@ const buildIdCommitmentCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildMerkleTreeInclusionProofCircuit = (dirPath: Path) => {
+const buildMerkleTreeInclusionProofCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `merkleTreeInclusionProof_test.circom`
@@ -74,7 +74,7 @@ const buildMerkleTreeInclusionProofCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildMerkleTreeLeafExistsCircuit = (dirPath: Path) => {
+const buildMerkleTreeLeafExistsCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `merkleTreeLeafExists_test.circom`
@@ -86,7 +86,7 @@ const buildMerkleTreeLeafExistsCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildSMTInclustionProofCircuit = (dirPath: Path) => {
+const buildSMTInclustionProofCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `smtInclusionProof_test.circom`
@@ -98,7 +98,7 @@ const buildSMTInclustionProofCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildSMTLeafExistsCircuit = (dirPath: Path) => {
+const buildSMTLeafExistsCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `smtLeafExists_test.circom`
@@ -110,7 +110,7 @@ const buildSMTLeafExistsCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildVerifyHashChainCircuit = (dirPath: Path) => {
+const buildVerifyHashChainCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `verifyHashChain_test.circom`
@@ -123,7 +123,7 @@ const buildVerifyHashChainCircuit = (dirPath: Path) => {
 }
 
 
-const buildVerifyEpochKeyCircuit = (dirPath: Path) => {
+const buildVerifyEpochKeyCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.verifyEpochKey}_test.circom`
@@ -141,7 +141,7 @@ const buildVerifyEpochKeyCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildProveRepuationCircuit = (dirPath: Path) => {
+const buildProveRepuationCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.proveReputation}_test.circom`
@@ -163,7 +163,7 @@ const buildProveRepuationCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildProveSignUpCircuit = (dirPath: Path) => {
+const buildProveSignUpCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.proveUserSignUp}_test.circom`
@@ -183,7 +183,7 @@ const buildProveSignUpCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildStartTransitionCircuit = (dirPath: Path) => {
+const buildStartTransitionCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.startTransition}_test.circom`
@@ -199,7 +199,7 @@ const buildStartTransitionCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildProcessAttestationsCircuit = (dirPath: Path) => {
+const buildProcessAttestationsCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.processAttestations}_test.circom`
@@ -217,7 +217,7 @@ const buildProcessAttestationsCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildUserStateTransitionCircuit = (dirPath: Path) => {
+const buildUserStateTransitionCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.userStateTransition}_test.circom`
@@ -238,7 +238,7 @@ const buildUserStateTransitionCircuit = (dirPath: Path) => {
 }
 
 const main = async (): Promise<number> => {
-    const dirPath: Path = testConfig.exportBuildPath
+    const dirPath = testConfig.exportBuildPath
     const configPath = path.join(dirPath, 'testConfig.json')
 
     // build export zk files folder

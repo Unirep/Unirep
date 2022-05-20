@@ -1,10 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { Path } from 'typescript'
 import config from '../config'
 import { CircuitName } from '../src'
 
-const buildVerifyEpochKeyCircuit = (dirPath: Path) => {
+const buildVerifyEpochKeyCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.verifyEpochKey}_main.circom`
@@ -22,7 +21,7 @@ const buildVerifyEpochKeyCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildProveRepuationCircuit = (dirPath: Path) => {
+const buildProveRepuationCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.proveReputation}_main.circom`
@@ -44,7 +43,7 @@ const buildProveRepuationCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildProveSignUpCircuit = (dirPath: Path) => {
+const buildProveSignUpCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.proveUserSignUp}_main.circom`
@@ -64,7 +63,7 @@ const buildProveSignUpCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildStartTransitionCircuit = (dirPath: Path) => {
+const buildStartTransitionCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.startTransition}_main.circom`
@@ -80,7 +79,7 @@ const buildStartTransitionCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildProcessAttestationsCircuit = (dirPath: Path) => {
+const buildProcessAttestationsCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.processAttestations}_main.circom`
@@ -98,7 +97,7 @@ const buildProcessAttestationsCircuit = (dirPath: Path) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildUserStateTransitionCircuit = (dirPath: Path) => {
+const buildUserStateTransitionCircuit = (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.userStateTransition}_main.circom`
@@ -119,7 +118,7 @@ const buildUserStateTransitionCircuit = (dirPath: Path) => {
 }
 
 const main = async (): Promise<number> => {
-    const dirPath: Path = config.exportBuildPath
+    const dirPath = config.exportBuildPath
     const configPath = path.join(dirPath, 'config.json')
 
     // build export zk files folder

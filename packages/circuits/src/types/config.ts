@@ -1,7 +1,5 @@
-import { Path } from "typescript"
-
 export type CircuitConfig = {
-    exportBuildPath: Path
+    exportBuildPath: string
     globalStateTreeDepth: number
     userStateTreeDepth: number
     epochTreeDepth: number
