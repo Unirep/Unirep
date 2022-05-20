@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
     },
 
     typechain: {
-        outDir: './typechain',
+        outDir: './src/contracts',
     },
 }
 
