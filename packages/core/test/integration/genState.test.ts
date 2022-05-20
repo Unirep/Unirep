@@ -19,12 +19,6 @@ import {
     Unirep,
     UserTransitionProof,
 } from '@unirep/contracts'
-// import {
-//     Attestation,
-//     genUserStateFromContract,
-//     genUserStateFromParams,
-//     UserState,
-// } from '../../src'
 import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
 import { genUserState, IUserState, UserState } from '../../src'

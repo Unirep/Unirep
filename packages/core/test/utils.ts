@@ -378,8 +378,8 @@ const compareEpochTrees = async (
     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
     const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
 
-    expect(epochTree1).to.deep.equal(epochTree2)
-    expect(epochTree1).to.deep.equal(epochTree3)
+    expect(epochTree1.getRootHash()).to.equal(epochTree2.getRootHash())
+    expect(epochTree1.getRootHash()).to.equal(epochTree3.getRootHash())
 
     return usWithNoStorage.toJSON()
 }
