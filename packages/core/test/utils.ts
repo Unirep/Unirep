@@ -136,7 +136,7 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
             j < unirepState.settings.numEpochKeyNoncePerEpoch;
             j++
         ) {
-            const epk = genEpochKey(id.nullifier, i, j)
+            const epk = genEpochKey(id.identityNullifier, i, j)
             const attestations = unirepState.getAttestations(epk.toString())
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
@@ -171,13 +171,13 @@ const genEpochKeyCircuitInput = (
 ) => {
     const proof = tree.createProof(leafIndex)
     const root = tree.root
-    const epk = genEpochKey(id.nullifier, epoch, nonce)
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
 
     const circuitInputs = {
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
         GST_root: root,
-        identity_nullifier: id.nullifier,
+        identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: ustRoot,
         nonce: nonce,
@@ -200,7 +200,7 @@ const genReputationCircuitInput = async (
     _proveGraffiti?,
     _graffitiPreImage?
 ) => {
-    const epk = genEpochKey(id.nullifier, epoch, nonce)
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     const repNullifiersAmount =
         _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
     const minRep = _minRep === undefined ? 0 : _minRep
@@ -248,7 +248,7 @@ const genReputationCircuitInput = async (
         epoch: epoch,
         epoch_key_nonce: nonce,
         epoch_key: epk,
-        identity_nullifier: id.nullifier,
+        identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
@@ -280,7 +280,7 @@ const genProveSignUpCircuitInput = async (
     _signUp?: number
 ) => {
     const nonce = 0
-    const epk = genEpochKey(id.nullifier, epoch, nonce)
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
@@ -305,7 +305,7 @@ const genProveSignUpCircuitInput = async (
     const circuitInputs = {
         epoch: epoch,
         epoch_key: epk,
-        identity_nullifier: id.nullifier,
+        identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,

@@ -268,7 +268,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = genReputationNullifier(
-                userIds[userIdx].nullifier,
+                userIds[userIdx].identityNullifier,
                 epoch,
                 0,
                 attesterId
@@ -362,7 +362,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = genReputationNullifier(
-                userIds[userIdx].nullifier,
+                userIds[userIdx].identityNullifier,
                 epoch,
                 0,
                 attesterId

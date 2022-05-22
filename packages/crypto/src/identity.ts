@@ -152,7 +152,7 @@ class ZkIdentity {
      * Returns the identity nullifier.
      * @returns The identity nullifier.
      */
-    get nullifier(): bigint {
+    get identityNullifier(): bigint {
         return this._identityNullifier
     }
 

@@ -118,7 +118,11 @@ describe('Verify user sign up verifier', function () {
 
     it('wrong epoch key should fail', async () => {
         const attesterId = signedUpAttesterId
-        const wrongEpochKey = genEpochKey(user.nullifier, epoch, nonce + 1)
+        const wrongEpochKey = genEpochKey(
+            user.identityNullifier,
+            epoch,
+            nonce + 1
+        )
         const circuitInputs = await genProveSignUpCircuitInput(
             user,
             epoch,
