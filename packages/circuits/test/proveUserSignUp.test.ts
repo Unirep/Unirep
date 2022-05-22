@@ -125,7 +125,7 @@ describe('Prove user has signed up circuit', function () {
         const attesterId = signedUpAttesterId
         const wrongNonce = 1
         const wrongEpochKey = genEpochKey(
-            user.getNullifier(),
+            user.nullifier,
             epoch,
             wrongNonce,
             EPOCH_TREE_DEPTH

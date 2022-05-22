@@ -83,6 +83,7 @@ const genEpochKey = (
         BigInt(0),
         BigInt(0),
     ]
+    console.log(values)
     let epochKey = hash5(values).toString()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)

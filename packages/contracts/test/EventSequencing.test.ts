@@ -57,7 +57,7 @@ describe('EventSequencing', () => {
         let currentEpoch = await unirepContract.currentEpoch()
         let epochKeyNonce = 0
         let epochKey = genEpochKey(
-            userIds[0].getNullifier(),
+            userIds[0].nullifier,
             currentEpoch.toNumber(),
             epochKeyNonce
         )
@@ -202,7 +202,7 @@ describe('EventSequencing', () => {
         // 9. Attest to second user
         epochKeyNonce = 0
         epochKey = genEpochKey(
-            userIds[1].getNullifier(),
+            userIds[1].nullifier,
             currentEpoch.toNumber(),
             epochKeyNonce
         )
