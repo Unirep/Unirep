@@ -54,7 +54,7 @@ enum Strategy {
  * @zk-key/protocols package and it simplifies the management of
  * identity-related witness parameters.
  */
-export default class ZkIdentity {
+class ZkIdentity {
     private _identityTrapdoor: bigint
     private _identityNullifier: bigint
 
@@ -144,7 +144,7 @@ export default class ZkIdentity {
      * Returns the identity trapdoor.
      * @returns The identity trapdoor.
      */
-    public getTrapdoor(): bigint {
+    get trapdoor(): bigint {
         return this._identityTrapdoor
     }
 
@@ -152,7 +152,7 @@ export default class ZkIdentity {
      * Returns the identity nullifier.
      * @returns The identity nullifier.
      */
-    public getNullifier(): bigint {
+    get nullifier(): bigint {
         return this._identityNullifier
     }
 
@@ -160,7 +160,7 @@ export default class ZkIdentity {
      * Returns the secret.
      * @returns The secret.
      */
-    public getSecret(): bigint[] {
+    get secret(): bigint[] {
         return this._secret
     }
 
@@ -168,7 +168,7 @@ export default class ZkIdentity {
      * Returns the Poseidon hash of the secret.
      * @returns The hash of the secret.
      */
-    public getSecretHash(): bigint {
+    get secretHash(): bigint {
         return poseidon(this._secret)
     }
 
@@ -177,7 +177,7 @@ export default class ZkIdentity {
      * @returns identity commitment
      */
     public genIdentityCommitment(): bigint {
-        return poseidon([this.getSecretHash()])
+        return poseidon([this.secretHash])
     }
 
     /**
