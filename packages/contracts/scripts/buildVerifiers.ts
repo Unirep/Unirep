@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import path from 'path'
 import UnirepCircuit, { CircuitName } from '@unirep/circuits'
 
-import { zkFilesPath, buildContractPath, verifiersPath } from '../src/config'
+import { zkFilesPath, verifiersPath } from '../src/config'
 import { genSnarkVerifierSol } from './genVerifier'
 
 const createVerifierName = (circuit: string) => {
@@ -10,13 +10,6 @@ const createVerifierName = (circuit: string) => {
 }
 
 const main = async (): Promise<number> => {
-    // create build folder
-    try {
-        fs.mkdirSync(buildContractPath, { recursive: true })
-    } catch (e) {
-        console.log('Cannot create folder ', e)
-    }
-
     // create verifier folder
     try {
         fs.mkdirSync(verifiersPath, { recursive: true })
@@ -26,7 +19,7 @@ const main = async (): Promise<number> => {
 
     for (const circuit of Object.keys(CircuitName)) {
         const verifierName = createVerifierName(circuit)
-        const solOut = path.join(buildContractPath, `${verifierName}.sol`)
+        const solOut = path.join(verifiersPath, `${verifierName}.sol`)
         const circuitName = circuit as CircuitName
         const vKey = await UnirepCircuit.getVKey(zkFilesPath, circuitName)
 

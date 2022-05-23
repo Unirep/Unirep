@@ -5,8 +5,8 @@ import path from "path";
 import { ContractConfig } from "./types/config";
 
 export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
-export const buildContractPath = path.join(__dirname, '../build')
 export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
+export const artifactsPath = path.join(__dirname, '../build/artifacts')
 const config: CircuitConfig = require(path.join(zkFilesPath, 'config.json'))
 
 export default {
