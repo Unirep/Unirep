@@ -11,9 +11,8 @@ import {
     genReputationCircuitInput,
     Reputation,
 } from './utils'
-import { deployUnirep, ReputationProof } from '../src'
-import { Unirep } from '../typechain'
-import config from '../src/config'
+import contract, { ReputationProof, Unirep } from '../src'
+import config, { artifactsPath } from '../src/config'
 
 describe('Verify reputation verifier', function () {
     this.timeout(30000)
@@ -34,13 +33,19 @@ describe('Verify reputation verifier', function () {
     const proveGraffiti = 1
     const signUp = 1
     const attestingFee = ethers.utils.parseEther('0.1')
+    const _config = {
+        ...config,
+        attestingFee
+    }
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            _config
+        )
 
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {

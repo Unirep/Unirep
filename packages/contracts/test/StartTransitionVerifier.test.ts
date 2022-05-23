@@ -15,8 +15,8 @@ import {
     bootstrapRandomUSTree,
     genInputForContract,
 } from './utils'
-import { computeStartTransitionProofHash, deployUnirep, Unirep } from '../src'
-import config from '../src/config'
+import contract, { computeStartTransitionProofHash, Unirep } from '../src'
+import config, { artifactsPath } from '../src/config'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -39,7 +39,11 @@ describe('User State Transition circuits', function () {
         before(async () => {
             accounts = await hardhatEthers.getSigners()
 
-            unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+            unirepContract = await contract.deploy(
+                artifactsPath,
+                accounts[0],
+                config
+            )
 
             // User state tree
             const results = await bootstrapRandomUSTree()

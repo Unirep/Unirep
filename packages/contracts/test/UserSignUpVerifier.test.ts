@@ -11,7 +11,8 @@ import {
     genProveSignUpCircuitInput,
     Reputation,
 } from './utils'
-import { deployUnirep, SignUpProof, Unirep } from '../src'
+import contract, { SignUpProof, Unirep } from '../src'
+import config, { artifactsPath } from '../src/config'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
@@ -32,7 +33,11 @@ describe('Verify user sign up verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            config
+        )
         // Bootstrap reputation
         const graffitiPreImage = genRandomSalt()
         reputationRecords[signedUpAttesterId] = new Reputation(

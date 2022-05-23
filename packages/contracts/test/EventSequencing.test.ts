@@ -6,9 +6,8 @@ import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import circuit from '@unirep/circuits'
 
 import { genEpochKey, Attestation } from './utils'
-import { deployUnirep, EpochKeyProof, Event } from '../src'
-import { Unirep } from '../typechain'
-import config from '../src/config'
+import contract, { EpochKeyProof, Event, Unirep } from '../src'
+import config, { artifactsPath } from '../src/config'
 
 describe('EventSequencing', () => {
     let expectedEventsInOrder: Event[] = []
@@ -22,13 +21,19 @@ describe('EventSequencing', () => {
 
     let attester, attesterAddress, attesterId, unirepContractCalledByAttester
     const attestingFee = ethers.utils.parseEther('0.1')
+    const _config = {
+        ...config,
+        attestingFee
+    }
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            _config
+        )
 
         // 1. Fisrt user sign up
         let userId = new ZkIdentity()

@@ -14,8 +14,8 @@ import {
     genEpochKeyCircuitInput,
     genInputForContract
 } from './utils'
-import { EpochKeyProof, deployUnirep, Unirep } from '../src'
-import config from '../src/config'
+import contract, { EpochKeyProof, Unirep } from '../src'
+import config, { artifactsPath } from '../src/config'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
@@ -35,7 +35,11 @@ describe('Verify Epoch Key verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            config
+        )
         tree = new IncrementalMerkleTree(config.globalStateTreeDepth, ZERO_VALUE, 2)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()

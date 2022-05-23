@@ -4,8 +4,8 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 
-import { deployUnirep, Unirep } from '../src'
-import config from '../src/config'
+import contract, { Unirep } from '../src'
+import config, { artifactsPath } from '../src/config'
 
 describe('Signup', () => {
     const testMaxUser = 5
@@ -14,14 +14,20 @@ describe('Signup', () => {
 
     let signedUpUsers = 0
     let signedUpAttesters = 0
+    const _config = {
+        ...config,
+        maxUsers: testMaxUser,
+        maxAttesters: testMaxUser,
+    }
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            maxUsers: testMaxUser,
-            maxAttesters: testMaxUser,
-        })
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            _config
+        )
     })
 
     it('should have the correct config value', async () => {

@@ -20,8 +20,8 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import contractConfig from '../src/config'
-import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import contractConfig, { artifactsPath } from '../src/config'
+import contract, { Unirep, UserTransitionProof } from '../src'
 import config from '../src/config'
 
 describe('Epoch Transition', function () {
@@ -40,6 +40,10 @@ describe('Epoch Transition', function () {
     let epochKeyProofIndex
     const proofIndexes: BigNumber[] = []
     const attestingFee = ethers.utils.parseEther('0.1')
+    const _config = {
+        ...config,
+        attestingFee,
+    }
 
     let fromEpoch
     let GSTree
@@ -49,9 +53,11 @@ describe('Epoch Transition', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            _config
+        )
 
         console.log('User sign up')
         userId = new ZkIdentity()

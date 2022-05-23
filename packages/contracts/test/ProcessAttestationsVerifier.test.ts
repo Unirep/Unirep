@@ -8,12 +8,11 @@ import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
 } from './utils'
-import {
+import contract, {
     computeProcessAttestationsProofHash,
-    deployUnirep,
     Unirep,
 } from '../src'
-import config from '../src/config'
+import config, { artifactsPath } from '../src/config'
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -28,7 +27,11 @@ describe('Process attestation circuit', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            config
+        )
     })
 
     it('successfully process attestations', async () => {

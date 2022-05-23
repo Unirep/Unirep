@@ -11,8 +11,10 @@ import {
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
     genInputForContract,
+    config,
 } from './utils'
-import { deployUnirep, Unirep } from '../src'
+import contract, { Unirep } from '../src'
+import { artifactsPath } from '../src/config'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -29,9 +31,11 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            config
+        )
     })
 
     describe('Attesters set airdrop', () => {

@@ -22,11 +22,10 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import config from '../src/config'
-import {
+import config, { artifactsPath } from '../src/config'
+import contract, {
     computeProcessAttestationsProofHash,
     computeStartTransitionProofHash,
-    deployUnirep,
     ReputationProof,
     SignUpProof,
     Unirep,
@@ -52,13 +51,19 @@ describe('EventFilters', () => {
     let hashedStateLeaf
     const leafIndex = 0
     const attestingFee = ethers.utils.parseEther('0.1')
+    const _config = {
+        ...config,
+        attestingFee
+    }
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            _config
+        )
 
         console.log('User sign up')
         userId = new ZkIdentity()
