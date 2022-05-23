@@ -92,6 +92,9 @@ interface IUnirep is UnirepTypes {
         uint256[] proofIndexRecords
     );
 
+    // error 
+    error UserAlreadySignedUp(uint256 identityCommitment);
+
     /**
      * Sign up an attester using the address who sends the transaction
      */

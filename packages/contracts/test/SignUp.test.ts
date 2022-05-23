@@ -66,7 +66,7 @@ describe('Signup', () => {
         it('double sign up should fail', async () => {
             await expect(
                 unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith('Unirep: the user has already signed up')
+            ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
         })
 
         it('sign up should fail if max capacity reached', async () => {

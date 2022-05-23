@@ -166,10 +166,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * @param identityCommitment Commitment of the user's identity which is a semaphore identity.
      */
     function userSignUp(uint256 identityCommitment) external {
-        require(
-            hasUserSignedUp[identityCommitment] == false,
-            'Unirep: the user has already signed up'
-        );
+        if(hasUserSignedUp[identityCommitment] == true)
+            revert UserAlreadySignedUp(identityCommitment);
         require(
             numUserSignUps < maxUsers,
             'Unirep: maximum number of user signups reached'
