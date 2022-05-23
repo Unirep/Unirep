@@ -6,7 +6,7 @@ set -e
 cd "$(dirname "$0")"
 cd ..
 
-BUILD_FOLDER=./build
+BUILD_FOLDER=./vbuild
 VERIFIER_CONTRACT_FOLDER=./contracts/verifiers
 
 mkdir -p $BUILD_FOLDER

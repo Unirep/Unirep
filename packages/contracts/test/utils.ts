@@ -25,7 +25,7 @@ import {
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 import { SparseMerkleTree } from '@unirep/crypto'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))

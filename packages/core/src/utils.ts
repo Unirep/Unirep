@@ -20,7 +20,6 @@ import {
     SparseMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
-import { EPOCH_TREE_DEPTH } from '@unirep/config'
 
 import { ISettings, IUnirepState, IUserState } from './interfaces'
 import UnirepState from './UnirepState'
@@ -31,6 +30,7 @@ import {
     REPUTATION_NULLIFIER_DOMAIN,
 } from '../config/nullifierDomainSeparator'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
+import { EPOCH_TREE_DEPTH } from '@unirep/circuits/config'
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),

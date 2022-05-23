@@ -19,7 +19,7 @@ import {
     Unirep,
     UserTransitionProof,
 } from '@unirep/contracts'
-import { EPOCH_LENGTH } from '@unirep/config'
+import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
 import { genUserState, IUserState, UserState } from '../../src'
 import {

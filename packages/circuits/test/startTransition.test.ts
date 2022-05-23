@@ -16,7 +16,7 @@ import {
 } from './utils'
 import { startTransitionCircuitPath } from '../config'
 
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
+import { GLOBAL_STATE_TREE_DEPTH } from '../config'
 
 const circuitPath = path.join(__dirname, startTransitionCircuitPath)
 

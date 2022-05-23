@@ -4,13 +4,14 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import {
-    ATTESTTING_FEE,
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
+
+const ATTESTING_FEE = '0'
 
 import { deployUnirep, Unirep } from '../src'
 
@@ -33,7 +34,7 @@ describe('Signup', () => {
 
     it('should have the correct config value', async () => {
         const attestingFee_ = await unirepContract.attestingFee()
-        expect(ATTESTTING_FEE).equal(attestingFee_)
+        expect(ATTESTING_FEE).equal(attestingFee_)
         const epochLength_ = await unirepContract.epochLength()
         expect(EPOCH_LENGTH).equal(epochLength_)
         const numEpochKeyNoncePerEpoch_ =

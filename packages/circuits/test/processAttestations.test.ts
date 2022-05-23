@@ -11,7 +11,7 @@ import {
 } from './utils'
 import { processAttestationsCircuitPath } from '../config/'
 
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+import { NUM_ATTESTATIONS_PER_PROOF } from '../config'
 
 const circuitPath = path.join(__dirname, processAttestationsCircuitPath)
 

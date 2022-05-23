@@ -10,7 +10,6 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { IAttestation, Attestation } from '@unirep/contracts'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
 
 import {
     defaultUserStateLeaf,
@@ -22,6 +21,7 @@ import {
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
+import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits/config'
 
 export default class UserState {
     public userStateTreeDepth: number

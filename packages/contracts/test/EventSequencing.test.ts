@@ -8,7 +8,7 @@ import {
     EPOCH_LENGTH,
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 import { genEpochKey, Attestation } from './utils'
 import { deployUnirep, EpochKeyProof, Event } from '../src'
 import { Unirep } from '../typechain'
