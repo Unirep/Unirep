@@ -710,7 +710,7 @@ const genProveSignUpCircuitInput = async (
 
 const genProofAndVerify = async (circuit: CircuitName, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+    const { proof, publicSignals } = await UnirepCircuit.genProof(
         config.exportBuildPath,
         circuit,
         circuitInputs
@@ -721,7 +721,12 @@ const genProofAndVerify = async (circuit: CircuitName, circuitInputs) => {
             (endTime - startTime) / 1000
         )} s)`
     )
-    const isValid = await UnirepCircuit.verifyProof(config.exportBuildPath, circuit, proof, publicSignals)
+    const isValid = await UnirepCircuit.verifyProof(
+        config.exportBuildPath,
+        circuit,
+        proof,
+        publicSignals
+    )
     return isValid
 }
 

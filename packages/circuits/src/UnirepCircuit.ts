@@ -76,7 +76,7 @@ export default class UnirepCircuit {
      * @param inputs The input of the proof
      * @returns The proof and the public signals of the snark proof
      */
-    public static genProofAndPublicSignals = async (
+    public static genProof = async (
         zkFilesPath: string,
         circuitName: CircuitName,
         inputs: any

@@ -71,7 +71,7 @@ describe('Verify Epoch Key circuits', function () {
 
             await UnirepCircuit.executeCircuit(circuit, circuitInputs)
             const startTime = new Date().getTime()
-            const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+            const { proof, publicSignals } = await UnirepCircuit.genProof(
                 config.exportBuildPath,
                 CircuitName.verifyEpochKey,
                 circuitInputs

@@ -729,7 +729,7 @@ const formatProofAndPublicSignals = (
 
 const genProofAndVerify = async (circuit: CircuitName, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+    const { proof, publicSignals } = await UnirepCircuit.genProof(
         zkFilesPath,
         circuit,
         circuitInputs
@@ -751,7 +751,7 @@ const genProofAndVerify = async (circuit: CircuitName, circuitInputs) => {
 
 const genInputForContract = async (circuit: CircuitName, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await UnirepCircuit.genProofAndPublicSignals(
+    const { proof, publicSignals } = await UnirepCircuit.genProof(
         zkFilesPath,
         circuit,
         circuitInputs
@@ -768,6 +768,7 @@ const genInputForContract = async (circuit: CircuitName, circuitInputs) => {
 }
 
 export {
+    config,
     Attestation,
     Reputation,
     SMT_ONE_LEAF,
