@@ -277,7 +277,7 @@ describe('User State', async function () {
         it('add attestations to user himself', async () => {
             for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
                 const userEpk = genEpochKey(
-                    user.getNullifier(),
+                    user.identityNullifier,
                     epoch,
                     i
                 ).toString()
@@ -391,7 +391,7 @@ describe('User State', async function () {
             for (let i = 0; i < setting.numEpochKeyNoncePerEpoch; i++) {
                 const results = await userState.genVerifyEpochKeyProof(i)
                 const expectedEpk = genEpochKey(
-                    user.getNullifier(),
+                    user.identityNullifier,
                     epoch,
                     i
                 ).toString()
@@ -447,7 +447,7 @@ describe('User State', async function () {
                 proveMinRep
             )
             const expectedEpk = genEpochKey(
-                user.getNullifier(),
+                user.identityNullifier,
                 epoch,
                 epkNonce
             ).toString()
@@ -485,7 +485,7 @@ describe('User State', async function () {
                 nonceList
             )
             const expectedEpk = genEpochKey(
-                user.getNullifier(),
+                user.identityNullifier,
                 epoch,
                 epkNonce
             ).toString()
@@ -570,7 +570,7 @@ describe('User State', async function () {
                 BigInt(signedUpAttesterId)
             )
             const expectedEpk = genEpochKey(
-                user.getNullifier(),
+                user.identityNullifier,
                 epoch,
                 epkNonce
             ).toString()
@@ -596,7 +596,7 @@ describe('User State', async function () {
                 BigInt(nonSignUpAttesterId)
             )
             const expectedEpk = genEpochKey(
-                user.getNullifier(),
+                user.identityNullifier,
                 epoch,
                 epkNonce
             ).toString()
@@ -820,7 +820,7 @@ describe('User State', async function () {
             )
             for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
                 const userEpk = genEpochKey(
-                    user.getNullifier(),
+                    user.identityNullifier,
                     prevEpoch,
                     i
                 ).toString()
@@ -900,7 +900,7 @@ describe('User State', async function () {
             for (let i = 0; i < setting.numEpochKeyNoncePerEpoch; i++) {
                 const results = await userState.genVerifyEpochKeyProof(i)
                 const expectedEpk = genEpochKey(
-                    user.getNullifier(),
+                    user.identityNullifier,
                     epoch,
                     i
                 ).toString()
@@ -962,7 +962,7 @@ describe('User State', async function () {
                 proveMinRep
             )
             const expectedEpk = genEpochKey(
-                user.getNullifier(),
+                user.identityNullifier,
                 epoch,
                 epkNonce
             ).toString()
@@ -987,7 +987,7 @@ describe('User State', async function () {
                 BigInt(signedUpAttesterId)
             )
             const expectedEpk = genEpochKey(
-                user.getNullifier(),
+                user.identityNullifier,
                 epoch,
                 epkNonce
             ).toString()

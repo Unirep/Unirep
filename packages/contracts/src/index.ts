@@ -18,7 +18,7 @@ import {
     EPOCH_TREE_DEPTH,
 } from '@unirep/circuits/config'
 
-const ATTESTING_FEE = '0'
+const ATTESTING_FEE = 0
 
 import {
     EpochKeyValidityVerifier,
