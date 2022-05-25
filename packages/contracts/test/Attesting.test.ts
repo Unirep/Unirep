@@ -114,7 +114,7 @@ describe('Attesting', () => {
     it('submit attestation should succeed', async () => {
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(attesterId),
             BigInt(1),
@@ -145,7 +145,7 @@ describe('Attesting', () => {
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         // Same identity nullifier, epoch and nonce will result in the same epoch key
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(attesterId),
             BigInt(0),
@@ -168,7 +168,7 @@ describe('Attesting', () => {
         let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(999),
             BigInt(1),
@@ -191,7 +191,7 @@ describe('Attesting', () => {
         let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(attesterId),
             SNARK_FIELD_SIZE,
@@ -265,7 +265,7 @@ describe('Attesting', () => {
         let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         const zeroEpochKeyProofIndex = 0
         let attestation: Attestation = new Attestation(
             BigInt(attesterId),
@@ -289,7 +289,7 @@ describe('Attesting', () => {
         let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         const nonExistedProofIndex = 5
         let attestation: Attestation = new Attestation(
             BigInt(attesterId),
@@ -313,7 +313,7 @@ describe('Attesting', () => {
         let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(attesterId),
             BigInt(1),
@@ -352,7 +352,7 @@ describe('Attesting', () => {
             unirepContract.connect(nonAttester)
         let epoch = await unirepContract.currentEpoch()
         let nonce = 0
-        let epochKey = genEpochKey(userId.getNullifier(), epoch, nonce)
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
             BigInt(nonAttesterId),
             BigInt(0),

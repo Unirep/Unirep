@@ -4,7 +4,6 @@ import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { CircuitName } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
-
 import {
     genEpochKey,
     genInputForContract,
@@ -160,7 +159,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong nonce epoch key should fail', async () => {
         const wrongEpochKey = genEpochKey(
-            user.getNullifier(),
+            user.identityNullifier,
             epoch,
             nonce + 1
         )

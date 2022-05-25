@@ -21,8 +21,8 @@ describe('(Semaphore) identity commitment', function () {
         )
 
         const id: ZkIdentity = new ZkIdentity()
-        const nullifier = id.getNullifier()
-        const trapdoor = id.getTrapdoor()
+        const nullifier = id.identityNullifier
+        const trapdoor = id.trapdoor
         const commitment = id.genIdentityCommitment()
 
         const circuitInputs = {

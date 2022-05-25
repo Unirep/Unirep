@@ -5,5 +5,6 @@ node_modules
 .DS_Store
 typechain
 build
+vbuild
 contracts/verifiers
 artifacts

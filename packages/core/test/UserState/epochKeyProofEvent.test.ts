@@ -10,7 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
+import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
 import {
     computeInitUserStateRoot,

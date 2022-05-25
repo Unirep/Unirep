@@ -3,7 +3,9 @@
     "version": "1.0.0",
     "description": "",
     "main": "build/src/index.js",
+    "types": "build/src/index.d.ts",
     "scripts": {
+        "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "yarn UnirepStateTests & yarn UserStateTests & yarn integrationTest",
@@ -12,13 +14,13 @@
         "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --parallel --no-compile $(find test/UserState -name '*.test.ts')",
         "lint": "prettier --write ."
     },
-    "repository": "git+https://github.com/appliedzkp/UniRep.git",
+    "repository": "https://github.com/unirep/unirep",
     "author": "",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/appliedzkp/UniRep/issues"
+        "url": "https://github.com/unirep/unirep/issues"
     },
-    "homepage": "https://github.com/appliedzkp/UniRep#readme",
+    "homepage": "https://github.com/unirep/unirep#readme",
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -35,9 +37,9 @@
     },
     "dependencies": {
         "@typechain/ethers-v5": "^9.0.0",
-        "@unirep/circuits": "workspace:*",
-        "@unirep/contracts": "workspace:*",
-        "@unirep/crypto": "workspace:*",
+        "@unirep/circuits": "1.0.0",
+        "@unirep/contracts": "1.0.0",
+        "@unirep/crypto": "1.0.0",
         "argparse": "^2.0.1",
         "base64url": "^3.0.1",
         "ethers": "^5.4.6",

@@ -508,7 +508,7 @@ export default class UnirepState {
         this._checkBlockNumber(blockNumber)
         assert(
             nullifiers.length === this.settings.numEpochKeyNoncePerEpoch,
-            `UnirepState: wrong epoch key nullifiers amount. 
+            `UnirepState: wrong epoch key nullifiers amount.
             Expect (${this.settings.numEpochKeyNoncePerEpoch}) nullifiers`
         )
 
