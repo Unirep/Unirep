@@ -15,10 +15,7 @@ export const testConfig = {
 } as CircuitConfig
 
 const buildEpochKeyExistsCircuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `epochKeyExists_test.circom`
-    )
+    const circomPath = path.join(dirPath, `epochKeyExists_test.circom`)
     const circuitContent = `
         include "../userStateTransition.circom"
         component main = EpochKeyExist(${testConfig.epochTreeDepth});
@@ -27,10 +24,7 @@ const buildEpochKeyExistsCircuit = (dirPath: string) => {
 }
 
 const buildHash5Circuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `hasher5_test.circom`
-    )
+    const circomPath = path.join(dirPath, `hasher5_test.circom`)
     const circuitContent = `
         include "../hasherPoseidon.circom"
         component main = Hasher5();
@@ -38,11 +32,8 @@ const buildHash5Circuit = (dirPath: string) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildHashLeftRightCircuit  = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `hashleftright_test.circom`
-    )
+const buildHashLeftRightCircuit = (dirPath: string) => {
+    const circomPath = path.join(dirPath, `hashleftright_test.circom`)
     const circuitContent = `
         include "../hasherPoseidon.circom"
         component main = HashLeftRight();
@@ -51,10 +42,7 @@ const buildHashLeftRightCircuit  = (dirPath: string) => {
 }
 
 const buildIdCommitmentCircuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `identityCommitment_test.circom`
-    )
+    const circomPath = path.join(dirPath, `identityCommitment_test.circom`)
     const circuitContent = `
         include "../identityCommitment.circom"
         component main = IdentityCommitment();
@@ -75,10 +63,7 @@ const buildMerkleTreeInclusionProofCircuit = (dirPath: string) => {
 }
 
 const buildMerkleTreeLeafExistsCircuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `merkleTreeLeafExists_test.circom`
-    )
+    const circomPath = path.join(dirPath, `merkleTreeLeafExists_test.circom`)
     const circuitContent = `
         include "../incrementalMerkleTree.circom"
         component main = LeafExists(${testConfig.globalStateTreeDepth});
@@ -87,10 +72,7 @@ const buildMerkleTreeLeafExistsCircuit = (dirPath: string) => {
 }
 
 const buildSMTInclustionProofCircuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `smtInclusionProof_test.circom`
-    )
+    const circomPath = path.join(dirPath, `smtInclusionProof_test.circom`)
     const circuitContent = `
         include "../sparseMerkleTree.circom"
         component main = SMTInclusionProof(${testConfig.epochTreeDepth});
@@ -99,10 +81,7 @@ const buildSMTInclustionProofCircuit = (dirPath: string) => {
 }
 
 const buildSMTLeafExistsCircuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `smtLeafExists_test.circom`
-    )
+    const circomPath = path.join(dirPath, `smtLeafExists_test.circom`)
     const circuitContent = `
         include "../sparseMerkleTree.circom"
         component main = SMTLeafExists(${testConfig.epochTreeDepth});
@@ -111,17 +90,13 @@ const buildSMTLeafExistsCircuit = (dirPath: string) => {
 }
 
 const buildVerifyHashChainCircuit = (dirPath: string) => {
-    const circomPath = path.join(
-        dirPath,
-        `verifyHashChain_test.circom`
-    )
+    const circomPath = path.join(dirPath, `verifyHashChain_test.circom`)
     const circuitContent = `
         include "../verifyHashChain.circom"
         component main = VerifyHashChain(${testConfig.numAttestationsPerProof});
     `
     fs.writeFileSync(circomPath, circuitContent)
 }
-
 
 const buildVerifyEpochKeyCircuit = (dirPath: string) => {
     const circomPath = path.join(

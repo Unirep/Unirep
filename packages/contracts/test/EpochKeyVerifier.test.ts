@@ -10,10 +10,7 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
-import {
-    genEpochKeyCircuitInput,
-    genInputForContract
-} from './utils'
+import { genEpochKeyCircuitInput, genInputForContract } from './utils'
 import contract, { EpochKeyProof, Unirep } from '../src'
 import config, { artifactsPath } from '../src/config'
 
@@ -40,7 +37,11 @@ describe('Verify Epoch Key verifier', function () {
             accounts[0],
             config
         )
-        tree = new IncrementalMerkleTree(config.globalStateTreeDepth, ZERO_VALUE, 2)
+        tree = new IncrementalMerkleTree(
+            config.globalStateTreeDepth,
+            ZERO_VALUE,
+            2
+        )
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()

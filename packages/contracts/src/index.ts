@@ -1,11 +1,6 @@
-import {
-    Event,
-    AttestationEvent
-} from './types/event'
+import { Event, AttestationEvent } from './types/event'
 
-import {
-    Attestation
-} from './Attestation'
+import { Attestation } from './Attestation'
 
 import UnirepContract, {
     Unirep,
@@ -14,11 +9,11 @@ import UnirepContract, {
     SignUpProof,
     UserTransitionProof,
     EpochKeyProof,
-} from "./UnirepContract";
+} from './UnirepContract'
 
 import {
     computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash
+    computeProcessAttestationsProofHash,
 } from './utils'
 
 export default UnirepContract

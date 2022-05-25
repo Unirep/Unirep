@@ -1,5 +1,5 @@
-import path from "path";
-import { CircuitConfig } from "../src";
+import path from 'path'
+import { CircuitConfig } from '../src'
 
 export default {
     exportBuildPath: path.join(__dirname, '../zksnarkBuild'),
@@ -12,5 +12,8 @@ export default {
 } as CircuitConfig
 
 export const inputCircuitPath = path.join(__dirname, '../circuits')
-export const ptau = path.join(__dirname, '../zksnarkBuild/powersOfTau28_hez_final_17.ptau')
+export const ptau = path.join(
+    __dirname,
+    '../zksnarkBuild/powersOfTau28_hez_final_17.ptau'
+)
 export const overrideCircuit = false

@@ -154,10 +154,16 @@ const toCompleteHexString = (str: string, len?: number): string => {
 }
 
 const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt) => {
-    return crypto.SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+    return crypto.SparseMerkleTree.create(
+        new Keyv(),
+        treeDepth,
+        defaultLeafHash
+    )
 }
 
-const genNewEpochTree = async (_epochTreeDepth: number = config.epochTreeDepth) => {
+const genNewEpochTree = async (
+    _epochTreeDepth: number = config.epochTreeDepth
+) => {
     const defaultOTSMTHash = SMT_ONE_LEAF
     return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
@@ -171,7 +177,11 @@ const defaultUserStateLeaf = crypto.hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new crypto.IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
+    const t = new crypto.IncrementalMerkleTree(
+        treeDepth,
+        defaultUserStateLeaf,
+        2
+    )
     return t.root
 }
 

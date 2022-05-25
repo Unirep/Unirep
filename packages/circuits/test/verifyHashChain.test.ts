@@ -21,7 +21,9 @@ describe('Hash chain circuit', function () {
     const selectors: number[] = []
 
     before(async () => {
-        circuit = await UnirepCircuit.compileAndLoadCircuit(sealedHashChainCircuitPath)
+        circuit = await UnirepCircuit.compileAndLoadCircuit(
+            sealedHashChainCircuitPath
+        )
 
         for (let i = 0; i < NUM_ELEMENT; i++) {
             const element = genRandomSalt()

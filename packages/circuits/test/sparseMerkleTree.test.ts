@@ -63,7 +63,10 @@ describe('Sparse Merkle Tree circuits', function () {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
             }
 
             // Prove second half of empty leaves
@@ -80,7 +83,10 @@ describe('Sparse Merkle Tree circuits', function () {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
             }
         })
 
@@ -165,7 +171,9 @@ describe('Sparse Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await UnirepCircuit.compileAndLoadCircuit(InclusionProofCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(
+                InclusionProofCircuitPath
+            )
         })
 
         it('Valid update proofs should work', async () => {
@@ -196,7 +204,10 @@ describe('Sparse Merkle Tree circuits', function () {
                     path_elements: pathElements,
                 }
 
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
 
                 const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,

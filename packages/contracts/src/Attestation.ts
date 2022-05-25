@@ -1,7 +1,7 @@
-import { BigNumber, BigNumberish } from "ethers"
-import { hash5 } from "@unirep/crypto"
+import { BigNumber, BigNumberish } from 'ethers'
+import { hash5 } from '@unirep/crypto'
 
-import { UnirepTypes } from "./contracts/IUnirep"
+import { UnirepTypes } from './contracts/IUnirep'
 
 export class Attestation implements UnirepTypes.AttestationStruct {
     public attesterId: BigNumber

@@ -50,7 +50,9 @@ describe('User State Transition circuits', function () {
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
-            circuit = await UnirepCircuit.compileAndLoadCircuit(epkExistsCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(
+                epkExistsCircuitPath
+            )
             const endCompileTime = Math.floor(new Date().getTime() / 1000)
             console.log(
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
@@ -101,7 +103,10 @@ describe('User State Transition circuits', function () {
 
         describe('Process user state transition proof', () => {
             it('Valid user state update inputs should work', async () => {
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
 
                 const commitment = user.genIdentityCommitment()
                 const newGSTLeaf = hashLeftRight(

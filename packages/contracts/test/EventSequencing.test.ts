@@ -23,7 +23,7 @@ describe('EventSequencing', () => {
     const attestingFee = ethers.utils.parseEther('0.1')
     const _config = {
         ...config,
-        attestingFee
+        attestingFee,
     }
 
     before(async () => {
@@ -143,7 +143,9 @@ describe('EventSequencing', () => {
         // 5. First epoch end
         // let numEpochKey = await unirepContract.getNumEpochKey(currentEpoch)
         // expect(numEpochKey).equal(1)
-        await hardhatEthers.provider.send('evm_increaseTime', [config.epochLength]) // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send('evm_increaseTime', [
+            config.epochLength,
+        ]) // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -233,7 +235,9 @@ describe('EventSequencing', () => {
         expectedEventsNumber++
 
         // 10. Second epoch end
-        await hardhatEthers.provider.send('evm_increaseTime', [config.epochLength]) // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send('evm_increaseTime', [
+            config.epochLength,
+        ]) // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -242,7 +246,9 @@ describe('EventSequencing', () => {
         expectedEventsNumber++
 
         // 11. Third epoch end
-        await hardhatEthers.provider.send('evm_increaseTime', [config.epochLength]) // Fast-forward epochLength of seconds
+        await hardhatEthers.provider.send('evm_increaseTime', [
+            config.epochLength,
+        ]) // Fast-forward epochLength of seconds
         tx = await unirepContract.beginEpochTransition()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)

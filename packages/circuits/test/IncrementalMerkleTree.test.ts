@@ -26,7 +26,9 @@ describe('Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await UnirepCircuit.compileAndLoadCircuit(LeafExistsCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(
+                LeafExistsCircuitPath
+            )
         })
 
         it('Valid LeafExists inputs should work', async () => {
@@ -49,7 +51,10 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                     root,
                 }
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
                 const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
@@ -93,7 +98,9 @@ describe('Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await UnirepCircuit.compileAndLoadCircuit(InclusionProofCircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(
+                InclusionProofCircuitPath
+            )
         })
 
         it('Valid update proofs should work', async () => {
@@ -122,7 +129,10 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                 }
 
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
                 const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
@@ -162,7 +172,10 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                 }
 
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
                 const circuitRoot = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,

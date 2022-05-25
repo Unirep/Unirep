@@ -51,12 +51,13 @@ class EpochKeyProof implements UnirepTypes.EpochKeyProofStruct {
     private publicSignals: BigNumberish[]
 
     constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
-        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
+        const formattedProof: any[] =
+            UnirepCircuit.formatProofForVerifierContract(_proof)
         this.globalStateTree = ethers.BigNumber.from(_publicSignals[0])
         this.epoch = ethers.BigNumber.from(_publicSignals[1])
         this.epochKey = ethers.BigNumber.from(_publicSignals[2])
         this.proof = formattedProof
-        this.publicSignals = _publicSignals.map(n => ethers.BigNumber.from(n))
+        this.publicSignals = _publicSignals.map((n) => ethers.BigNumber.from(n))
     }
 
     public verify = (): Promise<boolean> => {
@@ -92,14 +93,15 @@ class ReputationProof implements UnirepTypes.ReputationProofStruct {
     private publicSignals: BigNumberish[]
 
     constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
-
-        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
+        const formattedProof: any[] =
+            UnirepCircuit.formatProofForVerifierContract(_proof)
         this.repNullifiers = _publicSignals.slice(0, config.maxReputationBudget)
         this.epoch = _publicSignals[config.maxReputationBudget]
         this.epochKey = _publicSignals[config.maxReputationBudget + 1]
         this.globalStateTree = _publicSignals[config.maxReputationBudget + 2]
         this.attesterId = _publicSignals[config.maxReputationBudget + 3]
-        this.proveReputationAmount = _publicSignals[config.maxReputationBudget + 4]
+        this.proveReputationAmount =
+            _publicSignals[config.maxReputationBudget + 4]
         this.minRep = _publicSignals[config.maxReputationBudget + 5]
         this.proveGraffiti = _publicSignals[config.maxReputationBudget + 6]
         this.graffitiPreImage = _publicSignals[config.maxReputationBudget + 7]
@@ -151,7 +153,8 @@ class SignUpProof implements UnirepTypes.SignUpProofStruct {
     private publicSignals: BigNumberish[]
 
     constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
-        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
+        const formattedProof: any[] =
+            UnirepCircuit.formatProofForVerifierContract(_proof)
         this.epoch = _publicSignals[0]
         this.epochKey = _publicSignals[1]
         this.globalStateTree = _publicSignals[2]
@@ -192,7 +195,8 @@ class UserTransitionProof implements UnirepTypes.UserTransitionProofStruct {
     private publicSignals: BigNumberish[]
 
     constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
-        const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(_proof)
+        const formattedProof: any[] =
+            UnirepCircuit.formatProofForVerifierContract(_proof)
         this.newGlobalStateTreeLeaf = _publicSignals[0]
         this.epkNullifiers = []
         this.blindedUserStates = []
@@ -254,22 +258,19 @@ class UserTransitionProof implements UnirepTypes.UserTransitionProofStruct {
 }
 
 export default class UnirepContract {
-
     private static createVerifierName = (circuit: string) => {
         return `${circuit.charAt(0).toUpperCase() + circuit.slice(1)}Verifier`
     }
 
     private static getUnirepArtifact = (
-        artifactsPath: string,
-    ): { abi, bytecode } => {
-        const Unirep = require(
-            path.join(
-                artifactsPath,
-                'contracts',
-                'Unirep.sol',
-                'Unirep.json'
-            )
-        )
+        artifactsPath: string
+    ): { abi; bytecode } => {
+        const Unirep = require(path.join(
+            artifactsPath,
+            'contracts',
+            'Unirep.sol',
+            'Unirep.json'
+        ))
         return Unirep
     }
 
@@ -285,21 +286,18 @@ export default class UnirepContract {
         deployer: ethers.Signer,
         config: ContractConfig
     ): Promise<Unirep> => {
-
         const Unirep = this.getUnirepArtifact(artifactsPath)
         const addrMap = {}
 
         for (const verifier of Object.keys(CircuitName)) {
             const verifierName = this.createVerifierName(verifier)
-            const artifact = require(
-                path.join(
-                    artifactsPath,
-                    'contracts',
-                    'verifiers',
-                    `${verifierName}.sol`,
-                    `${verifierName}.json`,
-                )
-            )
+            const artifact = require(path.join(
+                artifactsPath,
+                'contracts',
+                'verifiers',
+                `${verifierName}.sol`,
+                `${verifierName}.json`
+            ))
 
             console.log(`Deploying ${verifierName}`)
             const factory = new ethers.ContractFactory(
@@ -367,24 +365,20 @@ export default class UnirepContract {
      * Get Unirep contract from a specific address
      * @param address The address of the Unirep contract
      * @param signerOrProvider A given signer or provider
-     * @param artifactsPath If artifacts path is given, it loads abi from the given artifacts path. 
+     * @param artifactsPath If artifacts path is given, it loads abi from the given artifacts path.
      * Or it loads Unirep abi from exported package
      * @returns The Unirep contract object
      */
     public static get = (
         address: string,
         signerOrProvider?: ethers.Signer | ethers.providers.Provider,
-        artifactsPath?: string,
+        artifactsPath?: string
     ): Unirep => {
-        const abi = artifactsPath ?
-            this.getUnirepArtifact(artifactsPath).abi :
-            UnirepABI
+        const abi = artifactsPath
+            ? this.getUnirepArtifact(artifactsPath).abi
+            : UnirepABI
 
-        return new ethers.Contract(
-            address,
-            abi,
-            signerOrProvider,
-        ) as Unirep
+        return new ethers.Contract(address, abi, signerOrProvider) as Unirep
     }
 }
 

@@ -6,21 +6,14 @@ import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
 import { CircuitName } from './types/circuit'
 
 export default class UnirepCircuit {
-
     /**
      * Get VKey of given circuit
      * @param zkFilesPath The path of built zk files
      * @param circuitName The name of circuit
      * @returns Vkey of the circuit
      */
-    public static getVKey = (
-        zkFilesPath: string,
-        circuitName: CircuitName
-    ) => {
-        const VKeyPath = path.join(
-            zkFilesPath,
-            `${circuitName}.vkey.json`
-        )
+    public static getVKey = (zkFilesPath: string, circuitName: CircuitName) => {
+        const VKeyPath = path.join(zkFilesPath, `${circuitName}.vkey.json`)
         const vkey = require(VKeyPath)
         return vkey
     }
@@ -81,14 +74,8 @@ export default class UnirepCircuit {
         circuitName: CircuitName,
         inputs: any
     ) => {
-        const circuitWasmPath = path.join(
-            zkFilesPath,
-            `${circuitName}.wasm`
-        )
-        const zkeyPath = path.join(
-            zkFilesPath,
-            `${circuitName}.zkey`
-        )
+        const circuitWasmPath = path.join(zkFilesPath, `${circuitName}.wasm`)
+        const zkeyPath = path.join(zkFilesPath, `${circuitName}.zkey`)
         const { proof, publicSignals } = await snarkjs.groth16.fullProve(
             inputs,
             circuitWasmPath,
@@ -104,7 +91,7 @@ export default class UnirepCircuit {
      * @param circuitName The name of the circuit
      * @param proof The proof of the snark proof
      * @param publicSignals The public signals of the snark proof
-     * @returns 
+     * @returns
      */
     public static verifyProof = async (
         zkFilesPath: string,

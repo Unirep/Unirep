@@ -1,5 +1,5 @@
-import { BigNumber, ethers } from "ethers"
-import { UnirepABI } from "./abis/Unirep"
+import { BigNumber, ethers } from 'ethers'
+import { UnirepABI } from './abis/Unirep'
 
 const computeStartTransitionProofHash = (
     blindedUserState: BigNumber,
@@ -43,5 +43,5 @@ const rmFuncSigHash = (abiEncoder: string) => {
 export {
     computeStartTransitionProofHash,
     computeProcessAttestationsProofHash,
-    rmFuncSigHash
+    rmFuncSigHash,
 }

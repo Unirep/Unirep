@@ -143,7 +143,9 @@ describe('Epoch Transition', function () {
         let epoch = await unirepContract.currentEpoch()
 
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [contractConfig.epochLength])
+        await hardhatEthers.provider.send('evm_increaseTime', [
+            contractConfig.epochLength,
+        ])
         // Assert no epoch transition compensation is dispensed to volunteer
         expect(
             await unirepContract.epochTransitionCompensation(attesterAddress)
@@ -206,7 +208,10 @@ describe('Epoch Transition', function () {
             nonce
         )
         const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(CircuitName.startTransition, circuitInputs)
+            await genInputForContract(
+                CircuitName.startTransition,
+                circuitInputs
+            )
         const isProofValid = await unirepContract.verifyStartTransitionProof(
             blindedUserState,
             blindedHashChain,
@@ -335,7 +340,9 @@ describe('Epoch Transition', function () {
         let epoch = await unirepContract.currentEpoch()
 
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [contractConfig.epochLength])
+        await hardhatEthers.provider.send('evm_increaseTime', [
+            contractConfig.epochLength,
+        ])
         // Begin epoch transition
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()

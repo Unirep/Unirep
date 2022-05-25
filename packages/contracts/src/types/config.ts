@@ -1,5 +1,5 @@
-import { CircuitConfig } from "@unirep/circuits"
-import { BigNumber } from "ethers"
+import { CircuitConfig } from '@unirep/circuits'
+import { BigNumber } from 'ethers'
 
 export type ContractConfig = {
     attestingFee: BigNumber

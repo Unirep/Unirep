@@ -8,10 +8,7 @@ import {
 } from '@unirep/crypto'
 
 import UnirepCircuit, { CircuitName } from '../src'
-import {
-    genEpochKeyCircuitInput,
-    throwError,
-} from './utils'
+import { genEpochKeyCircuitInput, throwError } from './utils'
 
 import config from '../zksnarkBuild/config.json'
 const circuitPath = path.join(
@@ -40,7 +37,11 @@ describe('Verify Epoch Key circuits', function () {
             `Compile time: ${endCompileTime - startCompileTime} seconds`
         )
 
-        tree = new IncrementalMerkleTree(config.globalStateTreeDepth, ZERO_VALUE, 2)
+        tree = new IncrementalMerkleTree(
+            config.globalStateTreeDepth,
+            ZERO_VALUE,
+            2
+        )
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
@@ -90,8 +91,10 @@ describe('Verify Epoch Key circuits', function () {
             )
             expect(isValid).to.be.true
 
-            const formatProof = UnirepCircuit.formatProofForVerifierContract(proof)
-            const snarkjsProof = UnirepCircuit.formatProofForSnarkjsVerification(formatProof)
+            const formatProof =
+                UnirepCircuit.formatProofForVerifierContract(proof)
+            const snarkjsProof =
+                UnirepCircuit.formatProofForSnarkjsVerification(formatProof)
             isValid = await UnirepCircuit.verifyProof(
                 config.exportBuildPath,
                 CircuitName.verifyEpochKey,

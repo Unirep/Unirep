@@ -5,11 +5,11 @@ export enum Event {
     UserSignedUp,
     UserStateTransitioned,
     AttestationSubmitted,
-    EpochEnded
+    EpochEnded,
 }
 
 export enum AttestationEvent {
     SendAttestation,
     Airdrop,
-    SpendReputation
+    SpendReputation,
 }

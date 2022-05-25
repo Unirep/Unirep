@@ -2,25 +2,23 @@ import fs from 'fs'
 import prettier from 'prettier'
 
 const main = async () => {
-    const data = fs.readFileSync('./src/contracts/index.ts', 'utf-8');
+    const data = fs.readFileSync('./src/contracts/index.ts', 'utf-8')
 
-    const reg = /export[\{\ A-z\_]+factory[\ \}\"\.\/A-z]+factory";\n/ig
+    const reg = /export[\{\ A-z\_]+factory[\ \}\"\.\/A-z]+factory";\n/gi
     const newData = data.replace(reg, '')
     const formatted = prettier.format(newData, {
         semi: false,
-        parser: "babel",
-        singleQuote: true
-    });
+        parser: 'babel',
+        singleQuote: true,
+    })
 
-    fs.writeFileSync(`./src/contracts/index.ts`, formatted);
+    fs.writeFileSync(`./src/contracts/index.ts`, formatted)
 
     try {
         fs.unlinkSync('./src/contracts/hardhat.d.ts')
-    } catch (_) {
-    }
+    } catch (_) {}
 
     fs.rmSync('./src/contracts/factories', { recursive: true, force: true })
-
 }
 
 void (async () => {

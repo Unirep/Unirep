@@ -1,8 +1,8 @@
-import { CircuitConfig } from "@unirep/circuits";
-import { ethers } from "ethers";
-import path from "path";
+import { CircuitConfig } from '@unirep/circuits'
+import { ethers } from 'ethers'
+import path from 'path'
 
-import { ContractConfig } from "./types/config";
+import { ContractConfig } from './types/config'
 
 export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
 export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
@@ -14,5 +14,5 @@ export default {
     epochLength: 30,
     maxUsers: 10,
     maxAttesters: 10,
-    ...config
+    ...config,
 } as ContractConfig

@@ -8,10 +8,7 @@ import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
 } from './utils'
-import contract, {
-    computeProcessAttestationsProofHash,
-    Unirep,
-} from '../src'
+import contract, { computeProcessAttestationsProofHash, Unirep } from '../src'
 import config, { artifactsPath } from '../src/config'
 
 describe('Process attestation circuit', function () {

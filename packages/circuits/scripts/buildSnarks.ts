@@ -61,7 +61,6 @@ const main = async (): Promise<number> => {
             await fs.promises.writeFile(vkey, S)
             console.log(`Generated ${zkey} and ${vkey}`)
         }
-
     }
 
     return 0

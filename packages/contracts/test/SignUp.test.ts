@@ -43,7 +43,9 @@ describe('Signup', () => {
 
         const treeDepths_ = await unirepContract.treeDepths()
         expect(config.epochTreeDepth).equal(treeDepths_.epochTreeDepth)
-        expect(config.globalStateTreeDepth).equal(treeDepths_.globalStateTreeDepth)
+        expect(config.globalStateTreeDepth).equal(
+            treeDepths_.globalStateTreeDepth
+        )
         expect(config.userStateTreeDepth).equal(treeDepths_.userStateTreeDepth)
     })
 

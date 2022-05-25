@@ -698,7 +698,8 @@ const formatProofAndPublicSignals = (
     publicSignals: any[]
 ) => {
     let result
-    const formattedProof: any[] = UnirepCircuit.formatProofForVerifierContract(proof)
+    const formattedProof: any[] =
+        UnirepCircuit.formatProofForVerifierContract(proof)
     if (circuit === CircuitName.proveReputation) {
         result = new ReputationProof(publicSignals, proof)
     } else if (circuit === CircuitName.verifyEpochKey) {
@@ -742,8 +743,8 @@ const genProofAndVerify = async (circuit: CircuitName, circuitInputs) => {
     )
     const isValid = await UnirepCircuit.verifyProof(
         zkFilesPath,
-        circuit, 
-        proof, 
+        circuit,
+        proof,
         publicSignals
     )
     return isValid

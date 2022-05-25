@@ -53,7 +53,7 @@ describe('EventFilters', () => {
     const attestingFee = ethers.utils.parseEther('0.1')
     const _config = {
         ...config,
-        attestingFee
+        attestingFee,
     }
 
     before(async () => {
@@ -196,7 +196,10 @@ describe('EventFilters', () => {
             nonce
         )
         const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(CircuitName.startTransition, circuitInputs)
+            await genInputForContract(
+                CircuitName.startTransition,
+                circuitInputs
+            )
         const tx = await unirepContract.startUserStateTransition(
             blindedUserState,
             blindedHashChain,
@@ -268,7 +271,9 @@ describe('EventFilters', () => {
 
     it('submit user state transition proofs should success', async () => {
         // Fast-forward epochLength of seconds
-        await hardhatEthers.provider.send('evm_increaseTime', [config.epochLength])
+        await hardhatEthers.provider.send('evm_increaseTime', [
+            config.epochLength,
+        ])
         // Begin epoch transition
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()

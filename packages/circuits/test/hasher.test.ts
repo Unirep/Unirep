@@ -24,7 +24,9 @@ describe('Poseidon hash circuits', function () {
 
     describe('Hasher5', () => {
         it('correctly hashes 5 random values', async () => {
-            circuit = await UnirepCircuit.compileAndLoadCircuit(hasher5CircuitPath)
+            circuit = await UnirepCircuit.compileAndLoadCircuit(
+                hasher5CircuitPath
+            )
             const preImages: any = []
             for (let i = 0; i < 5; i++) {
                 preImages.push(genRandomSalt())
@@ -34,8 +36,15 @@ describe('Poseidon hash circuits', function () {
                 in: preImages,
             })
 
-            const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
-            const output = UnirepCircuit.getSignalByName(circuit, witness, 'main.hash')
+            const witness = await UnirepCircuit.executeCircuit(
+                circuit,
+                circuitInputs
+            )
+            const output = UnirepCircuit.getSignalByName(
+                circuit,
+                witness,
+                'main.hash'
+            )
 
             const outputJS = hash5(preImages)
 
@@ -54,8 +63,15 @@ describe('Poseidon hash circuits', function () {
 
             const circuitInputs = stringifyBigInts({ left, right })
 
-            const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
-            const output = UnirepCircuit.getSignalByName(circuit, witness, 'main.hash')
+            const witness = await UnirepCircuit.executeCircuit(
+                circuit,
+                circuitInputs
+            )
+            const output = UnirepCircuit.getSignalByName(
+                circuit,
+                witness,
+                'main.hash'
+            )
 
             const outputJS = hashLeftRight(left, right)
 

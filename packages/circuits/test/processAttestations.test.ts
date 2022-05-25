@@ -42,7 +42,10 @@ describe('Process attestation circuit', function () {
         const { circuitInputs, hashChainResult } =
             await genProcessAttestationsCircuitInput(user, epoch, nonce, nonce)
 
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
         const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
@@ -50,7 +53,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-            config.numAttestationsPerProof
+                config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.identityNullifier,
@@ -98,7 +101,10 @@ describe('Process attestation circuit', function () {
             circuitInputs.intermediate_user_state_tree_roots[0]
         const outputUserStateTreeRoot = initialUserStateTreeRoot
 
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
         const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
@@ -137,7 +143,10 @@ describe('Process attestation circuit', function () {
                 undefined,
                 hashChainStarter
             )
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
         const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
@@ -180,7 +189,10 @@ describe('Process attestation circuit', function () {
                 undefined,
                 hashChainStarter
             )
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
         const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
@@ -237,7 +249,10 @@ describe('Process attestation circuit', function () {
                 attestations
             )
 
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
         const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
@@ -308,7 +323,10 @@ describe('Process attestation circuit', function () {
                 undefined,
                 attestations
             )
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
         const outputUserState = UnirepCircuit.getSignalByName(
             circuit,
             witness,
@@ -316,7 +334,7 @@ describe('Process attestation circuit', function () {
         )
         const outputUserStateTreeRoot =
             circuitInputs.intermediate_user_state_tree_roots[
-            config.numAttestationsPerProof
+                config.numAttestationsPerProof
             ]
         const expectedUserState = hash5([
             user.identityNullifier,
@@ -357,7 +375,8 @@ describe('Process attestation circuit', function () {
         )
         while (selectors[indexWrongAttestationRecord] == 0)
             indexWrongAttestationRecord =
-                (indexWrongAttestationRecord + 1) % config.numAttestationsPerProof
+                (indexWrongAttestationRecord + 1) %
+                config.numAttestationsPerProof
         circuitInputs.old_pos_reps[indexWrongAttestationRecord] = Math.floor(
             Math.random() * 100
         ).toString()

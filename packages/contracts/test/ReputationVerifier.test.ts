@@ -34,7 +34,7 @@ describe('Verify reputation verifier', function () {
     const attestingFee = ethers.utils.parseEther('0.1')
     const _config = {
         ...config,
-        attestingFee
+        attestingFee,
     }
 
     before(async () => {

@@ -72,7 +72,10 @@ describe('User State Transition circuits', function () {
                     nonce
                 )
 
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
                 const outputUserState = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,
@@ -117,7 +120,10 @@ describe('User State Transition circuits', function () {
                     newNonce
                 )
 
-                const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
+                const witness = await UnirepCircuit.executeCircuit(
+                    circuit,
+                    circuitInputs
+                )
                 const outputUserState = UnirepCircuit.getSignalByName(
                     circuit,
                     witness,

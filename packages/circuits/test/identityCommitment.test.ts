@@ -30,8 +30,15 @@ describe('(Semaphore) identity commitment', function () {
             identity_trapdoor: trapdoor,
         }
 
-        const witness = await UnirepCircuit.executeCircuit(circuit, circuitInputs)
-        const output = UnirepCircuit.getSignalByName(circuit, witness, 'main.out')
+        const witness = await UnirepCircuit.executeCircuit(
+            circuit,
+            circuitInputs
+        )
+        const output = UnirepCircuit.getSignalByName(
+            circuit,
+            witness,
+            'main.out'
+        )
 
         expect(output.toString()).equal(commitment.toString())
     })
