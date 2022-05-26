@@ -94,7 +94,8 @@ interface IUnirep is UnirepTypes {
 
     // error 
     error UserAlreadySignedUp(uint256 identityCommitment);
-
+    error ReachedMaximumNumberUserSignedUp();
+    error AttesterAlreadySignUp(address attester);
     /**
      * Sign up an attester using the address who sends the transaction
      */

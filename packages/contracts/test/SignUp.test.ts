@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { ethers, Signer } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import {
@@ -85,17 +85,15 @@ describe('Signup', () => {
                 unirepContract.userSignUp(
                     new ZkIdentity().genIdentityCommitment()
                 )
-            ).to.be.revertedWith(
-                'Unirep: maximum number of user signups reached'
-            )
+            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
         })
     })
 
     describe('Attester sign-ups', () => {
-        let attester
-        let attesterAddress
-        let attester2
-        let attester2Address
+        let attester: Signer
+        let attesterAddress: string
+        let attester2: Signer
+        let attester2Address: string
         let attester2Sig
         let unirepContractCalledByAttester: Unirep
 
@@ -158,14 +156,16 @@ describe('Signup', () => {
         it('double sign up should fail', async () => {
             await expect(
                 unirepContractCalledByAttester.attesterSignUp()
-            ).to.be.revertedWith('Unirep: attester has already signed up')
+            ).to.be.revertedWith(
+                `AttesterAlreadySignUp("${await attester.getAddress()}")`
+            )
 
             await expect(
                 unirepContract.attesterSignUpViaRelayer(
                     attester2Address,
                     attester2Sig
                 )
-            ).to.be.revertedWith('Unirep: attester has already signed up')
+            ).to.be.revertedWith(`AttesterAlreadySignUp("${attester2Address}")`)
         })
 
         it('sign up should fail if max capacity reached', async () => {
@@ -191,9 +191,7 @@ describe('Signup', () => {
             unirepContractCalledByAttester = unirepContract.connect(attester)
             await expect(
                 unirepContractCalledByAttester.attesterSignUp()
-            ).to.be.revertedWith(
-                'Unirep: maximum number of attester signups reached'
-            )
+            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
         })
     })
 })

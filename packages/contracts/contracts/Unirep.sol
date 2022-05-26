@@ -166,12 +166,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * @param identityCommitment Commitment of the user's identity which is a semaphore identity.
      */
     function userSignUp(uint256 identityCommitment) external {
-        if(hasUserSignedUp[identityCommitment] == true)
+        if (hasUserSignedUp[identityCommitment] == true)
             revert UserAlreadySignedUp(identityCommitment);
-        require(
-            numUserSignUps < maxUsers,
-            'Unirep: maximum number of user signups reached'
-        );
+        if (numUserSignUps >= maxUsers)
+            revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
         uint256 airdropPosRep = airdropAmount[msg.sender];
@@ -189,14 +187,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     }
 
     function _attesterSignUp(address attester) private {
-        require(
-            attesters[attester] == 0,
-            'Unirep: attester has already signed up'
-        );
-        require(
-            nextAttesterId < maxAttesters,
-            'Unirep: maximum number of attester signups reached'
-        );
+        if (attesters[attester] != 0)
+            revert AttesterAlreadySignUp(attester);
+
+        if (nextAttesterId >= maxAttesters)
+            revert ReachedMaximumNumberUserSignedUp();
 
         attesters[attester] = nextAttesterId;
         nextAttesterId++;
