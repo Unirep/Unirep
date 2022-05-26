@@ -10,7 +10,6 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
 
 import { computeInitUserStateRoot, genUnirepState, Reputation } from '../../src'
 import {
@@ -19,6 +18,7 @@ import {
     genProveSignUpCircuitInput,
     genRandomAttestation,
 } from '../utils'
+import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
 describe('User sign up proof (Airdrop proof) events in Unirep State', function () {
     this.timeout(0)

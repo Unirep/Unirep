@@ -16,7 +16,7 @@ import {
     ReputationProof,
     Unirep,
 } from '@unirep/contracts'
-import { MAX_REPUTATION_BUDGET } from '@unirep/config'
+import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
     computeInitUserStateRoot,
@@ -261,7 +261,7 @@ describe('Reputation proof events in Unirep State', function () {
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             repNullifier = genReputationNullifier(
-                userIds[userIdx].getNullifier(),
+                userIds[userIdx].identityNullifier,
                 epoch,
                 0,
                 attesterId
@@ -414,7 +414,7 @@ describe('Reputation proof events in Unirep State', function () {
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             repNullifier = genReputationNullifier(
-                userIds[userIdx].getNullifier(),
+                userIds[userIdx].identityNullifier,
                 epoch,
                 0,
                 attesterId

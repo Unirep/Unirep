@@ -25,7 +25,7 @@ import {
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 import { SparseMerkleTree } from '@unirep/crypto'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
@@ -219,14 +219,14 @@ const genEpochKeyCircuitInput = (
 ) => {
     const proof = tree.createProof(leafIndex)
     const root = tree.root
-    const epk = genEpochKey(id.getNullifier(), epoch, nonce)
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
 
     const circuitInputs = {
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
         GST_root: root,
-        identity_nullifier: id.getNullifier(),
-        identity_trapdoor: id.getTrapdoor(),
+        identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         user_tree_root: ustRoot,
         nonce: nonce,
         epoch: epoch,
@@ -250,8 +250,8 @@ const genStartTransitionCircuitInput = (
         epoch: epoch,
         nonce: nonce,
         user_tree_root: ustRoot,
-        identity_nullifier: id.getNullifier(),
-        identity_trapdoor: id.getTrapdoor(),
+        identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
         GST_root: root,
@@ -400,7 +400,7 @@ const genProcessAttestationsCircuitInput = async (
         intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
     }
     const inputBlindedUserState = crypto.hash5([
-        id.getNullifier(),
+        id.identityNullifier,
         intermediateUserStateTreeRoots[0],
         epoch,
         fromNonce,
@@ -410,7 +410,7 @@ const genProcessAttestationsCircuitInput = async (
         epoch: epoch,
         from_nonce: fromNonce,
         to_nonce: toNonce,
-        identity_nullifier: id.getNullifier(),
+        identity_nullifier: id.identityNullifier,
         intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
         old_pos_reps: oldPosReps,
         old_neg_reps: oldNegReps,
@@ -458,7 +458,7 @@ const genUserStateTransitionCircuitInput = async (
     intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
     blindedUserState.push(
         crypto.hash5([
-            id.getNullifier(),
+            id.identityNullifier,
             userStateTree.getRootHash(),
             BigInt(epoch),
             BigInt(startEpochKeyNonce),
@@ -486,7 +486,7 @@ const genUserStateTransitionCircuitInput = async (
         // Each epoch key has `ATTESTATIONS_PER_EPOCH_KEY` of attestations so
         // interval between starting index of each epoch key is `ATTESTATIONS_PER_EPOCH_KEY`.
         const epochKey = genEpochKey(
-            id.getNullifier(),
+            id.identityNullifier,
             epoch,
             nonce,
             EPOCH_TREE_DEPTH
@@ -497,7 +497,7 @@ const genUserStateTransitionCircuitInput = async (
         hashChainResults.push(hashChainResult)
         blindedHashChain.push(
             crypto.hash5([
-                id.getNullifier(),
+                id.identityNullifier,
                 hashChainResult,
                 BigInt(epoch),
                 BigInt(nonce),
@@ -518,7 +518,7 @@ const genUserStateTransitionCircuitInput = async (
     intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
     blindedUserState.push(
         crypto.hash5([
-            id.getNullifier(),
+            id.identityNullifier,
             intermediateUserStateTreeRoot,
             BigInt(epoch),
             BigInt(endEpochKeyNonce),
@@ -527,7 +527,7 @@ const genUserStateTransitionCircuitInput = async (
 
     for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
         const epochKey = genEpochKey(
-            id.getNullifier(),
+            id.identityNullifier,
             epoch,
             nonce,
             EPOCH_TREE_DEPTH
@@ -544,8 +544,8 @@ const genUserStateTransitionCircuitInput = async (
         start_epoch_key_nonce: startEpochKeyNonce,
         end_epoch_key_nonce: endEpochKeyNonce,
 
-        identity_nullifier: id.getNullifier(),
-        identity_trapdoor: id.getTrapdoor(),
+        identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         GST_path_elements: GSTreeProof.siblings,
         GST_path_index: GSTreeProof.pathIndices,
         GST_root: GSTreeRoot,
@@ -568,7 +568,7 @@ const genReputationCircuitInput = async (
     _proveGraffiti?,
     _graffitiPreImage?
 ) => {
-    const epk = genEpochKey(id.getNullifier(), epoch, nonce)
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     const repNullifiersAmount =
         _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
     const minRep = _minRep === undefined ? 0 : _minRep
@@ -625,8 +625,8 @@ const genReputationCircuitInput = async (
         epoch_key_nonce: nonce,
         epoch_key: epk,
 
-        identity_nullifier: id.getNullifier(),
-        identity_trapdoor: id.getTrapdoor(),
+        identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
@@ -655,7 +655,7 @@ const genProveSignUpCircuitInput = async (
     _signUp?: number
 ) => {
     const nonce = 0
-    const epk = genEpochKey(id.getNullifier(), epoch, nonce)
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
@@ -688,8 +688,8 @@ const genProveSignUpCircuitInput = async (
     const circuitInputs = {
         epoch: epoch,
         epoch_key: epk,
-        identity_nullifier: id.getNullifier(),
-        identity_trapdoor: id.getTrapdoor(),
+        identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,

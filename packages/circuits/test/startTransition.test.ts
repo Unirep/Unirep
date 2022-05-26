@@ -16,7 +16,7 @@ import {
 } from './utils'
 import { startTransitionCircuitPath } from '../config'
 
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/config'
+import { GLOBAL_STATE_TREE_DEPTH } from '../config'
 
 const circuitPath = path.join(__dirname, startTransitionCircuitPath)
 
@@ -78,7 +78,7 @@ describe('User State Transition circuits', function () {
                     'main.blinded_user_state'
                 )
                 const expectedUserState = hash5([
-                    user.getNullifier(),
+                    user.identityNullifier,
                     userStateTree.getRootHash(),
                     BigInt(epoch),
                     BigInt(nonce),
@@ -91,7 +91,7 @@ describe('User State Transition circuits', function () {
                     'main.blinded_hash_chain_result'
                 )
                 const expectedHashChainResult = hash5([
-                    user.getNullifier(),
+                    user.identityNullifier,
                     zeroHashChain,
                     BigInt(epoch),
                     BigInt(nonce),
@@ -123,7 +123,7 @@ describe('User State Transition circuits', function () {
                     'main.blinded_user_state'
                 )
                 const expectedUserState = hash5([
-                    user.getNullifier(),
+                    user.identityNullifier,
                     userStateTree.getRootHash(),
                     BigInt(epoch),
                     BigInt(newNonce),
@@ -136,7 +136,7 @@ describe('User State Transition circuits', function () {
                     'main.blinded_hash_chain_result'
                 )
                 const expectedHashChainResult = hash5([
-                    user.getNullifier(),
+                    user.identityNullifier,
                     zeroHashChain,
                     BigInt(epoch),
                     BigInt(newNonce),

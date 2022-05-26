@@ -10,7 +10,6 @@ For more information, refer to the [documentation](https://unirep.gitbook.io/uni
 
 -   Composed by 4 packages:
     -   [`core`](./packages/core/) - main package.
-    -   [`config`](./packages/config) - declarations of protocol constants
     -   [`contracts`](./packages/contracts/) - Unirep smart contracts.
     -   [`circuits`](./packages/circuits/) - Circom libaries.
     -   [`crypto`](./packages/crypto) - Crypto utils.

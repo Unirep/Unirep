@@ -18,7 +18,7 @@ import {
 
 import { userStateTransitionCircuitPath } from '../config'
 
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 const epkExistsCircuitPath = path.join(
     __dirname,
     '../circuits/test/epochKeyExists_test.circom'
@@ -37,7 +37,7 @@ describe('User State Transition circuits', function () {
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
         const testEpochTreeDepth = 32
         const epochKey: SnarkBigInt = genEpochKey(
-            user.getNullifier(),
+            user.identityNullifier,
             epoch,
             nonce,
             testEpochTreeDepth
@@ -68,7 +68,7 @@ describe('User State Transition circuits', function () {
 
         it('Existed epoch key should pass check', async () => {
             const circuitInputs = {
-                identity_nullifier: user.getNullifier(),
+                identity_nullifier: user.identityNullifier,
                 epoch: epoch,
                 nonce: nonce,
                 hash_chain_result: hashChainResult,

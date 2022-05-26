@@ -11,7 +11,7 @@ import {
 } from './utils'
 import { processAttestationsCircuitPath } from '../config/'
 
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/config'
+import { NUM_ATTESTATIONS_PER_PROOF } from '../config'
 
 const circuitPath = path.join(__dirname, processAttestationsCircuitPath)
 
@@ -52,7 +52,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             outputUserStateTreeRoot,
             epoch,
             nonce,
@@ -65,7 +65,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             hashChainResult,
             epoch,
             nonce,
@@ -104,7 +104,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_user_state'
         )
         const expectedUserState = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             outputUserStateTreeRoot,
             epoch,
             nonce,
@@ -117,7 +117,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             noAttestationHashChainResult,
             epoch,
             nonce,
@@ -147,7 +147,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             outputUserStateTreeRoot,
             epoch,
             nonce,
@@ -160,7 +160,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             hashChainResult,
             epoch,
             nonce,
@@ -190,7 +190,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             outputUserStateTreeRoot,
             epoch,
             toNonce,
@@ -203,7 +203,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             hashChainResult,
             epoch,
             toNonce,
@@ -247,7 +247,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             outputUserStateTreeRoot,
             epoch,
             toNonce,
@@ -260,7 +260,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             hashChainResult,
             epoch,
             toNonce,
@@ -318,7 +318,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             outputUserStateTreeRoot,
             epoch,
             toNonce,
@@ -331,7 +331,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.getNullifier(),
+            user.identityNullifier,
             hashChainResult,
             epoch,
             toNonce,

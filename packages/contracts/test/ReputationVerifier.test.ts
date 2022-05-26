@@ -8,7 +8,7 @@ import {
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 import {
     genEpochKey,
     genInputForContract,
@@ -158,7 +158,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong nonce epoch key should fail', async () => {
         const wrongEpochKey = genEpochKey(
-            user.getNullifier(),
+            user.identityNullifier,
             epoch,
             nonce + 1,
             EPOCH_TREE_DEPTH

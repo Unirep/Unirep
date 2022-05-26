@@ -14,7 +14,7 @@ import {
     GLOBAL_STATE_TREE_DEPTH,
     EPOCH_LENGTH,
     MAX_REPUTATION_BUDGET,
-} from '@unirep/config'
+} from '@unirep/circuits/config'
 import {
     Attestation,
     genEpochKeyCircuitInput,

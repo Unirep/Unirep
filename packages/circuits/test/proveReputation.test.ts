@@ -11,7 +11,7 @@ import {
 } from './utils'
 import { proveReputationCircuitPath } from '../config'
 
-import { USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '@unirep/config'
+import { USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '../config'
 const circuitPath = path.join(__dirname, proveReputationCircuitPath)
 
 describe('Prove reputation from attester circuit', function () {

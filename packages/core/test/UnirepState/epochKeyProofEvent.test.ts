@@ -10,8 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/config'
-
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits/config'
 import {
     computeInitUserStateRoot,
     genUnirepState,
