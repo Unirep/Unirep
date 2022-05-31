@@ -1,8 +1,8 @@
 {
     "name": "@unirep/circuits",
     "version": "1.0.0",
-    "main": "dist/circuits/utils.js",
-    "types": "dist/circuits/utils.d.ts",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "yarn downloadPtau && yarn buildCircuits && yarn buildSnarks && tsc && yarn copyCircom",
