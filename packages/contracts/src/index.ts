@@ -1,15 +1,12 @@
-import { Event, AttestationEvent } from './types/event'
-
+import { ContractConfig } from './types/config'
+import { UnirepEvent, AttestationEvent } from './types/event'
 import { Attestation } from './Attestation'
+import { EpochKeyProof } from './EpochKeyProof'
+import { SignUpProof } from './SignUpProof'
+import { ReputationProof } from './ReputationProof'
+import { UserTransitionProof } from './UserTransitionProof'
 
-import UnirepContract, {
-    Unirep,
-    ContractConfig,
-    ReputationProof,
-    SignUpProof,
-    UserTransitionProof,
-    EpochKeyProof,
-} from './UnirepContract'
+import UnirepContract, { Unirep } from './UnirepContract'
 
 import {
     computeStartTransitionProofHash,
@@ -20,7 +17,7 @@ export default UnirepContract
 export {
     Unirep,
     ContractConfig,
-    Event,
+    UnirepEvent,
     AttestationEvent,
     Attestation,
     EpochKeyProof,
