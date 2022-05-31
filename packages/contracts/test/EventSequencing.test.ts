@@ -6,11 +6,11 @@ import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import circuit from '@unirep/circuits'
 
 import { genEpochKey, Attestation } from './utils'
-import contract, { EpochKeyProof, Event, Unirep } from '../src'
+import contract, { EpochKeyProof, UnirepEvent, Unirep } from '../src'
 import config, { artifactsPath } from '../src/config'
 
 describe('EventSequencing', () => {
-    let expectedEventsInOrder: Event[] = []
+    let expectedEventsInOrder: UnirepEvent[] = []
     let expectedEventsNumber: number = 0
 
     let unirepContract: Unirep
@@ -43,7 +43,7 @@ describe('EventSequencing', () => {
         let tx = await unirepContract.userSignUp(BigNumber.from(userCommitment))
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.UserSignedUp)
+        expectedEventsInOrder.push(UnirepEvent.UserSignedUp)
         expectedEventsNumber++
 
         // Attester sign up, no events emitted
@@ -104,7 +104,7 @@ describe('EventSequencing', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.AttestationSubmitted)
+        expectedEventsInOrder.push(UnirepEvent.AttestationSubmitted)
         expectedEventsNumber++
 
         // 3. Attest to first user
@@ -126,7 +126,7 @@ describe('EventSequencing', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.AttestationSubmitted)
+        expectedEventsInOrder.push(UnirepEvent.AttestationSubmitted)
         expectedEventsNumber++
 
         // 4. Second user sign up
@@ -137,7 +137,7 @@ describe('EventSequencing', () => {
         tx = await unirepContract.userSignUp(BigNumber.from(userCommitment))
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.UserSignedUp)
+        expectedEventsInOrder.push(UnirepEvent.UserSignedUp)
         expectedEventsNumber++
 
         // 5. First epoch end
@@ -150,7 +150,7 @@ describe('EventSequencing', () => {
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         currentEpoch = await unirepContract.currentEpoch()
-        expectedEventsInOrder.push(Event.EpochEnded)
+        expectedEventsInOrder.push(UnirepEvent.EpochEnded)
         expectedEventsNumber++
 
         // 6. Second user starts transition
@@ -200,7 +200,7 @@ describe('EventSequencing', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.UserStateTransitioned)
+        expectedEventsInOrder.push(UnirepEvent.UserStateTransitioned)
         expectedEventsNumber++
 
         // 9. Attest to second user
@@ -231,7 +231,7 @@ describe('EventSequencing', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.AttestationSubmitted)
+        expectedEventsInOrder.push(UnirepEvent.AttestationSubmitted)
         expectedEventsNumber++
 
         // 10. Second epoch end
@@ -242,7 +242,7 @@ describe('EventSequencing', () => {
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         currentEpoch = await unirepContract.currentEpoch()
-        expectedEventsInOrder.push(Event.EpochEnded)
+        expectedEventsInOrder.push(UnirepEvent.EpochEnded)
         expectedEventsNumber++
 
         // 11. Third epoch end
@@ -253,7 +253,7 @@ describe('EventSequencing', () => {
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         currentEpoch = await unirepContract.currentEpoch()
-        expectedEventsInOrder.push(Event.EpochEnded)
+        expectedEventsInOrder.push(UnirepEvent.EpochEnded)
         expectedEventsNumber++
 
         // 12. First user starts transition
@@ -293,7 +293,7 @@ describe('EventSequencing', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.UserStateTransitioned)
+        expectedEventsInOrder.push(UnirepEvent.UserStateTransitioned)
         expectedEventsNumber++
 
         // 15. Second user starts transition
@@ -333,7 +333,7 @@ describe('EventSequencing', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        expectedEventsInOrder.push(Event.UserStateTransitioned)
+        expectedEventsInOrder.push(UnirepEvent.UserStateTransitioned)
         expectedEventsNumber++
     })
 

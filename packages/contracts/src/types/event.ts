@@ -1,7 +1,7 @@
 /**
  * Defined in ../contracts/interfaces/IUnirep.sol
  */
-export enum Event {
+export enum UnirepEvent {
     UserSignedUp,
     UserStateTransitioned,
     AttestationSubmitted,
