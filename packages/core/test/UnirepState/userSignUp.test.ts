@@ -5,42 +5,44 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     hashLeftRight,
-    IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import contract, { Unirep } from '@unirep/contracts'
 
-import { computeInitUserStateRoot, genUnirepState, Reputation } from '../../src'
-import { genNewGST } from '../utils'
+import { genUnirepState } from '../../src'
+import { artifactsPath, config, zkFilesPath } from '../testConfig'
+import { UnirepProtocol } from '../../src/UnirepProtocol'
 
 describe('User sign up events in Unirep State', function () {
     this.timeout(0)
 
-    let userIds: any[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
-    let signUpAirdrops: Reputation[] = []
+    // attesters
+    let accounts: ethers.Signer[]
+    let attester = new Object()
 
+    // users
+    let userIds: ZkIdentity[] = []
+
+    // unirep contract and protocol
+    const protocol = new UnirepProtocol(zkFilesPath)
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-    let treeDepths
-    let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
 
-    let accounts: ethers.Signer[]
-    const attester = new Object()
+    // test config
     const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
+    const airdropPosRep = 10
+
+    // global variables
+    let GSTree = protocol.genNewGST()
+    const rootHistories: BigInt[] = []
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            maxUsers,
-        })
-        treeDepths = await unirepContract.treeDepths()
-        GSTree = genNewGST(
-            treeDepths.globalStateTreeDepth,
-            treeDepths.userStateTreeDepth
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            config
         )
     })
 
@@ -57,7 +59,6 @@ describe('User sign up events in Unirep State', function () {
         })
 
         it('attester set airdrop amount', async () => {
-            const airdropPosRep = 10
             const tx = await unirepContractCalledByAttester.setAirdropAmount(
                 airdropPosRep
             )
@@ -73,6 +74,7 @@ describe('User sign up events in Unirep State', function () {
     describe('Init Unirep State', async () => {
         it('check Unirep state matches the contract', async () => {
             const initUnirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -85,10 +87,7 @@ describe('User sign up events in Unirep State', function () {
             expect(unirepGSTLeaves).equal(0)
 
             const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
-            const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
-            )
+            const defaultGSTree = protocol.genNewGST()
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
     })
@@ -99,7 +98,6 @@ describe('User sign up events in Unirep State', function () {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
-                userCommitments.push(commitment)
 
                 const tx = await unirepContractCalledByAttester.userSignUp(
                     commitment
@@ -112,6 +110,7 @@ describe('User sign up events in Unirep State', function () {
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
                 const unirepState = await genUnirepState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address
                 )
@@ -129,21 +128,11 @@ describe('User sign up events in Unirep State', function () {
                 const airdroppedAmount = await unirepContract.airdropAmount(
                     attester['addr']
                 )
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
+                const newUSTRoot = await protocol.computeInitUserStateRoot(
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
-                signUpAirdrops.push(
-                    new Reputation(
-                        airdroppedAmount.toBigInt(),
-                        BigInt(0),
-                        BigInt(0),
-                        BigInt(1)
-                    )
-                )
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
             }
@@ -154,13 +143,13 @@ describe('User sign up events in Unirep State', function () {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
-                userCommitments.push(commitment)
 
                 const tx = await unirepContract.userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 const unirepState = await genUnirepState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address
                 )
@@ -172,12 +161,8 @@ describe('User sign up events in Unirep State', function () {
                 const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
-                )
+                const newUSTRoot = await protocol.computeInitUserStateRoot()
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
-                signUpAirdrops.push(Reputation.default())
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
             }
@@ -185,6 +170,7 @@ describe('User sign up events in Unirep State', function () {
 
         it('Sign up users more than contract capacity will not affect Unirep state', async () => {
             const unirepStateBefore = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -201,6 +187,7 @@ describe('User sign up events in Unirep State', function () {
             )
 
             const unirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -210,6 +197,7 @@ describe('User sign up events in Unirep State', function () {
 
         it('Check GST roots match Unirep state', async () => {
             const unirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )

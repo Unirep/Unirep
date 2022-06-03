@@ -1,45 +1,26 @@
 import { expect } from 'chai'
 import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
-import {
-    EPOCH_LENGTH,
-    EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    USER_STATE_TREE_DEPTH,
-} from '@unirep/circuits/config'
 import { Attestation } from '@unirep/contracts'
 
-import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
-import { genNewGST, genRandomAttestation } from '../utils'
-
-const ATTESTING_FEE = '0' as any
+import { UnirepState } from '../../src'
+import { genRandomAttestation } from '../utils'
+import { zkFilesPath } from '../testConfig'
 
 describe('Unirep State', function () {
-    let unirepState: UnirepState
-    const setting: ISettings = {
-        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-        userStateTreeDepth: USER_STATE_TREE_DEPTH,
-        epochTreeDepth: EPOCH_TREE_DEPTH,
-        attestingFee: ATTESTING_FEE as any,
-        epochLength: EPOCH_LENGTH,
-        numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        maxReputationBudget: MAX_REPUTATION_BUDGET,
-    }
-    const epochKeys: string[] = []
+
+    // unirep state
+    let unirepState: UnirepState = new UnirepState(zkFilesPath)
+
+    // test config
     const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
     let epoch = 1
 
-    before(async () => {
-        unirepState = new UnirepState(setting)
-    })
+    // global variables
+    const epochKeys: string[] = []
 
     describe('Users sign up', async () => {
-        const GSTree = genNewGST(
-            setting.globalStateTreeDepth,
-            setting.userStateTreeDepth
-        )
+        const GSTree = unirepState.genNewGST()
         const rootHistories: BigInt[] = []
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
@@ -52,8 +33,7 @@ describe('Unirep State', function () {
                     randomAttesterId,
                     randomAirdropAmount
                 )
-                const USTRoot = await computeInitUserStateRoot(
-                    setting.userStateTreeDepth,
+                const USTRoot = await unirepState.computeInitUserStateRoot(
                     randomAttesterId,
                     randomAirdropAmount
                 )
@@ -147,7 +127,7 @@ describe('Unirep State', function () {
 
                 const epochKey =
                     BigInt(genRandomSalt().toString()) %
-                    BigInt(2 ** setting.epochLength)
+                    BigInt(2 ** unirepState.config.epochTreeDepth)
                 epochKeys.push(epochKey.toString())
                 attestationsToEpochKey[epochKey.toString()] = []
 
@@ -192,7 +172,7 @@ describe('Unirep State', function () {
         it('Get attestation with non exist epoch key should return an empty array', async () => {
             const epochKey =
                 BigInt(genRandomSalt().toString()) %
-                BigInt(2 ** setting.epochLength)
+                BigInt(2 ** unirepState.config.epochTreeDepth)
             const unirepAttestations = unirepState.getAttestations(
                 epochKey.toString()
             )
@@ -263,10 +243,7 @@ describe('Unirep State', function () {
     })
 
     describe('1st Epoch transition', async () => {
-        const GSTree = genNewGST(
-            setting.globalStateTreeDepth,
-            setting.userStateTreeDepth
-        )
+        const GSTree = unirepState.genNewGST()
         const rootHistories: BigInt[] = []
 
         it('epoch transition', async () => {
@@ -307,7 +284,7 @@ describe('Unirep State', function () {
             for (let i = 0; i < userNum; i++) {
                 const GSTLeaf = genRandomSalt()
                 const nullifiers: BigInt[] = []
-                for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
+                for (let j = 0; j < unirepState.config.numEpochKeyNoncePerEpoch; j++) {
                     nullifiers.push(genRandomSalt())
                 }
                 unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
@@ -359,7 +336,7 @@ describe('Unirep State', function () {
             const wrongEpoch = epoch + 1
             const GSTLeaf = genRandomSalt()
             const nullifiers: BigInt[] = []
-            for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+            for (let i = 0; i < unirepState.config.numEpochKeyNoncePerEpoch; i++) {
                 nullifiers.push(genRandomSalt())
             }
             let error
@@ -378,7 +355,7 @@ describe('Unirep State', function () {
         it('user state transition with wrong nullifiers amount should fail', async () => {
             const GSTLeaf = genRandomSalt()
             const nullifiers: BigInt[] = []
-            const wrongEpkNullifierAmount = NUM_EPOCH_KEY_NONCE_PER_EPOCH + 1
+            const wrongEpkNullifierAmount = unirepState.config.numEpochKeyNoncePerEpoch + 1
             for (let i = 0; i < wrongEpkNullifierAmount; i++) {
                 nullifiers.push(genRandomSalt())
             }
@@ -437,7 +414,7 @@ describe('Unirep State', function () {
 
                 const epochKey =
                     BigInt(genRandomSalt().toString()) %
-                    BigInt(2 ** setting.epochLength)
+                    BigInt(2 ** unirepState.config.epochTreeDepth)
                 attestationsToEpochKey[epochKey.toString()] = []
 
                 for (let j = 0; j < attestNum; j++) {
@@ -476,10 +453,7 @@ describe('Unirep State', function () {
     })
 
     describe('2nd Epoch transition', async () => {
-        const GSTree = genNewGST(
-            setting.globalStateTreeDepth,
-            setting.userStateTreeDepth
-        )
+        const GSTree = unirepState.genNewGST()
         const rootHistories: BigInt[] = []
 
         it('epoch transition', async () => {
@@ -506,7 +480,7 @@ describe('Unirep State', function () {
             for (let i = 0; i < userNum; i++) {
                 const GSTLeaf = genRandomSalt()
                 const nullifiers: BigInt[] = []
-                for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
+                for (let j = 0; j < unirepState.config.numEpochKeyNoncePerEpoch; j++) {
                     nullifiers.push(genRandomSalt())
                 }
                 unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)

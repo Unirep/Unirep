@@ -5,47 +5,47 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     hashLeftRight,
-    IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import contract, { Unirep } from '@unirep/contracts'
 
 import {
-    computeInitUserStateRoot,
     genUnirepState,
     genUserState,
-    Reputation,
+    UnirepProtocol,
 } from '../../src'
-import { genNewGST } from '../utils'
+import { artifactsPath, config, zkFilesPath } from '../testConfig'
+
 
 describe('User sign up events in Unirep User State', function () {
     this.timeout(0)
 
-    let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
-    let signUpAirdrops: Reputation[] = []
+    // attesters
+    let accounts: ethers.Signer[]
+    let attester = new Object()
 
+    // users
+    let userIds: ZkIdentity[] = []
+
+    // unirep contract and protocol
+    const protocol = new UnirepProtocol(zkFilesPath)
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-    let treeDepths
-    let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
 
-    let accounts: ethers.Signer[]
-    const attester = new Object()
+    // test config
     const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
+
+    // global variables
+    let GSTree = protocol.genNewGST()
+    const rootHistories: BigInt[] = []
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            maxUsers,
-        })
-        treeDepths = await unirepContract.treeDepths()
-        GSTree = genNewGST(
-            treeDepths.globalStateTreeDepth,
-            treeDepths.userStateTreeDepth
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            config
         )
     })
 
@@ -79,21 +79,19 @@ describe('User sign up events in Unirep User State', function () {
         it('check User state matches the contract', async () => {
             const id = new ZkIdentity()
             const initUnirepState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
             )
 
             const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.getUnirepStateCurrentEpoch()
+            const unirepEpoch = initUnirepState.currentEpoch
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const unirepGSTree =
-                initUnirepState.getUnirepStateGSTree(unirepEpoch)
-            const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
-            )
+                initUnirepState.genGSTree(unirepEpoch)
+            const defaultGSTree = protocol.genNewGST()
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
     })
@@ -104,7 +102,6 @@ describe('User sign up events in Unirep User State', function () {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
-                userCommitments.push(commitment)
 
                 const tx = await unirepContractCalledByAttester.userSignUp(
                     commitment
@@ -117,13 +114,14 @@ describe('User sign up events in Unirep User State', function () {
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = userState.currentEpoch
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const attesterId = await unirepContract.attesters(
@@ -132,21 +130,11 @@ describe('User sign up events in Unirep User State', function () {
                 const airdroppedAmount = await unirepContract.airdropAmount(
                     attester['addr']
                 )
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
+                const newUSTRoot = await protocol.computeInitUserStateRoot(
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
-                signUpAirdrops.push(
-                    new Reputation(
-                        airdroppedAmount.toBigInt(),
-                        BigInt(0),
-                        BigInt(0),
-                        BigInt(1)
-                    )
-                )
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
             }
@@ -157,28 +145,24 @@ describe('User sign up events in Unirep User State', function () {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
-                userCommitments.push(commitment)
 
                 const tx = await unirepContract.userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = userState.currentEpoch
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
-                )
+                const newUSTRoot = await protocol.computeInitUserStateRoot()
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
-                signUpAirdrops.push(Reputation.default())
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
             }
@@ -188,11 +172,12 @@ describe('User sign up events in Unirep User State', function () {
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
             const userStateBefore = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
             )
-            const GSTRootBefore = userStateBefore.getUnirepStateGSTree(1).root
+            const GSTRootBefore = userStateBefore.genGSTree(1).root
 
             await expect(
                 unirepContract.userSignUp(commitment)
@@ -201,16 +186,18 @@ describe('User sign up events in Unirep User State', function () {
             )
 
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
             )
-            const GSTRoot = userState.getUnirepStateGSTree(1).root
+            const GSTRoot = userState.genGSTree(1).root
             expect(GSTRoot).equal(GSTRootBefore)
         })
 
         it('Check GST roots match Unirep state', async () => {
             const unirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )

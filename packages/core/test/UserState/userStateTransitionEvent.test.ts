@@ -5,77 +5,81 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     genRandomSalt,
-    hashLeftRight,
-    IncrementalMerkleTree,
+    hashLeftRight
 } from '@unirep/crypto'
-import {
-    deployUnirep,
+import contract, {
+    Attestation,
     EpochKeyProof,
     UserTransitionProof,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
     Unirep,
+    computeStartTransitionProofHash,
+    computeProcessAttestationsProofHash
 } from '@unirep/contracts'
-import { formatProofForVerifierContract } from '@unirep/circuits'
-import {
-    EPOCH_LENGTH,
-    MAX_REPUTATION_BUDGET,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits/config'
+import circuit, {
+    CircuitName,
+} from '@unirep/circuits'
 
 import {
-    computeInitUserStateRoot,
     genUnirepState,
     genUserState,
-    ISettings,
     Reputation,
+    UnirepProtocol,
     UnirepState,
     UserState,
 } from '../../src'
 import {
-    genNewGST,
+    genEpochKeyCircuitInput,
     genRandomAttestation,
     genRandomList,
-    verifyProcessAttestationsProof,
-    verifyStartTransitionProof,
 } from '../utils'
+import {
+    artifactsPath,
+    config,
+    zkFilesPath
+} from '../testConfig'
 
 describe('User state transition events in Unirep User State', async function () {
     this.timeout(0)
 
-    let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
-    let signUpAirdrops: Reputation[] = []
-    let attestations: Reputation[] = []
+    // attesters
+    let accounts: ethers.Signer[]
+    let attester = new Object()
+    let attesterId
 
+    // users
+    let userIds: ZkIdentity[] = []
+
+    // unirep contract and protocol
+    const protocol = new UnirepProtocol(zkFilesPath)
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-    let treeDepths
-    let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
 
-    let accounts: ethers.Signer[]
-    const attester = new Object()
-    let attesterId
+    // test config
     const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
     const attestingFee = ethers.utils.parseEther('0.1')
-    const transitionedUsers: number[] = []
     const fromProofIndex = 0
+    const EPOCH_LENGTH = 60
+
+    // global variables
+    let GSTree = protocol.genNewGST()
+    const rootHistories: BigInt[] = []
+    let userStateTreeRoots: BigInt[] = []
+    let signUpAirdrops: Reputation[] = []
+    let attestations: Reputation[] = []
+    const transitionedUsers: number[] = []
+
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            maxUsers,
-            attestingFee,
-        })
-
-        treeDepths = await unirepContract.treeDepths()
-        GSTree = genNewGST(
-            treeDepths.globalStateTreeDepth,
-            treeDepths.userStateTreeDepth
+        unirepContract = await contract.deploy(
+            artifactsPath,
+            accounts[0],
+            {
+                ...config,
+                maxUsers
+            }
         )
     })
 
@@ -112,21 +116,19 @@ describe('User state transition events in Unirep User State', async function () 
         it('check User state matches the contract', async () => {
             const id = new ZkIdentity()
             const initUnirepState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
             )
 
             const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.getUnirepStateCurrentEpoch()
+            const unirepEpoch = initUnirepState.currentEpoch
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const unirepGSTree =
-                initUnirepState.getUnirepStateGSTree(unirepEpoch)
-            const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
-            )
+                initUnirepState.genGSTree(unirepEpoch)
+            const defaultGSTree = protocol.genNewGST()
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
     })
@@ -137,7 +139,6 @@ describe('User state transition events in Unirep User State', async function () 
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
-                userCommitments.push(commitment)
 
                 const tx = await unirepContractCalledByAttester.userSignUp(
                     commitment
@@ -150,13 +151,14 @@ describe('User state transition events in Unirep User State', async function () 
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = userState.currentEpoch
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const attesterId = await unirepContract.attesters(
@@ -165,8 +167,7 @@ describe('User state transition events in Unirep User State', async function () 
                 const airdroppedAmount = await unirepContract.airdropAmount(
                     attester['addr']
                 )
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
+                const newUSTRoot = await protocol.computeInitUserStateRoot(
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
@@ -191,25 +192,23 @@ describe('User state transition events in Unirep User State', async function () 
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
-                userCommitments.push(commitment)
 
                 const tx = await unirepContract.userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     id
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = userState.currentEpoch
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
-                )
+                const newUSTRoot = await protocol.computeInitUserStateRoot()
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(Reputation.default())
@@ -223,11 +222,12 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
             const userStateBefore = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
             )
-            const GSTRootBefore = userStateBefore.getUnirepStateGSTree(1).root
+            const GSTRootBefore = userStateBefore.genGSTree(1).root
 
             await expect(
                 unirepContract.userSignUp(commitment)
@@ -236,16 +236,18 @@ describe('User state transition events in Unirep User State', async function () 
             )
 
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 id
             )
-            const GSTRoot = userState.getUnirepStateGSTree(1).root
+            const GSTRoot = userState.genGSTree(1).root
             expect(GSTRoot).equal(GSTRootBefore)
         })
 
         it('Check GST roots match Unirep state', async () => {
             const unirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -307,18 +309,10 @@ describe('User state transition events in Unirep User State', async function () 
         const storedUserIdx = 0
         let invalidProofIndexes: number[] = []
         const notTransitionUsers: number[] = []
-        const setting: ISettings = {
-            globalStateTreeDepth: treeDepths.globalStateTreeDepth,
-            userStateTreeDepth: treeDepths.userStateTreeDepth,
-            epochTreeDepth: treeDepths.epochTreeDepth,
-            attestingFee: attestingFee,
-            epochLength: EPOCH_LENGTH,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            maxReputationBudget: MAX_REPUTATION_BUDGET,
-        }
         it('Users should successfully perform user state transition', async () => {
             for (let i = 0; i < userIds.length; i++) {
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[i]
@@ -331,8 +325,11 @@ describe('User state transition events in Unirep User State', async function () 
                 } = await userState.genUserStateTransitionProofs()
                 const proofIndexes: number[] = []
 
-                let isValid = await verifyStartTransitionProof(
-                    startTransitionProof
+                let isValid = await circuit.verifyProof(
+                    protocol.config.exportBuildPath,
+                    CircuitName.startTransition,
+                    startTransitionProof.proof,
+                    startTransitionProof.publicSignals
                 )
                 expect(isValid).to.be.true
 
@@ -341,7 +338,11 @@ describe('User state transition events in Unirep User State', async function () 
                     startTransitionProof.blindedUserState,
                     startTransitionProof.blindedHashChain,
                     startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
+                    circuit.formatProofForVerifierContract(
+                        startTransitionProof.proof
+                    ).map(
+                        n => BigNumber.from(n)
+                    )
                 )
                 let receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
@@ -350,15 +351,22 @@ describe('User state transition events in Unirep User State', async function () 
                     startTransitionProof.blindedUserState,
                     startTransitionProof.blindedHashChain,
                     startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
+                    circuit.formatProofForVerifierContract(
+                        startTransitionProof.proof
+                    ).map(
+                        n => BigNumber.from(n)
+                    )
                 )
                 proofIndexes.push(
                     Number(await unirepContract.getProofIndex(hashedProof))
                 )
 
                 for (let i = 0; i < processAttestationProofs.length; i++) {
-                    isValid = await verifyProcessAttestationsProof(
-                        processAttestationProofs[i]
+                    isValid = await await circuit.verifyProof(
+                        protocol.config.exportBuildPath,
+                        CircuitName.processAttestations,
+                        processAttestationProofs[i].proof,
+                        processAttestationProofs[i].publicSignals
                     )
                     expect(isValid).to.be.true
 
@@ -366,7 +374,7 @@ describe('User state transition events in Unirep User State', async function () 
                         processAttestationProofs[i].outputBlindedUserState,
                         processAttestationProofs[i].outputBlindedHashChain,
                         processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
+                        circuit.formatProofForVerifierContract(
                             processAttestationProofs[i].proof
                         )
                     )
@@ -377,8 +385,10 @@ describe('User state transition events in Unirep User State', async function () 
                         processAttestationProofs[i].outputBlindedUserState,
                         processAttestationProofs[i].outputBlindedHashChain,
                         processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
+                        circuit.formatProofForVerifierContract(
                             processAttestationProofs[i].proof
+                        ).map(
+                            n => BigNumber.from(n)
                         )
                     )
                     proofIndexes.push(
@@ -387,7 +397,8 @@ describe('User state transition events in Unirep User State', async function () 
                 }
                 const USTInput = new UserTransitionProof(
                     finalTransitionProof.publicSignals,
-                    finalTransitionProof.proof
+                    finalTransitionProof.proof,
+                    protocol.config.exportBuildPath
                 )
                 isValid = await USTInput.verify()
                 expect(isValid).to.be.true
@@ -405,33 +416,36 @@ describe('User state transition events in Unirep User State', async function () 
         it('Users state transition matches current Unirep state', async () => {
             for (let i = 0; i < transitionedUsers.length; i++) {
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[i]
                 )
-                expect(userState.getUnirepStateCurrentEpoch()).equal(
+                expect(userState.currentEpoch).equal(
                     userState.latestTransitionedEpoch
                 )
             }
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
             const unirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            expect(userState.getUnirepStateCurrentEpoch()).equal(
+            expect(userState.currentEpoch).equal(
                 unirepState.currentEpoch
             )
             for (let i = 1; i <= unirepState.currentEpoch; i++) {
-                expect(userState.getUnirepStateGSTree(i).root).equal(
+                expect(userState.genGSTree(i).root).equal(
                     unirepState.genGSTree(i).root
                 )
             }
             expect(
-                (await userState.getUnirepStateEpochTree(1)).getRootHash()
+                (await userState.genEpochTree(1)).getRootHash()
             ).equal((await unirepState.genEpochTree(1)).getRootHash())
 
             storedUserState = userState.toJSON()
@@ -446,8 +460,7 @@ describe('User state transition events in Unirep User State', async function () 
 
             if (transitionedUsers.length === 0) return
             const n = transitionedUsers[0]
-            const unirepState = new UnirepState(setting)
-            const userState = new UserState(unirepState, userIds[n])
+            const userState = new UserState(zkFilesPath, userIds[n])
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
@@ -468,7 +481,12 @@ describe('User state transition events in Unirep User State', async function () 
             } = await userState.genUserStateTransitionProofs()
             const proofIndexes: number[] = []
 
-            let isValid = await verifyStartTransitionProof(startTransitionProof)
+            let isValid = await circuit.verifyProof(
+                protocol.config.exportBuildPath,
+                CircuitName.startTransition,
+                startTransitionProof.proof,
+                startTransitionProof.publicSignals
+            )
             expect(isValid).to.be.true
 
             // submit proofs
@@ -476,7 +494,7 @@ describe('User state transition events in Unirep User State', async function () 
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(startTransitionProof.proof)
             )
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -485,15 +503,22 @@ describe('User state transition events in Unirep User State', async function () 
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(
+                    startTransitionProof.proof
+                ).map(
+                    n => BigNumber.from(n)
+                )
             )
             proofIndexes.push(
                 Number(await unirepContract.getProofIndex(hashedProof))
             )
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProcessAttestationsProof(
-                    processAttestationProofs[i]
+                isValid = await await circuit.verifyProof(
+                    protocol.config.exportBuildPath,
+                    CircuitName.processAttestations,
+                    processAttestationProofs[i].proof,
+                    processAttestationProofs[i].publicSignals
                 )
                 expect(isValid).to.be.true
 
@@ -501,7 +526,7 @@ describe('User state transition events in Unirep User State', async function () 
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
                     )
                 )
@@ -512,8 +537,10 @@ describe('User state transition events in Unirep User State', async function () 
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
+                    ).map(
+                        n => BigNumber.from(n)
                     )
                 )
                 proofIndexes.push(
@@ -522,7 +549,8 @@ describe('User state transition events in Unirep User State', async function () 
             }
             const USTInput = new UserTransitionProof(
                 finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
+                finalTransitionProof.proof,
+                protocol.config.exportBuildPath
             )
             isValid = await USTInput.verify()
             expect(isValid).to.be.true
@@ -534,11 +562,12 @@ describe('User state transition events in Unirep User State', async function () 
             expect(receipt.status).to.equal(1)
 
             const userStateAfterUST = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            expect(userStateAfterUST.toJSON()).equal(storedUserState)
+            expect(userStateAfterUST.toJSON()).deep.equal(storedUserState)
         })
 
         it('Submit invalid start tranistion proof should not affect Unirep State', async () => {
@@ -556,11 +585,12 @@ describe('User state transition events in Unirep User State', async function () 
             expect(receipt.status).to.equal(1)
 
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            expect(userState.toJSON()).equal(storedUserState)
+            expect(userState.toJSON()).deep.equal(storedUserState)
 
             let hashedProof = computeStartTransitionProofHash(
                 BigNumber.from(randomBlindedUserState),
@@ -588,11 +618,12 @@ describe('User state transition events in Unirep User State', async function () 
             expect(receipt.status).to.equal(1)
 
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            expect(userState.toJSON()).equal(storedUserState)
+            expect(userState.toJSON()).deep.equal(storedUserState)
 
             let hashedProof = computeProcessAttestationsProofHash(
                 BigNumber.from(randomOutputBlindedUserState),
@@ -608,11 +639,11 @@ describe('User state transition events in Unirep User State', async function () 
         it('Submit invalid user state transition proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
             const randomNullifiers: BigNumberish[] = genRandomList(
-                NUM_EPOCH_KEY_NONCE_PER_EPOCH
+                protocol.config.numEpochKeyNoncePerEpoch
             )
             const randomBlindedStates: BigNumberish[] = genRandomList(2)
             const randomBlindedChains: BigNumberish[] = genRandomList(
-                NUM_EPOCH_KEY_NONCE_PER_EPOCH
+                protocol.config.numEpochKeyNoncePerEpoch
             )
 
             const randomUSTInput = {
@@ -633,16 +664,16 @@ describe('User state transition events in Unirep User State', async function () 
             expect(receipt.status).to.equal(1)
 
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            expect(userState.toJSON()).equal(storedUserState)
+            expect(userState.toJSON()).deep.equal(storedUserState)
         })
 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
-            const unirepState = new UnirepState(setting)
-            const userState = new UserState(unirepState, userIds[0])
+            const userState = new UserState(zkFilesPath, userIds[0])
 
             const epoch = 1
             const commitment = userIds[0].genIdentityCommitment()
@@ -658,7 +689,12 @@ describe('User state transition events in Unirep User State', async function () 
             } = await userState.genUserStateTransitionProofs()
             const proofIndexes: number[] = []
 
-            let isValid = await verifyStartTransitionProof(startTransitionProof)
+            let isValid = await circuit.verifyProof(
+                protocol.config.exportBuildPath,
+                CircuitName.startTransition,
+                startTransitionProof.proof,
+                startTransitionProof.publicSignals
+            )
             expect(isValid).to.be.true
 
             // submit proofs
@@ -666,7 +702,7 @@ describe('User state transition events in Unirep User State', async function () 
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(startTransitionProof.proof)
             )
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -675,15 +711,22 @@ describe('User state transition events in Unirep User State', async function () 
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(
+                    startTransitionProof.proof
+                ).map(
+                    n => BigNumber.from(n)
+                )
             )
             proofIndexes.push(
                 Number(await unirepContract.getProofIndex(hashedProof))
             )
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProcessAttestationsProof(
-                    processAttestationProofs[i]
+                isValid = await circuit.verifyProof(
+                    protocol.config.exportBuildPath,
+                    CircuitName.processAttestations,
+                    processAttestationProofs[i].proof,
+                    processAttestationProofs[i].publicSignals
                 )
                 expect(isValid).to.be.true
 
@@ -691,7 +734,7 @@ describe('User state transition events in Unirep User State', async function () 
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
                     )
                 )
@@ -702,8 +745,10 @@ describe('User state transition events in Unirep User State', async function () 
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
+                    ).map(
+                        n => BigNumber.from(n)
                     )
                 )
                 proofIndexes.push(
@@ -712,7 +757,8 @@ describe('User state transition events in Unirep User State', async function () 
             }
             const USTInput = new UserTransitionProof(
                 finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
+                finalTransitionProof.proof,
+                protocol.config.exportBuildPath
             )
             isValid = await USTInput.verify()
             expect(isValid).to.be.true
@@ -724,21 +770,24 @@ describe('User state transition events in Unirep User State', async function () 
             expect(receipt.status).to.equal(1)
 
             const userStateAfterUST = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
             )
-            expect(userStateAfterUST.toJSON()).equal(storedUserState)
+            expect(userStateAfterUST.toJSON()).deep.equal(storedUserState)
         })
 
         it('mismatch proof indexes will not affect Unirep state', async () => {
             if (notTransitionUsers.length < 2) return
             const userState1 = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[notTransitionUsers[0]]
             )
             const userState2 = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[notTransitionUsers[1]]
@@ -748,7 +797,12 @@ describe('User state transition events in Unirep User State', async function () 
                 await userState1.genUserStateTransitionProofs()
             const proofIndexes: number[] = []
 
-            let isValid = await verifyStartTransitionProof(startTransitionProof)
+            let isValid = await circuit.verifyProof(
+                protocol.config.exportBuildPath,
+                CircuitName.startTransition,
+                startTransitionProof.proof,
+                startTransitionProof.publicSignals
+            )
             expect(isValid).to.be.true
 
             // submit proofs
@@ -756,7 +810,7 @@ describe('User state transition events in Unirep User State', async function () 
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(startTransitionProof.proof)
             )
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
@@ -765,15 +819,22 @@ describe('User state transition events in Unirep User State', async function () 
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(
+                    startTransitionProof.proof
+                ).map(
+                    n => BigNumber.from(n)
+                )
             )
             proofIndexes.push(
                 Number(await unirepContract.getProofIndex(hashedProof))
             )
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProcessAttestationsProof(
-                    processAttestationProofs[i]
+                isValid = await circuit.verifyProof(
+                    protocol.config.exportBuildPath,
+                    CircuitName.processAttestations,
+                    processAttestationProofs[i].proof,
+                    processAttestationProofs[i].publicSignals
                 )
                 expect(isValid).to.be.true
 
@@ -781,7 +842,7 @@ describe('User state transition events in Unirep User State', async function () 
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
                     )
                 )
@@ -792,8 +853,10 @@ describe('User state transition events in Unirep User State', async function () 
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
+                    ).map(
+                        n => BigNumber.from(n)
                     )
                 )
                 proofIndexes.push(
@@ -803,7 +866,8 @@ describe('User state transition events in Unirep User State', async function () 
             const user2Proofs = await userState2.genUserStateTransitionProofs()
             const USTInput = new UserTransitionProof(
                 user2Proofs.finalTransitionProof.publicSignals,
-                user2Proofs.finalTransitionProof.proof
+                user2Proofs.finalTransitionProof.proof,
+                protocol.config.exportBuildPath
             )
             isValid = await USTInput.verify()
             expect(isValid).to.be.true
@@ -815,6 +879,7 @@ describe('User state transition events in Unirep User State', async function () 
             expect(receipt.status).to.equal(1)
 
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -827,6 +892,7 @@ describe('User state transition events in Unirep User State', async function () 
             for (let i = 0; i < transitionedUsers.length; i++) {
                 const userIdx = transitionedUsers[i]
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[userIdx]
@@ -834,7 +900,11 @@ describe('User state transition events in Unirep User State', async function () 
 
                 const { proof, publicSignals } =
                     await userState.genVerifyEpochKeyProof(epkNonce)
-                const epkProofInput = new EpochKeyProof(publicSignals, proof)
+                const epkProofInput = new EpochKeyProof(
+                    publicSignals,
+                    proof,
+                    protocol.config.exportBuildPath
+                )
                 const isValid = await epkProofInput.verify()
                 expect(isValid).to.be.true
 
@@ -872,6 +942,7 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('User state should store the attestations ', async () => {
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[storedUserIdx]
@@ -879,7 +950,7 @@ describe('User state transition events in Unirep User State', async function () 
             const unirepObj = userState.toJSON()
             expect(
                 Object.keys(
-                    unirepObj.unirepState.latestEpochKeyToAttestationsMap
+                    unirepObj.latestEpochKeyToAttestationsMap
                 ).length
             ).equal(transitionedUsers.length)
         })
@@ -924,6 +995,7 @@ describe('User state transition events in Unirep User State', async function () 
     describe('User state transition events with attestations', async () => {
         it('Users should successfully perform user state transition', async () => {
             const unirepStateBefore = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
@@ -935,12 +1007,13 @@ describe('User state transition events in Unirep User State', async function () 
                 if (randomUST === 0) continue
                 console.log('transition user', i)
                 const userState = await genUserState(
+                    protocol,
                     hardhatEthers.provider,
                     unirepContract.address,
                     userIds[i]
                 )
 
-                expect(userState.getUnirepStateGSTree(epoch).root).equal(
+                expect(userState.genGSTree(epoch).root).equal(
                     GSTRoot
                 )
 
@@ -951,8 +1024,11 @@ describe('User state transition events in Unirep User State', async function () 
                 } = await userState.genUserStateTransitionProofs()
                 const proofIndexes: number[] = []
 
-                let isValid = await verifyStartTransitionProof(
-                    startTransitionProof
+                let isValid = await circuit.verifyProof(
+                    protocol.config.exportBuildPath,
+                    CircuitName.startTransition,
+                    startTransitionProof.proof,
+                    startTransitionProof.publicSignals
                 )
                 expect(isValid).to.be.true
 
@@ -961,7 +1037,7 @@ describe('User state transition events in Unirep User State', async function () 
                     startTransitionProof.blindedUserState,
                     startTransitionProof.blindedHashChain,
                     startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
+                    circuit.formatProofForVerifierContract(startTransitionProof.proof)
                 )
                 let receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
@@ -970,15 +1046,22 @@ describe('User state transition events in Unirep User State', async function () 
                     startTransitionProof.blindedUserState,
                     startTransitionProof.blindedHashChain,
                     startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
+                    circuit.formatProofForVerifierContract(
+                        startTransitionProof.proof
+                    ).map(
+                        n => BigNumber.from(n)
+                    )
                 )
                 proofIndexes.push(
                     Number(await unirepContract.getProofIndex(hashedProof))
                 )
 
                 for (let i = 0; i < processAttestationProofs.length; i++) {
-                    isValid = await verifyProcessAttestationsProof(
-                        processAttestationProofs[i]
+                    isValid = await await circuit.verifyProof(
+                        protocol.config.exportBuildPath,
+                        CircuitName.processAttestations,
+                        processAttestationProofs[i].proof,
+                        processAttestationProofs[i].publicSignals
                     )
                     expect(isValid).to.be.true
 
@@ -986,7 +1069,7 @@ describe('User state transition events in Unirep User State', async function () 
                         processAttestationProofs[i].outputBlindedUserState,
                         processAttestationProofs[i].outputBlindedHashChain,
                         processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
+                        circuit.formatProofForVerifierContract(
                             processAttestationProofs[i].proof
                         )
                     )
@@ -997,8 +1080,10 @@ describe('User state transition events in Unirep User State', async function () 
                         processAttestationProofs[i].outputBlindedUserState,
                         processAttestationProofs[i].outputBlindedHashChain,
                         processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
+                        circuit.formatProofForVerifierContract(
                             processAttestationProofs[i].proof
+                        ).map(
+                            n => BigNumber.from(n)
                         )
                     )
                     proofIndexes.push(
@@ -1007,7 +1092,8 @@ describe('User state transition events in Unirep User State', async function () 
                 }
                 const USTInput = new UserTransitionProof(
                     finalTransitionProof.publicSignals,
-                    finalTransitionProof.proof
+                    finalTransitionProof.proof,
+                    protocol.config.exportBuildPath,
                 )
                 isValid = await USTInput.verify()
                 expect(isValid).to.be.true
@@ -1022,24 +1108,26 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Users state transition matches current Unirep state', async () => {
             const unirepState = await genUnirepState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address
             )
             const userState = await genUserState(
+                protocol,
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[0]
             )
-            expect(userState.getUnirepStateCurrentEpoch()).equal(
+            expect(userState.currentEpoch).equal(
                 unirepState.currentEpoch
             )
             for (let i = 1; i <= unirepState.currentEpoch; i++) {
-                expect(userState.getUnirepStateGSTree(i).root).equal(
+                expect(userState.genGSTree(i).root).equal(
                     unirepState.genGSTree(i).root
                 )
             }
             expect(
-                (await userState.getUnirepStateEpochTree(2)).getRootHash()
+                (await userState.genEpochTree(2)).getRootHash()
             ).equal((await unirepState.genEpochTree(2)).getRootHash())
         })
     })

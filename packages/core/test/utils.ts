@@ -3,26 +3,15 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
-import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
-    hash5,
-    hashLeftRight,
-    SparseMerkleTree,
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, verifyProof } from '@unirep/circuits'
 import { Attestation } from '@unirep/contracts'
-import {
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits/config'
 
 import {
-    genEpochKey,
     genUnirepState,
     genUserState,
     IUserState,
@@ -30,6 +19,8 @@ import {
     UnirepState,
     UserState,
 } from '../src'
+import { UnirepProtocol } from '../src/UnirepProtocol'
+import { Unirep } from '@unirep/contracts'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
@@ -37,47 +28,48 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
+const attesterSignUp = async (
+    account: ethers.Signer,
+    unirepContract: Unirep
+) => {
+    const attester = new Object
+    attester['acct'] = account
+    attester['addr'] = await attester['acct'].getAddress()
+    const unirepContractCalledByAttester = unirepContract.connect(
+        attester['acct']
+    )
+    let tx = await unirepContractCalledByAttester.attesterSignUp()
+    let receipt = await tx.wait()
+    expect(receipt.status, 'Attester signs up failed').to.equal(1)
 
-const genNewSMT = async (
-    treeDepth: number,
-    defaultLeafHash: BigInt
-): Promise<SparseMerkleTree> => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+    return {
+        attester,
+        unirepContractCalledByAttester
+    }
 }
 
-const genNewEpochTree = async (): Promise<SparseMerkleTree> => {
-    const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(EPOCH_TREE_DEPTH, defaultOTSMTHash)
+const attesterSetAirdrop = async (
+    account: ethers.Signer,
+    unirepContract: Unirep,
+    airdropPosRep: number
+) => {
+    const attester = new Object
+    attester['acct'] = account
+    attester['addr'] = await attester['acct'].getAddress()
+    const unirepContractCalledByAttester = unirepContract.connect(
+        attester['acct']
+    )
+    const tx = await unirepContractCalledByAttester.setAirdropAmount(
+        airdropPosRep
+    )
+    const receipt = await tx.wait()
+    expect(receipt.status).equal(1)
+    const airdroppedAmount = await unirepContract.airdropAmount(
+        attester['addr']
+    )
+    expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
 }
 
-const defaultUserStateLeaf = hash5([
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-])
-
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
-    return t.root
-}
-
-const genNewGST = (
-    GSTDepth: number,
-    USTDepth: number
-): IncrementalMerkleTree => {
-    const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
-    const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
-    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf, 2)
-    return GST
-}
-
-const genNewUserStateTree = async (): Promise<SparseMerkleTree> => {
-    return genNewSMT(USER_STATE_TREE_DEPTH, defaultUserStateLeaf)
-}
 
 const genRandomAttestation = (): Attestation => {
     const attesterId = Math.ceil(Math.random() * 10)
@@ -107,36 +99,16 @@ const computeEpochKeyProofHash = (epochKeyProof: any) => {
     return ethers.utils.keccak256(abiEncoder)
 }
 
-const verifyStartTransitionProof = async (
-    startTransitionProof
-): Promise<boolean> => {
-    return await verifyProof(
-        Circuit.startTransition,
-        startTransitionProof.proof,
-        startTransitionProof.publicSignals
-    )
-}
-
-const verifyProcessAttestationsProof = async (
-    processAttestationProof
-): Promise<boolean> => {
-    return await verifyProof(
-        Circuit.processAttestations,
-        processAttestationProof.proof,
-        processAttestationProof.publicSignals
-    )
-}
-
 const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
     const currentEpoch = unirepState.currentEpoch
     const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
         for (
             let j = 0;
-            j < unirepState.settings.numEpochKeyNoncePerEpoch;
+            j < unirepState.config.numEpochKeyNoncePerEpoch;
             j++
         ) {
-            const epk = genEpochKey(id.identityNullifier, i, j)
+            const epk = unirepState.genEpochKey(id.identityNullifier, i, j)
             const attestations = unirepState.getAttestations(epk.toString())
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
@@ -162,6 +134,7 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
 }
 
 const genEpochKeyCircuitInput = (
+    protocol: UnirepProtocol,
     id: ZkIdentity,
     tree: IncrementalMerkleTree,
     leafIndex: number,
@@ -171,7 +144,7 @@ const genEpochKeyCircuitInput = (
 ) => {
     const proof = tree.createProof(leafIndex)
     const root = tree.root
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+    const epk = protocol.genEpochKey(id.identityNullifier, epoch, nonce)
 
     const circuitInputs = {
         GST_path_elements: proof.siblings,
@@ -188,6 +161,7 @@ const genEpochKeyCircuitInput = (
 }
 
 const genReputationCircuitInput = async (
+    protocol: UnirepProtocol,
     id: ZkIdentity,
     epoch: number,
     nonce: number,
@@ -200,7 +174,7 @@ const genReputationCircuitInput = async (
     _proveGraffiti?,
     _graffitiPreImage?
 ) => {
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+    const epk = protocol.genEpochKey(id.identityNullifier, epoch, nonce)
     const repNullifiersAmount =
         _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
     const minRep = _minRep === undefined ? 0 : _minRep
@@ -215,7 +189,7 @@ const genReputationCircuitInput = async (
     }
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = await protocol.genNewUST()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
@@ -239,7 +213,7 @@ const genReputationCircuitInput = async (
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))
     }
-    for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
+    for (let i = repNullifiersAmount; i < protocol.config.maxReputationBudget; i++) {
         nonceList.push(BigInt(0))
         selectors.push(BigInt(0))
     }
@@ -271,6 +245,7 @@ const genReputationCircuitInput = async (
 }
 
 const genProveSignUpCircuitInput = async (
+    protocol: UnirepProtocol,
     id: ZkIdentity,
     epoch: number,
     GSTree: IncrementalMerkleTree,
@@ -280,13 +255,13 @@ const genProveSignUpCircuitInput = async (
     _signUp?: number
 ) => {
     const nonce = 0
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+    const epk = protocol.genEpochKey(id.identityNullifier, epoch, nonce)
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = await protocol.genNewUST()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
@@ -322,27 +297,31 @@ const genProveSignUpCircuitInput = async (
 }
 
 const compareStates = async (
+    protocol: UnirepProtocol,
     provider: ethers.providers.Provider,
     address: string,
     userId: ZkIdentity,
     savedUserState: IUserState
 ) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const unirepStateWithNoStorage = await genUnirepState(provider, address)
+    const usWithNoStorage = await genUserState(protocol, provider, address, userId)
+    const unirepStateWithNoStorage = await genUnirepState(protocol, provider, address)
 
     const usWithStorage = await genUserState(
+        protocol,
         provider,
         address,
         userId,
         savedUserState
     )
     const unirepStateWithStorage = await genUnirepState(
+        protocol,
         provider,
         address,
-        savedUserState.unirepState
+        savedUserState
     )
 
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    console.log(unirepStateWithStorage.toJSON())
+    const usFromJSON = UserState.fromJSONAndID(userId, usWithStorage.toJSON())
     const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
 
     expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
@@ -358,25 +337,27 @@ const compareStates = async (
 }
 
 const compareEpochTrees = async (
+    protocol: UnirepProtocol,
     provider: ethers.providers.Provider,
     address: string,
     userId: ZkIdentity,
     savedUserState: any,
     epoch: number
 ) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const epochTree1 = await usWithNoStorage.getUnirepStateEpochTree(epoch)
+    const usWithNoStorage = await genUserState(protocol, provider, address, userId)
+    const epochTree1 = await usWithNoStorage.genEpochTree(epoch)
 
     const usWithStorage = await genUserState(
+        protocol,
         provider,
         address,
         userId,
         savedUserState
     )
-    const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
+    const epochTree2 = await usWithStorage.genEpochTree(epoch)
 
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
+    const usFromJSON = UserState.fromJSONAndID(userId, usWithStorage.toJSON())
+    const epochTree3 = await usFromJSON.genEpochTree(epoch)
 
     expect(epochTree1.getRootHash()).to.equal(epochTree2.getRootHash())
     expect(epochTree1.getRootHash()).to.equal(epochTree3.getRootHash())
@@ -385,20 +366,12 @@ const compareEpochTrees = async (
 }
 
 export {
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
-    computeEmptyUserStateRoot,
-    defaultUserStateLeaf,
-    genNewEpochTree,
-    genNewUserStateTree,
-    genNewSMT,
-    genNewGST,
+    attesterSignUp,
+    attesterSetAirdrop,
     genRandomAttestation,
     genRandomList,
     toCompleteHexString,
     computeEpochKeyProofHash,
-    verifyStartTransitionProof,
-    verifyProcessAttestationsProof,
     getReputationRecords,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
