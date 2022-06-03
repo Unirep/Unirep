@@ -7,7 +7,6 @@ import { genRandomAttestation } from '../utils'
 import { zkFilesPath } from '../testConfig'
 
 describe('Unirep State', function () {
-
     // unirep state
     let unirepState: UnirepState = new UnirepState(zkFilesPath)
 
@@ -284,7 +283,11 @@ describe('Unirep State', function () {
             for (let i = 0; i < userNum; i++) {
                 const GSTLeaf = genRandomSalt()
                 const nullifiers: BigInt[] = []
-                for (let j = 0; j < unirepState.config.numEpochKeyNoncePerEpoch; j++) {
+                for (
+                    let j = 0;
+                    j < unirepState.config.numEpochKeyNoncePerEpoch;
+                    j++
+                ) {
                     nullifiers.push(genRandomSalt())
                 }
                 unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
@@ -336,7 +339,11 @@ describe('Unirep State', function () {
             const wrongEpoch = epoch + 1
             const GSTLeaf = genRandomSalt()
             const nullifiers: BigInt[] = []
-            for (let i = 0; i < unirepState.config.numEpochKeyNoncePerEpoch; i++) {
+            for (
+                let i = 0;
+                i < unirepState.config.numEpochKeyNoncePerEpoch;
+                i++
+            ) {
                 nullifiers.push(genRandomSalt())
             }
             let error
@@ -355,7 +362,8 @@ describe('Unirep State', function () {
         it('user state transition with wrong nullifiers amount should fail', async () => {
             const GSTLeaf = genRandomSalt()
             const nullifiers: BigInt[] = []
-            const wrongEpkNullifierAmount = unirepState.config.numEpochKeyNoncePerEpoch + 1
+            const wrongEpkNullifierAmount =
+                unirepState.config.numEpochKeyNoncePerEpoch + 1
             for (let i = 0; i < wrongEpkNullifierAmount; i++) {
                 nullifiers.push(genRandomSalt())
             }
@@ -480,7 +488,11 @@ describe('Unirep State', function () {
             for (let i = 0; i < userNum; i++) {
                 const GSTLeaf = genRandomSalt()
                 const nullifiers: BigInt[] = []
-                for (let j = 0; j < unirepState.config.numEpochKeyNoncePerEpoch; j++) {
+                for (
+                    let j = 0;
+                    j < unirepState.config.numEpochKeyNoncePerEpoch;
+                    j++
+                ) {
                     nullifiers.push(genRandomSalt())
                 }
                 unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)

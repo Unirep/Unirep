@@ -2,10 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import contract, { Unirep } from '@unirep/contracts'
 
 import { genUnirepState } from '../../src'

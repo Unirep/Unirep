@@ -2,11 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    genRandomSalt,
-    ZkIdentity,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import circuit, { CircuitName } from '@unirep/circuits'
 import contract, {
     Attestation,
@@ -15,21 +11,13 @@ import contract, {
     Unirep,
 } from '@unirep/contracts'
 
-import {
-    genUnirepState,
-    Reputation,
-    UnirepProtocol,
-} from '../../src'
+import { genUnirepState, Reputation, UnirepProtocol } from '../../src'
 import {
     genEpochKeyCircuitInput,
     genRandomAttestation,
     genReputationCircuitInput,
 } from '../utils'
-import {
-    artifactsPath,
-    config,
-    zkFilesPath
-} from '../testConfig'
+import { artifactsPath, config, zkFilesPath } from '../testConfig'
 
 describe('Reputation proof events in Unirep State', function () {
     this.timeout(0)
@@ -288,7 +276,11 @@ describe('Reputation proof events in Unirep State', function () {
                 CircuitName.proveReputation,
                 circuitInputs
             )
-            const repProofInput = new ReputationProof(publicSignals, proof, zkFilesPath)
+            const repProofInput = new ReputationProof(
+                publicSignals,
+                proof,
+                zkFilesPath
+            )
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
 
@@ -778,8 +770,8 @@ describe('Reputation proof events in Unirep State', function () {
                 circuitInputs
             )
             const repProofInput = new ReputationProof(
-                publicSignals, 
-                proof, 
+                publicSignals,
+                proof,
                 protocol.config.exportBuildPath
             )
             const isValid = await repProofInput.verify()

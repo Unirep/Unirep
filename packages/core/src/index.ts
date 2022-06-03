@@ -12,10 +12,7 @@ import UnirepState from './UnirepState'
 import UserState from './UserState'
 import { UnirepProtocol } from './UnirepProtocol'
 
-import {
-    genUnirepState,
-    genUserState,
-} from './utils'
+import { genUnirepState, genUserState } from './utils'
 export {
     IEpochTreeLeaf,
     ISettings,

@@ -2,28 +2,13 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    genRandomSalt,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import circuit, { CircuitName } from '@unirep/circuits'
 import contract, { SignUpProof, Unirep } from '@unirep/contracts'
 
-import {
-    genUnirepState,
-    Reputation,
-    UnirepProtocol
-} from '../../src'
-import {
-    genProveSignUpCircuitInput,
-    genRandomAttestation,
-} from '../utils'
-import {
-    artifactsPath,
-    config,
-    zkFilesPath
-} from '../testConfig'
+import { genUnirepState, Reputation, UnirepProtocol } from '../../src'
+import { genProveSignUpCircuitInput, genRandomAttestation } from '../utils'
+import { artifactsPath, config, zkFilesPath } from '../testConfig'
 
 describe('User sign up proof (Airdrop proof) events in Unirep State', function () {
     this.timeout(0)

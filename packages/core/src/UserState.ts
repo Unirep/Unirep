@@ -11,7 +11,12 @@ import {
 import circuit from '@unirep/circuits'
 import { Attestation } from '@unirep/contracts'
 
-import { IEpochTreeLeaf, IReputation, IUserState, IUserStateLeaf } from './interfaces'
+import {
+    IEpochTreeLeaf,
+    IReputation,
+    IUserState,
+    IUserStateLeaf,
+} from './interfaces'
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
 import { CircuitName } from '@unirep/circuits'
@@ -19,7 +24,6 @@ import { UnirepProtocol } from './UnirepProtocol'
 import { unstringifyBigInts } from '@unirep/crypto'
 
 export default class UserState extends UnirepState {
-
     public id: ZkIdentity
     public commitment: bigint
     private hasSignedUp: boolean = false
@@ -91,7 +95,7 @@ export default class UserState extends UnirepState {
             GSTLeaves,
             epochTreeLeaves,
             latestEpochKeyToAttestationsMap,
-            nullifiers
+            nullifiers,
         } = super.toJSON()
         const userStateLeavesMapToString: { [key: string]: string } = {}
         for (const l of this.latestUserStateLeaves) {
@@ -137,7 +141,10 @@ export default class UserState extends UnirepState {
     }
 
     // cannot override UnirepState.fromJSON
-    public static fromJSONAndID(identity: ZkIdentity, data: IUserState): UserState {
+    public static fromJSONAndID(
+        identity: ZkIdentity,
+        data: IUserState
+    ): UserState {
         const _userState = typeof data === 'string' ? JSON.parse(data) : data
         const parsedGSTLeaves = {}
         const parsedEpochTreeLeaves = {}
@@ -145,9 +152,7 @@ export default class UserState extends UnirepState {
         const parsedAttestationsMap = {}
 
         for (let key in _userState.GSTLeaves) {
-            parsedGSTLeaves[key] = unstringifyBigInts(
-                _userState.GSTLeaves[key]
-            )
+            parsedGSTLeaves[key] = unstringifyBigInts(_userState.GSTLeaves[key])
         }
 
         for (let key in _userState.epochTreeLeaves) {
@@ -235,7 +240,11 @@ export default class UserState extends UnirepState {
      */
     public getEpochKeyNullifiers(epoch: number): BigInt[] {
         const nullifiers: BigInt[] = []
-        for (let nonce = 0; nonce < this.config.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.config.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const nullifier = UserState.genEpochKeyNullifier(
                 this.id.identityNullifier,
                 epoch,
@@ -329,8 +338,7 @@ export default class UserState extends UnirepState {
                 this.latestUserStateLeaves = [stateLeave]
             }
             this.latestTransitionedEpoch = epoch
-            this.latestGSTLeafIndex =
-                this.getNumGSTLeaves(epoch) - 1
+            this.latestGSTLeafIndex = this.getNumGSTLeaves(epoch) - 1
             this.hasSignedUp = true
         }
     }
@@ -355,7 +363,6 @@ export default class UserState extends UnirepState {
         const leaves = this.latestUserStateLeaves
         return await this._genUserStateTreeFromLeaves(leaves)
     }
-
 
     /**
      * Update user state and unirep state according to user state transition event
@@ -386,12 +393,7 @@ export default class UserState extends UnirepState {
             }
         }
 
-        super.userStateTransition(
-            fromEpoch,
-            GSTLeaf,
-            nullifiers,
-            blockNumber
-        )
+        super.userStateTransition(fromEpoch, GSTLeaf, nullifiers, blockNumber)
     }
 
     public async genVerifyEpochKeyProof(epochKeyNonce: number) {
@@ -468,7 +470,11 @@ export default class UserState extends UnirepState {
         this._checkUserSignUp()
         const fromEpoch = this.latestTransitionedEpoch
 
-        for (let nonce = 0; nonce < this.config.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.config.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const epochKey = this.genEpochKey(
                 this.id.identityNullifier,
                 fromEpoch,
@@ -494,7 +500,11 @@ export default class UserState extends UnirepState {
         let stateLeaves: IUserStateLeaf[]
         stateLeaves = this.latestUserStateLeaves.slice()
 
-        for (let nonce = 0; nonce < this.config.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.config.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const epkNullifier = UnirepProtocol.genEpochKeyNullifier(
                 this.id.identityNullifier,
                 fromEpoch,
@@ -591,8 +601,7 @@ export default class UserState extends UnirepState {
         ]
         const userStateLeafPathElements: any[] = []
         // GSTree
-        const fromEpochGSTree: IncrementalMerkleTree =
-            this.genGSTree(fromEpoch)
+        const fromEpochGSTree: IncrementalMerkleTree = this.genGSTree(fromEpoch)
         const GSTreeProof = fromEpochGSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
@@ -634,7 +643,11 @@ export default class UserState extends UnirepState {
         const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
         const finalHashChain: BigInt[] = []
 
-        for (let nonce = 0; nonce < this.config.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.config.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const epochKey = this.genEpochKey(
                 this.id.identityNullifier,
                 fromEpoch,
@@ -647,9 +660,7 @@ export default class UserState extends UnirepState {
             hashChainStarter.push(currentHashChain)
 
             // Attestations
-            const attestations = this.getAttestations(
-                epochKey.toString()
-            )
+            const attestations = this.getAttestations(epochKey.toString())
             for (let i = 0; i < attestations.length; i++) {
                 // Include a blinded user state and blinded hash chain per proof
                 if (
@@ -733,8 +744,8 @@ export default class UserState extends UnirepState {
             // Fill in blank data for non-exist attestation
             const filledAttestationNum = attestations.length
                 ? Math.ceil(
-                    attestations.length / this.config.numAttestationsPerProof
-                ) * this.config.numAttestationsPerProof
+                      attestations.length / this.config.numAttestationsPerProof
+                  ) * this.config.numAttestationsPerProof
                 : this.config.numAttestationsPerProof
             for (
                 let i = 0;
@@ -909,7 +920,7 @@ export default class UserState extends UnirepState {
                 ),
                 transitionedFromEpoch:
                     finalProofResults.publicSignals[
-                    1 + this.config.numEpochKeyNoncePerEpoch
+                        1 + this.config.numEpochKeyNoncePerEpoch
                     ],
                 blindedUserStates: finalProofResults.publicSignals.slice(
                     2 + this.config.numEpochKeyNoncePerEpoch,
@@ -917,7 +928,7 @@ export default class UserState extends UnirepState {
                 ),
                 fromGSTRoot:
                     finalProofResults.publicSignals[
-                    4 + this.config.numEpochKeyNoncePerEpoch
+                        4 + this.config.numEpochKeyNoncePerEpoch
                     ],
                 blindedHashChains: finalProofResults.publicSignals.slice(
                     5 + this.config.numEpochKeyNoncePerEpoch,
@@ -925,7 +936,7 @@ export default class UserState extends UnirepState {
                 ),
                 fromEpochTree:
                     finalProofResults.publicSignals[
-                    5 + 2 * this.config.numEpochKeyNoncePerEpoch
+                        5 + 2 * this.config.numEpochKeyNoncePerEpoch
                     ],
             },
         }
@@ -939,8 +950,7 @@ export default class UserState extends UnirepState {
 
         const fromEpoch = this.latestTransitionedEpoch
         const transitionToEpoch = this.currentEpoch
-        const transitionToGSTIndex =
-            this.getNumGSTLeaves(transitionToEpoch)
+        const transitionToGSTIndex = this.getNumGSTLeaves(transitionToEpoch)
         const newState = await this._genNewUserStateAfterTransition()
         if (newLeaf !== newState.newGSTLeaf) {
             console.error('UserState: new GST leaf mismatch')
@@ -971,15 +981,19 @@ export default class UserState extends UnirepState {
         this._checkEpkNonce(epkNonce)
 
         if (nonceList == undefined)
-            nonceList = new Array(
-                this.config.maxReputationBudget
-            ).fill(BigInt(-1))
+            nonceList = new Array(this.config.maxReputationBudget).fill(
+                BigInt(-1)
+            )
         assert(
             nonceList.length == this.config.maxReputationBudget,
             `Length of nonce list should be ${this.config.maxReputationBudget}`
         )
         const epoch = this.latestTransitionedEpoch
-        const epochKey = this.genEpochKey(this.id.identityNullifier, epoch, epkNonce)
+        const epochKey = this.genEpochKey(
+            this.id.identityNullifier,
+            epoch,
+            epkNonce
+        )
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
         const negRep = rep.negRep
@@ -993,11 +1007,7 @@ export default class UserState extends UnirepState {
         const selectors: BigInt[] = []
         const nonceExist = {}
         let repNullifiersAmount = 0
-        for (
-            let i = 0;
-            i < this.config.maxReputationBudget;
-            i++
-        ) {
+        for (let i = 0; i < this.config.maxReputationBudget; i++) {
             if (nonceList[i] !== BigInt(-1)) {
                 assert(
                     nonceExist[nonceList[i].toString()] == undefined,
@@ -1016,12 +1026,13 @@ export default class UserState extends UnirepState {
         if (repNullifiersAmount > 0) {
             // find valid nonce starter
             for (let n = 0; n < Number(posRep) - Number(negRep); n++) {
-                const reputationNullifier = UnirepProtocol.genReputationNullifier(
-                    this.id.identityNullifier,
-                    epoch,
-                    n,
-                    attesterId
-                )
+                const reputationNullifier =
+                    UnirepProtocol.genReputationNullifier(
+                        this.id.identityNullifier,
+                        epoch,
+                        n,
+                        attesterId
+                    )
                 if (!this.nullifierExist(reputationNullifier)) {
                     nonceStarter = n
                     break
@@ -1030,7 +1041,7 @@ export default class UserState extends UnirepState {
             assert(nonceStarter != -1, 'All nullifiers are spent')
             assert(
                 nonceStarter + repNullifiersAmount <=
-                Number(posRep) - Number(negRep),
+                    Number(posRep) - Number(negRep),
                 'Not enough reputation to spend'
             )
         }
@@ -1074,13 +1085,17 @@ export default class UserState extends UnirepState {
                 this.config.maxReputationBudget
             ),
             epoch: results['publicSignals'][this.config.maxReputationBudget],
-            epochKey: results['publicSignals'][this.config.maxReputationBudget + 1],
+            epochKey:
+                results['publicSignals'][this.config.maxReputationBudget + 1],
             globalStatetreeRoot:
                 results['publicSignals'][this.config.maxReputationBudget + 2],
-            attesterId: results['publicSignals'][this.config.maxReputationBudget + 3],
+            attesterId:
+                results['publicSignals'][this.config.maxReputationBudget + 3],
             proveReputationAmount:
                 results['publicSignals'][this.config.maxReputationBudget + 4],
-            minRep: results['publicSignals'][this.config.maxReputationBudget + 5],
+            minRep: results['publicSignals'][
+                this.config.maxReputationBudget + 5
+            ],
             proveGraffiti:
                 results['publicSignals'][this.config.maxReputationBudget + 6],
             graffitiPreImage:
@@ -1093,7 +1108,11 @@ export default class UserState extends UnirepState {
         this._checkAttesterId(attesterId)
         const epoch = this.latestTransitionedEpoch
         const nonce = 0 // fixed epk nonce
-        const epochKey = this.genEpochKey(this.id.identityNullifier, epoch, nonce)
+        const epochKey = this.genEpochKey(
+            this.id.identityNullifier,
+            epoch,
+            nonce
+        )
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
         const negRep = rep.negRep

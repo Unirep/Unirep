@@ -2,11 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    genRandomSalt,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import circuit, { CircuitName } from '@unirep/circuits'
 import contract, { SignUpProof, Unirep } from '@unirep/contracts'
 
@@ -16,10 +12,7 @@ import {
     Reputation,
     UnirepProtocol,
 } from '../../src'
-import {
-    genProveSignUpCircuitInput,
-    genRandomAttestation,
-} from '../utils'
+import { genProveSignUpCircuitInput, genRandomAttestation } from '../utils'
 import { artifactsPath, config, zkFilesPath } from '../testConfig'
 
 describe('User sign up proof (Airdrop proof) events in Unirep User State', function () {
@@ -101,8 +94,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const unirepEpoch = initUnirepState.currentEpoch
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            const unirepGSTree =
-                initUnirepState.genGSTree(unirepEpoch)
+            const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = protocol.genNewGST()
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })

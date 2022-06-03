@@ -13,7 +13,6 @@ import { IEpochTreeLeaf, IUnirepState } from './interfaces'
 import { UnirepProtocol } from './UnirepProtocol'
 
 export default class UnirepState extends UnirepProtocol {
-
     public currentEpoch: number = 1
     private epochTreeRoot: { [key: number]: BigInt } = {}
     private GSTLeaves: { [key: number]: BigInt[] } = {}
@@ -178,7 +177,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Get the number of GST leaves of given epoch
      * @param epoch A given epoch
-     * @returns The Number of GST leaves 
+     * @returns The Number of GST leaves
      */
     public getNumGSTLeaves(epoch: number): number {
         this._checkValidEpoch(epoch)
@@ -191,7 +190,7 @@ export default class UnirepState extends UnirepProtocol {
      * @param epochKey A given epoch key
      * @returns A list of attestations
      */
-    public getAttestations (epochKey: string): Attestation[] {
+    public getAttestations(epochKey: string): Attestation[] {
         this._checkEpochKeyRange(epochKey)
 
         const attestations = this.epochKeyToAttestationsMap[epochKey]
@@ -204,7 +203,7 @@ export default class UnirepState extends UnirepProtocol {
      * @param epoch The given epoch
      * @returns All used epoch key in the given epoch
      */
-    public getEpochKeys (epoch: number): string[] {
+    public getEpochKeys(epoch: number): string[] {
         this._checkValidEpoch(epoch)
         if (this.epochKeyInEpoch[epoch] == undefined) return []
         return Array.from(this.epochKeyInEpoch[epoch].keys())
@@ -215,7 +214,7 @@ export default class UnirepState extends UnirepProtocol {
      * @param nullifier The queried nullifier
      * @returns True if nullifier is in the Unirep State, false otherwise.
      */
-    public nullifierExist (nullifier: BigInt): boolean {
+    public nullifierExist(nullifier: BigInt): boolean {
         // Nullifier 0 exists because it is reserved
         if (nullifier === BigInt(0)) return true
         if (this.nullifiers[nullifier.toString()]) return true
@@ -227,7 +226,7 @@ export default class UnirepState extends UnirepProtocol {
      * @param nullifiers A list of nullifiers
      * @returns True if any of nullifiers is in the Unirep State, false otherwise
      */
-    public nullifiersExist (nullifiers: BigInt[]): boolean {
+    public nullifiersExist(nullifiers: BigInt[]): boolean {
         let exist = false
         for (let nullifier of nullifiers) {
             exist = this.nullifierExist(nullifier)
@@ -239,7 +238,7 @@ export default class UnirepState extends UnirepProtocol {
      * Check if the block has been processed
      * @param blockNumber The block number we want to check
      */
-    protected _checkBlockNumber (blockNumber: number | undefined) {
+    protected _checkBlockNumber(blockNumber: number | undefined) {
         if (
             blockNumber !== undefined &&
             blockNumber < this.latestProcessedBlock
@@ -255,7 +254,7 @@ export default class UnirepState extends UnirepProtocol {
      * Check if epoch matches current epoch
      * @param epoch The epoch we want to check
      */
-    protected _checkCurrentEpoch (epoch: number) {
+    protected _checkCurrentEpoch(epoch: number) {
         assert(
             epoch === this.currentEpoch,
             `UnirepState: Epoch (${epoch}) must be the same as the current epoch ${this.currentEpoch}`
@@ -266,7 +265,7 @@ export default class UnirepState extends UnirepProtocol {
      * Check if epoch is less than the current epoch
      * @param epoch The epoch we want to check
      */
-    protected _checkValidEpoch (epoch: number) {
+    protected _checkValidEpoch(epoch: number) {
         assert(
             epoch <= this.currentEpoch,
             `UnirepState: Epoch (${epoch}) must be less than the current epoch ${this.currentEpoch}`
@@ -277,7 +276,7 @@ export default class UnirepState extends UnirepProtocol {
      * Check if nullifier has been submitted before
      * @param nullifier The nullifier we want to check
      */
-    protected _checkNullifier (nullifier: BigInt) {
+    protected _checkNullifier(nullifier: BigInt) {
         assert(
             this.nullifierExist(nullifier) === false,
             `UnirepState: Nullifier ${nullifier.toString()} has been submitted before`
@@ -288,7 +287,7 @@ export default class UnirepState extends UnirepProtocol {
      * Check if epoch key is greater than max epoch tree leaf value
      * @param epochKey The epoch key we want to check
      */
-    protected _checkEpochKeyRange (epochKey: string) {
+    protected _checkEpochKeyRange(epochKey: string) {
         assert(
             BigInt(epochKey) < BigInt(2 ** this.config.epochTreeDepth),
             `UnirepState: Epoch key (${epochKey}) greater than max leaf value(2**epochTreeDepth)`
@@ -299,7 +298,7 @@ export default class UnirepState extends UnirepProtocol {
      * Check if epoch key has been sealed
      * @param epochKey The epoch key we want to check
      */
-    protected _isEpochKeySealed (epochKey: string) {
+    protected _isEpochKeySealed(epochKey: string) {
         assert(
             this.sealedEpochKey[epochKey] !== true,
             `UnirepState: Epoch key (${epochKey}) has been sealed`
@@ -309,7 +308,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Update Unirep global state tree in the given epoch
      */
-    private _updateGSTree (epoch: number, GSTLeaf: BigInt) {
+    private _updateGSTree(epoch: number, GSTLeaf: BigInt) {
         // Only insert non-zero GST leaf (zero GST leaf means the user has epoch keys left to process)
         if (GSTLeaf <= BigInt(0)) return
         this.GSTLeaves[epoch].push(GSTLeaf)
@@ -326,7 +325,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Computes the global state tree of given epoch
      */
-    public genGSTree (epoch: number): IncrementalMerkleTree {
+    public genGSTree(epoch: number): IncrementalMerkleTree {
         this._checkValidEpoch(epoch)
         return this.globalStateTree[epoch]
     }
@@ -351,10 +350,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Check if the root is one of the Global state tree roots in the given epoch
      */
-    public GSTRootExists (
-        GSTRoot: BigInt | string,
-        epoch: number
-    ): boolean {
+    public GSTRootExists(GSTRoot: BigInt | string, epoch: number): boolean {
         this._checkValidEpoch(epoch)
         return this.epochGSTRootMap[epoch].has(GSTRoot.toString())
     }
@@ -362,7 +358,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Check if the root is one of the epoch tree roots in the given epoch
      */
-    public async epochTreeRootExists (
+    public async epochTreeRootExists(
         _epochTreeRoot: BigInt | string,
         epoch: number
     ): Promise<boolean> {
@@ -387,7 +383,10 @@ export default class UnirepState extends UnirepProtocol {
         this._checkCurrentEpoch(epoch)
         this._checkBlockNumber(blockNumber)
 
-        const USTRoot = await this.computeInitUserStateRoot(attesterId, airdropAmount)
+        const USTRoot = await this.computeInitUserStateRoot(
+            attesterId,
+            airdropAmount
+        )
         const GSTLeaf = hashLeftRight(idCommitment, USTRoot)
 
         this._updateGSTree(epoch, GSTLeaf)
@@ -396,7 +395,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Add a new attestation to the list of attestations to the epoch key.
      */
-    public addAttestation (
+    public addAttestation(
         epochKey: string,
         attestation: Attestation,
         blockNumber?: number
@@ -414,10 +413,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Add reputation nullifiers to the map state
      */
-    public addReputationNullifiers (
-        nullifier: BigInt,
-        blockNumber?: number
-    )  {
+    public addReputationNullifiers(nullifier: BigInt, blockNumber?: number) {
         this._checkBlockNumber(blockNumber)
         this._checkNullifier(nullifier)
 
@@ -427,7 +423,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Add the leaves of epoch tree of given epoch and increment current epoch number
      */
-    public async epochTransition  (epoch: number, blockNumber?: number) {
+    public async epochTransition(epoch: number, blockNumber?: number) {
         this._checkCurrentEpoch(epoch)
         this._checkBlockNumber(blockNumber)
 
@@ -480,7 +476,7 @@ export default class UnirepState extends UnirepProtocol {
     /**
      * Add a new state leaf to the list of GST leaves in the current epoch.
      */
-    public userStateTransition (
+    public userStateTransition(
         fromEpoch: number,
         GSTLeaf: BigInt,
         nullifiers: BigInt[],

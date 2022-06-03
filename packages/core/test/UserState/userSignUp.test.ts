@@ -2,19 +2,11 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import contract, { Unirep } from '@unirep/contracts'
 
-import {
-    genUnirepState,
-    genUserState,
-    UnirepProtocol,
-} from '../../src'
+import { genUnirepState, genUserState, UnirepProtocol } from '../../src'
 import { artifactsPath, config, zkFilesPath } from '../testConfig'
-
 
 describe('User sign up events in Unirep User State', function () {
     this.timeout(0)
@@ -89,8 +81,7 @@ describe('User sign up events in Unirep User State', function () {
             const unirepEpoch = initUnirepState.currentEpoch
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            const unirepGSTree =
-                initUnirepState.genGSTree(unirepEpoch)
+            const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = protocol.genNewGST()
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })

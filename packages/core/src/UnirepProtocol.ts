@@ -1,25 +1,28 @@
-import { BigNumber, Event } from "ethers"
-import Keyv from "keyv"
-import path from "path"
-import {
-    CircuitConfig,
-    CircuitName
-} from "@unirep/circuits"
+import { BigNumber, Event } from 'ethers'
+import Keyv from 'keyv'
+import path from 'path'
+import { CircuitConfig, CircuitName } from '@unirep/circuits'
 import {
     hash5,
     hashLeftRight,
     IncrementalMerkleTree,
     SnarkBigInt,
-    SparseMerkleTree
-} from "@unirep/crypto"
+    SparseMerkleTree,
+} from '@unirep/crypto'
 import circuit from '@unirep/circuits'
 
-import Reputation from "./Reputation"
+import Reputation from './Reputation'
 
 export class UnirepProtocol {
     static EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
     static REPUTATION_NULLIFIER_DOMAIN = BigInt(2)
-    static DEFAULT_USER_LEAF = hash5([BigInt(0), BigInt(0), BigInt(0), BigInt(0), BigInt(0)])
+    static DEFAULT_USER_LEAF = hash5([
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+    ])
     static SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
     static SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
@@ -30,14 +33,9 @@ export class UnirepProtocol {
      * Set Unirep protocol paramters from a given circuit directory path
      * @param _zkFilesPath The path to the circuit keys and config
      */
-    constructor(
-        _zkFilesPath: string,
-    ) {
+    constructor(_zkFilesPath: string) {
         this.zkFilesPath = _zkFilesPath
-        this.config = require(path.join(
-            this.zkFilesPath,
-            'config.json'
-        ))
+        this.config = require(path.join(this.zkFilesPath, 'config.json'))
     }
 
     /**
@@ -50,18 +48,13 @@ export class UnirepProtocol {
     public genEpochKey(
         idNullifier: SnarkBigInt,
         epoch: number | bigint,
-        nonce: number | bigint,
+        nonce: number | bigint
     ) {
-        const values: any[] = [
-            idNullifier,
-            epoch,
-            nonce,
-            BigInt(0),
-            BigInt(0),
-        ]
+        const values: any[] = [idNullifier, epoch, nonce, BigInt(0), BigInt(0)]
         let epochKey = hash5(values).toString()
         // Adjust epoch key size according to epoch tree depth
-        const epochKeyModed = BigInt(epochKey) % BigInt(2 ** this.config.epochTreeDepth)
+        const epochKeyModed =
+            BigInt(epochKey) % BigInt(2 ** this.config.epochTreeDepth)
         return epochKeyModed
     }
 
@@ -138,7 +131,7 @@ export class UnirepProtocol {
     }
 
     /**
-     * Compute a tree root of an empty user state tree 
+     * Compute a tree root of an empty user state tree
      * @returns The tree root of the empty user state tree
      */
     public computeEmptyUserStateRoot(): BigInt {
@@ -153,7 +146,7 @@ export class UnirepProtocol {
 
     /**
      * Compute a tree root of the user state tree when user signs up
-     * If the leafIdx and airdropPosRep are not given, it computes the empty user state tree 
+     * If the leafIdx and airdropPosRep are not given, it computes the empty user state tree
      * @param leafIdx The leaf index to insert the airdrop reputation, it also means the attester ID
      * @param airdropPosRep The airdrop amount from a given attester
      * @returns The tree root of the user state tree
@@ -184,10 +177,7 @@ export class UnirepProtocol {
      */
     public genNewGST(): IncrementalMerkleTree {
         const emptyUserStateRoot = this.computeEmptyUserStateRoot()
-        const defaultGSTLeaf = hashLeftRight(
-            BigInt(0),
-            emptyUserStateRoot
-        )
+        const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
         const GST = new IncrementalMerkleTree(
             this.config.globalStateTreeDepth,
             defaultGSTLeaf,
@@ -211,11 +201,7 @@ export class UnirepProtocol {
         let formatPublicSignals
         if (circuitName === CircuitName.verifyEpochKey) {
             formatPublicSignals = emptyArray
-                .concat(
-                    args?.globalStateTree,
-                    args?.epoch,
-                    args?.epochKey
-                )
+                .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
                 .map((n) => n.toBigInt())
         } else if (circuitName === CircuitName.proveReputation) {
             formatPublicSignals = emptyArray
@@ -231,7 +217,6 @@ export class UnirepProtocol {
                     args?.graffitiPreImage
                 )
                 .map((n) => n.toBigInt())
-
         } else if (circuitName === CircuitName.proveUserSignUp) {
             formatPublicSignals = emptyArray
                 .concat(
@@ -273,9 +258,13 @@ export class UnirepProtocol {
                 )
                 .map((n) => n.toBigInt())
         } else {
-            throw new Error(`Unirep protocol: cannot find circuit name ${circuitName}`)
+            throw new Error(
+                `Unirep protocol: cannot find circuit name ${circuitName}`
+            )
         }
-        const formatProof = circuit.formatProofForSnarkjsVerification(args?.proof)
+        const formatProof = circuit.formatProofForSnarkjsVerification(
+            args?.proof
+        )
         const isProofValid = await circuit.verifyProof(
             this.zkFilesPath,
             circuitName,
@@ -313,11 +302,12 @@ export class UnirepProtocol {
 
         // verify process attestations proofs
         const transitionArgs = transitionEvent?.args?.proof
-        const isProcessAttestationValid = await this.verifyProcessAttestationEvents(
-            processAttestationEvents,
-            transitionArgs.blindedUserStates[0],
-            transitionArgs.blindedUserStates[1]
-        )
+        const isProcessAttestationValid =
+            await this.verifyProcessAttestationEvents(
+                processAttestationEvents,
+                transitionArgs.blindedUserStates[0],
+                transitionArgs.blindedUserStates[1]
+            )
         if (!isProcessAttestationValid) return false
         return true
     }

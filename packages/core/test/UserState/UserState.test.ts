@@ -3,12 +3,7 @@ import circuit, { CircuitName } from '@unirep/circuits'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import { Attestation } from '@unirep/contracts'
 
-import {
-    Reputation,
-    UnirepProtocol,
-    UnirepState,
-    UserState,
-} from '../../src'
+import { Reputation, UnirepProtocol, UnirepState, UserState } from '../../src'
 import { genRandomAttestation } from '../utils'
 import { zkFilesPath } from '../testConfig'
 
@@ -35,7 +30,6 @@ describe('User State', async function () {
     // global variables
     const epochKeys: string[] = []
     const attestationsToEpochKey: { [key: string]: Attestation[] } = {}
-
 
     describe('Users sign up', async () => {
         const GSTree = protocol.genNewGST()
@@ -251,11 +245,9 @@ describe('User State', async function () {
 
         it('add attestations to user himself', async () => {
             for (let i = 0; i < protocol.config.numEpochKeyNoncePerEpoch; i++) {
-                const userEpk = protocol.genEpochKey(
-                    user.identityNullifier,
-                    epoch,
-                    i
-                ).toString()
+                const userEpk = protocol
+                    .genEpochKey(user.identityNullifier, epoch, i)
+                    .toString()
                 epochKeys.push(userEpk.toString())
                 attestationsToEpochKey[userEpk.toString()] = []
 
@@ -364,11 +356,9 @@ describe('User State', async function () {
         it('generate epoch key proof should succeed', async () => {
             for (let i = 0; i < protocol.config.numEpochKeyNoncePerEpoch; i++) {
                 const results = await userState.genVerifyEpochKeyProof(i)
-                const expectedEpk = protocol.genEpochKey(
-                    user.identityNullifier,
-                    epoch,
-                    i
-                ).toString()
+                const expectedEpk = protocol
+                    .genEpochKey(user.identityNullifier, epoch, i)
+                    .toString()
                 const isValid = await circuit.verifyProof(
                     protocol.config.exportBuildPath,
                     CircuitName.verifyEpochKey,
@@ -421,11 +411,9 @@ describe('User State', async function () {
                 epkNonce,
                 proveMinRep
             )
-            const expectedEpk = protocol.genEpochKey(
-                user.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = protocol
+                .genEpochKey(user.identityNullifier, epoch, epkNonce)
+                .toString()
             const isValid = await circuit.verifyProof(
                 protocol.config.exportBuildPath,
                 CircuitName.proveReputation,
@@ -460,11 +448,9 @@ describe('User State', async function () {
                 undefined,
                 nonceList
             )
-            const expectedEpk = protocol.genEpochKey(
-                user.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = protocol
+                .genEpochKey(user.identityNullifier, epoch, epkNonce)
+                .toString()
             const isValid = await circuit.verifyProof(
                 protocol.config.exportBuildPath,
                 CircuitName.proveReputation,
@@ -548,11 +534,9 @@ describe('User State', async function () {
             const results = await userState.genUserSignUpProof(
                 BigInt(signedUpAttesterId)
             )
-            const expectedEpk = protocol.genEpochKey(
-                user.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = protocol
+                .genEpochKey(user.identityNullifier, epoch, epkNonce)
+                .toString()
             const isValid = await circuit.verifyProof(
                 protocol.config.exportBuildPath,
                 CircuitName.proveUserSignUp,
@@ -575,11 +559,9 @@ describe('User State', async function () {
             const results = await userState.genUserSignUpProof(
                 BigInt(nonSignUpAttesterId)
             )
-            const expectedEpk = protocol.genEpochKey(
-                user.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = protocol
+                .genEpochKey(user.identityNullifier, epoch, epkNonce)
+                .toString()
             const isValid = await circuit.verifyProof(
                 protocol.config.exportBuildPath,
                 CircuitName.proveUserSignUp,
@@ -665,7 +647,11 @@ describe('User State', async function () {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
                 const epkNullifiers: BigInt[] = []
-                for (let j = 0; j < protocol.config.numEpochKeyNoncePerEpoch; j++) {
+                for (
+                    let j = 0;
+                    j < protocol.config.numEpochKeyNoncePerEpoch;
+                    j++
+                ) {
                     epkNullifiers.push(genRandomSalt())
                 }
                 await userState.userStateTransition(
@@ -745,9 +731,7 @@ describe('User State', async function () {
             )
             expect(epochTreeExist).to.be.true
 
-            const unirepEpochTree = await userState.genEpochTree(
-                fromEpoch
-            )
+            const unirepEpochTree = await userState.genEpochTree(fromEpoch)
             expect(unirepEpochTree.getRootHash().toString()).equal(
                 fromEpochTree
             )
@@ -800,11 +784,9 @@ describe('User State', async function () {
                 BigInt(1)
             )
             for (let i = 0; i < protocol.config.numEpochKeyNoncePerEpoch; i++) {
-                const userEpk = protocol.genEpochKey(
-                    user.identityNullifier,
-                    prevEpoch,
-                    i
-                ).toString()
+                const userEpk = protocol
+                    .genEpochKey(user.identityNullifier, prevEpoch, i)
+                    .toString()
                 const attestations = attestationsToEpochKey[userEpk.toString()]
                 for (const attestation of attestations) {
                     const attesterId_ = attestation.attesterId
@@ -840,7 +822,11 @@ describe('User State', async function () {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
                 const epkNullifiers: BigInt[] = []
-                for (let j = 0; j < protocol.config.numEpochKeyNoncePerEpoch; j++) {
+                for (
+                    let j = 0;
+                    j < protocol.config.numEpochKeyNoncePerEpoch;
+                    j++
+                ) {
                     epkNullifiers.push(genRandomSalt())
                 }
                 await userState.userStateTransition(
@@ -880,11 +866,9 @@ describe('User State', async function () {
         it('generate epoch key proof should succeed', async () => {
             for (let i = 0; i < protocol.config.numEpochKeyNoncePerEpoch; i++) {
                 const results = await userState.genVerifyEpochKeyProof(i)
-                const expectedEpk = protocol.genEpochKey(
-                    user.identityNullifier,
-                    epoch,
-                    i
-                ).toString()
+                const expectedEpk = protocol
+                    .genEpochKey(user.identityNullifier, epoch, i)
+                    .toString()
                 const isValid = await circuit.verifyProof(
                     protocol.config.exportBuildPath,
                     CircuitName.verifyEpochKey,
@@ -943,11 +927,9 @@ describe('User State', async function () {
                 epkNonce,
                 proveMinRep
             )
-            const expectedEpk = protocol.genEpochKey(
-                user.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = protocol
+                .genEpochKey(user.identityNullifier, epoch, epkNonce)
+                .toString()
             const isValid = await circuit.verifyProof(
                 protocol.config.exportBuildPath,
                 CircuitName.proveReputation,
@@ -969,11 +951,9 @@ describe('User State', async function () {
             const results = await userState.genUserSignUpProof(
                 BigInt(signedUpAttesterId)
             )
-            const expectedEpk = protocol.genEpochKey(
-                user.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
+            const expectedEpk = protocol
+                .genEpochKey(user.identityNullifier, epoch, epkNonce)
+                .toString()
             const isValid = await circuit.verifyProof(
                 protocol.config.exportBuildPath,
                 CircuitName.proveUserSignUp,

@@ -15,12 +15,7 @@ import contract, {
     UserTransitionProof,
 } from '@unirep/contracts'
 
-import {
-    genUserState,
-    IUserState,
-    UnirepProtocol,
-    UserState
-} from '../../src'
+import { genUserState, IUserState, UnirepProtocol, UserState } from '../../src'
 import {
     compareEpochTrees,
     compareStates,
@@ -50,7 +45,6 @@ describe('Generate user state', function () {
     const protocol = new UnirepProtocol(zkFilesPath)
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
-
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -388,7 +382,7 @@ describe('Generate user state', function () {
                 blindedUserState,
                 blindedHashChain,
                 globalStateTree,
-                proof.map(n => BigNumber.from(n))
+                proof.map((n) => BigNumber.from(n))
             )
             let proofIndex = await unirepContract.getProofIndex(proofNullifier)
             proofIndexes.push(proofIndex)
@@ -450,11 +444,11 @@ describe('Generate user state', function () {
                     outputBlindedUserState,
                     outputBlindedHashChain,
                     inputBlindedUserState,
-                    circuit.formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    ).map(
-                        n => BigNumber.from(n)
-                    )
+                    circuit
+                        .formatProofForVerifierContract(
+                            processAttestationProofs[i].proof
+                        )
+                        .map((n) => BigNumber.from(n))
                 )
                 const proofIndex = await unirepContract.getProofIndex(
                     proofNullifier
@@ -581,7 +575,7 @@ describe('Generate user state', function () {
                 blindedUserState,
                 blindedHashChain,
                 globalStateTree,
-                proof.map(n => BigNumber.from(n))
+                proof.map((n) => BigNumber.from(n))
             )
             let proofIndex = await unirepContract.getProofIndex(proofNullifier)
             proofIndexes.push(proofIndex)
@@ -643,11 +637,11 @@ describe('Generate user state', function () {
                     outputBlindedUserState,
                     outputBlindedHashChain,
                     inputBlindedUserState,
-                    circuit.formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    ).map(
-                        n => BigNumber.from(n)
-                    )
+                    circuit
+                        .formatProofForVerifierContract(
+                            processAttestationProofs[i].proof
+                        )
+                        .map((n) => BigNumber.from(n))
                 )
                 const proofIndex = await unirepContract.getProofIndex(
                     proofNullifier

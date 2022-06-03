@@ -6,9 +6,7 @@ import contract, {
     AttestationEvent,
     Unirep,
 } from '@unirep/contracts'
-import {
-    ZkIdentity,
-} from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/crypto'
 
 import { IUnirepState, IUserState } from './interfaces'
 import UnirepState from './UnirepState'
@@ -174,11 +172,20 @@ const genUnirepState = async (
             if (isProofIndexValid[toProofIndex] === undefined) {
                 let isValid
                 if (event.event === 'IndexedEpochKeyProof') {
-                    isValid = await protocol.verifyProofEvent(CircuitName.verifyEpochKey, event)
+                    isValid = await protocol.verifyProofEvent(
+                        CircuitName.verifyEpochKey,
+                        event
+                    )
                 } else if (event.event === 'IndexedReputationProof') {
-                    isValid = await protocol.verifyProofEvent(CircuitName.proveReputation, event)
+                    isValid = await protocol.verifyProofEvent(
+                        CircuitName.proveReputation,
+                        event
+                    )
                 } else if (event.event === 'IndexedUserSignedUpProof') {
-                    isValid = await protocol.verifyProofEvent(CircuitName.proveUserSignUp, event)
+                    isValid = await protocol.verifyProofEvent(
+                        CircuitName.proveUserSignUp,
+                        event
+                    )
                 } else {
                     console.log('Cannot find the attestation event')
                     continue
@@ -331,7 +338,7 @@ const genUnirepState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                    'IndexedStartedTransitionProof'
+                        'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -345,7 +352,7 @@ const genUnirepState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                        'IndexedProcessedAttestationsProof'
+                            'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -440,22 +447,16 @@ const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: ZkIdentity,
-    _userState?: IUserState,
+    _userState?: IUserState
 ) => {
     const unirepContract: Unirep = await contract.get(address, provider)
 
     let userState: UserState
 
     if (!_userState) {
-        userState = new UserState(
-            protocol.config.exportBuildPath,
-            userIdentity
-        )
+        userState = new UserState(protocol.config.exportBuildPath, userIdentity)
     } else {
-        userState = UserState.fromJSONAndID(
-            userIdentity,
-            _userState
-        )
+        userState = UserState.fromJSONAndID(userIdentity, _userState)
     }
 
     const latestBlock = _userState?.latestProcessedBlock
@@ -592,11 +593,20 @@ const genUserState = async (
             if (isProofIndexValid[toProofIndex] === undefined) {
                 let isValid
                 if (event.event === 'IndexedEpochKeyProof') {
-                    isValid = await protocol.verifyProofEvent(CircuitName.verifyEpochKey, event)
+                    isValid = await protocol.verifyProofEvent(
+                        CircuitName.verifyEpochKey,
+                        event
+                    )
                 } else if (event.event === 'IndexedReputationProof') {
-                    isValid = await protocol.verifyProofEvent(CircuitName.proveReputation, event)
+                    isValid = await protocol.verifyProofEvent(
+                        CircuitName.proveReputation,
+                        event
+                    )
                 } else if (event.event === 'IndexedUserSignedUpProof') {
-                    isValid = await protocol.verifyProofEvent(CircuitName.proveUserSignUp, event)
+                    isValid = await protocol.verifyProofEvent(
+                        CircuitName.proveUserSignUp,
+                        event
+                    )
                 } else {
                     console.log('Cannot find the attestation event')
                     continue
@@ -749,7 +759,7 @@ const genUserState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                    'IndexedStartedTransitionProof'
+                        'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -763,7 +773,7 @@ const genUserState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                        'IndexedProcessedAttestationsProof'
+                            'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -843,7 +853,4 @@ const genUserState = async (
     return userState
 }
 
-export {
-    genUnirepState,
-    genUserState,
-}
+export { genUnirepState, genUserState }

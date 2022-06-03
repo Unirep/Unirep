@@ -2,11 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    genRandomSalt,
-    ZkIdentity,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import circuit, { CircuitName } from '@unirep/circuits'
 import contract, {
     Attestation,
@@ -21,16 +17,8 @@ import {
     Reputation,
     UnirepProtocol,
 } from '../../src'
-import {
-    genRandomAttestation,
-    genReputationCircuitInput,
-} from '../utils'
-import { 
-    artifactsPath, 
-    config, 
-    zkFilesPath 
-} from '../testConfig'
-
+import { genRandomAttestation, genReputationCircuitInput } from '../utils'
+import { artifactsPath, config, zkFilesPath } from '../testConfig'
 
 describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)
@@ -111,8 +99,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const unirepEpoch = initUnirepState.currentEpoch
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            const unirepGSTree =
-                initUnirepState.genGSTree(unirepEpoch)
+            const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = protocol.genNewGST()
             expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
@@ -259,7 +246,11 @@ describe('Reputation proof events in Unirep User State', function () {
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
-            for (let i = spendReputation; i < protocol.config.maxReputationBudget; i++) {
+            for (
+                let i = spendReputation;
+                i < protocol.config.maxReputationBudget;
+                i++
+            ) {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = UnirepProtocol.genReputationNullifier(
@@ -360,7 +351,11 @@ describe('Reputation proof events in Unirep User State', function () {
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
-            for (let i = spendReputation; i < protocol.config.maxReputationBudget; i++) {
+            for (
+                let i = spendReputation;
+                i < protocol.config.maxReputationBudget;
+                i++
+            ) {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = UnirepProtocol.genReputationNullifier(

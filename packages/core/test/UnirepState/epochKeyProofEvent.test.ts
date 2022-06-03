@@ -2,27 +2,13 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    genRandomSalt,
-    ZkIdentity,
-    hashLeftRight,
-} from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import circuit, { CircuitName } from '@unirep/circuits'
 import contract, { Unirep, EpochKeyProof } from '@unirep/contracts'
 
-import {
-    UnirepProtocol,
-    genUnirepState,
-} from '../../src'
-import {
-    genEpochKeyCircuitInput,
-    genRandomAttestation,
-} from '../utils'
-import {
-    artifactsPath,
-    config,
-    zkFilesPath
-} from '../testConfig'
+import { UnirepProtocol, genUnirepState } from '../../src'
+import { genEpochKeyCircuitInput, genRandomAttestation } from '../utils'
+import { artifactsPath, config, zkFilesPath } from '../testConfig'
 
 describe('Epoch key proof events in Unirep State', function () {
     this.timeout(0)
@@ -50,7 +36,6 @@ describe('Epoch key proof events in Unirep State', function () {
     let GSTree = protocol.genNewGST()
     const rootHistories: BigInt[] = []
     let userStateTreeRoots: BigInt[] = []
-
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()

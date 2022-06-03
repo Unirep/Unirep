@@ -32,7 +32,7 @@ const attesterSignUp = async (
     account: ethers.Signer,
     unirepContract: Unirep
 ) => {
-    const attester = new Object
+    const attester = new Object()
     attester['acct'] = account
     attester['addr'] = await attester['acct'].getAddress()
     const unirepContractCalledByAttester = unirepContract.connect(
@@ -44,7 +44,7 @@ const attesterSignUp = async (
 
     return {
         attester,
-        unirepContractCalledByAttester
+        unirepContractCalledByAttester,
     }
 }
 
@@ -53,7 +53,7 @@ const attesterSetAirdrop = async (
     unirepContract: Unirep,
     airdropPosRep: number
 ) => {
-    const attester = new Object
+    const attester = new Object()
     attester['acct'] = account
     attester['addr'] = await attester['acct'].getAddress()
     const unirepContractCalledByAttester = unirepContract.connect(
@@ -69,7 +69,6 @@ const attesterSetAirdrop = async (
     )
     expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
 }
-
 
 const genRandomAttestation = (): Attestation => {
     const attesterId = Math.ceil(Math.random() * 10)
@@ -103,11 +102,7 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
     const currentEpoch = unirepState.currentEpoch
     const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
-        for (
-            let j = 0;
-            j < unirepState.config.numEpochKeyNoncePerEpoch;
-            j++
-        ) {
+        for (let j = 0; j < unirepState.config.numEpochKeyNoncePerEpoch; j++) {
             const epk = unirepState.genEpochKey(id.identityNullifier, i, j)
             const attestations = unirepState.getAttestations(epk.toString())
             for (let attestation of attestations) {
@@ -213,7 +208,11 @@ const genReputationCircuitInput = async (
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))
     }
-    for (let i = repNullifiersAmount; i < protocol.config.maxReputationBudget; i++) {
+    for (
+        let i = repNullifiersAmount;
+        i < protocol.config.maxReputationBudget;
+        i++
+    ) {
         nonceList.push(BigInt(0))
         selectors.push(BigInt(0))
     }
@@ -303,8 +302,17 @@ const compareStates = async (
     userId: ZkIdentity,
     savedUserState: IUserState
 ) => {
-    const usWithNoStorage = await genUserState(protocol, provider, address, userId)
-    const unirepStateWithNoStorage = await genUnirepState(protocol, provider, address)
+    const usWithNoStorage = await genUserState(
+        protocol,
+        provider,
+        address,
+        userId
+    )
+    const unirepStateWithNoStorage = await genUnirepState(
+        protocol,
+        provider,
+        address
+    )
 
     const usWithStorage = await genUserState(
         protocol,
@@ -344,7 +352,12 @@ const compareEpochTrees = async (
     savedUserState: any,
     epoch: number
 ) => {
-    const usWithNoStorage = await genUserState(protocol, provider, address, userId)
+    const usWithNoStorage = await genUserState(
+        protocol,
+        provider,
+        address,
+        userId
+    )
     const epochTree1 = await usWithNoStorage.genEpochTree(epoch)
 
     const usWithStorage = await genUserState(

@@ -9,20 +9,10 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import circuit, { CircuitName } from '@unirep/circuits'
-import contract, { 
-    EpochKeyProof, 
-    Unirep 
-} from '@unirep/contracts'
+import contract, { EpochKeyProof, Unirep } from '@unirep/contracts'
 
-import {
-    genUnirepState,
-    genUserState,
-    UnirepProtocol,
-} from '../../src'
-import {
-    genEpochKeyCircuitInput,
-    genRandomAttestation,
-} from '../utils'
+import { genUnirepState, genUserState, UnirepProtocol } from '../../src'
+import { genEpochKeyCircuitInput, genRandomAttestation } from '../utils'
 import { config, artifactsPath, zkFilesPath } from '../testConfig'
 
 describe('Epoch key proof events in Unirep User State', function () {
@@ -303,8 +293,8 @@ describe('Epoch key proof events in Unirep User State', function () {
                 await userState.genVerifyEpochKeyProof(epkNonce)
             publicSignals[0] = genRandomSalt().toString()
             const epkProofInput = new EpochKeyProof(
-                publicSignals, 
-                proof, 
+                publicSignals,
+                proof,
                 protocol.config.exportBuildPath
             )
             const isValid = await epkProofInput.verify()
@@ -374,8 +364,8 @@ describe('Epoch key proof events in Unirep User State', function () {
                 circuitInputs
             )
             const epkProofInput = new EpochKeyProof(
-                publicSignals, 
-                proof, 
+                publicSignals,
+                proof,
                 protocol.config.exportBuildPath
             )
             const isValid = await epkProofInput.verify()
@@ -438,8 +428,8 @@ describe('Epoch key proof events in Unirep User State', function () {
                 circuitInputs
             )
             const epkProofInput = new EpochKeyProof(
-                publicSignals, 
-                proof, 
+                publicSignals,
+                proof,
                 protocol.config.exportBuildPath
             )
             const isValid = await epkProofInput.verify()
