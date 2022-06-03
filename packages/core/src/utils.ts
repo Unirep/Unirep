@@ -10,7 +10,7 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 
-import { ISettings, IUnirepState, IUserState } from './interfaces'
+import { IUnirepState, IUserState } from './interfaces'
 import UnirepState from './UnirepState'
 import UserState from './UserState'
 import { UnirepProtocol } from './UnirepProtocol'
@@ -35,27 +35,7 @@ const genUnirepState = async (
     let unirepState: UnirepState
 
     if (!_unirepState) {
-        const treeDepths_ = await unirepContract.treeDepths()
-        const globalStateTreeDepth = treeDepths_.globalStateTreeDepth
-        const userStateTreeDepth = treeDepths_.userStateTreeDepth
-        const epochTreeDepth = treeDepths_.epochTreeDepth
-
-        const attestingFee = await unirepContract.attestingFee()
-        const epochLength = await unirepContract.epochLength()
-        const numEpochKeyNoncePerEpoch =
-            await unirepContract.numEpochKeyNoncePerEpoch()
-        const maxReputationBudget = await unirepContract.maxReputationBudget()
-
-        const setting: ISettings = {
-            globalStateTreeDepth: globalStateTreeDepth,
-            userStateTreeDepth: userStateTreeDepth,
-            epochTreeDepth: epochTreeDepth,
-            attestingFee: attestingFee,
-            epochLength: epochLength.toNumber(),
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-        }
-        unirepState = new UnirepState(setting)
+        unirepState = new UnirepState(protocol.config.exportBuildPath)
     } else {
         unirepState = UnirepState.fromJSON(_unirepState)
     }
@@ -464,35 +444,18 @@ const genUserState = async (
 ) => {
     const unirepContract: Unirep = await contract.get(address, provider)
 
-    let unirepState: UnirepState
     let userState: UserState
 
     if (!_userState) {
-        const treeDepths_ = await unirepContract.treeDepths()
-        const globalStateTreeDepth = treeDepths_.globalStateTreeDepth
-        const userStateTreeDepth = treeDepths_.userStateTreeDepth
-        const epochTreeDepth = treeDepths_.epochTreeDepth
-
-        const attestingFee = await unirepContract.attestingFee()
-        const epochLength = await unirepContract.epochLength()
-        const numEpochKeyNoncePerEpoch =
-            await unirepContract.numEpochKeyNoncePerEpoch()
-        const maxReputationBudget = await unirepContract.maxReputationBudget()
-
-        const settings: ISettings = {
-            globalStateTreeDepth: globalStateTreeDepth,
-            userStateTreeDepth: userStateTreeDepth,
-            epochTreeDepth: epochTreeDepth,
-            attestingFee: attestingFee,
-            epochLength: epochLength.toNumber(),
-            numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-            maxReputationBudget: maxReputationBudget,
-        }
-        unirepState = new UnirepState(settings)
-        userState = new UserState(unirepState, userIdentity)
+        userState = new UserState(
+            protocol.config.exportBuildPath,
+            userIdentity
+        )
     } else {
-        userState = UserState.fromJSON(userIdentity, _userState)
-        unirepState = userState.getUnirepState()
+        userState = UserState.fromJSONAndID(
+            userIdentity,
+            _userState
+        )
     }
 
     const latestBlock = _userState?.latestProcessedBlock

@@ -1,22 +1,12 @@
-import { BigNumber, ethers } from 'ethers'
+import { BigNumber } from 'ethers'
 
 export interface IEpochTreeLeaf {
     epochKey: BigInt
     hashchainResult: BigInt
 }
 
-export interface ISettings {
-    readonly globalStateTreeDepth: number
-    readonly userStateTreeDepth: number
-    readonly epochTreeDepth: number
-    readonly attestingFee: ethers.BigNumber
-    readonly epochLength: number
-    readonly numEpochKeyNoncePerEpoch: number
-    readonly maxReputationBudget: number
-}
-
 export interface IUnirepState {
-    readonly settings: ISettings
+    readonly config: string
     currentEpoch: number
     latestProcessedBlock: number
     GSTLeaves: { [key: string]: string[] }
@@ -46,7 +36,7 @@ export interface IReputation {
     addGraffitiPreImage(_graffitiPreImage: BigNumber): void
 }
 
-export interface IUserState {
+export interface IUserState extends IUnirepState {
     idNullifier: BigInt
     idCommitment: BigInt
     hasSignedUp: boolean
@@ -54,5 +44,4 @@ export interface IUserState {
     latestGSTLeafIndex: number
     latestUserStateLeaves: { [key: string]: string }
     transitionedFromAttestations: { [key: string]: string[] }
-    unirepState: IUnirepState
 }
