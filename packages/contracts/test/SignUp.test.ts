@@ -5,7 +5,7 @@ import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 
 import contract, { Unirep } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 
 describe('Signup', () => {
     const testMaxUser = 5

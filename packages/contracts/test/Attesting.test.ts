@@ -7,7 +7,7 @@ import circuit from '@unirep/circuits'
 import contract, { EpochKeyProof, Unirep } from '../src'
 
 import { genEpochKey, Attestation } from './utils'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath, zkFilesPath } from './testConfig'
 
 describe('Attesting', () => {
     let unirepContract: Unirep
@@ -28,7 +28,8 @@ describe('Attesting', () => {
     const publicSignals = [genRandomSalt(), epoch, epochKey]
     const epochKeyProof = new EpochKeyProof(
         publicSignals as BigNumberish[],
-        circuit.formatProofForSnarkjsVerification(proof)
+        circuit.formatProofForSnarkjsVerification(proof),
+        zkFilesPath
     )
     let epochKeyProofIndex
     const senderPfIdx = 0
@@ -91,7 +92,8 @@ describe('Attesting', () => {
         const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
         const wrongEpochKeyProof = new EpochKeyProof(
             wrongSignals as BigNumberish[],
-            circuit.formatProofForSnarkjsVerification(proof)
+            circuit.formatProofForSnarkjsVerification(proof),
+            zkFilesPath
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
@@ -104,7 +106,8 @@ describe('Attesting', () => {
         const wrongEpochKey = genRandomSalt()
         const wrongEpochKeyProof = new EpochKeyProof(
             [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
-            circuit.formatProofForSnarkjsVerification(proof)
+            circuit.formatProofForSnarkjsVerification(proof),
+            zkFilesPath
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)

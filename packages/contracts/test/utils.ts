@@ -14,7 +14,7 @@ import {
     UserTransitionProof,
 } from '../src'
 
-import config, { zkFilesPath } from '../src/config'
+import config, { zkFilesPath } from './testConfig'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -701,11 +701,11 @@ const formatProofAndPublicSignals = (
     const formattedProof: any[] =
         UnirepCircuit.formatProofForVerifierContract(proof)
     if (circuit === CircuitName.proveReputation) {
-        result = new ReputationProof(publicSignals, proof)
+        result = new ReputationProof(publicSignals, proof, zkFilesPath)
     } else if (circuit === CircuitName.verifyEpochKey) {
-        result = new EpochKeyProof(publicSignals, proof)
+        result = new EpochKeyProof(publicSignals, proof, zkFilesPath)
     } else if (circuit === CircuitName.proveUserSignUp) {
-        result = new SignUpProof(publicSignals, proof)
+        result = new SignUpProof(publicSignals, proof, zkFilesPath)
     } else if (circuit === CircuitName.startTransition) {
         result = {
             blindedUserState: publicSignals[0],
@@ -721,7 +721,7 @@ const formatProofAndPublicSignals = (
             proof: formattedProof,
         }
     } else if (circuit === CircuitName.userStateTransition) {
-        result = new UserTransitionProof(publicSignals, proof)
+        result = new UserTransitionProof(publicSignals, proof, zkFilesPath)
     } else {
         result = publicSignals.concat([formattedProof])
     }

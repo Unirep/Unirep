@@ -22,7 +22,7 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 import contract, {
     computeProcessAttestationsProofHash,
     computeStartTransitionProofHash,

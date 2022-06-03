@@ -9,7 +9,7 @@ import {
     genProcessAttestationsCircuitInput,
 } from './utils'
 import contract, { computeProcessAttestationsProofHash, Unirep } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)

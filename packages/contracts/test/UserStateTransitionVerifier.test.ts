@@ -10,7 +10,7 @@ import {
     genInputForContract,
 } from './utils'
 import contract, { Unirep, UserTransitionProof } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 
 describe('User State Transition', function () {
     this.timeout(600000)

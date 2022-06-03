@@ -12,7 +12,7 @@ import {
 
 import { genEpochKeyCircuitInput, genInputForContract } from './utils'
 import contract, { EpochKeyProof, Unirep } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)

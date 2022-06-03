@@ -14,7 +14,7 @@ import {
     config,
 } from './utils'
 import contract, { Unirep } from '../src'
-import { artifactsPath } from '../src/config'
+import { artifactsPath } from './testConfig'
 
 describe('Airdrop', function () {
     this.timeout(100000)

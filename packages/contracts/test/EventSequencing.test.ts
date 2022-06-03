@@ -7,7 +7,7 @@ import circuit from '@unirep/circuits'
 
 import { genEpochKey, Attestation } from './utils'
 import contract, { EpochKeyProof, UnirepEvent, Unirep } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath, zkFilesPath } from './testConfig'
 
 describe('EventSequencing', () => {
     let expectedEventsInOrder: UnirepEvent[] = []
@@ -70,7 +70,8 @@ describe('EventSequencing', () => {
         let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         let epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
-            circuit.formatProofForSnarkjsVerification(proof)
+            circuit.formatProofForSnarkjsVerification(proof),
+            zkFilesPath
         )
         tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
         receipt = await tx.wait()
@@ -220,7 +221,8 @@ describe('EventSequencing', () => {
         publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
-            circuit.formatProofForSnarkjsVerification(proof)
+            circuit.formatProofForSnarkjsVerification(proof),
+            zkFilesPath
         )
         tx = await unirepContractCalledByAttester.submitAttestation(
             attestation,

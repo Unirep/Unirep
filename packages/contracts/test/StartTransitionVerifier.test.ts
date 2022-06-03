@@ -16,7 +16,7 @@ import {
     genInputForContract,
 } from './utils'
 import contract, { computeStartTransitionProofHash, Unirep } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)

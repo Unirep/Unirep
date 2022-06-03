@@ -11,7 +11,7 @@ import {
     Reputation,
 } from './utils'
 import contract, { ReputationProof, Unirep } from '../src'
-import config, { artifactsPath } from '../src/config'
+import config, { artifactsPath } from './testConfig'
 
 describe('Verify reputation verifier', function () {
     this.timeout(30000)

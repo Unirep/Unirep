@@ -20,9 +20,8 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import contractConfig, { artifactsPath } from '../src/config'
+import contractConfig, { artifactsPath } from './testConfig'
 import contract, { Unirep, UserTransitionProof } from '../src'
-import config from '../src/config'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -41,7 +40,7 @@ describe('Epoch Transition', function () {
     const proofIndexes: BigNumber[] = []
     const attestingFee = ethers.utils.parseEther('0.1')
     const _config = {
-        ...config,
+        ...contractConfig,
         attestingFee,
     }
 
@@ -63,7 +62,7 @@ describe('Epoch Transition', function () {
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
         const tree = new IncrementalMerkleTree(
-            config.globalStateTreeDepth,
+            contractConfig.globalStateTreeDepth,
             ZERO_VALUE,
             2
         )
@@ -183,7 +182,7 @@ describe('Epoch Transition', function () {
 
         // Global state tree
         GSTree = new IncrementalMerkleTree(
-            config.globalStateTreeDepth,
+            contractConfig.globalStateTreeDepth,
             GSTZERO_VALUE,
             2
         )
@@ -250,14 +249,15 @@ describe('Epoch Transition', function () {
     })
 
     it('submit process attestations proofs should succeed', async () => {
-        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+        for (let i = 0; i < contractConfig.numEpochKeyNoncePerEpoch; i++) {
             const prooftNum = Math.ceil(Math.random() * 5)
             let toNonce = i
             for (let j = 0; j < prooftNum; j++) {
                 // If it is the end of attestations of the epoch key, then the next epoch key nonce increased by one
                 if (j == prooftNum - 1) toNonce = i + 1
                 // If it it the maximum epoch key nonce, then the next epoch key nonce should not increase
-                if (i == config.numEpochKeyNoncePerEpoch - 1) toNonce = i
+                if (i == contractConfig.numEpochKeyNoncePerEpoch - 1)
+                    toNonce = i
                 const { circuitInputs } =
                     await genProcessAttestationsCircuitInput(
                         userId,
