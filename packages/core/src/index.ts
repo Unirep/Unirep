@@ -10,35 +10,12 @@ import {
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
 import UserState from './UserState'
+import { UnirepProtocol } from './UnirepProtocol'
 
 import {
-    defaultUserStateLeaf,
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
-    computeEmptyUserStateRoot,
-    computeInitUserStateRoot,
-    formatProofForSnarkjsVerification,
-    verifyEpochKeyProofEvent,
-    verifyReputationProofEvent,
-    verifySignUpProofEvent,
-    verifyStartTransitionProofEvent,
-    verifyProcessAttestationEvent,
-    verifyProcessAttestationEvents,
-    verifyUserStateTransitionEvent,
-    verifyUSTEvents,
-    genEpochKey,
-    genEpochKeyNullifier,
-    genReputationNullifier,
-    genNewSMT,
     genUnirepState,
     genUserState,
 } from './utils'
-
-import {
-    EPOCH_KEY_NULLIFIER_DOMAIN,
-    REPUTATION_NULLIFIER_DOMAIN,
-} from '../config/nullifierDomainSeparator'
-
 export {
     IEpochTreeLeaf,
     ISettings,
@@ -48,27 +25,8 @@ export {
     IUserStateLeaf,
     IUserState,
     Reputation,
+    UnirepProtocol,
     UserState,
-    defaultUserStateLeaf,
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
-    computeEmptyUserStateRoot,
-    computeInitUserStateRoot,
-    formatProofForSnarkjsVerification,
-    verifyEpochKeyProofEvent,
-    verifyReputationProofEvent,
-    verifySignUpProofEvent,
-    verifyStartTransitionProofEvent,
-    verifyProcessAttestationEvent,
-    verifyProcessAttestationEvents,
-    verifyUserStateTransitionEvent,
-    verifyUSTEvents,
-    genEpochKey,
-    genEpochKeyNullifier,
-    genReputationNullifier,
-    genNewSMT,
     genUnirepState,
     genUserState,
-    EPOCH_KEY_NULLIFIER_DOMAIN,
-    REPUTATION_NULLIFIER_DOMAIN,
 }
