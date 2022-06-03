@@ -2,8 +2,7 @@ import { BigNumberish, utils } from 'ethers'
 import { SnarkProof } from '@unirep/crypto'
 import UnirepCircuit, { CircuitName } from '@unirep/circuits'
 
-import { UnirepTypes } from "./contracts/IUnirep"
-import config from './config'
+import { UnirepTypes } from './contracts/IUnirep'
 import { rmFuncSigHash } from './utils'
 import { UnirepABI } from './abis/Unirep'
 
@@ -13,8 +12,13 @@ export class EpochKeyProof implements UnirepTypes.EpochKeyProofStruct {
     public epochKey: BigNumberish
     public proof: BigNumberish[]
     private publicSignals: BigNumberish[]
+    private zkFilesPath: string
 
-    constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
+    constructor(
+        _publicSignals: BigNumberish[],
+        _proof: SnarkProof,
+        _zkFilesPath: string
+    ) {
         const formattedProof: any[] =
             UnirepCircuit.formatProofForVerifierContract(_proof)
         this.globalStateTree = _publicSignals[0]
@@ -22,6 +26,7 @@ export class EpochKeyProof implements UnirepTypes.EpochKeyProofStruct {
         this.epochKey = _publicSignals[2]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
+        this.zkFilesPath = _zkFilesPath
     }
 
     public verify = (): Promise<boolean> => {
@@ -29,7 +34,7 @@ export class EpochKeyProof implements UnirepTypes.EpochKeyProofStruct {
             this.proof.map((n) => n.toString())
         )
         return UnirepCircuit.verifyProof(
-            config.exportBuildPath,
+            this.zkFilesPath,
             CircuitName.verifyEpochKey,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))

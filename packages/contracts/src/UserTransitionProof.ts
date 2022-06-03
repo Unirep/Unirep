@@ -1,11 +1,13 @@
 import { BigNumberish, utils } from 'ethers'
 import { SnarkProof } from '@unirep/crypto'
-import UnirepCircuit, { CircuitName } from '@unirep/circuits'
+import UnirepCircuit, { CircuitConfig, CircuitName } from '@unirep/circuits'
 
-import { UnirepTypes } from "./contracts/IUnirep"
-import config from './config'
+import { UnirepTypes } from './contracts/IUnirep'
+import path from 'path'
 
-export class UserTransitionProof implements UnirepTypes.UserTransitionProofStruct {
+export class UserTransitionProof
+    implements UnirepTypes.UserTransitionProofStruct
+{
     public newGlobalStateTreeLeaf: BigNumberish
     public epkNullifiers: BigNumberish[]
     public transitionFromEpoch: BigNumberish
@@ -15,34 +17,42 @@ export class UserTransitionProof implements UnirepTypes.UserTransitionProofStruc
     public fromEpochTree: BigNumberish
     public proof: BigNumberish[]
     private publicSignals: BigNumberish[]
+    private zkFilesPath: string
+    private config: CircuitConfig
 
-    constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
+    constructor(
+        _publicSignals: BigNumberish[],
+        _proof: SnarkProof,
+        _zkFilesPath: string
+    ) {
+        this.zkFilesPath = _zkFilesPath
+        this.config = require(path.join(this.zkFilesPath, 'config.json'))
         const formattedProof: any[] =
             UnirepCircuit.formatProofForVerifierContract(_proof)
         this.newGlobalStateTreeLeaf = _publicSignals[0]
         this.epkNullifiers = []
         this.blindedUserStates = []
         this.blindedHashChains = []
-        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+        for (let i = 0; i < this.config.numEpochKeyNoncePerEpoch; i++) {
             this.epkNullifiers.push(_publicSignals[1 + i])
         }
         this.transitionFromEpoch =
-            _publicSignals[1 + config.numEpochKeyNoncePerEpoch]
+            _publicSignals[1 + this.config.numEpochKeyNoncePerEpoch]
         this.blindedUserStates.push(
-            _publicSignals[2 + config.numEpochKeyNoncePerEpoch]
+            _publicSignals[2 + this.config.numEpochKeyNoncePerEpoch]
         )
         this.blindedUserStates.push(
-            _publicSignals[3 + config.numEpochKeyNoncePerEpoch]
+            _publicSignals[3 + this.config.numEpochKeyNoncePerEpoch]
         )
         this.fromGlobalStateTree =
-            _publicSignals[4 + config.numEpochKeyNoncePerEpoch]
-        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+            _publicSignals[4 + this.config.numEpochKeyNoncePerEpoch]
+        for (let i = 0; i < this.config.numEpochKeyNoncePerEpoch; i++) {
             this.blindedHashChains.push(
-                _publicSignals[5 + config.numEpochKeyNoncePerEpoch + i]
+                _publicSignals[5 + this.config.numEpochKeyNoncePerEpoch + i]
             )
         }
         this.fromEpochTree =
-            _publicSignals[5 + config.numEpochKeyNoncePerEpoch * 2]
+            _publicSignals[5 + this.config.numEpochKeyNoncePerEpoch * 2]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
     }
@@ -52,7 +62,7 @@ export class UserTransitionProof implements UnirepTypes.UserTransitionProofStruc
             this.proof.map((n) => n.toString())
         )
         return UnirepCircuit.verifyProof(
-            config.exportBuildPath,
+            this.zkFilesPath,
             CircuitName.userStateTransition,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))
@@ -64,11 +74,11 @@ export class UserTransitionProof implements UnirepTypes.UserTransitionProofStruc
         const abiEncoder = utils.defaultAbiCoder.encode(
             [
                 `tuple(uint256 newGlobalStateTreeLeaf,
-                    uint256[${config.numEpochKeyNoncePerEpoch}] epkNullifiers,
+                    uint256[${this.config.numEpochKeyNoncePerEpoch}] epkNullifiers,
                     uint256 transitionFromEpoch,
                     uint256[2] blindedUserStates,
                     uint256 fromGlobalStateTree,
-                    uint256[${config.numEpochKeyNoncePerEpoch}] blindedHashChains,
+                    uint256[${this.config.numEpochKeyNoncePerEpoch}] blindedHashChains,
                     uint256 fromEpochTree,
                     uint256[8] proof)
             `,

@@ -131,6 +131,4 @@ export default class UnirepContract {
     }
 }
 
-export {
-    Unirep
-}
+export { Unirep }

@@ -2,7 +2,8 @@ import * as fs from 'fs'
 import path from 'path'
 import UnirepCircuit, { CircuitName } from '@unirep/circuits'
 
-import { zkFilesPath, verifiersPath } from '../src/config'
+export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
+export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
 import { genSnarkVerifierSol } from './genVerifier'
 
 const createVerifierName = (circuit: string) => {

@@ -2,10 +2,9 @@ import { BigNumberish, utils } from 'ethers'
 import { SnarkProof } from '@unirep/crypto'
 import UnirepCircuit, { CircuitName } from '@unirep/circuits'
 
-import { UnirepTypes } from "./contracts/IUnirep"
+import { UnirepTypes } from './contracts/IUnirep'
 import { UnirepABI } from './abis/Unirep'
 import { rmFuncSigHash } from './utils'
-import config from './config'
 
 export class SignUpProof implements UnirepTypes.SignUpProofStruct {
     public epoch: BigNumberish
@@ -15,8 +14,13 @@ export class SignUpProof implements UnirepTypes.SignUpProofStruct {
     public userHasSignedUp: BigNumberish
     public proof: BigNumberish[]
     private publicSignals: BigNumberish[]
+    private zkFilesPath: string
 
-    constructor(_publicSignals: BigNumberish[], _proof: SnarkProof) {
+    constructor(
+        _publicSignals: BigNumberish[],
+        _proof: SnarkProof,
+        _zkFilesPath: string
+    ) {
         const formattedProof: any[] =
             UnirepCircuit.formatProofForVerifierContract(_proof)
         this.epoch = _publicSignals[0]
@@ -26,6 +30,7 @@ export class SignUpProof implements UnirepTypes.SignUpProofStruct {
         this.userHasSignedUp = _publicSignals[4]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
+        this.zkFilesPath = _zkFilesPath
     }
 
     public verify = (): Promise<boolean> => {
@@ -33,7 +38,7 @@ export class SignUpProof implements UnirepTypes.SignUpProofStruct {
             this.proof.map((n) => n.toString())
         )
         return UnirepCircuit.verifyProof(
-            config.exportBuildPath,
+            this.zkFilesPath,
             CircuitName.proveUserSignUp,
             proof_,
             this.publicSignals.map((n) => BigInt(n.toString()))
