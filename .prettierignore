@@ -4,5 +4,7 @@
 **/artifacts
 **/cache
 **/typechain
+.github/**
+**/*.md
 
 yarn.lock
