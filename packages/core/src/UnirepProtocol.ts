@@ -193,15 +193,8 @@ export class UnirepProtocol {
      * @param inputs The input of the proof
      * @returns The proof and the public signals of the snark proof
      */
-     public async genProof (
-        circuitName: CircuitName,
-        inputs: any
-    ) {
-        return circuit.genProof(
-            this.zkFilesPath,
-            circuitName,
-            inputs
-        )
+    public async genProof(circuitName: CircuitName, inputs: any) {
+        return circuit.genProof(this.zkFilesPath, circuitName, inputs)
     }
 
     /**
@@ -211,7 +204,7 @@ export class UnirepProtocol {
      * @param publicSignals The public signals of the snark proof
      * @returns
      */
-     public async verifyProof (
+    public async verifyProof(
         circuitName: CircuitName,
         proof: SnarkProof,
         publicSignals: SnarkPublicSignals

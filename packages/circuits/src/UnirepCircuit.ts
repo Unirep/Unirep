@@ -9,7 +9,7 @@ import { CircuitConfig } from './types/config'
 export default class UnirepCircuit {
     /**
      * Get circuit config from given zkFilesPath
-     * @param zkFilesPath 
+     * @param zkFilesPath
      * @returns circuit config
      */
     public static getConfig = (zkFilesPath: string): CircuitConfig => {

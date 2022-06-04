@@ -19,10 +19,7 @@ import {
     UnirepProtocol,
     UserState,
 } from '../../src'
-import {
-    genRandomAttestation,
-    genRandomList,
-} from '../utils'
+import { genRandomAttestation, genRandomList } from '../utils'
 import { artifactsPath, config, zkFilesPath } from '../testConfig'
 
 describe('User state transition events in Unirep User State', async function () {
