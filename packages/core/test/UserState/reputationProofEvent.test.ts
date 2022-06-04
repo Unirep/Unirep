@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import circuit, { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import contract, {
     Attestation,
     EpochKeyProof,
@@ -517,8 +517,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 spendReputation
             )
             circuitInputs.GST_root = genRandomSalt().toString()
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.proveReputation,
                 circuitInputs
             )
@@ -659,8 +658,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.proveReputation,
                 circuitInputs
             )
@@ -744,8 +742,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.proveReputation,
                 circuitInputs
             )

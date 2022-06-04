@@ -8,7 +8,7 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import circuit, { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import contract, { EpochKeyProof, Unirep } from '@unirep/contracts'
 
 import { genUnirepState, genUserState, UnirepProtocol } from '../../src'
@@ -358,8 +358,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )
@@ -422,8 +421,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 epkNonce
             )
 
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )

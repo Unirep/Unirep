@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import circuit, { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import contract, { Unirep, EpochKeyProof } from '@unirep/contracts'
 
 import { UnirepProtocol, genUnirepState } from '../../src'
@@ -197,8 +197,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )
@@ -269,8 +268,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 epkNonce
             )
             circuitInputs.GST_root = genRandomSalt().toString()
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )
@@ -335,8 +333,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )
@@ -401,8 +398,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 wrongEpoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )

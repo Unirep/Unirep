@@ -968,8 +968,7 @@ describe('User state transition events in Unirep State', async function () {
                     epkNonce
                 )
 
-                const { proof, publicSignals } = await circuit.genProof(
-                    protocol.config.exportBuildPath,
+                const { proof, publicSignals } = await protocol.genProof(
                     CircuitName.verifyEpochKey,
                     circuitInputs
                 )

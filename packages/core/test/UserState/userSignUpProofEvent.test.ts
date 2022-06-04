@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
-import circuit, { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 import contract, { SignUpProof, Unirep } from '@unirep/contracts'
 
 import {
@@ -405,8 +405,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.proveUserSignUp,
                 circuitInputs
             )
@@ -485,8 +484,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await circuit.genProof(
-                protocol.config.exportBuildPath,
+            const { proof, publicSignals } = await protocol.genProof(
                 CircuitName.proveUserSignUp,
                 circuitInputs
             )

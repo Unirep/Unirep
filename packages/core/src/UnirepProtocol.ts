@@ -1,15 +1,16 @@
 import { BigNumber, Event } from 'ethers'
 import Keyv from 'keyv'
 import path from 'path'
-import { CircuitConfig, CircuitName } from '@unirep/circuits'
+import circuit, { CircuitConfig, CircuitName } from '@unirep/circuits'
 import {
     hash5,
     hashLeftRight,
     IncrementalMerkleTree,
     SnarkBigInt,
     SparseMerkleTree,
+    SnarkProof,
+    SnarkPublicSignals,
 } from '@unirep/crypto'
-import circuit from '@unirep/circuits'
 
 import Reputation from './Reputation'
 
@@ -184,6 +185,43 @@ export class UnirepProtocol {
             2
         )
         return GST
+    }
+
+    /**
+     * Generate a full proof of the circuit
+     * @param circuitName The name of the circuit
+     * @param inputs The input of the proof
+     * @returns The proof and the public signals of the snark proof
+     */
+     public async genProof (
+        circuitName: CircuitName,
+        inputs: any
+    ) {
+        return circuit.genProof(
+            this.zkFilesPath,
+            circuitName,
+            inputs
+        )
+    }
+
+    /**
+     * Verify the snark proof
+     * @param circuitName The name of the circuit
+     * @param proof The proof of the snark proof
+     * @param publicSignals The public signals of the snark proof
+     * @returns
+     */
+     public async verifyProof (
+        circuitName: CircuitName,
+        proof: SnarkProof,
+        publicSignals: SnarkPublicSignals
+    ): Promise<boolean> {
+        return circuit.verifyProof(
+            this.zkFilesPath,
+            circuitName,
+            proof,
+            publicSignals
+        )
     }
 
     /**

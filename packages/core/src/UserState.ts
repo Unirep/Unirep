@@ -7,9 +7,10 @@ import {
     hashLeftRight,
     SparseMerkleTree,
     ZkIdentity,
+    unstringifyBigInts,
 } from '@unirep/crypto'
-import circuit from '@unirep/circuits'
 import { Attestation } from '@unirep/contracts'
+import { CircuitName } from '@unirep/circuits'
 
 import {
     IEpochTreeLeaf,
@@ -19,9 +20,7 @@ import {
 } from './interfaces'
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
-import { CircuitName } from '@unirep/circuits'
 import { UnirepProtocol } from './UnirepProtocol'
-import { unstringifyBigInts } from '@unirep/crypto'
 
 export default class UserState extends UnirepState {
     public id: ZkIdentity
@@ -421,8 +420,7 @@ export default class UserState extends UnirepState {
             epoch_key: epochKey,
         })
 
-        const results = await circuit.genProof(
-            this.config.exportBuildPath,
+        const results = await super.genProof(
             CircuitName.verifyEpochKey,
             circuitInputs
         )
@@ -873,16 +871,14 @@ export default class UserState extends UnirepState {
         })
 
         // Generate proofs
-        const startTransitionresults = await circuit.genProof(
-            this.config.exportBuildPath,
+        const startTransitionresults = await super.genProof(
             CircuitName.startTransition,
             startTransitionCircuitInputs.circuitInputs
         )
 
         const processAttestationProofs: any[] = []
         for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
-            const results = await circuit.genProof(
-                this.config.exportBuildPath,
+            const results = await super.genProof(
                 CircuitName.processAttestations,
                 processAttestationCircuitInputs[i]
             )
@@ -895,8 +891,7 @@ export default class UserState extends UnirepState {
             })
         }
 
-        const finalProofResults = await circuit.genProof(
-            this.config.exportBuildPath,
+        const finalProofResults = await super.genProof(
             CircuitName.userStateTransition,
             finalTransitionCircuitInputs
         )
@@ -1071,8 +1066,7 @@ export default class UserState extends UnirepState {
                 graffitiPreImage === undefined ? 0 : graffitiPreImage,
         })
 
-        const results = await circuit.genProof(
-            this.config.exportBuildPath,
+        const results = await super.genProof(
             CircuitName.proveReputation,
             circuitInputs
         )
@@ -1140,8 +1134,7 @@ export default class UserState extends UnirepState {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
-        const results = await circuit.genProof(
-            this.config.exportBuildPath,
+        const results = await super.genProof(
             CircuitName.proveUserSignUp,
             circuitInputs
         )

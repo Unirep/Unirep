@@ -4,7 +4,6 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import contract, {
-    Attestation,
     EpochKeyProof,
     UserTransitionProof,
     Unirep,
@@ -18,11 +17,9 @@ import {
     genUserState,
     Reputation,
     UnirepProtocol,
-    UnirepState,
     UserState,
 } from '../../src'
 import {
-    genEpochKeyCircuitInput,
     genRandomAttestation,
     genRandomList,
 } from '../utils'
