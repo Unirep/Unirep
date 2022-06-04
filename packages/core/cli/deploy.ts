@@ -1,10 +1,12 @@
 import { ethers } from 'ethers'
-import { deployUnirep } from '@unirep/contracts'
+import contract from '@unirep/contracts'
 
 import {
     DEFAULT_ATTESTING_FEE,
     DEFAULT_EPOCH_LENGTH,
     DEFAULT_ETH_PROVIDER,
+    CONTRACT_CONFIG,
+    DEFAULT_ARTIFACTS_PATH,
 } from './defaults'
 import {
     checkDeployerProviderConnection,
@@ -61,6 +63,7 @@ const deploy = async (args: any) => {
         : DEFAULT_ATTESTING_FEE
 
     const settings = {
+        ...CONTRACT_CONFIG,
         epochLength: _epochLength,
         attestingFee: _attestingFee,
     }
@@ -79,9 +82,13 @@ const deploy = async (args: any) => {
     const deployer = genJsonRpcDeployer(deployerPrivkey, provider)
     debugger
 
-    const contract = await deployUnirep(deployer.signer, settings)
+    const unirep = await contract.deploy(
+        DEFAULT_ARTIFACTS_PATH,
+        deployer.signer,
+        settings
+    )
 
-    console.log('Unirep:', contract.address)
+    console.log('Unirep:', unirep.address)
 }
 
 export { deploy, configureSubparser }

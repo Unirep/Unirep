@@ -1,15 +1,11 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    verifyProof,
-} from '@unirep/circuits'
-import { Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
+import circuit, { CircuitName }  from '@unirep/circuits'
+import contract, { Unirep, UserTransitionProof } from '@unirep/contracts'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserState } from '../src'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
+import { genUserState, UnirepProtocol } from '../src'
 import { identityPrefix } from './prefix'
 import { getProvider } from './utils'
 
@@ -49,7 +45,7 @@ const userStateTransition = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
+    const unirepContract: Unirep = contract.get(
         args.contract,
         provider
     )
@@ -63,7 +59,8 @@ const userStateTransition = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Generate user state transition proofs
-    const userState = await genUserState(provider, args.contract, id)
+    const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
+    const userState = await genUserState(protocol, provider, args.contract, id)
     const {
         startTransitionProof,
         processAttestationProofs,
@@ -71,8 +68,9 @@ const userStateTransition = async (args: any) => {
     } = await userState.genUserStateTransitionProofs()
 
     // Start user state transition proof
-    let isValid = await verifyProof(
-        Circuit.startTransition,
+    let isValid = await circuit.verifyProof(
+        DEFAULT_ZK_PATH,
+        CircuitName.startTransition,
         startTransitionProof.proof,
         startTransitionProof.publicSignals
     )
@@ -89,7 +87,9 @@ const userStateTransition = async (args: any) => {
                 startTransitionProof.blindedUserState,
                 startTransitionProof.blindedHashChain,
                 startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
+                circuit.formatProofForVerifierContract(
+                    startTransitionProof.proof
+                )
             )
         await tx.wait()
     } catch (error) {
@@ -100,8 +100,9 @@ const userStateTransition = async (args: any) => {
 
     // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const isValid = await verifyProof(
-            Circuit.processAttestations,
+        const isValid = await circuit.verifyProof(
+            DEFAULT_ZK_PATH,
+            CircuitName.processAttestations,
             processAttestationProofs[i].proof,
             processAttestationProofs[i].publicSignals
         )
@@ -118,7 +119,7 @@ const userStateTransition = async (args: any) => {
                     processAttestationProofs[i].outputBlindedUserState,
                     processAttestationProofs[i].outputBlindedHashChain,
                     processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
+                    circuit.formatProofForVerifierContract(
                         processAttestationProofs[i].proof
                     )
                 )
@@ -137,7 +138,9 @@ const userStateTransition = async (args: any) => {
             startTransitionProof.blindedUserState,
             startTransitionProof.blindedHashChain,
             startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(startTransitionProof.proof)
+            circuit.formatProofForVerifierContract(
+                startTransitionProof.proof
+            )
         )
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
@@ -147,15 +150,18 @@ const userStateTransition = async (args: any) => {
             processAttestationProofs[i].outputBlindedUserState,
             processAttestationProofs[i].outputBlindedHashChain,
             processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
+            circuit.formatProofForVerifierContract(
+                processAttestationProofs[i].proof
+            )
         )
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
 
     // update user state proof
-    isValid = await verifyProof(
-        Circuit.userStateTransition,
+    isValid = await circuit.verifyProof(
+        DEFAULT_ZK_PATH,
+        CircuitName.userStateTransition,
         finalTransitionProof.proof,
         finalTransitionProof.publicSignals
     )
@@ -206,7 +212,8 @@ const userStateTransition = async (args: any) => {
     // Submit the user state transition transaction
     const USTProof = new UserTransitionProof(
         finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
+        finalTransitionProof.proof,
+        DEFAULT_ZK_PATH
     )
     try {
         tx = await unirepContract

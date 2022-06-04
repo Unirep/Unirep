@@ -1,14 +1,10 @@
 import base64url from 'base64url'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    verifyProof,
-} from '@unirep/circuits'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import circuit, { CircuitName } from '@unirep/circuits'
+import contract, { Unirep } from '@unirep/contracts'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genReputationNullifier, genUserState } from '../src'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
+import { genUserState, UnirepProtocol } from '../src'
 import {
     identityPrefix,
     reputationPublicSignalsPrefix,
@@ -78,17 +74,18 @@ const genReputationProof = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Gen User State
-    const userState = await genUserState(provider, args.contract, id)
+    const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
+    const userState = await genUserState(protocol, provider, args.contract, id)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
+    const unirepContract: Unirep = contract.get(
         args.contract,
         provider
     )
     const maxReputationBudget = await unirepContract.maxReputationBudget()
 
     // Proving content
-    const epoch = userState.getUnirepStateCurrentEpoch()
+    const epoch = userState.currentEpoch
     const attesterId = BigInt(args.attester_id)
     const epkNonce = args.epoch_key_nonce
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
@@ -101,7 +98,7 @@ const genReputationProof = async (args: any) => {
     if (repNullifiersAmount > 0) {
         // find valid nonce starter
         for (let n = 0; n < Number(rep.posRep) - Number(rep.negRep); n++) {
-            const reputationNullifier = genReputationNullifier(
+            const reputationNullifier = UnirepProtocol.genReputationNullifier(
                 id.identityNullifier,
                 epoch,
                 n,
@@ -145,8 +142,9 @@ const genReputationProof = async (args: any) => {
     console.log('repnullifier amount', repNullifiersAmount)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(
-        Circuit.proveReputation,
+    const isValid = await circuit.verifyProof(
+        DEFAULT_ZK_PATH,
+        CircuitName.proveReputation,
         results.proof,
         results.publicSignals
     )
@@ -154,7 +152,7 @@ const genReputationProof = async (args: any) => {
         console.error('Error: reputation proof generated is not valid!')
     }
 
-    const formattedProof = formatProofForVerifierContract(results.proof)
+    const formattedProof = circuit.formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     const encodedPublicSignals = base64url.encode(
         JSON.stringify(results.publicSignals)

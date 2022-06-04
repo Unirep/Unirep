@@ -1,5 +1,5 @@
 import { ethers } from 'ethers'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import contract, { Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { getProvider } from './utils'
@@ -37,14 +37,14 @@ const setAirdropAmount = async (args: any) => {
     const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
-    // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
-
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
+
+    // Unirep contract
+    const unirepContract: Unirep = contract.get(
+        args.contract,
+        wallet
+    )
 
     // Parse input
     const airdropPosRep = args.airdrop

@@ -1,9 +1,9 @@
 import base64url from 'base64url'
-import { SignUpProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import contract, { SignUpProof, Unirep } from '@unirep/contracts'
+import circuit from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepState } from '../src'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
+import { genUnirepState, UnirepProtocol } from '../src'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
 
@@ -49,12 +49,13 @@ const verifyUserSignUpProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
+    const unirepContract: Unirep = contract.get(
         args.contract,
         provider
     )
 
-    const unirepState = await genUnirepState(provider, args.contract)
+    const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
+    const unirepState = await genUnirepState(protocol, provider, args.contract)
 
     // Parse Inputs
     const decodedProof = base64url.decode(
@@ -81,7 +82,8 @@ const verifyUserSignUpProof = async (args: any) => {
     // Verify the proof on-chain
     const signUpProof = new SignUpProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        circuit.formatProofForSnarkjsVerification(proof),
+        DEFAULT_ZK_PATH
     )
     const isProofValid = await unirepContract.verifyUserSignUp(signUpProof)
     if (!isProofValid) {

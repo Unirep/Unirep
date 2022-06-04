@@ -1,12 +1,11 @@
 import base64url from 'base64url'
-import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import contract, { ReputationProof, Unirep } from '@unirep/contracts'
+import circuit from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepState } from '../src'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
+import { genUnirepState, UnirepProtocol } from '../src'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
-import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyReputationProof', {
@@ -50,12 +49,13 @@ const verifyReputationProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
+    const unirepContract: Unirep = contract.get(
         args.contract,
         provider
     )
 
-    const unirepState = await genUnirepState(provider, args.contract)
+    const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
+    const unirepState = await genUnirepState(protocol, provider, args.contract)
 
     // Parse Inputs
     const decodedProof = base64url.decode(
@@ -64,6 +64,7 @@ const verifyReputationProof = async (args: any) => {
     const decodedPublicSignals = base64url.decode(
         args.public_signals.slice(reputationPublicSignalsPrefix.length)
     )
+    const MAX_REPUTATION_BUDGET = protocol.config.maxReputationBudget
     const publicSignals = JSON.parse(decodedPublicSignals)
     const outputNullifiers = publicSignals.slice(0, MAX_REPUTATION_BUDGET)
     const epoch = publicSignals[MAX_REPUTATION_BUDGET]
@@ -86,7 +87,8 @@ const verifyReputationProof = async (args: any) => {
     // Verify the proof on-chain
     const reputationProof = new ReputationProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        circuit.formatProofForSnarkjsVerification(proof),
+        DEFAULT_ZK_PATH
     )
     const isProofValid = await unirepContract.verifyReputation(reputationProof)
     if (!isProofValid) {

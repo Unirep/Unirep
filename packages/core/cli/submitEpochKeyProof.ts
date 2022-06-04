@@ -1,8 +1,8 @@
 import base64url from 'base64url'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
-import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
+import circuit from '@unirep/circuits'
+import contract, { EpochKeyProof, Unirep } from '@unirep/contracts'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
 import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
 import { ethers } from 'ethers'
@@ -50,11 +50,11 @@ const submitEpochKeyProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
+    const unirepContract: Unirep = contract.get(
         args.contract,
         provider
     )
-    const currentEpoch = Number(await unirepContract.currentEpoch())
+    const currentEpoch = await unirepContract.currentEpoch()
 
     const decodedProof = base64url.decode(
         args.proof.slice(epkProofPrefix.length)
@@ -66,7 +66,8 @@ const submitEpochKeyProof = async (args: any) => {
     const publicSignals = JSON.parse(decodedPublicSignals)
     const epochKeyProof = new EpochKeyProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        circuit.formatProofForSnarkjsVerification(proof),
+        DEFAULT_ZK_PATH
     )
     const inputEpoch = epochKeyProof.epoch
     console.log(

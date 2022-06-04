@@ -1,5 +1,5 @@
 import { ethers } from 'ethers'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import contract, { Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { getProvider } from './utils'
@@ -31,14 +31,14 @@ const attesterSignUp = async (args: any) => {
     const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
+    // Connect a signer
+    const wallet = new ethers.Wallet(args.eth_privkey, provider)
+
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
+    const unirepContract: Unirep = contract.get(
         args.contract,
         provider
     )
-
-    // Connect a signer
-    const wallet = new ethers.Wallet(args.eth_privkey, provider)
 
     // Submit the user sign up transaction
     let tx: ethers.ContractTransaction

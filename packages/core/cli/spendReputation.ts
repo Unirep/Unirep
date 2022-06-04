@@ -1,8 +1,8 @@
 import base64url from 'base64url'
-import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import contract, { ReputationProof, Unirep } from '@unirep/contracts'
+import circuit from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
 import { verifyReputationProof } from './verifyReputationProof'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
@@ -54,15 +54,15 @@ const spendReputation = async (args: any) => {
     const ethProvider = args.eth_provider ?? DEFAULT_ETH_PROVIDER
     const provider = getProvider(ethProvider)
 
-    // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
-    const attestingFee = await unirepContract.attestingFee()
-
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
+
+    // Unirep contract
+    const unirepContract: Unirep = contract.get(
+        args.contract,
+        wallet
+    )
+    const attestingFee = await unirepContract.attestingFee()
 
     await verifyReputationProof(args)
 
@@ -77,7 +77,8 @@ const spendReputation = async (args: any) => {
     const publicSignals = JSON.parse(decodedPublicSignals)
     const reputationProof = new ReputationProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        circuit.formatProofForSnarkjsVerification(proof),
+        DEFAULT_ZK_PATH
     )
 
     console.log(

@@ -1,13 +1,9 @@
 import base64url from 'base64url'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    verifyProof,
-} from '@unirep/circuits'
+import circuit, { CircuitName } from '@unirep/circuits'
 
-import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserState } from '../src'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
+import { genUserState, UnirepProtocol } from '../src'
 import {
     identityPrefix,
     signUpProofPrefix,
@@ -55,13 +51,16 @@ const genUserSignUpProof = async (args: any) => {
     const id = new ZkIdentity(Strategy.SERIALIZED, decodedIdentity)
 
     // Gen user sign up proof
-    const userState = await genUserState(provider, args.contract, id)
+    // Gen User State
+    const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
+    const userState = await genUserState(protocol, provider, args.contract, id)
     const attesterId = BigInt(args.attester_id)
     const results = await userState.genUserSignUpProof(attesterId)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(
-        Circuit.proveUserSignUp,
+    const isValid = await circuit.verifyProof(
+        DEFAULT_ZK_PATH,
+        CircuitName.proveUserSignUp,
         results.proof,
         results.publicSignals
     )
@@ -70,7 +69,7 @@ const genUserSignUpProof = async (args: any) => {
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results.proof)
+    const formattedProof = circuit.formatProofForVerifierContract(results.proof)
     const encodedProof = base64url.encode(JSON.stringify(formattedProof))
     const encodedPublicSignals = base64url.encode(
         JSON.stringify(results.publicSignals)

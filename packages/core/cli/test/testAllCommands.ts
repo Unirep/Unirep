@@ -5,16 +5,17 @@ import { ethers } from 'ethers'
 import chai from 'chai'
 const { expect } = chai
 import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
+import contract, { Unirep } from '@unirep/contracts'
 
-import { DEFAULT_ETH_PROVIDER } from '../defaults'
-import { genUnirepState, UnirepState } from '../../src'
+import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from '../defaults'
+import { UnirepProtocol, UnirepState } from '../../src'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 
 describe('test all CLI subcommands', function () {
     this.timeout(0)
 
+    // attesters
     let deployerPrivKey =
         '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
     let deployerAddr
@@ -24,16 +25,20 @@ describe('test all CLI subcommands', function () {
     let userPrivKey =
         '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
     let userAddr
+    const attesterId = 1
 
-    const attestingFee = ethers.BigNumber.from(10).pow(18)
+    // users
     const epochKeyNonce = 0
     const epochLength = 5
+    let userIdentity, userIdentityCommitment
+
+    // unirep contract and protocol
     let unirepContract: Unirep
     let unirepState: UnirepState
-
-    let userIdentity, userIdentityCommitment
-    const attesterId = 1
-    let epk, epkProof, epkPublicSignals, proofIdx
+    const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
+    
+    // test config
+    const attestingFee = ethers.BigNumber.from(10).pow(18)
     const airdropPosRep = 30
     const posRep = 5,
         negRep = 4,
@@ -42,6 +47,9 @@ describe('test all CLI subcommands', function () {
         signUpFlag = 1
     const minPosRep = 0
     const repNullifierAmount = 1
+
+    // global variables
+    let epk, epkProof, epkPublicSignals, proofIdx
     let userRepProof, signUpProof
     let repPublicSignals, signUpPublicSignals
 
@@ -92,12 +100,13 @@ describe('test all CLI subcommands', function () {
             const provider = new hardhatEthers.providers.JsonRpcProvider(
                 DEFAULT_ETH_PROVIDER
             )
-            unirepContract = getUnirepContract(unirepAddress, provider)
+            unirepContract = contract.get(unirepAddress, provider)
 
-            unirepState = await genUnirepState(provider, unirepAddress)
+            const _epochLengh = await unirepContract.epochLength()
+            const _attestingFee = await unirepContract.attestingFee()
 
-            expect(unirepState.settings.epochLength).equal(epochLength)
-            expect(unirepState.settings.attestingFee).equal(attestingFee)
+            expect(_epochLengh).equal(epochLength)
+            expect(_attestingFee).equal(attestingFee)
         })
     })
 
