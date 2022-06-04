@@ -36,7 +36,7 @@ describe('test all CLI subcommands', function () {
     let unirepContract: Unirep
     let unirepState: UnirepState
     const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
-    
+
     // test config
     const attestingFee = ethers.BigNumber.from(10).pow(18)
     const airdropPosRep = 30

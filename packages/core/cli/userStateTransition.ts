@@ -1,7 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import circuit, { CircuitName }  from '@unirep/circuits'
+import circuit, { CircuitName } from '@unirep/circuits'
 import contract, { Unirep, UserTransitionProof } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER, DEFAULT_ZK_PATH } from './defaults'
@@ -45,10 +45,7 @@ const userStateTransition = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        provider
-    )
+    const unirepContract: Unirep = contract.get(args.contract, provider)
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
@@ -138,9 +135,7 @@ const userStateTransition = async (args: any) => {
             startTransitionProof.blindedUserState,
             startTransitionProof.blindedHashChain,
             startTransitionProof.globalStateTreeRoot,
-            circuit.formatProofForVerifierContract(
-                startTransitionProof.proof
-            )
+            circuit.formatProofForVerifierContract(startTransitionProof.proof)
         )
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)

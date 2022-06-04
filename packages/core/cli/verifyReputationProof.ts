@@ -49,10 +49,7 @@ const verifyReputationProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        provider
-    )
+    const unirepContract: Unirep = contract.get(args.contract, provider)
 
     const protocol = new UnirepProtocol(DEFAULT_ZK_PATH)
     const unirepState = await genUnirepState(protocol, provider, args.contract)

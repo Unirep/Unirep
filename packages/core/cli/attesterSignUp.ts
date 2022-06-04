@@ -35,10 +35,7 @@ const attesterSignUp = async (args: any) => {
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        provider
-    )
+    const unirepContract: Unirep = contract.get(args.contract, provider)
 
     // Submit the user sign up transaction
     let tx: ethers.ContractTransaction

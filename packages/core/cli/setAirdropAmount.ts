@@ -41,10 +41,7 @@ const setAirdropAmount = async (args: any) => {
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        wallet
-    )
+    const unirepContract: Unirep = contract.get(args.contract, wallet)
 
     // Parse input
     const airdropPosRep = args.airdrop

@@ -40,10 +40,7 @@ const epochTransition = async (args: any) => {
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        wallet
-    )
+    const unirepContract: Unirep = contract.get(args.contract, wallet)
 
     // Fast-forward to end of epoch if in test environment
     if (args.is_test) {

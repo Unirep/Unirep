@@ -78,10 +78,7 @@ const genReputationProof = async (args: any) => {
     const userState = await genUserState(protocol, provider, args.contract, id)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        provider
-    )
+    const unirepContract: Unirep = contract.get(args.contract, provider)
     const maxReputationBudget = await unirepContract.maxReputationBudget()
 
     // Proving content

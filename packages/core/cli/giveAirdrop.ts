@@ -51,10 +51,7 @@ const giveAirdrop = async (args: any) => {
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        wallet
-    )
+    const unirepContract: Unirep = contract.get(args.contract, wallet)
     const attestingFee = await unirepContract.attestingFee()
 
     await verifyUserSignUpProof(args)
@@ -71,7 +68,7 @@ const giveAirdrop = async (args: any) => {
     const userSignUpProof = new SignUpProof(
         publicSignals,
         circuit.formatProofForSnarkjsVerification(proof),
-        DEFAULT_ZK_PATH,
+        DEFAULT_ZK_PATH
     )
 
     console.log(

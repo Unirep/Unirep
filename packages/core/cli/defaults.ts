@@ -10,7 +10,10 @@ const DEFAULT_START_BLOCK = 0
 const DEFAULT_EPOCH_LENGTH = 600
 const DEFAULT_ATTESTING_FEE = ethers.utils.parseEther('0')
 const DEFAULT_ZK_PATH = path.join(__dirname, '../../circuits/zksnarkBuild')
-const DEFAULT_ARTIFACTS_PATH = path.join(__dirname, '../../contracts/build/artifacts')
+const DEFAULT_ARTIFACTS_PATH = path.join(
+    __dirname,
+    '../../contracts/build/artifacts'
+)
 const CIRCUIT_CONFIG: CircuitConfig = require(path.join(
     DEFAULT_ZK_PATH,
     'config.json'

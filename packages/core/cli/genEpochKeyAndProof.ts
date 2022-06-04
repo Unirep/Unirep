@@ -48,10 +48,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = contract.get(
-        args.contract,
-        provider
-    )
+    const unirepContract: Unirep = contract.get(args.contract, provider)
     const numEpochKeyNoncePerEpoch =
         await unirepContract.numEpochKeyNoncePerEpoch()
 
@@ -74,11 +71,9 @@ const genEpochKeyAndProof = async (args: any) => {
     const userState = await genUserState(protocol, provider, args.contract, id)
     const results = await userState.genVerifyEpochKeyProof(epkNonce)
     const currentEpoch = userState.currentEpoch
-    const epk = protocol.genEpochKey(
-        id.identityNullifier,
-        currentEpoch,
-        epkNonce
-    ).toString()
+    const epk = protocol
+        .genEpochKey(id.identityNullifier, currentEpoch, epkNonce)
+        .toString()
 
     // TODO: Not sure if this validation is necessary
     const isValid = await circuit.verifyProof(
