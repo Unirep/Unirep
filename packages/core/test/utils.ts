@@ -328,7 +328,6 @@ const compareStates = async (
         savedUserState
     )
 
-    console.log(unirepStateWithStorage.toJSON())
     const usFromJSON = UserState.fromJSONAndID(userId, usWithStorage.toJSON())
     const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
 

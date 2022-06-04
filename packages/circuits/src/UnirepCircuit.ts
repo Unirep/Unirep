@@ -4,8 +4,21 @@ const circom = require('circom')
 import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
 
 import { CircuitName } from './types/circuit'
+import { CircuitConfig } from './types/config'
 
 export default class UnirepCircuit {
+    /**
+     * Get circuit config from given zkFilesPath
+     * @param zkFilesPath 
+     * @returns circuit config
+     */
+    public static getConfig = (zkFilesPath: string): CircuitConfig => {
+        const circuitConfig: CircuitConfig = require(path.join(
+            zkFilesPath,
+            'config.json'
+        ))
+        return circuitConfig
+    }
     /**
      * Get VKey of given circuit
      * @param zkFilesPath The path of built zk files
