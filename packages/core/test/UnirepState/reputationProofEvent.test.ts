@@ -261,7 +261,7 @@ describe('Reputation proof events in Unirep State', function () {
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             repNullifier = genReputationNullifier(
-                userIds[userIdx].identityNullifier,
+                userIds[userIdx].getNullifier(),
                 epoch,
                 0,
                 attesterId
@@ -414,7 +414,7 @@ describe('Reputation proof events in Unirep State', function () {
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             repNullifier = genReputationNullifier(
-                userIds[userIdx].identityNullifier,
+                userIds[userIdx].getNullifier(),
                 epoch,
                 0,
                 attesterId

@@ -158,7 +158,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong nonce epoch key should fail', async () => {
         const wrongEpochKey = genEpochKey(
-            user.identityNullifier,
+            user.getNullifier(),
             epoch,
             nonce + 1,
             EPOCH_TREE_DEPTH

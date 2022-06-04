@@ -102,7 +102,7 @@ const genReputationProof = async (args: any) => {
         // find valid nonce starter
         for (let n = 0; n < Number(rep.posRep) - Number(rep.negRep); n++) {
             const reputationNullifier = genReputationNullifier(
-                id.identityNullifier,
+                id.getNullifier(),
                 epoch,
                 n,
                 attesterId

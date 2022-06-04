@@ -52,7 +52,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             outputUserStateTreeRoot,
             epoch,
             nonce,
@@ -65,7 +65,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             hashChainResult,
             epoch,
             nonce,
@@ -104,7 +104,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_user_state'
         )
         const expectedUserState = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             outputUserStateTreeRoot,
             epoch,
             nonce,
@@ -117,7 +117,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             noAttestationHashChainResult,
             epoch,
             nonce,
@@ -147,7 +147,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             outputUserStateTreeRoot,
             epoch,
             nonce,
@@ -160,7 +160,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             hashChainResult,
             epoch,
             nonce,
@@ -190,7 +190,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             outputUserStateTreeRoot,
             epoch,
             toNonce,
@@ -203,7 +203,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             hashChainResult,
             epoch,
             toNonce,
@@ -247,7 +247,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             outputUserStateTreeRoot,
             epoch,
             toNonce,
@@ -260,7 +260,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             hashChainResult,
             epoch,
             toNonce,
@@ -318,7 +318,7 @@ describe('Process attestation circuit', function () {
                 NUM_ATTESTATIONS_PER_PROOF
             ]
         const expectedUserState = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             outputUserStateTreeRoot,
             epoch,
             toNonce,
@@ -331,7 +331,7 @@ describe('Process attestation circuit', function () {
             'main.blinded_hash_chain_result'
         )
         const expectedHashChainResult = hash5([
-            user.identityNullifier,
+            user.getNullifier(),
             hashChainResult,
             epoch,
             toNonce,

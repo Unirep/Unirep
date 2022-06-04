@@ -37,7 +37,7 @@ describe('User State Transition circuits', function () {
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
         const testEpochTreeDepth = 32
         const epochKey: SnarkBigInt = genEpochKey(
-            user.identityNullifier,
+            user.getNullifier(),
             epoch,
             nonce,
             testEpochTreeDepth
@@ -68,7 +68,7 @@ describe('User State Transition circuits', function () {
 
         it('Existed epoch key should pass check', async () => {
             const circuitInputs = {
-                identity_nullifier: user.identityNullifier,
+                identity_nullifier: user.getNullifier(),
                 epoch: epoch,
                 nonce: nonce,
                 hash_chain_result: hashChainResult,
