@@ -17,20 +17,20 @@ describe('SparseMerkleTree', function () {
     })
 
     it('insertion', async () => {
-        const rootBeforeInsert = tree.getRootHash()
+        const rootBeforeInsert = tree.root
         const leafKey = BigInt(2)
         const leafValue = BigInt(3)
         await tree.update(
             leafKey,
             leafValue
         )
-        expect(tree.getRootHash()).not.equal(rootBeforeInsert)
+        expect(tree.root).not.equal(rootBeforeInsert)
     })
 
     it('genProof/verifyProof', async () => {
         for (let index = 0; index < depth; index++) {
             const leafKey = BigInt(index)
-            const proof = await tree.getMerkleProof(leafKey)
+            const proof = await tree.createProof(leafKey)
             const isValid = await tree.verifyMerkleProof(leafKey, proof)
             expect(isValid).to.be.true
         }

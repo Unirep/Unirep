@@ -22,37 +22,37 @@ const newWrappedPoseidonT3Hash = (
 }
 
 export class SparseMerkleTree {
-    protected root?: BigInt
+    protected _root?: BigInt
     private zeroHashes!: BigInt[]
 
     public readonly numLeaves: BigInt
 
     public static async create(
         db,
-        height: number,
+        _height: number,
         zeroHash: BigInt
     ): Promise<SparseMerkleTree> {
-        const tree = new SparseMerkleTree(db, height)
+        const tree = new SparseMerkleTree(db, _height)
         await tree.init(zeroHash)
         return tree
     }
 
-    constructor(protected db, private height: number) {
-        assert(height > 0, 'SMT height needs to be > 0')
+    constructor(protected db, private _height: number) {
+        assert(_height > 0, 'SMT height needs to be > 0')
 
-        this.numLeaves = BigInt(2 ** height)
+        this.numLeaves = BigInt(2 ** _height)
     }
 
     private async init(zeroHash: BigInt): Promise<void> {
         await this.populateZeroHashesAndRoot(zeroHash)
     }
 
-    public getHeight(): number {
-        return this.height
+    get height() {
+        return this._height
     }
 
-    public getRootHash(): BigInt {
-        return this.root!
+    get root() {
+        return this._root
     }
 
     public getZeroHash(index: number): BigInt {
@@ -98,10 +98,10 @@ export class SparseMerkleTree {
                 : nodeIndex - BigInt(1)
         }
         assert(nodeIndex === BigInt(1), 'Root node index must be 1')
-        this.root = parentHash
+        this._root = parentHash
     }
 
-    public async getMerkleProof(leafKey: BigInt): Promise<BigInt[]> {
+    public async createProof(leafKey: BigInt): Promise<BigInt[]> {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -170,7 +170,7 @@ export class SparseMerkleTree {
 
         this.zeroHashes = hashes
 
-        this.root = newWrappedPoseidonT3Hash(
+        this._root = newWrappedPoseidonT3Hash(
             hashes[this.height - 1],
             hashes[this.height - 1]
         )
