@@ -127,7 +127,7 @@ export class SparseMerkleTree {
         return siblingNodeHashes
     }
 
-    public async verifyMerkleProof(
+    public async verifyProof(
         leafKey: BigInt,
         proof: BigInt[]
     ): Promise<boolean> {

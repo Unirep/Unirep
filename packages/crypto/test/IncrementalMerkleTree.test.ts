@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { IncrementalMerkleTree } from "../src"
+import { genRandomSalt, IncrementalMerkleTree } from "../src"
 
 
 describe('IncrementalMerkleTree', function () {
@@ -10,12 +10,24 @@ describe('IncrementalMerkleTree', function () {
     it('constructor', async () => {
         tree = new IncrementalMerkleTree(depth)
         expect(typeof tree).equal('object')
+
+        const nonZeroDefaultLeaf = genRandomSalt()
+        const nonZeroTree = new IncrementalMerkleTree(depth, nonZeroDefaultLeaf)
+        expect(typeof nonZeroTree).equal('object')
     })
 
     it('insertion', async () => {
         const rootBeforeInsert = tree.root
         const newLeaf = 1
         tree.insert(newLeaf)
+        expect(tree.root).not.equal(rootBeforeInsert)
+    })
+
+    it('update', async () => {
+        const rootBeforeInsert = tree.root
+        const index = 0
+        const newLeaf = 2
+        tree.update(index, newLeaf)
         expect(tree.root).not.equal(rootBeforeInsert)
     })
 

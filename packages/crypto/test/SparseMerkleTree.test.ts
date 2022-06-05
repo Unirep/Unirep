@@ -31,7 +31,7 @@ describe('SparseMerkleTree', function () {
         for (let index = 0; index < depth; index++) {
             const leafKey = BigInt(index)
             const proof = await tree.createProof(leafKey)
-            const isValid = await tree.verifyMerkleProof(leafKey, proof)
+            const isValid = await tree.verifyProof(leafKey, proof)
             expect(isValid).to.be.true
         }
     })
