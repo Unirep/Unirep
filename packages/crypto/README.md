@@ -34,8 +34,6 @@ Client library for cryptography related functions which are used in unirep proto
 
 ---
 
-[TOC]
-
 ## 🛠 Install
 
 ### npm or yarn

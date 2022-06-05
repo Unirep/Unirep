@@ -34,8 +34,6 @@ Client library for generating and verifying Unirep ZK proofs.
 
 ---
 
-[TOC]
-
 ## 🛠 Install
 
 ### npm or yarn
