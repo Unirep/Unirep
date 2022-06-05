@@ -104,7 +104,7 @@ export default class UserState {
             nonce++
         ) {
             const epk = genEpochKey(
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 epoch,
                 nonce
             ).toString()
@@ -115,7 +115,7 @@ export default class UserState {
                 )
         }
         return {
-            idNullifier: this.id.getNullifier(),
+            idNullifier: this.id.identityNullifier,
             idCommitment: this.commitment,
             hasSignedUp: this.hasSignedUp,
             latestTransitionedEpoch: this.latestTransitionedEpoch,
@@ -219,7 +219,7 @@ export default class UserState {
         const nullifiers: BigInt[] = []
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const nullifier = genEpochKeyNullifier(
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 epoch,
                 nonce
             )
@@ -411,7 +411,7 @@ export default class UserState {
         this._checkEpkNonce(epochKeyNonce)
         const epoch = this.latestTransitionedEpoch
         const epochKey = genEpochKey(
-            this.id.getNullifier(),
+            this.id.identityNullifier,
             epoch,
             epochKeyNonce,
             this.unirepState.settings.epochTreeDepth
@@ -424,7 +424,7 @@ export default class UserState {
             GST_path_elements: GSTProof.siblings,
             GST_path_index: GSTProof.pathIndices,
             GST_root: GSTree.root,
-            identity_nullifier: this.id.getNullifier(),
+            identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
             user_tree_root: userStateTree.getRootHash(),
             nonce: epochKeyNonce,
@@ -482,7 +482,7 @@ export default class UserState {
 
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const epochKey = genEpochKey(
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 fromEpoch,
                 nonce,
                 this.unirepState.settings.epochTreeDepth
@@ -509,7 +509,7 @@ export default class UserState {
 
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const epkNullifier = genEpochKeyNullifier(
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 fromEpoch,
                 nonce
             )
@@ -519,7 +519,7 @@ export default class UserState {
             )
 
             const epochKey = genEpochKey(
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 fromEpoch,
                 nonce,
                 this.unirepState.settings.epochTreeDepth
@@ -561,7 +561,7 @@ export default class UserState {
             epoch: this.latestTransitionedEpoch,
             nonce: fromNonce,
             user_tree_root: userStateTreeRoot,
-            identity_nullifier: this.id.getNullifier(),
+            identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
             GST_path_elements: GSTreeProof.siblings,
             GST_path_index: GSTreeProof.pathIndices,
@@ -571,14 +571,14 @@ export default class UserState {
         // Circuit outputs
         // blinded user state and blinded hash chain are the inputs of processAttestationProofs
         const blindedUserState = hash5([
-            this.id.getNullifier(),
+            this.id.identityNullifier,
             userStateTreeRoot,
             BigInt(this.latestTransitionedEpoch),
             BigInt(fromNonce),
             BigInt(0),
         ])
         const blindedHashChain = hash5([
-            this.id.getNullifier(),
+            this.id.identityNullifier,
             BigInt(0), // hashchain starter
             BigInt(this.latestTransitionedEpoch),
             BigInt(fromNonce),
@@ -650,7 +650,7 @@ export default class UserState {
 
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const epochKey = genEpochKey(
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 fromEpoch,
                 nonce,
                 this.unirepState.settings.epochTreeDepth
@@ -677,7 +677,7 @@ export default class UserState {
                     hashChainStarter.push(currentHashChain)
                     blindedUserState.push(
                         hash5([
-                            this.id.getNullifier(),
+                            this.id.identityNullifier,
                             fromEpochUserStateTree.getRootHash(),
                             BigInt(fromEpoch),
                             BigInt(nonce),
@@ -783,7 +783,7 @@ export default class UserState {
             finalHashChain.push(currentHashChain)
             blindedUserState.push(
                 hash5([
-                    this.id.getNullifier(),
+                    this.id.identityNullifier,
                     fromEpochUserStateTree.getRootHash(),
                     BigInt(fromEpoch),
                     BigInt(nonce),
@@ -791,7 +791,7 @@ export default class UserState {
             )
             blindedHashChain.push(
                 hash5([
-                    this.id.getNullifier(),
+                    this.id.identityNullifier,
                     currentHashChain,
                     BigInt(fromEpoch),
                     BigInt(nonce),
@@ -809,7 +809,7 @@ export default class UserState {
                     epoch: fromEpoch,
                     from_nonce: fromNonces[i],
                     to_nonce: toNonces[i],
-                    identity_nullifier: this.id.getNullifier(),
+                    identity_nullifier: this.id.identityNullifier,
                     intermediate_user_state_tree_roots:
                         intermediateUserStateTreeRoots.slice(
                             startIdx,
@@ -845,7 +845,7 @@ export default class UserState {
         finalUserState.push(fromEpochUserStateTree.getRootHash())
         finalBlindedUserState.push(
             hash5([
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 finalUserState[0],
                 BigInt(fromEpoch),
                 BigInt(startEpochKeyNonce),
@@ -853,7 +853,7 @@ export default class UserState {
         )
         finalBlindedUserState.push(
             hash5([
-                this.id.getNullifier(),
+                this.id.identityNullifier,
                 finalUserState[1],
                 BigInt(fromEpoch),
                 BigInt(endEpochKeyNonce),
@@ -865,7 +865,7 @@ export default class UserState {
             intermediate_user_state_tree_roots: finalUserState,
             start_epoch_key_nonce: startEpochKeyNonce,
             end_epoch_key_nonce: endEpochKeyNonce,
-            identity_nullifier: this.id.getNullifier(),
+            identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
             GST_path_elements: GSTreeProof.siblings,
             GST_path_index: GSTreeProof.pathIndices,
@@ -991,7 +991,7 @@ export default class UserState {
             `Length of nonce list should be ${this.unirepState.settings.maxReputationBudget}`
         )
         const epoch = this.latestTransitionedEpoch
-        const epochKey = genEpochKey(this.id.getNullifier(), epoch, epkNonce)
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epkNonce)
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
         const negRep = rep.negRep
@@ -1029,7 +1029,7 @@ export default class UserState {
             // find valid nonce starter
             for (let n = 0; n < Number(posRep) - Number(negRep); n++) {
                 const reputationNullifier = genReputationNullifier(
-                    this.id.getNullifier(),
+                    this.id.identityNullifier,
                     epoch,
                     n,
                     attesterId
@@ -1051,7 +1051,7 @@ export default class UserState {
             epoch: epoch,
             epoch_key_nonce: epkNonce,
             epoch_key: epochKey,
-            identity_nullifier: this.id.getNullifier(),
+            identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
             user_tree_root: userStateTree.getRootHash(),
             GST_path_index: GSTreeProof.pathIndices,
@@ -1104,7 +1104,7 @@ export default class UserState {
         this._checkAttesterId(attesterId)
         const epoch = this.latestTransitionedEpoch
         const nonce = 0 // fixed epk nonce
-        const epochKey = genEpochKey(this.id.getNullifier(), epoch, nonce)
+        const epochKey = genEpochKey(this.id.identityNullifier, epoch, nonce)
         const rep = this.getRepByAttester(attesterId)
         const posRep = rep.posRep
         const negRep = rep.negRep
@@ -1119,7 +1119,7 @@ export default class UserState {
         const circuitInputs = stringifyBigInts({
             epoch: epoch,
             epoch_key: epochKey,
-            identity_nullifier: this.id.getNullifier(),
+            identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
             user_tree_root: userStateTree.getRootHash(),
             GST_path_index: GSTreeProof.pathIndices,
