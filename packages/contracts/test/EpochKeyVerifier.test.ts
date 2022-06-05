@@ -17,8 +17,6 @@ import config, { artifactsPath } from './testConfig'
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
 
-    let ZERO_VALUE = 0
-
     const maxEPK = BigInt(2 ** config.epochTreeDepth)
 
     let unirepContract: Unirep
@@ -39,8 +37,6 @@ describe('Verify Epoch Key verifier', function () {
         )
         tree = new IncrementalMerkleTree(
             config.globalStateTreeDepth,
-            ZERO_VALUE,
-            2
         )
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()

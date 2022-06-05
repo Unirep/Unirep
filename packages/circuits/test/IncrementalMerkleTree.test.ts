@@ -10,7 +10,6 @@ import {
 import UnirepCircuit from '../src'
 
 const LEVELS = 4
-const ZERO_VALUE = 0
 const LeafExistsCircuitPath = path.join(
     __dirname,
     '../circuits/test/merkleTreeLeafExists_test.circom'
@@ -32,7 +31,7 @@ describe('Merkle Tree circuits', function () {
         })
 
         it('Valid LeafExists inputs should work', async () => {
-            const tree = new IncrementalMerkleTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalMerkleTree(LEVELS)
             const leaves: SnarkBigInt[] = []
 
             for (let i = 0; i < 2 ** LEVELS; i++) {
@@ -65,7 +64,7 @@ describe('Merkle Tree circuits', function () {
         })
 
         it('Invalid LeafExists inputs should not work', async () => {
-            const tree = new IncrementalMerkleTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalMerkleTree(LEVELS)
             const leaves: SnarkBigInt[] = []
 
             for (let i = 0; i < 2 ** LEVELS; i++) {
@@ -104,7 +103,7 @@ describe('Merkle Tree circuits', function () {
         })
 
         it('Valid update proofs should work', async () => {
-            const tree = new IncrementalMerkleTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalMerkleTree(LEVELS)
 
             // Populate the tree
             for (let i = 0; i < 2 ** LEVELS; i++) {
@@ -143,7 +142,7 @@ describe('Merkle Tree circuits', function () {
         })
 
         it('Invalid update proofs should not work', async () => {
-            const tree = new IncrementalMerkleTree(LEVELS, ZERO_VALUE, 2)
+            const tree = new IncrementalMerkleTree(LEVELS)
 
             // Populate the tree
             for (let i = 0; i < 2 ** LEVELS; i++) {

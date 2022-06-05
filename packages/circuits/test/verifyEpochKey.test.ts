@@ -20,7 +20,6 @@ describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
 
     let circuit
-    let ZERO_VALUE = 0
 
     const maxEPK = BigInt(2 ** config.epochTreeDepth)
 
@@ -39,8 +38,6 @@ describe('Verify Epoch Key circuits', function () {
 
         tree = new IncrementalMerkleTree(
             config.globalStateTreeDepth,
-            ZERO_VALUE,
-            2
         )
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()

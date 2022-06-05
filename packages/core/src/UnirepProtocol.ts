@@ -140,7 +140,6 @@ export class UnirepProtocol {
         const t = new IncrementalMerkleTree(
             this.config.userStateTreeDepth,
             UnirepProtocol.DEFAULT_USER_LEAF,
-            2
         )
         return t.root
     }
@@ -182,7 +181,6 @@ export class UnirepProtocol {
         const GST = new IncrementalMerkleTree(
             this.config.globalStateTreeDepth,
             defaultGSTLeaf,
-            2
         )
         return GST
     }

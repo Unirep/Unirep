@@ -14,7 +14,6 @@ import {
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
-    GSTZERO_VALUE,
     genReputationCircuitInput,
     bootstrapRandomUSTree,
     genProveSignUpCircuitInput,
@@ -83,8 +82,6 @@ describe('EventFilters', () => {
 
         tree = new IncrementalMerkleTree(
             config.globalStateTreeDepth,
-            GSTZERO_VALUE,
-            2
         )
         stateRoot = genRandomSalt()
         hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)

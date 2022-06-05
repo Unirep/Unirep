@@ -16,7 +16,6 @@ import {
     genInputForContract,
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
-    GSTZERO_VALUE,
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
@@ -25,8 +24,6 @@ import contract, { Unirep, UserTransitionProof } from '../src'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
-
-    let ZERO_VALUE = 0
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
@@ -63,8 +60,6 @@ describe('Epoch Transition', function () {
         userCommitment = userId.genIdentityCommitment()
         const tree = new IncrementalMerkleTree(
             contractConfig.globalStateTreeDepth,
-            ZERO_VALUE,
-            2
         )
         const stateRoot = genRandomSalt()
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
@@ -183,8 +178,6 @@ describe('Epoch Transition', function () {
         // Global state tree
         GSTree = new IncrementalMerkleTree(
             contractConfig.globalStateTreeDepth,
-            GSTZERO_VALUE,
-            2
         )
         const commitment = userId.genIdentityCommitment()
         const hashedLeaf = hashLeftRight(

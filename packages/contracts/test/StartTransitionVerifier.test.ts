@@ -28,8 +28,7 @@ describe('User State Transition circuits', function () {
         let unirepContract: Unirep
         const epoch = 1
 
-        let GSTZERO_VALUE = 0,
-            GSTree: IncrementalMerkleTree
+        let GSTree: IncrementalMerkleTree
         let userStateTree: SparseMerkleTree
 
         let hashedLeaf
@@ -52,8 +51,6 @@ describe('User State Transition circuits', function () {
             // Global state tree
             GSTree = new IncrementalMerkleTree(
                 config.globalStateTreeDepth,
-                GSTZERO_VALUE,
-                2
             )
             const commitment = user.genIdentityCommitment()
             hashedLeaf = hashLeftRight(commitment, userStateTree.getRootHash())

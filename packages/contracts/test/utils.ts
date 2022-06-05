@@ -18,7 +18,6 @@ import config, { zkFilesPath } from './testConfig'
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
-const GSTZERO_VALUE = 0
 
 export type Field = BigNumberish
 
@@ -122,7 +121,6 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
     const t = new crypto.IncrementalMerkleTree(
         treeDepth,
         defaultUserStateLeaf,
-        2
     )
     return t.root
 }
@@ -456,8 +454,6 @@ const genUserStateTransitionCircuitInput = async (
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
         config.globalStateTreeDepth,
-        GSTZERO_VALUE,
-        2
     )
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(
@@ -586,8 +582,6 @@ const genReputationCircuitInput = async (
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
         config.globalStateTreeDepth,
-        GSTZERO_VALUE,
-        2
     )
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
@@ -664,8 +658,6 @@ const genProveSignUpCircuitInput = async (
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
         config.globalStateTreeDepth,
-        GSTZERO_VALUE,
-        2
     )
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
@@ -774,7 +766,6 @@ export {
     Reputation,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
-    GSTZERO_VALUE,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     defaultGSTLeaf,
