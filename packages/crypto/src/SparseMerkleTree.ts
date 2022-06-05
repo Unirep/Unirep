@@ -22,29 +22,23 @@ const newWrappedPoseidonT3Hash = (
 }
 
 export class SparseMerkleTree {
-    protected _root?: BigInt
+    protected _root: BigInt
     private zeroHashes!: BigInt[]
 
     public readonly numLeaves: BigInt
 
-    public static async create(
-        db,
-        _height: number,
-        zeroHash: BigInt
-    ): Promise<SparseMerkleTree> {
-        const tree = new SparseMerkleTree(db, _height)
-        await tree.init(zeroHash)
-        return tree
-    }
-
-    constructor(protected db, private _height: number) {
+    constructor(protected db, private _height: number, zeroHash: BigInt) {
         assert(_height > 0, 'SMT height needs to be > 0')
+        // prevent get method returns undefined
+        this._root = BigInt(0)
+        this._height = _height
+        this.init(zeroHash)
 
         this.numLeaves = BigInt(2 ** _height)
     }
 
-    private async init(zeroHash: BigInt): Promise<void> {
-        await this.populateZeroHashesAndRoot(zeroHash)
+    private init(zeroHash: BigInt): void {
+        this.populateZeroHashesAndRoot(zeroHash)
     }
 
     get height() {
@@ -161,7 +155,7 @@ export class SparseMerkleTree {
         else return false
     }
 
-    private async populateZeroHashesAndRoot(zeroHash: BigInt): Promise<void> {
+    private populateZeroHashesAndRoot(zeroHash: BigInt): void {
         const hashes: BigInt[] = [zeroHash]
 
         for (let i = 1; i < this.height; i++) {
