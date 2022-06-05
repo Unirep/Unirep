@@ -1,4 +1,4 @@
-import { expect } from "chai"
+import { expect } from 'chai'
 import {
     genRandomSalt,
     hash5,
@@ -6,11 +6,9 @@ import {
     hashLeftRight,
     stringifyBigInts,
     unstringifyBigInts,
-} from "../src"
-
+} from '../src'
 
 describe('maci-crypto', function () {
-
     it('genRandomSalt', async () => {
         const salt = genRandomSalt()
         expect(typeof salt).equal('bigint')
@@ -22,7 +20,7 @@ describe('maci-crypto', function () {
             genRandomSalt(),
             genRandomSalt(),
             genRandomSalt(),
-            genRandomSalt()
+            genRandomSalt(),
         ]
         const hash = hash5(values)
         expect(typeof hash).equal('bigint')
@@ -48,9 +46,7 @@ describe('maci-crypto', function () {
             input3: genRandomSalt(),
         }
         // BigInt in JSON object cannot be stringify by JSON.stringify function
-        expect(
-            () => JSON.stringify(values)
-        ).to.throw(TypeError)
+        expect(() => JSON.stringify(values)).to.throw(TypeError)
 
         // stringify BigInt elements with stringifyBigInts function
         const stringifiedValues = stringifyBigInts(values)
@@ -58,5 +54,4 @@ describe('maci-crypto', function () {
         const unstringifiedValues = unstringifyBigInts(stringifiedValues)
         expect(unstringifiedValues).deep.equal(values)
     })
-
 })

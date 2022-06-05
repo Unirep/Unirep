@@ -35,9 +35,7 @@ describe('Verify Epoch Key verifier', function () {
             accounts[0],
             config
         )
-        tree = new IncrementalMerkleTree(
-            config.globalStateTreeDepth,
-        )
+        tree = new IncrementalMerkleTree(config.globalStateTreeDepth)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()

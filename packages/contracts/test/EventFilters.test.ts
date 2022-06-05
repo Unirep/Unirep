@@ -80,9 +80,7 @@ describe('EventFilters', () => {
         expect(receipt.status).equal(1)
         attesterId = await unirepContract.attesters(attesterAddress)
 
-        tree = new IncrementalMerkleTree(
-            config.globalStateTreeDepth,
-        )
+        tree = new IncrementalMerkleTree(config.globalStateTreeDepth)
         stateRoot = genRandomSalt()
         hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))

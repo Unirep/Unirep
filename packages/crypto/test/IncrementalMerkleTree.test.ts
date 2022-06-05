@@ -1,9 +1,7 @@
-import { expect } from "chai"
-import { genRandomSalt, IncrementalMerkleTree } from "../src"
-
+import { expect } from 'chai'
+import { genRandomSalt, IncrementalMerkleTree } from '../src'
 
 describe('IncrementalMerkleTree', function () {
-
     let tree: IncrementalMerkleTree
     const depth = 4
 
@@ -37,5 +35,4 @@ describe('IncrementalMerkleTree', function () {
         const isValid = tree.verifyProof(proof)
         expect(isValid).to.be.true
     })
-
 })

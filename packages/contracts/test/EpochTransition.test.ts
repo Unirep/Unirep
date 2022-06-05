@@ -59,7 +59,7 @@ describe('Epoch Transition', function () {
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
         const tree = new IncrementalMerkleTree(
-            contractConfig.globalStateTreeDepth,
+            contractConfig.globalStateTreeDepth
         )
         const stateRoot = genRandomSalt()
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
@@ -176,14 +176,9 @@ describe('Epoch Transition', function () {
         userStateTree = results.userStateTree
 
         // Global state tree
-        GSTree = new IncrementalMerkleTree(
-            contractConfig.globalStateTreeDepth,
-        )
+        GSTree = new IncrementalMerkleTree(contractConfig.globalStateTreeDepth)
         const commitment = userId.genIdentityCommitment()
-        const hashedLeaf = hashLeftRight(
-            commitment,
-            userStateTree.root
-        )
+        const hashedLeaf = hashLeftRight(commitment, userStateTree.root)
         GSTree.insert(hashedLeaf)
         leafIndex = 0
     })

@@ -732,9 +732,7 @@ describe('User State', async function () {
             expect(epochTreeExist).to.be.true
 
             const unirepEpochTree = await userState.genEpochTree(fromEpoch)
-            expect(unirepEpochTree.root.toString()).equal(
-                fromEpochTree
-            )
+            expect(unirepEpochTree.root.toString()).equal(fromEpochTree)
 
             // epoch key nullifiers
             const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)

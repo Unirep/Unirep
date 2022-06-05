@@ -36,9 +36,7 @@ describe('Verify Epoch Key circuits', function () {
             `Compile time: ${endCompileTime - startCompileTime} seconds`
         )
 
-        tree = new IncrementalMerkleTree(
-            config.globalStateTreeDepth,
-        )
+        tree = new IncrementalMerkleTree(config.globalStateTreeDepth)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()

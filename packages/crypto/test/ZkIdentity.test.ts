@@ -1,9 +1,7 @@
-import { expect } from "chai"
-import { Strategy, ZkIdentity } from "../src"
-
+import { expect } from 'chai'
+import { Strategy, ZkIdentity } from '../src'
 
 describe('ZkIdentity', function () {
-
     let identity: ZkIdentity
 
     it('constructor', async () => {
@@ -36,5 +34,4 @@ describe('ZkIdentity', function () {
         )
         expect(unserializedIdentity).deep.equal(identity)
     })
-
 })

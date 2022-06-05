@@ -139,7 +139,7 @@ export class UnirepProtocol {
         // the same as computed by IncrementalMerkleTree if all leaves are the same
         const t = new IncrementalMerkleTree(
             this.config.userStateTreeDepth,
-            UnirepProtocol.DEFAULT_USER_LEAF,
+            UnirepProtocol.DEFAULT_USER_LEAF
         )
         return t.root
     }
@@ -180,7 +180,7 @@ export class UnirepProtocol {
         const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
         const GST = new IncrementalMerkleTree(
             this.config.globalStateTreeDepth,
-            defaultGSTLeaf,
+            defaultGSTLeaf
         )
         return GST
     }

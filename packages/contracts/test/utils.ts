@@ -95,11 +95,7 @@ const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: BigInt
 ): crypto.SparseMerkleTree => {
-    return new crypto.SparseMerkleTree(
-        new Keyv(),
-        treeDepth,
-        defaultLeafHash
-    )
+    return new crypto.SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }
 
 const genNewEpochTree = (
@@ -118,10 +114,7 @@ const defaultUserStateLeaf = crypto.hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new crypto.IncrementalMerkleTree(
-        treeDepth,
-        defaultUserStateLeaf,
-    )
+    const t = new crypto.IncrementalMerkleTree(treeDepth, defaultUserStateLeaf)
     return t.root
 }
 
@@ -452,14 +445,9 @@ const genUserStateTransitionCircuitInput = async (
     )
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        config.globalStateTreeDepth,
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(config.globalStateTreeDepth)
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = crypto.hashLeftRight(
-        commitment,
-        userStateTree.root
-    )
+    const hashedLeaf = crypto.hashLeftRight(commitment, userStateTree.root)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0)
     const GSTreeRoot = GSTree.root
@@ -575,14 +563,10 @@ const genReputationCircuitInput = async (
         )
     }
     const userStateRoot = userStateTree.root
-    const USTPathElements = await userStateTree.createProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        config.globalStateTreeDepth,
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(config.globalStateTreeDepth)
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
@@ -651,14 +635,10 @@ const genProveSignUpCircuitInput = async (
         )
     }
     const userStateRoot = userStateTree.root
-    const USTPathElements = await userStateTree.createProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        config.globalStateTreeDepth,
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(config.globalStateTreeDepth)
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)

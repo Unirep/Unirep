@@ -192,9 +192,7 @@ const genReputationCircuitInput = async (
         )
     }
     const userStateRoot = userStateTree.root
-    const USTPathElements = await userStateTree.createProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
@@ -268,9 +266,7 @@ const genProveSignUpCircuitInput = async (
         )
     }
     const userStateRoot = userStateTree.root
-    const USTPathElements = await userStateTree.createProof(
-        BigInt(attesterId)
-    )
+    const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0

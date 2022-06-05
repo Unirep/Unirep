@@ -534,10 +534,7 @@ export default class UserState extends UnirepState {
         )
 
         // Gen new GST leaf
-        const newGSTLeaf = hashLeftRight(
-            this.commitment,
-            newUserStateTree.root
-        )
+        const newGSTLeaf = hashLeftRight(this.commitment, newUserStateTree.root)
         return {
             newGSTLeaf: newGSTLeaf,
             newUSTLeaves: stateLeaves,
@@ -718,9 +715,7 @@ export default class UserState extends UnirepState {
                     reputationRecords[attesterId.toString()].hash()
                 )
                 // Add new UST root to intermediate UST roots
-                intermediateUserStateTreeRoots.push(
-                    fromEpochUserStateTree.root
-                )
+                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
 
                 selectors.push(1)
                 attesterIds.push(attesterId)
@@ -758,9 +753,7 @@ export default class UserState extends UnirepState {
                 const USTLeafZeroPathElements =
                     await fromEpochUserStateTree.createProof(BigInt(0))
                 userStateLeafPathElements.push(USTLeafZeroPathElements)
-                intermediateUserStateTreeRoots.push(
-                    fromEpochUserStateTree.root
-                )
+                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
 
                 selectors.push(0)
                 attesterIds.push(BigInt(0))
@@ -770,9 +763,7 @@ export default class UserState extends UnirepState {
                 overwriteGraffities.push(BigInt(0))
                 signUps.push(BigInt(0))
             }
-            epochKeyPathElements.push(
-                await fromEpochTree.createProof(epochKey)
-            )
+            epochKeyPathElements.push(await fromEpochTree.createProof(epochKey))
             // finalUserState.push(fromEpochUserStateTree.root)
             finalHashChain.push(currentHashChain)
             blindedUserState.push(

@@ -1,29 +1,21 @@
-import { expect } from "chai"
-import Keyv from "keyv"
-import { SparseMerkleTree } from "../src"
+import { expect } from 'chai'
+import Keyv from 'keyv'
+import { SparseMerkleTree } from '../src'
 
 describe('SparseMerkleTree', function () {
-
     let tree: SparseMerkleTree
     const depth = 4
     const zeroHash = BigInt(0)
 
     it('constructor', async () => {
-        tree = new SparseMerkleTree(
-            new Keyv(),
-            depth,
-            zeroHash
-        )
+        tree = new SparseMerkleTree(new Keyv(), depth, zeroHash)
     })
 
     it('insertion', async () => {
         const rootBeforeInsert = tree.root
         const leafKey = BigInt(2)
         const leafValue = BigInt(3)
-        await tree.update(
-            leafKey,
-            leafValue
-        )
+        await tree.update(leafKey, leafValue)
         expect(tree.root).not.equal(rootBeforeInsert)
     })
 
@@ -35,5 +27,4 @@ describe('SparseMerkleTree', function () {
             expect(isValid).to.be.true
         }
     })
-
 })

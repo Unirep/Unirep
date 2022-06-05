@@ -1,4 +1,7 @@
-import { IncrementalMerkleTree as zkIncrementalMerkleTree, Node } from '@zk-kit/incremental-merkle-tree'
+import {
+    IncrementalMerkleTree as zkIncrementalMerkleTree,
+    Node,
+} from '@zk-kit/incremental-merkle-tree'
 import { poseidon } from 'circomlibjs'
 
 /**
@@ -13,11 +16,7 @@ export class IncrementalMerkleTree extends zkIncrementalMerkleTree {
      * @param zeroValue Zero values for zeroes.
      * @param arity The number of children for each node.
      */
-    constructor(
-        depth: number, 
-        zeroValue: Node = 0, 
-        arity = 2
-    ) {
+    constructor(depth: number, zeroValue: Node = 0, arity = 2) {
         super(poseidon, depth, zeroValue, arity)
     }
 }
