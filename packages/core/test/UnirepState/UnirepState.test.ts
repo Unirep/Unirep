@@ -379,7 +379,7 @@ describe('Unirep State', function () {
         it('generate epoch tree should succeed', async () => {
             const prevEpoch = 1
             const epochTree = await unirepState.genEpochTree(prevEpoch)
-            const root = epochTree.getRootHash()
+            const root = epochTree.root
 
             const exist = await unirepState.epochTreeRootExists(root, prevEpoch)
             expect(exist).to.be.true
@@ -543,7 +543,7 @@ describe('Unirep State', function () {
         it('generate epoch tree should succeed', async () => {
             const prevEpoch = 1
             const epochTree = await unirepState.genEpochTree(prevEpoch)
-            const root = epochTree.getRootHash()
+            const root = epochTree.root
 
             const exist = await unirepState.epochTreeRootExists(root, prevEpoch)
             expect(exist).to.be.true

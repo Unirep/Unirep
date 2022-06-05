@@ -9,7 +9,7 @@ describe('SparseMerkleTree', function () {
     const zeroHash = BigInt(0)
 
     it('constructor', async () => {
-        tree = await SparseMerkleTree.create(
+        tree = new SparseMerkleTree(
             new Keyv(),
             depth,
             zeroHash

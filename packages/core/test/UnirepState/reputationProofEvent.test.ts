@@ -661,7 +661,7 @@ describe('Reputation proof events in Unirep State', function () {
             const GSTree = protocol.genNewGST()
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const stateRoot = userStateTree.getRootHash()
+            const stateRoot = userStateTree.root
             const leafIndex = 0
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
             GSTree.insert(BigInt(hashedStateLeaf.toString()))

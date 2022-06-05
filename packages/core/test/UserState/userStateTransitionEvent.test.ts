@@ -420,8 +420,8 @@ describe('User state transition events in Unirep User State', async function () 
                     unirepState.genGSTree(i).root
                 )
             }
-            expect((await userState.genEpochTree(1)).getRootHash()).equal(
-                (await unirepState.genEpochTree(1)).getRootHash()
+            expect((await userState.genEpochTree(1)).root).equal(
+                (await unirepState.genEpochTree(1)).root
             )
 
             storedUserState = userState.toJSON()
@@ -1098,8 +1098,8 @@ describe('User state transition events in Unirep User State', async function () 
                     unirepState.genGSTree(i).root
                 )
             }
-            expect((await userState.genEpochTree(2)).getRootHash()).equal(
-                (await unirepState.genEpochTree(2)).getRootHash()
+            expect((await userState.genEpochTree(2)).root).equal(
+                (await unirepState.genEpochTree(2)).root
             )
         })
     })

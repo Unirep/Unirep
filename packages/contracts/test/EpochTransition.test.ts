@@ -182,7 +182,7 @@ describe('Epoch Transition', function () {
         const commitment = userId.genIdentityCommitment()
         const hashedLeaf = hashLeftRight(
             commitment,
-            userStateTree.getRootHash()
+            userStateTree.root
         )
         GSTree.insert(hashedLeaf)
         leafIndex = 0
@@ -195,7 +195,7 @@ describe('Epoch Transition', function () {
             userId,
             GSTree,
             leafIndex,
-            userStateTree.getRootHash(),
+            userStateTree.root,
             fromEpoch,
             nonce
         )

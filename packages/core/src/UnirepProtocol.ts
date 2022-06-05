@@ -110,8 +110,8 @@ export class UnirepProtocol {
      * User state tree is used to store how much reputation the user has
      * @returns Empty user state tree
      */
-    public async genNewUST(): Promise<SparseMerkleTree> {
-        return SparseMerkleTree.create(
+    public genNewUST(): SparseMerkleTree {
+        return new SparseMerkleTree(
             new Keyv(),
             this.config.userStateTreeDepth,
             UnirepProtocol.DEFAULT_USER_LEAF
@@ -123,8 +123,8 @@ export class UnirepProtocol {
      * Epoch tree is used to record the epoch key and corresponding attestations in a given epoch
      * @returns Empty epoch tree
      */
-    public async genNewEpochTree(): Promise<SparseMerkleTree> {
-        return SparseMerkleTree.create(
+    public genNewEpochTree(): SparseMerkleTree {
+        return new SparseMerkleTree(
             new Keyv(),
             this.config.epochTreeDepth,
             UnirepProtocol.SMT_ONE_LEAF
@@ -166,7 +166,7 @@ export class UnirepProtocol {
             const leafValue = airdropReputation.hash()
             await t.update(BigInt(leafIdx), leafValue)
         }
-        return t.getRootHash()
+        return t.root
     }
 
     /**

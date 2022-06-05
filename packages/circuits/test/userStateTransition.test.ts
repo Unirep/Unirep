@@ -59,14 +59,14 @@ describe('User State Transition circuits', function () {
             )
 
             // Epoch tree
-            epochTree = await genNewEpochTree(testConfig.epochTreeDepth)
+            epochTree = genNewEpochTree(testConfig.epochTreeDepth)
 
             hashChainResult = genRandomSalt()
 
             await epochTree.update(epochKey, hashChainResult)
 
-            epochTreePathElements = await epochTree.getMerkleProof(epochKey)
-            epochTreeRoot = epochTree.getRootHash()
+            epochTreePathElements = await epochTree.createProof(epochKey)
+            epochTreeRoot = epochTree.root
         })
 
         it('Existed epoch key should pass check', async () => {

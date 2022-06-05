@@ -414,7 +414,7 @@ export default class UserState extends UnirepState {
             GST_root: GSTree.root,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.root,
             nonce: epochKeyNonce,
             epoch: epoch,
             epoch_key: epochKey,
@@ -536,7 +536,7 @@ export default class UserState extends UnirepState {
         // Gen new GST leaf
         const newGSTLeaf = hashLeftRight(
             this.commitment,
-            newUserStateTree.getRootHash()
+            newUserStateTree.root
         )
         return {
             newGSTLeaf: newGSTLeaf,
@@ -595,7 +595,7 @@ export default class UserState extends UnirepState {
         const fromEpochUserStateTree: SparseMerkleTree =
             await this.genUserStateTree()
         const intermediateUserStateTreeRoots: BigInt[] = [
-            fromEpochUserStateTree.getRootHash(),
+            fromEpochUserStateTree.root,
         ]
         const userStateLeafPathElements: any[] = []
         // GSTree
@@ -604,7 +604,7 @@ export default class UserState extends UnirepState {
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
         const fromEpochTree = await this.genEpochTree(fromEpoch)
-        const epochTreeRoot = fromEpochTree.getRootHash()
+        const epochTreeRoot = fromEpochTree.root
         const epochKeyPathElements: any[] = []
 
         // start transition proof
@@ -672,7 +672,7 @@ export default class UserState extends UnirepState {
                     blindedUserState.push(
                         hash5([
                             this.id.identityNullifier,
-                            fromEpochUserStateTree.getRootHash(),
+                            fromEpochUserStateTree.root,
                             BigInt(fromEpoch),
                             BigInt(nonce),
                         ])
@@ -701,7 +701,7 @@ export default class UserState extends UnirepState {
 
                 // Add UST merkle proof to the list
                 const USTLeafPathElements =
-                    await fromEpochUserStateTree.getMerkleProof(attesterId)
+                    await fromEpochUserStateTree.createProof(attesterId)
                 userStateLeafPathElements.push(USTLeafPathElements)
 
                 // Update attestation record
@@ -719,7 +719,7 @@ export default class UserState extends UnirepState {
                 )
                 // Add new UST root to intermediate UST roots
                 intermediateUserStateTreeRoots.push(
-                    fromEpochUserStateTree.getRootHash()
+                    fromEpochUserStateTree.root
                 )
 
                 selectors.push(1)
@@ -756,10 +756,10 @@ export default class UserState extends UnirepState {
                 oldSignUps.push(BigInt(0))
 
                 const USTLeafZeroPathElements =
-                    await fromEpochUserStateTree.getMerkleProof(BigInt(0))
+                    await fromEpochUserStateTree.createProof(BigInt(0))
                 userStateLeafPathElements.push(USTLeafZeroPathElements)
                 intermediateUserStateTreeRoots.push(
-                    fromEpochUserStateTree.getRootHash()
+                    fromEpochUserStateTree.root
                 )
 
                 selectors.push(0)
@@ -771,14 +771,14 @@ export default class UserState extends UnirepState {
                 signUps.push(BigInt(0))
             }
             epochKeyPathElements.push(
-                await fromEpochTree.getMerkleProof(epochKey)
+                await fromEpochTree.createProof(epochKey)
             )
-            // finalUserState.push(fromEpochUserStateTree.getRootHash())
+            // finalUserState.push(fromEpochUserStateTree.root)
             finalHashChain.push(currentHashChain)
             blindedUserState.push(
                 hash5([
                     this.id.identityNullifier,
-                    fromEpochUserStateTree.getRootHash(),
+                    fromEpochUserStateTree.root,
                     BigInt(fromEpoch),
                     BigInt(nonce),
                 ])
@@ -836,7 +836,7 @@ export default class UserState extends UnirepState {
         // final user state transition proof
         const startEpochKeyNonce = 0
         const endEpochKeyNonce = this.config.numEpochKeyNoncePerEpoch - 1
-        finalUserState.push(fromEpochUserStateTree.getRootHash())
+        finalUserState.push(fromEpochUserStateTree.root)
         finalBlindedUserState.push(
             hash5([
                 this.id.identityNullifier,
@@ -998,7 +998,7 @@ export default class UserState extends UnirepState {
         const GSTree = this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
-        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
+        const USTPathElements = await userStateTree.createProof(attesterId)
         const selectors: BigInt[] = []
         const nonceExist = {}
         let repNullifiersAmount = 0
@@ -1047,7 +1047,7 @@ export default class UserState extends UnirepState {
             epoch_key: epochKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.root,
             GST_path_index: GSTreeProof.pathIndices,
             GST_path_elements: GSTreeProof.siblings,
             GST_root: GSTreeRoot,
@@ -1116,14 +1116,14 @@ export default class UserState extends UnirepState {
         const GSTree = this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
-        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
+        const USTPathElements = await userStateTree.createProof(attesterId)
 
         const circuitInputs = stringifyBigInts({
             epoch: epoch,
             epoch_key: epochKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.root,
             GST_path_index: GSTreeProof.pathIndices,
             GST_path_elements: GSTreeProof.siblings,
             GST_root: GSTreeRoot,

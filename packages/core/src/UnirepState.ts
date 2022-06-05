@@ -365,7 +365,7 @@ export default class UnirepState extends UnirepProtocol {
         this._checkValidEpoch(epoch)
         if (this.epochTreeRoot[epoch] == undefined) {
             const epochTree = await this.genEpochTree(epoch)
-            this.epochTreeRoot[epoch] = epochTree.getRootHash()
+            this.epochTreeRoot[epoch] = epochTree.root
         }
         return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString()
     }
@@ -427,7 +427,7 @@ export default class UnirepState extends UnirepProtocol {
         this._checkCurrentEpoch(epoch)
         this._checkBlockNumber(blockNumber)
 
-        this.epochTree[epoch] = await this.genNewEpochTree()
+        this.epochTree[epoch] = this.genNewEpochTree()
         const epochTreeLeaves: IEpochTreeLeaf[] = []
 
         // seal all epoch keys in current epoch
@@ -465,7 +465,7 @@ export default class UnirepState extends UnirepProtocol {
             )
         }
         this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
-        this.epochTreeRoot[epoch] = this.epochTree[epoch].getRootHash()
+        this.epochTreeRoot[epoch] = this.epochTree[epoch].root
         this.currentEpoch++
         this.GSTLeaves[this.currentEpoch] = []
         this.epochKeyInEpoch[this.currentEpoch] = new Map()

@@ -191,8 +191,8 @@ const genReputationCircuitInput = async (
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(
         BigInt(attesterId)
     )
 
@@ -267,8 +267,8 @@ const genProveSignUpCircuitInput = async (
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(
         BigInt(attesterId)
     )
 
@@ -371,8 +371,8 @@ const compareEpochTrees = async (
     const usFromJSON = UserState.fromJSONAndID(userId, usWithStorage.toJSON())
     const epochTree3 = await usFromJSON.genEpochTree(epoch)
 
-    expect(epochTree1.getRootHash()).to.equal(epochTree2.getRootHash())
-    expect(epochTree1.getRootHash()).to.equal(epochTree3.getRootHash())
+    expect(epochTree1.root).to.equal(epochTree2.root)
+    expect(epochTree1.root).to.equal(epochTree3.root)
 
     return usWithNoStorage.toJSON()
 }

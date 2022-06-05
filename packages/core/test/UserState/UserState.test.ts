@@ -625,7 +625,7 @@ describe('User State', async function () {
         it('generate epoch tree should succeed', async () => {
             const prevEpoch = 1
             const epochTree = await userState.genEpochTree(prevEpoch)
-            const root = epochTree.getRootHash()
+            const root = epochTree.root
 
             const exist = await userState.epochTreeRootExists(root, prevEpoch)
             expect(exist).to.be.true
@@ -732,7 +732,7 @@ describe('User State', async function () {
             expect(epochTreeExist).to.be.true
 
             const unirepEpochTree = await userState.genEpochTree(fromEpoch)
-            expect(unirepEpochTree.getRootHash().toString()).equal(
+            expect(unirepEpochTree.root.toString()).equal(
                 fromEpochTree
             )
 
@@ -762,7 +762,7 @@ describe('User State', async function () {
             const USTree_ = await userState.genUserStateTree()
             const GSTLeaf_ = hashLeftRight(
                 user.genIdentityCommitment(),
-                USTree_.getRootHash()
+                USTree_.root
             )
             expect(GSTLeaf_.toString()).equal(
                 finalTransitionProof.newGlobalStateTreeLeaf

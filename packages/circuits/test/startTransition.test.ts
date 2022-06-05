@@ -55,7 +55,7 @@ describe('User State Transition circuits', function () {
                 config.globalStateTreeDepth
             )
             const commitment = user.genIdentityCommitment()
-            hashedLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
+            hashedLeaf = hashLeftRight(commitment, userStateTree.root)
             GSTree.insert(hashedLeaf)
         })
 
@@ -65,7 +65,7 @@ describe('User State Transition circuits', function () {
                     user,
                     GSTree,
                     leafIndex,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     epoch,
                     nonce
                 )
@@ -81,7 +81,7 @@ describe('User State Transition circuits', function () {
                 )
                 const expectedUserState = hash5([
                     user.identityNullifier,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     BigInt(epoch),
                     BigInt(nonce),
                 ])
@@ -113,7 +113,7 @@ describe('User State Transition circuits', function () {
                     user,
                     GSTree,
                     leafIndex,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     epoch,
                     newNonce
                 )
@@ -129,7 +129,7 @@ describe('User State Transition circuits', function () {
                 )
                 const expectedUserState = hash5([
                     user.identityNullifier,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     BigInt(epoch),
                     BigInt(newNonce),
                 ])

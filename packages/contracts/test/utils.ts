@@ -91,20 +91,20 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const genNewSMT = async (
+const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: BigInt
-): Promise<crypto.SparseMerkleTree> => {
-    return crypto.SparseMerkleTree.create(
+): crypto.SparseMerkleTree => {
+    return new crypto.SparseMerkleTree(
         new Keyv(),
         treeDepth,
         defaultLeafHash
     )
 }
 
-const genNewEpochTree = async (
+const genNewEpochTree = (
     epochTreeDepth: number = config.epochTreeDepth
-): Promise<crypto.SparseMerkleTree> => {
+): crypto.SparseMerkleTree => {
     const defaultOTSMTHash = SMT_ONE_LEAF
     return genNewSMT(epochTreeDepth, defaultOTSMTHash)
 }
@@ -295,7 +295,7 @@ const genProcessAttestationsCircuitInput = async (
             reputationRecords[attesterId.toString()].hash()
         )
     }
-    intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+    intermediateUserStateTreeRoots.push(userStateTree.root)
 
     // Ensure as least one of the selectors is true
     const selTrue = Math.floor(Math.random() * config.numAttestationsPerProof)
@@ -348,7 +348,7 @@ const genProcessAttestationsCircuitInput = async (
             oldSignUps.push(reputationRecords[attesterId.toString()]['signUp'])
 
             // Get old reputation record proof
-            const oldReputationRecordProof = await userStateTree.getMerkleProof(
+            const oldReputationRecordProof = await userStateTree.createProof(
                 attesterId
             )
             userStateTreePathElements.push(oldReputationRecordProof)
@@ -377,13 +377,13 @@ const genProcessAttestationsCircuitInput = async (
             oldGraffities.push(BigInt(0))
             oldSignUps.push(BigInt(0))
 
-            const leafZeroPathElements = await userStateTree.getMerkleProof(
+            const leafZeroPathElements = await userStateTree.createProof(
                 BigInt(0)
             )
             userStateTreePathElements.push(leafZeroPathElements)
         }
 
-        intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+        intermediateUserStateTreeRoots.push(userStateTree.root)
     }
     const inputBlindedUserState = crypto.hash5([
         id.identityNullifier,
@@ -432,7 +432,7 @@ const genUserStateTransitionCircuitInput = async (
         config.numEpochKeyNoncePerEpoch
 
     // Epoch tree
-    const epochTree = await genNewEpochTree()
+    const epochTree = genNewEpochTree()
 
     // User state tree
     const { userStateTree } = await bootstrapRandomUSTree()
@@ -441,11 +441,11 @@ const genUserStateTransitionCircuitInput = async (
     const blindedHashChain: BigInt[] = []
     const epochTreePathElements: BigInt[][] = []
 
-    intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+    intermediateUserStateTreeRoots.push(userStateTree.root)
     blindedUserState.push(
         crypto.hash5([
             id.identityNullifier,
-            userStateTree.getRootHash(),
+            userStateTree.root,
             BigInt(epoch),
             BigInt(startEpochKeyNonce),
         ])
@@ -458,7 +458,7 @@ const genUserStateTransitionCircuitInput = async (
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(
         commitment,
-        userStateTree.getRootHash()
+        userStateTree.root
     )
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0)
@@ -517,9 +517,9 @@ const genUserStateTransitionCircuitInput = async (
             config.epochTreeDepth
         )
         // Get epoch tree root and merkle proof for this epoch key
-        epochTreePathElements.push(await epochTree.getMerkleProof(epochKey))
+        epochTreePathElements.push(await epochTree.createProof(epochKey))
     }
-    const epochTreeRoot = epochTree.getRootHash()
+    const epochTreeRoot = epochTree.root
 
     const circuitInputs = {
         epoch: epoch,
@@ -574,8 +574,8 @@ const genReputationCircuitInput = async (
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(
         BigInt(attesterId)
     )
 
@@ -650,8 +650,8 @@ const genProveSignUpCircuitInput = async (
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(
         BigInt(attesterId)
     )
 
