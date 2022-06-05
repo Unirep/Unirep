@@ -23,7 +23,6 @@ Client library for generating and verifying Unirep ZK proofs.
     </a>
 </p>
 
-
 <div align="center">
     <h4>
         <a href="https://discord.gg/uRPhQVB2">
@@ -51,9 +50,10 @@ yarn add @unirep/circuits
 ```
 
 ## 🔑 Get built circuits files
+
 ### Download from server
 
-*(TODO) Get circuits files from [PSE server](http://www.trusted-setup-pse.org/)*
+_(TODO) Get circuits files from [PSE server](http://www.trusted-setup-pse.org/)_
 
 ### Build circuits locally
 
@@ -105,6 +105,7 @@ const { proof, publicSignals } = await UnirepCircuit.genProof(
 ```
 
 ### Verify proof
+
 ```typescript
 const isValid = await UnirepCircuit.verifyProof(
     zkFilsPath,

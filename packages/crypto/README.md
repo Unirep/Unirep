@@ -23,7 +23,6 @@ Client library for cryptography related functions which are used in unirep proto
     </a>
 </p>
 
-
 <div align="center">
     <h4>
         <a href="https://discord.gg/uRPhQVB2">

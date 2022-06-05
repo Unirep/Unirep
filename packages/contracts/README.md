@@ -23,7 +23,6 @@ Client library for cryptography related functions which are used in unirep proto
     </a>
 </p>
 
-
 <div align="center">
     <h4>
         <a href="https://discord.gg/uRPhQVB2">
@@ -51,10 +50,12 @@ yarn add @unirep/contracts
 ```
 
 ## 👩🏻‍⚕️ Haven't deployed a contract yet?
+
 ### Get circuit keys from one of the following methods
+
 **🍀 Solution 1. Download circuit keys from server**
 
-*(TODO) Get circuits files from [PSE server](http://www.trusted-setup-pse.org/)*
+_(TODO) Get circuits files from [PSE server](http://www.trusted-setup-pse.org/)_
 
 **🍀 Solution 2. Build circuits locally**
 
@@ -68,9 +69,11 @@ yarn build
 By default, The `zksnarkBuild` directory will be found in `./packages/circuits`
 
 ### Compile contracts from the keys
+
 **Step 1. Set the `zksnarkBuild` path in [buildVerifier.ts](./scripts/buildVerifiers.ts)**
 
 **Step 2. Run compile command**
+
 ```bash
 yarn contracts compile
 ```
@@ -78,7 +81,8 @@ yarn contracts compile
 By default, The `artifacts` directory will be found in `./packages/contracts/build`
 
 ### Deploy contracts
-*(TODO) Add `yarn deploy` command*
+
+_(TODO) Add `yarn deploy` command_
 
 ## 🙆🏻‍♀️ Unirep contract has been compiled
 
@@ -121,22 +125,19 @@ import UnirepContract from '@unirep/contracts'
 
 const address = '0x....'
 const provider = 'YOUR/ETH/PROVIDER'
-const unirepContract = UnirepContract.get(
-    address,
-    provider
-)
+const unirepContract = UnirepContract.get(address, provider)
 ```
 
 ## 🙋🏻‍♂️ Call Unirep contract in DApps
 
-- 🚸 Please copy `verifiers/*.sol` files to `node_modules/@unirep/contracts/verifiers/` directories.
+-   🚸 Please copy `verifiers/*.sol` files to `node_modules/@unirep/contracts/verifiers/` directories.
     ```bash
     cp -rf ../Unirep/packages/contracts/contracts/verifiers/* ./node_modules/@unirep/contracts/verifiers
     ```
-    *(TODO) Find a better way to do this.*
+    _(TODO) Find a better way to do this._
 
 ```solidity
-import { Unirep } from "@unirep/contracts/Unirep.sol";
+import { Unirep } from '@unirep/contracts/Unirep.sol';
 
 contract YourContract {
     Unirep public unirep;
@@ -144,9 +145,7 @@ contract YourContract {
     uint256 internal _attesterId;
 
     // Initialize contract with a deployed
-    constructor(
-        Unirep _unirepContract
-    ) {
+    constructor(Unirep _unirepContract) {
         // Set the unirep contract address
         unirep = _unirepContract;
     }
@@ -164,10 +163,10 @@ contract YourContract {
 
     // Users submit their epoch key proof to Unirep contract
     // And get attestation from the contract
-    function submitEpochKeyProof(
-        Unirep.EpochKeyProof memory input
-    ) external payable {
-
+    function submitEpochKeyProof(Unirep.EpochKeyProof memory input)
+        external
+        payable
+    {
         // Step 1. submit epoch key proof
         unirep.submitEpochKeyProof(input);
 
@@ -182,7 +181,7 @@ contract YourContract {
         attestation.posRep = 5;
 
         // Step 4. send attestation
-        unirep.submitAttestation{value: unirep.attestingFee()}(
+        unirep.submitAttestation{ value: unirep.attestingFee() }(
             attestation,
             input.epochKey,
             proofIndex,
@@ -190,4 +189,5 @@ contract YourContract {
         );
     }
 }
+
 ```
