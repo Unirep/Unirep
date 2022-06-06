@@ -7,18 +7,19 @@ import {
     SparseMerkleTree,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-
-import UnirepCircuit, { CircuitName } from '../src'
 import {
+    UnirepCircuit,
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genProofAndVerify,
 } from './utils'
+import { CircuitName } from '../src'
+import { exportBuildPath } from './buildTestCircuits'
 
-import config from '../zksnarkBuild/config.json'
+const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
-    config.exportBuildPath,
-    `${CircuitName.startTransition}_main.circom`
+    exportBuildPath,
+    `${CircuitName.startTransition}_test.circom`
 )
 
 describe('User State Transition circuits', function () {

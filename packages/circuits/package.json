@@ -12,7 +12,7 @@
         "buildTestCircuits": "npx ts-node test/buildTestCircuits.ts",
         "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
-        "test": "yarn buildTestCircuits && mocha -r ts-node/register test/*.test.ts --exit",
+        "test": "yarn downloadPtau && yarn buildTestCircuits && mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep.git",

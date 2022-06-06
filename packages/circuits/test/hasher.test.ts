@@ -7,7 +7,7 @@ import {
     hash5,
 } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import { UnirepCircuit } from './utils'
 
 const hasher5CircuitPath = path.join(
     __dirname,

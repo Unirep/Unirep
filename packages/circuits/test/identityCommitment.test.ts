@@ -2,7 +2,7 @@ import * as path from 'path'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import { UnirepCircuit } from './utils'
 
 const circuitPath = path.join(
     __dirname,

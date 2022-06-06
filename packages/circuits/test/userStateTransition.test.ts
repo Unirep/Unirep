@@ -8,20 +8,21 @@ import {
     SnarkBigInt,
 } from '@unirep/crypto'
 
-import UnirepCircuit, { CircuitName } from '../src'
+import { CircuitName } from '../src'
 import {
+    UnirepCircuit,
     genNewEpochTree,
     genEpochKey,
     genUserStateTransitionCircuitInput,
     genProofAndVerify,
 } from './utils'
+import { exportBuildPath } from './buildTestCircuits'
 
-import config from '../zksnarkBuild/config.json'
+const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
-    config.exportBuildPath,
-    `${CircuitName.userStateTransition}_main.circom`
+    exportBuildPath,
+    `${CircuitName.userStateTransition}_test.circom`
 )
-import testConfig from '../circuits/test/testConfig.json'
 const epkExistsCircuitPath = path.join(
     __dirname,
     '../circuits/test/epochKeyExists_test.circom'
@@ -36,12 +37,12 @@ describe('User State Transition circuits', function () {
     describe('Epoch key exists', () => {
         let circuit
 
-        const nonce = testConfig.numEpochKeyNoncePerEpoch - 1
+        const nonce = config.numEpochKeyNoncePerEpoch - 1
         const epochKey: SnarkBigInt = genEpochKey(
             user.identityNullifier,
             epoch,
             nonce,
-            testConfig.epochTreeDepth
+            config.epochTreeDepth
         )
 
         let epochTree: SparseMerkleTree, epochTreeRoot, epochTreePathElements
@@ -59,7 +60,7 @@ describe('User State Transition circuits', function () {
             )
 
             // Epoch tree
-            epochTree = genNewEpochTree(testConfig.epochTreeDepth)
+            epochTree = genNewEpochTree(config.epochTreeDepth)
 
             hashChainResult = genRandomSalt()
 

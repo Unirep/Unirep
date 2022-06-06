@@ -7,13 +7,14 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 
-import UnirepCircuit, { CircuitName } from '../src'
-import { genEpochKeyCircuitInput, throwError } from './utils'
+import { CircuitName } from '../src'
+import { UnirepCircuit, genEpochKeyCircuitInput, throwError } from './utils'
+import { exportBuildPath } from './buildTestCircuits'
 
-import config from '../zksnarkBuild/config.json'
+const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
-    config.exportBuildPath,
-    `${CircuitName.verifyEpochKey}_main.circom`
+    exportBuildPath,
+    `${CircuitName.verifyEpochKey}_test.circom`
 )
 
 describe('Verify Epoch Key circuits', function () {
@@ -68,7 +69,7 @@ describe('Verify Epoch Key circuits', function () {
             await UnirepCircuit.executeCircuit(circuit, circuitInputs)
             const startTime = new Date().getTime()
             const { proof, publicSignals } = await UnirepCircuit.genProof(
-                config.exportBuildPath,
+                exportBuildPath,
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )
@@ -79,7 +80,7 @@ describe('Verify Epoch Key circuits', function () {
                 )} s)`
             )
             let isValid = await UnirepCircuit.verifyProof(
-                config.exportBuildPath,
+                exportBuildPath,
                 CircuitName.verifyEpochKey,
                 proof,
                 publicSignals
@@ -91,7 +92,7 @@ describe('Verify Epoch Key circuits', function () {
             const snarkjsProof =
                 UnirepCircuit.formatProofForSnarkjsVerification(formatProof)
             isValid = await UnirepCircuit.verifyProof(
-                config.exportBuildPath,
+                exportBuildPath,
                 CircuitName.verifyEpochKey,
                 snarkjsProof,
                 publicSignals

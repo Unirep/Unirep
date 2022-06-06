@@ -7,7 +7,7 @@ import {
     SnarkBigInt,
 } from '@unirep/crypto'
 
-import UnirepCircuit from '../src'
+import { UnirepCircuit } from './utils'
 
 const LEVELS = 4
 const LeafExistsCircuitPath = path.join(

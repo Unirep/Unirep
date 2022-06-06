@@ -2,10 +2,16 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import { CircuitConfig, CircuitName } from '../src'
+const snarkjs = require('snarkjs')
+const compiler = require('circom').compiler
+const fastFile = require('fastfile')
 
+import { ptau } from '../scripts/config'
+import { stringifyBigInts } from '@unirep/crypto'
+
+export const exportBuildPath = path.join(__dirname, '../circuits/test')
 // make the circuit size smaller
 export const testConfig = {
-    exportBuildPath: path.join(__dirname, '../circuits/test'),
     globalStateTreeDepth: 4,
     userStateTreeDepth: 4,
     epochTreeDepth: 8,
@@ -105,7 +111,7 @@ const buildVerifyEpochKeyCircuit = (dirPath: string) => {
     )
     // create .circom file
     const circuitContent = `
-        include "../circuits/verifyEpochKey.circom" \n\n
+        include "../verifyEpochKey.circom" \n\n
         component main = VerifyEpochKey(
             ${testConfig.globalStateTreeDepth}, 
             ${testConfig.epochTreeDepth}, 
@@ -124,7 +130,7 @@ const buildProveRepuationCircuit = (dirPath: string) => {
 
     // create .circom file
     const circuitContent = `
-        include "../circuits/proveReputation.circom" \n\n
+        include "../proveReputation.circom" \n\n
         component main = ProveReputation(
             ${testConfig.globalStateTreeDepth}, 
             ${testConfig.userStateTreeDepth}, 
@@ -146,7 +152,7 @@ const buildProveSignUpCircuit = (dirPath: string) => {
 
     // create .circom file
     const circuitContent = `
-        include "../circuits/proveUserSignUp.circom" \n\n
+        include "../proveUserSignUp.circom" \n\n
         component main = ProveUserSignUp(
             ${testConfig.globalStateTreeDepth}, 
             ${testConfig.userStateTreeDepth}, 
@@ -166,7 +172,7 @@ const buildStartTransitionCircuit = (dirPath: string) => {
 
     // create .circom file
     const circuitContent = `
-        include "../circuits/startTransition.circom" \n\n
+        include "../startTransition.circom" \n\n
         component main = StartTransition(
             ${testConfig.globalStateTreeDepth}
         )
@@ -182,7 +188,7 @@ const buildProcessAttestationsCircuit = (dirPath: string) => {
 
     // create .circom file
     const circuitContent = `
-        include "../circuits/processAttestations.circom" \n\n
+        include "../processAttestations.circom" \n\n
         component main = ProcessAttestations(
             ${testConfig.userStateTreeDepth}, 
             ${testConfig.numAttestationsPerProof}, 
@@ -192,7 +198,7 @@ const buildProcessAttestationsCircuit = (dirPath: string) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const buildUserStateTransitionCircuit = (dirPath: string) => {
+const buildUserStateTransitionCircuit = async (dirPath: string) => {
     const circomPath = path.join(
         dirPath,
         `${CircuitName.userStateTransition}_test.circom`
@@ -200,7 +206,7 @@ const buildUserStateTransitionCircuit = (dirPath: string) => {
 
     // create .circom file
     const circuitContent = `
-        include "../circuits/userStateTransition.circom" \n\n
+        include "../userStateTransition.circom" \n\n
         component main = UserStateTransition(
             ${testConfig.globalStateTreeDepth}, 
             ${testConfig.epochTreeDepth}, 
@@ -212,9 +218,55 @@ const buildUserStateTransitionCircuit = (dirPath: string) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
+const fileExists = (filepath: string): boolean => {
+    return fs.existsSync(filepath)
+}
+
+const generateProvingKey = async () => {
+    console.log('Building circuits')
+    for (const circuit of Object.keys(CircuitName)) {
+        const buildPath = exportBuildPath
+        const circomFile = path.join(buildPath, `${circuit}_test.circom`)
+        const R1CSFile = path.join(buildPath, `${circuit}.r1cs`)
+        const symFile = path.join(buildPath, `${circuit}.sym`)
+        const wasmFile = path.join(buildPath, `${circuit}.wasm`)
+        const zkey = path.join(buildPath, `${circuit}.zkey`)
+        const vkey = path.join(buildPath, `${circuit}.vkey.json`)
+
+        // Check if the input circom file exists
+        const inputFileExists = fileExists(circomFile)
+
+        // Exit if it does not
+        if (!inputFileExists) {
+            console.error('File does not exist:', circomFile)
+            return 1
+        }
+
+        // Check if the circuitOut file exists and if we should not override files
+        const circuitOutFileExists = fileExists(R1CSFile)
+        if (!circuitOutFileExists) {
+            // Compile the .circom file
+            const options = {
+                wasmFile: await fastFile.createOverride(wasmFile),
+                r1csFileName: R1CSFile,
+                symWriteStream: fs.createWriteStream(symFile),
+            }
+            await compiler(circomFile, options)
+        }
+
+        const zkeyOutFileExists = fileExists(zkey)
+        if (!zkeyOutFileExists) {
+            await snarkjs.zKey.newZKey(R1CSFile, ptau, zkey)
+            const vkeyJson = await snarkjs.zKey.exportVerificationKey(zkey)
+            const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1)
+            await fs.promises.writeFile(vkey, S)
+        }
+    }
+}
+
 const main = async (): Promise<number> => {
-    const dirPath = testConfig.exportBuildPath
-    const configPath = path.join(dirPath, 'testConfig.json')
+    const dirPath = exportBuildPath
+    const configPath = path.join(dirPath, 'config.json')
 
     // build export zk files folder
     try {
@@ -254,16 +306,15 @@ const main = async (): Promise<number> => {
 
     fs.writeFileSync(configPath, JSON.stringify(testConfig))
 
+    await generateProvingKey()
+
     return 0
 }
 
 void (async () => {
-    let exitCode
     try {
-        exitCode = await main()
+        await main()
     } catch (err) {
         console.error(err)
-        exitCode = 1
     }
-    process.exit(exitCode)
 })()

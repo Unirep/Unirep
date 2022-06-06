@@ -2,19 +2,21 @@ import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 
-import UnirepCircuit, { CircuitName } from '../src'
+import { CircuitName } from '../src'
 import {
+    UnirepCircuit,
     genEpochKey,
     Reputation,
     genProveSignUpCircuitInput,
     throwError,
     genProofAndVerify,
 } from './utils'
+import { exportBuildPath } from './buildTestCircuits'
 
-import config from '../zksnarkBuild/config.json'
+const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
-    config.exportBuildPath,
-    `${CircuitName.proveUserSignUp}_main.circom`
+    exportBuildPath,
+    `${CircuitName.proveUserSignUp}_test.circom`
 )
 
 describe('Prove user has signed up circuit', function () {

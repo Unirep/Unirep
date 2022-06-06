@@ -1,10 +1,10 @@
 import { genRandomSalt, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
 import * as path from 'path'
 
-import UnirepCircuit from '../src'
-import { throwError } from './utils'
+import { exportBuildPath } from './buildTestCircuits'
+import { throwError, UnirepCircuit } from './utils'
 
-import testConfig from '../circuits/test/testConfig.json'
+const config = UnirepCircuit.getConfig(exportBuildPath)
 const sealedHashChainCircuitPath = path.join(
     __dirname,
     '../circuits/test/verifyHashChain_test.circom'
@@ -14,7 +14,7 @@ describe('Hash chain circuit', function () {
     this.timeout(30000)
     let circuit
 
-    const NUM_ELEMENT = testConfig.numAttestationsPerProof
+    const NUM_ELEMENT = config.numAttestationsPerProof
     const elements: SnarkBigInt[] = []
     let cur: BigInt = BigInt(0)
     let result
