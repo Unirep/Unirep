@@ -6,7 +6,7 @@ const compiler = require('circom').compiler
 const snarkjs = require('snarkjs')
 const fastFile = require('fastfile')
 
-import config, { overrideCircuit, ptau } from '../config'
+import { exportBuildPath, overrideCircuit, ptau } from './config'
 import { CircuitName } from '../src'
 
 const fileExists = (filepath: string): boolean => {
@@ -16,7 +16,7 @@ const fileExists = (filepath: string): boolean => {
 const main = async (): Promise<number> => {
     const override = overrideCircuit
     for (const circuit of Object.keys(CircuitName)) {
-        const buildPath = config.exportBuildPath
+        const buildPath = exportBuildPath
         const circomFile = path.join(buildPath, `${circuit}_main.circom`)
         const R1CSFile = path.join(buildPath, `${circuit}.r1cs`)
         const symFile = path.join(buildPath, `${circuit}.sym`)

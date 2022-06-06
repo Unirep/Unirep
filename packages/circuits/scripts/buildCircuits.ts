@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import config from '../config'
+import config, { exportBuildPath } from './config'
 import { CircuitName } from '../src'
 
 const buildVerifyEpochKeyCircuit = (dirPath: string) => {
@@ -118,7 +118,7 @@ const buildUserStateTransitionCircuit = (dirPath: string) => {
 }
 
 const main = async (): Promise<number> => {
-    const dirPath = config.exportBuildPath
+    const dirPath = exportBuildPath
     const configPath = path.join(dirPath, 'config.json')
 
     // build export zk files folder

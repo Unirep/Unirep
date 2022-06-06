@@ -2,7 +2,6 @@ import path from 'path'
 import { CircuitConfig } from '../src'
 
 export default {
-    exportBuildPath: path.join(__dirname, '../zksnarkBuild'),
     globalStateTreeDepth: 4,
     userStateTreeDepth: 4,
     epochTreeDepth: 32,
@@ -11,6 +10,7 @@ export default {
     numAttestationsPerProof: 5,
 } as CircuitConfig
 
+export const exportBuildPath = path.join(__dirname, '../zksnarkBuild')
 export const inputCircuitPath = path.join(__dirname, '../circuits')
 export const ptau = path.join(
     __dirname,
