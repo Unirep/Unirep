@@ -12,6 +12,7 @@
         "typechain": "npx hardhat typechain && yarn genABI && yarn removeFactory",
         "genABI": "npx ts-node scripts/abiGenerator.ts",
         "removeFactory": "npx ts-node scripts/removeFactory.ts",
+        "deploy": "hardhat run --no-compile --network local scripts/deploy.js",
         "test": "npx hardhat test --no-compile",
         "lint": "prettier --write ."
     },
