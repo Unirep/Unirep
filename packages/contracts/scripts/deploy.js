@@ -17,7 +17,11 @@ const circuitConfig = UnirepCircuit.default.getConfig(zkFilesPath)
         maxAttesters: 10,
         ...circuitConfig,
     }
-    const unirep = await UnirepContract.default.deploy(artifactsPath, signer, config)
+    const unirep = await UnirepContract.default.deploy(
+        artifactsPath,
+        signer,
+        config
+    )
     await unirep.deployed()
     console.log(`Unirep address: ${unirep.address}`)
     return 0
