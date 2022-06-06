@@ -82,7 +82,11 @@ By default, The `artifacts` directory will be found in `./packages/contracts/bui
 
 ### Deploy contracts
 
-_(TODO) Add `yarn deploy` command_
+Set contract config in [deploy.js](./scripts/deploy.js), and run
+
+```bash
+yarn contracts deploy
+```
 
 ## 🙆🏻‍♀️ Unirep contract has been compiled
 
@@ -129,6 +133,7 @@ const unirepContract = UnirepContract.get(address, provider)
 ```
 
 ## 🧑🏻‍💻 Call Unirep contract with `ethers`
+
 ```typescript
 import { ethers } from 'ethers'
 import { ZkIdentity } from '@unirep/crypto'
@@ -144,9 +149,7 @@ const unirepContract = UnirepContract.get(address, signer)
 
 // user sign up
 const id = new ZkIdentity()
-const tx = await unirepContract.userSignUp(
-    id.genIdentityCommitment()
-)
+const tx = await unirepContract.userSignUp(id.genIdentityCommitment())
 
 // attester sign up
 const tx = await unirepContract.attesterSignUp()
