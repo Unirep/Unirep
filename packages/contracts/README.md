@@ -37,7 +37,7 @@ Client library for cryptography related functions which are used in unirep proto
 
 ### npm or yarn
 
-Install the `@unirep/crypto` package with npm:
+Install the `@unirep/contracts` package with npm:
 
 ```bash
 npm i @unirep/contracts
@@ -126,6 +126,30 @@ import UnirepContract from '@unirep/contracts'
 const address = '0x....'
 const provider = 'YOUR/ETH/PROVIDER'
 const unirepContract = UnirepContract.get(address, provider)
+```
+
+## 🧑🏻‍💻 Call Unirep contract with `ethers`
+```typescript
+import { ethers } from 'ethers'
+import { ZkIdentity } from '@unirep/crypto'
+import UnirepContract from '@unirep/contracts'
+
+const address = '0x....'
+const privateKey = 'YOUR/PRIVATE/KEY'
+const provider = 'YOUR/ETH/PROVIDER'
+
+// connect a signer
+const signer = new ethers.Wallet(privateKey, provider)
+const unirepContract = UnirepContract.get(address, signer)
+
+// user sign up
+const id = new ZkIdentity()
+const tx = await unirepContract.userSignUp(
+    id.genIdentityCommitment()
+)
+
+// attester sign up
+const tx = await unirepContract.attesterSignUp()
 ```
 
 ## 🙋🏻‍♂️ Call Unirep contract in DApps
