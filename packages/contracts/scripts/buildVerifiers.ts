@@ -1,10 +1,9 @@
 import * as fs from 'fs'
 import path from 'path'
-import UnirepCircuit, { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '@unirep/circuits'
 
-export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
-export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
 import { genSnarkVerifierSol } from './genVerifier'
+import { verifiersPath, zkFilesPath } from './config'
 
 const createVerifierName = (circuit: string) => {
     return `${circuit.charAt(0).toUpperCase() + circuit.slice(1)}Verifier`
@@ -21,8 +20,7 @@ const main = async (): Promise<number> => {
     for (const circuit of Object.keys(CircuitName)) {
         const verifierName = createVerifierName(circuit)
         const solOut = path.join(verifiersPath, `${verifierName}.sol`)
-        const circuitName = circuit as CircuitName
-        const vKey = await UnirepCircuit.getVKey(zkFilesPath, circuitName)
+        const vKey = require(path.join(zkFilesPath, `${circuit}.vkey.json`))
 
         console.log('Exporting verification contract...')
         const verifier = genSnarkVerifierSol(verifierName, vKey)

@@ -1,9 +1,11 @@
 import fs from 'fs'
+import path from 'path'
 import prettier from 'prettier'
+import { artifactsPath } from './config'
 
 const main = async () => {
     const contract = fs.readFileSync(
-        './build/artifacts/contracts/Unirep.sol/Unirep.json',
+        path.join(artifactsPath, 'contracts/Unirep.sol/Unirep.json'),
         'utf8'
     )
     fs.mkdirSync('./src/abis', { recursive: true })
