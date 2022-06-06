@@ -1,7 +1,7 @@
 // @ts-ignore
 const path = require('path')
 const { ethers } = require('hardhat')
-const { circuitConfig, addressMap, artifactsPath } = require('./config')
+const { contractConfig, addressMap, artifactsPath } = require('./config')
 const { CircuitName } = require('@unirep/circuits')
 
 const createVerifierName = (circuit) => {
@@ -10,13 +10,6 @@ const createVerifierName = (circuit) => {
 
 ;(async () => {
     const [signer] = await ethers.getSigners()
-    const config = {
-        attestingFee: ethers.utils.parseEther('0.1'),
-        epochLength: 30,
-        maxUsers: 10,
-        maxAttesters: 10,
-        ...circuitConfig,
-    }
     const Unirep = require(path.join(
         artifactsPath,
         'contracts',
@@ -52,13 +45,13 @@ const createVerifierName = (circuit) => {
     const f = new ethers.ContractFactory(Unirep.abi, Unirep.bytecode, signer)
     const c = await f.deploy(
         {
-            globalStateTreeDepth: config.globalStateTreeDepth,
-            userStateTreeDepth: config.userStateTreeDepth,
-            epochTreeDepth: config.epochTreeDepth,
+            globalStateTreeDepth: contractConfig.globalStateTreeDepth,
+            userStateTreeDepth: contractConfig.userStateTreeDepth,
+            epochTreeDepth: contractConfig.epochTreeDepth,
         },
         {
-            maxUsers: config.maxUsers,
-            maxAttesters: config.maxAttesters,
+            maxUsers: contractConfig.maxUsers,
+            maxAttesters: contractConfig.maxAttesters,
         },
         addressMap[CircuitName.verifyEpochKey],
         addressMap[CircuitName.startTransition],
@@ -66,10 +59,10 @@ const createVerifierName = (circuit) => {
         addressMap[CircuitName.userStateTransition],
         addressMap[CircuitName.proveReputation],
         addressMap[CircuitName.proveUserSignUp],
-        config.numEpochKeyNoncePerEpoch,
-        config.maxReputationBudget,
-        config.epochLength,
-        config.attestingFee
+        contractConfig.numEpochKeyNoncePerEpoch,
+        contractConfig.maxReputationBudget,
+        contractConfig.epochLength,
+        contractConfig.attestingFee
     )
 
     await c.deployTransaction.wait()
