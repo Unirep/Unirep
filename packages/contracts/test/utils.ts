@@ -144,9 +144,9 @@ const setAirdrop = async (
     const tx = await contract.connect(account).setAirdropAmount(amount)
     const receipt = await tx.wait()
     expect(receipt.status).equal(1)
-    const airdroppedAmount = await contract.connect(account).airdropAmount(
-        attesterAddress
-    )
+    const airdroppedAmount = await contract
+        .connect(account)
+        .airdropAmount(attesterAddress)
     expect(airdroppedAmount.toNumber()).equal(amount)
 }
 
