@@ -313,7 +313,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) external payable {
-        verifySignature(attester, signature);
+        require(verifySignature(attester, signature), "Unirep: invalid attester sign up signature");
+        
         _submitAttestation(
             attester,
             attestation,
