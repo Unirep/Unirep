@@ -12,8 +12,6 @@ export default {
 
 export const exportBuildPath = path.join(__dirname, '../zksnarkBuild')
 export const inputCircuitPath = path.join(__dirname, '../circuits')
-export const ptau = path.join(
-    __dirname,
-    '../zksnarkBuild/powersOfTau28_hez_final_17.ptau'
-)
+export const ptau = path.join(exportBuildPath, 'powersOfTau28_hez_final_17.ptau')
+export const ptauUrl = 'https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_17.ptau'
 export const overrideCircuit = false

@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "build": "yarn downloadPtau && yarn buildCircuits && yarn buildSnarks && tsc",
-        "downloadPtau": "./scripts/downloadPtau.sh",
+        "downloadPtau": "npx ts-node scripts/downloadPtau.ts",
         "buildCircuits": "npx ts-node scripts/buildCircuits.ts",
         "buildSnarks": "npx ts-node scripts/buildSnarks.ts",
         "buildTestCircuits": "npx ts-node test/buildTestCircuits.ts",
