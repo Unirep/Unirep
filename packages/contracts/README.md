@@ -25,7 +25,7 @@ Client library for cryptography related functions which are used in unirep proto
 
 <div align="center">
     <h4>
-        <a href="https://discord.gg/uRPhQVB2">
+        <a href="https://discord.gg/VzMMDJmYc5">
             🤖 Chat &amp; Support
         </a>
     </h4>

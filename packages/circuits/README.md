@@ -25,7 +25,7 @@ Client library for generating and verifying Unirep ZK proofs.
 
 <div align="center">
     <h4>
-        <a href="https://discord.gg/uRPhQVB2">
+        <a href="https://discord.gg/VzMMDJmYc5">
             🤖 Chat &amp; Support
         </a>
     </h4>
