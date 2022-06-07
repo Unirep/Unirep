@@ -214,7 +214,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         bytes calldata signature
     ) external override {
         require(
-            verifySignature(attester, signature),
+            isValidSignature(attester, signature),
             'Unirep: invalid attester sign up signature'
         );
         _attesterSignUp(attester);
@@ -313,8 +313,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) external payable {
-        require(verifySignature(attester, signature), "Unirep: invalid attester sign up signature");
-        
+        require(isValidSignature(attester, signature), "Unirep: invalid attester sign up signature");
+
         _submitAttestation(
             attester,
             attestation,
