@@ -1,38 +1,32 @@
 {
     "name": "@unirep/circuits",
     "version": "1.0.0",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
     "scripts": {
-        "pre": "node scripts/prepare",
-        "build": "yarn downloadPtau && yarn buildCircuits && yarn buildSnarks && tsc && yarn copyCircom",
+        "build": "yarn downloadPtau && yarn buildCircuits && yarn buildSnarks && tsc",
         "downloadPtau": "./scripts/downloadPtau.sh",
         "buildCircuits": "npx ts-node scripts/buildCircuits.ts",
         "buildSnarks": "npx ts-node scripts/buildSnarks.ts",
         "buildTestCircuits": "npx ts-node test/buildTestCircuits.ts",
         "buildTs": "tsc",
-        "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "test": "yarn downloadPtau && yarn buildTestCircuits && mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep.git",
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
-    "dependencies": {
-        "@unirep/crypto": "1.0.0",
-        "argparse": "^2.0.1",
-        "circom": "0.5.45",
-        "circomlib": "0.5.3",
-        "snarkjs": "^0.4.7",
-        "typescript": "^4.4.2"
-    },
     "devDependencies": {
         "@types/chai": "^4.2.21",
         "@types/mocha": "^9.0.0",
         "@types/node": "^16.9.1",
+        "@unirep/crypto": "1.0.0",
+        "argparse": "^2.0.1",
         "chai": "^4.3.4",
+        "circom": "0.5.45",
+        "circomlib": "0.5.3",
         "keyv": "^4.0.3",
         "mocha": "^9.1.1",
-        "ts-node": "^10.2.1"
+        "snarkjs": "^0.4.7",
+        "ts-node": "^10.2.1",
+        "typescript": "^4.4.2"
     }
 }
