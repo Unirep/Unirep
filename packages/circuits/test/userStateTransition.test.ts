@@ -16,17 +16,14 @@ import {
     genUserStateTransitionCircuitInput,
     genProofAndVerify,
 } from './utils'
-import { exportBuildPath } from './buildTestCircuits'
+import { exportBuildPath } from './config'
 
 const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
     exportBuildPath,
     `${CircuitName.userStateTransition}_test.circom`
 )
-const epkExistsCircuitPath = path.join(
-    __dirname,
-    '../circuits/test/epochKeyExists_test.circom'
-)
+const epkExistsCircuitPath = path.join(exportBuildPath, 'epochKeyExists_test.circom')
 
 describe('User State Transition circuits', function () {
     this.timeout(600000)

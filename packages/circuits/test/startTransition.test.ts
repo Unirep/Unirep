@@ -14,13 +14,10 @@ import {
     genProofAndVerify,
 } from './utils'
 import { CircuitName } from '../src'
-import { exportBuildPath } from './buildTestCircuits'
+import { exportBuildPath } from './config'
 
 const config = UnirepCircuit.getConfig(exportBuildPath)
-const circuitPath = path.join(
-    exportBuildPath,
-    `${CircuitName.startTransition}_test.circom`
-)
+const circuitPath = path.join(exportBuildPath,`${CircuitName.startTransition}_test.circom`)
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)

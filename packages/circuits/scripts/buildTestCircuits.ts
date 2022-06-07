@@ -1,24 +1,14 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { CircuitConfig, CircuitName } from '../src'
+import { CircuitName } from '../src'
 const snarkjs = require('snarkjs')
 const compiler = require('circom').compiler
 const fastFile = require('fastfile')
 
-import { ptau } from '../scripts/config'
+import { ptau } from './config'
 import { stringifyBigInts } from '@unirep/crypto'
-
-export const exportBuildPath = path.join(__dirname, '../circuits/test')
-// make the circuit size smaller
-export const testConfig = {
-    globalStateTreeDepth: 4,
-    userStateTreeDepth: 4,
-    epochTreeDepth: 8,
-    numEpochKeyNoncePerEpoch: 3,
-    maxReputationBudget: 10,
-    numAttestationsPerProof: 5,
-} as CircuitConfig
+import { exportBuildPath, testConfig } from '../test/config'
 
 const buildEpochKeyExistsCircuit = (dirPath: string) => {
     const circomPath = path.join(dirPath, `epochKeyExists_test.circom`)
@@ -225,6 +215,7 @@ const fileExists = (filepath: string): boolean => {
 const generateProvingKey = async () => {
     console.log('Building circuits')
     for (const circuit of Object.keys(CircuitName)) {
+        console.log('    ', circuit, 'circuit')
         const buildPath = exportBuildPath
         const circomFile = path.join(buildPath, `${circuit}_test.circom`)
         const R1CSFile = path.join(buildPath, `${circuit}.r1cs`)
@@ -262,9 +253,10 @@ const generateProvingKey = async () => {
             await fs.promises.writeFile(vkey, S)
         }
     }
+    console.log('Building circuits done!')
 }
 
-const main = async (): Promise<number> => {
+const main = async (): Promise<number> =>  {
     const dirPath = exportBuildPath
     const configPath = path.join(dirPath, 'config.json')
 
@@ -307,14 +299,16 @@ const main = async (): Promise<number> => {
     fs.writeFileSync(configPath, JSON.stringify(testConfig))
 
     await generateProvingKey()
-
-    return 0
+    process.exit(0)
 }
 
 void (async () => {
+    let exitCode
     try {
-        await main()
+        exitCode = await main()
     } catch (err) {
         console.error(err)
+        exitCode = 1
     }
+    process.exit(exitCode)
 })()
