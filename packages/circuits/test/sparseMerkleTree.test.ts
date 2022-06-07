@@ -8,7 +8,10 @@ import { exportBuildPath } from './config'
 const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitEpochTreeDepth = config.epochTreeDepth
 const circuitPath = path.join(exportBuildPath, 'smtLeafExists_test.circom')
-const InclusionProofCircuitPath = path.join(exportBuildPath, 'smtInclusionProof_test.circom')
+const InclusionProofCircuitPath = path.join(
+    exportBuildPath,
+    'smtInclusionProof_test.circom'
+)
 
 describe('Sparse Merkle Tree circuits', function () {
     this.timeout(500000)

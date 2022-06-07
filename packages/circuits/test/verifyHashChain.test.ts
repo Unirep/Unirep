@@ -5,7 +5,10 @@ import { exportBuildPath } from './config'
 import { throwError, UnirepCircuit } from './utils'
 
 const config = UnirepCircuit.getConfig(exportBuildPath)
-const sealedHashChainCircuitPath = path.join(exportBuildPath, 'verifyHashChain_test.circom')
+const sealedHashChainCircuitPath = path.join(
+    exportBuildPath,
+    'verifyHashChain_test.circom'
+)
 
 describe('Hash chain circuit', function () {
     this.timeout(30000)

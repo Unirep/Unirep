@@ -2,7 +2,7 @@
 import shelljs from 'shelljs'
 import * as fs from 'fs'
 
-import { ptau, ptauUrl } from './config'
+import { exportBuildPath, ptau, ptauUrl } from './config'
 
 const fileExists = (filepath: string): boolean => {
     return fs.existsSync(filepath)
@@ -11,6 +11,7 @@ const fileExists = (filepath: string): boolean => {
 const main = async (): Promise<number> => {
     const ptauExists = fileExists(ptau)
     if (!ptauExists) {
+        fs.mkdirSync(exportBuildPath)
         shelljs.exec(`curl -o ${ptau} ${ptauUrl}`)
     }
 

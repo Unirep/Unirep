@@ -12,7 +12,10 @@ import { UnirepCircuit, genEpochKeyCircuitInput, throwError } from './utils'
 import { exportBuildPath } from './config'
 
 const config = UnirepCircuit.getConfig(exportBuildPath)
-const circuitPath = path.join(exportBuildPath,`${CircuitName.verifyEpochKey}_test.circom`)
+const circuitPath = path.join(
+    exportBuildPath,
+    `${CircuitName.verifyEpochKey}_test.circom`
+)
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)

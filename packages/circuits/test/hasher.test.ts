@@ -10,8 +10,11 @@ import {
 import { UnirepCircuit } from './utils'
 import { exportBuildPath } from './config'
 
-const hasher5CircuitPath = path.join(exportBuildPath,'hasher5_test.circom')
-const hashleftrightCircuitPath = path.join(exportBuildPath, 'hashleftright_test.circom')
+const hasher5CircuitPath = path.join(exportBuildPath, 'hasher5_test.circom')
+const hashleftrightCircuitPath = path.join(
+    exportBuildPath,
+    'hashleftright_test.circom'
+)
 
 describe('Poseidon hash circuits', function () {
     this.timeout(100000)

@@ -1,5 +1,5 @@
-import path from "path"
-import { CircuitConfig } from "../src"
+import path from 'path'
+import { CircuitConfig } from '../src'
 
 export const exportBuildPath = path.join(__dirname, '../circuits/test')
 // make the circuit size smaller

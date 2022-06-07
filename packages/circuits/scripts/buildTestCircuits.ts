@@ -256,7 +256,7 @@ const generateProvingKey = async () => {
     console.log('Building circuits done!')
 }
 
-const main = async (): Promise<number> =>  {
+const main = async (): Promise<number> => {
     const dirPath = exportBuildPath
     const configPath = path.join(dirPath, 'config.json')
 
