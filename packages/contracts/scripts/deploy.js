@@ -2,7 +2,7 @@
 const path = require('path')
 const { ethers } = require('hardhat')
 const { contractConfig, addressMap, artifactsPath } = require('./config')
-const { CircuitName } = require('@unirep/circuits')
+const { CircuitName } = require('./circuitName')
 
 const createVerifierName = (circuit) => {
     return `${circuit.charAt(0).toUpperCase() + circuit.slice(1)}Verifier`

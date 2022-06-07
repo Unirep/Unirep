@@ -1,8 +1,8 @@
 import path from 'path'
-import { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '../../circuits/src'
 import { ethers } from 'ethers'
 
-export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
+export const zkFilesPath = path.join(__dirname, '../../circuits/circuits/test')
 export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
 export const artifactsPath = path.join(__dirname, '../build/artifacts')
 export const circuitConfig = require(path.join(zkFilesPath, 'config.json'))
@@ -23,8 +23,6 @@ export const addressMap: EnumDictionary<CircuitName, string | undefined> = {
     [CircuitName.proveReputation]: undefined,
     [CircuitName.proveUserSignUp]: undefined,
     [CircuitName.startTransition]: undefined,
-    [CircuitName.processAttestations]:
-        undefined,
-    [CircuitName.userStateTransition]:
-        undefined,
+    [CircuitName.processAttestations]: undefined,
+    [CircuitName.userStateTransition]: undefined,
 }

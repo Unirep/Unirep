@@ -1,29 +1,34 @@
+import { UnirepABI } from './abis/Unirep'
 import { ContractConfig } from './types/config'
 import { UnirepEvent, AttestationEvent } from './types/event'
-import { Attestation } from './Attestation'
-import { EpochKeyProof } from './EpochKeyProof'
-import { SignUpProof } from './SignUpProof'
-import { ReputationProof } from './ReputationProof'
-import { UserTransitionProof } from './UserTransitionProof'
+import type { UnirepTypes } from './contracts/IUnirep'
+import type {
+    Unirep,
+    IUnirep,
+    IVerifier,
+    Hasher,
+    ProcessAttestationsVerifier,
+    ProveReputationVerifier,
+    ProveUserSignUpVerifier,
+    StartTransitionVerifier,
+    UserStateTransitionVerifier,
+    VerifyEpochKeyVerifier,
+} from './contracts/index'
 
-import UnirepContract, { Unirep } from './UnirepContract'
-
-import {
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
-} from './utils'
-
-export default UnirepContract
 export {
+    UnirepTypes,
+    UnirepABI,
     Unirep,
     ContractConfig,
     UnirepEvent,
     AttestationEvent,
-    Attestation,
-    EpochKeyProof,
-    ReputationProof,
-    SignUpProof,
-    UserTransitionProof,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
+    IUnirep,
+    IVerifier,
+    Hasher,
+    ProcessAttestationsVerifier,
+    ProveReputationVerifier,
+    ProveUserSignUpVerifier,
+    StartTransitionVerifier,
+    UserStateTransitionVerifier,
+    VerifyEpochKeyVerifier,
 }
