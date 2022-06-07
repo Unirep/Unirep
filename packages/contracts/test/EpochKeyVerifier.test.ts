@@ -2,7 +2,6 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { CircuitName } from '@unirep/circuits'
 import {
     genRandomSalt,
     hashLeftRight,
@@ -10,9 +9,17 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
-import { genEpochKeyCircuitInput, genInputForContract } from './utils'
-import contract, { EpochKeyProof, Unirep } from '../src'
-import config, { artifactsPath } from './testConfig'
+import {
+    deploy,
+    genEpochKeyCircuitInput,
+    genIdentity,
+    genInputForContract,
+    genProof,
+    verifyProof,
+} from './utils'
+import { Unirep, UnirepTypes } from '../src'
+import { circuitConfig, config } from './testConfig'
+import { CircuitName } from '../../circuits/src'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
@@ -21,32 +28,22 @@ describe('Verify Epoch Key verifier', function () {
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
-    let id, commitment, stateRoot
+    const { id, commitment } = genIdentity()
+    let stateRoot = genRandomSalt()
     let tree
-    let nonce, currentEpoch
+    let nonce = 0
+    let currentEpoch = 1
     let leafIndex = 0
-    let input: EpochKeyProof
+    let input: UnirepTypes.EpochKeyProofStruct
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            config
-        )
-        tree = new IncrementalMerkleTree(config.globalStateTreeDepth)
-        id = new ZkIdentity()
-        commitment = id.genIdentityCommitment()
-        stateRoot = genRandomSalt()
+        unirepContract = await deploy(accounts[0], config)
 
-        const hashedStateLeaf = hashLeftRight(
-            commitment.toString(),
-            stateRoot.toString()
-        )
-        tree.insert(BigInt(hashedStateLeaf.toString()))
-        nonce = 0
-        currentEpoch = 1
+        const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
+        tree = new IncrementalMerkleTree(config.globalStateTreeDepth)
+        tree.insert(hashedStateLeaf)
     })
 
     it('Valid epoch key should pass check', async () => {
@@ -59,25 +56,37 @@ describe('Verify Epoch Key verifier', function () {
                 leafIndex,
                 stateRoot,
                 currentEpoch,
-                n
+                n,
+                circuitConfig
             )
 
             input = await genInputForContract(
                 CircuitName.verifyEpochKey,
                 circuitInputs
             )
-            const isValid = await input.verify()
+            const { proof, publicSignals } = await genProof(
+                CircuitName.verifyEpochKey,
+                circuitInputs
+            )
+            const isValid = await verifyProof(
+                CircuitName.verifyEpochKey,
+                publicSignals,
+                proof
+            )
             expect(isValid, 'Verify epoch key proof off-chain failed').to.be
                 .true
+
             let tx = await unirepContract.submitEpochKeyProof(input)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
+
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 input
             )
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
 
-            const pfIdx = await unirepContract.getProofIndex(input.hash())
+            const hash = await unirepContract.hashEpochKeyProof(input)
+            const pfIdx = await unirepContract.getProofIndex(hash)
             expect(Number(pfIdx)).not.eq(0)
         }
     })
@@ -91,7 +100,8 @@ describe('Verify Epoch Key verifier', function () {
             leafIndex,
             stateRoot,
             currentEpoch,
-            nonce
+            nonce,
+            circuitConfig
         )
         invalidCircuitInputs.epoch_key = invalidEpochKey1
 
@@ -112,7 +122,8 @@ describe('Verify Epoch Key verifier', function () {
             leafIndex,
             stateRoot,
             currentEpoch,
-            nonce
+            nonce,
+            circuitConfig
         )
 
         input = await genInputForContract(
@@ -132,7 +143,8 @@ describe('Verify Epoch Key verifier', function () {
             leafIndex,
             otherTreeRoot,
             currentEpoch,
-            nonce
+            nonce,
+            circuitConfig
         )
 
         input = await genInputForContract(
@@ -152,7 +164,8 @@ describe('Verify Epoch Key verifier', function () {
             leafIndex,
             stateRoot,
             currentEpoch,
-            invalidNonce
+            invalidNonce,
+            circuitConfig
         )
 
         input = await genInputForContract(

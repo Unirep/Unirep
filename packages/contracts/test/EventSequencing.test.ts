@@ -2,12 +2,18 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import circuit from '@unirep/circuits'
+import { genRandomSalt } from '@unirep/crypto'
 
-import { genEpochKey, Attestation } from './utils'
-import contract, { EpochKeyProof, UnirepEvent, Unirep } from '../src'
-import config, { artifactsPath, zkFilesPath } from './testConfig'
+import {
+    genEpochKey,
+    deploy,
+    genIdentity,
+    attesterSignUp,
+    keccak256Hash,
+} from './utils'
+import { UnirepEvent, Unirep, UnirepTypes } from '../src'
+import { config } from './testConfig'
+import { CircuitName } from '../../circuits/src'
 
 describe('EventSequencing', () => {
     let expectedEventsInOrder: UnirepEvent[] = []
@@ -16,10 +22,10 @@ describe('EventSequencing', () => {
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
-    let userIds: any[] = [],
-        userCommitments: any[] = []
+    let userIds: any[] = []
+    const userCommitments: any[] = []
 
-    let attester, attesterAddress, attesterId, unirepContractCalledByAttester
+    let attester, attesterAddress, attesterId
     const attestingFee = ethers.utils.parseEther('0.1')
     const _config = {
         ...config,
@@ -29,31 +35,29 @@ describe('EventSequencing', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            _config
-        )
+        unirepContract = await deploy(accounts[0], _config)
 
         // 1. Fisrt user sign up
-        let userId = new ZkIdentity()
-        let userCommitment = userId.genIdentityCommitment()
-        userIds.push(userId)
-        userCommitments.push(userCommitment)
-        let tx = await unirepContract.userSignUp(BigNumber.from(userCommitment))
-        let receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const { id, commitment } = genIdentity()
+            userIds.push(id)
+            userCommitments.push(commitment)
+            const tx = await unirepContract.userSignUp(commitment)
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
+
         expectedEventsInOrder.push(UnirepEvent.UserSignedUp)
         expectedEventsNumber++
 
         // Attester sign up, no events emitted
-        attester = accounts[1]
-        attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
-        tx = await unirepContractCalledByAttester.attesterSignUp()
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-        attesterId = await unirepContract.attesters(attesterAddress)
+        {
+            attester = accounts[1]
+            attesterAddress = await attester.getAddress()
+            const success = await attesterSignUp(unirepContract, attester)
+            expect(success).equal(1)
+            attesterId = await unirepContract.attesters(attesterAddress)
+        }
 
         // 2. Submit epoch key proof
         let currentEpoch = await unirepContract.currentEpoch()
@@ -61,280 +65,344 @@ describe('EventSequencing', () => {
         let epochKey = genEpochKey(
             userIds[0].identityNullifier,
             currentEpoch.toNumber(),
-            epochKeyNonce
-        )
+            epochKeyNonce,
+            config.epochTreeDepth
+        ).toString()
         const proof: string[] = []
+        let epochKeyProofIndex
         for (let i = 0; i < 8; i++) {
             proof.push('0')
         }
-        let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
-        let epochKeyProof = new EpochKeyProof(
-            publicSignals as BigNumberish[],
-            circuit.formatProofForSnarkjsVerification(proof),
-            zkFilesPath
-        )
-        tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-        const epochKeyProofIndex = await unirepContract.getProofIndex(
-            epochKeyProof.hash()
-        )
-        expect(epochKeyProof).not.equal(null)
+        {
+            const publicSignals = [genRandomSalt(), currentEpoch, epochKey]
+            const epochKeyProof: UnirepTypes.EpochKeyProofStruct = {
+                globalStateTree: genRandomSalt().toString(),
+                epoch: currentEpoch,
+                epochKey,
+                proof,
+            }
+            const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+            const hash = keccak256Hash(
+                CircuitName.verifyEpochKey,
+                epochKeyProof
+            )
+            epochKeyProofIndex = await unirepContract.getProofIndex(hash)
+            expect(epochKeyProof).not.equal(null)
+        }
 
         // 2. Submit reputation nullifiers
-        const reputationNullifiers: BigInt[] = []
-        const minRep = 0
-        const proveGraffiti = 1
-        for (let i = 0; i < config.maxReputationBudget; i++) {
-            reputationNullifiers.push(BigInt(255))
+        {
+            const repNullifiers: any[] = []
+            const minRep = 0
+            const proveGraffiti = 1
+            for (let i = 0; i < config.maxReputationBudget; i++) {
+                repNullifiers.push(255)
+            }
+            const tx = await unirepContract.connect(attester).spendReputation(
+                {
+                    repNullifiers,
+                    epoch: currentEpoch.toNumber(),
+                    epochKey,
+                    globalStateTree: genRandomSalt().toString(),
+                    attesterId,
+                    proveReputationAmount: 0,
+                    minRep,
+                    proveGraffiti,
+                    graffitiPreImage: genRandomSalt().toString(),
+                    proof,
+                } as UnirepTypes.ReputationProofStruct,
+                { value: attestingFee }
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
         }
-        tx = await unirepContractCalledByAttester.spendReputation(
-            [
-                reputationNullifiers,
-                currentEpoch.toNumber(),
-                epochKey,
-                genRandomSalt(),
-                attesterId.toNumber(),
-                0,
-                minRep,
-                proveGraffiti,
-                genRandomSalt(),
-                proof,
-            ],
-            { value: attestingFee }
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+
         expectedEventsInOrder.push(UnirepEvent.AttestationSubmitted)
         expectedEventsNumber++
 
         // 3. Attest to first user
         const signedUpInLeaf = 0
         const senderPfIdx = 0
-        let attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            epochKeyProofIndex,
-            senderPfIdx,
-            { value: attestingFee }
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            let attestation: UnirepTypes.AttestationStruct = {
+                attesterId,
+                posRep: 1,
+                negRep: 0,
+                graffiti: genRandomSalt().toString(),
+                signUp: signedUpInLeaf,
+            }
+            const tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    epochKeyProofIndex,
+                    senderPfIdx,
+                    { value: attestingFee }
+                )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
+
         expectedEventsInOrder.push(UnirepEvent.AttestationSubmitted)
         expectedEventsNumber++
 
         // 4. Second user sign up
-        userId = new ZkIdentity()
-        userCommitment = userId.genIdentityCommitment()
-        userIds.push(userId)
-        userCommitments.push(userCommitment)
-        tx = await unirepContract.userSignUp(BigNumber.from(userCommitment))
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const { id, commitment } = genIdentity()
+            userIds.push(id)
+            userCommitments.push(commitment)
+            const tx = await unirepContract.userSignUp(
+                BigNumber.from(commitment)
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
+
         expectedEventsInOrder.push(UnirepEvent.UserSignedUp)
         expectedEventsNumber++
 
         // 5. First epoch end
         // let numEpochKey = await unirepContract.getNumEpochKey(currentEpoch)
         // expect(numEpochKey).equal(1)
-        await hardhatEthers.provider.send('evm_increaseTime', [
-            config.epochLength,
-        ]) // Fast-forward epochLength of seconds
-        tx = await unirepContract.beginEpochTransition()
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                config.epochLength,
+            ]) // Fast-forward epochLength of seconds
+            const tx = await unirepContract.beginEpochTransition()
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
+
         currentEpoch = await unirepContract.currentEpoch()
         expectedEventsInOrder.push(UnirepEvent.EpochEnded)
         expectedEventsNumber++
 
         // 6. Second user starts transition
         let transitionFromEpoch = 1
-        const epkNullifiers: BigInt[] = []
-        const blindedHashChains: BigInt[] = []
-        const blindedUserStates: BigInt[] = []
         const indexes: BigInt[] = []
-        for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
-            epkNullifiers.push(BigInt(255))
-            blindedHashChains.push(BigInt(255))
+        {
+            const tx = await unirepContract.startUserStateTransition(
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
         }
-        for (let i = 0; i < 2; i++) {
-            blindedUserStates.push(BigInt(255))
-        }
-        tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            proof
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
 
         // 7. Second user processes attestations
-        tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            proof
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const tx = await unirepContract.processAttestations(
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
 
-        tx = await unirepContract.updateUserStateRoot(
-            {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
-                epkNullifiers: epkNullifiers as BigNumberish[],
-                transitionFromEpoch: transitionFromEpoch as BigNumberish,
-                blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
-                blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
-                proof: proof as BigNumberish[],
-            },
-            indexes as BigNumberish[]
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const epkNullifiers: BigInt[] = []
+            const blindedHashChains: BigInt[] = []
+            const blindedUserStates: BigInt[] = []
+
+            for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+                epkNullifiers.push(BigInt(255))
+                blindedHashChains.push(BigInt(255))
+            }
+            for (let i = 0; i < 2; i++) {
+                blindedUserStates.push(BigInt(255))
+            }
+            const tx = await unirepContract.updateUserStateRoot(
+                {
+                    newGlobalStateTreeLeaf: genRandomSalt().toString(),
+                    epkNullifiers: epkNullifiers,
+                    transitionFromEpoch: transitionFromEpoch,
+                    blindedUserStates: blindedUserStates,
+                    fromGlobalStateTree: genRandomSalt(),
+                    blindedHashChains: blindedHashChains,
+                    fromEpochTree: genRandomSalt().toString(),
+                    proof: proof,
+                } as UnirepTypes.UserTransitionProofStruct,
+                indexes as BigNumberish[]
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
         expectedEventsInOrder.push(UnirepEvent.UserStateTransitioned)
         expectedEventsNumber++
 
         // 9. Attest to second user
-        epochKeyNonce = 0
-        epochKey = genEpochKey(
-            userIds[1].identityNullifier,
-            currentEpoch.toNumber(),
-            epochKeyNonce
-        )
-        attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(2),
-            BigInt(1),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        publicSignals = [genRandomSalt(), currentEpoch, epochKey]
-        epochKeyProof = new EpochKeyProof(
-            publicSignals as BigNumberish[],
-            circuit.formatProofForSnarkjsVerification(proof),
-            zkFilesPath
-        )
-        tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            epochKeyProofIndex,
-            senderPfIdx,
-            { value: attestingFee }
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            epochKeyNonce = 0
+            const epochKey = genEpochKey(
+                userIds[1].identityNullifier,
+                currentEpoch.toNumber(),
+                epochKeyNonce,
+                config.epochTreeDepth
+            ).toString()
+            const attestation: UnirepTypes.AttestationStruct = {
+                attesterId,
+                posRep: 2,
+                negRep: 1,
+                graffiti: genRandomSalt().toString(),
+                signUp: 1,
+            }
+            const tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    epochKeyProofIndex,
+                    senderPfIdx,
+                    { value: attestingFee }
+                )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
         expectedEventsInOrder.push(UnirepEvent.AttestationSubmitted)
         expectedEventsNumber++
 
         // 10. Second epoch end
-        await hardhatEthers.provider.send('evm_increaseTime', [
-            config.epochLength,
-        ]) // Fast-forward epochLength of seconds
-        tx = await unirepContract.beginEpochTransition()
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                config.epochLength,
+            ]) // Fast-forward epochLength of seconds
+            const tx = await unirepContract.beginEpochTransition()
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
         currentEpoch = await unirepContract.currentEpoch()
         expectedEventsInOrder.push(UnirepEvent.EpochEnded)
         expectedEventsNumber++
 
         // 11. Third epoch end
-        await hardhatEthers.provider.send('evm_increaseTime', [
-            config.epochLength,
-        ]) // Fast-forward epochLength of seconds
-        tx = await unirepContract.beginEpochTransition()
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                config.epochLength,
+            ]) // Fast-forward epochLength of seconds
+            const tx = await unirepContract.beginEpochTransition()
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
         currentEpoch = await unirepContract.currentEpoch()
         expectedEventsInOrder.push(UnirepEvent.EpochEnded)
         expectedEventsNumber++
 
         // 12. First user starts transition
         transitionFromEpoch = 1
-        tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            proof
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const tx = await unirepContract.startUserStateTransition(
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
 
-        // 13. First user processes attestations
-        tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            proof
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        // 7. Second user processes attestations
+        {
+            const tx = await unirepContract.processAttestations(
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
 
-        // 14. First user transition
-        tx = await unirepContract.updateUserStateRoot(
-            {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
-                epkNullifiers: epkNullifiers as BigNumberish[],
-                transitionFromEpoch: transitionFromEpoch as BigNumberish,
-                blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
-                blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
-                proof: proof as BigNumberish[],
-            },
-            indexes as BigNumberish[]
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const epkNullifiers: BigInt[] = []
+            const blindedHashChains: BigInt[] = []
+            const blindedUserStates: BigInt[] = []
+
+            for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+                epkNullifiers.push(BigInt(255))
+                blindedHashChains.push(BigInt(255))
+            }
+            for (let i = 0; i < 2; i++) {
+                blindedUserStates.push(BigInt(255))
+            }
+            const tx = await unirepContract.updateUserStateRoot(
+                {
+                    newGlobalStateTreeLeaf: genRandomSalt().toString(),
+                    epkNullifiers: epkNullifiers,
+                    transitionFromEpoch: transitionFromEpoch,
+                    blindedUserStates: blindedUserStates,
+                    fromGlobalStateTree: genRandomSalt(),
+                    blindedHashChains: blindedHashChains,
+                    fromEpochTree: genRandomSalt().toString(),
+                    proof: proof,
+                } as UnirepTypes.UserTransitionProofStruct,
+                indexes as BigNumberish[]
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
         expectedEventsInOrder.push(UnirepEvent.UserStateTransitioned)
         expectedEventsNumber++
 
         // 15. Second user starts transition
         transitionFromEpoch = 2
-        tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            proof
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const tx = await unirepContract.startUserStateTransition(
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
 
-        // 16. Second user processes attestations
-        tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            proof
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        // 7. Second user processes attestations
+        {
+            const tx = await unirepContract.processAttestations(
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                genRandomSalt() as BigNumberish,
+                proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
 
-        // 17. Second user transition
-        tx = await unirepContract.updateUserStateRoot(
-            {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
-                epkNullifiers: epkNullifiers as BigNumberish[],
-                transitionFromEpoch: transitionFromEpoch as BigNumberish,
-                blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
-                blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
-                proof: proof as BigNumberish[],
-            },
-            indexes as BigNumberish[]
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        {
+            const epkNullifiers: BigInt[] = []
+            const blindedHashChains: BigInt[] = []
+            const blindedUserStates: BigInt[] = []
+
+            for (let i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+                epkNullifiers.push(BigInt(255))
+                blindedHashChains.push(BigInt(255))
+            }
+            for (let i = 0; i < 2; i++) {
+                blindedUserStates.push(BigInt(255))
+            }
+            const tx = await unirepContract.updateUserStateRoot(
+                {
+                    newGlobalStateTreeLeaf: genRandomSalt().toString(),
+                    epkNullifiers: epkNullifiers,
+                    transitionFromEpoch: transitionFromEpoch,
+                    blindedUserStates: blindedUserStates,
+                    fromGlobalStateTree: genRandomSalt(),
+                    blindedHashChains: blindedHashChains,
+                    fromEpochTree: genRandomSalt().toString(),
+                    proof: proof,
+                } as UnirepTypes.UserTransitionProofStruct,
+                indexes as BigNumberish[]
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+        }
         expectedEventsInOrder.push(UnirepEvent.UserStateTransitioned)
         expectedEventsNumber++
     })

@@ -2,17 +2,19 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { CircuitName } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 
 import {
+    deploy,
     genEpochKey,
     genInputForContract,
+    genProofAndVerify,
     genProveSignUpCircuitInput,
     Reputation,
 } from './utils'
-import contract, { SignUpProof, Unirep } from '../src'
-import config, { artifactsPath } from './testConfig'
+import { Unirep } from '../src'
+import { config } from './testConfig'
+import { CircuitName } from '../../circuits/src'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
@@ -33,11 +35,7 @@ describe('Verify user sign up verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            config
-        )
+        unirepContract = await deploy(accounts[0], config)
         // Bootstrap reputation
         const graffitiPreImage = genRandomSalt()
         reputationRecords[signedUpAttesterId] = new Reputation(
@@ -69,12 +67,14 @@ describe('Verify user sign up verifier', function () {
             reputationRecords,
             attesterId
         )
-        const input: SignUpProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.proveUserSignUp,
             circuitInputs
         )
-
-        const isValid = await input.verify()
+        const isValid = await genProofAndVerify(
+            CircuitName.proveUserSignUp,
+            circuitInputs
+        )
         expect(isValid, 'Verify user sign up proof off-chain failed').to.be.true
         const isProofValid = await unirepContract.verifyUserSignUp(input)
         expect(isProofValid, 'Verify reputation proof on-chain failed').to.be
@@ -90,7 +90,7 @@ describe('Verify user sign up verifier', function () {
             reputationRecords,
             attesterId
         )
-        const input: SignUpProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.proveUserSignUp,
             circuitInputs
         )
@@ -110,7 +110,7 @@ describe('Verify user sign up verifier', function () {
             reputationRecords,
             attesterId
         )
-        const input: SignUpProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.proveUserSignUp,
             circuitInputs
         )
@@ -134,7 +134,7 @@ describe('Verify user sign up verifier', function () {
             reputationRecords,
             attesterId
         )
-        const input: SignUpProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.proveUserSignUp,
             circuitInputs
         )

@@ -8,15 +8,17 @@ import {
     SparseMerkleTree,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { CircuitName } from '@unirep/circuits'
 
 import {
-    genStartTransitionCircuitInput,
-    bootstrapRandomUSTree,
     genInputForContract,
+    deploy,
+    bootstrapRandomUSTree,
+    genStartTransitionCircuitInput,
+    keccak256Hash,
 } from './utils'
-import contract, { computeStartTransitionProofHash, Unirep } from '../src'
-import config, { artifactsPath } from './testConfig'
+import { Unirep } from '../src'
+import { config } from './testConfig'
+import { CircuitName } from '../../circuits/src'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -38,11 +40,7 @@ describe('User State Transition circuits', function () {
         before(async () => {
             accounts = await hardhatEthers.getSigners()
 
-            unirepContract = await contract.deploy(
-                artifactsPath,
-                accounts[0],
-                config
-            )
+            unirepContract = await deploy(accounts[0], config)
 
             // User state tree
             const results = await bootstrapRandomUSTree()
@@ -89,13 +87,14 @@ describe('User State Transition circuits', function () {
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
 
+                const input = {
+                    blindedUserState,
+                    blindedHashChain,
+                    GSTRoot,
+                    proof,
+                }
                 const pfIdx = await unirepContract.getProofIndex(
-                    computeStartTransitionProofHash(
-                        blindedUserState,
-                        blindedHashChain,
-                        GSTRoot,
-                        proof
-                    )
+                    keccak256Hash(CircuitName.startTransition, input)
                 )
                 expect(Number(pfIdx)).not.eq(0)
             })
@@ -134,13 +133,14 @@ describe('User State Transition circuits', function () {
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
 
+                const input = {
+                    blindedUserState,
+                    blindedHashChain,
+                    GSTRoot,
+                    proof,
+                }
                 const pfIdx = await unirepContract.getProofIndex(
-                    computeStartTransitionProofHash(
-                        blindedUserState,
-                        blindedHashChain,
-                        GSTRoot,
-                        proof
-                    )
+                    keccak256Hash(CircuitName.startTransition, input)
                 )
                 expect(Number(pfIdx)).not.eq(0)
             })

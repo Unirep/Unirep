@@ -2,16 +2,13 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
-import { CircuitName } from '@unirep/circuits'
 import {
     genRandomSalt,
-    ZkIdentity,
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
 import {
-    Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
     genReputationCircuitInput,
@@ -20,24 +17,22 @@ import {
     genStartTransitionCircuitInput,
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
+    deploy,
+    genIdentity,
+    attesterSignUp,
+    keccak256Hash,
 } from './utils'
-import config, { artifactsPath } from './testConfig'
-import contract, {
-    computeProcessAttestationsProofHash,
-    computeStartTransitionProofHash,
-    ReputationProof,
-    SignUpProof,
-    Unirep,
-    UserTransitionProof,
-} from '../src'
+import { config } from './testConfig'
+import { Unirep, UnirepTypes } from '../src'
+import { CircuitName } from '../../circuits/src'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
-    let userId, userCommitment
+    const { id, commitment } = genIdentity()
 
-    let attester, attesterAddress, attesterId, unirepContractCalledByAttester
+    let attester, attesterAddress, attesterId
 
     const signedUpInLeaf = 1
     const indexes: BigNumber[] = []
@@ -58,75 +53,63 @@ describe('EventFilters', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            _config
-        )
+        unirepContract = await deploy(accounts[0], _config)
 
-        console.log('User sign up')
-        userId = new ZkIdentity()
-        userCommitment = userId.genIdentityCommitment()
-        let tx = await unirepContract.userSignUp(userCommitment)
+        let tx = await unirepContract.userSignUp(commitment)
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        console.log('Attesters sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
-        tx = await unirepContractCalledByAttester.attesterSignUp()
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        const success = await attesterSignUp(unirepContract, attester)
+        expect(success).equal(1)
         attesterId = await unirepContract.attesters(attesterAddress)
 
         tree = new IncrementalMerkleTree(config.globalStateTreeDepth)
         stateRoot = genRandomSalt()
-        hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
-        tree.insert(BigInt(hashedStateLeaf.toString()))
+        hashedStateLeaf = hashLeftRight(commitment, stateRoot)
+        tree.insert(hashedStateLeaf)
     })
 
     it('submit an epoch key proof should succeed', async () => {
         const circuitInputs = genEpochKeyCircuitInput(
-            userId,
+            id,
             tree,
             leafIndex,
             stateRoot,
             epoch,
-            nonce
+            nonce,
+            config
         )
-        const input = await genInputForContract(
-            CircuitName.verifyEpochKey,
-            circuitInputs
-        )
+        const input: UnirepTypes.EpochKeyProofStruct =
+            await genInputForContract(CircuitName.verifyEpochKey, circuitInputs)
         epochKey = input.epochKey
         const tx = await unirepContract.submitEpochKeyProof(input)
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        const hash = keccak256Hash(CircuitName.verifyEpochKey, input)
         const proofNullifier = await unirepContract.hashEpochKeyProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(input.hash())
+        expect(hash).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(hash)
         expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit attestation should succeed', async () => {
-        let attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
+        let attestation: UnirepTypes.AttestationStruct = {
+            attesterId,
+            posRep: 1,
+            negRep: 0,
+            graffiti: genRandomSalt().toString(),
+            signUp: signedUpInLeaf,
+        }
 
         const senderPfIdx = 0
-        const tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            proofIndex,
-            senderPfIdx,
-            { value: attestingFee }
-        )
+        const tx = await unirepContract
+            .connect(attester)
+            .submitAttestation(attestation, epochKey, proofIndex, senderPfIdx, {
+                value: attestingFee,
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
     })
@@ -134,56 +117,68 @@ describe('EventFilters', () => {
     it('spend reputation should succeed', async () => {
         const { reputationRecords } = await bootstrapRandomUSTree()
         const circuitInputs = await genReputationCircuitInput(
-            userId,
+            id,
             epoch,
             nonce,
             reputationRecords,
-            BigInt(attesterId)
+            BigInt(attesterId),
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            config
         )
-        const input: ReputationProof = await genInputForContract(
-            CircuitName.proveReputation,
-            circuitInputs
-        )
-        const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: attestingFee,
-        })
+        const input: UnirepTypes.ReputationProofStruct =
+            await genInputForContract(
+                CircuitName.proveReputation,
+                circuitInputs
+            )
+        const tx = await unirepContract
+            .connect(attester)
+            .spendReputation(input, {
+                value: attestingFee,
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        const hash = keccak256Hash(CircuitName.proveReputation, input)
         const proofNullifier = await unirepContract.hashReputationProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(input.hash())
+        expect(hash).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(hash)
         expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit get airdrop should succeed', async () => {
         const { reputationRecords } = await bootstrapRandomUSTree()
         const circuitInputs = await genProveSignUpCircuitInput(
-            userId,
+            id,
             epoch,
             reputationRecords,
-            BigInt(attesterId)
+            BigInt(attesterId),
+            undefined,
+            config
         )
-        const input: SignUpProof = await genInputForContract(
+        const input: UnirepTypes.SignUpProofStruct = await genInputForContract(
             CircuitName.proveUserSignUp,
             circuitInputs
         )
 
-        let tx = await unirepContractCalledByAttester.airdropEpochKey(input, {
+        let tx = await unirepContract.connect(attester).airdropEpochKey(input, {
             value: attestingFee,
         })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        const hash = keccak256Hash(CircuitName.proveUserSignUp, input)
         const proofNullifier = await unirepContract.hashSignUpProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(input.hash())
+        expect(hash).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(hash)
         expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit start user state transition should success', async () => {
         const circuitInputs = genStartTransitionCircuitInput(
-            userId,
+            id,
             tree,
             leafIndex,
             stateRoot,
@@ -210,20 +205,16 @@ describe('EventFilters', () => {
             GSTRoot,
             proof
         )
-        const computedHash = computeStartTransitionProofHash(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
-        )
-        expect(computedHash).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(computedHash)
+        const input = { blindedUserState, blindedHashChain, GSTRoot, proof }
+        const hash = keccak256Hash(CircuitName.startTransition, input)
+        expect(hash).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(hash)
         expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit process attestation proofs should success', async () => {
         const { circuitInputs } = await genProcessAttestationsCircuitInput(
-            userId,
+            id,
             BigInt(epoch),
             BigInt(nonce),
             BigInt(nonce)
@@ -253,14 +244,15 @@ describe('EventFilters', () => {
                 inputBlindedUserState,
                 proof
             )
-        const computedHash = computeProcessAttestationsProofHash(
+        const input = {
             outputBlindedUserState,
             outputBlindedHashChain,
             inputBlindedUserState,
-            proof
-        )
-        expect(computedHash).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(computedHash)
+            proof,
+        }
+        const hash = keccak256Hash(CircuitName.processAttestations, input)
+        expect(hash).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(hash)
         expect(Number(proofIndex)).greaterThan(0)
     })
 
@@ -275,21 +267,24 @@ describe('EventFilters', () => {
         expect(receipt.status).equal(1)
 
         const circuitInputs = await genUserStateTransitionCircuitInput(
-            userId,
-            epoch
+            id,
+            epoch,
+            config
         )
-        const input: UserTransitionProof = await genInputForContract(
-            CircuitName.userStateTransition,
-            circuitInputs
-        )
+        const input: UnirepTypes.UserTransitionProofStruct =
+            await genInputForContract(
+                CircuitName.userStateTransition,
+                circuitInputs
+            )
         tx = await unirepContract.updateUserStateRoot(input, indexes)
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         const proofNullifier =
             await unirepContract.hashUserStateTransitionProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(input.hash())
+        const hash = keccak256Hash(CircuitName.userStateTransition, input)
+        expect(hash).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(hash)
         expect(Number(proofIndex)).greaterThan(0)
     })
 

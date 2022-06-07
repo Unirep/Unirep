@@ -4,14 +4,16 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 
-import contract, { Unirep } from '../src'
-import config, { artifactsPath } from './testConfig'
+import { Unirep } from '../src'
+import { config } from './testConfig'
+import { attesterSignUp, deploy, genIdentity } from './utils'
 
 describe('Signup', () => {
     const testMaxUser = 5
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
 
+    const { id, commitment } = genIdentity()
     let signedUpUsers = 0
     let signedUpAttesters = 0
     const _config = {
@@ -23,23 +25,16 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            _config
-        )
+        unirepContract = await deploy(accounts[0], _config)
     })
 
     it('should have the correct config value', async () => {
-        const attestingFee_ = await unirepContract.attestingFee()
-        expect(config.attestingFee).equal(attestingFee_)
-        const epochLength_ = await unirepContract.epochLength()
-        expect(config.epochLength).equal(epochLength_)
-        const numEpochKeyNoncePerEpoch_ =
+        expect(config.attestingFee).equal(await unirepContract.attestingFee())
+        expect(config.epochLength).equal(await unirepContract.epochLength())
+        expect(config.numEpochKeyNoncePerEpoch).equal(
             await unirepContract.numEpochKeyNoncePerEpoch()
-        expect(config.numEpochKeyNoncePerEpoch).equal(numEpochKeyNoncePerEpoch_)
-        const maxUsers_ = await unirepContract.maxUsers()
-        expect(testMaxUser).equal(maxUsers_)
+        )
+        expect(testMaxUser).equal(await unirepContract.maxUsers())
 
         const treeDepths_ = await unirepContract.treeDepths()
         expect(config.epochTreeDepth).equal(treeDepths_.epochTreeDepth)
@@ -50,13 +45,9 @@ describe('Signup', () => {
     })
 
     describe('User sign-ups', () => {
-        const id = new ZkIdentity()
-        const commitment = id.genIdentityCommitment()
-
         it('sign up should succeed', async () => {
             const tx = await unirepContract.userSignUp(commitment)
             const receipt = await tx.wait()
-
             expect(receipt.status).equal(1)
             signedUpUsers++
 
@@ -94,23 +85,18 @@ describe('Signup', () => {
 
     describe('Attester sign-ups', () => {
         let attester
-        let attesterAddress
         let attester2
         let attester2Address
         let attester2Sig
-        let unirepContractCalledByAttester: Unirep
 
         it('sign up should succeed', async () => {
-            attester = accounts[1]
-            attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(attester)
-            const tx = await unirepContractCalledByAttester.attesterSignUp()
-            const receipt = await tx.wait()
-
-            expect(receipt.status).equal(1)
+            const success = await attesterSignUp(unirepContract, accounts[1])
+            expect(success).equal(1)
             signedUpAttesters++
 
-            const attesterId = await unirepContract.attesters(attesterAddress)
+            const attesterId = await unirepContract.attesters(
+                await accounts[1].getAddress()
+            )
             expect(signedUpAttesters).equal(attesterId)
             const nextAttesterId_ = await unirepContract.nextAttesterId()
             // nextAttesterId starts with 1 so now it should be 2
@@ -135,7 +121,6 @@ describe('Signup', () => {
                 attester2Sig
             )
             const receipt = await tx.wait()
-
             expect(receipt.status).equal(1)
             signedUpAttesters++
 
@@ -146,11 +131,9 @@ describe('Signup', () => {
         })
 
         it('sign up with invalid signature should fail', async () => {
-            let attester3 = accounts[3]
-            let attester3Address = await attester3.getAddress()
             await expect(
                 unirepContract.attesterSignUpViaRelayer(
-                    attester3Address,
+                    await accounts[3].getAddress(),
                     attester2Sig
                 )
             ).to.be.revertedWith('Unirep: invalid attester sign up signature')
@@ -158,7 +141,7 @@ describe('Signup', () => {
 
         it('double sign up should fail', async () => {
             await expect(
-                unirepContractCalledByAttester.attesterSignUp()
+                attesterSignUp(unirepContract, accounts[1])
             ).to.be.revertedWith('Unirep: attester has already signed up')
 
             await expect(
@@ -171,27 +154,23 @@ describe('Signup', () => {
 
         it('sign up should fail if max capacity reached', async () => {
             for (let i = 3; i < testMaxUser; i++) {
-                attester = accounts[i]
-                attesterAddress = await attester.getAddress()
-                unirepContractCalledByAttester =
-                    unirepContract.connect(attester)
-                const tx = await unirepContractCalledByAttester.attesterSignUp()
-                const receipt = await tx.wait()
-                expect(receipt.status).equal(1)
+                const success = await attesterSignUp(
+                    unirepContract,
+                    accounts[i]
+                )
+                expect(success).equal(1)
                 signedUpAttesters++
 
                 const attesterId = await unirepContract.attesters(
-                    attesterAddress
+                    await accounts[i].getAddress()
                 )
                 expect(signedUpAttesters).equal(attesterId)
                 const nextAttesterId_ = await unirepContract.nextAttesterId()
                 expect(signedUpAttesters + 1).equal(nextAttesterId_)
             }
-            attester = accounts[5]
-            attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(attester)
+            attester = accounts[testMaxUser]
             await expect(
-                unirepContractCalledByAttester.attesterSignUp()
+                attesterSignUp(unirepContract, attester)
             ).to.be.revertedWith(
                 'Unirep: maximum number of attester signups reached'
             )

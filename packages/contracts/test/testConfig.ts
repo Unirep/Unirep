@@ -1,15 +1,13 @@
-import circuit, { CircuitConfig } from '@unirep/circuits'
 import { ethers } from 'ethers'
 import path from 'path'
-
 import { ContractConfig } from '../src/types/config'
 
-export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
+export const zkFilesPath = path.join(__dirname, '../../circuits/circuits/test')
 export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
 export const artifactsPath = path.join(__dirname, '../build/artifacts')
-const circuitConfig: CircuitConfig = circuit.getConfig(zkFilesPath)
+export const circuitConfig = require(path.join(zkFilesPath, 'config.json'))
 
-export default {
+export const config = {
     attestingFee: ethers.utils.parseEther('0.1'),
     epochLength: 30,
     maxUsers: 10,

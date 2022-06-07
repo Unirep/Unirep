@@ -3,14 +3,17 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
-import { CircuitName } from '@unirep/circuits'
 
 import {
     genUserStateTransitionCircuitInput,
     genInputForContract,
+    deploy,
+    genProofAndVerify,
+    keccak256Hash,
 } from './utils'
-import contract, { Unirep, UserTransitionProof } from '../src'
-import config, { artifactsPath } from './testConfig'
+import { Unirep } from '../src'
+import { circuitConfig, config } from './testConfig'
+import { CircuitName } from '../../circuits/src'
 
 describe('User State Transition', function () {
     this.timeout(600000)
@@ -24,23 +27,23 @@ describe('User State Transition', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            config
-        )
+        unirepContract = await deploy(accounts[0], config)
     })
 
     it('Valid user state update inputs should work', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )
-        const isValid = await input.verify()
+        const isValid = await genProofAndVerify(
+            CircuitName.userStateTransition,
+            circuitInputs
+        )
         expect(isValid, 'Verify user state transition proof off-chain failed')
             .to.be.true
         const isProofValid = await unirepContract.verifyUserStateTransition(
@@ -60,7 +63,8 @@ describe('User State Transition', function () {
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const pfIdx = await unirepContract.getProofIndex(input.hash())
+        const hash = keccak256Hash(CircuitName.userStateTransition, input)
+        const pfIdx = await unirepContract.getProofIndex(hash)
         expect(Number(pfIdx)).not.eq(0)
     })
 
@@ -68,9 +72,10 @@ describe('User State Transition', function () {
         const wrongEpoch = epoch + 1
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )
@@ -85,9 +90,10 @@ describe('User State Transition', function () {
         const wrongGlobalStateTreeRoot = genRandomSalt() as BigNumberish
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )
@@ -102,9 +108,10 @@ describe('User State Transition', function () {
         const wrongEpochTreeRoot = genRandomSalt()
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )
@@ -118,9 +125,10 @@ describe('User State Transition', function () {
     it('Proof with wrong blinded user states should fail', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )
@@ -134,9 +142,10 @@ describe('User State Transition', function () {
     it('Proof with wrong blinded hash chain should fail', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )
@@ -150,9 +159,10 @@ describe('User State Transition', function () {
     it('Proof with wrong global state tree leaf should fail', async () => {
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
-            epoch
+            epoch,
+            circuitConfig
         )
-        const input: UserTransitionProof = await genInputForContract(
+        const input = await genInputForContract(
             CircuitName.userStateTransition,
             circuitInputs
         )

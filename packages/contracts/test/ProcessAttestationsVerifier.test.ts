@@ -3,13 +3,15 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { CircuitName } from '@unirep/circuits'
 import {
+    deploy,
     genInputForContract,
+    keccak256Hash,
     genProcessAttestationsCircuitInput,
 } from './utils'
-import contract, { computeProcessAttestationsProofHash, Unirep } from '../src'
-import config, { artifactsPath } from './testConfig'
+import { Unirep } from '../src'
+import { config } from './testConfig'
+import { CircuitName } from '../../circuits/src'
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
@@ -24,11 +26,7 @@ describe('Process attestation circuit', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            config
-        )
+        unirepContract = await deploy(accounts[0], config)
     })
 
     it('successfully process attestations', async () => {
@@ -65,13 +63,14 @@ describe('Process attestation circuit', function () {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        const input: Object = {
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof,
+        }
         const pfIdx = await unirepContract.getProofIndex(
-            computeProcessAttestationsProofHash(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof
-            )
+            keccak256Hash(CircuitName.processAttestations, input)
         )
         expect(Number(pfIdx)).not.eq(0)
     })
@@ -114,13 +113,14 @@ describe('Process attestation circuit', function () {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        const input = {
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof,
+        }
         const pfIdx = await unirepContract.getProofIndex(
-            computeProcessAttestationsProofHash(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof
-            )
+            keccak256Hash(CircuitName.processAttestations, input)
         )
         expect(Number(pfIdx)).not.eq(0)
     })
