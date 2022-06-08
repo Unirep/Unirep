@@ -30,6 +30,7 @@ function copyContracts(currentDir, outPath) {
     } catch (_) {}
     const contents = fs.readdirSync(currentDir)
     for (const c of contents) {
+        if (c === 'verifiers') continue
         const contentPath = path.join(currentDir, c)
         const stat = fs.statSync(contentPath)
         if (stat.isDirectory()) {
