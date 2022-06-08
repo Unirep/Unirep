@@ -2,13 +2,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import { CircuitName } from '../src'
-const snarkjs = require('snarkjs')
-const compiler = require('circom').compiler
-const fastFile = require('fastfile')
 
-import { ptau } from './config'
-import { stringifyBigInts } from '@unirep/crypto'
-import { exportBuildPath, testConfig } from '../test/config'
+import { testCircuits, testConfig } from '../test/config'
 
 const buildEpochKeyExistsCircuit = (dirPath: string) => {
     const circomPath = path.join(dirPath, `epochKeyExists_test.circom`)
@@ -208,56 +203,8 @@ const buildUserStateTransitionCircuit = async (dirPath: string) => {
     fs.writeFileSync(circomPath, circuitContent)
 }
 
-const fileExists = (filepath: string): boolean => {
-    return fs.existsSync(filepath)
-}
-
-const generateProvingKey = async () => {
-    console.log('Building circuits')
-    for (const circuit of Object.keys(CircuitName)) {
-        console.log('    ', circuit, 'circuit')
-        const buildPath = exportBuildPath
-        const circomFile = path.join(buildPath, `${circuit}_test.circom`)
-        const R1CSFile = path.join(buildPath, `${circuit}.r1cs`)
-        const symFile = path.join(buildPath, `${circuit}.sym`)
-        const wasmFile = path.join(buildPath, `${circuit}.wasm`)
-        const zkey = path.join(buildPath, `${circuit}.zkey`)
-        const vkey = path.join(buildPath, `${circuit}.vkey.json`)
-
-        // Check if the input circom file exists
-        const inputFileExists = fileExists(circomFile)
-
-        // Exit if it does not
-        if (!inputFileExists) {
-            console.error('File does not exist:', circomFile)
-            return 1
-        }
-
-        // Check if the circuitOut file exists and if we should not override files
-        const circuitOutFileExists = fileExists(R1CSFile)
-        if (!circuitOutFileExists) {
-            // Compile the .circom file
-            const options = {
-                wasmFile: await fastFile.createOverride(wasmFile),
-                r1csFileName: R1CSFile,
-                symWriteStream: fs.createWriteStream(symFile),
-            }
-            await compiler(circomFile, options)
-        }
-
-        const zkeyOutFileExists = fileExists(zkey)
-        if (!zkeyOutFileExists) {
-            await snarkjs.zKey.newZKey(R1CSFile, ptau, zkey)
-            const vkeyJson = await snarkjs.zKey.exportVerificationKey(zkey)
-            const S = JSON.stringify(stringifyBigInts(vkeyJson), null, 1)
-            await fs.promises.writeFile(vkey, S)
-        }
-    }
-    console.log('Building circuits done!')
-}
-
 const main = async (): Promise<number> => {
-    const dirPath = exportBuildPath
+    const dirPath = testCircuits
     const configPath = path.join(dirPath, 'config.json')
 
     // build export zk files folder
@@ -297,9 +244,7 @@ const main = async (): Promise<number> => {
     buildUserStateTransitionCircuit(dirPath)
 
     fs.writeFileSync(configPath, JSON.stringify(testConfig))
-
-    await generateProvingKey()
-    process.exit(0)
+    return 0
 }
 
 void (async () => {

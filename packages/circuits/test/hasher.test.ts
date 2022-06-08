@@ -8,11 +8,11 @@ import {
 } from '@unirep/crypto'
 
 import { UnirepCircuit } from './utils'
-import { exportBuildPath } from './config'
+import { testCircuits } from './config'
 
-const hasher5CircuitPath = path.join(exportBuildPath, 'hasher5_test.circom')
+const hasher5CircuitPath = path.join(testCircuits, 'hasher5_test.circom')
 const hashleftrightCircuitPath = path.join(
-    exportBuildPath,
+    testCircuits,
     'hashleftright_test.circom'
 )
 

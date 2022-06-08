@@ -8,16 +8,15 @@ import {
 } from '@unirep/crypto'
 
 import { UnirepCircuit } from './utils'
-import { exportBuildPath } from './config'
+import { testCircuits, testConfig as config } from './config'
 
-const config = UnirepCircuit.getConfig(exportBuildPath)
 const LEVELS = config.globalStateTreeDepth
 const LeafExistsCircuitPath = path.join(
-    exportBuildPath,
+    testCircuits,
     'merkleTreeLeafExists_test.circom'
 )
 const InclusionProofCircuitPath = path.join(
-    exportBuildPath,
+    testCircuits,
     'merkleTreeInclusionProof_test.circom'
 )
 

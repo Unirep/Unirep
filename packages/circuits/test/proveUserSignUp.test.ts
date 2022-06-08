@@ -11,12 +11,11 @@ import {
     throwError,
     genProofAndVerify,
 } from './utils'
-import { exportBuildPath } from './config'
+import { exportBuildPath, config } from './config'
 
-const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
     exportBuildPath,
-    `${CircuitName.proveUserSignUp}_test.circom`
+    `${CircuitName.proveUserSignUp}_main.circom`
 )
 
 describe('Prove user has signed up circuit', function () {

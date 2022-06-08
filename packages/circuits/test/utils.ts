@@ -12,8 +12,7 @@ const circom = require('circom')
 
 import { CircuitConfig, CircuitName } from '../src'
 import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
-import { exportBuildPath } from './config'
-const config = require(path.join(exportBuildPath, 'config.json'))
+import { exportBuildPath, config } from './config'
 
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))

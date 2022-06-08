@@ -3,13 +3,12 @@ import { expect } from 'chai'
 import { genRandomSalt, hashOne, SparseMerkleTree } from '@unirep/crypto'
 
 import { UnirepCircuit, genNewSMT } from './utils'
-import { exportBuildPath } from './config'
+import { testCircuits, testConfig as config } from './config'
 
-const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitEpochTreeDepth = config.epochTreeDepth
-const circuitPath = path.join(exportBuildPath, 'smtLeafExists_test.circom')
+const circuitPath = path.join(testCircuits, 'smtLeafExists_test.circom')
 const InclusionProofCircuitPath = path.join(
-    exportBuildPath,
+    testCircuits,
     'smtInclusionProof_test.circom'
 )
 

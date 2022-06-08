@@ -10,12 +10,11 @@ import {
     genProofAndVerify,
     throwError,
 } from './utils'
-import { exportBuildPath } from './config'
+import { exportBuildPath, config } from './config'
 
-const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
     exportBuildPath,
-    `${CircuitName.processAttestations}_test.circom`
+    `${CircuitName.processAttestations}_main.circom`
 )
 
 describe('Process attestation circuit', function () {

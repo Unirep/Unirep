@@ -8,7 +8,7 @@
         "buildSnarks": "npx ts-node scripts/buildSnarks.ts",
         "buildTestCircuits": "npx ts-node scripts/buildTestCircuits.ts",
         "buildTs": "tsc",
-        "test": "yarn downloadPtau && yarn buildTestCircuits && mocha -r ts-node/register test/*.test.ts --exit",
+        "test": "yarn buildTestCircuits && mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep.git",

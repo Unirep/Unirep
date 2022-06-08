@@ -14,12 +14,11 @@ import {
     genProofAndVerify,
 } from './utils'
 import { CircuitName } from '../src'
-import { exportBuildPath } from './config'
+import { exportBuildPath, config } from './config'
 
-const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
     exportBuildPath,
-    `${CircuitName.startTransition}_test.circom`
+    `${CircuitName.startTransition}_main.circom`
 )
 
 describe('User State Transition circuits', function () {
@@ -31,8 +30,7 @@ describe('User State Transition circuits', function () {
         let circuit
         const epoch = 1
 
-        let GSTZERO_VALUE = 0,
-            GSTree: IncrementalMerkleTree
+        let GSTree: IncrementalMerkleTree
         let userStateTree: SparseMerkleTree
 
         let hashedLeaf

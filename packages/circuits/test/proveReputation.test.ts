@@ -10,12 +10,11 @@ import {
     throwError,
     genProofAndVerify,
 } from './utils'
-import { exportBuildPath } from './config'
+import { exportBuildPath, config } from './config'
 
-const config = UnirepCircuit.getConfig(exportBuildPath)
 const circuitPath = path.join(
     exportBuildPath,
-    `${CircuitName.proveReputation}_test.circom`
+    `${CircuitName.proveReputation}_main.circom`
 )
 
 describe('Prove reputation from attester circuit', function () {
