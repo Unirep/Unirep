@@ -20,7 +20,6 @@
         "@openzeppelin/contracts": "4.4.2",
         "@typechain/ethers-v5": "^9.0.0",
         "@typechain/hardhat": "^5.0.0",
-        "@unirep/circuits": "1.0.0",
         "@unirep/crypto": "1.0.0",
         "argparse": "^2.0.1",
         "ethers": "^5.5.3",

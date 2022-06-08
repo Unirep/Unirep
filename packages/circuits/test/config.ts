@@ -15,4 +15,4 @@ export const testConfig = {
     numAttestationsPerProof: 5,
 } as CircuitConfig
 
-export const config = require(path.join(exportBuildPath,'config.json'))
+export const config = require(path.join(exportBuildPath, 'config.json'))
