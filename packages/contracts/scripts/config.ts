@@ -2,7 +2,7 @@ import path from 'path'
 import { CircuitName } from '../../circuits/src'
 import { ethers } from 'ethers'
 
-export const zkFilesPath = path.join(__dirname, '../../circuits/circuits/test')
+export const zkFilesPath = path.join(__dirname, '../../circuits/zksnarkBuild')
 export const verifiersPath = path.join(__dirname, '../contracts/verifiers')
 export const artifactsPath = path.join(__dirname, '../build/artifacts')
 export const circuitConfig = require(path.join(zkFilesPath, 'config.json'))

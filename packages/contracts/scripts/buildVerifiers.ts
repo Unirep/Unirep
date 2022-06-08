@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import path from 'path'
-import { CircuitName } from '@unirep/circuits'
+import { CircuitName } from '../../circuits/src'
 
 import { genSnarkVerifierSol } from './genVerifier'
 import { verifiersPath, zkFilesPath } from './config'
