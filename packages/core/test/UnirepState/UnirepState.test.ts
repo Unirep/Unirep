@@ -1,8 +1,7 @@
 import { expect } from 'chai'
 import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
-import { Attestation } from '@unirep/contracts'
 
-import { UnirepState } from '../../src'
+import { Attestation, UnirepState } from '../../src'
 import { genRandomAttestation } from '../utils'
 import { zkFilesPath } from '../testConfig'
 

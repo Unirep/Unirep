@@ -9,7 +9,7 @@ import {
     ZkIdentity,
     unstringifyBigInts,
 } from '@unirep/crypto'
-import { CircuitName } from './types/circuit'
+import { CircuitName } from './types'
 
 import {
     IEpochTreeLeaf,
@@ -18,9 +18,9 @@ import {
     IUserStateLeaf,
 } from './interfaces'
 import Reputation from './Reputation'
+import Attestation from './Attestation'
 import UnirepState from './UnirepState'
 import { UnirepProtocol } from './UnirepProtocol'
-import { Attestation } from './Attestation'
 
 export default class UserState extends UnirepState {
     public id: ZkIdentity
@@ -336,7 +336,7 @@ export default class UserState extends UnirepState {
     private async _genUserStateTreeFromLeaves(
         leaves: IUserStateLeaf[]
     ): Promise<SparseMerkleTree> {
-        const USTree = await this.genNewUST()
+        const USTree = this.genNewUST()
         for (const leaf of leaves) {
             await USTree.update(leaf.attesterId, leaf.reputation.hash())
         }
@@ -348,7 +348,7 @@ export default class UserState extends UnirepState {
      */
     public async genUserStateTree(): Promise<SparseMerkleTree> {
         const leaves = this.latestUserStateLeaves
-        return await this._genUserStateTreeFromLeaves(leaves)
+        return this._genUserStateTreeFromLeaves(leaves)
     }
 
     /**
@@ -370,7 +370,7 @@ export default class UserState extends UnirepState {
 
             // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
             // stand anymore, below `epkNullifiersMatched` check should be changed.
-            if (epkNullifiersMatched == this.config.numEpochKeyNoncePerEpoch) {
+            if (epkNullifiersMatched === this.config.numEpochKeyNoncePerEpoch) {
                 await this._transition(GSTLeaf)
             } else if (epkNullifiersMatched > 0) {
                 console.error(
@@ -383,7 +383,7 @@ export default class UserState extends UnirepState {
         super.userStateTransition(fromEpoch, GSTLeaf, nullifiers, blockNumber)
     }
 
-    public async genVerifyEpochKeyProof(epochKeyNonce: number) {
+    private async _genVerifyEpochKeyProof(epochKeyNonce: number) {
         this._checkUserSignUp()
         this._checkEpkNonce(epochKeyNonce)
         const epoch = this.latestTransitionedEpoch
@@ -408,18 +408,7 @@ export default class UserState extends UnirepState {
             epoch_key: epochKey,
         })
 
-        const results = await super.genProof(
-            CircuitName.verifyEpochKey,
-            circuitInputs
-        )
-
-        return {
-            proof: results.proof,
-            publicSignals: results.publicSignals,
-            globalStateTree: results.publicSignals[0],
-            epoch: results.publicSignals[1],
-            epochKey: results.publicSignals[2],
-        }
+        return circuitInputs
     }
 
     private _updateUserStateLeaf(
@@ -571,7 +560,7 @@ export default class UserState extends UnirepState {
         }
     }
 
-    public genUserStateTransitionProofs = async () => {
+    private _genUserStateTransitionProofs = async () => {
         this._checkUserSignUp()
         const fromEpoch = this.latestTransitionedEpoch
         const fromNonce = 0
@@ -752,7 +741,6 @@ export default class UserState extends UnirepState {
                 signUps.push('0')
             }
             epochKeyPathElements.push(await fromEpochTree.createProof(epochKey))
-            // finalUserState.push(fromEpochUserStateTree.root)
             finalHashChain.push(currentHashChain)
             blindedUserState.push(
                 hash5([
@@ -849,70 +837,10 @@ export default class UserState extends UnirepState {
             epoch_tree_root: epochTreeRoot,
         })
 
-        // Generate proofs
-        const startTransitionresults = await super.genProof(
-            CircuitName.startTransition,
-            startTransitionCircuitInputs.circuitInputs
-        )
-
-        const processAttestationProofs: any[] = []
-        for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
-            const results = await super.genProof(
-                CircuitName.processAttestations,
-                processAttestationCircuitInputs[i]
-            )
-            processAttestationProofs.push({
-                proof: results.proof,
-                publicSignals: results.publicSignals,
-                outputBlindedUserState: results.publicSignals[0],
-                outputBlindedHashChain: results.publicSignals[1],
-                inputBlindedUserState: results.publicSignals[2],
-            })
-        }
-
-        const finalProofResults = await super.genProof(
-            CircuitName.userStateTransition,
-            finalTransitionCircuitInputs
-        )
-
         return {
-            startTransitionProof: {
-                proof: startTransitionresults.proof,
-                publicSignals: startTransitionresults.publicSignals,
-                blindedUserState: startTransitionresults.publicSignals[0],
-                blindedHashChain: startTransitionresults.publicSignals[1],
-                globalStateTreeRoot: startTransitionresults.publicSignals[2],
-            },
-            processAttestationProofs: processAttestationProofs,
-            finalTransitionProof: {
-                proof: finalProofResults.proof,
-                publicSignals: finalProofResults.publicSignals,
-                newGlobalStateTreeLeaf: finalProofResults.publicSignals[0],
-                epochKeyNullifiers: finalProofResults.publicSignals.slice(
-                    1,
-                    1 + this.config.numEpochKeyNoncePerEpoch
-                ),
-                transitionedFromEpoch:
-                    finalProofResults.publicSignals[
-                        1 + this.config.numEpochKeyNoncePerEpoch
-                    ],
-                blindedUserStates: finalProofResults.publicSignals.slice(
-                    2 + this.config.numEpochKeyNoncePerEpoch,
-                    4 + this.config.numEpochKeyNoncePerEpoch
-                ),
-                fromGSTRoot:
-                    finalProofResults.publicSignals[
-                        4 + this.config.numEpochKeyNoncePerEpoch
-                    ],
-                blindedHashChains: finalProofResults.publicSignals.slice(
-                    5 + this.config.numEpochKeyNoncePerEpoch,
-                    5 + 2 * this.config.numEpochKeyNoncePerEpoch
-                ),
-                fromEpochTree:
-                    finalProofResults.publicSignals[
-                        5 + 2 * this.config.numEpochKeyNoncePerEpoch
-                    ],
-            },
+            startTransition: startTransitionCircuitInputs.circuitInputs,
+            processAttestation: processAttestationCircuitInputs,
+            finalTransition: finalTransitionCircuitInputs,
         }
     }
 
@@ -943,7 +871,7 @@ export default class UserState extends UnirepState {
         this.latestUserStateLeaves = latestStateLeaves.slice()
     }
 
-    public async genProveReputationProof(
+    private async _genProveReputationProof(
         attesterId: BigInt,
         epkNonce: number,
         minRep?: number,
@@ -1020,7 +948,7 @@ export default class UserState extends UnirepState {
             )
         }
 
-        const circuitInputs = stringifyBigInts({
+        return stringifyBigInts({
             epoch: epoch,
             epoch_key_nonce: epkNonce,
             epoch_key: epochKey,
@@ -1044,39 +972,9 @@ export default class UserState extends UnirepState {
             graffiti_pre_image:
                 graffitiPreImage === undefined ? 0 : graffitiPreImage,
         })
-
-        const results = await super.genProof(
-            CircuitName.proveReputation,
-            circuitInputs
-        )
-
-        return {
-            proof: results['proof'],
-            publicSignals: results['publicSignals'],
-            reputationNullifiers: results['publicSignals'].slice(
-                0,
-                this.config.maxReputationBudget
-            ),
-            epoch: results['publicSignals'][this.config.maxReputationBudget],
-            epochKey:
-                results['publicSignals'][this.config.maxReputationBudget + 1],
-            globalStatetreeRoot:
-                results['publicSignals'][this.config.maxReputationBudget + 2],
-            attesterId:
-                results['publicSignals'][this.config.maxReputationBudget + 3],
-            proveReputationAmount:
-                results['publicSignals'][this.config.maxReputationBudget + 4],
-            minRep: results['publicSignals'][
-                this.config.maxReputationBudget + 5
-            ],
-            proveGraffiti:
-                results['publicSignals'][this.config.maxReputationBudget + 6],
-            graffitiPreImage:
-                results['publicSignals'][this.config.maxReputationBudget + 7],
-        }
     }
 
-    public async genUserSignUpProof(attesterId: BigInt) {
+    private async _genUserSignUpCircuitInputs(attesterId: BigInt) {
         this._checkUserSignUp()
         this._checkAttesterId(attesterId)
         const epoch = this.latestTransitionedEpoch
@@ -1097,7 +995,7 @@ export default class UserState extends UnirepState {
         const GSTreeRoot = GSTree.root
         const USTPathElements = await userStateTree.createProof(attesterId)
 
-        const circuitInputs = stringifyBigInts({
+        return stringifyBigInts({
             epoch: epoch,
             epoch_key: epochKey,
             identity_nullifier: this.id.identityNullifier,
@@ -1113,19 +1011,33 @@ export default class UserState extends UnirepState {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
-        const results = await super.genProof(
-            CircuitName.proveUserSignUp,
-            circuitInputs
-        )
+    }
 
-        return {
-            proof: results['proof'],
-            publicSignals: results['publicSignals'],
-            epoch: results['publicSignals'][0],
-            epochKey: results['publicSignals'][1],
-            globalStateTreeRoot: results['publicSignals'][2],
-            attesterId: results['publicSignals'][3],
-            userHasSignedUp: results['publicSignals'][4],
+    /**
+     * Generate circuit input for snarkjs verification
+     * @param circuit The name of the circuit that users want to proof
+     * @param input the variables that users can define in the circuit
+     */
+    public async genCircuitInputs(circuit: CircuitName, input: any) {
+        if (circuit === CircuitName.verifyEpochKey) {
+            return this._genVerifyEpochKeyProof(input.epochKeyNonce)
+        } else if (circuit === CircuitName.proveReputation) {
+            return this._genProveReputationProof(
+                input.attesterId,
+                input.epkNonce,
+                input.minRep,
+                input.proveGraffiti,
+                input.graffitiPreImage,
+                input.nonceList
+            )
+        } else if (circuit === CircuitName.proveUserSignUp) {
+            return this._genUserSignUpCircuitInputs(input.attesterId)
+        } else if (circuit === CircuitName.userStateTransition) {
+            return this._genUserStateTransitionProofs()
+        } else {
+            throw new TypeError(
+                `UserState: Generating circuit ${circuit} inputs is not defined`
+            )
         }
     }
 }

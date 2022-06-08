@@ -10,7 +10,7 @@ import {
 
 import { IEpochTreeLeaf, IUnirepState } from './interfaces'
 import { UnirepProtocol } from './UnirepProtocol'
-import { Attestation } from './Attestation'
+import Attestation from './Attestation'
 
 export default class UnirepState extends UnirepProtocol {
     public currentEpoch: number = 1

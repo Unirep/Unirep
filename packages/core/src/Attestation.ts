@@ -1,22 +1,20 @@
-import { UnirepTypes } from "@unirep/contracts";
-import { hash5 } from "@unirep/crypto";
-import { BigNumberish } from "ethers";
+import { UnirepTypes } from '@unirep/contracts'
+import { hash5 } from '@unirep/crypto'
+import { BigNumberish } from 'ethers'
 
-export class Attestation implements UnirepTypes.AttestationStruct {
-    attesterId: BigNumberish;
-    posRep: BigNumberish;
-    negRep: BigNumberish;
-    graffiti: BigNumberish;
-    signUp: BigNumberish;
+export default class Attestation implements UnirepTypes.AttestationStruct {
+    attesterId: BigNumberish
+    posRep: BigNumberish
+    negRep: BigNumberish
+    graffiti: BigNumberish
+    signUp: BigNumberish
 
-    constructor(
-        attestation: UnirepTypes.AttestationStruct
-    ) {
-        this.attesterId = attestation.attesterId,
-        this.posRep = attestation.posRep,
-        this.negRep = attestation.negRep,
-        this.graffiti = attestation.graffiti,
-        this.signUp = attestation.signUp
+    constructor(attestation: UnirepTypes.AttestationStruct) {
+        ;(this.attesterId = attestation.attesterId),
+            (this.posRep = attestation.posRep),
+            (this.negRep = attestation.negRep),
+            (this.graffiti = attestation.graffiti),
+            (this.signUp = attestation.signUp)
     }
 
     hash() {
@@ -27,5 +25,15 @@ export class Attestation implements UnirepTypes.AttestationStruct {
             BigInt(this.graffiti.toString()),
             BigInt(this.signUp.toString()),
         ])
+    }
+
+    toJSON() {
+        return JSON.stringify({
+            attesterId: this.attesterId.toString(),
+            posRep: this.posRep.toString(),
+            negRep: this.negRep.toString(),
+            graffiti: this.graffiti.toString(),
+            signUp: this.signUp.toString(),
+        })
     }
 }

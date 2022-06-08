@@ -9,9 +9,9 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Attestation } from '@unirep/contracts'
 
 import {
+    Attestation,
     genUnirepState,
     genUserState,
     IUserState,
@@ -20,7 +20,18 @@ import {
     UserState,
 } from '../src'
 import { UnirepProtocol } from '../src/UnirepProtocol'
+import {
+    deploy,
+    attesterSignUp,
+    setAirdrop,
+    genIdentity,
+    genProof,
+    verifyProof,
+    formatProofAndPublicSignals,
+    keccak256Hash,
+} from '../../contracts/test/utils'
 import { Unirep } from '@unirep/contracts'
+import { CircuitName } from '../src/types'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
@@ -28,57 +39,15 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const attesterSignUp = async (
-    account: ethers.Signer,
-    unirepContract: Unirep
-) => {
-    const attester = new Object()
-    attester['acct'] = account
-    attester['addr'] = await attester['acct'].getAddress()
-    const unirepContractCalledByAttester = unirepContract.connect(
-        attester['acct']
-    )
-    let tx = await unirepContractCalledByAttester.attesterSignUp()
-    let receipt = await tx.wait()
-    expect(receipt.status, 'Attester signs up failed').to.equal(1)
-
-    return {
-        attester,
-        unirepContractCalledByAttester,
-    }
-}
-
-const attesterSetAirdrop = async (
-    account: ethers.Signer,
-    unirepContract: Unirep,
-    airdropPosRep: number
-) => {
-    const attester = new Object()
-    attester['acct'] = account
-    attester['addr'] = await attester['acct'].getAddress()
-    const unirepContractCalledByAttester = unirepContract.connect(
-        attester['acct']
-    )
-    const tx = await unirepContractCalledByAttester.setAirdropAmount(
-        airdropPosRep
-    )
-    const receipt = await tx.wait()
-    expect(receipt.status).equal(1)
-    const airdroppedAmount = await unirepContract.airdropAmount(
-        attester['addr']
-    )
-    expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
-}
-
 const genRandomAttestation = (): Attestation => {
     const attesterId = Math.ceil(Math.random() * 10)
-    const attestation = new Attestation(
-        BigInt(attesterId),
-        BigInt(Math.floor(Math.random() * 100)),
-        BigInt(Math.floor(Math.random() * 100)),
-        BigNumber.from(genRandomSalt()),
-        BigInt(Math.floor(Math.random() * 2))
-    )
+    const attestation = new Attestation({
+        attesterId,
+        posRep: Math.floor(Math.random() * 100),
+        negRep: Math.floor(Math.random() * 100),
+        graffiti: genRandomSalt().toString(),
+        signUp: Math.floor(Math.random() * 2),
+    })
     return attestation
 }
 
@@ -88,14 +57,6 @@ const genRandomList = (length): BigNumberish[] => {
         array.push(BigNumber.from(genRandomSalt()))
     }
     return array
-}
-
-const computeEpochKeyProofHash = (epochKeyProof: any) => {
-    const abiEncoder = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256', 'uint256', 'uint256[8]'],
-        epochKeyProof
-    )
-    return ethers.utils.keccak256(abiEncoder)
 }
 
 const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
@@ -373,17 +334,127 @@ const compareEpochTrees = async (
     return usWithNoStorage.toJSON()
 }
 
+const submitUSTProofs = async (
+    contract: Unirep,
+    { startTransition, processAttestation, finalTransition }
+) => {
+    const proofIndexes: number[] = []
+    {
+        const circuit = CircuitName.startTransition
+        const { proof, publicSignals } = await genProof(
+            circuit,
+            startTransition
+        )
+        const isValid = await verifyProof(circuit, publicSignals, proof)
+        const format = formatProofAndPublicSignals(
+            circuit,
+            proof,
+            publicSignals
+        )
+        expect(isValid).to.be.true
+
+        // submit proofs
+        let tx = await contract.startUserStateTransition(
+            format.blindedUserState,
+            format.blindedHashChain,
+            format.globalStateTree,
+            format.proof
+        )
+        let receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.startUserStateTransition(
+                format.blindedUserState,
+                format.blindedHashChain,
+                format.globalStateTree,
+                format.proof
+            )
+        ).to.be.revertedWith('Unirep: the proof has been submitted before')
+        const hashedProof = keccak256Hash(circuit, format)
+        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+    }
+
+    {
+        const circuit = CircuitName.processAttestations
+        for (let i = 0; i < processAttestation.length; i++) {
+            const { proof, publicSignals } = await genProof(
+                circuit,
+                processAttestation[i]
+            )
+            const isValid = await verifyProof(circuit, publicSignals, proof)
+            const format = formatProofAndPublicSignals(
+                circuit,
+                proof,
+                publicSignals
+            )
+            expect(isValid).to.be.true
+            const tx = await contract.processAttestations(
+                format.outputBlindedUserState,
+                format.outputBlindedHashChain,
+                format.inputBlindedUserState,
+                format.proof
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).to.equal(1)
+
+            // submit twice should fail
+            await expect(
+                contract.processAttestations(
+                    format.outputBlindedUserState,
+                    format.outputBlindedHashChain,
+                    format.inputBlindedUserState,
+                    format.proof
+                )
+            ).to.be.revertedWith('Unirep: the proof has been submitted before')
+
+            let hashedProof = keccak256Hash(circuit, format)
+            proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+        }
+    }
+
+    {
+        const circuit = CircuitName.userStateTransition
+        const { proof, publicSignals } = await genProof(
+            circuit,
+            finalTransition
+        )
+        const USTInput = formatProofAndPublicSignals(
+            circuit,
+            proof,
+            publicSignals
+        )
+        const isValid = await verifyProof(circuit, publicSignals, proof)
+        expect(isValid).to.be.true
+        const tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
+        const receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.updateUserStateRoot(USTInput, proofIndexes)
+        ).to.be.revertedWith('Unirep: the proof has been submitted before')
+    }
+}
+
 export {
+    deploy,
     attesterSignUp,
-    attesterSetAirdrop,
+    setAirdrop,
+    genIdentity,
+    genProof,
+    verifyProof,
+    formatProofAndPublicSignals,
+    keccak256Hash,
     genRandomAttestation,
     genRandomList,
     toCompleteHexString,
-    computeEpochKeyProofHash,
     getReputationRecords,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
     compareStates,
     compareEpochTrees,
+    submitUSTProofs,
 }

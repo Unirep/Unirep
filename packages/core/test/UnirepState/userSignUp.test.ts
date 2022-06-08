@@ -3,18 +3,20 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import contract, { Unirep } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
 
 import { genUnirepState } from '../../src'
-import { artifactsPath, config, zkFilesPath } from '../testConfig'
+import { config, zkFilesPath } from '../testConfig'
 import { UnirepProtocol } from '../../src/UnirepProtocol'
+import { attesterSignUp, deploy, genIdentity, setAirdrop } from '../utils'
 
 describe('User sign up events in Unirep State', function () {
     this.timeout(0)
 
     // attesters
     let accounts: ethers.Signer[]
-    let attester = new Object()
+    let attester, attesterAddr
+    let attesterId
 
     // users
     let userIds: ZkIdentity[] = []
@@ -22,7 +24,6 @@ describe('User sign up events in Unirep State', function () {
     // unirep contract and protocol
     const protocol = new UnirepProtocol(zkFilesPath)
     let unirepContract: Unirep
-    let unirepContractCalledByAttester: Unirep
 
     // test config
     const maxUsers = 10
@@ -36,35 +37,20 @@ describe('User sign up events in Unirep State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            config
-        )
+        unirepContract = await deploy(accounts[0], config)
     })
 
     describe('Attester sign up and set airdrop', async () => {
         it('attester sign up', async () => {
-            attester['acct'] = accounts[2]
-            attester['addr'] = await attester['acct'].getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(
-                attester['acct']
-            )
-            let tx = await unirepContractCalledByAttester.attesterSignUp()
-            let receipt = await tx.wait()
-            expect(receipt.status, 'Attester signs up failed').to.equal(1)
+            attester = accounts[2]
+            const success = await attesterSignUp(unirepContract, attester)
+            expect(success, 'Attester signs up failed').to.equal(1)
+            attesterAddr = await attester.getAddress()
+            attesterId = await unirepContract.attesters(attesterAddr)
         })
 
         it('attester set airdrop amount', async () => {
-            const tx = await unirepContractCalledByAttester.setAirdropAmount(
-                airdropPosRep
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester['addr']
-            )
-            expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
+            await setAirdrop(unirepContract, attester, airdropPosRep)
         })
     })
 
@@ -92,18 +78,17 @@ describe('User sign up events in Unirep State', function () {
     describe('User Sign Up event', async () => {
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {
-                const id = new ZkIdentity()
-                const commitment = id.genIdentityCommitment()
+                const { id, commitment } = genIdentity()
                 userIds.push(id)
 
-                const tx = await unirepContractCalledByAttester.userSignUp(
-                    commitment
-                )
+                const tx = await unirepContract
+                    .connect(attester)
+                    .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
-                    unirepContractCalledByAttester.userSignUp(commitment)
+                    unirepContract.connect(attester).userSignUp(commitment)
                 ).to.be.revertedWith('Unirep: the user has already signed up')
 
                 const unirepState = await genUnirepState(
@@ -119,11 +104,9 @@ describe('User sign up events in Unirep State', function () {
                 const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
                 expect(unirepGSTLeaves).equal(i + 1)
 
-                const attesterId = await unirepContract.attesters(
-                    attester['addr']
-                )
+                const attesterId = await unirepContract.attesters(attesterAddr)
                 const airdroppedAmount = await unirepContract.airdropAmount(
-                    attester['addr']
+                    attesterAddr
                 )
                 const newUSTRoot = await protocol.computeInitUserStateRoot(
                     Number(attesterId),
@@ -137,8 +120,7 @@ describe('User sign up events in Unirep State', function () {
 
         it('sign up users with no airdrop', async () => {
             for (let i = 0; i < maxUsers - userNum; i++) {
-                const id = new ZkIdentity()
-                const commitment = id.genIdentityCommitment()
+                const { id, commitment } = genIdentity()
                 userIds.push(id)
 
                 const tx = await unirepContract.userSignUp(commitment)
@@ -175,8 +157,7 @@ describe('User sign up events in Unirep State', function () {
             const unirepGSTLeavesBefore =
                 unirepStateBefore.getNumGSTLeaves(unirepEpoch)
 
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
+            const { id, commitment } = genIdentity()
             await expect(
                 unirepContract.userSignUp(commitment)
             ).to.be.revertedWith(

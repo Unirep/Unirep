@@ -6,6 +6,7 @@ import {
     IUserState,
 } from './interfaces'
 
+import Attestation from './Attestation'
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
 import UserState from './UserState'
@@ -19,6 +20,7 @@ export {
     IReputation,
     IUserStateLeaf,
     IUserState,
+    Attestation,
     Reputation,
     UnirepProtocol,
     UserState,
