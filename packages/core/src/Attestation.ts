@@ -16,7 +16,7 @@ export class Attestation implements UnirepTypes.AttestationStruct {
         this.posRep = attestation.posRep,
         this.negRep = attestation.negRep,
         this.graffiti = attestation.graffiti,
-        this.signUp = attestation.signUp,
+        this.signUp = attestation.signUp
     }
 
     hash() {

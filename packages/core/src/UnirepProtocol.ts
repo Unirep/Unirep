@@ -1,7 +1,5 @@
 import { BigNumber, Event } from 'ethers'
 import Keyv from 'keyv'
-import path from 'path'
-import circuit, { CircuitConfig, CircuitName } from '@unirep/circuits'
 import {
     hash5,
     hashLeftRight,
@@ -9,10 +7,10 @@ import {
     SnarkBigInt,
     SparseMerkleTree,
     SnarkProof,
-    SnarkPublicSignals,
 } from '@unirep/crypto'
 
 import Reputation from './Reputation'
+import { CircuitName, CircuitConfig } from './types'
 
 export class UnirepProtocol {
     static EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -36,7 +34,7 @@ export class UnirepProtocol {
      */
     constructor(_zkFilesPath: string) {
         this.zkFilesPath = _zkFilesPath
-        this.config = require(path.join(this.zkFilesPath, 'config.json'))
+        this.config = require([this.zkFilesPath, 'config.json'].join('/'))
     }
 
     /**
@@ -186,45 +184,32 @@ export class UnirepProtocol {
     }
 
     /**
-     * Generate a full proof of the circuit
-     * @param circuitName The name of the circuit
-     * @param inputs The input of the proof
-     * @returns The proof and the public signals of the snark proof
+     * Format event proof strings for snarkjs verification
+     * @param proof the proof emitted from unirep smart contract
+     * @returns formatted SnarkProof type proof
      */
-    public async genProof(circuitName: CircuitName, inputs: any) {
-        return circuit.genProof(this.zkFilesPath, circuitName, inputs)
-    }
-
-    /**
-     * Verify the snark proof
-     * @param circuitName The name of the circuit
-     * @param proof The proof of the snark proof
-     * @param publicSignals The public signals of the snark proof
-     * @returns
-     */
-    public async verifyProof(
-        circuitName: CircuitName,
-        proof: SnarkProof,
-        publicSignals: SnarkPublicSignals
-    ): Promise<boolean> {
-        return circuit.verifyProof(
-            this.zkFilesPath,
-            circuitName,
-            proof,
-            publicSignals
-        )
+    private formatProofForSnarkJs(proof: string[8]): SnarkProof {
+        return {
+            pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
+            pi_b: [
+                [BigInt(proof[3]), BigInt(proof[2])],
+                [BigInt(proof[5]), BigInt(proof[4])],
+                [BigInt('1'), BigInt('0')],
+            ],
+            pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
+        }
     }
 
     /**
      * Verify contract events' proof
      * @param circuitName The name of the circuit
      * @param event The event from the unirep contract
-     * @returns True if the proof is valid, false otherwise.
+     * @returns formatted proof and publicSignals to be verified by snarkjs
      */
     public async verifyProofEvent(
         circuitName: CircuitName,
         event: Event
-    ): Promise<boolean> {
+    ): Promise<{ proof, publicSignals }> {
         let args = event?.args?.proof
         const emptyArray: BigNumber[] = []
         let formatPublicSignals
@@ -291,16 +276,11 @@ export class UnirepProtocol {
                 `Unirep protocol: cannot find circuit name ${circuitName}`
             )
         }
-        const formatProof = circuit.formatProofForSnarkjsVerification(
-            args?.proof
-        )
-        const isProofValid = await circuit.verifyProof(
-            this.zkFilesPath,
-            circuitName,
-            formatProof,
-            formatPublicSignals
-        )
-        return isProofValid
+        const formatProof = this.formatProofForSnarkJs(args?.proof)
+        return {
+            proof: formatProof,
+            publicSignals: formatPublicSignals
+        }
     }
 
     /**
