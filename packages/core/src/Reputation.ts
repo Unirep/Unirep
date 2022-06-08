@@ -33,17 +33,17 @@ export default class Reputation implements IReputation {
     }
 
     public update = (
-        _posRep: BigNumber,
-        _negRep: BigNumber,
-        _graffiti: BigNumber,
-        _signUp: BigNumber
+        _posRep: BigNumberish,
+        _negRep: BigNumberish,
+        _graffiti: BigNumberish,
+        _signUp: BigNumberish
     ): IReputation => {
-        this.posRep = this.posRep.add(_posRep)
-        this.negRep = this.negRep.add(_negRep)
+        this.posRep = this.posRep.add(BigNumber.from(_posRep))
+        this.negRep = this.negRep.add(BigNumber.from(_negRep))
         if (_graffiti !== BigNumber.from(0)) {
-            this.graffiti = _graffiti
+            this.graffiti = BigNumber.from(_graffiti)
         }
-        this.signUp = this.signUp.or(_signUp)
+        this.signUp = this.signUp.or(BigNumber.from(_signUp))
         return this
     }
 

@@ -7,10 +7,10 @@ import {
     stringifyBigInts,
     unstringifyBigInts,
 } from '@unirep/crypto'
-import { Attestation } from '@unirep/contracts'
 
 import { IEpochTreeLeaf, IUnirepState } from './interfaces'
 import { UnirepProtocol } from './UnirepProtocol'
+import { Attestation } from './Attestation'
 
 export default class UnirepState extends UnirepProtocol {
     public currentEpoch: number = 1
@@ -150,13 +150,7 @@ export default class UnirepState extends UnirepProtocol {
             for (const attestation of _unirepState
                 .latestEpochKeyToAttestationsMap[key]) {
                 const jsonAttestation = JSON.parse(attestation)
-                const attestClass = new Attestation(
-                    jsonAttestation.attesterId,
-                    jsonAttestation.posRep,
-                    jsonAttestation.negRep,
-                    jsonAttestation.graffiti,
-                    jsonAttestation.signUp
-                )
+                const attestClass = jsonAttestation
                 parsedAttestations.push(attestClass)
             }
             parsedAttestationsMap[key] = parsedAttestations

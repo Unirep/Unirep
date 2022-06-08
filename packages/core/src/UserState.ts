@@ -9,8 +9,7 @@ import {
     ZkIdentity,
     unstringifyBigInts,
 } from '@unirep/crypto'
-import { Attestation } from '@unirep/contracts'
-import { CircuitName } from '@unirep/circuits'
+import { CircuitName } from './types/circuit'
 
 import {
     IEpochTreeLeaf,
@@ -21,6 +20,7 @@ import {
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
 import { UnirepProtocol } from './UnirepProtocol'
+import { Attestation } from './Attestation'
 
 export default class UserState extends UnirepState {
     public id: ZkIdentity
@@ -175,13 +175,7 @@ export default class UserState extends UnirepState {
             for (const attestation of _userState
                 .latestEpochKeyToAttestationsMap[key]) {
                 const jsonAttestation = JSON.parse(attestation)
-                const attestClass = new Attestation(
-                    jsonAttestation.attesterId,
-                    jsonAttestation.posRep,
-                    jsonAttestation.negRep,
-                    jsonAttestation.graffiti,
-                    jsonAttestation.signUp
-                )
+                const attestClass: Attestation = jsonAttestation
                 parsedAttestations.push(attestClass)
             }
             parsedAttestationsMap[key] = parsedAttestations
@@ -206,13 +200,7 @@ export default class UserState extends UnirepState {
             transitionedFromAttestations[key] = []
             for (const attest of _userState.transitionedFromAttestations[key]) {
                 const parsedAttest = JSON.parse(attest)
-                const attestation: Attestation = new Attestation(
-                    parsedAttest.attesterId,
-                    parsedAttest.posRep,
-                    parsedAttest.negRep,
-                    parsedAttest.graffiti,
-                    parsedAttest.signUp
-                )
+                const attestation: Attestation = parsedAttest
                 transitionedFromAttestations[key].push(attestation)
             }
         }
@@ -256,7 +244,7 @@ export default class UserState extends UnirepState {
 
     public getRepByAttester(attesterId: BigInt): IReputation {
         const leaf = this.latestUserStateLeaves.find(
-            (leaf) => leaf.attesterId == attesterId
+            (leaf) => leaf.attesterId === attesterId
         )
         if (leaf !== undefined) return leaf.reputation
         else return Reputation.default()
@@ -438,7 +426,7 @@ export default class UserState extends UnirepState {
         attestation: Attestation,
         stateLeaves: IUserStateLeaf[]
     ): IUserStateLeaf[] {
-        const attesterId = attestation.attesterId.toBigInt()
+        const attesterId = attestation.attesterId
         for (const leaf of stateLeaves) {
             if (leaf.attesterId === attesterId) {
                 leaf.reputation = leaf.reputation.update(
@@ -452,7 +440,7 @@ export default class UserState extends UnirepState {
         }
         // If no matching state leaf, insert new one
         const newLeaf: IUserStateLeaf = {
-            attesterId: attesterId,
+            attesterId: BigInt(attesterId.toString()),
             reputation: Reputation.default().update(
                 attestation.posRep,
                 attestation.negRep,
@@ -625,15 +613,15 @@ export default class UserState extends UnirepState {
         let reputationRecords = {}
         const selectors: number[] = []
         const attesterIds: BigInt[] = []
-        const oldPosReps: BigInt[] = [],
-            oldNegReps: BigInt[] = [],
-            oldGraffities: BigInt[] = [],
-            oldSignUps: BigInt[] = []
-        const posReps: BigInt[] = [],
-            negReps: BigInt[] = [],
-            graffities: BigInt[] = [],
+        const oldPosReps: string[] = [],
+            oldNegReps: string[] = [],
+            oldGraffities: string[] = [],
+            oldSignUps: string[] = []
+        const posReps: string[] = [],
+            negReps: string[] = [],
+            graffities: string[] = [],
             overwriteGraffities: any[] = [],
-            signUps: BigInt[] = []
+            signUps: string[] = []
         const finalBlindedUserState: BigInt[] = []
         const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
         const finalHashChain: BigInt[] = []
@@ -677,8 +665,8 @@ export default class UserState extends UnirepState {
                 }
 
                 const attestation = attestations[i]
-                const attesterId: BigInt = attestation.attesterId.toBigInt()
-                const rep = this.getRepByAttester(attesterId as BigInt)
+                const attesterId = BigInt(attestation.attesterId.toString())
+                const rep = this.getRepByAttester(attesterId)
 
                 if (reputationRecords[attesterId.toString()] === undefined) {
                     reputationRecords[attesterId.toString()] = new Reputation(
@@ -719,13 +707,13 @@ export default class UserState extends UnirepState {
 
                 selectors.push(1)
                 attesterIds.push(attesterId)
-                posReps.push(attestation.posRep.toBigInt())
-                negReps.push(attestation.negRep.toBigInt())
-                graffities.push(attestation.graffiti.toBigInt())
+                posReps.push(attestation.posRep.toString())
+                negReps.push(attestation.negRep.toString())
+                graffities.push(attestation.graffiti.toString())
                 overwriteGraffities.push(
-                    attestation.graffiti.toBigInt() != BigInt(0)
+                    attestation.graffiti.toString() !== '0'
                 )
-                signUps.push(attestation.signUp.toBigInt())
+                signUps.push(attestation.signUp.toString())
 
                 // Update current hashchain result
                 const attestationHash = attestation.hash()
@@ -745,10 +733,10 @@ export default class UserState extends UnirepState {
                 i < filledAttestationNum - attestations.length;
                 i++
             ) {
-                oldPosReps.push(BigInt(0))
-                oldNegReps.push(BigInt(0))
-                oldGraffities.push(BigInt(0))
-                oldSignUps.push(BigInt(0))
+                oldPosReps.push('0')
+                oldNegReps.push('0')
+                oldGraffities.push('0')
+                oldSignUps.push('0')
 
                 const USTLeafZeroPathElements =
                     await fromEpochUserStateTree.createProof(BigInt(0))
@@ -757,11 +745,11 @@ export default class UserState extends UnirepState {
 
                 selectors.push(0)
                 attesterIds.push(BigInt(0))
-                posReps.push(BigInt(0))
-                negReps.push(BigInt(0))
-                graffities.push(BigInt(0))
-                overwriteGraffities.push(BigInt(0))
-                signUps.push(BigInt(0))
+                posReps.push('0')
+                negReps.push('0')
+                graffities.push('0')
+                overwriteGraffities.push('0')
+                signUps.push('0')
             }
             epochKeyPathElements.push(await fromEpochTree.createProof(epochKey))
             // finalUserState.push(fromEpochUserStateTree.root)

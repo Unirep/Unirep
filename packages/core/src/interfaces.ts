@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers'
+import { BigNumberish } from 'ethers'
 
 export interface IEpochTreeLeaf {
     epochKey: BigInt
@@ -21,19 +21,19 @@ export interface IUserStateLeaf {
 }
 
 export interface IReputation {
-    posRep: BigNumber
-    negRep: BigNumber
-    graffiti: BigNumber
-    signUp: BigNumber
+    posRep: BigNumberish
+    negRep: BigNumberish
+    graffiti: BigNumberish
+    signUp: BigNumberish
     toJSON(): string
     hash(): BigInt
     update(
-        _posRep: BigNumber,
-        _negRep: BigNumber,
-        _graffiti: BigNumber,
-        _signUp: BigNumber
+        _posRep: BigNumberish,
+        _negRep: BigNumberish,
+        _graffiti: BigNumberish,
+        _signUp: BigNumberish
     ): IReputation
-    addGraffitiPreImage(_graffitiPreImage: BigNumber): void
+    addGraffitiPreImage(_graffitiPreImage: BigNumberish): void
 }
 
 export interface IUserState extends IUnirepState {

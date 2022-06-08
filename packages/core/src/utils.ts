@@ -1,10 +1,11 @@
 import { ethers } from 'ethers'
-import { CircuitName } from '@unirep/circuits'
-import contract, {
-    Attestation,
+import { CircuitName } from './types/circuit'
+import {
     UnirepEvent,
     AttestationEvent,
     Unirep,
+    UnirepABI,
+    UnirepTypes,
 } from '@unirep/contracts'
 import { ZkIdentity } from '@unirep/crypto'
 
@@ -12,6 +13,7 @@ import { IUnirepState, IUserState } from './interfaces'
 import UnirepState from './UnirepState'
 import UserState from './UserState'
 import { UnirepProtocol } from './UnirepProtocol'
+import { Attestation } from './Attestation'
 
 const DEFAULT_START_BLOCK = 0
 
@@ -29,7 +31,7 @@ const genUnirepState = async (
     address: string,
     _unirepState?: IUnirepState
 ) => {
-    const unirepContract: Unirep = await contract.get(address, provider)
+    const unirepContract = await new ethers.Contract(address, UnirepABI, provider) as Unirep
     let unirepState: UnirepState
 
     if (!_unirepState) {
@@ -282,13 +284,7 @@ const genUnirepState = async (
                 isProofIndexValid[fromProofIndex]
             ) {
                 // update attestation
-                const attestation = new Attestation(
-                    attestation_.attesterId.toBigInt(),
-                    attestation_.posRep.toBigInt(),
-                    attestation_.negRep.toBigInt(),
-                    attestation_.graffiti.toBigInt(),
-                    attestation_.signUp.toBigInt()
-                )
+                const attestation = new Attestation(attestation_)
                 const epochKey = args?.epochKey
                 if (epochKey.eq(results?.epochKey)) {
                     unirepState.addAttestation(
@@ -338,7 +334,7 @@ const genUnirepState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                        'IndexedStartedTransitionProof'
+                    'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -352,7 +348,7 @@ const genUnirepState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                            'IndexedProcessedAttestationsProof'
+                        'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -449,7 +445,7 @@ const genUserState = async (
     userIdentity: ZkIdentity,
     _userState?: IUserState
 ) => {
-    const unirepContract: Unirep = await contract.get(address, provider)
+    const unirepContract = await new ethers.Contract(address, UnirepABI, provider) as Unirep
 
     let userState: UserState
 
@@ -703,13 +699,7 @@ const genUserState = async (
                 isProofIndexValid[fromProofIndex]
             ) {
                 // update attestation
-                const attestation = new Attestation(
-                    attestation_.attesterId.toBigInt(),
-                    attestation_.posRep.toBigInt(),
-                    attestation_.negRep.toBigInt(),
-                    attestation_.graffiti.toBigInt(),
-                    attestation_.signUp.toBigInt()
-                )
+                const attestation = new Attestation(attestation_)
                 const epochKey = args?.epochKey
                 if (epochKey.eq(results?.epochKey)) {
                     userState.addAttestation(
@@ -759,7 +749,7 @@ const genUserState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                        'IndexedStartedTransitionProof'
+                    'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -773,7 +763,7 @@ const genUserState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                            'IndexedProcessedAttestationsProof'
+                        'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
