@@ -38,7 +38,7 @@ describe('Reputation proof events in Unirep User State', function () {
     let userIds: ZkIdentity[] = []
 
     // unirep contract and protocol
-    const protocol = new UnirepProtocol(zkFilesPath)
+    const protocol = new UnirepProtocol(config)
     let unirepContract: Unirep
 
     // test config

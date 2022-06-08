@@ -25,7 +25,7 @@ import {
     submitUSTProofs,
     verifyProof,
 } from '../utils'
-import { config, zkFilesPath } from '../testConfig'
+import { config } from '../testConfig'
 import { CircuitName } from '../../src/types'
 
 describe('User state transition events in Unirep User State', async function () {
@@ -40,7 +40,7 @@ describe('User state transition events in Unirep User State', async function () 
     let userIds: ZkIdentity[] = []
 
     // unirep contract and protocol
-    const protocol = new UnirepProtocol(zkFilesPath)
+    const protocol = new UnirepProtocol(config)
     let unirepContract: Unirep
 
     // test config
@@ -298,7 +298,7 @@ describe('User state transition events in Unirep User State', async function () 
 
             if (transitionedUsers.length === 0) return
             const n = transitionedUsers[0]
-            const userState = new UserState(zkFilesPath, userIds[n])
+            const userState = new UserState(config, userIds[n])
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
@@ -431,7 +431,7 @@ describe('User state transition events in Unirep User State', async function () 
         })
 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
-            const userState = new UserState(zkFilesPath, userIds[0])
+            const userState = new UserState(config, userIds[0])
 
             const epoch = 1
             const commitment = userIds[0].genIdentityCommitment()

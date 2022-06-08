@@ -41,7 +41,7 @@ describe('User state transition events in Unirep State', async function () {
     let userIds: ZkIdentity[] = []
 
     // unirep contract and protocol
-    const protocol = new UnirepProtocol(zkFilesPath)
+    const protocol = new UnirepProtocol(config)
     let unirepContract: Unirep
 
     // test config
@@ -263,7 +263,7 @@ describe('User state transition events in Unirep State', async function () {
                     continue
                 }
                 const userState = new UserState(
-                    protocol.zkFilesPath,
+                    protocol.config,
                     userIds[i]
                 )
 
@@ -321,7 +321,7 @@ describe('User state transition events in Unirep State', async function () {
 
             if (transitionedUsers.length === 0) return
             const n = transitionedUsers[0]
-            const userState = new UserState(protocol.zkFilesPath, userIds[n])
+            const userState = new UserState(protocol.config, userIds[n])
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
@@ -449,7 +449,7 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
-            const userState = new UserState(protocol.zkFilesPath, userIds[0])
+            const userState = new UserState(protocol.config, userIds[0])
 
             const epoch = 1
             const commitment = userIds[0].genIdentityCommitment()
@@ -476,11 +476,11 @@ describe('User state transition events in Unirep State', async function () {
             if (notTransitionUsers.length < 2) return
 
             const userState1 = new UserState(
-                protocol.zkFilesPath,
+                protocol.config,
                 userIds[notTransitionUsers[0]]
             )
             const userState2 = new UserState(
-                protocol.zkFilesPath,
+                protocol.config,
                 userIds[notTransitionUsers[1]]
             )
 
@@ -682,7 +682,7 @@ describe('User state transition events in Unirep State', async function () {
                 if (randomUST === 0) continue
                 console.log('transition user', i)
                 const userState = new UserState(
-                    protocol.zkFilesPath,
+                    protocol.config,
                     userIds[i]
                 )
 

@@ -18,7 +18,7 @@ import {
     setAirdrop,
     verifyProof,
 } from '../utils'
-import { config, zkFilesPath } from '../testConfig'
+import { config } from '../testConfig'
 import { CircuitName } from '../../src/types'
 
 describe('Epoch key proof events in Unirep State', function () {
@@ -33,7 +33,7 @@ describe('Epoch key proof events in Unirep State', function () {
     let userIds: ZkIdentity[] = []
 
     // unirep contract and protocol
-    const protocol = new UnirepProtocol(zkFilesPath)
+    const protocol = new UnirepProtocol(config)
     let unirepContract: Unirep
 
     // test config

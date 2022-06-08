@@ -3,33 +3,37 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import circuit from '@unirep/circuits'
-import contract, {
-    Attestation,
-    computeProcessAttestationsProofHash,
-    computeStartTransitionProofHash,
-    EpochKeyProof,
-    ReputationProof,
-    SignUpProof,
-    Unirep,
-    UserTransitionProof,
-} from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
 
-import { genUserState, IUserState, UnirepProtocol, UserState } from '../../src'
 import {
+    Attestation,
+    genUserState,
+    IUserState,
+    UnirepProtocol,
+    UserState,
+} from '../../src'
+import {
+    attesterSignUp,
     compareEpochTrees,
     compareStates,
+    deploy,
+    formatProofAndPublicSignals,
+    genIdentity,
+    genProof,
     genRandomAttestation,
+    keccak256Hash,
+    setAirdrop,
+    verifyProof,
 } from '../utils'
-import { artifactsPath, config, zkFilesPath } from '../testConfig'
-import { CircuitName } from '@unirep/circuits'
+import { config } from '../testConfig'
+import { CircuitName } from '../../src/types'
 
 describe('Generate user state', function () {
     this.timeout(0)
 
     // attesters
     let accounts: ethers.Signer[]
-    let attester = new Object()
+    let attester, attesterAddr
     let attesterId
 
     // users
@@ -42,50 +46,32 @@ describe('Generate user state', function () {
     let secondUserState: IUserState
 
     // unirep contract and protocol
-    const protocol = new UnirepProtocol(zkFilesPath)
+    const protocol = new UnirepProtocol(config)
     let unirepContract: Unirep
-    let unirepContractCalledByAttester: Unirep
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await contract.deploy(
-            artifactsPath,
-            accounts[0],
-            config
-        )
+        unirepContract = await deploy(accounts[0], config)
     })
 
     describe('Attester sign up and set airdrop', () => {
         it('attester sign up', async () => {
             attester['acct'] = accounts[2]
-            attester['addr'] = await attester['acct'].getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(
-                attester['acct']
-            )
-            let tx = await unirepContractCalledByAttester.attesterSignUp()
-            let receipt = await tx.wait()
-            expect(receipt.status, 'Attester signs up failed').to.equal(1)
+            const success = await attesterSignUp(unirepContract, attester)
+            expect(success, 'Attester signs up failed').to.equal(1)
+            attesterAddr = await attester.getAddress()
         })
 
         it('attester set airdrop amount', async () => {
             const airdropPosRep = 10
-            const tx = await unirepContractCalledByAttester.setAirdropAmount(
-                airdropPosRep
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester['addr']
-            )
-            expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
+            await setAirdrop(unirepContract, attester, airdropPosRep)
         })
     })
 
     describe('User Sign Up event', () => {
         it('users sign up events', async () => {
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
+            const { id, commitment } = genIdentity()
             userIds.push(id)
             userCommitments.push(commitment)
 
@@ -96,9 +82,9 @@ describe('Generate user state', function () {
                 userIds[firstUser]
             )
 
-            const tx = await unirepContractCalledByAttester.userSignUp(
-                commitment
-            )
+            const tx = await unirepContract
+                .connect(attester)
+                .userSignUp(commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
 
@@ -130,14 +116,13 @@ describe('Generate user state', function () {
         })
 
         it('users sign up events', async () => {
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
+            const { id, commitment } = genIdentity()
             userIds.push(id)
             userCommitments.push(commitment)
 
-            const tx = await unirepContractCalledByAttester.userSignUp(
-                commitment
-            )
+            const tx = await unirepContract
+                .connect(attester)
+                .userSignUp(commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
             users[secondUser] = await genUserState(
@@ -158,38 +143,51 @@ describe('Generate user state', function () {
                 secondUserState
             )
             const epochKeyNonce = 2
-            const { proof, publicSignals } =
-                await userState.genVerifyEpochKeyProof(epochKeyNonce)
-            const epochKeyProof = new EpochKeyProof(
-                publicSignals,
-                proof,
-                protocol.config.exportBuildPath
+            const circuit = CircuitName.verifyEpochKey
+            const circuitInputs = await userState.genCircuitInputs(circuit, {
+                epochKeyNonce,
+            })
+
+            // gen proof and public signals
+            const { proof, publicSignals } = await genProof(
+                circuit,
+                circuitInputs
             )
-            const isValid = await epochKeyProof.verify()
+            // format proof and public signals
+            const input = formatProofAndPublicSignals(
+                circuit,
+                proof,
+                publicSignals
+            )
+
+            // verify proof
+            const isValid = await verifyProof(circuit, publicSignals, proof)
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
 
-            let tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+            let tx = await unirepContract.submitEpochKeyProof(input)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
             const proofIndex = await unirepContract.getProofIndex(
-                epochKeyProof.hash()
+                keccak256Hash(circuit, input)
             )
             expect(proofIndex.toNumber()).not.equal(0)
             const fromProofIndex = 0
 
             attesterId = (
-                await unirepContract.attesters(attester['addr'])
+                await unirepContract.attesters(attesterAddr)
             ).toBigInt()
             const attestation: Attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKeyProof.epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: config.attestingFee }
-            )
+            tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    attestation,
+                    input.epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: config.attestingFee }
+                )
             receipt = await tx.wait()
             expect(receipt.status, 'Submit attestation failed').to.equal(1)
         })
@@ -238,10 +236,11 @@ describe('Generate user state', function () {
             const isValid = await reputationProof.verify()
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
 
-            const tx = await unirepContractCalledByAttester.spendReputation(
-                reputationProof,
-                { value: config.attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester)
+                .spendReputation(reputationProof, {
+                    value: config.attestingFee,
+                })
             const receipt = await tx.wait()
             expect(
                 receipt.status,
@@ -282,10 +281,12 @@ describe('Generate user state', function () {
             const isValid = await userSignUpProof.verify()
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
 
-            const tx = await unirepContractCalledByAttester.airdropEpochKey(
-                userSignUpProof,
-                { value: config.attestingFee, gasLimit: 1000000 }
-            )
+            const tx = await unirepContract
+                .connect(attester)
+                .airdropEpochKey(userSignUpProof, {
+                    value: config.attestingFee,
+                    gasLimit: 1000000,
+                })
             const receipt = await tx.wait()
             expect(receipt.status, 'Submit airdrop proof failed').to.equal(1)
 

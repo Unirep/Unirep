@@ -3,11 +3,11 @@ import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
 
 import { Attestation, UnirepState } from '../../src'
 import { genRandomAttestation } from '../utils'
-import { zkFilesPath } from '../testConfig'
+import { config } from '../testConfig'
 
 describe('Unirep State', function () {
     // unirep state
-    let unirepState: UnirepState = new UnirepState(zkFilesPath)
+    let unirepState: UnirepState = new UnirepState(config)
 
     // test config
     const maxUsers = 10
