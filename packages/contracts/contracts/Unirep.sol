@@ -129,34 +129,24 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     // Verify input data - Should found better way to handle it.
 
     function verifyAstesterSignUp(address attester) private view {
-        require(
-            attesters[attester] > 0,
-            'Unirep: attester has not signed up yet'
-        );
+        if (attesters[attester] == 0) revert AttesterNotSignUp(attester);
     }
 
     function verifyProofNullilier(bytes32 proofNullifier) private view {
-        require(
-            getProofIndex[proofNullifier] == 0,
-            'Unirep: the proof has been submitted before'
-        );
+        if (getProofIndex[proofNullifier] != 0)
+            revert NullilierAlreadyUsed(proofNullifier);
     }
 
     function verifyAttesterFee() private view {
-        require(
-            msg.value >= attestingFee,
-            'Unirep: no attesting fee or incorrect amount'
-        );
+        if (msg.value < attestingFee) revert AttestingFeeInvalid();
     }
 
     function verifyAttesterIndex(address attester, uint256 attesterId)
         private
         view
     {
-        require(
-            attesters[attester] == attesterId,
-            'Unirep: mismatched attesterId'
-        );
+        if (attesters[attester] != attesterId)
+            revert AttesterIdNotMatch(attesterId);
     }
 
     /**
@@ -187,8 +177,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     }
 
     function _attesterSignUp(address attester) private {
-        if (attesters[attester] != 0)
-            revert AttesterAlreadySignUp(attester);
+        if (attesters[attester] != 0) revert AttesterAlreadySignUp(attester);
 
         if (nextAttesterId >= maxAttesters)
             revert ReachedMaximumNumberUserSignedUp();
@@ -313,7 +302,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) external payable {
-        require(isValidSignature(attester, signature), "Unirep: invalid attester sign up signature");
+        require(
+            isValidSignature(attester, signature),
+            'Unirep: invalid attester sign up signature'
+        );
 
         _submitAttestation(
             attester,

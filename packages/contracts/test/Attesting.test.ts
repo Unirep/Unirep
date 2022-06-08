@@ -81,7 +81,7 @@ describe('Attesting', () => {
     it('submit an epoch key proof again should fail', async () => {
         await expect(
             unirepContract.submitEpochKeyProof(epochKeyProof)
-        ).to.be.revertedWith('Unirep: the proof has been submitted before')
+        ).to.be.revertedWith('NullilierAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
@@ -181,7 +181,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: mismatched attesterId')
+        ).to.be.revertedWith(`AttesterIdNotMatch(999)`)
     })
 
     it('attestation with invalid repuation should fail', async () => {
@@ -325,7 +325,7 @@ describe('Attesting', () => {
                 epochKeyProofIndex,
                 senderPfIdx
             )
-        ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
+        ).to.be.revertedWith('AttestingFeeInvalid()')
         await expect(
             unirepContractCalledByAttester.submitAttestation(
                 attestation,
@@ -334,7 +334,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee.sub(1) }
             )
-        ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
+        ).to.be.revertedWith('AttestingFeeInvalid()')
     })
 
     it('attestation from unregistered attester should fail', async () => {
@@ -365,7 +365,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: attester has not signed up yet')
+        ).to.be.revertedWith(`AttesterNotSignUp("${nonAttesterAddress}")`)
     })
 
     it('burn collected attesting fee should work', async () => {

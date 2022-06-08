@@ -308,7 +308,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContractCalledByAttester.spendReputation(repProofInput, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith('Unirep: the proof has been submitted before')
+            ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
         it('spendReputation event should update User state', async () => {

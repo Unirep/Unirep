@@ -92,10 +92,15 @@ interface IUnirep is UnirepTypes {
         uint256[] proofIndexRecords
     );
 
-    // error 
+    // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error ReachedMaximumNumberUserSignedUp();
     error AttesterAlreadySignUp(address attester);
+    error AttesterNotSignUp(address attester);
+    error NullilierAlreadyUsed(bytes32 nullilier);
+    error AttestingFeeInvalid();
+    error AttesterIdNotMatch(uint256 attesterId);
+
     /**
      * Sign up an attester using the address who sends the transaction
      */

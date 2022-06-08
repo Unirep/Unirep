@@ -268,7 +268,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             // submit the same proof twice should fail
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith('Unirep: the proof has been submitted before')
+            ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {

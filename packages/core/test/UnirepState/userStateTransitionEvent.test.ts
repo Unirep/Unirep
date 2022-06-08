@@ -396,9 +396,7 @@ describe('User state transition events in Unirep State', async function () {
                             startTransitionProof.proof
                         )
                     )
-                ).to.be.revertedWith(
-                    'Unirep: the proof has been submitted before'
-                )
+                ).to.be.revertedWith('NullilierAlreadyUsed')
 
                 let hashedProof = computeStartTransitionProofHash(
                     startTransitionProof.blindedUserState,
@@ -437,9 +435,7 @@ describe('User state transition events in Unirep State', async function () {
                                 processAttestationProofs[i].proof
                             )
                         )
-                    ).to.be.revertedWith(
-                        'Unirep: the proof has been submitted before'
-                    )
+                    ).to.be.revertedWith('NullilierAlreadyUsed')
 
                     let hashedProof = computeProcessAttestationsProofHash(
                         processAttestationProofs[i].outputBlindedUserState,
@@ -469,9 +465,7 @@ describe('User state transition events in Unirep State', async function () {
                 // submit twice should fail
                 await expect(
                     unirepContract.updateUserStateRoot(USTInput, proofIndexes)
-                ).to.be.revertedWith(
-                    'Unirep: the proof has been submitted before'
-                )
+                ).to.be.revertedWith('NullilierAlreadyUsed')
                 transitionedUsers.push(i)
             }
         })

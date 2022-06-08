@@ -66,7 +66,9 @@ describe('Airdrop', function () {
             unirepContractCalledByAttester = unirepContract.connect(accounts[2])
             await expect(
                 unirepContractCalledByAttester.setAirdropAmount(airdropPosRep)
-            ).to.be.revertedWith('Unirep: attester has not signed up yet')
+            ).to.be.revertedWith(
+                `AttesterNotSignUp("${await accounts[2].getAddress()}")`
+            )
         })
 
         it('user signs up through a signed up attester with 0 airdrop should not get airdrop', async () => {
@@ -232,7 +234,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input)
-            ).to.be.revertedWith('Unirep: the proof has been submitted before')
+            ).to.be.revertedWith(`NullilierAlreadyUsed`)
         })
 
         it('get airdrop through a non-signup attester should fail', async () => {
@@ -252,7 +254,9 @@ describe('Airdrop', function () {
                 unirepContractCalledByAttester.airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith('Unirep: attester has not signed up yet')
+            ).to.be.revertedWith(
+                `AttesterNotSignUp("${await accounts[2].getAddress()}")`
+            )
         })
 
         it('get airdrop through a wrong attester should fail', async () => {
@@ -272,7 +276,7 @@ describe('Airdrop', function () {
                 unirepContractCalledByAttester.airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith('Unirep: mismatched attesterId')
+            ).to.be.revertedWith(`AttesterIdNotMatch(${attesterId_})`)
         })
 
         it('get airdrop through a wrong attesting fee should fail', async () => {
@@ -290,7 +294,7 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContractCalledByAttester.airdropEpochKey(input)
-            ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
+            ).to.be.revertedWith(`AttestingFeeInvalid()`)
         })
 
         it('get airdrop through a wrong epoch should fail', async () => {

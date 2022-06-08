@@ -277,7 +277,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                         value: attestingFee,
                     }
                 )
-            ).to.be.revertedWith('Unirep: the proof has been submitted before')
+            ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
         it('airdropEpochKey event should update Unirep state', async () => {
