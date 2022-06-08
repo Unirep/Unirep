@@ -185,7 +185,7 @@ describe('EventFilters', () => {
             epoch,
             nonce
         )
-        const { blindedUserState, blindedHashChain, GSTRoot, proof } =
+        const { blindedUserState, blindedHashChain, globalStateTree, proof } =
             await genInputForContract(
                 CircuitName.startTransition,
                 circuitInputs
@@ -193,7 +193,7 @@ describe('EventFilters', () => {
         const tx = await unirepContract.startUserStateTransition(
             blindedUserState,
             blindedHashChain,
-            GSTRoot,
+            globalStateTree,
             proof
         )
         const receipt = await tx.wait()
@@ -202,10 +202,15 @@ describe('EventFilters', () => {
         const proofNullifier = await unirepContract.hashStartTransitionProof(
             blindedUserState,
             blindedHashChain,
-            GSTRoot,
+            globalStateTree,
             proof
         )
-        const input = { blindedUserState, blindedHashChain, GSTRoot, proof }
+        const input = {
+            blindedUserState,
+            blindedHashChain,
+            globalStateTree,
+            proof,
+        }
         const hash = keccak256Hash(CircuitName.startTransition, input)
         expect(hash).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(hash)

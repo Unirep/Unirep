@@ -694,19 +694,19 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * Verify start user state transition proof
      * @param blindedUserState The blinded user state of the proof
      * @param blindedHashChain The blinded hash chain of the proof
-     * @param GSTRoot The global state tree of the proof
+     * @param globalStateTree The global state tree of the proof
      * @param _proof The start user state transition proof
      */
     function verifyStartTransitionProof(
         uint256 blindedUserState,
         uint256 blindedHashChain,
-        uint256 GSTRoot,
+        uint256 globalStateTree,
         uint256[8] calldata _proof
     ) external view returns (bool) {
         uint256[] memory publicSignals = new uint256[](3);
         publicSignals[0] = blindedUserState;
         publicSignals[1] = blindedHashChain;
-        publicSignals[2] = GSTRoot;
+        publicSignals[2] = globalStateTree;
 
         // Ensure that each public input is within range of the snark scalar
         // field.

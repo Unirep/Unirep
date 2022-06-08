@@ -217,7 +217,7 @@ const formatProofAndPublicSignals = (
         result = {
             blindedUserState: publicSignals[0],
             blindedHashChain: publicSignals[1],
-            GSTRoot: publicSignals[2],
+            globalStateTree: publicSignals[2],
         }
     } else if (circuit === CircuitName.proveReputation) {
         result = {
@@ -299,7 +299,7 @@ const keccak256Hash = (circuit: CircuitName, input) => {
             [
                 input.blindedUserState,
                 input.blindedHashChain,
-                input.GSTRoot,
+                input.globalStateTree,
                 input.proof,
             ]
         )

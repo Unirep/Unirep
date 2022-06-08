@@ -187,7 +187,7 @@ describe('Epoch Transition', function () {
             fromEpoch,
             nonce
         )
-        const { blindedUserState, blindedHashChain, GSTRoot, proof } =
+        const { blindedUserState, blindedHashChain, globalStateTree, proof } =
             await genInputForContract(
                 CircuitName.startTransition,
                 circuitInputs
@@ -195,7 +195,7 @@ describe('Epoch Transition', function () {
         const isProofValid = await unirepContract.verifyStartTransitionProof(
             blindedUserState,
             blindedHashChain,
-            GSTRoot,
+            globalStateTree,
             proof
         )
         expect(isProofValid).to.be.true
@@ -203,7 +203,7 @@ describe('Epoch Transition', function () {
         const tx = await unirepContract.startUserStateTransition(
             blindedUserState,
             blindedHashChain,
-            GSTRoot,
+            globalStateTree,
             proof
         )
         const receipt = await tx.wait()
@@ -219,7 +219,7 @@ describe('Epoch Transition', function () {
         const input = {
             blindedUserState,
             blindedHashChain,
-            GSTRoot,
+            globalStateTree,
             proof,
         }
         let proofNullifier = keccak256Hash(CircuitName.startTransition, input)

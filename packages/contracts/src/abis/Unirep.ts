@@ -1488,7 +1488,11 @@ export const UnirepABI = [
                 name: 'blindedHashChain',
                 type: 'uint256',
             },
-            { internalType: 'uint256', name: 'GSTRoot', type: 'uint256' },
+            {
+                internalType: 'uint256',
+                name: 'globalStateTree',
+                type: 'uint256',
+            },
             { internalType: 'uint256[8]', name: '_proof', type: 'uint256[8]' },
         ],
         name: 'verifyStartTransitionProof',

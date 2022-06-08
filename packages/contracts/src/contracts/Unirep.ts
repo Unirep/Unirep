@@ -1003,7 +1003,7 @@ export interface Unirep extends BaseContract {
         verifyStartTransitionProof(
             blindedUserState: BigNumberish,
             blindedHashChain: BigNumberish,
-            GSTRoot: BigNumberish,
+            globalStateTree: BigNumberish,
             _proof: BigNumberish[],
             overrides?: CallOverrides
         ): Promise<[boolean]>
@@ -1225,7 +1225,7 @@ export interface Unirep extends BaseContract {
     verifyStartTransitionProof(
         blindedUserState: BigNumberish,
         blindedHashChain: BigNumberish,
-        GSTRoot: BigNumberish,
+        globalStateTree: BigNumberish,
         _proof: BigNumberish[],
         overrides?: CallOverrides
     ): Promise<boolean>
@@ -1444,7 +1444,7 @@ export interface Unirep extends BaseContract {
         verifyStartTransitionProof(
             blindedUserState: BigNumberish,
             blindedHashChain: BigNumberish,
-            GSTRoot: BigNumberish,
+            globalStateTree: BigNumberish,
             _proof: BigNumberish[],
             overrides?: CallOverrides
         ): Promise<boolean>
@@ -1797,7 +1797,7 @@ export interface Unirep extends BaseContract {
         verifyStartTransitionProof(
             blindedUserState: BigNumberish,
             blindedHashChain: BigNumberish,
-            GSTRoot: BigNumberish,
+            globalStateTree: BigNumberish,
             _proof: BigNumberish[],
             overrides?: CallOverrides
         ): Promise<BigNumber>
@@ -2022,7 +2022,7 @@ export interface Unirep extends BaseContract {
         verifyStartTransitionProof(
             blindedUserState: BigNumberish,
             blindedHashChain: BigNumberish,
-            GSTRoot: BigNumberish,
+            globalStateTree: BigNumberish,
             _proof: BigNumberish[],
             overrides?: CallOverrides
         ): Promise<PopulatedTransaction>
