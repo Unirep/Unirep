@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { BigNumber } from 'ethers'
 import {
     IncrementalMerkleTree,
     hashLeftRight,
@@ -11,6 +10,7 @@ import {
 import { IEpochTreeLeaf, IUnirepState } from './interfaces'
 import { UnirepProtocol } from './UnirepProtocol'
 import Attestation from './Attestation'
+import { CircuitConfig } from './types'
 
 export default class UnirepState extends UnirepProtocol {
     public currentEpoch: number = 1
@@ -28,7 +28,7 @@ export default class UnirepState extends UnirepProtocol {
     private epochGSTRootMap: { [key: number]: Map<string, boolean> } = {}
 
     constructor(
-        _zkFilesPath: string,
+        _config: CircuitConfig,
         _currentEpoch?: number,
         _latestBlock?: number,
         _GSTLeaves?: { [key: number]: BigInt[] },
@@ -36,7 +36,7 @@ export default class UnirepState extends UnirepProtocol {
         _epochKeyToAttestationsMap?: { [key: string]: Attestation[] },
         _nullifiers?: { [key: string]: boolean }
     ) {
-        super(_zkFilesPath)
+        super(_config)
         if (_currentEpoch !== undefined) this.currentEpoch = _currentEpoch
 
         if (_latestBlock !== undefined) this.latestProcessedBlock = _latestBlock
@@ -436,9 +436,7 @@ export default class UnirepState extends UnirepProtocol {
                 i++
             ) {
                 hashChain = hashLeftRight(
-                    BigNumber.from(
-                        this.epochKeyToAttestationsMap[epochKey][i].hash()
-                    ).toBigInt(),
+                    this.epochKeyToAttestationsMap[epochKey][i].hash(),
                     hashChain
                 )
             }

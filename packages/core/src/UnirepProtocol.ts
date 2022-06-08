@@ -1,4 +1,3 @@
-import { BigNumber, Event } from 'ethers'
 import Keyv from 'keyv'
 import {
     hash5,
@@ -7,10 +6,18 @@ import {
     SnarkBigInt,
     SparseMerkleTree,
     SnarkProof,
+    SnarkPublicSignals,
 } from '@unirep/crypto'
 
 import Reputation from './Reputation'
-import { CircuitName, CircuitConfig } from './types'
+import {
+    CircuitName,
+    CircuitConfig,
+    ParsedContractInput,
+    StartTransitionProof,
+    ProcessAttestationProof,
+} from './types'
+import { UnirepTypes } from '@unirep/contracts'
 
 export class UnirepProtocol {
     static EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
@@ -26,15 +33,12 @@ export class UnirepProtocol {
     static SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
     public config: CircuitConfig
-    private zkFilesPath: string
-
     /**
-     * Set Unirep protocol paramters from a given circuit directory path
-     * @param _zkFilesPath The path to the circuit keys and config
+     * Set Unirep protocol paramters from a given circuit configuration
+     * @param _config The circuit configuration
      */
-    constructor(_zkFilesPath: string) {
-        this.zkFilesPath = _zkFilesPath
-        this.config = require([this.zkFilesPath, 'config.json'].join('/'))
+    constructor(_config: CircuitConfig) {
+        this.config = _config
     }
 
     /**
@@ -184,166 +188,110 @@ export class UnirepProtocol {
     }
 
     /**
-     * Format event proof strings for snarkjs verification
-     * @param proof the proof emitted from unirep smart contract
-     * @returns formatted SnarkProof type proof
+     * Parse snark proof for smart contract input, verifiers
+     * @param circuit The circuit name
+     * @param proof The snark proof
+     * @param publicSignals The public signals of the snark proof
+     * @returns The parsed input for smart contract
      */
-    private formatProofForSnarkJs(proof: string[8]): SnarkProof {
-        return {
-            pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
-            pi_b: [
-                [BigInt(proof[3]), BigInt(proof[2])],
-                [BigInt(proof[5]), BigInt(proof[4])],
-                [BigInt('1'), BigInt('0')],
-            ],
-            pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
-        }
-    }
+    public parseProof(
+        circuit: CircuitName,
+        proof: SnarkProof,
+        publicSignals: SnarkPublicSignals
+    ): ParsedContractInput {
+        let result
+        const formattedProof: any[] = [
+            proof.pi_a[0],
+            proof.pi_a[1],
+            proof.pi_b[0][1],
+            proof.pi_b[0][0],
+            proof.pi_b[1][1],
+            proof.pi_b[1][0],
+            proof.pi_c[0],
+            proof.pi_c[1],
+        ]
+        if (circuit === CircuitName.proveUserSignUp) {
+            result = {
+                epoch: publicSignals[0],
+                epochKey: publicSignals[1],
+                globalStateTree: publicSignals[2],
+                attesterId: publicSignals[3],
+                userHasSignedUp: publicSignals[4],
+            } as UnirepTypes.SignUpProofStruct
+        } else if (circuit === CircuitName.verifyEpochKey) {
+            result = {
+                globalStateTree: publicSignals[0],
+                epoch: publicSignals[1],
+                epochKey: publicSignals[2],
+            } as UnirepTypes.EpochKeyProofStruct
+        } else if (circuit === CircuitName.startTransition) {
+            result = {
+                blindedUserState: publicSignals[0],
+                blindedHashChain: publicSignals[1],
+                globalStateTree: publicSignals[2],
+            } as StartTransitionProof
+        } else if (circuit === CircuitName.proveReputation) {
+            result = {
+                repNullifiers: publicSignals.slice(
+                    0,
+                    this.config.maxReputationBudget
+                ),
+                epoch: publicSignals[this.config.maxReputationBudget],
+                epochKey: publicSignals[this.config.maxReputationBudget + 1],
+                globalStateTree:
+                    publicSignals[this.config.maxReputationBudget + 2],
+                attesterId: publicSignals[this.config.maxReputationBudget + 3],
+                proveReputationAmount:
+                    publicSignals[this.config.maxReputationBudget + 4],
+                minRep: publicSignals[this.config.maxReputationBudget + 5],
+                proveGraffiti:
+                    publicSignals[this.config.maxReputationBudget + 6],
+                graffitiPreImage:
+                    publicSignals[this.config.maxReputationBudget + 7],
+            } as UnirepTypes.ReputationProofStruct
+        } else if (circuit === CircuitName.processAttestations) {
+            result = {
+                outputBlindedUserState: publicSignals[0],
+                outputBlindedHashChain: publicSignals[1],
+                inputBlindedUserState: publicSignals[2],
+            } as ProcessAttestationProof
+        } else if (circuit === CircuitName.userStateTransition) {
+            const epkNullifiers: string[] = []
+            const blindedUserStates = [
+                publicSignals[2 + this.config.numEpochKeyNoncePerEpoch],
+                publicSignals[3 + this.config.numEpochKeyNoncePerEpoch],
+            ]
+            const blindedHashChains: string[] = []
+            for (let i = 0; i < this.config.numEpochKeyNoncePerEpoch; i++) {
+                epkNullifiers.push(publicSignals[1 + i].toString())
+            }
+            for (let i = 0; i < this.config.numEpochKeyNoncePerEpoch; i++) {
+                blindedHashChains.push(
+                    publicSignals[
+                        5 + this.config.numEpochKeyNoncePerEpoch + i
+                    ].toString()
+                )
+            }
 
-    /**
-     * Verify contract events' proof
-     * @param circuitName The name of the circuit
-     * @param event The event from the unirep contract
-     * @returns formatted proof and publicSignals to be verified by snarkjs
-     */
-    public async verifyProofEvent(
-        circuitName: CircuitName,
-        event: Event
-    ): Promise<{ proof, publicSignals }> {
-        let args = event?.args?.proof
-        const emptyArray: BigNumber[] = []
-        let formatPublicSignals
-        if (circuitName === CircuitName.verifyEpochKey) {
-            formatPublicSignals = emptyArray
-                .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
-                .map((n) => n.toBigInt())
-        } else if (circuitName === CircuitName.proveReputation) {
-            formatPublicSignals = emptyArray
-                .concat(
-                    args?.repNullifiers,
-                    args?.epoch,
-                    args?.epochKey,
-                    args?.globalStateTree,
-                    args?.attesterId,
-                    args?.proveReputationAmount,
-                    args?.minRep,
-                    args?.proveGraffiti,
-                    args?.graffitiPreImage
-                )
-                .map((n) => n.toBigInt())
-        } else if (circuitName === CircuitName.proveUserSignUp) {
-            formatPublicSignals = emptyArray
-                .concat(
-                    args?.epoch,
-                    args?.epochKey,
-                    args?.globalStateTree,
-                    args?.attesterId,
-                    args?.userHasSignedUp
-                )
-                .map((n) => n.toBigInt())
-        } else if (circuitName === CircuitName.startTransition) {
-            args = event?.args
-            formatPublicSignals = emptyArray
-                .concat(
-                    args?.blindedUserState,
-                    args?.blindedHashChain,
-                    args?.globalStateTree
-                )
-                .map((n) => n.toBigInt())
-        } else if (circuitName === CircuitName.processAttestations) {
-            args = event?.args
-            formatPublicSignals = emptyArray
-                .concat(
-                    args?.outputBlindedUserState,
-                    args?.outputBlindedHashChain,
-                    args?.inputBlindedUserState
-                )
-                .map((n) => n.toBigInt())
-        } else if (circuitName === CircuitName.userStateTransition) {
-            formatPublicSignals = emptyArray
-                .concat(
-                    args.newGlobalStateTreeLeaf,
-                    args.epkNullifiers,
-                    args.transitionFromEpoch,
-                    args.blindedUserStates,
-                    args.fromGlobalStateTree,
-                    args.blindedHashChains,
-                    args.fromEpochTree
-                )
-                .map((n) => n.toBigInt())
+            result = {
+                newGlobalStateTreeLeaf: publicSignals[0],
+                epkNullifiers,
+                transitionFromEpoch:
+                    publicSignals[1 + this.config.numEpochKeyNoncePerEpoch],
+                blindedUserStates,
+                fromGlobalStateTree:
+                    publicSignals[4 + this.config.numEpochKeyNoncePerEpoch],
+                blindedHashChains,
+                fromEpochTree:
+                    publicSignals[5 + this.config.numEpochKeyNoncePerEpoch * 2],
+            } as UnirepTypes.UserTransitionProofStruct
         } else {
-            throw new Error(
-                `Unirep protocol: cannot find circuit name ${circuitName}`
-            )
+            throw new TypeError(`circuit ${circuit} is not defined`)
         }
-        const formatProof = this.formatProofForSnarkJs(args?.proof)
         return {
-            proof: formatProof,
-            publicSignals: formatPublicSignals
+            proof: formattedProof,
+            ...result,
         }
     }
 
-    /**
-     * Verify one user state transition action. It composes of `transitionEvent`, `startTransitionEvent`, and `processAttestationEvent`s.
-     * @param transitionEvent The user state transition event
-     * @param startTransitionEvent The start transition event
-     * @param processAttestationEvents The process attestations event
-     * @returns True if all proofs of the events are valid, false otherwise.
-     */
-    public async verifyUSTEvents(
-        transitionEvent: Event,
-        startTransitionEvent: Event,
-        processAttestationEvents: Event[]
-    ): Promise<boolean> {
-        // verify the final UST proof
-        const isValid = await this.verifyProofEvent(
-            CircuitName.userStateTransition,
-            transitionEvent
-        )
-        if (!isValid) return false
-
-        // verify the start transition proof
-        const isStartTransitionProofValid = await this.verifyProofEvent(
-            CircuitName.startTransition,
-            startTransitionEvent
-        )
-        if (!isStartTransitionProofValid) return false
-
-        // verify process attestations proofs
-        const transitionArgs = transitionEvent?.args?.proof
-        const isProcessAttestationValid =
-            await this.verifyProcessAttestationEvents(
-                processAttestationEvents,
-                transitionArgs.blindedUserStates[0],
-                transitionArgs.blindedUserStates[1]
-            )
-        if (!isProcessAttestationValid) return false
-        return true
-    }
-
-    /**
-     * Verify all process attestations events. One input blinded user state should be the output of other process attestations proof
-     * @param processAttestationEvents All process attestation events
-     * @param startBlindedUserState The blinded user state from `startTrantision` proof
-     * @param finalBlindedUserState The Final output of the latest `processAttestation` proof
-     * @returns True if all events are valid and blinded user state are connected
-     */
-    public async verifyProcessAttestationEvents(
-        processAttestationEvents: Event[],
-        startBlindedUserState: BigNumber,
-        finalBlindedUserState: BigNumber
-    ): Promise<boolean> {
-        let currentBlindedUserState = startBlindedUserState
-        // The rest are process attestations proofs
-        for (let i = 0; i < processAttestationEvents.length; i++) {
-            const args = processAttestationEvents[i]?.args
-            const isValid = await this.verifyProofEvent(
-                CircuitName.processAttestations,
-                processAttestationEvents[i]
-            )
-            if (!isValid) return false
-            currentBlindedUserState = args?.outputBlindedUserState
-        }
-        return currentBlindedUserState.eq(finalBlindedUserState)
-    }
 }

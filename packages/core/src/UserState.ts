@@ -1,4 +1,3 @@
-import { BigNumber } from 'ethers'
 import assert from 'assert'
 import {
     IncrementalMerkleTree,
@@ -9,7 +8,7 @@ import {
     ZkIdentity,
     unstringifyBigInts,
 } from '@unirep/crypto'
-import { CircuitName } from './types'
+import { CircuitConfig, CircuitName } from './types'
 
 import {
     IEpochTreeLeaf,
@@ -33,7 +32,7 @@ export default class UserState extends UnirepState {
     private transitionedFromAttestations: { [key: string]: Attestation[] } = {} // attestations in the latestTransitionedEpoch
 
     constructor(
-        _zkFilesPath: string,
+        _config: CircuitConfig,
         _id: ZkIdentity,
         // unirep config
         _currentEpoch?: number,
@@ -50,7 +49,7 @@ export default class UserState extends UnirepState {
         _transitionedFromAttestations?: { [key: string]: Attestation[] }
     ) {
         super(
-            _zkFilesPath,
+            _config,
             _currentEpoch,
             _latestBlock,
             _GSTLeaves,
@@ -316,10 +315,10 @@ export default class UserState extends UnirepState {
                 const stateLeave: IUserStateLeaf = {
                     attesterId: BigInt(attesterId),
                     reputation: Reputation.default().update(
-                        BigNumber.from(airdropAmount),
-                        BigNumber.from(0),
-                        BigNumber.from(0),
-                        BigNumber.from(signUpInLeaf)
+                        airdropAmount,
+                        0,
+                        0,
+                        signUpInLeaf
                     ),
                 }
                 this.latestUserStateLeaves = [stateLeave]

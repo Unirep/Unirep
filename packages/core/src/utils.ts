@@ -1,21 +1,262 @@
-import { ethers } from 'ethers'
-import { CircuitName } from './types/circuit'
+import { BigNumber, ethers } from 'ethers'
+import { CircuitName, UnirepEvents } from './types'
 import {
+    UnirepTypes,
     UnirepEvent,
     AttestationEvent,
     Unirep,
     UnirepABI,
-    UnirepTypes,
 } from '@unirep/contracts'
-import { ZkIdentity } from '@unirep/crypto'
+import { SnarkProof, ZkIdentity } from '@unirep/crypto'
 
 import { IUnirepState, IUserState } from './interfaces'
+import Attestation from './Attestation'
 import UnirepState from './UnirepState'
 import UserState from './UserState'
 import { UnirepProtocol } from './UnirepProtocol'
-import { Attestation } from './Attestation'
+import {
+    IndexedProcessedAttestationsProofEvent,
+    IndexedStartedTransitionProofEvent,
+    IndexedUserStateTransitionProofEvent,
+} from '@unirep/contracts/build/src/contracts/Unirep'
 
 const DEFAULT_START_BLOCK = 0
+
+// TODO: integrate with circom
+
+const parseEventProof = (
+    circuitName: CircuitName,
+    event: ethers.Event
+): { proof; publicSignals } => {
+    let args = event?.args?.proof
+    const emptyArray: ethers.BigNumber[] = []
+    let formatPublicSignals
+    if (circuitName === CircuitName.verifyEpochKey) {
+        formatPublicSignals = emptyArray
+            .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
+            .map((n) => n.toBigInt())
+    } else if (circuitName === CircuitName.proveReputation) {
+        formatPublicSignals = emptyArray
+            .concat(
+                args?.repNullifiers,
+                args?.epoch,
+                args?.epochKey,
+                args?.globalStateTree,
+                args?.attesterId,
+                args?.proveReputationAmount,
+                args?.minRep,
+                args?.proveGraffiti,
+                args?.graffitiPreImage
+            )
+            .map((n) => n.toBigInt())
+    } else if (circuitName === CircuitName.proveUserSignUp) {
+        formatPublicSignals = emptyArray
+            .concat(
+                args?.epoch,
+                args?.epochKey,
+                args?.globalStateTree,
+                args?.attesterId,
+                args?.userHasSignedUp
+            )
+            .map((n) => n.toBigInt())
+    } else if (circuitName === CircuitName.startTransition) {
+        args = event?.args
+        formatPublicSignals = emptyArray
+            .concat(
+                args?.blindedUserState,
+                args?.blindedHashChain,
+                args?.globalStateTree
+            )
+            .map((n) => n.toBigInt())
+    } else if (circuitName === CircuitName.processAttestations) {
+        args = event?.args
+        formatPublicSignals = emptyArray
+            .concat(
+                args?.outputBlindedUserState,
+                args?.outputBlindedHashChain,
+                args?.inputBlindedUserState
+            )
+            .map((n) => n.toBigInt())
+    } else if (circuitName === CircuitName.userStateTransition) {
+        formatPublicSignals = emptyArray
+            .concat(
+                args.newGlobalStateTreeLeaf,
+                args.epkNullifiers,
+                args.transitionFromEpoch,
+                args.blindedUserStates,
+                args.fromGlobalStateTree,
+                args.blindedHashChains,
+                args.fromEpochTree
+            )
+            .map((n) => n.toBigInt())
+    } else {
+        throw new Error(
+            `Unirep protocol: cannot find circuit name ${circuitName}`
+        )
+    }
+    const proof = args?.proof
+    const formattedProof: SnarkProof = {
+        pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
+        pi_b: [
+            [BigInt(proof[3]), BigInt(proof[2])],
+            [BigInt(proof[5]), BigInt(proof[4])],
+            [BigInt('1'), BigInt('0')],
+        ],
+        pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
+    }
+    return {
+        proof: formattedProof,
+        publicSignals: formatPublicSignals,
+    }
+}
+
+/**
+ * Verify contract events' proof
+ * @param circuit The name of the circuit
+ * @param contract Unirep smart contract in ethers.Contract type
+ * @param event The event from the unirep contract
+ * @returns formatted proof and publicSignals to be verified by snarkjs
+ */
+const verifyProofEvent = async (
+    circuit: CircuitName,
+    contract: Unirep,
+    event: UnirepEvents
+): Promise<boolean> => {
+    // try-catch ethers CALL_EXCEPTION error if proof is invalid
+    // Error: call revert exception [ See: https://links.ethers.org/v5-errors-CALL_EXCEPTION ]
+    if (circuit === CircuitName.verifyEpochKey) {
+        try {
+            const isValid = contract.verifyEpochKeyValidity(event.args.proof as UnirepTypes.EpochKeyProofStruct)
+            return isValid
+        } catch (_) { }
+    } else if (circuit === CircuitName.proveReputation) {
+        try {
+            const isValid = contract.verifyReputation(event.args.proof as UnirepTypes.ReputationProofStruct)
+            return isValid
+        } catch (_) { }
+    } else if (circuit === CircuitName.proveUserSignUp) {
+        try {
+            const isValid = await contract.verifyUserSignUp(event.args.proof as UnirepTypes.SignUpProofStruct)
+            return isValid
+        } catch (_) { }
+    } else if (circuit === CircuitName.startTransition) {
+        const {
+            blindedUserState,
+            blindedHashChain,
+            globalStateTree,
+            proof,
+        } = (event as IndexedStartedTransitionProofEvent).args
+        try {
+            const isValid = contract.verifyStartTransitionProof(
+                blindedUserState,
+                blindedHashChain,
+                globalStateTree,
+                proof,
+            )
+            return isValid
+        } catch (_) { }
+    } else if (circuit === CircuitName.processAttestations) {
+        const {
+            outputBlindedUserState,
+            outputBlindedHashChain,
+            inputBlindedUserState,
+            proof,
+        } = (event as IndexedProcessedAttestationsProofEvent).args
+        try {
+            const isValid = contract.verifyProcessAttestationProof(
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
+                proof,
+            )
+            return isValid
+        } catch (_) { }
+    } else if (circuit === CircuitName.userStateTransition) {
+        try {
+            const isValid = await contract
+                .verifyUserStateTransition(
+                    event.args.proof as UnirepTypes.UserTransitionProofStruct
+                )
+            return isValid
+        } catch (_) { }
+    }
+    return false
+}
+
+/**
+ * Verify one user state transition action. It composes of `transitionEvent`, `startTransitionEvent`, and `processAttestationEvent`s.
+ * @param transitionEvent The user state transition event
+ * @param startTransitionEvent The start transition event
+ * @param processAttestationEvents The process attestations event
+ * @returns True if all proofs of the events are valid, false otherwise.
+ */
+const verifyUSTEvents = async (
+    contract: Unirep,
+    transitionEvent: IndexedUserStateTransitionProofEvent,
+    startTransitionEvent: IndexedStartedTransitionProofEvent,
+    processAttestationEvents: IndexedProcessedAttestationsProofEvent[]
+): Promise<boolean> => {
+    // verify the final UST proof
+    const isValid = await verifyProofEvent(
+        CircuitName.userStateTransition,
+        contract,
+        transitionEvent
+    )
+    if (!isValid) {
+        return false
+    }
+
+    // verify the start transition proof
+    const isStartTransitionProofValid = await verifyProofEvent(
+        CircuitName.startTransition,
+        contract,
+        startTransitionEvent
+    )
+    if (!isStartTransitionProofValid) {
+        return false
+    }
+
+    // verify process attestations proofs
+    const transitionArgs = transitionEvent?.args?.proof
+    const isProcessAttestationValid = await verifyProcessAttestationEvents(
+        contract,
+        processAttestationEvents,
+        transitionArgs.blindedUserStates[0],
+        transitionArgs.blindedUserStates[1]
+    )
+    if (!isProcessAttestationValid) {
+        return false
+    }
+    return true
+}
+
+/**
+ * Verify all process attestations events. One input blinded user state should be the output of other process attestations proof
+ * @param processAttestationEvents All process attestation events
+ * @param startBlindedUserState The blinded user state from `startTrantision` proof
+ * @param finalBlindedUserState The Final output of the latest `processAttestation` proof
+ * @returns True if all events are valid and blinded user state are connected
+ */
+const verifyProcessAttestationEvents = async (
+    contract: Unirep,
+    processAttestationEvents: IndexedProcessedAttestationsProofEvent[],
+    startBlindedUserState: BigNumber,
+    finalBlindedUserState: BigNumber
+): Promise<boolean> => {
+    let currentBlindedUserState = startBlindedUserState
+    // The rest are process attestations proofs
+    for (let i = 0; i < processAttestationEvents.length; i++) {
+        const args = processAttestationEvents[i]?.args
+        const isValid = await verifyProofEvent(
+            CircuitName.processAttestations,
+            contract,
+            processAttestationEvents[i]
+        )
+        if (!isValid) return false
+        currentBlindedUserState = args?.outputBlindedUserState
+    }
+    return currentBlindedUserState.eq(finalBlindedUserState)
+}
 
 /**
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
@@ -31,11 +272,15 @@ const genUnirepState = async (
     address: string,
     _unirepState?: IUnirepState
 ) => {
-    const unirepContract = await new ethers.Contract(address, UnirepABI, provider) as Unirep
+    const unirepContract = (await new ethers.Contract(
+        address,
+        UnirepABI,
+        provider
+    )) as Unirep
     let unirepState: UnirepState
 
     if (!_unirepState) {
-        unirepState = new UnirepState(protocol.config.exportBuildPath)
+        unirepState = new UnirepState(protocol.config)
     } else {
         unirepState = UnirepState.fromJSON(_unirepState)
     }
@@ -174,18 +419,21 @@ const genUnirepState = async (
             if (isProofIndexValid[toProofIndex] === undefined) {
                 let isValid
                 if (event.event === 'IndexedEpochKeyProof') {
-                    isValid = await protocol.verifyProofEvent(
+                    isValid = await verifyProofEvent(
                         CircuitName.verifyEpochKey,
+                        unirepContract,
                         event
                     )
                 } else if (event.event === 'IndexedReputationProof') {
-                    isValid = await protocol.verifyProofEvent(
+                    isValid = await verifyProofEvent(
                         CircuitName.proveReputation,
+                        unirepContract,
                         event
                     )
                 } else if (event.event === 'IndexedUserSignedUpProof') {
-                    isValid = await protocol.verifyProofEvent(
+                    isValid = await verifyProofEvent(
                         CircuitName.proveUserSignUp,
+                        unirepContract,
                         event
                     )
                 } else {
@@ -340,7 +588,8 @@ const genUnirepState = async (
                     continue
                 }
 
-                const processAttestationEvents: ethers.Event[] = []
+                const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
+                    []
                 for (let j = 1; j < proofIndexes.length; j++) {
                     if (proofIndexes[j] === 0) isValid = false
                     const processAttestationEvent =
@@ -355,7 +604,8 @@ const genUnirepState = async (
                     }
                     processAttestationEvents.push(processAttestationEvent)
                 }
-                isValid = await protocol.verifyUSTEvents(
+                isValid = await verifyUSTEvents(
+                    unirepContract,
                     event,
                     startTransitionEvent,
                     processAttestationEvents
@@ -445,12 +695,16 @@ const genUserState = async (
     userIdentity: ZkIdentity,
     _userState?: IUserState
 ) => {
-    const unirepContract = await new ethers.Contract(address, UnirepABI, provider) as Unirep
+    const unirepContract = (await new ethers.Contract(
+        address,
+        UnirepABI,
+        provider
+    )) as Unirep
 
     let userState: UserState
 
     if (!_userState) {
-        userState = new UserState(protocol.config.exportBuildPath, userIdentity)
+        userState = new UserState(protocol.config, userIdentity)
     } else {
         userState = UserState.fromJSONAndID(userIdentity, _userState)
     }
@@ -589,18 +843,21 @@ const genUserState = async (
             if (isProofIndexValid[toProofIndex] === undefined) {
                 let isValid
                 if (event.event === 'IndexedEpochKeyProof') {
-                    isValid = await protocol.verifyProofEvent(
+                    isValid = await verifyProofEvent(
                         CircuitName.verifyEpochKey,
+                        unirepContract,
                         event
                     )
                 } else if (event.event === 'IndexedReputationProof') {
-                    isValid = await protocol.verifyProofEvent(
+                    isValid = await verifyProofEvent(
                         CircuitName.proveReputation,
+                        unirepContract,
                         event
                     )
                 } else if (event.event === 'IndexedUserSignedUpProof') {
-                    isValid = await protocol.verifyProofEvent(
+                    isValid = await verifyProofEvent(
                         CircuitName.proveUserSignUp,
+                        unirepContract,
                         event
                     )
                 } else {
@@ -755,7 +1012,8 @@ const genUserState = async (
                     continue
                 }
 
-                const processAttestationEvents: ethers.Event[] = []
+                const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
+                    []
                 for (let j = 1; j < proofIndexes.length; j++) {
                     if (proofIndexes[j] === 0) isValid = false
                     const processAttestationEvent =
@@ -770,7 +1028,8 @@ const genUserState = async (
                     }
                     processAttestationEvents.push(processAttestationEvent)
                 }
-                isValid = await protocol.verifyUSTEvents(
+                isValid = await verifyUSTEvents(
+                    unirepContract,
                     event,
                     startTransitionEvent,
                     processAttestationEvents
