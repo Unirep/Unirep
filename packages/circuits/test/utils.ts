@@ -607,10 +607,13 @@ const genReputationCircuitInput = async (
     const minRep = _minRep ?? 0
     const proveGraffiti = _proveGraffiti ?? 0
     let graffitiPreImage
-    if (proveGraffiti === 1 && reputationRecords[attesterId] !== undefined) {
+    if (
+        proveGraffiti === 1 && 
+        reputationRecords[attesterId]
+    ) {
         graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
     }
-    graffitiPreImage = graffitiPreImage ?? 0
+    graffitiPreImage = _graffitiPreImage ?? 0
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
