@@ -16,7 +16,12 @@ export class IncrementalMerkleTree extends zkIncrementalMerkleTree {
      * @param zeroValue Zero values for zeroes.
      * @param arity The number of children for each node.
      */
-    constructor(hash: HashFunction, depth: number, zeroValue: Node = 0, arity = 2) {
+    constructor(
+        hash: HashFunction,
+        depth: number,
+        zeroValue: Node = 0,
+        arity = 2
+    ) {
         super(hash, depth, zeroValue, arity)
     }
 }

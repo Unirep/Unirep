@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import Keyv from 'keyv'
-import { poseidon } from "circomlibjs"
+import { poseidon } from 'circomlibjs'
 import { SparseMerkleTree } from '../src'
 
 describe('SparseMerkleTree', function () {

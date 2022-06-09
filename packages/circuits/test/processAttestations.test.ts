@@ -10,7 +10,10 @@ import {
     hash5,
     throwError,
 } from './utils'
-import { processAttestationsCircuitPath, NUM_ATTESTATIONS_PER_PROOF } from '../config/'
+import {
+    processAttestationsCircuitPath,
+    NUM_ATTESTATIONS_PER_PROOF,
+} from '../config/'
 
 const circuitPath = path.join(__dirname, processAttestationsCircuitPath)
 

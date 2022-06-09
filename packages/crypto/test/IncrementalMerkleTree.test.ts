@@ -1,7 +1,6 @@
-import { poseidon } from "circomlibjs"
+import { poseidon } from 'circomlibjs'
 import { expect } from 'chai'
 import { genRandomSalt, IncrementalMerkleTree } from '../src'
-
 
 describe('IncrementalMerkleTree', function () {
     let tree: IncrementalMerkleTree
@@ -12,7 +11,11 @@ describe('IncrementalMerkleTree', function () {
         expect(typeof tree).equal('object')
 
         const nonZeroDefaultLeaf = genRandomSalt()
-        const nonZeroTree = new IncrementalMerkleTree(poseidon, depth, nonZeroDefaultLeaf)
+        const nonZeroTree = new IncrementalMerkleTree(
+            poseidon,
+            depth,
+            nonZeroDefaultLeaf
+        )
         expect(typeof nonZeroTree).equal('object')
     })
 

@@ -61,7 +61,10 @@ describe('Epoch Transition', function () {
         console.log('User sign up')
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
-        const tree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(
+            poseidon,
+            GLOBAL_STATE_TREE_DEPTH
+        )
         const stateRoot = genRandomSalt()
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))
@@ -177,10 +180,7 @@ describe('Epoch Transition', function () {
         // Global state tree
         GSTree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
         const commitment = userId.genIdentityCommitment()
-        const hashedLeaf = hashLeftRight(
-            commitment,
-            userStateTree.root
-        )
+        const hashedLeaf = hashLeftRight(commitment, userStateTree.root)
         GSTree.insert(hashedLeaf)
         leafIndex = 0
     })

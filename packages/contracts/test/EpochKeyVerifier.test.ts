@@ -15,7 +15,12 @@ import {
     GLOBAL_STATE_TREE_DEPTH,
 } from '@unirep/circuits/config'
 
-import { genEpochKeyCircuitInput, genInputForContract, hashLeftRight, poseidon } from './utils'
+import {
+    genEpochKeyCircuitInput,
+    genInputForContract,
+    hashLeftRight,
+    poseidon,
+} from './utils'
 import { EpochKeyProof, deployUnirep, Unirep } from '../src'
 
 describe('Verify Epoch Key verifier', function () {

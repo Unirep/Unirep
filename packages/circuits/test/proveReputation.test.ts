@@ -10,7 +10,11 @@ import {
     genProofAndVerify,
     hashOne,
 } from './utils'
-import { proveReputationCircuitPath, USER_STATE_TREE_DEPTH, MAX_REPUTATION_BUDGET } from '../config'
+import {
+    proveReputationCircuitPath,
+    USER_STATE_TREE_DEPTH,
+    MAX_REPUTATION_BUDGET,
+} from '../config'
 const circuitPath = path.join(__dirname, proveReputationCircuitPath)
 
 describe('Prove reputation from attester circuit', function () {

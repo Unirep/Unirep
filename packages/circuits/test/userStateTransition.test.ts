@@ -16,7 +16,10 @@ import {
     hashLeftRight,
 } from './utils'
 
-import { userStateTransitionCircuitPath, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
+import {
+    userStateTransitionCircuitPath,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} from '../config'
 
 const epkExistsCircuitPath = path.join(
     __dirname,

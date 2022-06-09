@@ -30,7 +30,12 @@ export class SparseMerkleTree {
 
     public readonly numLeaves: BigInt
 
-    constructor(hash: HashFunction, protected db, private _height: number, zeroHash: BigInt) {
+    constructor(
+        hash: HashFunction,
+        protected db,
+        private _height: number,
+        zeroHash: BigInt
+    ) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
         this._hash = hash
@@ -163,7 +168,11 @@ export class SparseMerkleTree {
         const hashes: BigInt[] = [zeroHash]
 
         for (let i = 1; i < this.height; i++) {
-            hashes[i] = newWrappedPoseidonT3Hash(this._hash, hashes[i - 1], hashes[i - 1])
+            hashes[i] = newWrappedPoseidonT3Hash(
+                this._hash,
+                hashes[i - 1],
+                hashes[i - 1]
+            )
         }
 
         this.zeroHashes = hashes

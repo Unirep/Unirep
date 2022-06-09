@@ -1,10 +1,7 @@
 import * as path from 'path'
 import { expect } from 'chai'
 
-import {
-    stringifyBigInts,
-    genRandomSalt,
-} from '@unirep/crypto'
+import { stringifyBigInts, genRandomSalt } from '@unirep/crypto'
 import { executeCircuit, getSignalByName } from '../circuits/utils'
 import { compileAndLoadCircuit, hash5, hashLeftRight } from './utils'
 

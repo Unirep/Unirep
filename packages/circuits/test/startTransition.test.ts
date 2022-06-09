@@ -48,7 +48,10 @@ describe('User State Transition circuits', function () {
             userStateTree = await bootstrapRandomUSTree()
 
             // Global state tree
-            GSTree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
+            GSTree = new IncrementalMerkleTree(
+                poseidon,
+                GLOBAL_STATE_TREE_DEPTH
+            )
             const commitment = user.genIdentityCommitment()
             hashedLeaf = hashLeftRight(commitment, userStateTree.root)
             GSTree.insert(hashedLeaf)
