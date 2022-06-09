@@ -1,7 +1,6 @@
 import { expect } from 'chai'
 import { Circuit, verifyProof } from '@unirep/circuits'
-import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
-import { Attestation } from '@unirep/contracts'
+import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -21,7 +20,12 @@ import {
     UnirepState,
     UserState,
 } from '../../src'
-import { genNewGST, genRandomAttestation } from '../utils'
+import {
+    Attestation,
+    hashLeftRight,
+    genNewGST,
+    genRandomAttestation,
+} from '../utils'
 
 describe('User State', async function () {
     this.timeout(0)
@@ -665,7 +669,7 @@ describe('User State', async function () {
         it('generate epoch tree should succeed', async () => {
             const prevEpoch = 1
             const epochTree = await userState.getUnirepStateEpochTree(prevEpoch)
-            const root = epochTree.getRootHash()
+            const root = epochTree.root
 
             const exist = await userState.epochTreeRootExists(root, prevEpoch)
             expect(exist).to.be.true
@@ -767,9 +771,7 @@ describe('User State', async function () {
             const unirepEpochTree = await userState.getUnirepStateEpochTree(
                 fromEpoch
             )
-            expect(unirepEpochTree.getRootHash().toString()).equal(
-                fromEpochTree
-            )
+            expect(unirepEpochTree.root.toString()).equal(fromEpochTree)
 
             // epoch key nullifiers
             const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
@@ -797,7 +799,7 @@ describe('User State', async function () {
             const USTree_ = await userState.genUserStateTree()
             const GSTLeaf_ = hashLeftRight(
                 user.genIdentityCommitment(),
-                USTree_.getRootHash()
+                USTree_.root
             )
             expect(GSTLeaf_.toString()).equal(
                 finalTransitionProof.newGlobalStateTreeLeaf

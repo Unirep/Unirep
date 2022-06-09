@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { BigNumber, BigNumberish } from 'ethers'
-import { hash5, hashOne } from '@unirep/crypto'
+import { hash5, hashOne } from './utils'
 
 import { IReputation } from './interfaces'
 

@@ -5,7 +5,6 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     genRandomSalt,
-    hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
@@ -17,6 +16,8 @@ import {
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
+    hashLeftRight,
+    poseidon,
 } from '../utils'
 import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
@@ -393,10 +394,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
         })
 
         it('submit valid sign up proof with wrong GST root event', async () => {
-            const ZERO_VALUE = 0
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const userStateTree = await genNewUserStateTree()
+            const userStateTree = genNewUserStateTree()
             for (const attester of Object.keys(reputationRecords)) {
                 await userStateTree.update(
                     BigInt(attester),
@@ -404,13 +404,12 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
-                ZERO_VALUE,
-                2
+                poseidon,
+                GLOBAL_STATE_TREE_DEPTH
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const stateRoot = userStateTree.getRootHash()
+            const stateRoot = userStateTree.root
             const leafIndex = 0
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
             GSTree.insert(BigInt(hashedStateLeaf.toString()))

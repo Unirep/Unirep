@@ -114,14 +114,7 @@ class Attestation extends _Attestation {
         _graffiti: BigInt | BigNumberish,
         _signUp: BigInt | BigNumberish
     ) {
-        super(
-            poseidon,
-            _attesterId,
-            _posRep,
-            _negRep,
-            _graffiti,
-            _signUp
-        )
+        super(poseidon, _attesterId, _posRep, _negRep, _graffiti, _signUp)
     }
 }
 

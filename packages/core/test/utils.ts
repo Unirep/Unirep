@@ -6,15 +6,12 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
-    hash5,
-    hashLeftRight,
     SparseMerkleTree,
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
-import { Attestation } from '@unirep/contracts'
 import {
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
@@ -30,6 +27,13 @@ import {
     UnirepState,
     UserState,
 } from '../src'
+import {
+    hashLeftRight,
+    hash5,
+    poseidon,
+    SMT_ONE_LEAF,
+} from '../../circuits/test/utils'
+import { Attestation } from '../../contracts/test/utils'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
@@ -37,17 +41,19 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
-
-const genNewSMT = async (
+const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: BigInt
-): Promise<SparseMerkleTree> => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+): SparseMerkleTree => {
+    return new SparseMerkleTree(
+        poseidon,
+        new Keyv(),
+        treeDepth,
+        defaultLeafHash
+    )
 }
 
-const genNewEpochTree = async (): Promise<SparseMerkleTree> => {
+const genNewEpochTree = (): SparseMerkleTree => {
     const defaultOTSMTHash = SMT_ONE_LEAF
     return genNewSMT(EPOCH_TREE_DEPTH, defaultOTSMTHash)
 }
@@ -61,7 +67,11 @@ const defaultUserStateLeaf = hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
+    const t = new IncrementalMerkleTree(
+        poseidon,
+        treeDepth,
+        defaultUserStateLeaf
+    )
     return t.root
 }
 
@@ -71,11 +81,11 @@ const genNewGST = (
 ): IncrementalMerkleTree => {
     const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
     const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
-    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf, 2)
+    const GST = new IncrementalMerkleTree(poseidon, GSTDepth, defaultGSTLeaf)
     return GST
 }
 
-const genNewUserStateTree = async (): Promise<SparseMerkleTree> => {
+const genNewUserStateTree = (): SparseMerkleTree => {
     return genNewSMT(USER_STATE_TREE_DEPTH, defaultUserStateLeaf)
 }
 
@@ -215,17 +225,15 @@ const genReputationCircuitInput = async (
     }
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
@@ -286,17 +294,15 @@ const genProveSignUpCircuitInput = async (
     }
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
@@ -378,15 +384,17 @@ const compareEpochTrees = async (
     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
     const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
 
-    expect(epochTree1.getRootHash()).to.equal(epochTree2.getRootHash())
-    expect(epochTree1.getRootHash()).to.equal(epochTree3.getRootHash())
+    expect(epochTree1.root).to.equal(epochTree2.root)
+    expect(epochTree1.root).to.equal(epochTree3.root)
 
     return usWithNoStorage.toJSON()
 }
 
 export {
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
+    hash5,
+    hashLeftRight,
+    poseidon,
+    Attestation,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     genNewEpochTree,

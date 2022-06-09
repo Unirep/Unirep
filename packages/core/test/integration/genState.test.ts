@@ -9,7 +9,6 @@ import {
     verifyProof,
 } from '@unirep/circuits'
 import {
-    Attestation,
     computeProcessAttestationsProofHash,
     computeStartTransitionProofHash,
     deployUnirep,
@@ -23,6 +22,7 @@ import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
 import { genUserState, IUserState, UserState } from '../../src'
 import {
+    Attestation,
     compareEpochTrees,
     compareStates,
     genRandomAttestation,

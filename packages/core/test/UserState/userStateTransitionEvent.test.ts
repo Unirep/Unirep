@@ -5,7 +5,6 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     genRandomSalt,
-    hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import {
@@ -33,6 +32,7 @@ import {
     UserState,
 } from '../../src'
 import {
+    hashLeftRight,
     genNewGST,
     genRandomAttestation,
     genRandomList,
@@ -430,9 +430,9 @@ describe('User state transition events in Unirep User State', async function () 
                     unirepState.genGSTree(i).root
                 )
             }
-            expect(
-                (await userState.getUnirepStateEpochTree(1)).getRootHash()
-            ).equal((await unirepState.genEpochTree(1)).getRootHash())
+            expect((await userState.getUnirepStateEpochTree(1)).root).equal(
+                (await unirepState.genEpochTree(1)).root
+            )
 
             storedUserState = userState.toJSON()
         })
@@ -1038,9 +1038,9 @@ describe('User state transition events in Unirep User State', async function () 
                     unirepState.genGSTree(i).root
                 )
             }
-            expect(
-                (await userState.getUnirepStateEpochTree(2)).getRootHash()
-            ).equal((await unirepState.genEpochTree(2)).getRootHash())
+            expect((await userState.getUnirepStateEpochTree(2)).root).equal(
+                (await unirepState.genEpochTree(2)).root
+            )
         })
     })
 })

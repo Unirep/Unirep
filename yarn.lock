@@ -1718,10 +1718,9 @@ __metadata:
     "@unirep/circuits": 1.0.0
     "@unirep/contracts": 1.0.0
     "@unirep/crypto": 1.0.0
-    argparse: ^2.0.1
-    base64url: ^3.0.1
     bigint-conversion: ^2.1.12
     chai: ^4.2.0
+    circomlibjs: ^0.0.8
     ethereum-waffle: ^3.4.0
     ethers: ^5.4.6
     hardhat: ^2.8.3

@@ -1,16 +1,14 @@
 import assert from 'assert'
 import { BigNumber } from 'ethers'
-import {
-    IncrementalMerkleTree,
-    hashLeftRight,
-    SparseMerkleTree,
-    stringifyBigInts,
-    unstringifyBigInts,
-} from '@unirep/crypto'
-import { Attestation, IAttestation } from '@unirep/contracts'
+import { stringifyBigInts, unstringifyBigInts } from '@unirep/crypto'
+import { IAttestation } from '@unirep/contracts'
 
 import { IEpochTreeLeaf, ISettings, IUnirepState } from './interfaces'
 import {
+    Attestation,
+    hashLeftRight,
+    IncrementalMerkleTree,
+    SparseMerkleTree,
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     genNewSMT,
@@ -60,8 +58,7 @@ export default class UnirepState {
             for (let key in this.GSTLeaves) {
                 this.globalStateTree[key] = new IncrementalMerkleTree(
                     this.settings.globalStateTreeDepth,
-                    this.defaultGSTLeaf,
-                    2
+                    this.defaultGSTLeaf
                 )
                 this.epochGSTRootMap[key] = new Map()
                 this.GSTLeaves[key].map((n) => {
@@ -76,8 +73,7 @@ export default class UnirepState {
             this.GSTLeaves[this.currentEpoch] = []
             this.globalStateTree[this.currentEpoch] = new IncrementalMerkleTree(
                 this.settings.globalStateTreeDepth,
-                this.defaultGSTLeaf,
-                2
+                this.defaultGSTLeaf
             )
             this.epochGSTRootMap[this.currentEpoch] = new Map()
         }
@@ -339,10 +335,7 @@ export default class UnirepState {
      */
     public genEpochTree = async (epoch: number): Promise<SparseMerkleTree> => {
         this._checkValidEpoch(epoch)
-        const epochTree = await genNewSMT(
-            this.settings.epochTreeDepth,
-            SMT_ONE_LEAF
-        )
+        const epochTree = genNewSMT(this.settings.epochTreeDepth, SMT_ONE_LEAF)
 
         const leaves = this.epochTreeLeaves[epoch]
         if (!leaves) return epochTree
@@ -375,7 +368,7 @@ export default class UnirepState {
         this._checkValidEpoch(epoch)
         if (this.epochTreeRoot[epoch] == undefined) {
             const epochTree = await this.genEpochTree(epoch)
-            this.epochTreeRoot[epoch] = epochTree.getRootHash()
+            this.epochTreeRoot[epoch] = epochTree.root
         }
         return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString()
     }
@@ -442,7 +435,7 @@ export default class UnirepState {
         this._checkCurrentEpoch(epoch)
         this._checkBlockNumber(blockNumber)
 
-        this.epochTree[epoch] = await genNewSMT(
+        this.epochTree[epoch] = genNewSMT(
             this.settings.epochTreeDepth,
             SMT_ONE_LEAF
         )
@@ -483,14 +476,13 @@ export default class UnirepState {
             )
         }
         this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
-        this.epochTreeRoot[epoch] = this.epochTree[epoch].getRootHash()
+        this.epochTreeRoot[epoch] = this.epochTree[epoch].root
         this.currentEpoch++
         this.GSTLeaves[this.currentEpoch] = []
         this.epochKeyInEpoch[this.currentEpoch] = new Map()
         this.globalStateTree[this.currentEpoch] = new IncrementalMerkleTree(
             this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf,
-            2
+            this.defaultGSTLeaf
         )
         this.epochGSTRootMap[this.currentEpoch] = new Map()
     }
