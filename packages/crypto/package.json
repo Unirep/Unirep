@@ -6,7 +6,7 @@
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "tsc",
-        "test": "echo 'No test for crypto!!!'",
+        "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep.git",
