@@ -1,17 +1,16 @@
 import * as path from 'path'
 import { expect } from 'chai'
-import { genRandomSalt, hash5, ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { executeCircuit, getSignalByName, Circuit } from '../circuits/utils'
 import {
     Attestation,
     compileAndLoadCircuit,
     genProcessAttestationsCircuitInput,
     genProofAndVerify,
+    hash5,
     throwError,
 } from './utils'
-import { processAttestationsCircuitPath } from '../config/'
-
-import { NUM_ATTESTATIONS_PER_PROOF } from '../config'
+import { processAttestationsCircuitPath, NUM_ATTESTATIONS_PER_PROOF } from '../config/'
 
 const circuitPath = path.join(__dirname, processAttestationsCircuitPath)
 

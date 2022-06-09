@@ -1,13 +1,12 @@
 import * as path from 'path'
 import { expect } from 'chai'
+
 import {
     stringifyBigInts,
     genRandomSalt,
-    hashLeftRight,
-    hash5,
 } from '@unirep/crypto'
 import { executeCircuit, getSignalByName } from '../circuits/utils'
-import { compileAndLoadCircuit } from './utils'
+import { compileAndLoadCircuit, hash5, hashLeftRight } from './utils'
 
 const hasher5CircuitPath = path.join(
     __dirname,

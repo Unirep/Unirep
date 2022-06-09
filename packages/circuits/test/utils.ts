@@ -6,6 +6,7 @@ import { ethers } from 'ethers'
 const circom = require('circom')
 import Keyv from 'keyv'
 import * as crypto from '@unirep/crypto'
+import { poseidon } from 'circomlibjs'
 
 import {
     EPOCH_TREE_DEPTH,
@@ -26,10 +27,9 @@ import {
 import { expect } from 'chai'
 import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
 
-const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
+const SMT_ZERO_LEAF = crypto.hashLeftRight(poseidon, BigInt(0), BigInt(0))
+const SMT_ONE_LEAF = crypto.hashLeftRight(poseidon, BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
-const GSTZERO_VALUE = 0
 
 interface IAttestation {
     attesterId: BigInt
@@ -62,7 +62,7 @@ class Attestation implements IAttestation {
     }
 
     public hash = (): BigInt => {
-        return crypto.hash5([
+        return hash5([
             this.attesterId,
             this.posRep,
             this.negRep,
@@ -132,14 +132,14 @@ class Reputation implements IReputation {
 
     public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
         assert(
-            crypto.hashOne(_graffitiPreImage) === this.graffiti,
+            hashOne(_graffitiPreImage) === this.graffiti,
             'Graffiti pre-image does not match'
         )
         this.graffitiPreImage = _graffitiPreImage
     }
 
     public hash = (): BigInt => {
-        return crypto.hash5([
+        return hash5([
             this.posRep,
             this.negRep,
             this.graffiti,
@@ -163,22 +163,34 @@ class Reputation implements IReputation {
     }
 }
 
+const hash5 = (elements: BigInt[]) => {
+    return crypto.hash5(poseidon, elements)
+}
+
+const hashLeftRight = (left: BigInt, right: BigInt) => {
+    return crypto.hashLeftRight(poseidon, left, right)
+}
+
+const hashOne = (preImage: BigInt) => {
+    return crypto.hashOne(poseidon, preImage)
+}
+
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
     if (len) str = ethers.utils.hexZeroPad(str, len)
     return str
 }
 
-const genNewSMT = async (treeDepth: number, defaultLeafHash: BigInt) => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+const genNewSMT = (treeDepth: number, defaultLeafHash: BigInt) => {
+    return new SparseMerkleTree(poseidon, new Keyv(), treeDepth, defaultLeafHash)
 }
 
-const genNewEpochTree = async (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
+const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
     const defaultOTSMTHash = SMT_ONE_LEAF
     return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
 
-const defaultUserStateLeaf = crypto.hash5([
+const defaultUserStateLeaf = hash5([
     BigInt(0),
     BigInt(0),
     BigInt(0),
@@ -187,7 +199,7 @@ const defaultUserStateLeaf = crypto.hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
+    const t = new SparseMerkleTree(poseidon, new Keyv(), treeDepth, defaultUserStateLeaf)
     return t.root
 }
 
@@ -210,7 +222,7 @@ const genEpochKey = (
         BigInt(0),
         BigInt(0),
     ]
-    let epochKey = crypto.hash5(values).toString()
+    let epochKey = hash5(values).toString()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = BigInt(epochKey) % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed
@@ -342,7 +354,7 @@ const genProcessAttestationsCircuitInput = async (
             reputationRecords[attesterId.toString()].hash()
         )
     }
-    intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+    intermediateUserStateTreeRoots.push(userStateTree.root)
 
     // Ensure as least one of the selectors is true
     const selTrue = Math.floor(Math.random() * NUM_ATTESTATIONS_PER_PROOF)
@@ -393,7 +405,7 @@ const genProcessAttestationsCircuitInput = async (
             oldSignUps.push(reputationRecords[attesterId.toString()]['signUp'])
 
             // Get old reputation record proof
-            const oldReputationRecordProof = await userStateTree.getMerkleProof(
+            const oldReputationRecordProof = await userStateTree.createProof(
                 attesterId
             )
             userStateTreePathElements.push(oldReputationRecordProof)
@@ -412,7 +424,7 @@ const genProcessAttestationsCircuitInput = async (
             )
 
             const attestation_hash = attestation.hash()
-            hashChainResult = crypto.hashLeftRight(
+            hashChainResult = hashLeftRight(
                 attestation_hash,
                 hashChainResult
             )
@@ -422,15 +434,15 @@ const genProcessAttestationsCircuitInput = async (
             oldGraffities.push(BigInt(0))
             oldSignUps.push(BigInt(0))
 
-            const leafZeroPathElements = await userStateTree.getMerkleProof(
+            const leafZeroPathElements = await userStateTree.createProof(
                 BigInt(0)
             )
             userStateTreePathElements.push(leafZeroPathElements)
         }
 
-        intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+        intermediateUserStateTreeRoots.push(userStateTree.root)
     }
-    const inputBlindedUserState = crypto.hash5([
+    const inputBlindedUserState = hash5([
         id.identityNullifier,
         intermediateUserStateTreeRoots[0],
         epoch,
@@ -486,11 +498,11 @@ const genUserStateTransitionCircuitInput = async (
     const blindedHashChain: BigInt[] = []
     const epochTreePathElements: BigInt[][] = []
 
-    intermediateUserStateTreeRoots.push(userStateTree.getRootHash())
+    intermediateUserStateTreeRoots.push(userStateTree.root)
     blindedUserState.push(
-        crypto.hash5([
+        hash5([
             id.identityNullifier,
-            userStateTree.getRootHash(),
+            userStateTree.root,
             BigInt(epoch),
             BigInt(startEpochKeyNonce),
         ])
@@ -498,14 +510,13 @@ const genUserStateTransitionCircuitInput = async (
 
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
+        poseidon,
         GLOBAL_STATE_TREE_DEPTH,
-        GSTZERO_VALUE,
-        2
     )
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = crypto.hashLeftRight(
+    const hashedLeaf = hashLeftRight(
         commitment,
-        userStateTree.getRootHash()
+        userStateTree.root
     )
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0)
@@ -527,7 +538,7 @@ const genUserStateTransitionCircuitInput = async (
         // Blinded hash chain result
         hashChainResults.push(hashChainResult)
         blindedHashChain.push(
-            crypto.hash5([
+            hash5([
                 id.identityNullifier,
                 hashChainResult,
                 BigInt(epoch),
@@ -536,7 +547,7 @@ const genUserStateTransitionCircuitInput = async (
         )
 
         // Seal hash chain of this epoch key
-        const sealedHashChainResult = crypto.hashLeftRight(
+        const sealedHashChainResult = hashLeftRight(
             BigInt(1),
             hashChainResult
         )
@@ -548,7 +559,7 @@ const genUserStateTransitionCircuitInput = async (
     const intermediateUserStateTreeRoot = crypto.genRandomSalt()
     intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
     blindedUserState.push(
-        crypto.hash5([
+        hash5([
             id.identityNullifier,
             intermediateUserStateTreeRoot,
             BigInt(epoch),
@@ -564,9 +575,9 @@ const genUserStateTransitionCircuitInput = async (
             EPOCH_TREE_DEPTH
         )
         // Get epoch tree root and merkle proof for this epoch key
-        epochTreePathElements.push(await epochTree.getMerkleProof(epochKey))
+        epochTreePathElements.push(await epochTree.createProof(epochKey))
     }
-    const epochTreeRoot = epochTree.getRootHash()
+    const epochTreeRoot = epochTree.root
 
     const circuitInputs = {
         epoch: epoch,
@@ -614,19 +625,18 @@ const genReputationCircuitInput = async (
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(
         BigInt(attesterId)
     )
 
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
+        poseidon,
         GLOBAL_STATE_TREE_DEPTH,
-        GSTZERO_VALUE,
-        2
     )
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
+    const hashedLeaf = hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
     const GSTreeRoot = GSTree.root
@@ -688,19 +698,18 @@ const genProveSignUpCircuitInput = async (
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
+    const userStateRoot = userStateTree.root
+    const USTPathElements = await userStateTree.createProof(
         BigInt(attesterId)
     )
 
     // Global state tree
     const GSTree = new crypto.IncrementalMerkleTree(
+        poseidon,
         GLOBAL_STATE_TREE_DEPTH,
-        GSTZERO_VALUE,
-        2
     )
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
+    const hashedLeaf = hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
     const GSTreeRoot = GSTree.root
@@ -745,7 +754,7 @@ const genEpochKeyNullifier = (
     epoch: number,
     nonce: number
 ): crypto.SnarkBigInt => {
-    return crypto.hash5([
+    return hash5([
         EPOCH_KEY_NULLIFIER_DOMAIN,
         identityNullifier,
         BigInt(epoch),
@@ -787,6 +796,10 @@ export {
     Reputation,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
+    poseidon,
+    hash5,
+    hashLeftRight,
+    hashOne,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     genNewEpochTree,

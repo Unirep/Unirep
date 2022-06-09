@@ -1,8 +1,8 @@
 import * as path from 'path'
 import { expect } from 'chai'
-import { genRandomSalt, hashOne, SparseMerkleTree } from '@unirep/crypto'
+import { genRandomSalt, SparseMerkleTree } from '@unirep/crypto'
 import { executeCircuit, getSignalByName } from '../circuits/utils'
-import { genNewSMT, compileAndLoadCircuit } from './utils'
+import { genNewSMT, compileAndLoadCircuit, hashOne } from './utils'
 // circuitEpochTreeDepth too large will greatly slow down the test...
 const circuitEpochTreeDepth = 8
 const circuitPath = path.join(
@@ -50,12 +50,12 @@ describe('Sparse Merkle Tree circuits', function () {
                 leaves[ind] = leaf
             }
 
-            root = tree.getRootHash()
+            root = tree.root
 
             // Prove first half of existent leaves
             for (let ind of leafIndicesToInsert) {
                 const leaf = leaves[ind]
-                const pathElements = await tree.getMerkleProof(BigInt(ind))
+                const pathElements = await tree.createProof(BigInt(ind))
                 const circuitInputs = {
                     leaf: leaf,
                     leaf_index: ind,
@@ -72,7 +72,7 @@ describe('Sparse Merkle Tree circuits', function () {
                 else emptyLeafIndices.push(i)
             }
             for (let ind of emptyLeafIndices) {
-                const pathElements = await tree.getMerkleProof(BigInt(ind))
+                const pathElements = await tree.createProof(BigInt(ind))
                 const circuitInputs = {
                     leaf: ZERO_VALUE,
                     leaf_index: ind,
@@ -86,7 +86,7 @@ describe('Sparse Merkle Tree circuits', function () {
         it('Invalid LeafExists inputs should not work', async () => {
             for (let ind of leafIndicesToInsert) {
                 const leaf = leaves[ind]
-                const pathElements = await tree.getMerkleProof(BigInt(ind))
+                const pathElements = await tree.createProof(BigInt(ind))
 
                 // Check against wrong leaf
                 const randomVal = genRandomSalt()
@@ -134,7 +134,7 @@ describe('Sparse Merkle Tree circuits', function () {
 
                 // Check against wrong path elements
                 const otherIndex = emptyLeafIndices[0]
-                const wrongPathElements = await tree.getMerkleProof(
+                const wrongPathElements = await tree.createProof(
                     BigInt(otherIndex)
                 )
                 circuitInputs = {
@@ -185,9 +185,9 @@ describe('Sparse Merkle Tree circuits', function () {
                 await tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
 
-                const pathElements = await tree.getMerkleProof(BigInt(ind))
+                const pathElements = await tree.createProof(BigInt(ind))
 
-                const root = tree.getRootHash()
+                const root = tree.root
 
                 const circuitInputs = {
                     leaf: leaf,

@@ -1,8 +1,6 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import {
-    hash5,
-    hashLeftRight,
     ZkIdentity,
     SparseMerkleTree,
     IncrementalMerkleTree,
@@ -13,10 +11,11 @@ import {
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genProofAndVerify,
+    poseidon,
+    hashLeftRight,
+    hash5,
 } from './utils'
-import { startTransitionCircuitPath } from '../config'
-
-import { GLOBAL_STATE_TREE_DEPTH } from '../config'
+import { startTransitionCircuitPath, GLOBAL_STATE_TREE_DEPTH } from '../config'
 
 const circuitPath = path.join(__dirname, startTransitionCircuitPath)
 
@@ -29,8 +28,7 @@ describe('User State Transition circuits', function () {
         let circuit
         const epoch = 1
 
-        let GSTZERO_VALUE = 0,
-            GSTree: IncrementalMerkleTree
+        let GSTree: IncrementalMerkleTree
         let userStateTree: SparseMerkleTree
 
         let hashedLeaf
@@ -51,12 +49,11 @@ describe('User State Transition circuits', function () {
 
             // Global state tree
             GSTree = new IncrementalMerkleTree(
+                poseidon,
                 GLOBAL_STATE_TREE_DEPTH,
-                GSTZERO_VALUE,
-                2
             )
             const commitment = user.genIdentityCommitment()
-            hashedLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
+            hashedLeaf = hashLeftRight(commitment, userStateTree.root)
             GSTree.insert(hashedLeaf)
         })
 
@@ -66,7 +63,7 @@ describe('User State Transition circuits', function () {
                     user,
                     GSTree,
                     leafIndex,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     epoch,
                     nonce
                 )
@@ -79,7 +76,7 @@ describe('User State Transition circuits', function () {
                 )
                 const expectedUserState = hash5([
                     user.identityNullifier,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     BigInt(epoch),
                     BigInt(nonce),
                 ])
@@ -111,7 +108,7 @@ describe('User State Transition circuits', function () {
                     user,
                     GSTree,
                     leafIndex,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     epoch,
                     newNonce
                 )
@@ -124,7 +121,7 @@ describe('User State Transition circuits', function () {
                 )
                 const expectedUserState = hash5([
                     user.identityNullifier,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     BigInt(epoch),
                     BigInt(newNonce),
                 ])

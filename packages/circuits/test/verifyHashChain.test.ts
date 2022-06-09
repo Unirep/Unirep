@@ -1,8 +1,8 @@
-import { genRandomSalt, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
+import { genRandomSalt, SnarkBigInt } from '@unirep/crypto'
 import * as path from 'path'
 
 import { executeCircuit } from '../circuits/utils'
-import { compileAndLoadCircuit, throwError } from './utils'
+import { compileAndLoadCircuit, hashLeftRight, throwError } from './utils'
 
 const sealedHashChainCircuitPath = path.join(
     __dirname,
