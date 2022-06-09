@@ -1,4 +1,5 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { poseidon } from 'circomlibjs'
 import { hash5, SnarkProof } from '@unirep/crypto'
 import {
     Circuit,
@@ -123,7 +124,7 @@ class Attestation implements IAttestation {
     }
 
     public hash = (): BigInt => {
-        return hash5([
+        return hash5(poseidon, [
             this.attesterId.toBigInt(),
             this.posRep.toBigInt(),
             this.negRep.toBigInt(),

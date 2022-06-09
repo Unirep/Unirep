@@ -27,7 +27,7 @@ describe('Sparse Merkle Tree circuits', function () {
             circuit = await compileAndLoadCircuit(circuitPath)
 
             const defaultLeafHash = hashOne(BigInt(0))
-            tree = await genNewSMT(circuitEpochTreeDepth, defaultLeafHash)
+            tree = genNewSMT(circuitEpochTreeDepth, defaultLeafHash)
             leaves = {}
             ZERO_VALUE = tree.getZeroHash(0)
         })
@@ -169,7 +169,7 @@ describe('Sparse Merkle Tree circuits', function () {
 
         it('Valid update proofs should work', async () => {
             const defaultLeafHash = hashOne(BigInt(0))
-            const tree = await genNewSMT(circuitEpochTreeDepth, defaultLeafHash)
+            const tree = genNewSMT(circuitEpochTreeDepth, defaultLeafHash)
             const leaves = {}
 
             // Populate the tree

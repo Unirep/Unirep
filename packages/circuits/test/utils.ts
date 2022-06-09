@@ -203,7 +203,7 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
     return t.root
 }
 
-const genNewUserStateTree = async (
+const genNewUserStateTree = (
     _userStateTreeDepth: number = USER_STATE_TREE_DEPTH
 ) => {
     return genNewSMT(_userStateTreeDepth, defaultUserStateLeaf)
@@ -280,7 +280,7 @@ const genStartTransitionCircuitInput = (
 
 const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
     const expectedNumAttestationsMade = 5
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     let reputationRecords = {}
     // Bootstrap user state for the first `expectedNumAttestationsMade` attesters
     for (let i = 1; i < expectedNumAttestationsMade; i++) {
@@ -331,7 +331,7 @@ const genProcessAttestationsCircuitInput = async (
     const intermediateUserStateTreeRoots: BigInt[] = []
     const userStateTreePathElements: BigInt[][] = []
 
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     let reputationRecords = {}
 
     // Bootstrap user state
@@ -489,7 +489,7 @@ const genUserStateTransitionCircuitInput = async (
         NUM_EPOCH_KEY_NONCE_PER_EPOCH
 
     // Epoch tree
-    const epochTree = await genNewEpochTree()
+    const epochTree = genNewEpochTree()
 
     // User state tree
     const userStateTree = await bootstrapRandomUSTree()
@@ -618,7 +618,7 @@ const genReputationCircuitInput = async (
         _graffitiPreImage === undefined ? 0 : _graffitiPreImage
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
@@ -691,7 +691,7 @@ const genProveSignUpCircuitInput = async (
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),

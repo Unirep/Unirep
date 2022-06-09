@@ -55,7 +55,7 @@ describe('User State Transition circuits', function () {
             )
 
             // Epoch tree
-            epochTree = await genNewEpochTree(testEpochTreeDepth)
+            epochTree = genNewEpochTree(testEpochTreeDepth)
 
             hashChainResult = genRandomSalt()
 

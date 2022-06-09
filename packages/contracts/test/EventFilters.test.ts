@@ -6,7 +6,6 @@ import { Circuit } from '@unirep/circuits'
 import {
     genRandomSalt,
     ZkIdentity,
-    hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
@@ -26,6 +25,8 @@ import {
     genStartTransitionCircuitInput,
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
+    hashLeftRight,
+    poseidon,
 } from './utils'
 import {
     computeProcessAttestationsProofHash,
@@ -80,11 +81,7 @@ describe('EventFilters', () => {
         expect(receipt.status).equal(1)
         attesterId = await unirepContract.attesters(attesterAddress)
 
-        tree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
-            GSTZERO_VALUE,
-            2
-        )
+        tree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
         stateRoot = genRandomSalt()
         hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))

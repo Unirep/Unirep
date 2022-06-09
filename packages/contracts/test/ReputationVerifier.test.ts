@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
-import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
@@ -13,6 +13,7 @@ import {
     genEpochKey,
     genInputForContract,
     genReputationCircuitInput,
+    hashOne,
     Reputation,
 } from './utils'
 import { deployUnirep, ReputationProof } from '../src'

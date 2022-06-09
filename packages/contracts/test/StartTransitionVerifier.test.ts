@@ -3,7 +3,6 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    hashLeftRight,
     ZkIdentity,
     SparseMerkleTree,
     IncrementalMerkleTree,
@@ -15,6 +14,8 @@ import {
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genInputForContract,
+    hashLeftRight,
+    poseidon,
 } from './utils'
 import { computeStartTransitionProofHash, deployUnirep, Unirep } from '../src'
 
@@ -46,13 +47,9 @@ describe('User State Transition circuits', function () {
             userStateTree = results.userStateTree
 
             // Global state tree
-            GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
-                GSTZERO_VALUE,
-                2
-            )
+            GSTree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
             const commitment = user.genIdentityCommitment()
-            hashedLeaf = hashLeftRight(commitment, userStateTree.getRootHash())
+            hashedLeaf = hashLeftRight(commitment, userStateTree.root)
             GSTree.insert(hashedLeaf)
         })
 
@@ -62,7 +59,7 @@ describe('User State Transition circuits', function () {
                     user,
                     GSTree,
                     leafIndex,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     epoch,
                     nonce
                 )
@@ -107,7 +104,7 @@ describe('User State Transition circuits', function () {
                     user,
                     GSTree,
                     leafIndex,
-                    userStateTree.getRootHash(),
+                    userStateTree.root,
                     epoch,
                     newNonce
                 )

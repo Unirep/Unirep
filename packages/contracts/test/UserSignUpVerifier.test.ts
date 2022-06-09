@@ -3,12 +3,13 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
-import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 
 import {
     genEpochKey,
     genInputForContract,
     genProveSignUpCircuitInput,
+    hashOne,
     Reputation,
 } from './utils'
 import { deployUnirep, SignUpProof, Unirep } from '../src'
