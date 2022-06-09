@@ -1,4 +1,4 @@
-import { HashFunction } from '@zk-kit/incremental-merkle-tree';
+import { HashFunction } from '@zk-kit/incremental-merkle-tree'
 import assert from 'assert'
 import crypto from 'crypto'
 
@@ -9,19 +9,19 @@ import crypto from 'crypto'
  * @returns An object with all BigInts stringified
  */
 const stringifyBigInts = (o) => {
-    if ((typeof (o) == "bigint") || o.eq !== undefined) {
-        return o.toString(10);
+    if (typeof o == 'bigint' || o.eq !== undefined) {
+        return o.toString(10)
     } else if (Array.isArray(o)) {
-        return o.map(stringifyBigInts);
-    } else if (typeof o == "object") {
-        const res = {};
-        const keys = Object.keys(o);
+        return o.map(stringifyBigInts)
+    } else if (typeof o == 'object') {
+        const res = {}
+        const keys = Object.keys(o)
         keys.forEach((k) => {
-            res[k] = stringifyBigInts(o[k]);
-        });
-        return res;
+            res[k] = stringifyBigInts(o[k])
+        })
+        return res
     } else {
-        return o;
+        return o
     }
 }
 /**
@@ -30,21 +30,21 @@ const stringifyBigInts = (o) => {
  * @returns An object with all BigInts unstringified
  */
 const unstringifyBigInts = (o) => {
-    if ((typeof (o) == "string") && (/^[0-9]+$/.test(o))) {
-        return BigInt(o);
-    } else if ((typeof (o) == "string") && (/^0x[0-9a-fA-F]+$/.test(o))) {
-        return BigInt(o);
+    if (typeof o == 'string' && /^[0-9]+$/.test(o)) {
+        return BigInt(o)
+    } else if (typeof o == 'string' && /^0x[0-9a-fA-F]+$/.test(o)) {
+        return BigInt(o)
     } else if (Array.isArray(o)) {
-        return o.map(unstringifyBigInts);
-    } else if (typeof o == "object") {
-        const res = {};
-        const keys = Object.keys(o);
+        return o.map(unstringifyBigInts)
+    } else if (typeof o == 'object') {
+        const res = {}
+        const keys = Object.keys(o)
         keys.forEach((k) => {
-            res[k] = unstringifyBigInts(o[k]);
-        });
-        return res;
+            res[k] = unstringifyBigInts(o[k])
+        })
+        return res
     } else {
-        return o;
+        return o
     }
 }
 
@@ -71,10 +71,16 @@ const poseidonT6 = (hash: HashFunction, inputs: BigInt[]) => {
     return hash(inputs)
 }
 
-const hashN = (hash: HashFunction, numElements: number, elements: Plaintext): BigInt => {
+const hashN = (
+    hash: HashFunction,
+    numElements: number,
+    elements: Plaintext
+): BigInt => {
     const elementLength = elements.length
     if (elements.length > numElements) {
-        throw new TypeError(`the length of the elements array should be at most ${numElements}; got ${elements.length}`)
+        throw new TypeError(
+            `the length of the elements array should be at most ${numElements}; got ${elements.length}`
+        )
     }
     const elementsPadded = elements.slice()
     if (elementLength < numElements) {
@@ -99,7 +105,9 @@ const hashN = (hash: HashFunction, numElements: number, elements: Plaintext): Bi
 const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => {
     const elementLength = elements.length
     if (elements.length > 5) {
-        throw new Error(`elements length should not greater than 5, got ${elements.length}`)
+        throw new Error(
+            `elements length should not greater than 5, got ${elements.length}`
+        )
     }
     const elementsPadded = elements.slice()
     if (elementLength < 5) {
@@ -115,7 +123,8 @@ const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => {
  * @param hash The poseidon hash function
  * @param preImage The preImage of the hash
  */
-const hashOne = (hash: HashFunction, preImage: BigInt): BigInt => hashN(hash, 2, [preImage, BigInt(0)])
+const hashOne = (hash: HashFunction, preImage: BigInt): BigInt =>
+    hashN(hash, 2, [preImage, BigInt(0)])
 
 /**
  * Hash two BigInts with the Poseidon hash function
@@ -123,7 +132,11 @@ const hashOne = (hash: HashFunction, preImage: BigInt): BigInt => hashN(hash, 2,
  * @param left The first element to be hashed
  * @param right The seconde element to be hashed
  */
-const hashLeftRight = (hash: HashFunction, left: BigInt, right: BigInt): BigInt => hashN(hash, 2, [left, right])
+const hashLeftRight = (
+    hash: HashFunction,
+    left: BigInt,
+    right: BigInt
+): BigInt => hashN(hash, 2, [left, right])
 
 /*
  * Returns a BabyJub-compatible random value. We create it by first generating
@@ -135,11 +148,12 @@ const hashLeftRight = (hash: HashFunction, left: BigInt, right: BigInt): BigInt 
  * @return A BabyJub-compatible random value.
  */
 const genRandomBabyJubValue = (): BigInt => {
-
     // Prevent modulo bias
     //const lim = BigInt('0x10000000000000000000000000000000000000000000000000000000000000000')
     //const min = (lim - SNARK_FIELD_SIZE) % SNARK_FIELD_SIZE
-    const min = BigInt('6350874878119819312338956282401532410528162663560392320966563075034087161851')
+    const min = BigInt(
+        '6350874878119819312338956282401532410528162663560392320966563075034087161851'
+    )
 
     let rand
     while (true) {
@@ -164,8 +178,8 @@ const genRandomSalt = (): BigInt => {
     return genRandomBabyJubValue()
 }
 
-
 export {
+    HashFunction,
     SNARK_FIELD_SIZE,
     SnarkBigInt,
     genRandomSalt,
