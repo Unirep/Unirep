@@ -91,7 +91,24 @@ const hashN = (hash: HashFunction, numElements: number, elements: Plaintext): Bi
     return funcs[numElements](hash, elements)
 }
 
-const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => hashN(hash, 5, elements)
+/**
+ * Hash 5 BigInts with the Poseidon hash function
+ * @param hash The poseidon hash function
+ * @param preImage The preImage of the hash
+ */
+const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => {
+    const elementLength = elements.length
+    if (elements.length > 5) {
+        throw new Error(`elements length should not greater than 5, got ${elements.length}`)
+    }
+    const elementsPadded = elements.slice()
+    if (elementLength < 5) {
+        for (let i = elementLength; i < 5; i++) {
+            elementsPadded.push(BigInt(0))
+        }
+    }
+    return poseidonT6(hash, elementsPadded)
+}
 
 /**
  * Hash a single BigInt with the Poseidon hash function

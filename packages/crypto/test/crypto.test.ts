@@ -9,20 +9,18 @@ import {
     unstringifyBigInts,
 } from '../src'
 
-describe('maci-crypto', function () {
+describe('crypto utils', function () {
     it('genRandomSalt', async () => {
         const salt = genRandomSalt()
         expect(typeof salt).equal('bigint')
     })
 
     it('hash5', async () => {
-        const values = [
-            genRandomSalt(),
-            genRandomSalt(),
-            genRandomSalt(),
-            genRandomSalt(),
-            genRandomSalt(),
-        ]
+        const values: BigInt[] = []
+        const elementNum = Math.ceil(Math.random() * 5)
+        for (let num = 0; num < elementNum; num++) {
+            values.push(genRandomSalt())
+        }
         const hash = hash5(poseidon, values)
         expect(typeof hash).equal('bigint')
     })
