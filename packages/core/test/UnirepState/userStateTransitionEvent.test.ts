@@ -199,11 +199,6 @@ describe('User state transition events in Unirep State', async function () {
     })
 
     describe('Epoch transition event with no attestation', async () => {
-        it('premature epoch transition should fail', async () => {
-            await expect(
-                unirepContract.beginEpochTransition()
-            ).to.be.revertedWith('Unirep: epoch not yet ended')
-        })
 
         it('epoch transition should succeed', async () => {
             // Record data before epoch transition so as to compare them with data after epoch transition
@@ -213,12 +208,6 @@ describe('User state transition events in Unirep State', async function () {
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
             ])
-            // Assert no epoch transition compensation is dispensed to volunteer
-            expect(
-                await unirepContract.epochTransitionCompensation(
-                    attester['addr']
-                )
-            ).to.be.equal(0)
             // Begin epoch transition
             let tx = await unirepContractCalledByAttester.beginEpochTransition()
             let receipt = await tx.wait()
@@ -227,26 +216,11 @@ describe('User state transition events in Unirep State', async function () {
                 'Gas cost of epoch transition:',
                 receipt.gasUsed.toString()
             )
-            // Verify compensation to the volunteer increased
-            expect(
-                await unirepContract.epochTransitionCompensation(
-                    attester['addr']
-                )
-            ).to.gt(0)
 
             // Complete epoch transition
             expect(await unirepContract.currentEpoch()).to.be.equal(
                 epoch.add(1)
             )
-
-            // Verify latestEpochTransitionTime and currentEpoch
-            let latestEpochTransitionTime =
-                await unirepContract.latestEpochTransitionTime()
-            expect(latestEpochTransitionTime).equal(
-                (await hardhatEthers.provider.getBlock(receipt.blockNumber))
-                    .timestamp
-            )
-
             let epoch_ = await unirepContract.currentEpoch()
             expect(epoch_).equal(epoch.add(1))
         })
@@ -928,15 +902,6 @@ describe('User state transition events in Unirep State', async function () {
             expect(await unirepContract.currentEpoch()).to.be.equal(
                 epoch.add(1)
             )
-
-            // Verify latestEpochTransitionTime and currentEpoch
-            let latestEpochTransitionTime =
-                await unirepContract.latestEpochTransitionTime()
-            expect(latestEpochTransitionTime).equal(
-                (await hardhatEthers.provider.getBlock(receipt.blockNumber))
-                    .timestamp
-            )
-
             let epoch_ = await unirepContract.currentEpoch()
             expect(epoch_).equal(epoch.add(1))
         })
