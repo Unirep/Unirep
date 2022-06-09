@@ -90,29 +90,6 @@ describe('Reputation proof events in Unirep State', function () {
         })
     })
 
-    describe('Init Unirep State', async () => {
-        it('check Unirep state matches the contract', async () => {
-            const initUnirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-
-            const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.currentEpoch
-            expect(unirepEpoch).equal(Number(contractEpoch))
-
-            const unirepGSTLeaves = initUnirepState.getNumGSTLeaves(unirepEpoch)
-            expect(unirepGSTLeaves).equal(0)
-
-            const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
-            const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
-            )
-            expect(unirepGSTree.root).equal(defaultGSTree.root)
-        })
-    })
-
     describe('User Sign Up event', async () => {
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {

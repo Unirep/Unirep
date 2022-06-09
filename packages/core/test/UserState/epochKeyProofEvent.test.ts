@@ -82,29 +82,6 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
     })
 
-    describe('Init User State', async () => {
-        it('check User state matches the contract', async () => {
-            const id = new ZkIdentity()
-            const initUnirepState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                id
-            )
-
-            const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.getUnirepStateCurrentEpoch()
-            expect(unirepEpoch).equal(Number(contractEpoch))
-
-            const unirepGSTree =
-                initUnirepState.getUnirepStateGSTree(unirepEpoch)
-            const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
-            )
-            expect(unirepGSTree.root).equal(defaultGSTree.root)
-        })
-    })
-
     describe('User Sign Up event', async () => {
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {
