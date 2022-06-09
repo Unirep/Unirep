@@ -10,8 +10,18 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, verifyProof } from '@unirep/circuits'
-import { Attestation } from '@unirep/contracts'
+import {
+    Circuit,
+    formatProofForVerifierContract,
+    verifyProof,
+} from '@unirep/circuits'
+import {
+    Attestation,
+    computeStartTransitionProofHash,
+    computeProcessAttestationsProofHash,
+    UserTransitionProof,
+} from '@unirep/contracts'
+
 import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
@@ -31,9 +41,6 @@ import {
     genNewUserStateTree,
     toCompleteHexString,
 } from '../../circuits/test/utils'
-
-const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
 const genNewGST = (
     GSTDepth: number,
@@ -261,6 +268,94 @@ const genProveSignUpCircuitInput = async (
     return stringifyBigInts(circuitInputs)
 }
 
+const submitUSTProofs = async (
+    contract: ethers.Contract,
+    { startTransitionProof, processAttestationProofs, finalTransitionProof }
+) => {
+    const proofIndexes: number[] = []
+
+    let isValid = await verifyStartTransitionProof(startTransitionProof)
+    expect(isValid).to.be.true
+
+    // submit proofs
+    let tx = await contract.startUserStateTransition(
+        startTransitionProof.blindedUserState,
+        startTransitionProof.blindedHashChain,
+        startTransitionProof.globalStateTreeRoot,
+        formatProofForVerifierContract(startTransitionProof.proof)
+    )
+    let receipt = await tx.wait()
+    expect(receipt.status).to.equal(1)
+
+    // submit twice should fail
+    await expect(
+        contract.startUserStateTransition(
+            startTransitionProof.blindedUserState,
+            startTransitionProof.blindedHashChain,
+            startTransitionProof.globalStateTreeRoot,
+            formatProofForVerifierContract(startTransitionProof.proof)
+        )
+    ).to.be.revertedWith('Unirep: the proof has been submitted before')
+
+    let hashedProof = computeStartTransitionProofHash(
+        startTransitionProof.blindedUserState,
+        startTransitionProof.blindedHashChain,
+        startTransitionProof.globalStateTreeRoot,
+        formatProofForVerifierContract(startTransitionProof.proof)
+    )
+    proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+
+    for (let i = 0; i < processAttestationProofs.length; i++) {
+        isValid = await verifyProcessAttestationsProof(
+            processAttestationProofs[i]
+        )
+        expect(isValid).to.be.true
+
+        tx = await contract.processAttestations(
+            processAttestationProofs[i].outputBlindedUserState,
+            processAttestationProofs[i].outputBlindedHashChain,
+            processAttestationProofs[i].inputBlindedUserState,
+            formatProofForVerifierContract(processAttestationProofs[i].proof)
+        )
+        receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.processAttestations(
+                processAttestationProofs[i].outputBlindedUserState,
+                processAttestationProofs[i].outputBlindedHashChain,
+                processAttestationProofs[i].inputBlindedUserState,
+                formatProofForVerifierContract(
+                    processAttestationProofs[i].proof
+                )
+            )
+        ).to.be.revertedWith('Unirep: the proof has been submitted before')
+
+        let hashedProof = computeProcessAttestationsProofHash(
+            processAttestationProofs[i].outputBlindedUserState,
+            processAttestationProofs[i].outputBlindedHashChain,
+            processAttestationProofs[i].inputBlindedUserState,
+            formatProofForVerifierContract(processAttestationProofs[i].proof)
+        )
+        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+    }
+    const USTInput = new UserTransitionProof(
+        finalTransitionProof.publicSignals,
+        finalTransitionProof.proof
+    )
+    isValid = await USTInput.verify()
+    expect(isValid).to.be.true
+    tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
+    receipt = await tx.wait()
+    expect(receipt.status).to.equal(1)
+
+    // submit twice should fail
+    await expect(
+        contract.updateUserStateRoot(USTInput, proofIndexes)
+    ).to.be.revertedWith('Unirep: the proof has been submitted before')
+}
+
 const compareStates = async (
     provider: ethers.providers.Provider,
     address: string,
@@ -325,8 +420,6 @@ const compareEpochTrees = async (
 }
 
 export {
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
     genNewEpochTree,
     genNewUserStateTree,
     genNewSMT,
@@ -341,6 +434,7 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
+    submitUSTProofs,
     compareStates,
     compareEpochTrees,
 }

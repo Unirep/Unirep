@@ -7,16 +7,11 @@ import {
     Attestation,
     deployUnirep,
     EpochKeyProof,
-    UserTransitionProof,
     computeStartTransitionProofHash,
     computeProcessAttestationsProofHash,
     Unirep,
 } from '@unirep/contracts'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    genProofAndPublicSignals,
-} from '@unirep/circuits'
+import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
 import {
@@ -31,8 +26,7 @@ import {
     genEpochKeyCircuitInput,
     genRandomAttestation,
     genRandomList,
-    verifyProcessAttestationsProof,
-    verifyStartTransitionProof,
+    submitUSTProofs,
 } from '../utils'
 
 describe('User state transition events in Unirep State', async function () {
@@ -249,114 +243,9 @@ describe('User state transition events in Unirep State', async function () {
 
                 await userState.epochTransition(1)
 
-                const {
-                    startTransitionProof,
-                    processAttestationProofs,
-                    finalTransitionProof,
-                } = await userState.genUserStateTransitionProofs()
-                const proofIndexes: number[] = []
+                const proofs = await userState.genUserStateTransitionProofs()
+                await submitUSTProofs(unirepContract, proofs)
 
-                let isValid = await verifyStartTransitionProof(
-                    startTransitionProof
-                )
-                expect(isValid).to.be.true
-
-                // submit proofs
-                let tx = await unirepContract.startUserStateTransition(
-                    startTransitionProof.blindedUserState,
-                    startTransitionProof.blindedHashChain,
-                    startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
-                )
-                let receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-
-                // submit twice should fail
-                await expect(
-                    unirepContract.startUserStateTransition(
-                        startTransitionProof.blindedUserState,
-                        startTransitionProof.blindedHashChain,
-                        startTransitionProof.globalStateTreeRoot,
-                        formatProofForVerifierContract(
-                            startTransitionProof.proof
-                        )
-                    )
-                ).to.be.revertedWith(
-                    'Unirep: the proof has been submitted before'
-                )
-
-                let hashedProof = computeStartTransitionProofHash(
-                    startTransitionProof.blindedUserState,
-                    startTransitionProof.blindedHashChain,
-                    startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
-                )
-
-                for (let i = 0; i < processAttestationProofs.length; i++) {
-                    isValid = await verifyProcessAttestationsProof(
-                        processAttestationProofs[i]
-                    )
-                    expect(isValid).to.be.true
-
-                    tx = await unirepContract.processAttestations(
-                        processAttestationProofs[i].outputBlindedUserState,
-                        processAttestationProofs[i].outputBlindedHashChain,
-                        processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    receipt = await tx.wait()
-                    expect(receipt.status).to.equal(1)
-
-                    // submit twice should fail
-                    await expect(
-                        unirepContract.processAttestations(
-                            processAttestationProofs[i].outputBlindedUserState,
-                            processAttestationProofs[i].outputBlindedHashChain,
-                            processAttestationProofs[i].inputBlindedUserState,
-                            formatProofForVerifierContract(
-                                processAttestationProofs[i].proof
-                            )
-                        )
-                    ).to.be.revertedWith(
-                        'Unirep: the proof has been submitted before'
-                    )
-
-                    let hashedProof = computeProcessAttestationsProofHash(
-                        processAttestationProofs[i].outputBlindedUserState,
-                        processAttestationProofs[i].outputBlindedHashChain,
-                        processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    proofIndexes.push(
-                        Number(await unirepContract.getProofIndex(hashedProof))
-                    )
-                }
-                const USTInput = new UserTransitionProof(
-                    finalTransitionProof.publicSignals,
-                    finalTransitionProof.proof
-                )
-                isValid = await USTInput.verify()
-                expect(isValid).to.be.true
-                tx = await unirepContract.updateUserStateRoot(
-                    USTInput,
-                    proofIndexes
-                )
-                receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-
-                // submit twice should fail
-                await expect(
-                    unirepContract.updateUserStateRoot(USTInput, proofIndexes)
-                ).to.be.revertedWith(
-                    'Unirep: the proof has been submitted before'
-                )
                 transitionedUsers.push(i)
             }
         })
@@ -403,77 +292,8 @@ describe('User state transition events in Unirep State', async function () {
 
             await userState.epochTransition(1)
 
-            const {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            } = await userState.genUserStateTransitionProofs()
-            const proofIndexes: number[] = []
-
-            let isValid = await verifyStartTransitionProof(startTransitionProof)
-            expect(isValid).to.be.true
-
-            // submit proofs
-            let tx = await unirepContract.startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            let hashedProof = computeStartTransitionProofHash(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            proofIndexes.push(
-                Number(await unirepContract.getProofIndex(hashedProof))
-            )
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProcessAttestationsProof(
-                    processAttestationProofs[i]
-                )
-                expect(isValid).to.be.true
-
-                tx = await unirepContract.processAttestations(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-
-                let hashedProof = computeProcessAttestationsProofHash(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
-                )
-            }
-            const USTInput = new UserTransitionProof(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-            isValid = await USTInput.verify()
-            expect(isValid).to.be.true
-            tx = await unirepContract.updateUserStateRoot(
-                USTInput,
-                proofIndexes
-            )
-            receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            const proofs = await userState.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, proofs)
 
             const unirepStateAfterUST = await genUnirepState(
                 hardhatEthers.provider,
@@ -589,77 +409,8 @@ describe('User state transition events in Unirep State', async function () {
             await userState.signUp(epoch, commitment, attesterId, airdrop)
             await userState.epochTransition(1)
 
-            const {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            } = await userState.genUserStateTransitionProofs()
-            const proofIndexes: number[] = []
-
-            let isValid = await verifyStartTransitionProof(startTransitionProof)
-            expect(isValid).to.be.true
-
-            // submit proofs
-            let tx = await unirepContract.startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            let hashedProof = computeStartTransitionProofHash(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            proofIndexes.push(
-                Number(await unirepContract.getProofIndex(hashedProof))
-            )
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProcessAttestationsProof(
-                    processAttestationProofs[i]
-                )
-                expect(isValid).to.be.true
-
-                tx = await unirepContract.processAttestations(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-
-                let hashedProof = computeProcessAttestationsProofHash(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
-                )
-            }
-            const USTInput = new UserTransitionProof(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-            isValid = await USTInput.verify()
-            expect(isValid).to.be.true
-            tx = await unirepContract.updateUserStateRoot(
-                USTInput,
-                proofIndexes
-            )
-            receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            const proofs = await userState.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, proofs)
 
             const unirepStateAfterUST = await genUnirepState(
                 hardhatEthers.provider,
@@ -702,74 +453,13 @@ describe('User state transition events in Unirep State', async function () {
 
             const { startTransitionProof, processAttestationProofs } =
                 await userState1.genUserStateTransitionProofs()
-            const proofIndexes: number[] = []
-
-            let isValid = await verifyStartTransitionProof(startTransitionProof)
-            expect(isValid).to.be.true
-
-            // submit proofs
-            let tx = await unirepContract.startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            let hashedProof = computeStartTransitionProofHash(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            proofIndexes.push(
-                Number(await unirepContract.getProofIndex(hashedProof))
-            )
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProcessAttestationsProof(
-                    processAttestationProofs[i]
-                )
-                expect(isValid).to.be.true
-
-                tx = await unirepContract.processAttestations(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-
-                let hashedProof = computeProcessAttestationsProofHash(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
-                )
-            }
-            const user2Proofs = await userState2.genUserStateTransitionProofs()
-            const USTInput = new UserTransitionProof(
-                user2Proofs.finalTransitionProof.publicSignals,
-                user2Proofs.finalTransitionProof.proof
-            )
-            isValid = await USTInput.verify()
-            expect(isValid).to.be.true
-            tx = await unirepContract.updateUserStateRoot(
-                USTInput,
-                proofIndexes
-            )
-            receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
+            const { finalTransitionProof } =
+                await userState2.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, {
+                startTransitionProof,
+                processAttestationProofs,
+                finalTransitionProof,
+            })
             const unirepStateAfterUST = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
@@ -983,79 +673,9 @@ describe('User state transition events in Unirep State', async function () {
 
                 await userState.epochTransition(2)
 
-                const {
-                    startTransitionProof,
-                    processAttestationProofs,
-                    finalTransitionProof,
-                } = await userState.genUserStateTransitionProofs()
-                const proofIndexes: number[] = []
+                const proofs = await userState.genUserStateTransitionProofs()
+                await submitUSTProofs(unirepContract, proofs)
 
-                let isValid = await verifyStartTransitionProof(
-                    startTransitionProof
-                )
-                expect(isValid).to.be.true
-
-                // submit proofs
-                let tx = await unirepContract.startUserStateTransition(
-                    startTransitionProof.blindedUserState,
-                    startTransitionProof.blindedHashChain,
-                    startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
-                )
-                let receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-
-                let hashedProof = computeStartTransitionProofHash(
-                    startTransitionProof.blindedUserState,
-                    startTransitionProof.blindedHashChain,
-                    startTransitionProof.globalStateTreeRoot,
-                    formatProofForVerifierContract(startTransitionProof.proof)
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
-                )
-
-                for (let i = 0; i < processAttestationProofs.length; i++) {
-                    isValid = await verifyProcessAttestationsProof(
-                        processAttestationProofs[i]
-                    )
-                    expect(isValid).to.be.true
-
-                    tx = await unirepContract.processAttestations(
-                        processAttestationProofs[i].outputBlindedUserState,
-                        processAttestationProofs[i].outputBlindedHashChain,
-                        processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    receipt = await tx.wait()
-                    expect(receipt.status).to.equal(1)
-
-                    let hashedProof = computeProcessAttestationsProofHash(
-                        processAttestationProofs[i].outputBlindedUserState,
-                        processAttestationProofs[i].outputBlindedHashChain,
-                        processAttestationProofs[i].inputBlindedUserState,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    proofIndexes.push(
-                        Number(await unirepContract.getProofIndex(hashedProof))
-                    )
-                }
-                const USTInput = new UserTransitionProof(
-                    finalTransitionProof.publicSignals,
-                    finalTransitionProof.proof
-                )
-                isValid = await USTInput.verify()
-                expect(isValid).to.be.true
-                tx = await unirepContract.updateUserStateRoot(
-                    USTInput,
-                    proofIndexes
-                )
-                receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
                 USTNum++
             }
         })
