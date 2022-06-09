@@ -12,7 +12,7 @@ import {
     verifyProof,
 } from '@unirep/circuits'
 import {
-    Attestation,
+    Attestation as _Attestation,
     EpochKeyProof,
     ReputationProof,
     SignUpProof,
@@ -103,6 +103,25 @@ class Reputation implements IReputation {
             this.signUp,
             BigInt(0),
         ])
+    }
+}
+
+class Attestation extends _Attestation {
+    constructor(
+        _attesterId: BigInt | BigNumberish,
+        _posRep: BigInt | BigNumberish,
+        _negRep: BigInt | BigNumberish,
+        _graffiti: BigInt | BigNumberish,
+        _signUp: BigInt | BigNumberish
+    ) {
+        super(
+            poseidon,
+            _attesterId,
+            _posRep,
+            _negRep,
+            _graffiti,
+            _signUp
+        )
     }
 }
 
