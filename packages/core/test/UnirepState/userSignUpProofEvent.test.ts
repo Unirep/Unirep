@@ -13,7 +13,6 @@ import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
 import { genUnirepState, Reputation } from '../../src'
 import {
-    genNewGST,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,

@@ -33,7 +33,6 @@ import {
 } from '../../src'
 import {
     genEpochKeyCircuitInput,
-    genNewGST,
     genRandomAttestation,
     genRandomList,
     verifyProcessAttestationsProof,
@@ -176,7 +175,6 @@ describe('User state transition events in Unirep State', async function () {
     })
 
     describe('Epoch transition event with no attestation', async () => {
-
         it('epoch transition should succeed', async () => {
             // Record data before epoch transition so as to compare them with data after epoch transition
             let epoch = await unirepContract.currentEpoch()

@@ -12,13 +12,8 @@ import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
+import { genUnirepState, genUserState, Reputation } from '../../src'
 import {
-    genUnirepState,
-    genUserState,
-    Reputation,
-} from '../../src'
-import {
-    genNewGST,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,

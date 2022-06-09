@@ -26,7 +26,6 @@ import {
 } from '../../src'
 import {
     genEpochKeyCircuitInput,
-    genNewGST,
     genNewUserStateTree,
     genRandomAttestation,
     genReputationCircuitInput,

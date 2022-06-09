@@ -24,7 +24,6 @@ import {
     Reputation,
 } from '../../src'
 import {
-    genNewGST,
     genNewUserStateTree,
     genRandomAttestation,
     genReputationCircuitInput,
