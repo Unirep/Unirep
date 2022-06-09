@@ -10,7 +10,6 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
 import { genUnirepState, genUserState, Reputation } from '../../src'
 import {
@@ -293,7 +292,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )

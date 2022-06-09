@@ -10,7 +10,6 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
 import {
     computeInitUserStateRoot,
@@ -266,7 +265,7 @@ describe('Epoch key proof events in Unirep User State', function () {
         it('submit valid epoch key proof with wrong GST root event', async () => {
             const ZERO_VALUE = 0
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )

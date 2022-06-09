@@ -10,7 +10,6 @@ import {
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits/config'
 import {
     computeInitUserStateRoot,
     genUnirepState,
@@ -31,6 +30,7 @@ describe('Epoch key proof events in Unirep State', function () {
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths: any
+    let numEpochKeyNoncePerEpoch
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -48,6 +48,8 @@ describe('Epoch key proof events in Unirep State', function () {
             attestingFee,
         })
         treeDepths = await unirepContract.treeDepths()
+        numEpochKeyNoncePerEpoch =
+            await unirepContract.numEpochKeyNoncePerEpoch()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -355,7 +357,7 @@ describe('Epoch key proof events in Unirep State', function () {
             )
             const wrongEpoch = epoch + 1
             const epkNonce = Math.floor(
-                Math.random() * NUM_EPOCH_KEY_NONCE_PER_EPOCH
+                Math.random() * numEpochKeyNoncePerEpoch
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
             const circuitInputs = genEpochKeyCircuitInput(

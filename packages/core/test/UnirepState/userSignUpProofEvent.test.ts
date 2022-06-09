@@ -17,7 +17,6 @@ import {
     genProveSignUpCircuitInput,
     genRandomAttestation,
 } from '../utils'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
 describe('User sign up proof (Airdrop proof) events in Unirep State', function () {
     this.timeout(0)
@@ -315,7 +314,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )

@@ -17,11 +17,7 @@ import {
     formatProofForVerifierContract,
     genProofAndPublicSignals,
 } from '@unirep/circuits'
-import {
-    EPOCH_LENGTH,
-    MAX_REPUTATION_BUDGET,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits/config'
+import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
 import {
     computeInitUserStateRoot,
@@ -50,6 +46,8 @@ describe('User state transition events in Unirep State', async function () {
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths
+    let numEpochKeyNoncePerEpoch
+    let maxReputationBudget
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -69,6 +67,9 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         treeDepths = await unirepContract.treeDepths()
+        numEpochKeyNoncePerEpoch =
+            await unirepContract.numEpochKeyNoncePerEpoch()
+        maxReputationBudget = await unirepContract.maxReputationBudget()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -211,8 +212,8 @@ describe('User state transition events in Unirep State', async function () {
             epochTreeDepth: treeDepths.epochTreeDepth,
             attestingFee: attestingFee,
             epochLength: EPOCH_LENGTH,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            numEpochKeyNoncePerEpoch,
+            maxReputationBudget,
         }
         it('Users should successfully perform user state transition', async () => {
             // add user state manually
@@ -546,11 +547,11 @@ describe('User state transition events in Unirep State', async function () {
         it('Submit invalid user state transition proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
             const randomNullifiers: BigNumberish[] = genRandomList(
-                NUM_EPOCH_KEY_NONCE_PER_EPOCH
+                numEpochKeyNoncePerEpoch
             )
             const randomBlindedStates: BigNumberish[] = genRandomList(2)
             const randomBlindedChains: BigNumberish[] = genRandomList(
-                NUM_EPOCH_KEY_NONCE_PER_EPOCH
+                numEpochKeyNoncePerEpoch
             )
 
             const randomUSTInput = {
@@ -890,8 +891,8 @@ describe('User state transition events in Unirep State', async function () {
             epochTreeDepth: treeDepths.epochTreeDepth,
             attestingFee: attestingFee,
             epochLength: EPOCH_LENGTH,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            numEpochKeyNoncePerEpoch,
+            maxReputationBudget,
         }
         it('Users should successfully perform user state transition', async () => {
             // add user state manually

@@ -28,10 +28,6 @@ import {
     genRandomAttestation,
     genReputationCircuitInput,
 } from '../utils'
-import {
-    GLOBAL_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits/config'
 
 describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)
@@ -43,6 +39,7 @@ describe('Reputation proof events in Unirep User State', function () {
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths
+    let maxReputationBudget
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -63,6 +60,7 @@ describe('Reputation proof events in Unirep User State', function () {
         })
 
         treeDepths = await unirepContract.treeDepths()
+        maxReputationBudget = await unirepContract.maxReputationBudget()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -174,7 +172,7 @@ describe('Reputation proof events in Unirep User State', function () {
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
-            for (let i = spendReputation; i < MAX_REPUTATION_BUDGET; i++) {
+            for (let i = spendReputation; i < maxReputationBudget; i++) {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = genReputationNullifier(
@@ -268,7 +266,7 @@ describe('Reputation proof events in Unirep User State', function () {
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
-            for (let i = spendReputation; i < MAX_REPUTATION_BUDGET; i++) {
+            for (let i = spendReputation; i < maxReputationBudget; i++) {
                 nonceList.push(BigInt(-1))
             }
             repNullifier = genReputationNullifier(
@@ -394,7 +392,7 @@ describe('Reputation proof events in Unirep User State', function () {
         it('submit invalid reputation proof event', async () => {
             const epkNonce = 1
             const spendReputation = Math.ceil(
-                Math.random() * MAX_REPUTATION_BUDGET
+                Math.random() * maxReputationBudget
             )
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
@@ -527,7 +525,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )
@@ -603,7 +601,7 @@ describe('Reputation proof events in Unirep User State', function () {
         it('submit valid reputation proof event in wrong epoch should fail', async () => {
             const epkNonce = 1
             const spendReputation = Math.floor(
-                Math.random() * MAX_REPUTATION_BUDGET
+                Math.random() * maxReputationBudget
             )
             const wrongEpoch = epoch + 1
             const reputationRecords = {}
