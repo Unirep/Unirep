@@ -268,7 +268,7 @@ const genStartTransitionCircuitInput = (
 }
 
 const bootstrapRandomUSTree = async (): Promise<{
-    userStateTree,
+    userStateTree
     reputationRecords
 }> => {
     const expectedNumAttestationsMade = 5
@@ -607,10 +607,7 @@ const genReputationCircuitInput = async (
     const minRep = _minRep ?? 0
     const proveGraffiti = _proveGraffiti ?? 0
     let graffitiPreImage
-    if (
-        proveGraffiti === 1 && 
-        reputationRecords[attesterId]
-    ) {
+    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
         graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
     }
     graffitiPreImage = _graffitiPreImage ?? 0

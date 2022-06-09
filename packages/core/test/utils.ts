@@ -12,9 +12,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
 import { Attestation } from '@unirep/contracts'
-import {
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits/config'
+import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
     computeEmptyUserStateRoot,
@@ -30,12 +28,12 @@ import {
 import {
     genEpochKeyCircuitInput,
     genNewEpochTree,
-    genNewUserStateTree, toCompleteHexString
+    genNewUserStateTree,
+    toCompleteHexString,
 } from '../../circuits/test/utils'
 
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
-
 
 const genNewGST = (
     GSTDepth: number,
@@ -46,7 +44,6 @@ const genNewGST = (
     const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf, 2)
     return GST
 }
-
 
 const genRandomAttestation = (): Attestation => {
     const attesterId = Math.ceil(Math.random() * 10)
