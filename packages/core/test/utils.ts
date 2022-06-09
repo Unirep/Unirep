@@ -3,12 +3,9 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
-import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
-    hash5,
     hashLeftRight,
-    SparseMerkleTree,
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
@@ -16,13 +13,13 @@ import {
 import { Circuit, verifyProof } from '@unirep/circuits'
 import { Attestation } from '@unirep/contracts'
 import {
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
 } from '@unirep/circuits/config'
 
 import {
+    computeEmptyUserStateRoot,
     genEpochKey,
+    genNewSMT,
     genUnirepState,
     genUserState,
     IUserState,
@@ -30,40 +27,15 @@ import {
     UnirepState,
     UserState,
 } from '../src'
-
-const toCompleteHexString = (str: string, len?: number): string => {
-    str = str.startsWith('0x') ? str : '0x' + str
-    if (len) str = ethers.utils.hexZeroPad(str, len)
-    return str
-}
+import {
+    genEpochKeyCircuitInput,
+    genNewEpochTree,
+    genNewUserStateTree, toCompleteHexString
+} from '../../circuits/test/utils'
 
 const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
-const genNewSMT = async (
-    treeDepth: number,
-    defaultLeafHash: BigInt
-): Promise<SparseMerkleTree> => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
-}
-
-const genNewEpochTree = async (): Promise<SparseMerkleTree> => {
-    const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(EPOCH_TREE_DEPTH, defaultOTSMTHash)
-}
-
-const defaultUserStateLeaf = hash5([
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-])
-
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
-    return t.root
-}
 
 const genNewGST = (
     GSTDepth: number,
@@ -75,9 +47,6 @@ const genNewGST = (
     return GST
 }
 
-const genNewUserStateTree = async (): Promise<SparseMerkleTree> => {
-    return genNewSMT(USER_STATE_TREE_DEPTH, defaultUserStateLeaf)
-}
 
 const genRandomAttestation = (): Attestation => {
     const attesterId = Math.ceil(Math.random() * 10)
@@ -159,32 +128,6 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
         }
     }
     return reputaitonRecord
-}
-
-const genEpochKeyCircuitInput = (
-    id: ZkIdentity,
-    tree: IncrementalMerkleTree,
-    leafIndex: number,
-    ustRoot: BigInt,
-    epoch: number,
-    nonce: number
-) => {
-    const proof = tree.createProof(leafIndex)
-    const root = tree.root
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-
-    const circuitInputs = {
-        GST_path_elements: proof.siblings,
-        GST_path_index: proof.pathIndices,
-        GST_root: root,
-        identity_nullifier: id.identityNullifier,
-        identity_trapdoor: id.trapdoor,
-        user_tree_root: ustRoot,
-        nonce: nonce,
-        epoch: epoch,
-        epoch_key: epk,
-    }
-    return stringifyBigInts(circuitInputs)
 }
 
 const genReputationCircuitInput = async (
@@ -387,8 +330,6 @@ const compareEpochTrees = async (
 export {
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
-    computeEmptyUserStateRoot,
-    defaultUserStateLeaf,
     genNewEpochTree,
     genNewUserStateTree,
     genNewSMT,
