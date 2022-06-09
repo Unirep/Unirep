@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
+import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import {
     Attestation,
     deployUnirep,
@@ -45,7 +45,6 @@ describe('User state transition events in Unirep State', async function () {
 
     let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
     let attestations: Reputation[] = []
 
@@ -126,12 +125,6 @@ describe('User state transition events in Unirep State', async function () {
     })
 
     describe('User Sign Up event', async () => {
-        const GSTree = genNewGST(
-            treeDepths.globalStateTreeDepth,
-            treeDepths.userStateTreeDepth
-        )
-        const rootHistories: BigInt[] = []
-
         it('sign up users through attester who sets airdrop', async () => {
             for (let i = 0; i < userNum; i++) {
                 const id = new ZkIdentity()
@@ -161,19 +154,9 @@ describe('User state transition events in Unirep State', async function () {
                 const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
                 expect(unirepGSTLeaves).equal(i + 1)
 
-                const attesterId = await unirepContract.attesters(
-                    attester['addr']
-                )
                 const airdroppedAmount = await unirepContract.airdropAmount(
                     attester['addr']
                 )
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
-                    Number(attesterId),
-                    Number(airdroppedAmount)
-                )
-                const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
                         airdroppedAmount.toBigInt(),
@@ -183,8 +166,6 @@ describe('User state transition events in Unirep State', async function () {
                     )
                 )
                 attestations.push(Reputation.default())
-                GSTree.insert(newGSTLeaf)
-                rootHistories.push(GSTree.root)
             }
         })
 
@@ -211,54 +192,8 @@ describe('User state transition events in Unirep State', async function () {
                 const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
-                )
-                const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(Reputation.default())
                 attestations.push(Reputation.default())
-                GSTree.insert(newGSTLeaf)
-                rootHistories.push(GSTree.root)
-            }
-        })
-
-        it('Sign up users more than contract capacity will not affect Unirep state', async () => {
-            const unirepStateBefore = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            const unirepEpoch = unirepStateBefore.currentEpoch
-            const unirepGSTLeavesBefore =
-                unirepStateBefore.getNumGSTLeaves(unirepEpoch)
-
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
-            await expect(
-                unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith(
-                'Unirep: maximum number of user signups reached'
-            )
-
-            const unirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
-            expect(unirepGSTLeaves).equal(unirepGSTLeavesBefore)
-        })
-
-        it('Check GST roots match Unirep state', async () => {
-            const unirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            for (let root of rootHistories) {
-                const exist = unirepState.GSTRootExists(
-                    root,
-                    unirepState.currentEpoch
-                )
-                expect(exist).to.be.true
             }
         })
     })
