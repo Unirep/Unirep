@@ -720,7 +720,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * Verify process attestations proof
-    * @param outputBlindedUserState The output blinded user state of the proof
+     * @param outputBlindedUserState The output blinded user state of the proof
      * @param outputBlindedHashChain The output blinded hash chain of the proof
      * @param inputBlindedUserState The input blinded user state of the proof
      * @param _proof The process attestation proof

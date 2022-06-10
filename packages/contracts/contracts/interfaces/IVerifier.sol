@@ -7,8 +7,8 @@ interface IVerifier {
      * @returns Whether the proof is valid given the hardcoded verifying key
      *          above and the public inputs
      */
-    function verifyProof(
-        uint256[8] memory proof,
-        uint256[] memory input
-    ) external view returns (bool);
+    function verifyProof(uint256[8] memory proof, uint256[] memory input)
+        external
+        view
+        returns (bool);
 }
