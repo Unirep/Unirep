@@ -31,6 +31,11 @@ const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
 const GSTZERO_VALUE = 0
 
+type UserStates = {
+    userStateTree: SparseMerkleTree
+    reputationRecords: { [key: string]: IReputation }
+}
+
 interface IAttestation {
     attesterId: BigInt
     posRep: BigInt
@@ -267,10 +272,7 @@ const genStartTransitionCircuitInput = (
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const bootstrapRandomUSTree = async (): Promise<{
-    userStateTree
-    reputationRecords
-}> => {
+const bootstrapRandomUSTree = async (): Promise<UserStates> => {
     const expectedNumAttestationsMade = 5
     const userStateTree = await genNewUserStateTree()
     let reputationRecords = {}
