@@ -1,4 +1,4 @@
-import _sha256 from 'crypto-js/sha256'
+import { createHash } from 'crypto'
 
 import { poseidon } from './poseidon'
 import { genRandomNumber, SnarkBigInt } from './crypto'
@@ -26,9 +26,9 @@ type SerializedIdentity = {
  * @returns The hexadecimal hash of the message.
  */
 function sha256(message: string): string {
-    const hash = _sha256(message)
-
-    return hash.toString()
+    return `0x${createHash('sha256')
+        .update(Buffer.from(message))
+        .digest('hex')}`
 }
 
 // The strategy used to generate the ZK identity.
