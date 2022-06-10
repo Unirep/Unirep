@@ -40,7 +40,6 @@
         "@unirep/circuits": "1.0.0",
         "@unirep/contracts": "1.0.0",
         "@unirep/crypto": "1.0.0",
-        "circomlibjs": "^0.0.8",
         "ethers": "^5.5.3"
     }
 }
