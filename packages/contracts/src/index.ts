@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers'
-import { hash5, SnarkProof, HashFunction } from '@unirep/crypto'
+import { hash5, SnarkProof } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForSnarkjsVerification,
@@ -102,7 +102,6 @@ interface IUserTransitionProof {
 }
 
 class Attestation implements IAttestation {
-    protected poseidon: HashFunction
     public attesterId: BigNumber
     public posRep: BigNumber
     public negRep: BigNumber
@@ -110,14 +109,12 @@ class Attestation implements IAttestation {
     public signUp: BigNumber
 
     constructor(
-        _poseidon: HashFunction,
         _attesterId: BigInt | BigNumberish,
         _posRep: BigInt | BigNumberish,
         _negRep: BigInt | BigNumberish,
         _graffiti: BigInt | BigNumberish,
         _signUp: BigInt | BigNumberish
     ) {
-        this.poseidon = _poseidon
         this.attesterId = ethers.BigNumber.from(_attesterId)
         this.posRep = ethers.BigNumber.from(_posRep)
         this.negRep = ethers.BigNumber.from(_negRep)
@@ -126,7 +123,7 @@ class Attestation implements IAttestation {
     }
 
     public hash = (): BigInt => {
-        return hash5(this.poseidon, [
+        return hash5([
             this.attesterId.toBigInt(),
             this.posRep.toBigInt(),
             this.negRep.toBigInt(),

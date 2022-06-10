@@ -5,6 +5,7 @@ import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import {
     genRandomSalt,
+    hashLeftRight,
     ZkIdentity,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
@@ -15,12 +16,7 @@ import {
     GLOBAL_STATE_TREE_DEPTH,
 } from '@unirep/circuits/config'
 
-import {
-    genEpochKeyCircuitInput,
-    genInputForContract,
-    hashLeftRight,
-    poseidon,
-} from './utils'
+import { genEpochKeyCircuitInput, genInputForContract } from './utils'
 import { EpochKeyProof, deployUnirep, Unirep } from '../src'
 
 describe('Verify Epoch Key verifier', function () {
@@ -40,7 +36,7 @@ describe('Verify Epoch Key verifier', function () {
         accounts = await hardhatEthers.getSigners()
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
-        tree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
+        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()

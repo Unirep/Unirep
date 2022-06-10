@@ -2,6 +2,7 @@ import * as path from 'path'
 import { expect } from 'chai'
 import {
     genRandomSalt,
+    hashLeftRight,
     ZkIdentity,
     SparseMerkleTree,
     SnarkBigInt,
@@ -13,7 +14,6 @@ import {
     compileAndLoadCircuit,
     genUserStateTransitionCircuitInput,
     genProofAndVerify,
-    hashLeftRight,
 } from './utils'
 
 import {

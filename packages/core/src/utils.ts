@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
     Circuit,
@@ -6,18 +6,18 @@ import {
     verifyProof,
 } from '@unirep/circuits'
 import {
-    Attestation as _Attestation,
+    Attestation,
     getUnirepContract,
     Event,
     AttestationEvent,
     Unirep,
 } from '@unirep/contracts'
 import {
-    hash5 as _hash5,
-    hashLeftRight as _hashLeftRight,
-    hashOne as _hashOne,
-    IncrementalMerkleTree as _IncrementalMerkleTree,
-    SparseMerkleTree as _SparseMerkleTree,
+    hash5,
+    hashLeftRight,
+    hashOne,
+    IncrementalMerkleTree,
+    SparseMerkleTree,
     SnarkBigInt,
     ZkIdentity,
 } from '@unirep/crypto'
@@ -32,35 +32,6 @@ import {
 } from '../config/nullifierDomainSeparator'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
 import { EPOCH_TREE_DEPTH } from '@unirep/circuits/config'
-
-// TODO: remove this dependencies in the future
-import { poseidon } from 'circomlibjs'
-
-const hash5 = (values) => _hash5(poseidon, values)
-const hashLeftRight = (left, right) => _hashLeftRight(poseidon, left, right)
-const hashOne = (preImage) => _hashOne(poseidon, preImage)
-class Attestation extends _Attestation {
-    constructor(
-        _attesterId: BigInt | BigNumberish,
-        _posRep: BigInt | BigNumberish,
-        _negRep: BigInt | BigNumberish,
-        _graffiti: BigInt | BigNumberish,
-        _signUp: BigInt | BigNumberish
-    ) {
-        super(poseidon, _attesterId, _posRep, _negRep, _graffiti, _signUp)
-    }
-}
-class IncrementalMerkleTree extends _IncrementalMerkleTree {
-    constructor(depth: number, zeroValue: any = 0) {
-        super(poseidon, depth, zeroValue)
-    }
-}
-
-class SparseMerkleTree extends _SparseMerkleTree {
-    constructor(db, depth: number, zeroHash) {
-        super(poseidon, db, depth, zeroHash)
-    }
-}
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),
@@ -1188,12 +1159,6 @@ const genUserState = async (
 }
 
 export {
-    hash5,
-    hashLeftRight,
-    hashOne,
-    Attestation,
-    IncrementalMerkleTree,
-    SparseMerkleTree,
     defaultUserStateLeaf,
     SMT_ONE_LEAF,
     computeEmptyUserStateRoot,

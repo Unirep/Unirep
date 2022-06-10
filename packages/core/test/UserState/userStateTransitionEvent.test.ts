@@ -5,6 +5,7 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     genRandomSalt,
+    hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import {
@@ -32,7 +33,6 @@ import {
     UserState,
 } from '../../src'
 import {
-    hashLeftRight,
     genNewGST,
     genRandomAttestation,
     genRandomList,

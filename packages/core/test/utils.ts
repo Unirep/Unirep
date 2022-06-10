@@ -6,12 +6,15 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
+    hash5,
+    hashLeftRight,
     SparseMerkleTree,
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, verifyProof } from '@unirep/circuits'
+import { Attestation } from '@unirep/contracts'
 import {
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
@@ -27,13 +30,6 @@ import {
     UnirepState,
     UserState,
 } from '../src'
-import {
-    hashLeftRight,
-    hash5,
-    poseidon,
-    SMT_ONE_LEAF,
-} from '../../circuits/test/utils'
-import { Attestation } from '../../contracts/test/utils'
 
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
@@ -41,16 +37,14 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
+const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
+const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
+
 const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: BigInt
 ): SparseMerkleTree => {
-    return new SparseMerkleTree(
-        poseidon,
-        new Keyv(),
-        treeDepth,
-        defaultLeafHash
-    )
+    return new SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }
 
 const genNewEpochTree = (): SparseMerkleTree => {
@@ -67,11 +61,7 @@ const defaultUserStateLeaf = hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(
-        poseidon,
-        treeDepth,
-        defaultUserStateLeaf
-    )
+    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
     return t.root
 }
 
@@ -81,7 +71,7 @@ const genNewGST = (
 ): IncrementalMerkleTree => {
     const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
     const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
-    const GST = new IncrementalMerkleTree(poseidon, GSTDepth, defaultGSTLeaf)
+    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf)
     return GST
 }
 
@@ -225,7 +215,7 @@ const genReputationCircuitInput = async (
     }
 
     // User state tree
-    const userStateTree = genNewUserStateTree()
+    const userStateTree = await genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
@@ -294,7 +284,7 @@ const genProveSignUpCircuitInput = async (
     }
 
     // User state tree
-    const userStateTree = genNewUserStateTree()
+    const userStateTree = await genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
         await userStateTree.update(
             BigInt(attester),
@@ -391,10 +381,8 @@ const compareEpochTrees = async (
 }
 
 export {
-    hash5,
-    hashLeftRight,
-    poseidon,
-    Attestation,
+    SMT_ONE_LEAF,
+    SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     genNewEpochTree,

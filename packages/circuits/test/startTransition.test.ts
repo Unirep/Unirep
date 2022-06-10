@@ -1,6 +1,8 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import {
+    hash5,
+    hashLeftRight,
     ZkIdentity,
     SparseMerkleTree,
     IncrementalMerkleTree,
@@ -11,9 +13,6 @@ import {
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genProofAndVerify,
-    poseidon,
-    hashLeftRight,
-    hash5,
 } from './utils'
 import { startTransitionCircuitPath, GLOBAL_STATE_TREE_DEPTH } from '../config'
 
@@ -48,10 +47,7 @@ describe('User State Transition circuits', function () {
             userStateTree = await bootstrapRandomUSTree()
 
             // Global state tree
-            GSTree = new IncrementalMerkleTree(
-                poseidon,
-                GLOBAL_STATE_TREE_DEPTH
-            )
+            GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
             const commitment = user.genIdentityCommitment()
             hashedLeaf = hashLeftRight(commitment, userStateTree.root)
             GSTree.insert(hashedLeaf)

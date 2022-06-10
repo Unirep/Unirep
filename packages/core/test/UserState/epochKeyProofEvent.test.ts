@@ -5,6 +5,7 @@ import { expect } from 'chai'
 import {
     genRandomSalt,
     ZkIdentity,
+    hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
@@ -21,8 +22,6 @@ import {
     genEpochKeyCircuitInput,
     genNewGST,
     genRandomAttestation,
-    poseidon,
-    hashLeftRight,
 } from '../utils'
 
 describe('Epoch key proof events in Unirep User State', function () {
@@ -343,10 +342,7 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
 
         it('submit valid epoch key proof with wrong GST root event', async () => {
-            const GSTree = new IncrementalMerkleTree(
-                poseidon,
-                GLOBAL_STATE_TREE_DEPTH
-            )
+            const GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
             const stateRoot = genRandomSalt()

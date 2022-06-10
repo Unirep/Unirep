@@ -2,7 +2,11 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, IncrementalMerkleTree } from '@unirep/crypto'
+import {
+    ZkIdentity,
+    hashLeftRight,
+    IncrementalMerkleTree,
+} from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 
 import {
@@ -11,7 +15,7 @@ import {
     genUserState,
     Reputation,
 } from '../../src'
-import { genNewGST, hashLeftRight } from '../utils'
+import { genNewGST } from '../utils'
 
 describe('User sign up events in Unirep User State', function () {
     this.timeout(0)

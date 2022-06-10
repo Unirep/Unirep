@@ -1,8 +1,8 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { randomBytes } from '@ethersproject/random'
 import _sha256 from 'crypto-js/sha256'
-import { poseidon } from 'circomlibjs'
 
+import { poseidon } from './poseidon'
 import { SnarkBigInt } from './crypto'
 
 type EddsaPrivateKey = Buffer

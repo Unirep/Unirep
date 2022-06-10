@@ -1,14 +1,16 @@
 import assert from 'assert'
 import { BigNumber } from 'ethers'
-import { stringifyBigInts, unstringifyBigInts } from '@unirep/crypto'
-import { IAttestation } from '@unirep/contracts'
+import {
+    IncrementalMerkleTree,
+    hashLeftRight,
+    SparseMerkleTree,
+    stringifyBigInts,
+    unstringifyBigInts,
+} from '@unirep/crypto'
+import { Attestation, IAttestation } from '@unirep/contracts'
 
 import { IEpochTreeLeaf, ISettings, IUnirepState } from './interfaces'
 import {
-    Attestation,
-    hashLeftRight,
-    IncrementalMerkleTree,
-    SparseMerkleTree,
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     genNewSMT,
@@ -58,7 +60,8 @@ export default class UnirepState {
             for (let key in this.GSTLeaves) {
                 this.globalStateTree[key] = new IncrementalMerkleTree(
                     this.settings.globalStateTreeDepth,
-                    this.defaultGSTLeaf
+                    this.defaultGSTLeaf,
+                    2
                 )
                 this.epochGSTRootMap[key] = new Map()
                 this.GSTLeaves[key].map((n) => {

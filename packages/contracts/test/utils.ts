@@ -26,19 +26,10 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits/config'
-import { SparseMerkleTree } from '@unirep/crypto'
 
-import {
-    hashLeftRight,
-    hash5,
-    hashOne,
-    poseidon,
-} from '../../circuits/test/utils'
-
-const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
+const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
+const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
-const GSTZERO_VALUE = 0
 
 export type Field = BigNumberish
 
@@ -89,14 +80,14 @@ class Reputation implements IReputation {
 
     public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
         assert(
-            hashOne(_graffitiPreImage) === this.graffiti,
+            crypto.hashOne(_graffitiPreImage) === this.graffiti,
             'Graffiti pre-image does not match'
         )
         this.graffitiPreImage = _graffitiPreImage
     }
 
     public hash = (): BigInt => {
-        return hash5([
+        return crypto.hash5([
             this.posRep,
             this.negRep,
             this.graffiti,
@@ -114,7 +105,7 @@ class Attestation extends _Attestation {
         _graffiti: BigInt | BigNumberish,
         _signUp: BigInt | BigNumberish
     ) {
-        super(poseidon, _attesterId, _posRep, _negRep, _graffiti, _signUp)
+        super(_attesterId, _posRep, _negRep, _graffiti, _signUp)
     }
 }
 
@@ -125,12 +116,7 @@ const toCompleteHexString = (str: string, len?: number): string => {
 }
 
 const genNewSMT = (treeDepth: number, defaultLeafHash: BigInt) => {
-    return new SparseMerkleTree(
-        poseidon,
-        new Keyv(),
-        treeDepth,
-        defaultLeafHash
-    )
+    return new crypto.SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }
 
 const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
@@ -138,7 +124,7 @@ const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
     return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
 }
 
-const defaultUserStateLeaf = hash5([
+const defaultUserStateLeaf = crypto.hash5([
     BigInt(0),
     BigInt(0),
     BigInt(0),
@@ -147,8 +133,7 @@ const defaultUserStateLeaf = hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new SparseMerkleTree(
-        poseidon,
+    const t = new crypto.SparseMerkleTree(
         new Keyv(),
         treeDepth,
         defaultUserStateLeaf
@@ -158,7 +143,7 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
 }
 const defaultGSTLeaf = (treeDepth: number): BigInt => {
     const USTRoot = computeEmptyUserStateRoot(treeDepth)
-    return hashLeftRight(BigInt(0), USTRoot)
+    return crypto.hashLeftRight(BigInt(0), USTRoot)
 }
 
 const genNewUserStateTree = (
@@ -180,7 +165,7 @@ const genEpochKey = (
         BigInt(0),
         BigInt(0),
     ]
-    let epochKey = hash5(values).toString()
+    let epochKey = crypto.hash5(values).toString()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
@@ -191,7 +176,7 @@ const genEpochKeyNullifier = (
     epoch: number,
     nonce: number
 ): crypto.SnarkBigInt => {
-    return hash5([
+    return crypto.hash5([
         EPOCH_KEY_NULLIFIER_DOMAIN,
         identityNullifier,
         BigInt(epoch),
@@ -398,7 +383,10 @@ const genProcessAttestationsCircuitInput = async (
             )
 
             const attestation_hash = attestation.hash()
-            hashChainResult = hashLeftRight(attestation_hash, hashChainResult)
+            hashChainResult = crypto.hashLeftRight(
+                attestation_hash,
+                hashChainResult
+            )
         } else {
             oldPosReps.push(BigInt(0))
             oldNegReps.push(BigInt(0))
@@ -413,7 +401,7 @@ const genProcessAttestationsCircuitInput = async (
 
         intermediateUserStateTreeRoots.push(userStateTree.root)
     }
-    const inputBlindedUserState = hash5([
+    const inputBlindedUserState = crypto.hash5([
         id.identityNullifier,
         intermediateUserStateTreeRoots[0],
         epoch,
@@ -471,7 +459,7 @@ const genUserStateTransitionCircuitInput = async (
 
     intermediateUserStateTreeRoots.push(userStateTree.root)
     blindedUserState.push(
-        hash5([
+        crypto.hash5([
             id.identityNullifier,
             userStateTree.root,
             BigInt(epoch),
@@ -480,12 +468,9 @@ const genUserStateTransitionCircuitInput = async (
     )
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        poseidon,
-        GLOBAL_STATE_TREE_DEPTH
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = hashLeftRight(commitment, userStateTree.root)
+    const hashedLeaf = crypto.hashLeftRight(commitment, userStateTree.root)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0)
     const GSTreeRoot = GSTree.root
@@ -506,7 +491,7 @@ const genUserStateTransitionCircuitInput = async (
         // Blinded hash chain result
         hashChainResults.push(hashChainResult)
         blindedHashChain.push(
-            hash5([
+            crypto.hash5([
                 id.identityNullifier,
                 hashChainResult,
                 BigInt(epoch),
@@ -515,7 +500,10 @@ const genUserStateTransitionCircuitInput = async (
         )
 
         // Seal hash chain of this epoch key
-        const sealedHashChainResult = hashLeftRight(BigInt(1), hashChainResult)
+        const sealedHashChainResult = crypto.hashLeftRight(
+            BigInt(1),
+            hashChainResult
+        )
 
         // Update epoch tree
         await epochTree.update(epochKey, sealedHashChainResult)
@@ -524,7 +512,7 @@ const genUserStateTransitionCircuitInput = async (
     const intermediateUserStateTreeRoot = crypto.genRandomSalt()
     intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
     blindedUserState.push(
-        hash5([
+        crypto.hash5([
             id.identityNullifier,
             intermediateUserStateTreeRoot,
             BigInt(epoch),
@@ -601,12 +589,9 @@ const genReputationCircuitInput = async (
     const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        poseidon,
-        GLOBAL_STATE_TREE_DEPTH
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = hashLeftRight(commitment, userStateRoot)
+    const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
     const GSTreeRoot = GSTree.root
@@ -676,12 +661,9 @@ const genProveSignUpCircuitInput = async (
     const USTPathElements = await userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(
-        poseidon,
-        GLOBAL_STATE_TREE_DEPTH
-    )
+    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = hashLeftRight(commitment, userStateRoot)
+    const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
     const GSTreeRoot = GSTree.root
@@ -774,14 +756,10 @@ const genInputForContract = async (circuit: Circuit, circuitInputs) => {
 }
 
 export {
-    hashOne,
-    hashLeftRight,
-    poseidon,
     Attestation,
     Reputation,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
-    GSTZERO_VALUE,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     defaultGSTLeaf,

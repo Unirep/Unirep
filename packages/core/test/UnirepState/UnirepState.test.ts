@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { genRandomSalt } from '@unirep/crypto'
+import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -8,15 +8,10 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits/config'
+import { Attestation } from '@unirep/contracts'
 
 import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
-import {
-    genNewGST,
-    genRandomAttestation,
-    hashLeftRight,
-    Attestation,
-} from '../utils'
-
+import { genNewGST, genRandomAttestation } from '../utils'
 const ATTESTING_FEE = '0' as any
 
 describe('Unirep State', function () {

@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { Circuit, verifyProof } from '@unirep/circuits'
-import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
+import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
+import { Attestation } from '@unirep/contracts'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -20,12 +21,7 @@ import {
     UnirepState,
     UserState,
 } from '../../src'
-import {
-    Attestation,
-    hashLeftRight,
-    genNewGST,
-    genRandomAttestation,
-} from '../utils'
+import { genNewGST, genRandomAttestation } from '../utils'
 
 describe('User State', async function () {
     this.timeout(0)

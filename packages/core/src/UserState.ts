@@ -1,15 +1,17 @@
 import { BigNumber } from 'ethers'
 import assert from 'assert'
-import { stringifyBigInts, ZkIdentity } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
-import { IAttestation } from '@unirep/contracts'
-
 import {
-    Attestation,
-    hash5,
     IncrementalMerkleTree,
+    hash5,
+    stringifyBigInts,
     hashLeftRight,
     SparseMerkleTree,
+    ZkIdentity,
+} from '@unirep/crypto'
+import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { IAttestation, Attestation } from '@unirep/contracts'
+
+import {
     defaultUserStateLeaf,
     genEpochKey,
     genNewSMT,

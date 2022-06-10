@@ -5,10 +5,12 @@ import { expect } from 'chai'
 import {
     genRandomSalt,
     ZkIdentity,
+    hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import {
+    Attestation,
     deployUnirep,
     EpochKeyProof,
     ReputationProof,
@@ -23,13 +25,10 @@ import {
     Reputation,
 } from '../../src'
 import {
-    Attestation,
     genNewGST,
     genNewUserStateTree,
     genRandomAttestation,
     genReputationCircuitInput,
-    hashLeftRight,
-    poseidon,
 } from '../utils'
 import {
     GLOBAL_STATE_TREE_DEPTH,
@@ -616,10 +615,7 @@ describe('Reputation proof events in Unirep User State', function () {
                     reputationRecords[attester].hash()
                 )
             }
-            const GSTree = new IncrementalMerkleTree(
-                poseidon,
-                GLOBAL_STATE_TREE_DEPTH
-            )
+            const GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
             const stateRoot = userStateTree.root

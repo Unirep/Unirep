@@ -2,6 +2,7 @@ import * as path from 'path'
 import { expect } from 'chai'
 import {
     genRandomSalt,
+    hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
@@ -24,8 +25,6 @@ import { verifyEpochKeyCircuitPath } from '../config'
 import {
     compileAndLoadCircuit,
     genEpochKeyCircuitInput,
-    hashLeftRight,
-    poseidon,
     throwError,
 } from './utils'
 
@@ -51,7 +50,7 @@ describe('Verify Epoch Key circuits', function () {
             `Compile time: ${endCompileTime - startCompileTime} seconds`
         )
 
-        tree = new IncrementalMerkleTree(poseidon, GLOBAL_STATE_TREE_DEPTH)
+        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()
