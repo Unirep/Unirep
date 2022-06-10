@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
+import { genRandomNumber, ZkIdentity } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
@@ -35,7 +35,7 @@ describe('Generate user state', function () {
     const firstUser = 0
     const secondUser = 1
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
+    let userCommitments: bigint[] = []
     let savedUserState: IUserState
     let secondUserState: IUserState
 
@@ -384,7 +384,7 @@ describe('Generate user state', function () {
                     processAttestationProofs[i].inputBlindedUserState
 
                 // submit random process attestations should success and not affect the results
-                const falseInput = BigNumber.from(genRandomSalt())
+                const falseInput = BigNumber.from(genRandomNumber())
                 tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,
@@ -568,7 +568,7 @@ describe('Generate user state', function () {
                     processAttestationProofs[i].inputBlindedUserState
 
                 // submit random process attestations should success and not affect the results
-                const falseInput = BigNumber.from(genRandomSalt())
+                const falseInput = BigNumber.from(genRandomNumber())
                 tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,

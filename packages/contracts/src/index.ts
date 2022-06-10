@@ -58,7 +58,7 @@ interface IAttestation {
     negRep: BigNumber
     graffiti: BigNumber
     signUp: BigNumber
-    hash(): BigInt
+    hash(): bigint
 }
 
 interface IEpochKeyProof {
@@ -109,11 +109,11 @@ class Attestation implements IAttestation {
     public signUp: BigNumber
 
     constructor(
-        _attesterId: BigInt | BigNumberish,
-        _posRep: BigInt | BigNumberish,
-        _negRep: BigInt | BigNumberish,
-        _graffiti: BigInt | BigNumberish,
-        _signUp: BigInt | BigNumberish
+        _attesterId: bigint | BigNumberish,
+        _posRep: bigint | BigNumberish,
+        _negRep: bigint | BigNumberish,
+        _graffiti: bigint | BigNumberish,
+        _signUp: bigint | BigNumberish
     ) {
         this.attesterId = ethers.BigNumber.from(_attesterId)
         this.posRep = ethers.BigNumber.from(_posRep)
@@ -122,7 +122,7 @@ class Attestation implements IAttestation {
         this.signUp = ethers.BigNumber.from(_signUp)
     }
 
-    public hash = (): BigInt => {
+    public hash = (): bigint => {
         return hash5([
             this.attesterId.toBigInt(),
             this.posRep.toBigInt(),

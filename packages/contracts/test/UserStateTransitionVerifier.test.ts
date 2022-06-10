@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
+import { ZkIdentity, genRandomNumber } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 
 import {
@@ -77,7 +77,7 @@ describe('User State Transition', function () {
     })
 
     it('Proof with wrong global state tree root should fail', async () => {
-        const wrongGlobalStateTreeRoot = genRandomSalt() as BigNumberish
+        const wrongGlobalStateTreeRoot = genRandomNumber() as BigNumberish
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
             epoch
@@ -94,7 +94,7 @@ describe('User State Transition', function () {
     })
 
     it('Proof with wrong epoch tree root should fail', async () => {
-        const wrongEpochTreeRoot = genRandomSalt()
+        const wrongEpochTreeRoot = genRandomNumber()
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
             epoch
@@ -119,7 +119,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.blindedUserStates[0] = genRandomSalt() as BigNumberish
+        input.blindedUserStates[0] = genRandomNumber() as BigNumberish
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input
         )
@@ -135,7 +135,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.blindedHashChains[0] = genRandomSalt() as BigNumberish
+        input.blindedHashChains[0] = genRandomNumber() as BigNumberish
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input
         )
@@ -151,7 +151,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.newGlobalStateTreeLeaf = genRandomSalt() as BigNumberish
+        input.newGlobalStateTreeLeaf = genRandomNumber() as BigNumberish
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input
         )

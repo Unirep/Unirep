@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
+import { genRandomNumber, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
     EPOCH_LENGTH,
@@ -65,7 +65,7 @@ describe('EventSequencing', () => {
         for (let i = 0; i < 8; i++) {
             proof.push('0')
         }
-        let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
+        let publicSignals = [genRandomNumber(), currentEpoch, epochKey]
         let epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
@@ -79,7 +79,7 @@ describe('EventSequencing', () => {
         expect(epochKeyProof).not.equal(null)
 
         // 2. Submit reputation nullifiers
-        const reputationNullifiers: BigInt[] = []
+        const reputationNullifiers: bigint[] = []
         const minRep = 0
         const proveGraffiti = 1
         for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
@@ -90,12 +90,12 @@ describe('EventSequencing', () => {
                 reputationNullifiers,
                 currentEpoch.toNumber(),
                 epochKey,
-                genRandomSalt(),
+                genRandomNumber(),
                 attesterId.toNumber(),
                 0,
                 minRep,
                 proveGraffiti,
-                genRandomSalt(),
+                genRandomNumber(),
                 proof,
             ],
             { value: attestingFee }
@@ -112,7 +112,7 @@ describe('EventSequencing', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomSalt(),
+            genRandomNumber(),
             BigInt(signedUpInLeaf)
         )
         tx = await unirepContractCalledByAttester.submitAttestation(
@@ -151,10 +151,10 @@ describe('EventSequencing', () => {
 
         // 6. Second user starts transition
         let transitionFromEpoch = 1
-        const epkNullifiers: BigInt[] = []
-        const blindedHashChains: BigInt[] = []
-        const blindedUserStates: BigInt[] = []
-        const indexes: BigInt[] = []
+        const epkNullifiers: bigint[] = []
+        const blindedHashChains: bigint[] = []
+        const blindedUserStates: bigint[] = []
+        const indexes: bigint[] = []
         for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             epkNullifiers.push(BigInt(255))
             blindedHashChains.push(BigInt(255))
@@ -163,9 +163,9 @@ describe('EventSequencing', () => {
             blindedUserStates.push(BigInt(255))
         }
         tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -173,9 +173,9 @@ describe('EventSequencing', () => {
 
         // 7. Second user processes attestations
         tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -183,13 +183,13 @@ describe('EventSequencing', () => {
 
         tx = await unirepContract.updateUserStateRoot(
             {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
+                newGlobalStateTreeLeaf: genRandomNumber() as BigNumberish,
                 epkNullifiers: epkNullifiers as BigNumberish[],
                 transitionFromEpoch: transitionFromEpoch as BigNumberish,
                 blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
+                fromGlobalStateTree: genRandomNumber() as BigNumberish,
                 blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
+                fromEpochTree: genRandomNumber() as BigNumberish,
                 proof: proof as BigNumberish[],
             },
             indexes as BigNumberish[]
@@ -210,10 +210,10 @@ describe('EventSequencing', () => {
             BigInt(attesterId),
             BigInt(2),
             BigInt(1),
-            genRandomSalt(),
+            genRandomNumber(),
             BigInt(signedUpInLeaf)
         )
-        publicSignals = [genRandomSalt(), currentEpoch, epochKey]
+        publicSignals = [genRandomNumber(), currentEpoch, epochKey]
         epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
@@ -251,9 +251,9 @@ describe('EventSequencing', () => {
         // 12. First user starts transition
         transitionFromEpoch = 1
         tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -261,9 +261,9 @@ describe('EventSequencing', () => {
 
         // 13. First user processes attestations
         tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -272,13 +272,13 @@ describe('EventSequencing', () => {
         // 14. First user transition
         tx = await unirepContract.updateUserStateRoot(
             {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
+                newGlobalStateTreeLeaf: genRandomNumber() as BigNumberish,
                 epkNullifiers: epkNullifiers as BigNumberish[],
                 transitionFromEpoch: transitionFromEpoch as BigNumberish,
                 blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
+                fromGlobalStateTree: genRandomNumber() as BigNumberish,
                 blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
+                fromEpochTree: genRandomNumber() as BigNumberish,
                 proof: proof as BigNumberish[],
             },
             indexes as BigNumberish[]
@@ -291,9 +291,9 @@ describe('EventSequencing', () => {
         // 15. Second user starts transition
         transitionFromEpoch = 2
         tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -301,9 +301,9 @@ describe('EventSequencing', () => {
 
         // 16. Second user processes attestations
         tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
+            genRandomNumber() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -312,13 +312,13 @@ describe('EventSequencing', () => {
         // 17. Second user transition
         tx = await unirepContract.updateUserStateRoot(
             {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
+                newGlobalStateTreeLeaf: genRandomNumber() as BigNumberish,
                 epkNullifiers: epkNullifiers as BigNumberish[],
                 transitionFromEpoch: transitionFromEpoch as BigNumberish,
                 blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
+                fromGlobalStateTree: genRandomNumber() as BigNumberish,
                 blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
+                fromEpochTree: genRandomNumber() as BigNumberish,
                 proof: proof as BigNumberish[],
             },
             indexes as BigNumberish[]

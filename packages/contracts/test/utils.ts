@@ -34,24 +34,24 @@ const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
 export type Field = BigNumberish
 
 interface IReputation {
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
-    signUp: BigInt
+    posRep: bigint
+    negRep: bigint
+    graffiti: bigint
+    signUp: bigint
 }
 
 class Reputation implements IReputation {
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public graffitiPreImage: BigInt = BigInt(0)
-    public signUp: BigInt
+    public posRep: bigint
+    public negRep: bigint
+    public graffiti: bigint
+    public graffitiPreImage: bigint = BigInt(0)
+    public signUp: bigint
 
     constructor(
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ) {
         this.posRep = _posRep
         this.negRep = _negRep
@@ -64,10 +64,10 @@ class Reputation implements IReputation {
     }
 
     public update = (
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ): Reputation => {
         this.posRep = BigInt(Number(this.posRep) + Number(_posRep))
         this.negRep = BigInt(Number(this.negRep) + Number(_negRep))
@@ -78,7 +78,7 @@ class Reputation implements IReputation {
         return this
     }
 
-    public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
+    public addGraffitiPreImage = (_graffitiPreImage: bigint) => {
         assert(
             crypto.hashOne(_graffitiPreImage) === this.graffiti,
             'Graffiti pre-image does not match'
@@ -86,7 +86,7 @@ class Reputation implements IReputation {
         this.graffitiPreImage = _graffitiPreImage
     }
 
-    public hash = (): BigInt => {
+    public hash = (): bigint => {
         return crypto.hash5([
             this.posRep,
             this.negRep,
@@ -103,7 +103,7 @@ const toCompleteHexString = (str: string, len?: number): string => {
     return str
 }
 
-const genNewSMT = (treeDepth: number, defaultLeafHash: BigInt) => {
+const genNewSMT = (treeDepth: number, defaultLeafHash: bigint) => {
     return new crypto.SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }
 
@@ -120,7 +120,7 @@ const defaultUserStateLeaf = crypto.hash5([
     BigInt(0),
 ])
 
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
+const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
     const t = new crypto.SparseMerkleTree(
         new Keyv(),
         treeDepth,
@@ -129,7 +129,7 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
 
     return t.root
 }
-const defaultGSTLeaf = (treeDepth: number): BigInt => {
+const defaultGSTLeaf = (treeDepth: number): bigint => {
     const USTRoot = computeEmptyUserStateRoot(treeDepth)
     return crypto.hashLeftRight(BigInt(0), USTRoot)
 }
@@ -153,9 +153,9 @@ const genEpochKey = (
         BigInt(0),
         BigInt(0),
     ]
-    let epochKey = crypto.hash5(values).toString()
+    let epochKey = crypto.hash5(values)
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)
+    const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
 }
 
@@ -187,7 +187,7 @@ const bootstrapRandomUSTree = async (): Promise<any> => {
             reputationRecords[attesterId.toString()] = new Reputation(
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
-                crypto.genRandomSalt(),
+                crypto.genRandomNumber(),
                 BigInt(signUp)
             )
         }
@@ -203,7 +203,7 @@ const genEpochKeyCircuitInput = (
     id: crypto.ZkIdentity,
     tree: crypto.IncrementalMerkleTree,
     leafIndex: number,
-    ustRoot: BigInt,
+    ustRoot: bigint,
     epoch: number,
     nonce: number
 ) => {
@@ -229,7 +229,7 @@ const genStartTransitionCircuitInput = (
     id: crypto.ZkIdentity,
     tree: crypto.IncrementalMerkleTree,
     leafIndex: number,
-    ustRoot: BigInt,
+    ustRoot: bigint,
     epoch: number,
     nonce: number
 ) => {
@@ -251,30 +251,30 @@ const genStartTransitionCircuitInput = (
 
 const genProcessAttestationsCircuitInput = async (
     id: crypto.ZkIdentity,
-    epoch: BigInt,
-    fromNonce: BigInt,
-    toNonce: BigInt,
+    epoch: bigint,
+    fromNonce: bigint,
+    toNonce: bigint,
     _selectors?: number[],
-    _hashChainStarter?: BigInt,
+    _hashChainStarter?: bigint,
     _attestations?: Attestation[]
 ) => {
-    const oldPosReps: BigInt[] = []
-    const oldNegReps: BigInt[] = []
-    const oldGraffities: BigInt[] = []
-    const oldSignUps: BigInt[] = []
-    const attesterIds: BigInt[] = []
-    const posReps: BigInt[] = []
-    const negReps: BigInt[] = []
-    const overwriteGraffitis: BigInt[] = []
-    const graffities: BigInt[] = []
-    const signUps: BigInt[] = []
+    const oldPosReps: bigint[] = []
+    const oldNegReps: bigint[] = []
+    const oldGraffities: bigint[] = []
+    const oldSignUps: bigint[] = []
+    const attesterIds: bigint[] = []
+    const posReps: bigint[] = []
+    const negReps: bigint[] = []
+    const overwriteGraffitis: bigint[] = []
+    const graffities: bigint[] = []
+    const signUps: bigint[] = []
     let selectors: number[] = []
     const hashChainStarter =
         _hashChainStarter === undefined
-            ? crypto.genRandomSalt()
+            ? crypto.genRandomNumber()
             : _hashChainStarter
-    const intermediateUserStateTreeRoots: BigInt[] = []
-    const userStateTreePathElements: BigInt[][] = []
+    const intermediateUserStateTreeRoots: bigint[] = []
+    const userStateTreePathElements: bigint[][] = []
 
     const userStateTree = genNewUserStateTree()
     let reputationRecords = {}
@@ -290,7 +290,7 @@ const genProcessAttestationsCircuitInput = async (
             reputationRecords[attesterId.toString()] = new Reputation(
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
-                crypto.genRandomSalt(),
+                crypto.genRandomNumber(),
                 BigInt(signUp)
             )
         }
@@ -440,10 +440,10 @@ const genUserStateTransitionCircuitInput = async (
 
     // User state tree
     const { userStateTree } = await bootstrapRandomUSTree()
-    const intermediateUserStateTreeRoots: BigInt[] = []
-    const blindedUserState: BigInt[] = []
-    const blindedHashChain: BigInt[] = []
-    const epochTreePathElements: BigInt[][] = []
+    const intermediateUserStateTreeRoots: bigint[] = []
+    const blindedUserState: bigint[] = []
+    const blindedHashChain: bigint[] = []
+    const epochTreePathElements: bigint[][] = []
 
     intermediateUserStateTreeRoots.push(userStateTree.root)
     blindedUserState.push(
@@ -463,7 +463,7 @@ const genUserStateTransitionCircuitInput = async (
     const GSTreeProof = GSTree.createProof(0)
     const GSTreeRoot = GSTree.root
 
-    const hashChainResults: BigInt[] = []
+    const hashChainResults: bigint[] = []
     // Begin generating and processing attestations
     for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
         // Each epoch key has `ATTESTATIONS_PER_EPOCH_KEY` of attestations so
@@ -474,7 +474,7 @@ const genUserStateTransitionCircuitInput = async (
             nonce,
             EPOCH_TREE_DEPTH
         )
-        const hashChainResult = crypto.genRandomSalt()
+        const hashChainResult = crypto.genRandomNumber()
 
         // Blinded hash chain result
         hashChainResults.push(hashChainResult)
@@ -497,7 +497,7 @@ const genUserStateTransitionCircuitInput = async (
         await epochTree.update(epochKey, sealedHashChainResult)
     }
 
-    const intermediateUserStateTreeRoot = crypto.genRandomSalt()
+    const intermediateUserStateTreeRoot = crypto.genRandomNumber()
     intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
     blindedUserState.push(
         crypto.hash5([
@@ -586,8 +586,8 @@ const genReputationCircuitInput = async (
 
     // selectors and karma nonce
     const nonceStarter = 0
-    const selectors: BigInt[] = []
-    const nonceList: BigInt[] = []
+    const selectors: bigint[] = []
+    const nonceList: bigint[] = []
     for (let i = 0; i < repNullifiersAmount; i++) {
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))

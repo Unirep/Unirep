@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
+    genRandomNumber,
     hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
@@ -58,7 +58,7 @@ describe('Epoch Transition', function () {
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
         const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        const stateRoot = genRandomSalt()
+        const stateRoot = genRandomNumber()
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))
         const leafIndex = 0
@@ -108,7 +108,7 @@ describe('Epoch Transition', function () {
                 BigInt(attesterId.toString()),
                 BigInt(i),
                 BigInt(0),
-                genRandomSalt(),
+                genRandomNumber(),
                 BigInt(signedUpInLeaf)
             )
             tx = await unirepContractCalledByAttester.submitAttestation(

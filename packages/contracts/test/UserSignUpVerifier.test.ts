@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
-import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
+import { genRandomNumber, ZkIdentity, hashOne } from '@unirep/crypto'
 
 import {
     genEpochKey,
@@ -34,7 +34,7 @@ describe('Verify user sign up verifier', function () {
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
         // Bootstrap reputation
-        const graffitiPreImage = genRandomSalt()
+        const graffitiPreImage = genRandomNumber()
         reputationRecords[signedUpAttesterId] = new Reputation(
             BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
             BigInt(Math.floor(Math.random() * MAX_NEG_REP)),

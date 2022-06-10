@@ -2,7 +2,7 @@ import * as path from 'path'
 import { expect } from 'chai'
 import {
     stringifyBigInts,
-    genRandomSalt,
+    genRandomNumber,
     hashLeftRight,
     hash5,
 } from '@unirep/crypto'
@@ -27,7 +27,7 @@ describe('Poseidon hash circuits', function () {
             circuit = await compileAndLoadCircuit(hasher5CircuitPath)
             const preImages: any = []
             for (let i = 0; i < 5; i++) {
-                preImages.push(genRandomSalt())
+                preImages.push(genRandomNumber())
             }
 
             const circuitInputs = stringifyBigInts({
@@ -49,8 +49,8 @@ describe('Poseidon hash circuits', function () {
                 hashleftrightCircuitPath
             )
 
-            const left = genRandomSalt()
-            const right = genRandomSalt()
+            const left = genRandomNumber()
+            const right = genRandomNumber()
 
             const circuitInputs = stringifyBigInts({ left, right })
 

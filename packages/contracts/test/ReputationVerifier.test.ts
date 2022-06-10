@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
-import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
+import { genRandomNumber, ZkIdentity, hashOne } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
@@ -54,7 +54,7 @@ describe('Verify reputation verifier', function () {
                 attesterId = Math.floor(
                     Math.random() * 2 ** USER_STATE_TREE_DEPTH
                 )
-            const graffitiPreImage = genRandomSalt()
+            const graffitiPreImage = genRandomNumber()
             reputationRecords[attesterId] = new Reputation(
                 BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
                 BigInt(Math.floor(Math.random() * MAX_NEG_REP)),
@@ -128,7 +128,7 @@ describe('Verify reputation verifier', function () {
         )
         // random reputation nullifiers
         for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
-            input.repNullifiers[i] = genRandomSalt() as BigNumberish
+            input.repNullifiers[i] = genRandomNumber() as BigNumberish
         }
         const isProofValid = await unirepContract.verifyReputation(input)
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
@@ -226,7 +226,7 @@ describe('Verify reputation verifier', function () {
     })
 
     it('wrong graffiti preimage should fail', async () => {
-        const wrongGraffitiPreimage = genRandomSalt()
+        const wrongGraffitiPreimage = genRandomNumber()
         const circuitInputs = await genReputationCircuitInput(
             user,
             epoch,
@@ -327,7 +327,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epochKey = genRandomSalt() as BigNumberish
+        input.epochKey = genRandomNumber() as BigNumberish
         await expect(
             unirepContractCalledByAttester.spendReputation(input, {
                 value: attestingFee,

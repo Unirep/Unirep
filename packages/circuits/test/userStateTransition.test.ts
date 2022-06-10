@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
+    genRandomNumber,
     hashLeftRight,
     ZkIdentity,
     SparseMerkleTree,
@@ -60,7 +60,7 @@ describe('User State Transition circuits', function () {
             // Epoch tree
             epochTree = genNewEpochTree(testEpochTreeDepth)
 
-            hashChainResult = genRandomSalt()
+            hashChainResult = genRandomNumber()
 
             await epochTree.update(epochKey, hashChainResult)
 

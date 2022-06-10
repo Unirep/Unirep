@@ -9,7 +9,7 @@ import {
     hash5,
     hashLeftRight,
     SparseMerkleTree,
-    genRandomSalt,
+    genRandomNumber,
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
@@ -42,7 +42,7 @@ const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
 const genNewSMT = (
     treeDepth: number,
-    defaultLeafHash: BigInt
+    defaultLeafHash: bigint
 ): SparseMerkleTree => {
     return new SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }
@@ -60,7 +60,7 @@ const defaultUserStateLeaf = hash5([
     BigInt(0),
 ])
 
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
+const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
     const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
     return t.root
 }
@@ -85,7 +85,7 @@ const genRandomAttestation = (): Attestation => {
         BigInt(attesterId),
         BigInt(Math.floor(Math.random() * 100)),
         BigInt(Math.floor(Math.random() * 100)),
-        BigNumber.from(genRandomSalt()),
+        BigNumber.from(genRandomNumber()),
         BigInt(Math.floor(Math.random() * 2))
     )
     return attestation
@@ -94,7 +94,7 @@ const genRandomAttestation = (): Attestation => {
 const genRandomList = (length): BigNumberish[] => {
     const array: BigNumberish[] = []
     for (let i = 0; i < length; i++) {
-        array.push(BigNumber.from(genRandomSalt()))
+        array.push(BigNumber.from(genRandomNumber()))
     }
     return array
 }
@@ -165,7 +165,7 @@ const genEpochKeyCircuitInput = (
     id: ZkIdentity,
     tree: IncrementalMerkleTree,
     leafIndex: number,
-    ustRoot: BigInt,
+    ustRoot: bigint,
     epoch: number,
     nonce: number
 ) => {
@@ -231,8 +231,8 @@ const genReputationCircuitInput = async (
 
     // selectors and karma nonce
     const nonceStarter = 0
-    const selectors: BigInt[] = []
-    const nonceList: BigInt[] = []
+    const selectors: bigint[] = []
+    const nonceList: bigint[] = []
     for (let i = 0; i < repNullifiersAmount; i++) {
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))

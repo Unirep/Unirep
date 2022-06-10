@@ -206,7 +206,7 @@ export default class UserState {
     }
 
     public addReputationNullifiers = (
-        nullifier: BigInt,
+        nullifier: bigint,
         blockNumber?: number
     ) => {
         this.unirepState.addReputationNullifiers(nullifier, blockNumber)
@@ -215,8 +215,8 @@ export default class UserState {
     /**
      * Get the epoch key nullifier of given epoch
      */
-    public getEpochKeyNullifiers = (epoch: number): BigInt[] => {
-        const nullifiers: BigInt[] = []
+    public getEpochKeyNullifiers = (epoch: number): bigint[] => {
+        const nullifiers: bigint[] = []
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const nullifier = genEpochKeyNullifier(
                 this.id.identityNullifier,
@@ -228,7 +228,7 @@ export default class UserState {
         return nullifiers
     }
 
-    public getRepByAttester = (attesterId: BigInt): IReputation => {
+    public getRepByAttester = (attesterId: bigint): IReputation => {
         const leaf = this.latestUserStateLeaves.find(
             (leaf) => leaf.attesterId == attesterId
         )
@@ -239,7 +239,7 @@ export default class UserState {
     /**
      * Check if given nullifier exists in nullifier tree
      */
-    public nullifierExist = (nullifier: BigInt): boolean => {
+    public nullifierExist = (nullifier: bigint): boolean => {
         return this.unirepState.nullifierExist(nullifier)
     }
 
@@ -270,7 +270,7 @@ export default class UserState {
     /**
      * Check if attester ID is valid
      */
-    private _checkAttesterId = (attesterId: BigInt) => {
+    private _checkAttesterId = (attesterId: bigint) => {
         assert(
             attesterId > BigInt(0),
             `UserState: attesterId must be greater than zero`
@@ -286,7 +286,7 @@ export default class UserState {
      */
     public signUp = async (
         epoch: number,
-        identityCommitment: BigInt,
+        identityCommitment: bigint,
         attesterId?: number,
         airdropAmount?: number,
         blockNumber?: number
@@ -353,7 +353,7 @@ export default class UserState {
      * Check if the root is one of the Global state tree roots in the given epoch
      */
     public GSTRootExists = (
-        GSTRoot: BigInt | string,
+        GSTRoot: bigint | string,
         epoch: number
     ): boolean => {
         return this.unirepState.GSTRootExists(GSTRoot, epoch)
@@ -363,7 +363,7 @@ export default class UserState {
      * Check if the root is one of the epoch tree roots in the given epoch
      */
     public epochTreeRootExists = async (
-        epochTreeRoot: BigInt | string,
+        epochTreeRoot: bigint | string,
         epoch: number
     ): Promise<boolean> => {
         return this.unirepState.epochTreeRootExists(epochTreeRoot, epoch)
@@ -374,8 +374,8 @@ export default class UserState {
      */
     public userStateTransition = async (
         fromEpoch: number,
-        GSTLeaf: BigInt,
-        nullifiers: BigInt[],
+        GSTLeaf: bigint,
+        nullifiers: bigint[],
         blockNumber?: number
     ) => {
         if (this.hasSignedUp && this.latestTransitionedEpoch === fromEpoch) {
@@ -549,9 +549,9 @@ export default class UserState {
 
     private _genStartTransitionCircuitInputs = async (
         fromNonce: number,
-        userStateTreeRoot: BigInt,
+        userStateTreeRoot: bigint,
         GSTreeProof: any,
-        GSTreeRoot: BigInt
+        GSTreeRoot: bigint
     ) => {
         // Circuit inputs
         const circuitInputs = stringifyBigInts({
@@ -597,7 +597,7 @@ export default class UserState {
         // User state tree
         const fromEpochUserStateTree: SparseMerkleTree =
             await this.genUserStateTree()
-        const intermediateUserStateTreeRoots: BigInt[] = [
+        const intermediateUserStateTreeRoots: bigint[] = [
             fromEpochUserStateTree.root,
         ]
         const userStateLeafPathElements: any[] = []
@@ -624,26 +624,26 @@ export default class UserState {
         const processAttestationCircuitInputs: any[] = []
         const fromNonces: number[] = [fromNonce]
         const toNonces: number[] = []
-        const hashChainStarter: BigInt[] = []
-        const blindedUserState: BigInt[] = [
+        const hashChainStarter: bigint[] = []
+        const blindedUserState: bigint[] = [
             startTransitionCircuitInputs.blindedUserState,
         ]
-        const blindedHashChain: BigInt[] = []
+        const blindedHashChain: bigint[] = []
         let reputationRecords = {}
         const selectors: number[] = []
-        const attesterIds: BigInt[] = []
-        const oldPosReps: BigInt[] = [],
-            oldNegReps: BigInt[] = [],
-            oldGraffities: BigInt[] = [],
-            oldSignUps: BigInt[] = []
-        const posReps: BigInt[] = [],
-            negReps: BigInt[] = [],
-            graffities: BigInt[] = [],
+        const attesterIds: bigint[] = []
+        const oldPosReps: bigint[] = [],
+            oldNegReps: bigint[] = [],
+            oldGraffities: bigint[] = [],
+            oldSignUps: bigint[] = []
+        const posReps: bigint[] = [],
+            negReps: bigint[] = [],
+            graffities: bigint[] = [],
             overwriteGraffities: any[] = [],
-            signUps: BigInt[] = []
-        const finalBlindedUserState: BigInt[] = []
-        const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
-        const finalHashChain: BigInt[] = []
+            signUps: bigint[] = []
+        const finalBlindedUserState: bigint[] = []
+        const finalUserState: bigint[] = [intermediateUserStateTreeRoots[0]]
+        const finalHashChain: bigint[] = []
 
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const epochKey = genEpochKey(
@@ -652,7 +652,7 @@ export default class UserState {
                 nonce,
                 this.unirepState.settings.epochTreeDepth
             )
-            let currentHashChain: BigInt = BigInt(0)
+            let currentHashChain: bigint = BigInt(0)
 
             // Blinded user state and hash chain of the epoch key
             toNonces.push(nonce)
@@ -683,8 +683,8 @@ export default class UserState {
                 }
 
                 const attestation = attestations[i]
-                const attesterId: BigInt = attestation.attesterId.toBigInt()
-                const rep = this.getRepByAttester(attesterId as BigInt)
+                const attesterId: bigint = attestation.attesterId.toBigInt()
+                const rep = this.getRepByAttester(attesterId)
 
                 if (reputationRecords[attesterId.toString()] === undefined) {
                     reputationRecords[attesterId.toString()] = new Reputation(
@@ -937,7 +937,7 @@ export default class UserState {
     /**
      * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
      */
-    private _transition = async (newLeaf: BigInt) => {
+    private _transition = async (newLeaf: bigint) => {
         this._checkUserSignUp()
 
         const fromEpoch = this.latestTransitionedEpoch
@@ -963,12 +963,12 @@ export default class UserState {
     }
 
     public genProveReputationProof = async (
-        attesterId: BigInt,
+        attesterId: bigint,
         epkNonce: number,
         minRep?: number,
-        proveGraffiti?: BigInt,
-        graffitiPreImage?: BigInt,
-        nonceList?: BigInt[]
+        proveGraffiti?: bigint,
+        graffitiPreImage?: bigint,
+        nonceList?: bigint[]
     ) => {
         this._checkUserSignUp()
         this._checkEpkNonce(epkNonce)
@@ -993,7 +993,7 @@ export default class UserState {
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
         const USTPathElements = await userStateTree.createProof(attesterId)
-        const selectors: BigInt[] = []
+        const selectors: bigint[] = []
         const nonceExist = {}
         let repNullifiersAmount = 0
         for (
@@ -1090,7 +1090,7 @@ export default class UserState {
         }
     }
 
-    public genUserSignUpProof = async (attesterId: BigInt) => {
+    public genUserSignUpProof = async (attesterId: bigint) => {
         this._checkUserSignUp()
         this._checkAttesterId(attesterId)
         const epoch = this.latestTransitionedEpoch

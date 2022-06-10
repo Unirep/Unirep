@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import {
-    genRandomSalt,
+    genRandomNumber,
     hashLeftRight,
     ZkIdentity,
     IncrementalMerkleTree,
@@ -39,7 +39,7 @@ describe('Verify Epoch Key verifier', function () {
         tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
-        stateRoot = genRandomSalt()
+        stateRoot = genRandomNumber()
 
         const hashedStateLeaf = hashLeftRight(
             commitment.toString(),
@@ -126,7 +126,7 @@ describe('Verify Epoch Key verifier', function () {
     })
 
     it('Mismatched GST tree root should not pass check', async () => {
-        const otherTreeRoot = genRandomSalt()
+        const otherTreeRoot = genRandomNumber()
         const invalidCircuitInputs = genEpochKeyCircuitInput(
             id,
             tree,

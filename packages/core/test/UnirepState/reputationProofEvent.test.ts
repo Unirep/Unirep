@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
+    genRandomNumber,
     ZkIdentity,
     hashLeftRight,
     IncrementalMerkleTree,
@@ -36,15 +36,15 @@ describe('Reputation proof events in Unirep State', function () {
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
+    let userCommitments: bigint[] = []
+    let userStateTreeRoots: bigint[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths: any
     let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
+    const rootHistories: bigint[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -510,7 +510,7 @@ describe('Reputation proof events in Unirep State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            circuitInputs.GST_root = genRandomSalt().toString()
+            circuitInputs.GST_root = genRandomNumber().toString()
             const { proof, publicSignals } = await genProofAndPublicSignals(
                 Circuit.proveReputation,
                 circuitInputs

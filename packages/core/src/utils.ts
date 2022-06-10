@@ -40,7 +40,7 @@ const defaultUserStateLeaf = hash5([
 ])
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
+const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
     const t = new SparseMerkleTree(new Keyv(), treeDepth, defaultUserStateLeaf)
     return t.root
 }
@@ -49,7 +49,7 @@ const computeInitUserStateRoot = async (
     treeDepth: number,
     leafIdx?: number,
     airdropPosRep?: number
-): Promise<BigInt> => {
+): Promise<bigint> => {
     const t = new SparseMerkleTree(new Keyv(), treeDepth, defaultUserStateLeaf)
     if (leafIdx && airdropPosRep) {
         const airdropReputation = new Reputation(
@@ -77,9 +77,9 @@ const genEpochKey = (
         BigInt(0),
         BigInt(0),
     ]
-    let epochKey = hash5(values).toString()
+    let epochKey = hash5(values)
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)
+    const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
 }
 
@@ -101,7 +101,7 @@ const genReputationNullifier = (
     identityNullifier: SnarkBigInt,
     epoch: number,
     nonce: number,
-    attesterId: BigInt
+    attesterId: bigint
 ): SnarkBigInt => {
     return hash5([
         REPUTATION_NULLIFIER_DOMAIN,
@@ -114,7 +114,7 @@ const genReputationNullifier = (
 
 const genNewSMT = (
     treeDepth: number,
-    defaultLeafHash: BigInt
+    defaultLeafHash: bigint
 ): SparseMerkleTree => {
     return new SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }

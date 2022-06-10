@@ -21,15 +21,15 @@ describe('User sign up events in Unirep User State', function () {
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
+    let userCommitments: bigint[] = []
+    let userStateTreeRoots: bigint[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths
     let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
+    const rootHistories: bigint[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()

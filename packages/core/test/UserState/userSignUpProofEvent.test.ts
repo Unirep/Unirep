@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
     ZkIdentity,
-    genRandomSalt,
+    genRandomNumber,
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
@@ -29,15 +29,15 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
+    let userCommitments: bigint[] = []
+    let userStateTreeRoots: bigint[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths
     let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
+    const rootHistories: bigint[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -325,7 +325,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const { proof, publicSignals } = await userState.genUserSignUpProof(
                 BigInt(attesterId)
             )
-            publicSignals[2] = genRandomSalt().toString()
+            publicSignals[2] = genRandomNumber().toString()
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.false

@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
+    genRandomNumber,
     IncrementalMerkleTree,
     hashOne,
     SnarkBigInt,
@@ -33,7 +33,7 @@ describe('Merkle Tree circuits', function () {
             const leaves: SnarkBigInt[] = []
 
             for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
+                const randomVal = genRandomNumber()
                 tree.insert(hashOne(randomVal))
                 leaves.push(hashOne(randomVal))
             }
@@ -63,7 +63,7 @@ describe('Merkle Tree circuits', function () {
             const leaves: SnarkBigInt[] = []
 
             for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
+                const randomVal = genRandomNumber()
                 tree.insert(randomVal)
                 leaves.push(hashOne(randomVal))
             }
@@ -100,13 +100,13 @@ describe('Merkle Tree circuits', function () {
 
             // Populate the tree
             for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
+                const randomVal = genRandomNumber()
                 const leaf = hashOne(randomVal)
                 tree.insert(leaf)
             }
 
             for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
+                const randomVal = genRandomNumber()
                 const leaf = hashOne(randomVal)
 
                 tree.update(i, leaf)
@@ -136,13 +136,13 @@ describe('Merkle Tree circuits', function () {
 
             // Populate the tree
             for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
+                const randomVal = genRandomNumber()
                 const leaf = hashOne(randomVal)
                 tree.insert(leaf)
             }
 
             for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
+                const randomVal = genRandomNumber()
                 const leaf = hashOne(randomVal)
 
                 tree.update(i, leaf)

@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
+    genRandomNumber,
     ZkIdentity,
     hashLeftRight,
     IncrementalMerkleTree,
@@ -28,15 +28,15 @@ describe('Epoch key proof events in Unirep State', function () {
 
     let users: UserState[] = new Array(2)
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
+    let userCommitments: bigint[] = []
+    let userStateTreeRoots: bigint[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths: any
     let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
+    const rootHistories: bigint[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -324,7 +324,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            circuitInputs.GST_root = genRandomSalt().toString()
+            circuitInputs.GST_root = genRandomNumber().toString()
             const { proof, publicSignals } = await genProofAndPublicSignals(
                 Circuit.verifyEpochKey,
                 circuitInputs
@@ -370,7 +370,7 @@ describe('Epoch key proof events in Unirep State', function () {
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const stateRoot = genRandomSalt()
+            const stateRoot = genRandomNumber()
             const leafIndex = 0
 
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)

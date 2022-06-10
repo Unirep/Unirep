@@ -4,7 +4,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import {
     ZkIdentity,
-    genRandomSalt,
+    genRandomNumber,
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
@@ -44,8 +44,8 @@ describe('User state transition events in Unirep User State', async function () 
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
+    let userCommitments: bigint[] = []
+    let userStateTreeRoots: bigint[] = []
     let signUpAirdrops: Reputation[] = []
     let attestations: Reputation[] = []
 
@@ -53,7 +53,7 @@ describe('User state transition events in Unirep User State', async function () 
     let unirepContractCalledByAttester: Unirep
     let treeDepths
     let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
+    const rootHistories: bigint[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -543,9 +543,9 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Submit invalid start tranistion proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomBlindedUserState = BigNumber.from(genRandomSalt())
-            const randomBlindedHashChain = BigNumber.from(genRandomSalt())
-            const randomGSTRoot = BigNumber.from(genRandomSalt())
+            const randomBlindedUserState = BigNumber.from(genRandomNumber())
+            const randomBlindedHashChain = BigNumber.from(genRandomNumber())
+            const randomGSTRoot = BigNumber.from(genRandomNumber())
             const tx = await unirepContract.startUserStateTransition(
                 randomBlindedUserState,
                 randomBlindedHashChain,
@@ -575,9 +575,9 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Submit invalid process attestation proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomOutputBlindedUserState = BigNumber.from(genRandomSalt())
-            const randomOutputBlindedHashChain = BigNumber.from(genRandomSalt())
-            const randomInputBlindedUserState = BigNumber.from(genRandomSalt())
+            const randomOutputBlindedUserState = BigNumber.from(genRandomNumber())
+            const randomOutputBlindedHashChain = BigNumber.from(genRandomNumber())
+            const randomInputBlindedUserState = BigNumber.from(genRandomNumber())
             const tx = await unirepContract.processAttestations(
                 randomOutputBlindedUserState,
                 randomOutputBlindedHashChain,
@@ -616,13 +616,13 @@ describe('User state transition events in Unirep User State', async function () 
             )
 
             const randomUSTInput = {
-                newGlobalStateTreeLeaf: BigNumber.from(genRandomSalt()),
+                newGlobalStateTreeLeaf: BigNumber.from(genRandomNumber()),
                 epkNullifiers: randomNullifiers,
                 transitionFromEpoch: 1,
                 blindedUserStates: randomBlindedStates,
-                fromGlobalStateTree: BigNumber.from(genRandomSalt()),
+                fromGlobalStateTree: BigNumber.from(genRandomNumber()),
                 blindedHashChains: randomBlindedChains,
-                fromEpochTree: BigNumber.from(genRandomSalt()),
+                fromEpochTree: BigNumber.from(genRandomNumber()),
                 proof: randomProof,
             }
             const tx = await unirepContract.updateUserStateRoot(

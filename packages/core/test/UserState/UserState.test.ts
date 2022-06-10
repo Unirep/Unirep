@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Circuit, verifyProof } from '@unirep/circuits'
-import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
+import { ZkIdentity, genRandomNumber, hashLeftRight } from '@unirep/crypto'
 import { Attestation } from '@unirep/contracts'
 import {
     EPOCH_LENGTH,
@@ -56,11 +56,11 @@ describe('User State', async function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: BigInt[] = []
+        const rootHistories: bigint[] = []
 
         it('sign up other users', async () => {
             for (let i = 0; i < userNum; i++) {
-                const randomCommitment = genRandomSalt()
+                const randomCommitment = genRandomNumber()
                 const randomAttesterId = Math.floor(Math.random() * 3)
                 const randomAirdropAmount = Math.floor(Math.random() * 3)
                 await userState.signUp(
@@ -160,7 +160,7 @@ describe('User State', async function () {
 
         it('continue sign up other users', async () => {
             for (let i = 0; i < maxUsers - userNum - 3; i++) {
-                const randomCommitment = genRandomSalt()
+                const randomCommitment = genRandomNumber()
                 await userState.signUp(epoch, randomCommitment)
 
                 const userObj = userState.toJSON()
@@ -213,7 +213,7 @@ describe('User State', async function () {
             const wrongEpoch = epoch + 1
             let error
             try {
-                await userState.signUp(wrongEpoch, genRandomSalt())
+                await userState.signUp(wrongEpoch, genRandomNumber())
             } catch (e) {
                 error = e
             }
@@ -231,7 +231,7 @@ describe('User State', async function () {
         })
 
         it('Query global state tree roots with wrong input should success', async () => {
-            const notExist = userState.GSTRootExists(genRandomSalt(), epoch)
+            const notExist = userState.GSTRootExists(genRandomNumber(), epoch)
             expect(notExist, 'Query non-exist root from User state should fail')
                 .to.be.false
 
@@ -259,7 +259,7 @@ describe('User State', async function () {
                 )
 
                 const epochKey =
-                    BigInt(genRandomSalt().toString()) %
+                    BigInt(genRandomNumber().toString()) %
                     BigInt(2 ** setting.epochLength)
                 epochKeys.push(epochKey.toString())
                 attestationsToEpochKey[epochKey.toString()] = []
@@ -299,7 +299,7 @@ describe('User State', async function () {
 
         it('wrong epoch key should throw error', async () => {
             let error
-            const wrongEpochKey = genRandomSalt()
+            const wrongEpochKey = genRandomNumber()
             const attestation = genRandomAttestation()
             try {
                 userState.addAttestation(wrongEpochKey.toString(), attestation)
@@ -324,7 +324,7 @@ describe('User State', async function () {
 
         it('Get attestation with non exist epoch key should return an empty array', async () => {
             const epochKey =
-                BigInt(genRandomSalt().toString()) %
+                BigInt(genRandomNumber().toString()) %
                 BigInt(2 ** setting.epochLength)
             const unirepAttestations = userState.getAttestations(
                 epochKey.toString()
@@ -334,7 +334,7 @@ describe('User State', async function () {
 
         it('Get attestation with invalid epoch key should throw error', async () => {
             let error
-            const wrongEpochKey = genRandomSalt()
+            const wrongEpochKey = genRandomNumber()
             try {
                 userState.getAttestations(wrongEpochKey.toString())
             } catch (e) {
@@ -356,7 +356,7 @@ describe('User State', async function () {
         it('add reputation nullifiers', async () => {
             const nullifierNum = Math.ceil(Math.random() * 10)
             for (let i = 0; i < nullifierNum; i++) {
-                const nullifier = genRandomSalt()
+                const nullifier = genRandomNumber()
                 userState.addReputationNullifiers(nullifier)
 
                 // submit the same nullifier twice should fail
@@ -378,7 +378,7 @@ describe('User State', async function () {
         })
 
         it('non exist nullifier should return false', async () => {
-            const notExist = unirepState.nullifierExist(genRandomSalt())
+            const notExist = unirepState.nullifierExist(genRandomNumber())
             expect(
                 notExist,
                 'Query non exist nullifier from Unirep state with wrong result'
@@ -471,7 +471,7 @@ describe('User State', async function () {
                 Math.random() * setting.numEpochKeyNoncePerEpoch
             )
             const proveNullifiers = Math.floor(Math.random() * signedUpAirdrop)
-            const nonceList: BigInt[] = []
+            const nonceList: bigint[] = []
             for (let i = 0; i < setting.maxReputationBudget; i++) {
                 if (i < proveNullifiers) nonceList.push(BigInt(i))
                 else nonceList.push(BigInt(-1))
@@ -637,7 +637,7 @@ describe('User State', async function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: BigInt[] = []
+        const rootHistories: bigint[] = []
 
         it('epoch transition', async () => {
             await userState.epochTransition(epoch)
@@ -685,10 +685,10 @@ describe('User State', async function () {
         it('transition other users state should success', async () => {
             for (let i = 0; i < userNum; i++) {
                 const fromEpoch = 1
-                const newGSTLeaf = genRandomSalt()
-                const epkNullifiers: BigInt[] = []
+                const newGSTLeaf = genRandomNumber()
+                const epkNullifiers: bigint[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
-                    epkNullifiers.push(genRandomSalt())
+                    epkNullifiers.push(genRandomNumber())
                 }
                 await userState.userStateTransition(
                     fromEpoch,
@@ -855,10 +855,10 @@ describe('User State', async function () {
         it('continue transition other users state should success', async () => {
             for (let i = 0; i < maxUsers - userNum - 3; i++) {
                 const fromEpoch = 1
-                const newGSTLeaf = genRandomSalt()
-                const epkNullifiers: BigInt[] = []
+                const newGSTLeaf = genRandomNumber()
+                const epkNullifiers: bigint[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
-                    epkNullifiers.push(genRandomSalt())
+                    epkNullifiers.push(genRandomNumber())
                 }
                 await userState.userStateTransition(
                     fromEpoch,
