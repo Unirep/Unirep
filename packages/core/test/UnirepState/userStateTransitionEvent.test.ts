@@ -630,9 +630,15 @@ describe('User state transition events in Unirep State', async function () {
 
         it('Submit invalid process attestation proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomOutputBlindedUserState = BigNumber.from(genRandomNumber())
-            const randomOutputBlindedHashChain = BigNumber.from(genRandomNumber())
-            const randomInputBlindedUserState = BigNumber.from(genRandomNumber())
+            const randomOutputBlindedUserState = BigNumber.from(
+                genRandomNumber()
+            )
+            const randomOutputBlindedHashChain = BigNumber.from(
+                genRandomNumber()
+            )
+            const randomInputBlindedUserState = BigNumber.from(
+                genRandomNumber()
+            )
             const tx = await unirepContract.processAttestations(
                 randomOutputBlindedUserState,
                 randomOutputBlindedHashChain,

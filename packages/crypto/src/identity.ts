@@ -112,15 +112,9 @@ class ZkIdentity {
 
                 const { identityNullifier, identityTrapdoor, secret } = metadata
 
-                this._identityNullifier = BigInt(
-                    `0x${identityNullifier}`
-                )
-                this._identityTrapdoor = BigInt(
-                    `0x${identityTrapdoor}`
-                )
-                this._secret = secret.map((item) =>
-                    BigInt(`0x${item}`)
-                )
+                this._identityNullifier = BigInt(`0x${identityNullifier}`)
+                this._identityTrapdoor = BigInt(`0x${identityTrapdoor}`)
+                this._secret = secret.map((item) => BigInt(`0x${item}`))
 
                 break
             }
