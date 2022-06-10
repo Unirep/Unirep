@@ -1,52 +1,8 @@
-import { HashFunction } from '@zk-kit/incremental-merkle-tree'
 import assert from 'assert'
 import crypto from 'crypto'
+const { stringifyBigInts, unstringifyBigInts } = require('ffjavascript').utils
 
-// Copy from ffjavascript@0.2.55
-/**
- * Recursively stringify BigInt in an object
- * @param o An object data
- * @returns An object with all BigInts stringified
- */
-const stringifyBigInts = (o) => {
-    if (typeof o == 'bigint' || o.eq !== undefined) {
-        return o.toString(10)
-    } else if (Array.isArray(o)) {
-        return o.map(stringifyBigInts)
-    } else if (typeof o == 'object') {
-        const res = {}
-        const keys = Object.keys(o)
-        keys.forEach((k) => {
-            res[k] = stringifyBigInts(o[k])
-        })
-        return res
-    } else {
-        return o
-    }
-}
-/**
- * Recursively unstringify BigInt in an object
- * @param o An object data with all stringified BigInts
- * @returns An object with all BigInts unstringified
- */
-const unstringifyBigInts = (o) => {
-    if (typeof o == 'string' && /^[0-9]+$/.test(o)) {
-        return BigInt(o)
-    } else if (typeof o == 'string' && /^0x[0-9a-fA-F]+$/.test(o)) {
-        return BigInt(o)
-    } else if (Array.isArray(o)) {
-        return o.map(unstringifyBigInts)
-    } else if (typeof o == 'object') {
-        const res = {}
-        const keys = Object.keys(o)
-        keys.forEach((k) => {
-            res[k] = unstringifyBigInts(o[k])
-        })
-        return res
-    } else {
-        return o
-    }
-}
+import { poseidon } from './poseidon'
 
 // Copy from maci-crypto@0.9.1
 
@@ -60,22 +16,18 @@ const SNARK_FIELD_SIZE = BigInt(
 )
 
 // Hash up to 2 elements
-const poseidonT3 = (hash: HashFunction, inputs: BigInt[]) => {
+const poseidonT3 = (inputs: BigInt[]) => {
     assert(inputs.length === 2)
-    return hash(inputs)
+    return poseidon(inputs)
 }
 
 // Hash up to 5 elements
-const poseidonT6 = (hash: HashFunction, inputs: BigInt[]) => {
+const poseidonT6 = (inputs: BigInt[]) => {
     assert(inputs.length === 5)
-    return hash(inputs)
+    return poseidon(inputs)
 }
 
-const hashN = (
-    hash: HashFunction,
-    numElements: number,
-    elements: Plaintext
-): BigInt => {
+const hashN = (numElements: number, elements: Plaintext): BigInt => {
     const elementLength = elements.length
     if (elements.length > numElements) {
         throw new TypeError(
@@ -94,15 +46,14 @@ const hashN = (
         5: poseidonT6,
     }
 
-    return funcs[numElements](hash, elements)
+    return funcs[numElements](elements)
 }
 
 /**
  * Hash 5 BigInts with the Poseidon hash function
- * @param hash The poseidon hash function
  * @param preImage The preImage of the hash
  */
-const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => {
+const hash5 = (elements: Plaintext): BigInt => {
     const elementLength = elements.length
     if (elements.length > 5) {
         throw new Error(
@@ -115,7 +66,7 @@ const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => {
             elementsPadded.push(BigInt(0))
         }
     }
-    return poseidonT6(hash, elementsPadded)
+    return poseidonT6(elementsPadded)
 }
 
 /**
@@ -123,20 +74,15 @@ const hash5 = (hash: HashFunction, elements: Plaintext): BigInt => {
  * @param hash The poseidon hash function
  * @param preImage The preImage of the hash
  */
-const hashOne = (hash: HashFunction, preImage: BigInt): BigInt =>
-    hashN(hash, 2, [preImage, BigInt(0)])
+const hashOne = (preImage: BigInt): BigInt => hashN(2, [preImage, BigInt(0)])
 
 /**
  * Hash two BigInts with the Poseidon hash function
- * @param hash The poseidon hash function
  * @param left The first element to be hashed
  * @param right The seconde element to be hashed
  */
-const hashLeftRight = (
-    hash: HashFunction,
-    left: BigInt,
-    right: BigInt
-): BigInt => hashN(hash, 2, [left, right])
+const hashLeftRight = (left: BigInt, right: BigInt): BigInt =>
+    hashN(2, [left, right])
 
 /*
  * Returns a BabyJub-compatible random value. We create it by first generating
@@ -179,7 +125,6 @@ const genRandomSalt = (): BigInt => {
 }
 
 export {
-    HashFunction,
     SNARK_FIELD_SIZE,
     SnarkBigInt,
     genRandomSalt,

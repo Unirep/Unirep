@@ -13,13 +13,15 @@
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "dependencies": {
+        "@ethersproject/bignumber": "^5.5.0",
+        "@ethersproject/random": "^5.5.1",
         "@zk-kit/incremental-merkle-tree": "^0.4.3",
-        "crypto-js": "^4.1.1"
+        "crypto-js": "^4.1.1",
+        "ffjavascript": "^0.2.55"
     },
     "devDependencies": {
         "@types/mocha": "^9.1.1",
         "@types/node": "^16.9.1",
-        "circomlibjs": "^0.0.8",
         "mocha": "^10.0.0",
         "ts-node": "^10.2.1",
         "typescript": "^4.4.2"

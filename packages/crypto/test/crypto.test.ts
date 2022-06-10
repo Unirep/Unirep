@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import { poseidon } from 'circomlibjs'
 import {
     genRandomSalt,
     hash5,
@@ -7,7 +6,6 @@ import {
     hashLeftRight,
     stringifyBigInts,
     unstringifyBigInts,
-    HashFunction,
 } from '../src'
 
 describe('crypto utils', function () {
@@ -16,36 +14,26 @@ describe('crypto utils', function () {
         expect(typeof salt).equal('bigint')
     })
 
-    it('HashFunction', () => {
-        const values = [BigInt(1)]
-        const returnValue = genRandomSalt()
-        const hashF: HashFunction = (values): BigInt => {
-            return returnValue
-        }
-        const hash = hash5(hashF, values)
-        expect(hash).equal(returnValue)
-    })
-
     it('hash5', () => {
         const values: BigInt[] = []
         const elementNum = Math.ceil(Math.random() * 5)
         for (let num = 0; num < elementNum; num++) {
             values.push(genRandomSalt())
         }
-        const hash = hash5(poseidon, values)
+        const hash = hash5(values)
         expect(typeof hash).equal('bigint')
     })
 
     it('hashOne', () => {
         const value = genRandomSalt()
-        const hash = hashOne(poseidon, value)
+        const hash = hashOne(value)
         expect(typeof hash).equal('bigint')
     })
 
     it('hashLeftRight', () => {
         const leftValue = genRandomSalt()
         const rightValue = genRandomSalt()
-        const hash = hashLeftRight(poseidon, leftValue, rightValue)
+        const hash = hashLeftRight(leftValue, rightValue)
         expect(typeof hash).equal('bigint')
     })
 

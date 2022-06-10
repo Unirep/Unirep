@@ -90,12 +90,11 @@ const unserializedIdentity = new ZkIdentity(
 
 **Create a IncrementalMerkleTree**
 ```typescript
-import { poseidon } from "circomlibjs" // v0.0.8
 import { IncrementalMerkleTree } from '@unirep/crypto'
 
 const depth = 4
 // initialize incremental merkle tree with depth 4
-const tree = new IncrementalMerkleTree(poseidon, depth)
+const tree = new IncrementalMerkleTree(depth)
 ```
 
 **Get tree root**
@@ -125,7 +124,6 @@ const isValid = tree.verifyProof(proof)
 **Create a SparseMerkleTree**
 ```typescript
 import keyv from 'keyv'
-import { poseidon } from "circomlibjs" // v0.0.8
 import { SparseMerkleTree } from '@unirep/crypto'
 
 const depth = 4
@@ -133,7 +131,6 @@ const depth = 4
 const zeroHash = 0
 // initialize sparse merkle tree with depth 4 and zeroHash 0
 const tree = new SparseMerkleTree(
-    poseidon,
     new Keyv(), 
     depth, 
     zeroHash
@@ -176,7 +173,6 @@ const salt = genRandomSalt()
 **hash5**
 
 ```typescript
-import { poseidon } from "circomlibjs" // v0.0.8
 import { hash5 } from '@unirep/crypto'
 
 // poseidon hash 5 BigInt elements
@@ -187,7 +183,7 @@ const values = [
     genRandomSalt(),
     genRandomSalt(),
 ]
-const hash5Value = hash5(poseidon, values)
+const hash5Value = hash5(values)
 ```
 **hashOne**
 ```typescript
@@ -195,7 +191,7 @@ import { hashOne } from '@unirep/crypto'
 
 // poseidon hash 1 BigInt elements
 const value = genRandomSalt()
-const hashOneValue = hashOne(poseidon, value)
+const hashOneValue = hashOne(value)
 ```
 **hashLeftRight**
 ```typescript
@@ -204,7 +200,7 @@ import { hashLeftRight } from '@unirep/crypto'
 // poseidon hash 2 BigInt elements
 const leftValue = genRandomSalt()
 const rightValue = genRandomSalt()
-const hash = hashLeftRight(poseidon, leftValue, rightValue)
+const hash = hashLeftRight(leftValue, rightValue)
 ```
 **stringifyBigInts/unstringifyBigInts**
 ```typescript

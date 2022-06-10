@@ -1,6 +1,5 @@
 import { expect } from 'chai'
 import Keyv from 'keyv'
-import { poseidon } from 'circomlibjs'
 import { SparseMerkleTree } from '../src'
 
 describe('SparseMerkleTree', function () {
@@ -9,7 +8,7 @@ describe('SparseMerkleTree', function () {
     const zeroHash = BigInt(0)
 
     it('constructor', async () => {
-        tree = new SparseMerkleTree(poseidon, new Keyv(), depth, zeroHash)
+        tree = new SparseMerkleTree(new Keyv(), depth, zeroHash)
     })
 
     it('update', async () => {
