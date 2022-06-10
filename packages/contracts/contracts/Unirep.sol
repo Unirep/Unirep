@@ -677,10 +677,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        return epkValidityVerifier.verifyProof(
-            input.proof,
-            publicSignals
-        );
+        return epkValidityVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
@@ -710,10 +707,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        return startTransitionVerifier.verifyProof(
-            _proof,
-            publicSignals
-        );
+        return startTransitionVerifier.verifyProof(_proof, publicSignals);
     }
 
     /**
@@ -742,10 +736,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        return processAttestationsVerifier.verifyProof(
-            _proof,
-            publicSignals
-        );
+        return processAttestationsVerifier.verifyProof(_proof, publicSignals);
     }
 
     /**
@@ -793,10 +784,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        return userStateTransitionVerifier.verifyProof(
-            input.proof,
-            publicSignals
-        );
+        return
+            userStateTransitionVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
@@ -836,10 +825,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        return reputationVerifier.verifyProof(
-            input.proof,
-            publicSignals
-        );
+        return reputationVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
@@ -870,10 +856,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        return userSignUpVerifier.verifyProof(
-            input.proof,
-            publicSignals
-        );
+        return userSignUpVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
