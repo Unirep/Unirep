@@ -12,7 +12,7 @@ import {
     verifyProof,
 } from '@unirep/circuits'
 import {
-    Attestation as _Attestation,
+    Attestation,
     EpochKeyProof,
     ReputationProof,
     SignUpProof,
@@ -97,18 +97,6 @@ class Reputation implements IReputation {
     }
 }
 
-class Attestation extends _Attestation {
-    constructor(
-        _attesterId: BigInt | BigNumberish,
-        _posRep: BigInt | BigNumberish,
-        _negRep: BigInt | BigNumberish,
-        _graffiti: BigInt | BigNumberish,
-        _signUp: BigInt | BigNumberish
-    ) {
-        super(_attesterId, _posRep, _negRep, _graffiti, _signUp)
-    }
-}
-
 const toCompleteHexString = (str: string, len?: number): string => {
     str = str.startsWith('0x') ? str : '0x' + str
     if (len) str = ethers.utils.hexZeroPad(str, len)
@@ -119,9 +107,9 @@ const genNewSMT = (treeDepth: number, defaultLeafHash: BigInt) => {
     return new crypto.SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
 }
 
-const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
+const genNewEpochTree = (epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
     const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(_epochTreeDepth, defaultOTSMTHash)
+    return genNewSMT(epochTreeDepth, defaultOTSMTHash)
 }
 
 const defaultUserStateLeaf = crypto.hash5([

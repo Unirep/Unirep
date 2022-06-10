@@ -4,7 +4,7 @@ import base64url from 'base64url'
 import { ethers } from 'ethers'
 import chai from 'chai'
 const { expect } = chai
-import { ZkIdentity, Strategy, hashOne } from '@unirep/crypto'
+import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
