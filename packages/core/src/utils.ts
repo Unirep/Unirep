@@ -15,8 +15,6 @@ import {
 import {
     hash5,
     hashLeftRight,
-    hashOne,
-    IncrementalMerkleTree,
     SparseMerkleTree,
     SnarkBigInt,
     ZkIdentity,

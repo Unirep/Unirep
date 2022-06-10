@@ -20,10 +20,6 @@
         "ffjavascript": "^0.2.55"
     },
     "devDependencies": {
-        "@types/mocha": "^9.1.1",
-        "@types/node": "^16.9.1",
-        "mocha": "^10.0.0",
-        "ts-node": "^10.2.1",
-        "typescript": "^4.4.2"
+        "mocha": "^10.0.0"
     }
 }
