@@ -13,8 +13,6 @@
     "author": "vivianjeng <vivi432@yahoo.com.tw>",
     "license": "MIT",
     "dependencies": {
-        "@ethersproject/bignumber": "^5.5.0",
-        "@ethersproject/random": "^5.5.1",
         "@zk-kit/incremental-merkle-tree": "^0.4.3",
         "crypto-js": "^4.1.1",
         "ffjavascript": "^0.2.55"

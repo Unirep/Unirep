@@ -162,12 +162,12 @@ const isValid = await tree.verifyProof(proof)
 
 ### Crypto utils
 
-**genRandomSalt**
+**genRandomNumber**
 ```typescript
-import { genRandomSalt } from '@unirep/crypto'
+import { genRandomNumber } from '@unirep/crypto'
 
 // generate random BigInt
-const salt = genRandomSalt()
+const salt = genRandomNumber()
 ```
 
 **hash5**
@@ -177,11 +177,11 @@ import { hash5 } from '@unirep/crypto'
 
 // poseidon hash 5 BigInt elements
 const values = [
-    genRandomSalt(),
-    genRandomSalt(),
-    genRandomSalt(),
-    genRandomSalt(),
-    genRandomSalt(),
+    genRandomNumber(),
+    genRandomNumber(),
+    genRandomNumber(),
+    genRandomNumber(),
+    genRandomNumber(),
 ]
 const hash5Value = hash5(values)
 ```
@@ -190,7 +190,7 @@ const hash5Value = hash5(values)
 import { hashOne } from '@unirep/crypto'
 
 // poseidon hash 1 BigInt elements
-const value = genRandomSalt()
+const value = genRandomNumber()
 const hashOneValue = hashOne(value)
 ```
 **hashLeftRight**
@@ -198,16 +198,16 @@ const hashOneValue = hashOne(value)
 import { hashLeftRight } from '@unirep/crypto'
 
 // poseidon hash 2 BigInt elements
-const leftValue = genRandomSalt()
-const rightValue = genRandomSalt()
+const leftValue = genRandomNumber()
+const rightValue = genRandomNumber()
 const hash = hashLeftRight(leftValue, rightValue)
 ```
 **stringifyBigInts/unstringifyBigInts**
 ```typescript
 const values = {
-    input1: genRandomSalt(),
-    input2: genRandomSalt(),
-    input3: genRandomSalt(),
+    input1: genRandomNumber(),
+    input2: genRandomNumber(),
+    input3: genRandomNumber(),
 }
 // stringify BigInt elements with stringifyBigInts function
 const stringifiedValues = stringifyBigInts(values)

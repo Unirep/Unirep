@@ -20,12 +20,12 @@ const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
 }
 
 export class SparseMerkleTree {
-    protected _root: BigInt
-    private zeroHashes!: BigInt[]
+    protected _root: bigint
+    private zeroHashes!: bigint[]
 
-    public readonly numLeaves: BigInt
+    public readonly numLeaves: bigint
 
-    constructor(protected db, private _height: number, zeroHash: BigInt) {
+    constructor(protected db, private _height: number, zeroHash: bigint) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
         this._root = BigInt(0)
@@ -35,7 +35,7 @@ export class SparseMerkleTree {
         this.numLeaves = BigInt(2 ** _height)
     }
 
-    private init(zeroHash: BigInt): void {
+    private init(zeroHash: bigint): void {
         this.populateZeroHashesAndRoot(zeroHash)
     }
 
@@ -47,11 +47,11 @@ export class SparseMerkleTree {
         return this._root
     }
 
-    public getZeroHash(index: number): BigInt {
+    public getZeroHash(index: number): bigint {
         return this.zeroHashes[index]
     }
 
-    public async update(leafKey: BigInt, leafHash: BigInt): Promise<void> {
+    public async update(leafKey: bigint, leafHash: bigint): Promise<void> {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -93,13 +93,13 @@ export class SparseMerkleTree {
         this._root = parentHash
     }
 
-    public async createProof(leafKey: BigInt): Promise<BigInt[]> {
+    public async createProof(leafKey: bigint): Promise<bigint[]> {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
         )
 
-        const siblingNodeHashes: BigInt[] = []
+        const siblingNodeHashes: bigint[] = []
         let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
         let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
         let sibNodeIndex = isLeftNode
@@ -126,8 +126,8 @@ export class SparseMerkleTree {
     }
 
     public async verifyProof(
-        leafKey: BigInt,
-        proof: BigInt[]
+        leafKey: bigint,
+        proof: bigint[]
     ): Promise<boolean> {
         assert(
             leafKey < this.numLeaves,
@@ -153,8 +153,8 @@ export class SparseMerkleTree {
         else return false
     }
 
-    private populateZeroHashesAndRoot(zeroHash: BigInt): void {
-        const hashes: BigInt[] = [zeroHash]
+    private populateZeroHashesAndRoot(zeroHash: bigint): void {
+        const hashes: bigint[] = [zeroHash]
 
         for (let i = 1; i < this.height; i++) {
             hashes[i] = newWrappedPoseidonT3Hash(hashes[i - 1], hashes[i - 1])
