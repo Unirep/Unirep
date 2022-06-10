@@ -151,7 +151,7 @@ describe('Signup', () => {
                     attester3Address,
                     attester2Sig
                 )
-            ).to.be.revertedWith('Unirep: invalid attester sign up signature')
+            ).to.be.revertedWith('InvalidSignature()')
         })
 
         it('double sign up should fail', async () => {

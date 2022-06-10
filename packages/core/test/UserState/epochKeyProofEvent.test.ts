@@ -432,9 +432,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith(
-                'Unirep: submit an epoch key proof with incorrect epoch'
-            )
+            ).to.be.revertedWith('EpochNotMatch()')
         })
     })
 })

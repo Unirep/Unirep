@@ -263,7 +263,7 @@ describe('User state transition events in Unirep User State', async function () 
         it('premature epoch transition should fail', async () => {
             await expect(
                 unirepContract.beginEpochTransition()
-            ).to.be.revertedWith('Unirep: epoch not yet ended')
+            ).to.be.revertedWith('EpochNotEndYet()')
         })
 
         it('epoch transition should succeed', async () => {

@@ -92,6 +92,12 @@ interface IUnirep is UnirepTypes {
         uint256[] proofIndexRecords
     );
 
+    enum AttestationFieldError {
+        POS_REP,
+        NEG_REP,
+        GRAFFITI
+    }
+
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error ReachedMaximumNumberUserSignedUp();
@@ -100,6 +106,21 @@ interface IUnirep is UnirepTypes {
     error NullilierAlreadyUsed(bytes32 nullilier);
     error AttestingFeeInvalid();
     error AttesterIdNotMatch(uint256 attesterId);
+
+    error InvalidSignature();
+    error InvalidProofIndex();
+    error InvalidSignUpFlag();
+    error InvalidEpochKey();
+    error EpochNotMatch();
+    error InvalidNumberNullifiers();
+    error InvalidTransitionEpoch();
+    error InvalidBlindedUserState();
+    error InvalidNumberBlindedHashChain();
+
+    error InvalidSNARKField(AttestationFieldError); // better name???
+    error EpochNotEndYet();
+
+    error InvalidSignals();
 
     /**
      * Sign up an attester using the address who sends the transaction

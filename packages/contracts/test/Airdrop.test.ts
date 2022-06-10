@@ -317,9 +317,7 @@ describe('Airdrop', function () {
                 unirepContractCalledByAttester.airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith(
-                'Unirep: submit an airdrop proof with incorrect epoch'
-            )
+            ).to.be.revertedWith('EpochNotMatch()')
         })
 
         it('submit an invalid epoch key should fail', async () => {
@@ -340,7 +338,7 @@ describe('Airdrop', function () {
                 unirepContractCalledByAttester.airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith('Unirep: invalid epoch key range')
+            ).to.be.revertedWith('InvalidEpochKey()')
         })
     })
 })

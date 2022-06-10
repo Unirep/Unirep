@@ -92,9 +92,7 @@ describe('Attesting', () => {
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
-        ).to.be.revertedWith(
-            'Unirep: submit an epoch key proof with incorrect epoch'
-        )
+        ).to.be.revertedWith('EpochNotMatch()')
     })
 
     it('submit an invalid epoch key should fail', async () => {
@@ -105,7 +103,7 @@ describe('Attesting', () => {
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
-        ).to.be.revertedWith('Unirep: invalid epoch key range')
+        ).to.be.revertedWith('InvalidEpochKey()')
     })
 
     it('submit attestation should succeed', async () => {
@@ -204,7 +202,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: invalid attestation posRep')
+        ).to.be.revertedWith('InvalidSNARKField(0)')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -221,7 +219,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: invalid attestation negRep')
+        ).to.be.revertedWith('InvalidSNARKField(1)')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -238,7 +236,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: invalid attestation graffiti')
+        ).to.be.revertedWith('InvalidSNARKField(2)')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -255,7 +253,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: invalid sign up flag')
+        ).to.be.revertedWith('InvalidSignUpFlag()')
     })
 
     it('attestation with zero proof index should fail', async () => {
@@ -279,7 +277,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: invalid proof index')
+        ).to.be.revertedWith('InvalidProofIndex()')
     })
 
     it('attestation with non-existed proof index should fail', async () => {
@@ -303,7 +301,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith('Unirep: invalid proof index')
+        ).to.be.revertedWith('InvalidProofIndex()')
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {

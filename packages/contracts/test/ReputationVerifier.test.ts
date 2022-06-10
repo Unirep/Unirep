@@ -309,7 +309,7 @@ describe('Verify reputation verifier', function () {
             unirepContractCalledByAttester.spendReputation(input, {
                 value: attestingFee,
             })
-        ).to.be.revertedWith('Unirep: invalid number of reputation nullifiers')
+        ).to.be.revertedWith('InvalidNumberNullifiers()')
     })
 
     it('submit reputation nullifiers with wrong epoch key should fail', async () => {
@@ -332,6 +332,6 @@ describe('Verify reputation verifier', function () {
             unirepContractCalledByAttester.spendReputation(input, {
                 value: attestingFee,
             })
-        ).to.be.revertedWith('Unirep: invalid epoch key range')
+        ).to.be.revertedWith('InvalidEpochKey()')
     })
 })
