@@ -677,11 +677,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        bool isValid = epkValidityVerifier.verifyProof(
+        return epkValidityVerifier.verifyProof(
             input.proof,
             publicSignals
         );
-        return isValid;
     }
 
     /**
@@ -711,11 +710,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        bool isValid = startTransitionVerifier.verifyProof(
+        return startTransitionVerifier.verifyProof(
             _proof,
             publicSignals
         );
-        return isValid;
     }
 
     /**
@@ -744,11 +742,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        bool isValid = processAttestationsVerifier.verifyProof(
+        return processAttestationsVerifier.verifyProof(
             _proof,
             publicSignals
         );
-        return isValid;
     }
 
     /**
@@ -796,11 +793,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        bool isValid = userStateTransitionVerifier.verifyProof(
+        return userStateTransitionVerifier.verifyProof(
             input.proof,
             publicSignals
         );
-        return isValid;
     }
 
     /**
@@ -840,11 +836,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        bool isValid = reputationVerifier.verifyProof(
+        return reputationVerifier.verifyProof(
             input.proof,
             publicSignals
         );
-        return isValid;
     }
 
     /**
@@ -875,11 +870,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         );
 
         // Verify the proof
-        bool isValid = userSignUpVerifier.verifyProof(
+        return userSignUpVerifier.verifyProof(
             input.proof,
             publicSignals
         );
-        return isValid;
     }
 
     /**
