@@ -19,9 +19,6 @@ interface IUnirep is UnirepTypes {
     // Events
     event Sequencer(uint256 indexed epoch, Event userEvent);
 
-    // Two global state tree leaf inserted events in Unirep
-    // 1. UserSignUp
-    // 2. UserStateTransition
     event UserSignedUp(
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
@@ -52,14 +49,16 @@ interface IUnirep is UnirepTypes {
         uint256 indexed proofIndex,
         uint256 indexed epoch,
         uint256 indexed epochKey,
-        EpochKeyProof proof
+        uint256[] publicSignals,
+        uint256[8] proof
     );
 
     event IndexedReputationProof(
         uint256 indexed proofIndex,
         uint256 indexed epoch,
         uint256 indexed epochKey,
-        ReputationProof proof
+        uint256[] publicSignals,
+        uint256[8] proof
     );
 
     // This event is emitted if a user wants to prove that he has a signup flag in an attester ID
@@ -67,28 +66,29 @@ interface IUnirep is UnirepTypes {
         uint256 indexed proofIndex,
         uint256 indexed epoch,
         uint256 indexed epochKey,
-        SignUpProof proof
+        uint256[] publicSignals,
+        uint256[8] proof
     );
 
     event IndexedStartedTransitionProof(
         uint256 indexed proofIndex,
         uint256 indexed blindedUserState,
         uint256 indexed globalStateTree,
-        uint256 blindedHashChain,
+        uint256[] publicSignals,
         uint256[8] proof
     );
 
     event IndexedProcessedAttestationsProof(
         uint256 indexed proofIndex,
         uint256 indexed inputBlindedUserState,
-        uint256 outputBlindedUserState,
-        uint256 outputBlindedHashChain,
+        uint256[] publicSignals,
         uint256[8] proof
     );
 
     event IndexedUserStateTransitionProof(
         uint256 indexed proofIndex,
-        UserTransitionProof proof,
+        uint256[] publicSignals,
+        uint256[8] proof,
         uint256[] proofIndexRecords
     );
 
