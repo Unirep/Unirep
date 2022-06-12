@@ -126,7 +126,7 @@ describe('Epoch key proof events in Unirep State', function () {
 
                 await expect(
                     unirepContractCalledByAttester.userSignUp(commitment)
-                ).to.be.revertedWith('Unirep: the user has already signed up')
+                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -214,7 +214,7 @@ describe('Epoch key proof events in Unirep State', function () {
             await expect(
                 unirepContract.userSignUp(commitment)
             ).to.be.revertedWith(
-                'Unirep: maximum number of user signups reached'
+                'ReachedMaximumNumberUserSignedUp()'
             )
 
             const unirepState = await genUnirepState(

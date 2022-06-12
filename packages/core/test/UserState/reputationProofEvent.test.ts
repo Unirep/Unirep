@@ -139,7 +139,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
                 await expect(
                     unirepContractCalledByAttester.userSignUp(commitment)
-                ).to.be.revertedWith('Unirep: the user has already signed up')
+                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -222,7 +222,7 @@ describe('Reputation proof events in Unirep User State', function () {
             await expect(
                 unirepContract.userSignUp(commitment)
             ).to.be.revertedWith(
-                'Unirep: maximum number of user signups reached'
+                'ReachedMaximumNumberUserSignedUp()'
             )
 
             const userState = await genUserState(
@@ -726,7 +726,7 @@ describe('Reputation proof events in Unirep User State', function () {
                     value: attestingFee,
                 })
             ).to.be.revertedWith(
-                'Unirep: submit a reputation proof with incorrect epoch'
+                'EpochNotMatch()'
             )
         })
     })

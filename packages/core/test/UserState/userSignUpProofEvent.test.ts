@@ -128,7 +128,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
                 await expect(
                     unirepContractCalledByAttester.userSignUp(commitment)
-                ).to.be.revertedWith('Unirep: the user has already signed up')
+                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -211,7 +211,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             await expect(
                 unirepContract.userSignUp(commitment)
             ).to.be.revertedWith(
-                'Unirep: maximum number of user signups reached'
+                'ReachedMaximumNumberUserSignedUp()'
             )
 
             const userState = await genUserState(
@@ -493,7 +493,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     }
                 )
             ).to.be.revertedWith(
-                'Unirep: submit an airdrop proof with incorrect epoch'
+                'EpochNotMatch()'
             )
         })
     })
