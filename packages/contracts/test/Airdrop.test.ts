@@ -19,9 +19,10 @@ describe('Airdrop', function () {
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
+    let attester: ethers.Signer
 
     let numUsers = 0
-    let attesterAddress, unirepContractCalledByAttester: Unirep
+    let attesterAddress: string
     const airdropPosRep = 20
     const epkNonce = 0
     const attestingFee = ethers.utils.parseEther('0.1')
@@ -39,35 +40,35 @@ describe('Airdrop', function () {
             console.log('Attesters sign up')
 
             for (let i = 0; i < 2; i++) {
-                unirepContractCalledByAttester = unirepContract.connect(
-                    accounts[i]
-                )
-                const tx = await unirepContractCalledByAttester.attesterSignUp()
+                const tx = await unirepContract
+                    .connect(accounts[i])
+                    .attesterSignUp()
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
             }
 
             console.log('attesters set airdrop amount')
-            unirepContractCalledByAttester = unirepContract.connect(accounts[0])
+            attester = accounts[0]
             attesterAddress = await accounts[0].getAddress()
-            const tx = await unirepContractCalledByAttester.setAirdropAmount(
-                airdropPosRep
-            )
+            const tx = await unirepContract
+                .connect(attester)
+                .setAirdropAmount(airdropPosRep)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
-            const airdroppedAmount =
-                await unirepContractCalledByAttester.airdropAmount(
-                    attesterAddress
-                )
+            const airdroppedAmount = await unirepContract
+                .connect(attester)
+                .airdropAmount(attesterAddress)
             expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
 
         it('non-signup attester cannot set airdrop amount', async () => {
-            unirepContractCalledByAttester = unirepContract.connect(accounts[2])
+            const nonSignUpAttester = accounts[2]
             await expect(
-                unirepContractCalledByAttester.setAirdropAmount(airdropPosRep)
+                unirepContract
+                    .connect(nonSignUpAttester)
+                    .setAirdropAmount(airdropPosRep)
             ).to.be.revertedWith(
-                `AttesterNotSignUp("${await accounts[2].getAddress()}")`
+                `AttesterNotSignUp("${await nonSignUpAttester.getAddress()}")`
             )
         })
 
@@ -75,10 +76,11 @@ describe('Airdrop', function () {
             console.log('User sign up')
             const userId = new ZkIdentity()
             const userCommitment = userId.genIdentityCommitment()
-            unirepContractCalledByAttester = unirepContract.connect(accounts[1])
-            let tx = await unirepContractCalledByAttester.userSignUp(
-                userCommitment
-            )
+            const zeroAirdropAtteseter = accounts[1]
+
+            let tx = await unirepContract
+                .connect(zeroAirdropAtteseter)
+                .userSignUp(userCommitment)
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
@@ -126,8 +128,8 @@ describe('Airdrop', function () {
         //     console.log('User sign up')
         //     const userId = new ZkIdentity()
         //     const userCommitment = userId.genIdentityCommitment()
-        //     unirepContractCalledByAttester = unirepContract.connect(accounts[2])
-        //     let tx = await unirepContractCalledByAttester.userSignUp(
+        //
+        //     let tx = await unirepContract.connect(attester).userSignUp(
         //         userCommitment
         //     )
         //     let receipt = await tx.wait()
@@ -219,13 +221,12 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            unirepContractCalledByAttester = unirepContract.connect(accounts[0])
-            const tx = await unirepContractCalledByAttester.airdropEpochKey(
-                input,
-                {
+
+            const tx = await unirepContract
+                .connect(attester)
+                .airdropEpochKey(input, {
                     value: attestingFee,
-                }
-            )
+                })
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
@@ -233,7 +234,7 @@ describe('Airdrop', function () {
             expect(Number(pfIdx)).not.eq(0)
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input)
+                unirepContract.connect(attester).airdropEpochKey(input)
             ).to.be.revertedWith(`NullilierAlreadyUsed`)
         })
 
@@ -248,14 +249,16 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            unirepContractCalledByAttester = unirepContract.connect(accounts[2])
 
+            const nonSignUpAttester = accounts[2]
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContract
+                    .connect(nonSignUpAttester)
+                    .airdropEpochKey(input, {
+                        value: attestingFee,
+                    })
             ).to.be.revertedWith(
-                `AttesterNotSignUp("${await accounts[2].getAddress()}")`
+                `AttesterNotSignUp("${await nonSignUpAttester.getAddress()}")`
             )
         })
 
@@ -270,10 +273,10 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            unirepContractCalledByAttester = unirepContract.connect(accounts[1])
 
+            const wrongAttester = accounts[1]
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
+                unirepContract.connect(wrongAttester).airdropEpochKey(input, {
                     value: attestingFee,
                 })
             ).to.be.revertedWith(`AttesterIdNotMatch(${attesterId_})`)
@@ -290,10 +293,9 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            unirepContractCalledByAttester = unirepContract.connect(accounts[0])
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input)
+                unirepContract.connect(attester).airdropEpochKey(input)
             ).to.be.revertedWith(`AttestingFeeInvalid()`)
         })
 
@@ -309,12 +311,12 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            unirepContractCalledByAttester = unirepContract.connect(accounts[0])
+
             const currentEpoch_ = await unirepContract.currentEpoch()
             expect(wrongEpoch).not.equal(currentEpoch_)
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
+                unirepContract.connect(attester).airdropEpochKey(input, {
                     value: attestingFee,
                 })
             ).to.be.revertedWith('EpochNotMatch()')
@@ -331,11 +333,11 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            unirepContractCalledByAttester = unirepContract.connect(accounts[0])
+
             input.epochKey = genRandomSalt()
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
+                unirepContract.connect(attester).airdropEpochKey(input, {
                     value: attestingFee,
                 })
             ).to.be.revertedWith('InvalidEpochKey()')
