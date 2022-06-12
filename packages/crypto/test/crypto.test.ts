@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import {
-    genRandomNumber,
+    genRandomSalt,
     hash5,
     hashOne,
     hashLeftRight,
@@ -9,8 +9,8 @@ import {
 } from '../src'
 
 describe('crypto utils', function () {
-    it('genRandomNumber', () => {
-        const salt = genRandomNumber()
+    it('genRandomSalt', () => {
+        const salt = genRandomSalt()
         expect(typeof salt).equal('bigint')
     })
 
@@ -18,30 +18,30 @@ describe('crypto utils', function () {
         const values: bigint[] = []
         const elementNum = Math.ceil(Math.random() * 5)
         for (let num = 0; num < elementNum; num++) {
-            values.push(genRandomNumber())
+            values.push(genRandomSalt())
         }
         const hash = hash5(values)
         expect(typeof hash).equal('bigint')
     })
 
     it('hashOne', () => {
-        const value = genRandomNumber()
+        const value = genRandomSalt()
         const hash = hashOne(value)
         expect(typeof hash).equal('bigint')
     })
 
     it('hashLeftRight', () => {
-        const leftValue = genRandomNumber()
-        const rightValue = genRandomNumber()
+        const leftValue = genRandomSalt()
+        const rightValue = genRandomSalt()
         const hash = hashLeftRight(leftValue, rightValue)
         expect(typeof hash).equal('bigint')
     })
 
     it('stringifyBigInts/unstringifyBigInts', () => {
         const values = {
-            input1: genRandomNumber(),
-            input2: genRandomNumber(),
-            input3: genRandomNumber(),
+            input1: genRandomSalt(),
+            input2: genRandomSalt(),
+            input3: genRandomSalt(),
         }
         // BigInt in JSON object cannot be stringify by JSON.stringify function
         expect(() => JSON.stringify(values)).to.throw(TypeError)

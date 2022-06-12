@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomNumber } from '@unirep/crypto'
+import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import {
     Attestation,
     deployUnirep,
@@ -304,9 +304,9 @@ describe('User state transition events in Unirep State', async function () {
 
         it('Submit invalid start tranistion proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomBlindedUserState = BigNumber.from(genRandomNumber())
-            const randomBlindedHashChain = BigNumber.from(genRandomNumber())
-            const randomGSTRoot = BigNumber.from(genRandomNumber())
+            const randomBlindedUserState = BigNumber.from(genRandomSalt())
+            const randomBlindedHashChain = BigNumber.from(genRandomSalt())
+            const randomGSTRoot = BigNumber.from(genRandomSalt())
             const tx = await unirepContract.startUserStateTransition(
                 randomBlindedUserState,
                 randomBlindedHashChain,
@@ -336,13 +336,13 @@ describe('User state transition events in Unirep State', async function () {
         it('Submit invalid process attestation proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
             const randomOutputBlindedUserState = BigNumber.from(
-                genRandomNumber()
+                genRandomSalt()
             )
             const randomOutputBlindedHashChain = BigNumber.from(
-                genRandomNumber()
+                genRandomSalt()
             )
             const randomInputBlindedUserState = BigNumber.from(
-                genRandomNumber()
+                genRandomSalt()
             )
             const tx = await unirepContract.processAttestations(
                 randomOutputBlindedUserState,
@@ -381,13 +381,13 @@ describe('User state transition events in Unirep State', async function () {
             )
 
             const randomUSTInput = {
-                newGlobalStateTreeLeaf: BigNumber.from(genRandomNumber()),
+                newGlobalStateTreeLeaf: BigNumber.from(genRandomSalt()),
                 epkNullifiers: randomNullifiers,
                 transitionFromEpoch: 1,
                 blindedUserStates: randomBlindedStates,
-                fromGlobalStateTree: BigNumber.from(genRandomNumber()),
+                fromGlobalStateTree: BigNumber.from(genRandomSalt()),
                 blindedHashChains: randomBlindedChains,
-                fromEpochTree: BigNumber.from(genRandomNumber()),
+                fromEpochTree: BigNumber.from(genRandomSalt()),
                 proof: randomProof,
             }
             const tx = await unirepContract.updateUserStateRoot(

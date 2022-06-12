@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from 'chai'
-import { genRandomNumber, hash5, ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, hash5, ZkIdentity } from '@unirep/crypto'
 import { executeCircuit, getSignalByName, Circuit } from '../circuits/utils'
 import {
     Attestation,
@@ -26,7 +26,7 @@ describe('Process attestation circuit', function () {
     const user = new ZkIdentity()
     const signUp = 1
 
-    let hashChainStarter = genRandomNumber()
+    let hashChainStarter = genRandomSalt()
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -220,7 +220,7 @@ describe('Process attestation circuit', function () {
                 sameAttesterID,
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
-                genRandomNumber(),
+                genRandomSalt(),
                 BigInt(signUp)
             )
             attestations.push(attestation)
@@ -282,7 +282,7 @@ describe('Process attestation circuit', function () {
             sameAttesterID,
             BigInt(Math.floor(Math.random() * 100)),
             BigInt(Math.floor(Math.random() * 100)),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signUp)
         )
         attestations.push(signUpAttestation)
@@ -292,7 +292,7 @@ describe('Process attestation circuit', function () {
                 sameAttesterID,
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
-                genRandomNumber(),
+                genRandomSalt(),
                 BigInt(notSignUp)
             )
             attestations.push(attestation)
@@ -364,7 +364,7 @@ describe('Process attestation circuit', function () {
             Math.random() * 100
         ).toString()
         circuitInputs.graffities[indexWrongAttestationRecord] =
-            genRandomNumber().toString()
+            genRandomSalt().toString()
 
         await throwError(
             circuit,
@@ -384,7 +384,7 @@ describe('Process attestation circuit', function () {
             Math.random() * NUM_ATTESTATIONS_PER_PROOF
         )
         circuitInputs.intermediate_user_state_tree_roots[indexWrongRoot] =
-            genRandomNumber().toString()
+            genRandomSalt().toString()
 
         await throwError(
             circuit,

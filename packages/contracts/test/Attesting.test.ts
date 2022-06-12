@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomNumber, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
@@ -23,8 +23,8 @@ describe('Attesting', () => {
     }
     const epoch = 1
     const nonce = 0
-    const epochKey = genEpochKey(genRandomNumber(), epoch, nonce)
-    const publicSignals = [genRandomNumber(), epoch, epochKey]
+    const epochKey = genEpochKey(genRandomSalt(), epoch, nonce)
+    const publicSignals = [genRandomSalt(), epoch, epochKey]
     const epochKeyProof = new EpochKeyProof(
         publicSignals as BigNumberish[],
         formatProofForSnarkjsVerification(proof)
@@ -85,7 +85,7 @@ describe('Attesting', () => {
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
-        const wrongSignals = [genRandomNumber(), epoch + 1, epochKey]
+        const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
         const wrongEpochKeyProof = new EpochKeyProof(
             wrongSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
@@ -98,9 +98,9 @@ describe('Attesting', () => {
     })
 
     it('submit an invalid epoch key should fail', async () => {
-        const wrongEpochKey = genRandomNumber()
+        const wrongEpochKey = genRandomSalt()
         const wrongEpochKeyProof = new EpochKeyProof(
-            [genRandomNumber(), epoch, wrongEpochKey] as BigNumberish[],
+            [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
         )
         await expect(
@@ -115,7 +115,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
 
@@ -145,7 +145,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(0),
             BigInt(1000),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         const tx = await unirepContractCalledByAttester.submitAttestation(
@@ -167,7 +167,7 @@ describe('Attesting', () => {
             BigInt(999),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(
@@ -189,7 +189,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             SNARK_FIELD_SIZE,
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(
@@ -206,7 +206,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(1),
             SNARK_FIELD_SIZE,
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(
@@ -240,8 +240,8 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
-            genRandomNumber()
+            genRandomSalt(),
+            genRandomSalt()
         )
         await expect(
             unirepContractCalledByAttester.submitAttestation(
@@ -263,7 +263,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(
@@ -286,7 +286,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(
@@ -308,7 +308,7 @@ describe('Attesting', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(
@@ -346,7 +346,7 @@ describe('Attesting', () => {
             BigInt(nonAttesterId),
             BigInt(0),
             BigInt(1),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         await expect(

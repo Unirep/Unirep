@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { genRandomNumber, IncrementalMerkleTree } from '../src'
+import { genRandomSalt, IncrementalMerkleTree } from '../src'
 
 describe('IncrementalMerkleTree', function () {
     let tree: IncrementalMerkleTree
@@ -9,7 +9,7 @@ describe('IncrementalMerkleTree', function () {
         tree = new IncrementalMerkleTree(depth)
         expect(typeof tree).equal('object')
 
-        const nonZeroDefaultLeaf = genRandomNumber()
+        const nonZeroDefaultLeaf = genRandomSalt()
         const nonZeroTree = new IncrementalMerkleTree(depth, nonZeroDefaultLeaf)
         expect(typeof nonZeroTree).equal('object')
     })

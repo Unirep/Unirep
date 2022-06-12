@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from 'chai'
-import { genRandomNumber, ZkIdentity, hashOne } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 import { Circuit, executeCircuit } from '../circuits/utils'
 import {
     genEpochKey,
@@ -38,7 +38,7 @@ describe('Prove user has signed up circuit', function () {
         )
 
         // Bootstrap reputation
-        const graffitiPreImage = genRandomNumber()
+        const graffitiPreImage = genRandomSalt()
         reputationRecords[signedUpAttesterId] = new Reputation(
             BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
             BigInt(Math.floor(Math.random() * MAX_NEG_REP)),

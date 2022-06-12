@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
     ZkIdentity,
-    genRandomNumber,
+    genRandomSalt,
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
@@ -250,7 +250,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 reputationRecords,
                 BigInt(attesterId)
             )
-            circuitInputs.GST_root = genRandomNumber().toString()
+            circuitInputs.GST_root = genRandomSalt().toString()
             const { proof, publicSignals } = await genProofAndPublicSignals(
                 Circuit.proveUserSignUp,
                 circuitInputs

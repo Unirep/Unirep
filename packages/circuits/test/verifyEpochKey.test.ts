@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import {
-    genRandomNumber,
+    genRandomSalt,
     hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
@@ -53,7 +53,7 @@ describe('Verify Epoch Key circuits', function () {
         tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
-        stateRoot = genRandomNumber()
+        stateRoot = genRandomSalt()
 
         const hashedStateLeaf = hashLeftRight(
             commitment.toString(),
@@ -148,7 +148,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Mismatched GST tree root should not pass check', async () => {
-        const otherTreeRoot = genRandomNumber()
+        const otherTreeRoot = genRandomSalt()
         const invalidCircuitInputs = (circuitInputs = genEpochKeyCircuitInput(
             id,
             tree,

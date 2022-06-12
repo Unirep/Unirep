@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomNumber,
+    genRandomSalt,
     ZkIdentity,
     hashLeftRight,
     IncrementalMerkleTree,
@@ -245,7 +245,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            circuitInputs.GST_root = genRandomNumber().toString()
+            circuitInputs.GST_root = genRandomSalt().toString()
             const { proof, publicSignals } = await genProofAndPublicSignals(
                 Circuit.verifyEpochKey,
                 circuitInputs
@@ -291,7 +291,7 @@ describe('Epoch key proof events in Unirep State', function () {
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const stateRoot = genRandomNumber()
+            const stateRoot = genRandomSalt()
             const leafIndex = 0
 
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)

@@ -283,7 +283,7 @@ const bootstrapRandomUSTree = async (): Promise<UserStates> => {
             reputationRecords[attesterId.toString()] = new Reputation(
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
-                crypto.genRandomNumber(),
+                crypto.genRandomSalt(),
                 BigInt(signUp)
             )
         }
@@ -317,7 +317,7 @@ const genProcessAttestationsCircuitInput = async (
     let selectors: number[] = []
     const hashChainStarter =
         _hashChainStarter === undefined
-            ? crypto.genRandomNumber()
+            ? crypto.genRandomSalt()
             : _hashChainStarter
     const intermediateUserStateTreeRoots: bigint[] = []
     const userStateTreePathElements: bigint[][] = []
@@ -336,7 +336,7 @@ const genProcessAttestationsCircuitInput = async (
             reputationRecords[attesterId.toString()] = new Reputation(
                 BigInt(Math.floor(Math.random() * 100)),
                 BigInt(Math.floor(Math.random() * 100)),
-                crypto.genRandomNumber(),
+                crypto.genRandomSalt(),
                 BigInt(signUp)
             )
         }
@@ -518,7 +518,7 @@ const genUserStateTransitionCircuitInput = async (
             nonce,
             EPOCH_TREE_DEPTH
         )
-        const hashChainResult = crypto.genRandomNumber()
+        const hashChainResult = crypto.genRandomSalt()
 
         // Blinded hash chain result
         hashChainResults.push(hashChainResult)
@@ -541,7 +541,7 @@ const genUserStateTransitionCircuitInput = async (
         await epochTree.update(epochKey, sealedHashChainResult)
     }
 
-    const intermediateUserStateTreeRoot = crypto.genRandomNumber()
+    const intermediateUserStateTreeRoot = crypto.genRandomSalt()
     intermediateUserStateTreeRoots.push(intermediateUserStateTreeRoot)
     blindedUserState.push(
         crypto.hash5([

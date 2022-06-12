@@ -1,4 +1,4 @@
-import { genRandomNumber, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
+import { genRandomSalt, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
 import * as path from 'path'
 
 import { executeCircuit } from '../circuits/utils'
@@ -23,7 +23,7 @@ describe('Hash chain circuit', function () {
         circuit = await compileAndLoadCircuit(sealedHashChainCircuitPath)
 
         for (let i = 0; i < NUM_ELEMENT; i++) {
-            const element = genRandomNumber()
+            const element = genRandomSalt()
             const sel = Math.floor(Math.random() * 2)
             selectors.push(sel)
             elements.push(element)
@@ -95,7 +95,7 @@ describe('Hash chain circuit', function () {
     })
 
     it('verify incorrect result should fail', async () => {
-        const incorrectResult = genRandomNumber()
+        const incorrectResult = genRandomSalt()
         const circuitInputs = {
             hashes: elements,
             selectors: selectors,

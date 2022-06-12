@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomNumber,
+    genRandomSalt,
     ZkIdentity,
     hashLeftRight,
     IncrementalMerkleTree,
@@ -226,7 +226,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             const epkNonce = 1
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
-            publicSignals[0] = genRandomNumber().toString()
+            publicSignals[0] = genRandomSalt().toString()
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.false
@@ -266,7 +266,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             const GSTree = new IncrementalMerkleTree(treeDepths.globalStateTreeDepth)
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const stateRoot = genRandomNumber()
+            const stateRoot = genRandomSalt()
             const leafIndex = 0
 
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)

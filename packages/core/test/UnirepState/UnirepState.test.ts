@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { genRandomNumber, hashLeftRight } from '@unirep/crypto'
+import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -42,7 +42,7 @@ describe('Unirep State', function () {
         const rootHistories: bigint[] = []
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
-                const commitment = genRandomNumber()
+                const commitment = genRandomSalt()
                 const randomAttesterId = Math.ceil(Math.random() * 10)
                 const randomAirdropAmount = Math.ceil(Math.random() * 10)
                 await unirepState.signUp(
@@ -87,7 +87,7 @@ describe('Unirep State', function () {
 
         it('Update user sign up with wrong epoch should fail', async () => {
             const wrongEpoch = epoch + 1
-            const commitment = genRandomNumber()
+            const commitment = genRandomSalt()
             const randomAttesterId = Math.ceil(Math.random() * 10)
             const randomAirdropAmount = Math.ceil(Math.random() * 10)
             let error
@@ -115,7 +115,7 @@ describe('Unirep State', function () {
         })
 
         it('Query global state tree roots with wrong input should success', async () => {
-            const notExist = unirepState.GSTRootExists(genRandomNumber(), epoch)
+            const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch)
             expect(notExist, 'Query non-exist root from User state should fail')
                 .to.be.false
 
@@ -145,7 +145,7 @@ describe('Unirep State', function () {
                 )
 
                 const epochKey =
-                    BigInt(genRandomNumber().toString()) %
+                    BigInt(genRandomSalt().toString()) %
                     BigInt(2 ** setting.epochLength)
                 epochKeys.push(epochKey.toString())
                 attestationsToEpochKey[epochKey.toString()] = []
@@ -162,7 +162,7 @@ describe('Unirep State', function () {
 
         it('wrong epoch key should throw error', async () => {
             let error
-            const wrongEpochKey = genRandomNumber()
+            const wrongEpochKey = genRandomSalt()
             const attestation = genRandomAttestation()
             try {
                 unirepState.addAttestation(
@@ -190,7 +190,7 @@ describe('Unirep State', function () {
 
         it('Get attestation with non exist epoch key should return an empty array', async () => {
             const epochKey =
-                BigInt(genRandomNumber().toString()) %
+                BigInt(genRandomSalt().toString()) %
                 BigInt(2 ** setting.epochLength)
             const unirepAttestations = unirepState.getAttestations(
                 epochKey.toString()
@@ -200,7 +200,7 @@ describe('Unirep State', function () {
 
         it('Get attestation with invalid epoch key should throw error', async () => {
             let error
-            const wrongEpochKey = genRandomNumber()
+            const wrongEpochKey = genRandomSalt()
             try {
                 unirepState.getAttestations(wrongEpochKey.toString())
             } catch (e) {
@@ -231,7 +231,7 @@ describe('Unirep State', function () {
         it('add reputation nullifiers', async () => {
             const nullifierNum = Math.ceil(Math.random() * 10)
             for (let i = 0; i < nullifierNum; i++) {
-                const nullifier = genRandomNumber()
+                const nullifier = genRandomSalt()
                 unirepState.addReputationNullifiers(nullifier)
 
                 // submit the same nullifier twice should fail
@@ -253,7 +253,7 @@ describe('Unirep State', function () {
         })
 
         it('non exist nullifier should return false', async () => {
-            const notExist = unirepState.nullifierExist(genRandomNumber())
+            const notExist = unirepState.nullifierExist(genRandomSalt())
             expect(
                 notExist,
                 'Query non exist nullifier from Unirep state with wrong result'
@@ -304,10 +304,10 @@ describe('Unirep State', function () {
 
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
-                const GSTLeaf = genRandomNumber()
+                const GSTLeaf = genRandomSalt()
                 const nullifiers: bigint[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
-                    nullifiers.push(genRandomNumber())
+                    nullifiers.push(genRandomSalt())
                 }
                 unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
 
@@ -338,7 +338,7 @@ describe('Unirep State', function () {
         })
 
         it('Query global state tree roots with wrong input should success', async () => {
-            const notExist = unirepState.GSTRootExists(genRandomNumber(), epoch)
+            const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch)
             expect(notExist, 'Query non-exist root from User state should fail')
                 .to.be.false
 
@@ -356,10 +356,10 @@ describe('Unirep State', function () {
 
         it('user state transition with wrong epoch should fail', async () => {
             const wrongEpoch = epoch + 1
-            const GSTLeaf = genRandomNumber()
+            const GSTLeaf = genRandomSalt()
             const nullifiers: bigint[] = []
             for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-                nullifiers.push(genRandomNumber())
+                nullifiers.push(genRandomSalt())
             }
             let error
             try {
@@ -375,11 +375,11 @@ describe('Unirep State', function () {
         })
 
         it('user state transition with wrong nullifiers amount should fail', async () => {
-            const GSTLeaf = genRandomNumber()
+            const GSTLeaf = genRandomSalt()
             const nullifiers: bigint[] = []
             const wrongEpkNullifierAmount = NUM_EPOCH_KEY_NONCE_PER_EPOCH + 1
             for (let i = 0; i < wrongEpkNullifierAmount; i++) {
-                nullifiers.push(genRandomNumber())
+                nullifiers.push(genRandomSalt())
             }
             let error
             try {
@@ -401,7 +401,7 @@ describe('Unirep State', function () {
 
         it('query wrong epoch tree root should fail', async () => {
             const prevEpoch = 1
-            const wrongRoot = genRandomNumber()
+            const wrongRoot = genRandomSalt()
             const notExist = await unirepState.epochTreeRootExists(
                 wrongRoot,
                 prevEpoch
@@ -411,7 +411,7 @@ describe('Unirep State', function () {
 
         it('query epoch tree root with wrong epoch should throw error', async () => {
             const wrongEpoch = epoch + 1
-            const root = genRandomNumber()
+            const root = genRandomSalt()
             let error
             try {
                 await unirepState.epochTreeRootExists(root, wrongEpoch)
@@ -435,7 +435,7 @@ describe('Unirep State', function () {
                 )
 
                 const epochKey =
-                    BigInt(genRandomNumber().toString()) %
+                    BigInt(genRandomSalt().toString()) %
                     BigInt(2 ** setting.epochLength)
                 attestationsToEpochKey[epochKey.toString()] = []
 
@@ -452,7 +452,7 @@ describe('Unirep State', function () {
         it('add reputation nullifiers', async () => {
             const nullifierNum = Math.ceil(Math.random() * 10)
             for (let i = 0; i < nullifierNum; i++) {
-                const nullifier = genRandomNumber()
+                const nullifier = genRandomSalt()
                 unirepState.addReputationNullifiers(nullifier)
 
                 // submit the same nullifier twice should fail
@@ -503,10 +503,10 @@ describe('Unirep State', function () {
 
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
-                const GSTLeaf = genRandomNumber()
+                const GSTLeaf = genRandomSalt()
                 const nullifiers: bigint[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
-                    nullifiers.push(genRandomNumber())
+                    nullifiers.push(genRandomSalt())
                 }
                 unirepState.userStateTransition(epoch, GSTLeaf, nullifiers)
 
@@ -537,7 +537,7 @@ describe('Unirep State', function () {
         })
 
         it('Query global state tree roots with wrong input should success', async () => {
-            const notExist = unirepState.GSTRootExists(genRandomNumber(), epoch)
+            const notExist = unirepState.GSTRootExists(genRandomSalt(), epoch)
             expect(notExist, 'Query non-exist root from User state should fail')
                 .to.be.false
 

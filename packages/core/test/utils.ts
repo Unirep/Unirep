@@ -6,7 +6,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import {
     IncrementalMerkleTree,
     hashLeftRight,
-    genRandomNumber,
+    genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
@@ -58,7 +58,7 @@ const genRandomAttestation = (): Attestation => {
         BigInt(attesterId),
         BigInt(Math.floor(Math.random() * 100)),
         BigInt(Math.floor(Math.random() * 100)),
-        BigNumber.from(genRandomNumber()),
+        BigNumber.from(genRandomSalt()),
         BigInt(Math.floor(Math.random() * 2))
     )
     return attestation
@@ -67,7 +67,7 @@ const genRandomAttestation = (): Attestation => {
 const genRandomList = (length): BigNumberish[] => {
     const array: BigNumberish[] = []
     for (let i = 0; i < length; i++) {
-        array.push(BigNumber.from(genRandomNumber()))
+        array.push(BigNumber.from(genRandomSalt()))
     }
     return array
 }

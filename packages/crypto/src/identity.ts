@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 
 import { poseidon } from './poseidon'
-import { genRandomNumber, SnarkBigInt } from './crypto'
+import { genRandomSalt, SnarkBigInt } from './crypto'
 
 type EddsaPrivateKey = Buffer
 type EddsaPublicKey = SnarkBigInt[]
@@ -60,8 +60,8 @@ class ZkIdentity {
     ) {
         switch (strategy) {
             case Strategy.RANDOM: {
-                this._identityTrapdoor = genRandomNumber()
-                this._identityNullifier = genRandomNumber()
+                this._identityTrapdoor = genRandomSalt()
+                this._identityNullifier = genRandomSalt()
                 this._secret = [this._identityNullifier, this._identityTrapdoor]
                 break
             }

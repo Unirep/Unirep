@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomNumber, ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
     EPOCH_LENGTH,
@@ -65,7 +65,7 @@ describe('EventSequencing', () => {
         for (let i = 0; i < 8; i++) {
             proof.push('0')
         }
-        let publicSignals = [genRandomNumber(), currentEpoch, epochKey]
+        let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         let epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
@@ -90,12 +90,12 @@ describe('EventSequencing', () => {
                 reputationNullifiers,
                 currentEpoch.toNumber(),
                 epochKey,
-                genRandomNumber(),
+                genRandomSalt(),
                 attesterId.toNumber(),
                 0,
                 minRep,
                 proveGraffiti,
-                genRandomNumber(),
+                genRandomSalt(),
                 proof,
             ],
             { value: attestingFee }
@@ -112,7 +112,7 @@ describe('EventSequencing', () => {
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
         tx = await unirepContractCalledByAttester.submitAttestation(
@@ -163,9 +163,9 @@ describe('EventSequencing', () => {
             blindedUserStates.push(BigInt(255))
         }
         tx = await unirepContract.startUserStateTransition(
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -173,9 +173,9 @@ describe('EventSequencing', () => {
 
         // 7. Second user processes attestations
         tx = await unirepContract.processAttestations(
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -183,13 +183,13 @@ describe('EventSequencing', () => {
 
         tx = await unirepContract.updateUserStateRoot(
             {
-                newGlobalStateTreeLeaf: genRandomNumber() as BigNumberish,
+                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
                 epkNullifiers: epkNullifiers as BigNumberish[],
                 transitionFromEpoch: transitionFromEpoch as BigNumberish,
                 blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomNumber() as BigNumberish,
+                fromGlobalStateTree: genRandomSalt() as BigNumberish,
                 blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomNumber() as BigNumberish,
+                fromEpochTree: genRandomSalt() as BigNumberish,
                 proof: proof as BigNumberish[],
             },
             indexes as BigNumberish[]
@@ -210,10 +210,10 @@ describe('EventSequencing', () => {
             BigInt(attesterId),
             BigInt(2),
             BigInt(1),
-            genRandomNumber(),
+            genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
-        publicSignals = [genRandomNumber(), currentEpoch, epochKey]
+        publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
@@ -251,9 +251,9 @@ describe('EventSequencing', () => {
         // 12. First user starts transition
         transitionFromEpoch = 1
         tx = await unirepContract.startUserStateTransition(
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -261,9 +261,9 @@ describe('EventSequencing', () => {
 
         // 13. First user processes attestations
         tx = await unirepContract.processAttestations(
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -272,13 +272,13 @@ describe('EventSequencing', () => {
         // 14. First user transition
         tx = await unirepContract.updateUserStateRoot(
             {
-                newGlobalStateTreeLeaf: genRandomNumber() as BigNumberish,
+                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
                 epkNullifiers: epkNullifiers as BigNumberish[],
                 transitionFromEpoch: transitionFromEpoch as BigNumberish,
                 blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomNumber() as BigNumberish,
+                fromGlobalStateTree: genRandomSalt() as BigNumberish,
                 blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomNumber() as BigNumberish,
+                fromEpochTree: genRandomSalt() as BigNumberish,
                 proof: proof as BigNumberish[],
             },
             indexes as BigNumberish[]
@@ -291,9 +291,9 @@ describe('EventSequencing', () => {
         // 15. Second user starts transition
         transitionFromEpoch = 2
         tx = await unirepContract.startUserStateTransition(
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -301,9 +301,9 @@ describe('EventSequencing', () => {
 
         // 16. Second user processes attestations
         tx = await unirepContract.processAttestations(
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
-            genRandomNumber() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
+            genRandomSalt() as BigNumberish,
             proof
         )
         receipt = await tx.wait()
@@ -312,13 +312,13 @@ describe('EventSequencing', () => {
         // 17. Second user transition
         tx = await unirepContract.updateUserStateRoot(
             {
-                newGlobalStateTreeLeaf: genRandomNumber() as BigNumberish,
+                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
                 epkNullifiers: epkNullifiers as BigNumberish[],
                 transitionFromEpoch: transitionFromEpoch as BigNumberish,
                 blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomNumber() as BigNumberish,
+                fromGlobalStateTree: genRandomSalt() as BigNumberish,
                 blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomNumber() as BigNumberish,
+                fromEpochTree: genRandomSalt() as BigNumberish,
                 proof: proof as BigNumberish[],
             },
             indexes as BigNumberish[]

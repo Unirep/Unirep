@@ -87,7 +87,7 @@ const hashLeftRight = (left: bigint, right: bigint): bigint =>
  * Compute a random BigInt within SNARK_FIELD_SIZE
  * @return A random BigInt salt.
  */
-const genRandomNumber = (): bigint => {
+const genRandomSalt = (): bigint => {
     const rand = BigInt('0x' + crypto.randomBytes(32).toString('hex'))
     const modRand: bigint = rand % SNARK_FIELD_SIZE
     assert(modRand < SNARK_FIELD_SIZE)
@@ -97,7 +97,7 @@ const genRandomNumber = (): bigint => {
 export {
     SNARK_FIELD_SIZE,
     SnarkBigInt,
-    genRandomNumber,
+    genRandomSalt,
     hash5,
     hashOne,
     hashLeftRight,

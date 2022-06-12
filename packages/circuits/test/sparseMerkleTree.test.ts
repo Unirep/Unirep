@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { expect } from 'chai'
-import { genRandomNumber, hashOne, SparseMerkleTree } from '@unirep/crypto'
+import { genRandomSalt, hashOne, SparseMerkleTree } from '@unirep/crypto'
 import { executeCircuit, getSignalByName } from '../circuits/utils'
 import { genNewSMT, compileAndLoadCircuit } from './utils'
 // circuitEpochTreeDepth too large will greatly slow down the test...
@@ -45,7 +45,7 @@ describe('Sparse Merkle Tree circuits', function () {
                 leafIndicesToInsert.push(ind)
             }
             for (let ind of leafIndicesToInsert) {
-                const leaf = genRandomNumber()
+                const leaf = genRandomSalt()
                 await tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
             }
@@ -89,8 +89,8 @@ describe('Sparse Merkle Tree circuits', function () {
                 const pathElements = await tree.createProof(BigInt(ind))
 
                 // Check against wrong leaf
-                const randomVal = genRandomNumber()
-                const wrongLeaf = genRandomNumber()
+                const randomVal = genRandomSalt()
+                const wrongLeaf = genRandomSalt()
                 let circuitInputs = {
                     leaf: wrongLeaf,
                     leaf_index: ind,
@@ -174,14 +174,14 @@ describe('Sparse Merkle Tree circuits', function () {
 
             // Populate the tree
             for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
-                const leaf = genRandomNumber()
+                const leaf = genRandomSalt()
                 await tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
             }
 
             // Update the tree and verify inclusion proof
             for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
-                const leaf = genRandomNumber()
+                const leaf = genRandomSalt()
                 await tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
 

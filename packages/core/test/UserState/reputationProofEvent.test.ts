@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomNumber,
+    genRandomSalt,
     ZkIdentity,
     hashLeftRight,
     IncrementalMerkleTree,
@@ -412,7 +412,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            circuitInputs.GST_root = genRandomNumber().toString()
+            circuitInputs.GST_root = genRandomSalt().toString()
             const { proof, publicSignals } = await genProofAndPublicSignals(
                 Circuit.proveReputation,
                 circuitInputs
