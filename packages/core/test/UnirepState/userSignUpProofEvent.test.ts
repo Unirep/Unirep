@@ -11,28 +11,23 @@ import {
 import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
-import { computeInitUserStateRoot, genUnirepState, Reputation } from '../../src'
+import { genUnirepState, Reputation } from '../../src'
 import {
-    genNewGST,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
 } from '../utils'
-import { GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits/config'
 
 describe('User sign up proof (Airdrop proof) events in Unirep State', function () {
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths
-    let GSTree: IncrementalMerkleTree
-    const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -50,10 +45,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             attestingFee,
         })
         treeDepths = await unirepContract.treeDepths()
-        GSTree = genNewGST(
-            treeDepths.globalStateTreeDepth,
-            treeDepths.userStateTreeDepth
-        )
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -80,29 +71,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 attester['addr']
             )
             expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
-        })
-    })
-
-    describe('Init Unirep State', async () => {
-        it('check Unirep state matches the contract', async () => {
-            const initUnirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-
-            const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.currentEpoch
-            expect(unirepEpoch).equal(Number(contractEpoch))
-
-            const unirepGSTLeaves = initUnirepState.getNumGSTLeaves(unirepEpoch)
-            expect(unirepGSTLeaves).equal(0)
-
-            const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
-            const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
-            )
-            expect(unirepGSTree.root).equal(defaultGSTree.root)
         })
     })
 
@@ -136,19 +104,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
                 expect(unirepGSTLeaves).equal(i + 1)
 
-                const attesterId = await unirepContract.attesters(
-                    attester['addr']
-                )
                 const airdroppedAmount = await unirepContract.airdropAmount(
                     attester['addr']
                 )
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
-                    Number(attesterId),
-                    Number(airdroppedAmount)
-                )
-                const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
                         airdroppedAmount.toBigInt(),
@@ -157,8 +115,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                         BigInt(1)
                     )
                 )
-                GSTree.insert(newGSTLeaf)
-                rootHistories.push(GSTree.root)
             }
         })
 
@@ -185,53 +141,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
-                const newUSTRoot = await computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
-                )
-                const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
-                userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(Reputation.default())
-                GSTree.insert(newGSTLeaf)
-                rootHistories.push(GSTree.root)
-            }
-        })
-
-        it('Sign up users more than contract capacity will not affect Unirep state', async () => {
-            const unirepStateBefore = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            const unirepEpoch = unirepStateBefore.currentEpoch
-            const unirepGSTLeavesBefore =
-                unirepStateBefore.getNumGSTLeaves(unirepEpoch)
-
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
-            await expect(
-                unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith(
-                'Unirep: maximum number of user signups reached'
-            )
-
-            const unirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
-            expect(unirepGSTLeaves).equal(unirepGSTLeavesBefore)
-        })
-
-        it('Check GST roots match Unirep state', async () => {
-            const unirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            for (let root of rootHistories) {
-                const exist = unirepState.GSTRootExists(
-                    root,
-                    unirepState.currentEpoch
-                )
-                expect(exist).to.be.true
             }
         })
     })
@@ -404,7 +314,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH,
+                treeDepths.globalStateTreeDepth,
                 ZERO_VALUE,
                 2
             )

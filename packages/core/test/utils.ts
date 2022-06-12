@@ -3,26 +3,31 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
-import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
-    hash5,
     hashLeftRight,
-    SparseMerkleTree,
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, verifyProof } from '@unirep/circuits'
-import { Attestation } from '@unirep/contracts'
 import {
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits/config'
+    Circuit,
+    formatProofForVerifierContract,
+    verifyProof,
+} from '@unirep/circuits'
+import {
+    Attestation,
+    computeStartTransitionProofHash,
+    computeProcessAttestationsProofHash,
+    UserTransitionProof,
+} from '@unirep/contracts'
+
+import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
+    computeEmptyUserStateRoot,
     genEpochKey,
+    genNewSMT,
     genUnirepState,
     genUserState,
     IUserState,
@@ -30,40 +35,12 @@ import {
     UnirepState,
     UserState,
 } from '../src'
-
-const toCompleteHexString = (str: string, len?: number): string => {
-    str = str.startsWith('0x') ? str : '0x' + str
-    if (len) str = ethers.utils.hexZeroPad(str, len)
-    return str
-}
-
-const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
-
-const genNewSMT = async (
-    treeDepth: number,
-    defaultLeafHash: BigInt
-): Promise<SparseMerkleTree> => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
-}
-
-const genNewEpochTree = async (): Promise<SparseMerkleTree> => {
-    const defaultOTSMTHash = SMT_ONE_LEAF
-    return genNewSMT(EPOCH_TREE_DEPTH, defaultOTSMTHash)
-}
-
-const defaultUserStateLeaf = hash5([
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-])
-
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
-    return t.root
-}
+import {
+    genEpochKeyCircuitInput,
+    genNewEpochTree,
+    genNewUserStateTree,
+    toCompleteHexString,
+} from '../../circuits/test/utils'
 
 const genNewGST = (
     GSTDepth: number,
@@ -73,10 +50,6 @@ const genNewGST = (
     const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
     const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf, 2)
     return GST
-}
-
-const genNewUserStateTree = async (): Promise<SparseMerkleTree> => {
-    return genNewSMT(USER_STATE_TREE_DEPTH, defaultUserStateLeaf)
 }
 
 const genRandomAttestation = (): Attestation => {
@@ -159,32 +132,6 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
         }
     }
     return reputaitonRecord
-}
-
-const genEpochKeyCircuitInput = (
-    id: ZkIdentity,
-    tree: IncrementalMerkleTree,
-    leafIndex: number,
-    ustRoot: BigInt,
-    epoch: number,
-    nonce: number
-) => {
-    const proof = tree.createProof(leafIndex)
-    const root = tree.root
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-
-    const circuitInputs = {
-        GST_path_elements: proof.siblings,
-        GST_path_index: proof.pathIndices,
-        GST_root: root,
-        identity_nullifier: id.identityNullifier,
-        identity_trapdoor: id.trapdoor,
-        user_tree_root: ustRoot,
-        nonce: nonce,
-        epoch: epoch,
-        epoch_key: epk,
-    }
-    return stringifyBigInts(circuitInputs)
 }
 
 const genReputationCircuitInput = async (
@@ -321,6 +268,94 @@ const genProveSignUpCircuitInput = async (
     return stringifyBigInts(circuitInputs)
 }
 
+const submitUSTProofs = async (
+    contract: ethers.Contract,
+    { startTransitionProof, processAttestationProofs, finalTransitionProof }
+) => {
+    const proofIndexes: number[] = []
+
+    let isValid = await verifyStartTransitionProof(startTransitionProof)
+    expect(isValid).to.be.true
+
+    // submit proofs
+    let tx = await contract.startUserStateTransition(
+        startTransitionProof.blindedUserState,
+        startTransitionProof.blindedHashChain,
+        startTransitionProof.globalStateTreeRoot,
+        formatProofForVerifierContract(startTransitionProof.proof)
+    )
+    let receipt = await tx.wait()
+    expect(receipt.status).to.equal(1)
+
+    // submit twice should fail
+    await expect(
+        contract.startUserStateTransition(
+            startTransitionProof.blindedUserState,
+            startTransitionProof.blindedHashChain,
+            startTransitionProof.globalStateTreeRoot,
+            formatProofForVerifierContract(startTransitionProof.proof)
+        )
+    ).to.be.revertedWith('Unirep: the proof has been submitted before')
+
+    let hashedProof = computeStartTransitionProofHash(
+        startTransitionProof.blindedUserState,
+        startTransitionProof.blindedHashChain,
+        startTransitionProof.globalStateTreeRoot,
+        formatProofForVerifierContract(startTransitionProof.proof)
+    )
+    proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+
+    for (let i = 0; i < processAttestationProofs.length; i++) {
+        isValid = await verifyProcessAttestationsProof(
+            processAttestationProofs[i]
+        )
+        expect(isValid).to.be.true
+
+        tx = await contract.processAttestations(
+            processAttestationProofs[i].outputBlindedUserState,
+            processAttestationProofs[i].outputBlindedHashChain,
+            processAttestationProofs[i].inputBlindedUserState,
+            formatProofForVerifierContract(processAttestationProofs[i].proof)
+        )
+        receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.processAttestations(
+                processAttestationProofs[i].outputBlindedUserState,
+                processAttestationProofs[i].outputBlindedHashChain,
+                processAttestationProofs[i].inputBlindedUserState,
+                formatProofForVerifierContract(
+                    processAttestationProofs[i].proof
+                )
+            )
+        ).to.be.revertedWith('Unirep: the proof has been submitted before')
+
+        let hashedProof = computeProcessAttestationsProofHash(
+            processAttestationProofs[i].outputBlindedUserState,
+            processAttestationProofs[i].outputBlindedHashChain,
+            processAttestationProofs[i].inputBlindedUserState,
+            formatProofForVerifierContract(processAttestationProofs[i].proof)
+        )
+        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+    }
+    const USTInput = new UserTransitionProof(
+        finalTransitionProof.publicSignals,
+        finalTransitionProof.proof
+    )
+    isValid = await USTInput.verify()
+    expect(isValid).to.be.true
+    tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
+    receipt = await tx.wait()
+    expect(receipt.status).to.equal(1)
+
+    // submit twice should fail
+    await expect(
+        contract.updateUserStateRoot(USTInput, proofIndexes)
+    ).to.be.revertedWith('Unirep: the proof has been submitted before')
+}
+
 const compareStates = async (
     provider: ethers.providers.Provider,
     address: string,
@@ -385,10 +420,6 @@ const compareEpochTrees = async (
 }
 
 export {
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
-    computeEmptyUserStateRoot,
-    defaultUserStateLeaf,
     genNewEpochTree,
     genNewUserStateTree,
     genNewSMT,
@@ -403,6 +434,7 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
+    submitUSTProofs,
     compareStates,
     compareEpochTrees,
 }

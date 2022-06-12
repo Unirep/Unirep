@@ -3,7 +3,7 @@
     "compilerOptions": {
         "outDir": "./build"
     },
-    "include": ["./src", "./cli", "./test"],
+    "include": ["./src"],
     "exclude": ["**/privateKey.ts"],
     "files": ["./hardhat.config.ts"]
 }
