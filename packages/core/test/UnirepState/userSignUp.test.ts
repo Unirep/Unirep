@@ -47,20 +47,18 @@ describe('User sign up events in Unirep State', function () {
         it('attester sign up', async () => {
             attester['acct'] = accounts[2]
             attester['addr'] = await attester['acct'].getAddress()
-            let tx = await unirepContract.connect(
-                attester['acct']
-            ).attesterSignUp()
+            let tx = await unirepContract
+                .connect(attester['acct'])
+                .attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
         })
 
         it('attester set airdrop amount', async () => {
             const airdropPosRep = 10
-            const tx = await unirepContract.connect(
-                attester['acct']
-            ).setAirdropAmount(
-                airdropPosRep
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .setAirdropAmount(airdropPosRep)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const airdroppedAmount = await unirepContract.airdropAmount(
@@ -101,18 +99,16 @@ describe('User sign up events in Unirep State', function () {
                 userIds.push(id)
                 userCommitments.push(commitment)
 
-                const tx = await unirepContract.connect(
-                    attester['acct']
-                ).userSignUp(
-                    commitment
-                )
+                const tx = await unirepContract
+                    .connect(attester['acct'])
+                    .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
-                    unirepContract.connect(
-                        attester['acct']
-                    ).userSignUp(commitment)
+                    unirepContract
+                        .connect(attester['acct'])
+                        .userSignUp(commitment)
                 ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const unirepState = await genUnirepState(
@@ -200,9 +196,7 @@ describe('User sign up events in Unirep State', function () {
             const commitment = id.genIdentityCommitment()
             await expect(
                 unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith(
-                'ReachedMaximumNumberUserSignedUp()'
-            )
+            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
 
             const unirepState = await genUnirepState(
                 hardhatEthers.provider,

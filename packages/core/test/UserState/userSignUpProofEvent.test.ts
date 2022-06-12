@@ -26,7 +26,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
-    let unirepContractCalledByAttester: Unirep
+
     let treeDepths
 
     let accounts: ethers.Signer[]
@@ -52,10 +52,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         it('attester sign up', async () => {
             attester['acct'] = accounts[2]
             attester['addr'] = await attester['acct'].getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(
-                attester['acct']
-            )
-            let tx = await unirepContractCalledByAttester.attesterSignUp()
+
+            let tx = await unirepContract
+                .connect(attester['acct'])
+                .attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
             attesterId = await unirepContract.attesters(attester['addr'])
@@ -63,9 +63,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
         it('attester set airdrop amount', async () => {
             const airdropPosRep = 10
-            const tx = await unirepContractCalledByAttester.setAirdropAmount(
-                airdropPosRep
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .setAirdropAmount(airdropPosRep)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const airdroppedAmount = await unirepContract.airdropAmount(
@@ -83,14 +83,16 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 userIds.push(id)
                 userCommitments.push(commitment)
 
-                const tx = await unirepContractCalledByAttester.userSignUp(
-                    commitment
-                )
+                const tx = await unirepContract
+                    .connect(attester['acct'])
+                    .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
-                    unirepContractCalledByAttester.userSignUp(commitment)
+                    unirepContract
+                        .connect(attester['acct'])
+                        .userSignUp(commitment)
                 ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const userState = await genUserState(
@@ -163,10 +165,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContractCalledByAttester.airdropEpochKey(
-                airdropProofInput,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .airdropEpochKey(airdropProofInput, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -176,12 +177,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(
-                    airdropProofInput,
-                    {
+                unirepContract
+                    .connect(attester['acct'])
+                    .airdropEpochKey(airdropProofInput, {
                         value: attestingFee,
-                    }
-                )
+                    })
             ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
@@ -198,13 +198,15 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -235,10 +237,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContractCalledByAttester.airdropEpochKey(
-                airdropProofInput,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .airdropEpochKey(airdropProofInput, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -261,13 +262,15 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         it('submit attestations to the epoch key should update User state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -319,10 +322,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContractCalledByAttester.airdropEpochKey(
-                airdropProofInput,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .airdropEpochKey(airdropProofInput, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -345,13 +347,15 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         it('submit attestations to the epoch key should update User state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -391,15 +395,12 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             expect(isValid).to.be.true
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(
-                    airdropProofInput,
-                    {
+                unirepContract
+                    .connect(attester['acct'])
+                    .airdropEpochKey(airdropProofInput, {
                         value: attestingFee,
-                    }
-                )
-            ).to.be.revertedWith(
-                'EpochNotMatch()'
-            )
+                    })
+            ).to.be.revertedWith('EpochNotMatch()')
         })
     })
 })
