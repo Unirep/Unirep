@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomNumber, ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
@@ -384,7 +384,7 @@ describe('Generate user state', function () {
                     processAttestationProofs[i].inputBlindedUserState
 
                 // submit random process attestations should success and not affect the results
-                const falseInput = BigNumber.from(genRandomNumber())
+                const falseInput = BigNumber.from(genRandomSalt())
                 tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,
@@ -568,7 +568,7 @@ describe('Generate user state', function () {
                     processAttestationProofs[i].inputBlindedUserState
 
                 // submit random process attestations should success and not affect the results
-                const falseInput = BigNumber.from(genRandomNumber())
+                const falseInput = BigNumber.from(genRandomSalt())
                 tx = await unirepContract.processAttestations(
                     outputBlindedUserState,
                     outputBlindedHashChain,

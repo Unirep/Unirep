@@ -161,7 +161,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
-            const circuitInputs = await genProveSignUpCircuitInput(
+            const circuitInputs = genProveSignUpCircuitInput(
                 userIds[userIdx],
                 epoch,
                 GSTree,
@@ -242,7 +242,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
-            const circuitInputs = await genProveSignUpCircuitInput(
+            const circuitInputs = genProveSignUpCircuitInput(
                 userIds[userIdx],
                 epoch,
                 GSTree,
@@ -322,7 +322,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
             GSTree.insert(BigInt(hashedStateLeaf.toString()))
 
-            const circuitInputs = await genProveSignUpCircuitInput(
+            const circuitInputs = genProveSignUpCircuitInput(
                 id,
                 epoch,
                 GSTree,
@@ -391,7 +391,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
-            const circuitInputs = await genProveSignUpCircuitInput(
+            const circuitInputs = genProveSignUpCircuitInput(
                 userIds[userIdx],
                 wrongEpoch,
                 GSTree,

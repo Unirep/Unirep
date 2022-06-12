@@ -197,7 +197,7 @@ describe('Reputation proof events in Unirep State', function () {
                 unirepContract.address
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 epoch,
                 epkNonce,
@@ -350,7 +350,7 @@ describe('Reputation proof events in Unirep State', function () {
                 unirepContract.address
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 epoch,
                 epkNonce,
@@ -425,7 +425,7 @@ describe('Reputation proof events in Unirep State', function () {
                 unirepContract.address
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 epoch,
                 epkNonce,
@@ -568,7 +568,7 @@ describe('Reputation proof events in Unirep State', function () {
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
             GSTree.insert(BigInt(hashedStateLeaf.toString()))
 
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 id,
                 epoch,
                 epkNonce,
@@ -641,7 +641,7 @@ describe('Reputation proof events in Unirep State', function () {
                 unirepContract.address
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 wrongEpoch,
                 epkNonce,
