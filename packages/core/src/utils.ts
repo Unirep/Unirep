@@ -1,5 +1,4 @@
 import { BigNumber, ethers } from 'ethers'
-import Keyv from 'keyv'
 import {
     Circuit,
     formatProofForSnarkjsVerification,
@@ -41,7 +40,7 @@ const defaultUserStateLeaf = hash5([
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
 const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
-    const t = new SparseMerkleTree(new Keyv(), treeDepth, defaultUserStateLeaf)
+    const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     return t.root
 }
 
@@ -50,7 +49,7 @@ const computeInitUserStateRoot = async (
     leafIdx?: number,
     airdropPosRep?: number
 ): Promise<bigint> => {
-    const t = new SparseMerkleTree(new Keyv(), treeDepth, defaultUserStateLeaf)
+    const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     if (leafIdx && airdropPosRep) {
         const airdropReputation = new Reputation(
             BigInt(airdropPosRep),
@@ -116,7 +115,7 @@ const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: bigint
 ): SparseMerkleTree => {
-    return new SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
+    return new SparseMerkleTree(treeDepth, defaultLeafHash)
 }
 
 const verifyEpochKeyProofEvent = async (

@@ -123,7 +123,6 @@ const isValid = tree.verifyProof(proof)
 
 **Create a SparseMerkleTree**
 ```typescript
-import keyv from 'keyv'
 import { SparseMerkleTree } from '@unirep/crypto'
 
 const depth = 4
@@ -131,7 +130,6 @@ const depth = 4
 const zeroHash = 0
 // initialize sparse merkle tree with depth 4 and zeroHash 0
 const tree = new SparseMerkleTree(
-    new Keyv(), 
     depth, 
     zeroHash
 )

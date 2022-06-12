@@ -3,7 +3,6 @@
 // @ts-ignore
 import assert from 'assert'
 import { ethers, BigNumberish } from 'ethers'
-import Keyv from 'keyv'
 import * as crypto from '@unirep/crypto'
 import {
     Circuit,
@@ -104,7 +103,7 @@ const toCompleteHexString = (str: string, len?: number): string => {
 }
 
 const genNewSMT = (treeDepth: number, defaultLeafHash: bigint) => {
-    return new crypto.SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
+    return new crypto.SparseMerkleTree(treeDepth, defaultLeafHash)
 }
 
 const genNewEpochTree = (epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
@@ -121,11 +120,7 @@ const defaultUserStateLeaf = crypto.hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
-    const t = new crypto.SparseMerkleTree(
-        new Keyv(),
-        treeDepth,
-        defaultUserStateLeaf
-    )
+    const t = new crypto.SparseMerkleTree(treeDepth, defaultUserStateLeaf)
 
     return t.root
 }

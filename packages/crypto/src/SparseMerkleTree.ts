@@ -22,10 +22,11 @@ const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
 export class SparseMerkleTree {
     protected _root: bigint
     private zeroHashes!: bigint[]
+    private node: { [key: string]: string } = {}
 
     public readonly numLeaves: bigint
 
-    constructor(protected db, private _height: number, zeroHash: bigint) {
+    constructor(private _height: number, zeroHash: bigint) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
         this._root = BigInt(0)
@@ -51,7 +52,7 @@ export class SparseMerkleTree {
         return this.zeroHashes[index]
     }
 
-    public async update(leafKey: bigint, leafHash: bigint): Promise<void> {
+    public update(leafKey: bigint, leafHash: bigint): void {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -59,11 +60,11 @@ export class SparseMerkleTree {
 
         let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
         let nodeHash
-        const nodeHashString = await this.db.get(nodeIndex.toString())
+        const nodeHashString = this.node[nodeIndex.toString()]
         if (nodeHashString === leafHash.toString()) return
         else nodeHash = leafHash
 
-        await this.db.set(nodeIndex.toString(), nodeHash.toString())
+        this.node[nodeIndex.toString()] = nodeHash.toString()
 
         let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
         let sibNodeIndex = isLeftNode
@@ -72,7 +73,7 @@ export class SparseMerkleTree {
         let sibNodeHash
         let parentNodeIndex, parentHash
         for (let i = 0; i < this.height; i++) {
-            const sibNodeHashString = await this.db.get(sibNodeIndex.toString())
+            const sibNodeHashString = this.node[sibNodeIndex.toString()]
             if (!sibNodeHashString) sibNodeHash = this.zeroHashes[i]
             else sibNodeHash = BigInt(sibNodeHashString)
 
@@ -80,7 +81,7 @@ export class SparseMerkleTree {
             parentHash = isLeftNode
                 ? newWrappedPoseidonT3Hash(nodeHash, sibNodeHash)
                 : newWrappedPoseidonT3Hash(sibNodeHash, nodeHash)
-            await this.db.set(parentNodeIndex.toString(), parentHash.toString())
+            this.node[parentNodeIndex.toString()] = parentHash.toString()
 
             nodeIndex = parentNodeIndex
             nodeHash = parentHash
@@ -93,7 +94,7 @@ export class SparseMerkleTree {
         this._root = parentHash
     }
 
-    public async createProof(leafKey: bigint): Promise<bigint[]> {
+    public createProof(leafKey: bigint): bigint[] {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -107,7 +108,7 @@ export class SparseMerkleTree {
             : nodeIndex - BigInt(1)
         let sibNodeHash
         for (let i = 0; i < this.height; i++) {
-            const sibNodeHashString = await this.db.get(sibNodeIndex.toString())
+            const sibNodeHashString = this.node[sibNodeIndex.toString()]
             if (!sibNodeHashString) sibNodeHash = this.zeroHashes[i]
             else sibNodeHash = BigInt(sibNodeHashString)
             siblingNodeHashes.push(sibNodeHash)
@@ -125,10 +126,7 @@ export class SparseMerkleTree {
         return siblingNodeHashes
     }
 
-    public async verifyProof(
-        leafKey: bigint,
-        proof: bigint[]
-    ): Promise<boolean> {
+    public verifyProof(leafKey: bigint, proof: bigint[]): boolean {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -137,7 +135,7 @@ export class SparseMerkleTree {
 
         let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
         let nodeHash
-        const nodeHashString = await this.db.get(nodeIndex.toString())
+        const nodeHashString = this.node[nodeIndex.toString()]
         if (!nodeHashString) nodeHash = this.zeroHashes[0]
         else nodeHash = BigInt(nodeHashString)
         let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false

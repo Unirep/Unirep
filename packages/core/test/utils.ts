@@ -3,7 +3,6 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
-import Keyv from 'keyv'
 import {
     IncrementalMerkleTree,
     hash5,
@@ -44,7 +43,7 @@ const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: bigint
 ): SparseMerkleTree => {
-    return new SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
+    return new SparseMerkleTree(treeDepth, defaultLeafHash)
 }
 
 const genNewEpochTree = (): SparseMerkleTree => {

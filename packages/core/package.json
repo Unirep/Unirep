@@ -33,7 +33,6 @@
         "@unirep/circuits": "1.0.0",
         "@unirep/contracts": "1.0.0",
         "@unirep/crypto": "1.0.0",
-        "ethers": "^5.6.8",
-        "keyv": "^4.3.0"
+        "ethers": "^5.6.8"
     }
 }

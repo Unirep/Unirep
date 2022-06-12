@@ -4,7 +4,6 @@
 import assert from 'assert'
 import { ethers } from 'ethers'
 const circom = require('circom')
-import Keyv from 'keyv'
 import * as crypto from '@unirep/crypto'
 
 import {
@@ -168,7 +167,7 @@ const toCompleteHexString = (str: string, len?: number): string => {
 }
 
 const genNewSMT = (treeDepth: number, defaultLeafHash: bigint) => {
-    return new crypto.SparseMerkleTree(new Keyv(), treeDepth, defaultLeafHash)
+    return new crypto.SparseMerkleTree(treeDepth, defaultLeafHash)
 }
 
 const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
@@ -185,11 +184,7 @@ const defaultUserStateLeaf = crypto.hash5([
 ])
 
 const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
-    const t = new crypto.SparseMerkleTree(
-        new Keyv(),
-        treeDepth,
-        defaultUserStateLeaf
-    )
+    const t = new crypto.SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     return t.root
 }
 
