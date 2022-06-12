@@ -132,7 +132,7 @@ describe('EventFilters', () => {
 
     it('spend reputation should succeed', async () => {
         const { reputationRecords } = await bootstrapRandomUSTree()
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             userId,
             epoch,
             nonce,
@@ -157,7 +157,7 @@ describe('EventFilters', () => {
 
     it('submit get airdrop should succeed', async () => {
         const { reputationRecords } = await bootstrapRandomUSTree()
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             userId,
             epoch,
             reputationRecords,
@@ -218,7 +218,7 @@ describe('EventFilters', () => {
     })
 
     it('submit process attestation proofs should success', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             userId,
             BigInt(epoch),
             BigInt(nonce),
@@ -268,7 +268,7 @@ describe('EventFilters', () => {
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const circuitInputs = await genUserStateTransitionCircuitInput(
+        const circuitInputs = genUserStateTransitionCircuitInput(
             userId,
             epoch
         )

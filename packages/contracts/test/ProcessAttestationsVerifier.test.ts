@@ -32,7 +32,7 @@ describe('Process attestation circuit', function () {
     })
 
     it('successfully process attestations', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             nonce,
@@ -81,7 +81,7 @@ describe('Process attestation circuit', function () {
         for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
             zeroSelectors.push(0)
         }
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             nonce,

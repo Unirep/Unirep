@@ -68,7 +68,7 @@ describe('Verify reputation verifier', function () {
     it('successfully prove a random generated reputation', async () => {
         const attesterIds = Object.keys(reputationRecords)
         attesterId = attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -89,7 +89,7 @@ describe('Verify reputation verifier', function () {
 
     it('mismatched reputation nullifiers and nullifiers amount should fail', async () => {
         const wrongReputationNullifierAmount = repNullifiersAmount + 1
-        const invalidCircuitInputs = await genReputationCircuitInput(
+        const invalidCircuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -113,7 +113,7 @@ describe('Verify reputation verifier', function () {
     })
 
     it('wrong nullifiers should fail', async () => {
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -137,7 +137,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong epoch should fail', async () => {
         const wrongEpoch = epoch + 1
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -163,7 +163,7 @@ describe('Verify reputation verifier', function () {
             nonce + 1,
             EPOCH_TREE_DEPTH
         )
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -184,7 +184,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong attesterId should fail', async () => {
         const wrongAttesterId = attesterId + 1
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -205,7 +205,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong minRep should fail', async () => {
         const wrongMinRep = minRep + 1
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -227,7 +227,7 @@ describe('Verify reputation verifier', function () {
 
     it('wrong graffiti preimage should fail', async () => {
         const wrongGraffitiPreimage = genRandomSalt()
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -261,7 +261,7 @@ describe('Verify reputation verifier', function () {
     })
 
     it('submit reputation nullifiers should succeed', async () => {
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -286,7 +286,7 @@ describe('Verify reputation verifier', function () {
     })
 
     it('submit reputation nullifiers with wrong length of nullifiers should fail', async () => {
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -313,7 +313,7 @@ describe('Verify reputation verifier', function () {
     })
 
     it('submit reputation nullifiers with wrong epoch key should fail', async () => {
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,

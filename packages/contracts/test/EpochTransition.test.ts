@@ -238,7 +238,7 @@ describe('Epoch Transition', function () {
                 // If it it the maximum epoch key nonce, then the next epoch key nonce should not increase
                 if (i == NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1) toNonce = i
                 const { circuitInputs } =
-                    await genProcessAttestationsCircuitInput(
+                    genProcessAttestationsCircuitInput(
                         userId,
                         fromEpoch,
                         BigInt(i),
@@ -295,7 +295,7 @@ describe('Epoch Transition', function () {
     })
 
     it('submit user state transition proofs should succeed', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
+        const circuitInputs = genUserStateTransitionCircuitInput(
             userId,
             fromEpoch
         )

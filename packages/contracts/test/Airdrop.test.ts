@@ -102,7 +102,7 @@ describe('Airdrop', function () {
                 )
             }
             const minPosRep = 19
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userId,
                 currentEpoch,
                 epkNonce,
@@ -172,7 +172,7 @@ describe('Airdrop', function () {
 
         it('user can prove airdrop pos rep', async () => {
             const minPosRep = 19
-            const repProofCircuitInputs = await genReputationCircuitInput(
+            const repProofCircuitInputs = genReputationCircuitInput(
                 userId,
                 currentEpoch,
                 epkNonce,
@@ -190,7 +190,7 @@ describe('Airdrop', function () {
         })
 
         it('user can prove sign up flag', async () => {
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
                 reputationRecords,
@@ -207,7 +207,7 @@ describe('Airdrop', function () {
         })
 
         it('user can use sign up proof to get airdrop (from the attester)', async () => {
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
                 reputationRecords,
@@ -236,7 +236,7 @@ describe('Airdrop', function () {
         })
 
         it('get airdrop through a non-signup attester should fail', async () => {
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
                 reputationRecords,
@@ -256,7 +256,7 @@ describe('Airdrop', function () {
         })
 
         it('get airdrop through a wrong attester should fail', async () => {
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
                 reputationRecords,
@@ -276,7 +276,7 @@ describe('Airdrop', function () {
         })
 
         it('get airdrop through a wrong attesting fee should fail', async () => {
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
                 reputationRecords,
@@ -295,7 +295,7 @@ describe('Airdrop', function () {
 
         it('get airdrop through a wrong epoch should fail', async () => {
             const wrongEpoch = currentEpoch + 1
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 wrongEpoch,
                 reputationRecords,
@@ -319,7 +319,7 @@ describe('Airdrop', function () {
         })
 
         it('submit an invalid epoch key should fail', async () => {
-            const signUpCircuitInputs = await genProveSignUpCircuitInput(
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
                 userId,
                 currentEpoch,
                 reputationRecords,
