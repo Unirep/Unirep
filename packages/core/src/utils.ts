@@ -44,11 +44,11 @@ const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
     return t.root
 }
 
-const computeInitUserStateRoot = async (
+const computeInitUserStateRoot = (
     treeDepth: number,
     leafIdx?: number,
     airdropPosRep?: number
-): Promise<bigint> => {
+): bigint => {
     const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     if (leafIdx && airdropPosRep) {
         const airdropReputation = new Reputation(
@@ -58,7 +58,7 @@ const computeInitUserStateRoot = async (
             BigInt(1)
         )
         const leafValue = airdropReputation.hash()
-        await t.update(BigInt(leafIdx), leafValue)
+        t.update(BigInt(leafIdx), leafValue)
     }
     return t.root
 }
