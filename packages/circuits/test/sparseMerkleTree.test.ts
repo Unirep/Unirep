@@ -46,7 +46,7 @@ describe('Sparse Merkle Tree circuits', function () {
             }
             for (let ind of leafIndicesToInsert) {
                 const leaf = genRandomSalt()
-                await tree.update(BigInt(ind), leaf)
+                tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
             }
 
@@ -55,7 +55,7 @@ describe('Sparse Merkle Tree circuits', function () {
             // Prove first half of existent leaves
             for (let ind of leafIndicesToInsert) {
                 const leaf = leaves[ind]
-                const pathElements = await tree.createProof(BigInt(ind))
+                const pathElements = tree.createProof(BigInt(ind))
                 const circuitInputs = {
                     leaf: leaf,
                     leaf_index: ind,
@@ -72,7 +72,7 @@ describe('Sparse Merkle Tree circuits', function () {
                 else emptyLeafIndices.push(i)
             }
             for (let ind of emptyLeafIndices) {
-                const pathElements = await tree.createProof(BigInt(ind))
+                const pathElements = tree.createProof(BigInt(ind))
                 const circuitInputs = {
                     leaf: ZERO_VALUE,
                     leaf_index: ind,
@@ -86,7 +86,7 @@ describe('Sparse Merkle Tree circuits', function () {
         it('Invalid LeafExists inputs should not work', async () => {
             for (let ind of leafIndicesToInsert) {
                 const leaf = leaves[ind]
-                const pathElements = await tree.createProof(BigInt(ind))
+                const pathElements = tree.createProof(BigInt(ind))
 
                 // Check against wrong leaf
                 const randomVal = genRandomSalt()
@@ -134,7 +134,7 @@ describe('Sparse Merkle Tree circuits', function () {
 
                 // Check against wrong path elements
                 const otherIndex = emptyLeafIndices[0]
-                const wrongPathElements = await tree.createProof(
+                const wrongPathElements = tree.createProof(
                     BigInt(otherIndex)
                 )
                 circuitInputs = {
@@ -175,17 +175,17 @@ describe('Sparse Merkle Tree circuits', function () {
             // Populate the tree
             for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
                 const leaf = genRandomSalt()
-                await tree.update(BigInt(ind), leaf)
+                tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
             }
 
             // Update the tree and verify inclusion proof
             for (let ind = 0; ind < 2 ** circuitEpochTreeDepth; ind++) {
                 const leaf = genRandomSalt()
-                await tree.update(BigInt(ind), leaf)
+                tree.update(BigInt(ind), leaf)
                 leaves[ind] = leaf
 
-                const pathElements = await tree.createProof(BigInt(ind))
+                const pathElements = tree.createProof(BigInt(ind))
 
                 const root = tree.root
 

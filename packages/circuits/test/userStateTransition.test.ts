@@ -62,9 +62,9 @@ describe('User State Transition circuits', function () {
 
             hashChainResult = genRandomSalt()
 
-            await epochTree.update(epochKey, hashChainResult)
+            epochTree.update(epochKey, hashChainResult)
 
-            epochTreePathElements = await epochTree.createProof(epochKey)
+            epochTreePathElements = epochTree.createProof(epochKey)
             epochTreeRoot = epochTree.root
         })
 
@@ -94,7 +94,7 @@ describe('User State Transition circuits', function () {
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
             )
 
-            circuitInputs = await genUserStateTransitionCircuitInput(
+            circuitInputs = genUserStateTransitionCircuitInput(
                 user,
                 epoch
             )

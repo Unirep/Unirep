@@ -44,7 +44,7 @@ describe('User State Transition circuits', function () {
             )
 
             // User state tree
-            const result = await bootstrapRandomUSTree()
+            const result = bootstrapRandomUSTree()
             userStateTree = result.userStateTree
 
             // Global state tree

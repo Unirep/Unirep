@@ -67,7 +67,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterIds = Object.keys(reputationRecords)
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -92,7 +92,7 @@ describe('Prove reputation from attester circuit', function () {
             reputationRecords[attesterId]['posRep'] -
             reputationRecords[attesterId]['negRep']
 
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -118,7 +118,7 @@ describe('Prove reputation from attester circuit', function () {
         const zeroRepNullifiersAmount = 0
         const graffitiPreImage =
             reputationRecords[attesterId]['graffitiPreImage']
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -144,7 +144,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         const zeroMinRep = 0
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -169,7 +169,7 @@ describe('Prove reputation from attester circuit', function () {
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         const notProveGraffiti = 0
         const wrongGraffitiPreImage = genRandomSalt()
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -195,7 +195,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         )
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -225,7 +225,7 @@ describe('Prove reputation from attester circuit', function () {
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         )
         const wrongUserStateRoot = genRandomSalt().toString()
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -266,7 +266,7 @@ describe('Prove reputation from attester circuit', function () {
             BigInt(signUp)
         )
 
-        const circuitInputs1 = await genReputationCircuitInput(
+        const circuitInputs1 = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -296,7 +296,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
             zeroSelector.push(0)
         }
-        const circuitInputs2 = await genReputationCircuitInput(
+        const circuitInputs2 = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -322,7 +322,7 @@ describe('Prove reputation from attester circuit', function () {
 
         // only prove graffiti should success
         const zeroMinRep = 0
-        const circuitInputs3 = await genReputationCircuitInput(
+        const circuitInputs3 = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -360,7 +360,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
             wrongNonceList.push(0)
         }
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -399,7 +399,7 @@ describe('Prove reputation from attester circuit', function () {
         for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
             wrongNonceList.push(0)
         }
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -431,7 +431,7 @@ describe('Prove reputation from attester circuit', function () {
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
         const wrongMinRep = Number(posRep - negRep) + 1
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
@@ -460,7 +460,7 @@ describe('Prove reputation from attester circuit', function () {
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         )
         const wrongGraffitiPreImage = genRandomSalt()
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
             nonce,
