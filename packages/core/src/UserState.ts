@@ -330,10 +330,7 @@ export default class UserState {
     private _genUserStateTreeFromLeaves = (
         leaves: IUserStateLeaf[]
     ): SparseMerkleTree => {
-        const USTree = genNewSMT(
-            this.userStateTreeDepth,
-            defaultUserStateLeaf
-        )
+        const USTree = genNewSMT(this.userStateTreeDepth, defaultUserStateLeaf)
 
         for (const leaf of leaves) {
             USTree.update(leaf.attesterId, leaf.reputation.hash())
@@ -535,9 +532,7 @@ export default class UserState {
         }
 
         // Gen new user state tree
-        const newUserStateTree = this._genUserStateTreeFromLeaves(
-            stateLeaves
-        )
+        const newUserStateTree = this._genUserStateTreeFromLeaves(stateLeaves)
 
         // Gen new GST leaf
         const newGSTLeaf = hashLeftRight(this.commitment, newUserStateTree.root)
@@ -595,8 +590,7 @@ export default class UserState {
         const fromNonce = 0
 
         // User state tree
-        const fromEpochUserStateTree: SparseMerkleTree =
-            this.genUserStateTree()
+        const fromEpochUserStateTree: SparseMerkleTree = this.genUserStateTree()
         const intermediateUserStateTreeRoots: bigint[] = [
             fromEpochUserStateTree.root,
         ]

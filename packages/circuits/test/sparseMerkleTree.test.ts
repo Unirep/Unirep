@@ -134,9 +134,7 @@ describe('Sparse Merkle Tree circuits', function () {
 
                 // Check against wrong path elements
                 const otherIndex = emptyLeafIndices[0]
-                const wrongPathElements = tree.createProof(
-                    BigInt(otherIndex)
-                )
+                const wrongPathElements = tree.createProof(BigInt(otherIndex))
                 circuitInputs = {
                     leaf: leaf,
                     leaf_index: ind,

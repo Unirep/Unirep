@@ -268,10 +268,7 @@ describe('EventFilters', () => {
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const circuitInputs = genUserStateTransitionCircuitInput(
-            userId,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(userId, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs

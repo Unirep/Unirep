@@ -237,13 +237,12 @@ describe('Epoch Transition', function () {
                 if (j == prooftNum - 1) toNonce = i + 1
                 // If it it the maximum epoch key nonce, then the next epoch key nonce should not increase
                 if (i == NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1) toNonce = i
-                const { circuitInputs } =
-                    genProcessAttestationsCircuitInput(
-                        userId,
-                        fromEpoch,
-                        BigInt(i),
-                        BigInt(toNonce)
-                    )
+                const { circuitInputs } = genProcessAttestationsCircuitInput(
+                    userId,
+                    fromEpoch,
+                    BigInt(i),
+                    BigInt(toNonce)
+                )
 
                 const {
                     outputBlindedUserState,

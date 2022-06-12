@@ -473,10 +473,7 @@ export default class UnirepState {
 
         // Add to epoch key hash chain map
         for (let leaf of epochTreeLeaves) {
-            this.epochTree[epoch].update(
-                leaf.epochKey,
-                leaf.hashchainResult
-            )
+            this.epochTree[epoch].update(leaf.epochKey, leaf.hashchainResult)
         }
         this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
         this.epochTreeRoot[epoch] = this.epochTree[epoch].root

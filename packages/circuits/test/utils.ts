@@ -393,9 +393,8 @@ const genProcessAttestationsCircuitInput = (
             oldSignUps.push(reputationRecords[attesterId.toString()]['signUp'])
 
             // Get old reputation record proof
-            const oldReputationRecordProof = userStateTree.createProof(
-                attesterId
-            )
+            const oldReputationRecordProof =
+                userStateTree.createProof(attesterId)
             userStateTreePathElements.push(oldReputationRecordProof)
 
             // Update reputation record
@@ -422,9 +421,7 @@ const genProcessAttestationsCircuitInput = (
             oldGraffities.push(BigInt(0))
             oldSignUps.push(BigInt(0))
 
-            const leafZeroPathElements = userStateTree.createProof(
-                BigInt(0)
-            )
+            const leafZeroPathElements = userStateTree.createProof(BigInt(0))
             userStateTreePathElements.push(leafZeroPathElements)
         }
 

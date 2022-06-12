@@ -94,10 +94,7 @@ describe('User State Transition circuits', function () {
                 `Compile time: ${endCompileTime - startCompileTime} seconds`
             )
 
-            circuitInputs = genUserStateTransitionCircuitInput(
-                user,
-                epoch
-            )
+            circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         })
 
         describe('Process user state transition proof', () => {
