@@ -7,7 +7,7 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/circuits/config'
+} from '@unirep/circuits'
 import { Attestation } from '@unirep/contracts'
 
 import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'

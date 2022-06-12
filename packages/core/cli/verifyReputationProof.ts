@@ -1,12 +1,14 @@
 import base64url from 'base64url'
 import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepState } from '../src'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
-import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
+import {
+    formatProofForSnarkjsVerification,
+    MAX_REPUTATION_BUDGET,
+} from '@unirep/circuits'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyReputationProof', {

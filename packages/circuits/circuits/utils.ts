@@ -11,6 +11,8 @@ import userStateTransitionVkey from '../zksnarkBuild/userStateTransition.vkey.js
 import verifyEpochKeyVkey from '../zksnarkBuild/verifyEpochKey.vkey.json'
 import * as snarkjs from 'snarkjs'
 
+export * from '../config'
+
 const buildPath = '../zksnarkBuild'
 
 const executeCircuit = async (circuit: any, inputs: any): Promise<any> => {

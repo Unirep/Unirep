@@ -14,6 +14,7 @@ import {
     Circuit,
     formatProofForVerifierContract,
     verifyProof,
+    MAX_REPUTATION_BUDGET,
 } from '@unirep/circuits'
 import {
     Attestation,
@@ -21,8 +22,6 @@ import {
     computeProcessAttestationsProofHash,
     UserTransitionProof,
 } from '@unirep/contracts'
-
-import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
     computeEmptyUserStateRoot,

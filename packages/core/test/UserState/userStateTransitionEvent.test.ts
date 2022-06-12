@@ -10,7 +10,7 @@ import {
     computeProcessAttestationsProofHash,
     Unirep,
 } from '@unirep/contracts'
-import { EPOCH_LENGTH } from '@unirep/circuits/config'
+import { EPOCH_LENGTH } from '@unirep/circuits'
 
 import {
     genUnirepState,

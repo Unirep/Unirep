@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import { Circuit, verifyProof } from '@unirep/circuits'
 import { ZkIdentity, genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import { Attestation } from '@unirep/contracts'
 import {
@@ -9,7 +8,9 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/circuits/config'
+    Circuit,
+    verifyProof,
+} from '@unirep/circuits'
 
 const ATTESTING_FEE = '0' as any
 

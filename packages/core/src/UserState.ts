@@ -8,7 +8,6 @@ import {
     SparseMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import { IAttestation, Attestation } from '@unirep/contracts'
 
 import {
@@ -21,7 +20,11 @@ import {
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
 import UnirepState from './UnirepState'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits/config'
+import {
+    Circuit,
+    genProofAndPublicSignals,
+    NUM_ATTESTATIONS_PER_PROOF,
+} from '@unirep/circuits'
 
 export default class UserState {
     public userStateTreeDepth: number

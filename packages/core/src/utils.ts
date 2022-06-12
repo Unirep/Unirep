@@ -1,10 +1,5 @@
 import { BigNumber, ethers } from 'ethers'
 import {
-    Circuit,
-    formatProofForSnarkjsVerification,
-    verifyProof,
-} from '@unirep/circuits'
-import {
     Attestation,
     getUnirepContract,
     Event,
@@ -28,7 +23,12 @@ import {
     REPUTATION_NULLIFIER_DOMAIN,
 } from '../config/nullifierDomainSeparator'
 import { DEFAULT_START_BLOCK } from '../cli/defaults'
-import { EPOCH_TREE_DEPTH } from '@unirep/circuits/config'
+import {
+    Circuit,
+    formatProofForSnarkjsVerification,
+    verifyProof,
+    EPOCH_TREE_DEPTH,
+} from '@unirep/circuits'
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),

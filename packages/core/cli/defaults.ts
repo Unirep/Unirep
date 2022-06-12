@@ -1,7 +1,7 @@
 //  TODO: better setup for cli Ethereum client.
 // import { ALCHEMY_API_KEY } from '../config/privateKey'
 
-import { EPOCH_LENGTH } from '@unirep/circuits/config'
+import { EPOCH_LENGTH } from '@unirep/circuits'
 import { ethers } from 'ethers'
 
 // apply the api key from https://www.alchemy.com/
