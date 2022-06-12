@@ -28,6 +28,11 @@ const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
 
+type UserStates = {
+    userStateTree: SparseMerkleTree
+    reputationRecords: { [key: string]: IReputation }
+}
+
 interface IAttestation {
     attesterId: bigint
     posRep: bigint
@@ -87,6 +92,7 @@ interface IReputation {
     posRep: bigint
     negRep: bigint
     graffiti: bigint
+    signUp: bigint
 }
 
 class Reputation implements IReputation {
@@ -263,7 +269,7 @@ const genStartTransitionCircuitInput = (
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
+const bootstrapRandomUSTree = async (): Promise<UserStates> => {
     const expectedNumAttestationsMade = 5
     const userStateTree = genNewUserStateTree()
     let reputationRecords = {}
@@ -286,7 +292,7 @@ const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
             reputationRecords[attesterId.toString()].hash()
         )
     }
-    return userStateTree
+    return { userStateTree, reputationRecords }
 }
 
 const genProcessAttestationsCircuitInput = async (
@@ -589,12 +595,17 @@ const genReputationCircuitInput = async (
     _graffitiPreImage?
 ) => {
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-    const repNullifiersAmount =
-        _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
-    const minRep = _minRep === undefined ? 0 : _minRep
-    const proveGraffiti = _proveGraffiti === undefined ? 0 : _proveGraffiti
-    const graffitiPreImage =
-        _graffitiPreImage === undefined ? 0 : _graffitiPreImage
+    const repNullifiersAmount = _repNullifiersAmount ?? 0
+    const minRep = _minRep ?? 0
+    const proveGraffiti = _proveGraffiti ?? 0
+    let graffitiPreImage
+    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
+        graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
+    }
+    graffitiPreImage = _graffitiPreImage ?? 0
+    if (reputationRecords[attesterId] === undefined) {
+        reputationRecords[attesterId] = Reputation.default()
+    }
 
     // User state tree
     const userStateTree = genNewUserStateTree()
@@ -663,6 +674,9 @@ const genProveSignUpCircuitInput = async (
 ) => {
     const nonce = 0
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+    if (reputationRecords[attesterId] === undefined) {
+        reputationRecords[attesterId] = Reputation.default()
+    }
 
     // User state tree
     const userStateTree = genNewUserStateTree()

@@ -44,7 +44,8 @@ describe('User State Transition circuits', function () {
             )
 
             // User state tree
-            userStateTree = await bootstrapRandomUSTree()
+            const result = await bootstrapRandomUSTree()
+            userStateTree = result.userStateTree
 
             // Global state tree
             GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)

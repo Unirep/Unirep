@@ -676,18 +676,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             'Unirep: invalid public signals when verifyEpochKeyValidity'
         );
 
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
-
         // Verify the proof
-        proof.isValid = epkValidityVerifier.verifyProof(
-            proof.a,
-            proof.b,
-            proof.c,
-            publicSignals
-        );
-        return proof.isValid;
+        return epkValidityVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
@@ -716,18 +706,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             'Unirep: invalid public signals when verify StartTransition Proof'
         );
 
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(_proof);
-
         // Verify the proof
-        proof.isValid = startTransitionVerifier.verifyProof(
-            proof.a,
-            proof.b,
-            proof.c,
-            publicSignals
-        );
-        return proof.isValid;
+        return startTransitionVerifier.verifyProof(_proof, publicSignals);
     }
 
     /**
@@ -755,18 +735,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             'Unirep: invalid public signals when verify ProcessAttestation Proof'
         );
 
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(_proof);
-
         // Verify the proof
-        proof.isValid = processAttestationsVerifier.verifyProof(
-            proof.a,
-            proof.b,
-            proof.c,
-            publicSignals
-        );
-        return proof.isValid;
+        return processAttestationsVerifier.verifyProof(_proof, publicSignals);
     }
 
     /**
@@ -813,18 +783,9 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             'Unirep: invalid public signals when verify UserStateTransition'
         );
 
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
-
         // Verify the proof
-        proof.isValid = userStateTransitionVerifier.verifyProof(
-            proof.a,
-            proof.b,
-            proof.c,
-            publicSignals
-        );
-        return proof.isValid;
+        return
+            userStateTransitionVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
@@ -863,18 +824,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             'Unirep: invalid public signals when verify Reputation'
         );
 
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
-
         // Verify the proof
-        proof.isValid = reputationVerifier.verifyProof(
-            proof.a,
-            proof.b,
-            proof.c,
-            publicSignals
-        );
-        return proof.isValid;
+        return reputationVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
@@ -904,39 +855,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             'Unirep: invalid public signals when verify UserSignUp'
         );
 
-        ProofsRelated memory proof;
-        // Unpack the snark proof
-        (proof.a, proof.b, proof.c) = unpackProof(input.proof);
-
         // Verify the proof
-        proof.isValid = userSignUpVerifier.verifyProof(
-            proof.a,
-            proof.b,
-            proof.c,
-            publicSignals
-        );
-        return proof.isValid;
-    }
-
-    /**
-     * A helper function to convert an array of 8 uint256 values into the a, b,
-     * and c array values that the zk-SNARK verifier's verifyProof accepts.
-     * @param proof The 8-length array of the proof
-     */
-    function unpackProof(uint256[8] memory proof)
-        public
-        pure
-        returns (
-            uint256[2] memory,
-            uint256[2][2] memory,
-            uint256[2] memory
-        )
-    {
-        return (
-            [proof[0], proof[1]],
-            [[proof[2], proof[3]], [proof[4], proof[5]]],
-            [proof[6], proof[7]]
-        );
+        return userSignUpVerifier.verifyProof(input.proof, publicSignals);
     }
 
     /**
