@@ -107,7 +107,6 @@ describe('Attesting', () => {
     })
 
     it('submit attestation should succeed', async () => {
-        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(
@@ -137,7 +136,6 @@ describe('Attesting', () => {
     })
 
     it('attest to same epoch key again should succeed', async () => {
-        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         // Same identity nullifier, epoch and nonce will result in the same epoch key
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -160,7 +158,6 @@ describe('Attesting', () => {
     })
 
     it('attestation with incorrect attesterId should fail', async () => {
-        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -183,7 +180,6 @@ describe('Attesting', () => {
     })
 
     it('attestation with invalid repuation should fail', async () => {
-        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -257,7 +253,6 @@ describe('Attesting', () => {
     })
 
     it('attestation with zero proof index should fail', async () => {
-        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -281,7 +276,6 @@ describe('Attesting', () => {
     })
 
     it('attestation with non-existed proof index should fail', async () => {
-        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -305,7 +299,6 @@ describe('Attesting', () => {
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {
-        let epoch = await unirepContract.currentEpoch()
         // Increment nonce to get different epoch key
         let nonce = 1
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
@@ -345,7 +338,6 @@ describe('Attesting', () => {
 
         let unirepContractCalledByNonAttester =
             unirepContract.connect(nonAttester)
-        let epoch = await unirepContract.currentEpoch()
         let nonce = 0
         let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
         let attestation: Attestation = new Attestation(

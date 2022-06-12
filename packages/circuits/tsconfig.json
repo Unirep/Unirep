@@ -4,5 +4,5 @@
         "outDir": "./dist"
     },
     "exclude": ["node_modules/**"],
-    "include": ["./circuits", "./test", "./config", "./scripts"]
+    "include": ["./circuits", "./config"]
 }
