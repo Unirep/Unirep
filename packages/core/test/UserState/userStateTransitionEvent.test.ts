@@ -31,7 +31,7 @@ describe('User state transition events in Unirep User State', async function () 
     let attestations: Reputation[] = []
 
     let unirepContract: Unirep
-    let unirepContractCalledByAttester: Unirep
+
     let treeDepths
     let numEpochKeyNoncePerEpoch
     let maxReputationBudget
@@ -63,10 +63,10 @@ describe('User state transition events in Unirep User State', async function () 
         it('attester sign up', async () => {
             attester['acct'] = accounts[2]
             attester['addr'] = await attester['acct'].getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(
-                attester['acct']
-            )
-            let tx = await unirepContractCalledByAttester.attesterSignUp()
+
+            let tx = await unirepContract
+                .connect(attester['acct'])
+                .attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
             attesterId = (
@@ -76,9 +76,9 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('attester set airdrop amount', async () => {
             const airdropPosRep = 10
-            const tx = await unirepContractCalledByAttester.setAirdropAmount(
-                airdropPosRep
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .setAirdropAmount(airdropPosRep)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const airdroppedAmount = await unirepContract.airdropAmount(
@@ -96,15 +96,17 @@ describe('User state transition events in Unirep User State', async function () 
                 userIds.push(id)
                 userCommitments.push(commitment)
 
-                const tx = await unirepContractCalledByAttester.userSignUp(
-                    commitment
-                )
+                const tx = await unirepContract
+                    .connect(attester['acct'])
+                    .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
-                    unirepContractCalledByAttester.userSignUp(commitment)
-                ).to.be.revertedWith('Unirep: the user has already signed up')
+                    unirepContract
+                        .connect(attester['acct'])
+                        .userSignUp(commitment)
+                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -168,7 +170,9 @@ describe('User state transition events in Unirep User State', async function () 
                 EPOCH_LENGTH,
             ])
             // Begin epoch transition
-            let tx = await unirepContractCalledByAttester.beginEpochTransition()
+            let tx = await unirepContract
+                .connect(attester['acct'])
+                .beginEpochTransition()
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
             console.log(
@@ -466,13 +470,15 @@ describe('User state transition events in Unirep User State', async function () 
 
                 const attestation = genRandomAttestation()
                 attestation.attesterId = attesterId
-                tx = await unirepContractCalledByAttester.submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
+                tx = await unirepContract
+                    .connect(attester['acct'])
+                    .submitAttestation(
+                        attestation,
+                        epochKey,
+                        proofIndex,
+                        fromProofIndex,
+                        { value: attestingFee }
+                    )
                 receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
                 attestations[userIdx].update(
@@ -509,7 +515,9 @@ describe('User state transition events in Unirep User State', async function () 
                 EPOCH_LENGTH,
             ])
             // Begin epoch transition
-            let tx = await unirepContractCalledByAttester.beginEpochTransition()
+            let tx = await unirepContract
+                .connect(attester['acct'])
+                .beginEpochTransition()
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
             console.log(

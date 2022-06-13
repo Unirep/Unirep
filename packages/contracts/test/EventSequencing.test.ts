@@ -23,7 +23,7 @@ describe('EventSequencing', () => {
     let userIds: any[] = [],
         userCommitments: any[] = []
 
-    let attester, attesterAddress, attesterId, unirepContractCalledByAttester
+    let attester, attesterAddress, attesterId
     const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
@@ -47,8 +47,8 @@ describe('EventSequencing', () => {
         // Attester sign up, no events emitted
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
-        tx = await unirepContractCalledByAttester.attesterSignUp()
+
+        tx = await unirepContract.connect(attester).attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         attesterId = await unirepContract.attesters(attesterAddress)
@@ -85,21 +85,23 @@ describe('EventSequencing', () => {
         for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
             reputationNullifiers.push(BigInt(255))
         }
-        tx = await unirepContractCalledByAttester.spendReputation(
-            [
-                reputationNullifiers,
-                currentEpoch.toNumber(),
-                epochKey,
-                genRandomSalt(),
-                attesterId.toNumber(),
-                0,
-                minRep,
-                proveGraffiti,
-                genRandomSalt(),
-                proof,
-            ],
-            { value: attestingFee }
-        )
+        tx = await unirepContract
+            .connect(attester)
+            .spendReputation(
+                [
+                    reputationNullifiers,
+                    currentEpoch.toNumber(),
+                    epochKey,
+                    genRandomSalt(),
+                    attesterId.toNumber(),
+                    0,
+                    minRep,
+                    proveGraffiti,
+                    genRandomSalt(),
+                    proof,
+                ] as any,
+                { value: attestingFee }
+            )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         expectedEventsInOrder.push(Event.AttestationSubmitted)
@@ -115,13 +117,15 @@ describe('EventSequencing', () => {
             genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
-        tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            epochKeyProofIndex,
-            senderPfIdx,
-            { value: attestingFee }
-        )
+        tx = await unirepContract
+            .connect(attester)
+            .submitAttestation(
+                attestation,
+                epochKey as BigNumberish,
+                epochKeyProofIndex,
+                senderPfIdx,
+                { value: attestingFee }
+            )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         expectedEventsInOrder.push(Event.AttestationSubmitted)
@@ -218,13 +222,15 @@ describe('EventSequencing', () => {
             publicSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof)
         )
-        tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            epochKeyProofIndex,
-            senderPfIdx,
-            { value: attestingFee }
-        )
+        tx = await unirepContract
+            .connect(attester)
+            .submitAttestation(
+                attestation,
+                epochKey as BigNumberish,
+                epochKeyProofIndex,
+                senderPfIdx,
+                { value: attestingFee }
+            )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         expectedEventsInOrder.push(Event.AttestationSubmitted)
