@@ -1,11 +1,5 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers'
-import { hash5, SnarkProof } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForSnarkjsVerification,
-    formatProofForVerifierContract,
-    verifyProof,
-} from '@unirep/circuits'
+import { hash5 } from '@unirep/crypto'
 
 import {
     MAX_USERS,
@@ -37,8 +31,6 @@ import {
     UserStateTransitionVerifier__factory,
 } from '../typechain'
 
-export type Field = BigNumberish
-
 enum Event {
     UserSignedUp,
     UserStateTransitioned,
@@ -61,44 +53,9 @@ interface IAttestation {
     hash(): BigInt
 }
 
-interface IEpochKeyProof {
-    globalStateTree: Field
-    epoch: Field
-    epochKey: Field
-    proof: Field[]
-}
-
-interface IReputationProof {
-    repNullifiers: Field[]
-    epoch: Field
-    epochKey: Field
-    globalStateTree: Field
-    attesterId: Field
-    proveReputationAmount: Field
-    minRep: Field
-    proveGraffiti: Field
-    graffitiPreImage: Field
-    proof: Field[]
-}
-
-interface ISignUpProof {
-    epoch: Field
-    epochKey: Field
-    globalStateTree: Field
-    attesterId: Field
-    userHasSignedUp: Field
-    proof: Field[]
-}
-
-interface IUserTransitionProof {
-    newGlobalStateTreeLeaf: Field
-    epkNullifiers: Field[]
-    transitionFromEpoch: Field
-    blindedUserStates: Field[]
-    fromGlobalStateTree: Field
-    blindedHashChains: Field[]
-    fromEpochTree: Field
-    proof: Field[]
+interface IProofStruct {
+    publicSignals: string[]
+    proof: string[]
 }
 
 class Attestation implements IAttestation {
@@ -133,249 +90,11 @@ class Attestation implements IAttestation {
     }
 }
 
-// the struct EpochKeyProof in UnirepTypes
-class EpochKeyProof implements IEpochKeyProof {
-    public globalStateTree: Field
-    public epoch: Field
-    public epochKey: Field
-    public proof: Field[]
-    private publicSignals: Field[]
-
-    constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.globalStateTree = _publicSignals[0]
-        this.epoch = _publicSignals[1]
-        this.epochKey = _publicSignals[2]
-        this.proof = formattedProof
-        this.publicSignals = _publicSignals
-    }
-
-    public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
-            this.proof.map((n) => n.toString())
-        )
-        return verifyProof(
-            Circuit.verifyEpochKey,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
-        )
-    }
-
-    public hash = () => {
-        const iface = new ethers.utils.Interface(UnirepFactory.abi)
-        const abiEncoder = iface.encodeFunctionData('hashEpochKeyProof', [this])
-        return ethers.utils.keccak256(rmFuncSigHash(abiEncoder))
-    }
-}
-
-class ReputationProof implements IReputationProof {
-    public repNullifiers: Field[]
-    public epoch: Field
-    public epochKey: Field
-    public globalStateTree: Field
-    public attesterId: Field
-    public proveReputationAmount: Field
-    public minRep: Field
-    public proveGraffiti: Field
-    public graffitiPreImage: Field
-    public proof: Field[]
-    private publicSignals: Field[]
-
-    constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.repNullifiers = _publicSignals.slice(0, MAX_REPUTATION_BUDGET)
-        this.epoch = _publicSignals[MAX_REPUTATION_BUDGET]
-        this.epochKey = _publicSignals[MAX_REPUTATION_BUDGET + 1]
-        this.globalStateTree = _publicSignals[MAX_REPUTATION_BUDGET + 2]
-        this.attesterId = _publicSignals[MAX_REPUTATION_BUDGET + 3]
-        this.proveReputationAmount = _publicSignals[MAX_REPUTATION_BUDGET + 4]
-        this.minRep = _publicSignals[MAX_REPUTATION_BUDGET + 5]
-        this.proveGraffiti = _publicSignals[MAX_REPUTATION_BUDGET + 6]
-        this.graffitiPreImage = _publicSignals[MAX_REPUTATION_BUDGET + 7]
-        this.proof = formattedProof
-        this.publicSignals = _publicSignals
-    }
-
-    public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
-            this.proof.map((n) => n.toString())
-        )
-        return verifyProof(
-            Circuit.proveReputation,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
-        )
-    }
-
-    public hash = () => {
-        // array length should be fixed
-        const abiEncoder = ethers.utils.defaultAbiCoder.encode(
-            [
-                `tuple(uint256[${MAX_REPUTATION_BUDGET}] repNullifiers,
-                    uint256 epoch,
-                    uint256 epochKey,
-                    uint256 globalStateTree,
-                    uint256 attesterId,
-                    uint256 proveReputationAmount,
-                    uint256 minRep,
-                    uint256 proveGraffiti,
-                    uint256 graffitiPreImage,
-                    uint256[8] proof)
-            `,
-            ],
-            [this]
-        )
-        return ethers.utils.keccak256(abiEncoder)
-    }
-}
-
-class SignUpProof implements ISignUpProof {
-    public epoch: Field
-    public epochKey: Field
-    public globalStateTree: Field
-    public attesterId: Field
-    public userHasSignedUp: Field
-    public proof: Field[]
-    private publicSignals: Field[]
-
-    constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.epoch = _publicSignals[0]
-        this.epochKey = _publicSignals[1]
-        this.globalStateTree = _publicSignals[2]
-        this.attesterId = _publicSignals[3]
-        this.userHasSignedUp = _publicSignals[4]
-        this.proof = formattedProof
-        this.publicSignals = _publicSignals
-    }
-
-    public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
-            this.proof.map((n) => n.toString())
-        )
-        return verifyProof(
-            Circuit.proveUserSignUp,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
-        )
-    }
-
-    public hash = () => {
-        const iface = new ethers.utils.Interface(UnirepFactory.abi)
-        const abiEncoder = iface.encodeFunctionData('hashSignUpProof', [this])
-        return ethers.utils.keccak256(rmFuncSigHash(abiEncoder))
-    }
-}
-
-class UserTransitionProof implements IUserTransitionProof {
-    public newGlobalStateTreeLeaf: Field
-    public epkNullifiers: Field[]
-    public transitionFromEpoch: Field
-    public blindedUserStates: Field[]
-    public fromGlobalStateTree: Field
-    public blindedHashChains: Field[]
-    public fromEpochTree: Field
-    public proof: Field[]
-    private publicSignals: Field[]
-
-    constructor(_publicSignals: Field[], _proof: SnarkProof) {
-        const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.newGlobalStateTreeLeaf = _publicSignals[0]
-        this.epkNullifiers = []
-        this.blindedUserStates = []
-        this.blindedHashChains = []
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-            this.epkNullifiers.push(_publicSignals[1 + i])
-        }
-        this.transitionFromEpoch =
-            _publicSignals[1 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
-        this.blindedUserStates.push(
-            _publicSignals[2 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
-        )
-        this.blindedUserStates.push(
-            _publicSignals[3 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
-        )
-        this.fromGlobalStateTree =
-            _publicSignals[4 + NUM_EPOCH_KEY_NONCE_PER_EPOCH]
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-            this.blindedHashChains.push(
-                _publicSignals[5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH + i]
-            )
-        }
-        this.fromEpochTree =
-            _publicSignals[5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 2]
-        this.proof = formattedProof
-        this.publicSignals = _publicSignals
-    }
-
-    public verify = (): Promise<boolean> => {
-        const proof_ = formatProofForSnarkjsVerification(
-            this.proof.map((n) => n.toString())
-        )
-        return verifyProof(
-            Circuit.userStateTransition,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
-        )
-    }
-
-    public hash = () => {
-        // array length should be fixed
-        const abiEncoder = ethers.utils.defaultAbiCoder.encode(
-            [
-                `tuple(uint256 newGlobalStateTreeLeaf,
-                    uint256[${NUM_EPOCH_KEY_NONCE_PER_EPOCH}] epkNullifiers,
-                    uint256 transitionFromEpoch,
-                    uint256[2] blindedUserStates,
-                    uint256 fromGlobalStateTree,
-                    uint256[${NUM_EPOCH_KEY_NONCE_PER_EPOCH}] blindedHashChains,
-                    uint256 fromEpochTree,
-                    uint256[8] proof)
-            `,
-            ],
-            [this]
-        )
-        return ethers.utils.keccak256(abiEncoder)
-    }
-}
-
-const computeStartTransitionProofHash = (
-    blindedUserState: Field,
-    blindedHashChain: Field,
-    globalStateTree: Field,
-    proof: Field[]
-) => {
-    const iface = new ethers.utils.Interface(UnirepFactory.abi)
-    const abiEncoder = iface.encodeFunctionData('hashStartTransitionProof', [
-        blindedUserState,
-        blindedHashChain,
-        globalStateTree,
-        proof,
-    ])
-    return ethers.utils.keccak256(rmFuncSigHash(abiEncoder))
-}
-
-const computeProcessAttestationsProofHash = (
-    outputBlindedUserState: Field,
-    outputBlindedHashChain: Field,
-    inputBlindedUserState: Field,
-    proof: Field[]
-) => {
-    const iface = new ethers.utils.Interface(UnirepFactory.abi)
-    const abiEncoder = iface.encodeFunctionData(
-        'hashProcessAttestationsProof',
-        [
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof,
-        ]
+const hashProof = (publicSignals: string[], proof: string[]) => {
+    return ethers.utils.solidityKeccak256(
+        ['uint256[]', 'uint256[8]'],
+        [publicSignals, proof]
     )
-    return ethers.utils.keccak256(rmFuncSigHash(abiEncoder))
-}
-
-const rmFuncSigHash = (abiEncoder: string) => {
-    return '0x' + abiEncoder.slice(10)
 }
 
 const deployUnirep = async (
@@ -478,21 +197,20 @@ const getUnirepContract = (
     return UnirepFactory.connect(addressOrName, signerOrProvider)
 }
 
+export * from './proof/EpochKeyProof'
+export * from './proof/ReputationProof'
+export * from './proof/SignUpProof'
+export * from './proof/StartTransitionProof'
+export * from './proof/ProcessAttestationsProof'
+export * from './proof/UserStateTransitionProof'
+
 export {
     Event,
     AttestationEvent,
     IAttestation,
-    IEpochKeyProof,
-    IReputationProof,
-    ISignUpProof,
-    IUserTransitionProof,
+    IProofStruct,
     Attestation,
-    EpochKeyProof,
-    ReputationProof,
-    SignUpProof,
-    UserTransitionProof,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
+    hashProof,
     deployUnirep,
     getUnirepContract,
     UnirepFactory,
