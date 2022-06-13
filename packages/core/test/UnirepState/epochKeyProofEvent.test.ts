@@ -28,7 +28,7 @@ describe('Epoch key proof events in Unirep State', function () {
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
-    let unirepContractCalledByAttester: Unirep
+
     let treeDepths: any
     let numEpochKeyNoncePerEpoch
 
@@ -56,10 +56,10 @@ describe('Epoch key proof events in Unirep State', function () {
         it('attester sign up', async () => {
             attester['acct'] = accounts[2]
             attester['addr'] = await attester['acct'].getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(
-                attester['acct']
-            )
-            let tx = await unirepContractCalledByAttester.attesterSignUp()
+
+            let tx = await unirepContract
+                .connect(attester['acct'])
+                .attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
             attesterId = await unirepContract.attesters(attester['addr'])
@@ -67,9 +67,9 @@ describe('Epoch key proof events in Unirep State', function () {
 
         it('attester set airdrop amount', async () => {
             const airdropPosRep = 10
-            const tx = await unirepContractCalledByAttester.setAirdropAmount(
-                airdropPosRep
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .setAirdropAmount(airdropPosRep)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const airdroppedAmount = await unirepContract.airdropAmount(
@@ -87,15 +87,17 @@ describe('Epoch key proof events in Unirep State', function () {
                 userIds.push(id)
                 userCommitments.push(commitment)
 
-                const tx = await unirepContractCalledByAttester.userSignUp(
-                    commitment
-                )
+                const tx = await unirepContract
+                    .connect(attester['acct'])
+                    .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
-                    unirepContractCalledByAttester.userSignUp(commitment)
-                ).to.be.revertedWith('Unirep: the user has already signed up')
+                    unirepContract
+                        .connect(attester['acct'])
+                        .userSignUp(commitment)
+                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -202,19 +204,21 @@ describe('Epoch key proof events in Unirep State', function () {
             // submit the same proof twice should fail
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith('Unirep: the proof has been submitted before')
+            ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -267,13 +271,15 @@ describe('Epoch key proof events in Unirep State', function () {
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -328,13 +334,15 @@ describe('Epoch key proof events in Unirep State', function () {
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                proofIndex,
-                fromProofIndex,
-                { value: attestingFee }
-            )
+            const tx = await unirepContract
+                .connect(attester['acct'])
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    proofIndex,
+                    fromProofIndex,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -375,9 +383,7 @@ describe('Epoch key proof events in Unirep State', function () {
 
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith(
-                'Unirep: submit an epoch key proof with incorrect epoch'
-            )
+            ).to.be.revertedWith('EpochNotMatch()')
         })
     })
 })

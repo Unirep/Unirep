@@ -35,7 +35,7 @@ describe('Epoch Transition', function () {
 
     let userId, userCommitment
 
-    let attester, attesterAddress, attesterId, unirepContractCalledByAttester
+    let attester, attesterAddress, attesterId
 
     const signedUpInLeaf = 1
     let epochKeyProofIndex
@@ -69,8 +69,8 @@ describe('Epoch Transition', function () {
         console.log('Attester sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
-        tx = await unirepContractCalledByAttester.attesterSignUp()
+
+        tx = await unirepContract.connect(attester).attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -111,13 +111,15 @@ describe('Epoch Transition', function () {
                 genRandomSalt(),
                 BigInt(signedUpInLeaf)
             )
-            tx = await unirepContractCalledByAttester.submitAttestation(
-                attestation,
-                epochKey,
-                epochKeyProofIndex,
-                senderPfIdx,
-                { value: attestingFee }
-            )
+            tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    epochKeyProofIndex,
+                    senderPfIdx,
+                    { value: attestingFee }
+                )
             receipt = await tx.wait()
             expect(receipt.status).equal(1)
         }
@@ -125,7 +127,7 @@ describe('Epoch Transition', function () {
 
     it('premature epoch transition should fail', async () => {
         await expect(unirepContract.beginEpochTransition()).to.be.revertedWith(
-            'Unirep: epoch not yet ended'
+            'EpochNotEndYet()'
         )
     })
 
@@ -140,7 +142,7 @@ describe('Epoch Transition', function () {
             await unirepContract.epochTransitionCompensation(attesterAddress)
         ).to.be.equal(0)
         // Begin epoch transition
-        let tx = await unirepContractCalledByAttester.beginEpochTransition()
+        let tx = await unirepContract.connect(attester).beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
         console.log(
@@ -343,7 +345,9 @@ describe('Epoch Transition', function () {
         expect(compensation).to.gt(0)
         // Set gas price to 0 so attester will not be charged transaction fee
         await expect(() =>
-            unirepContractCalledByAttester.collectEpochTransitionCompensation()
+            unirepContract
+                .connect(attester)
+                .collectEpochTransitionCompensation()
         ).to.changeEtherBalance(attester, compensation)
         expect(
             await unirepContract.epochTransitionCompensation(attesterAddress)

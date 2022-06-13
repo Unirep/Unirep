@@ -1,10 +1,13 @@
 import { HardhatUserConfig } from 'hardhat/config'
-import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
+import 'hardhat-gas-reporter'
 
 const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',
+    paths: {
+        artifacts: '../contracts/build/artifacts',
+    },
     networks: {
         hardhat: {
             blockGasLimit: 12000000,
@@ -14,10 +17,17 @@ const config: HardhatUserConfig = {
         },
     },
     solidity: {
-        version: '0.8.0',
-        settings: {
-            optimizer: { enabled: true, runs: 200 },
-        },
+        compilers: [
+            {
+                version: '0.8.0',
+                settings: {
+                    optimizer: { enabled: true, runs: 200 },
+                },
+            },
+        ],
+    },
+    gasReporter: {
+        enabled: process.env.REPORT_GAS ? true : false,
     },
 }
 
