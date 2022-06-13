@@ -565,7 +565,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      */
     function startUserStateTransition(
         uint256[] memory publicSignals,
-        uint256[8] calldata proof
+        uint256[8] memory proof
     ) external {
         bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
 
@@ -593,7 +593,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      */
     function processAttestations(
         uint256[] memory publicSignals,
-        uint256[8] calldata proof
+        uint256[8] memory proof
     ) external {
         bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
 
@@ -626,7 +626,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      */
     function updateUserStateRoot(
         uint256[] memory publicSignals,
-        uint256[8] calldata proof,
+        uint256[8] memory proof,
         uint256[] memory proofIndexRecords
     ) external {
         bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
