@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, SnarkPublicSignals, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
     EPOCH_LENGTH,
@@ -67,10 +67,13 @@ describe('EventSequencing', () => {
         }
         let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         let epochKeyProof = new EpochKeyProof(
-            publicSignals as BigNumberish[],
+            publicSignals as SnarkPublicSignals,
             formatProofForSnarkjsVerification(proof)
         )
-        tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+        tx = await unirepContract.submitEpochKeyProof(
+            epochKeyProof.publicSignals,
+            epochKeyProof.proof
+        )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         const epochKeyProofIndex = await unirepContract.getProofIndex(
@@ -79,25 +82,17 @@ describe('EventSequencing', () => {
         expect(epochKeyProof).not.equal(null)
 
         // 2. Submit reputation nullifiers
-        const reputationNullifiers: BigInt[] = []
-        const minRep = 0
-        const proveGraffiti = 1
-        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
-            reputationNullifiers.push(BigInt(255))
+        publicSignals = []
+        for (let i = 0; i < MAX_REPUTATION_BUDGET + 8; i++) {
+            publicSignals.push(BigInt(255))
         }
+        publicSignals[MAX_REPUTATION_BUDGET] = currentEpoch
+        publicSignals[MAX_REPUTATION_BUDGET + 1] = epochKey
+        publicSignals[MAX_REPUTATION_BUDGET + 3] = attesterId
+        publicSignals[MAX_REPUTATION_BUDGET + 4] = BigInt(0)
         tx = await unirepContractCalledByAttester.spendReputation(
-            [
-                reputationNullifiers,
-                currentEpoch.toNumber(),
-                epochKey,
-                genRandomSalt(),
-                attesterId.toNumber(),
-                0,
-                minRep,
-                proveGraffiti,
-                genRandomSalt(),
-                proof,
-            ],
+            publicSignals,
+            proof,
             { value: attestingFee }
         )
         receipt = await tx.wait()
@@ -151,6 +146,7 @@ describe('EventSequencing', () => {
 
         // 6. Second user starts transition
         let transitionFromEpoch = 1
+        publicSignals = [genRandomSalt(), genRandomSalt(), genRandomSalt()]
         const epkNullifiers: BigInt[] = []
         const blindedHashChains: BigInt[] = []
         const blindedUserStates: BigInt[] = []
@@ -163,35 +159,31 @@ describe('EventSequencing', () => {
             blindedUserStates.push(BigInt(255))
         }
         tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            publicSignals as BigNumberish[],
             proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // 7. Second user processes attestations
+        publicSignals = [genRandomSalt(), genRandomSalt(), genRandomSalt()]
         tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            publicSignals as BigNumberish[],
             proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        publicSignals = []
+        for (let i = 0; i < 5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 2; i++) {
+            publicSignals.push(BigInt(255))
+        }
+
+        publicSignals[1 + NUM_EPOCH_KEY_NONCE_PER_EPOCH] =
+            BigInt(transitionFromEpoch)
         tx = await unirepContract.updateUserStateRoot(
-            {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
-                epkNullifiers: epkNullifiers as BigNumberish[],
-                transitionFromEpoch: transitionFromEpoch as BigNumberish,
-                blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
-                blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
-                proof: proof as BigNumberish[],
-            },
+            publicSignals as BigNumberish[],
+            proof,
             indexes as BigNumberish[]
         )
         receipt = await tx.wait()
@@ -215,7 +207,7 @@ describe('EventSequencing', () => {
         )
         publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         epochKeyProof = new EpochKeyProof(
-            publicSignals as BigNumberish[],
+            publicSignals as SnarkPublicSignals,
             formatProofForSnarkjsVerification(proof)
         )
         tx = await unirepContractCalledByAttester.submitAttestation(
@@ -250,37 +242,34 @@ describe('EventSequencing', () => {
 
         // 12. First user starts transition
         transitionFromEpoch = 1
+        publicSignals = [genRandomSalt(), genRandomSalt(), genRandomSalt()]
         tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            publicSignals as BigNumberish[],
             proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // 13. First user processes attestations
+        publicSignals = [genRandomSalt(), genRandomSalt(), genRandomSalt()]
         tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            publicSignals as BigNumberish[],
             proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // 14. First user transition
+        publicSignals = []
+        for (let i = 0; i < 5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 2; i++) {
+            publicSignals.push(BigInt(244))
+        }
+
+        publicSignals[1 + NUM_EPOCH_KEY_NONCE_PER_EPOCH] =
+            BigInt(transitionFromEpoch)
         tx = await unirepContract.updateUserStateRoot(
-            {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
-                epkNullifiers: epkNullifiers as BigNumberish[],
-                transitionFromEpoch: transitionFromEpoch as BigNumberish,
-                blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
-                blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
-                proof: proof as BigNumberish[],
-            },
+            publicSignals as BigNumberish[],
+            proof,
             indexes as BigNumberish[]
         )
         receipt = await tx.wait()
@@ -290,37 +279,34 @@ describe('EventSequencing', () => {
 
         // 15. Second user starts transition
         transitionFromEpoch = 2
+        publicSignals = [genRandomSalt(), genRandomSalt(), genRandomSalt()]
         tx = await unirepContract.startUserStateTransition(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            publicSignals as BigNumberish[],
             proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // 16. Second user processes attestations
+        publicSignals = [genRandomSalt(), genRandomSalt(), genRandomSalt()]
         tx = await unirepContract.processAttestations(
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
-            genRandomSalt() as BigNumberish,
+            publicSignals as BigNumberish[],
             proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         // 17. Second user transition
+        publicSignals = []
+        for (let i = 0; i < 5 + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 2; i++) {
+            publicSignals.push(BigInt(233))
+        }
+
+        publicSignals[1 + NUM_EPOCH_KEY_NONCE_PER_EPOCH] =
+            BigInt(transitionFromEpoch)
         tx = await unirepContract.updateUserStateRoot(
-            {
-                newGlobalStateTreeLeaf: genRandomSalt() as BigNumberish,
-                epkNullifiers: epkNullifiers as BigNumberish[],
-                transitionFromEpoch: transitionFromEpoch as BigNumberish,
-                blindedUserStates: blindedUserStates as BigNumberish[],
-                fromGlobalStateTree: genRandomSalt() as BigNumberish,
-                blindedHashChains: blindedHashChains as BigNumberish[],
-                fromEpochTree: genRandomSalt() as BigNumberish,
-                proof: proof as BigNumberish[],
-            },
+            publicSignals as BigNumberish[],
+            proof,
             indexes as BigNumberish[]
         )
         receipt = await tx.wait()

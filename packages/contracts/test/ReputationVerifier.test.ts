@@ -1,12 +1,11 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits/config'
 import {
@@ -82,7 +81,10 @@ describe('Verify reputation verifier', function () {
         )
         const isValid = await input.verify()
         expect(isValid, 'Verify reputation proof off-chain failed').to.be.true
-        const isProofValid = await unirepContract.verifyReputation(input)
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain failed').to.be
             .true
     })
@@ -107,7 +109,10 @@ describe('Verify reputation verifier', function () {
         const isValid = await input.verify()
         expect(isValid, 'Verify reputation proof off-chain should fail').to.be
             .false
-        const isProofValid = await unirepContract.verifyReputation(input)
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -127,10 +132,17 @@ describe('Verify reputation verifier', function () {
             circuitInputs
         )
         // random reputation nullifiers
-        for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
-            input.repNullifiers[i] = genRandomSalt() as BigNumberish
+        for (
+            let i = ReputationProof.idx.repNullifiers[0];
+            i < ReputationProof.idx.repNullifiers[1];
+            i++
+        ) {
+            input.publicSignals[i] = genRandomSalt().toString() // rep nullifiers
         }
-        const isProofValid = await unirepContract.verifyReputation(input)
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -150,8 +162,11 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epoch = wrongEpoch
-        const isProofValid = await unirepContract.verifyReputation(input)
+        input.publicSignals[ReputationProof.idx.epoch] = wrongEpoch.toString()
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -176,8 +191,12 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epochKey = wrongEpochKey as BigNumberish
-        const isProofValid = await unirepContract.verifyReputation(input)
+        input.publicSignals[ReputationProof.idx.epochKey] =
+            wrongEpochKey.toString() // epoch key
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -197,8 +216,11 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.attesterId = wrongAttesterId
-        const isProofValid = await unirepContract.verifyReputation(input)
+        input.publicSignals[ReputationProof.idx.attesterId] = wrongAttesterId // attester id
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -219,8 +241,11 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.minRep = wrongMinRep
-        const isProofValid = await unirepContract.verifyReputation(input)
+        input.publicSignals[ReputationProof.idx.minRep] = wrongMinRep.toString() // min rep
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -242,8 +267,12 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.graffitiPreImage = wrongGraffitiPreimage as BigNumberish
-        const isProofValid = await unirepContract.verifyReputation(input)
+        input.publicSignals[ReputationProof.idx.graffitiPreImage] =
+            wrongGraffitiPreimage.toString() // graffiti preimage
+        const isProofValid = await unirepContract.verifyReputation(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain should fail').to
             .be.false
     })
@@ -275,41 +304,18 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: attestingFee,
-        })
+        const tx = await unirepContractCalledByAttester.spendReputation(
+            input.publicSignals,
+            input.proof,
+            {
+                value: attestingFee,
+            }
+        )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
-    })
-
-    it('submit reputation nullifiers with wrong length of nullifiers should fail', async () => {
-        const circuitInputs = await genReputationCircuitInput(
-            user,
-            epoch,
-            nonce,
-            reputationRecords,
-            attesterId,
-            repNullifiersAmount,
-            minRep,
-            proveGraffiti
-        )
-        const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
-            circuitInputs
-        )
-        const wrongNullifiers = input.repNullifiers.slice(
-            1,
-            MAX_REPUTATION_BUDGET
-        )
-        input.repNullifiers = wrongNullifiers
-        await expect(
-            unirepContractCalledByAttester.spendReputation(input, {
-                value: attestingFee,
-            })
-        ).to.be.revertedWith('Unirep: invalid number of reputation nullifiers')
     })
 
     it('submit reputation nullifiers with wrong epoch key should fail', async () => {
@@ -327,11 +333,16 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epochKey = genRandomSalt() as BigNumberish
+        input.publicSignals[ReputationProof.idx.epochKey] =
+            genRandomSalt().toString()
         await expect(
-            unirepContractCalledByAttester.spendReputation(input, {
-                value: attestingFee,
-            })
+            unirepContractCalledByAttester.spendReputation(
+                input.publicSignals,
+                input.proof,
+                {
+                    value: attestingFee,
+                }
+            )
         ).to.be.revertedWith('Unirep: invalid epoch key range')
     })
 })

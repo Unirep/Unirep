@@ -12,7 +12,7 @@ import {
     genProveSignUpCircuitInput,
     genInputForContract,
 } from './utils'
-import { deployUnirep, Unirep } from '../src'
+import { deployUnirep, SignUpProof, Unirep } from '../src'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -219,7 +219,8 @@ describe('Airdrop', function () {
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
             const tx = await unirepContractCalledByAttester.airdropEpochKey(
-                input,
+                input.publicSignals,
+                input.proof,
                 {
                     value: attestingFee,
                 }
@@ -227,11 +228,17 @@ describe('Airdrop', function () {
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
+            const isValid = await input.verify()
+            expect(isValid).to.be.true
+
             const pfIdx = await unirepContract.getProofIndex(input.hash())
             expect(Number(pfIdx)).not.eq(0)
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input)
+                unirepContractCalledByAttester.airdropEpochKey(
+                    input.publicSignals,
+                    input.proof
+                )
             ).to.be.revertedWith('Unirep: the proof has been submitted before')
         })
 
@@ -249,9 +256,13 @@ describe('Airdrop', function () {
             unirepContractCalledByAttester = unirepContract.connect(accounts[2])
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContractCalledByAttester.airdropEpochKey(
+                    input.publicSignals,
+                    input.proof,
+                    {
+                        value: attestingFee,
+                    }
+                )
             ).to.be.revertedWith('Unirep: attester has not signed up yet')
         })
 
@@ -269,9 +280,13 @@ describe('Airdrop', function () {
             unirepContractCalledByAttester = unirepContract.connect(accounts[1])
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContractCalledByAttester.airdropEpochKey(
+                    input.publicSignals,
+                    input.proof,
+                    {
+                        value: attestingFee,
+                    }
+                )
             ).to.be.revertedWith('Unirep: mismatched attesterId')
         })
 
@@ -289,7 +304,10 @@ describe('Airdrop', function () {
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input)
+                unirepContractCalledByAttester.airdropEpochKey(
+                    input.publicSignals,
+                    input.proof
+                )
             ).to.be.revertedWith('Unirep: no attesting fee or incorrect amount')
         })
 
@@ -310,9 +328,13 @@ describe('Airdrop', function () {
             expect(wrongEpoch).not.equal(currentEpoch_)
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContractCalledByAttester.airdropEpochKey(
+                    input.publicSignals,
+                    input.proof,
+                    {
+                        value: attestingFee,
+                    }
+                )
             ).to.be.revertedWith(
                 'Unirep: submit an airdrop proof with incorrect epoch'
             )
@@ -325,17 +347,22 @@ describe('Airdrop', function () {
                 reputationRecords,
                 attesterId_
             )
-            const input = await genInputForContract(
+            const input: SignUpProof = await genInputForContract(
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
             unirepContractCalledByAttester = unirepContract.connect(accounts[0])
-            input.epochKey = genRandomSalt()
+            input.publicSignals[SignUpProof.idx.epochKey] =
+                genRandomSalt().toString() // epoch key
 
             await expect(
-                unirepContractCalledByAttester.airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContractCalledByAttester.airdropEpochKey(
+                    input.publicSignals,
+                    input.proof,
+                    {
+                        value: attestingFee,
+                    }
+                )
             ).to.be.revertedWith('Unirep: invalid epoch key range')
         })
     })

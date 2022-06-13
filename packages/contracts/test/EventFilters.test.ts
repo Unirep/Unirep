@@ -10,11 +10,7 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
-import {
-    GLOBAL_STATE_TREE_DEPTH,
-    EPOCH_LENGTH,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits/config'
+import { GLOBAL_STATE_TREE_DEPTH, EPOCH_LENGTH } from '@unirep/circuits/config'
 import {
     Attestation,
     genEpochKeyCircuitInput,
@@ -28,14 +24,20 @@ import {
     genUserStateTransitionCircuitInput,
 } from './utils'
 import {
-    computeProcessAttestationsProofHash,
-    computeStartTransitionProofHash,
     deployUnirep,
     ReputationProof,
     SignUpProof,
     Unirep,
     UserTransitionProof,
 } from '../src'
+import {
+    IndexedEpochKeyProofEvent,
+    IndexedProcessedAttestationsProofEvent,
+    IndexedReputationProofEvent,
+    IndexedStartedTransitionProofEvent,
+    IndexedUserSignedUpProofEvent,
+    IndexedUserStateTransitionProofEvent,
+} from '../typechain/IUnirep'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep
@@ -104,11 +106,17 @@ describe('EventFilters', () => {
             circuitInputs
         )
         epochKey = input.epochKey
-        const tx = await unirepContract.submitEpochKeyProof(input)
+        const tx = await unirepContract.submitEpochKeyProof(
+            input.publicSignals,
+            input.proof
+        )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashEpochKeyProof(input)
+        const proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
+        )
         expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
@@ -148,13 +156,20 @@ describe('EventFilters', () => {
             Circuit.proveReputation,
             circuitInputs
         )
-        const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: attestingFee,
-        })
+        const tx = await unirepContractCalledByAttester.spendReputation(
+            input.publicSignals,
+            input.proof,
+            {
+                value: attestingFee,
+            }
+        )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashReputationProof(input)
+        const proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
+        )
         expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
@@ -173,13 +188,20 @@ describe('EventFilters', () => {
             circuitInputs
         )
 
-        let tx = await unirepContractCalledByAttester.airdropEpochKey(input, {
-            value: attestingFee,
-        })
+        let tx = await unirepContractCalledByAttester.airdropEpochKey(
+            input.publicSignals,
+            input.proof,
+            {
+                value: attestingFee,
+            }
+        )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashSignUpProof(input)
+        const proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
+        )
         expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
@@ -194,31 +216,23 @@ describe('EventFilters', () => {
             epoch,
             nonce
         )
-        const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(Circuit.startTransition, circuitInputs)
+        const input = await genInputForContract(
+            Circuit.startTransition,
+            circuitInputs
+        )
         const tx = await unirepContract.startUserStateTransition(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
+            input.publicSignals,
+            input.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
+        const proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
         )
-        const computedHash = computeStartTransitionProofHash(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
-        )
-        expect(computedHash).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(computedHash)
+        expect(input.hash()).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
 
@@ -229,39 +243,24 @@ describe('EventFilters', () => {
             BigInt(nonce),
             BigInt(nonce)
         )
-        const {
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof,
-        } = await genInputForContract(
+        const input = await genInputForContract(
             Circuit.processAttestations,
             circuitInputs
         )
         const tx = await unirepContract.processAttestations(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+            input.publicSignals,
+            input.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier =
-            await unirepContract.hashProcessAttestationsProof(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof
-            )
-        const computedHash = computeProcessAttestationsProofHash(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+        const proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
         )
-        expect(computedHash).equal(proofNullifier.toString())
-        proofIndex = await unirepContract.getProofIndex(computedHash)
+
+        expect(input.hash()).equal(proofNullifier.toString())
+        proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
 
@@ -281,12 +280,18 @@ describe('EventFilters', () => {
             Circuit.userStateTransition,
             circuitInputs
         )
-        tx = await unirepContract.updateUserStateRoot(input, indexes)
+        tx = await unirepContract.updateUserStateRoot(
+            input.publicSignals,
+            input.proof,
+            indexes
+        )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier =
-            await unirepContract.hashUserStateTransitionProof(input)
+        const proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
+        )
         expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
@@ -304,39 +309,40 @@ describe('EventFilters', () => {
             const proofIndex = attestationSubmittedEvents[i].args?.toProofIndex
             const epochKeyProofFilter =
                 unirepContract.filters.IndexedEpochKeyProof(proofIndex)
-            const epochKeyProofEvent = await unirepContract.queryFilter(
-                epochKeyProofFilter
-            )
+            const epochKeyProofEvent: IndexedEpochKeyProofEvent[] =
+                await unirepContract.queryFilter(epochKeyProofFilter)
             const repProofFilter =
                 unirepContract.filters.IndexedReputationProof(proofIndex)
-            const repProofEvent = await unirepContract.queryFilter(
-                repProofFilter
-            )
+            const repProofEvent: IndexedReputationProofEvent[] =
+                await unirepContract.queryFilter(repProofFilter)
             const signUpProofFilter =
                 unirepContract.filters.IndexedUserSignedUpProof(proofIndex)
-            const signUpProofEvent = await unirepContract.queryFilter(
-                signUpProofFilter
-            )
+            const signUpProofEvent: IndexedUserSignedUpProofEvent[] =
+                await unirepContract.queryFilter(signUpProofFilter)
 
             if (epochKeyProofEvent.length == 1) {
                 console.log('epoch key proof event')
-                const args = epochKeyProofEvent[0]?.args?.proof
+                const { proof, publicSignals } = epochKeyProofEvent[0].args
                 const isValid = await unirepContract.verifyEpochKeyValidity(
-                    args
+                    publicSignals,
+                    proof
                 )
                 expect(isValid).equal(true)
             } else if (repProofEvent.length == 1) {
                 console.log('reputation proof event')
-                const args = repProofEvent[0]?.args?.proof
-                expect(args?.repNullifiers.length).to.equal(
-                    MAX_REPUTATION_BUDGET
+                const { proof, publicSignals } = repProofEvent[0].args
+                const isValid = await unirepContract.verifyReputation(
+                    publicSignals,
+                    proof
                 )
-                const isValid = await unirepContract.verifyReputation(args)
                 expect(isValid).equal(true)
             } else if (signUpProofEvent.length == 1) {
                 console.log('sign up proof event')
-                const args = signUpProofEvent[0]?.args?.proof
-                const isValid = await unirepContract.verifyUserSignUp(args)
+                const { proof, publicSignals } = signUpProofEvent[0].args
+                const isValid = await unirepContract.verifyUserSignUp(
+                    publicSignals,
+                    proof
+                )
                 expect(isValid).equal(true)
             }
         }
@@ -346,20 +352,12 @@ describe('EventFilters', () => {
         {
             const startTransitionFilter =
                 unirepContract.filters.IndexedStartedTransitionProof()
-            const startTransitionEvents = await unirepContract.queryFilter(
-                startTransitionFilter
-            )
+            const startTransitionEvents: IndexedStartedTransitionProofEvent[] =
+                await unirepContract.queryFilter(startTransitionFilter)
             expect(startTransitionEvents.length).to.equal(1)
-            const {
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
-                proof,
-            } = startTransitionEvents[0]?.args
+            const { publicSignals, proof } = startTransitionEvents[0].args
             let isValid = await unirepContract.verifyStartTransitionProof(
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
+                publicSignals,
                 proof
             )
             expect(isValid).equal(true)
@@ -368,20 +366,12 @@ describe('EventFilters', () => {
         {
             const processAttestationFilter =
                 unirepContract.filters.IndexedProcessedAttestationsProof()
-            const processAttestationEvents = await unirepContract.queryFilter(
-                processAttestationFilter
-            )
+            const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
+                await unirepContract.queryFilter(processAttestationFilter)
             expect(processAttestationEvents.length).to.equal(1)
-            const {
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof,
-            } = processAttestationEvents[0]?.args
+            const { publicSignals, proof } = processAttestationEvents[0].args
             const isValid = await unirepContract.verifyProcessAttestationProof(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
+                publicSignals,
                 proof
             )
             expect(isValid).equal(true)
@@ -390,12 +380,14 @@ describe('EventFilters', () => {
         {
             const userStateTransitionFilter =
                 unirepContract.filters.IndexedUserStateTransitionProof()
-            const userStateTransitionEvents = await unirepContract.queryFilter(
-                userStateTransitionFilter
-            )
+            const userStateTransitionEvents: IndexedUserStateTransitionProofEvent[] =
+                await unirepContract.queryFilter(userStateTransitionFilter)
             expect(userStateTransitionEvents.length).to.equal(1)
-            const args = userStateTransitionEvents[0]?.args?.proof
-            const isValid = await unirepContract.verifyUserStateTransition(args)
+            const { publicSignals, proof } = userStateTransitionEvents[0].args
+            const isValid = await unirepContract.verifyUserStateTransition(
+                publicSignals,
+                proof
+            )
             expect(isValid).equal(true)
         }
     })

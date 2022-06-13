@@ -71,7 +71,10 @@ describe('Verify user sign up verifier', function () {
 
         const isValid = await input.verify()
         expect(isValid, 'Verify user sign up proof off-chain failed').to.be.true
-        const isProofValid = await unirepContract.verifyUserSignUp(input)
+        const isProofValid = await unirepContract.verifyUserSignUp(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify reputation proof on-chain failed').to.be
             .true
     })
@@ -89,9 +92,13 @@ describe('Verify user sign up verifier', function () {
             Circuit.proveUserSignUp,
             circuitInputs
         )
-        input.attesterId = wrongAttesterId
+        input.publicSignals[SignUpProof.idx.attesterId] =
+            wrongAttesterId.toString()
 
-        const isProofValid = await unirepContract.verifyUserSignUp(input)
+        const isProofValid = await unirepContract.verifyUserSignUp(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify user sign up proof on-chain should fail')
             .to.be.false
     })
@@ -109,9 +116,12 @@ describe('Verify user sign up verifier', function () {
             Circuit.proveUserSignUp,
             circuitInputs
         )
-        input.epoch = wrongEpoch
+        input.publicSignals[SignUpProof.idx.epoch] = wrongEpoch.toString()
 
-        const isProofValid = await unirepContract.verifyUserSignUp(input)
+        const isProofValid = await unirepContract.verifyUserSignUp(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify user sign up proof on-chain should fail')
             .to.be.false
     })
@@ -133,9 +143,12 @@ describe('Verify user sign up verifier', function () {
             Circuit.proveUserSignUp,
             circuitInputs
         )
-        input.epochKey = wrongEpochKey as BigNumberish
+        input.publicSignals[SignUpProof.idx.epochKey] = wrongEpochKey.toString()
 
-        const isProofValid = await unirepContract.verifyUserSignUp(input)
+        const isProofValid = await unirepContract.verifyUserSignUp(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify user sign up proof on-chain should fail')
             .to.be.false
     })

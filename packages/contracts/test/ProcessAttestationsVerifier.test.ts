@@ -8,11 +8,7 @@ import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
 } from './utils'
-import {
-    computeProcessAttestationsProofHash,
-    deployUnirep,
-    Unirep,
-} from '../src'
+import { deployUnirep, Unirep } from '../src'
 import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits/config'
 
 describe('Process attestation circuit', function () {
@@ -39,40 +35,24 @@ describe('Process attestation circuit', function () {
             nonce
         )
 
-        const {
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof,
-        } = await genInputForContract(
+        const input = await genInputForContract(
             Circuit.processAttestations,
             circuitInputs
         )
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.true
 
         const tx = await unirepContract.processAttestations(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+            input.publicSignals,
+            input.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const pfIdx = await unirepContract.getProofIndex(
-            computeProcessAttestationsProofHash(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof
-            )
-        )
+        const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
     })
 
@@ -88,40 +68,24 @@ describe('Process attestation circuit', function () {
             nonce,
             zeroSelectors
         )
-        const {
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof,
-        } = await genInputForContract(
+        const input = await genInputForContract(
             Circuit.processAttestations,
             circuitInputs
         )
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.true
 
         const tx = await unirepContract.processAttestations(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+            input.publicSignals,
+            input.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const pfIdx = await unirepContract.getProofIndex(
-            computeProcessAttestationsProofHash(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof
-            )
-        )
+        const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
     })
 })

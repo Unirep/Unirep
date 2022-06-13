@@ -39,7 +39,8 @@ describe('User State Transition', function () {
         expect(isValid, 'Verify user state transition proof off-chain failed')
             .to.be.true
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.true
 
@@ -51,7 +52,11 @@ describe('User State Transition', function () {
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        tx = await unirepContract.updateUserStateRoot(input, proofIndexes)
+        tx = await unirepContract.updateUserStateRoot(
+            input.publicSignals,
+            input.proof,
+            proofIndexes
+        )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -69,15 +74,17 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.transitionFromEpoch = wrongEpoch
+        input.publicSignals[UserTransitionProof.idx.transitionFromEpoch] =
+            wrongEpoch.toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.false
     })
 
     it('Proof with wrong global state tree root should fail', async () => {
-        const wrongGlobalStateTreeRoot = genRandomSalt() as BigNumberish
+        const wrongGlobalStateTreeRoot = genRandomSalt().toString()
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
             epoch
@@ -86,15 +93,17 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.fromGlobalStateTree = wrongGlobalStateTreeRoot
+        input.publicSignals[UserTransitionProof.idx.fromGlobalStateTree] =
+            wrongGlobalStateTreeRoot
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.false
     })
 
     it('Proof with wrong epoch tree root should fail', async () => {
-        const wrongEpochTreeRoot = genRandomSalt()
+        const wrongEpochTreeRoot = genRandomSalt().toString()
         const circuitInputs = await genUserStateTransitionCircuitInput(
             user,
             epoch
@@ -103,9 +112,11 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.fromEpochTree = wrongEpochTreeRoot as BigNumberish
+        input.publicSignals[UserTransitionProof.idx.fromEpochTree] =
+            wrongEpochTreeRoot
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.false
     })
@@ -119,9 +130,11 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.blindedUserStates[0] = genRandomSalt() as BigNumberish
+        input.publicSignals[UserTransitionProof.idx.blindedUserStates[0]] =
+            genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.false
     })
@@ -135,9 +148,11 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.blindedHashChains[0] = genRandomSalt() as BigNumberish
+        input.publicSignals[UserTransitionProof.idx.blindedHashChains[0]] =
+            genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.false
     })
@@ -151,9 +166,11 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.newGlobalStateTreeLeaf = genRandomSalt() as BigNumberish
+        input.publicSignals[UserTransitionProof.idx.newGlobalStateTreeLeaf] =
+            genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
-            input
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.false
     })

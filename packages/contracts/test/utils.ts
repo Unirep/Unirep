@@ -14,8 +14,10 @@ import {
 import {
     Attestation,
     EpochKeyProof,
+    ProcessAttestationsProof,
     ReputationProof,
     SignUpProof,
+    StartTransitionProof,
     UserTransitionProof,
 } from '../src'
 import {
@@ -718,19 +720,9 @@ const formatProofAndPublicSignals = (
     } else if (circuit === Circuit.proveUserSignUp) {
         result = new SignUpProof(publicSignals, proof)
     } else if (circuit === Circuit.startTransition) {
-        result = {
-            blindedUserState: publicSignals[0],
-            blindedHashChain: publicSignals[1],
-            GSTRoot: publicSignals[2],
-            proof: formattedProof,
-        }
+        result = new StartTransitionProof(publicSignals, proof)
     } else if (circuit === Circuit.processAttestations) {
-        result = {
-            outputBlindedUserState: publicSignals[0],
-            outputBlindedHashChain: publicSignals[1],
-            inputBlindedUserState: publicSignals[2],
-            proof: formattedProof,
-        }
+        result = new ProcessAttestationsProof(publicSignals, proof)
     } else if (circuit === Circuit.userStateTransition) {
         result = new UserTransitionProof(publicSignals, proof)
     } else {

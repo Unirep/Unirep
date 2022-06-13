@@ -101,10 +101,16 @@ describe('Epoch Transition', function () {
         let epochKey = input.epochKey
 
         // Submit epoch key proof
-        tx = await unirepContract.submitEpochKeyProof(input)
+        tx = await unirepContract.submitEpochKeyProof(
+            input.publicSignals,
+            input.proof
+        )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        let proofNullifier = await unirepContract.hashEpochKeyProof(input)
+        let proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
+        )
         epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
         const senderPfIdx = 0
 
@@ -203,25 +209,20 @@ describe('Epoch Transition', function () {
             fromEpoch,
             nonce
         )
-        const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-            await genInputForContract(Circuit.startTransition, circuitInputs)
+        const input = await genInputForContract(
+            Circuit.startTransition,
+            circuitInputs
+        )
         const isProofValid = await unirepContract.verifyStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
+            input.publicSignals,
+            input.proof
         )
         expect(isProofValid).to.be.true
 
         const tx = await unirepContract.startUserStateTransition(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
+            input.publicSignals,
+            input.proof
         )
-        console.log('start transition')
-        console.log('start blinded user state: ', blindedUserState)
-        console.log('start blinded hash chain: ', blindedHashChain)
         const receipt = await tx.wait()
         expect(
             receipt.status,
@@ -232,11 +233,9 @@ describe('Epoch Transition', function () {
             receipt.gasUsed.toString()
         )
 
-        let proofNullifier = await unirepContract.hashStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
+        let proofNullifier = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
         )
         let proofIndex = await unirepContract.getProofIndex(proofNullifier)
         proofIndexes.push(proofIndex)
@@ -259,29 +258,13 @@ describe('Epoch Transition', function () {
                         BigInt(toNonce)
                     )
 
-                const {
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    proof,
-                } = await genInputForContract(
+                const input = await genInputForContract(
                     Circuit.processAttestations,
                     circuitInputs
                 )
                 const tx = await unirepContract.processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    proof
-                )
-                console.log('input blinded user state: ', inputBlindedUserState)
-                console.log(
-                    'output blinded user state: ',
-                    outputBlindedUserState
-                )
-                console.log(
-                    'output blinded hash chain: ',
-                    outputBlindedHashChain
+                    input.publicSignals,
+                    input.proof
                 )
                 const receipt = await tx.wait()
                 expect(
@@ -293,13 +276,10 @@ describe('Epoch Transition', function () {
                     receipt.gasUsed.toString()
                 )
 
-                const proofNullifier =
-                    await unirepContract.hashProcessAttestationsProof(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        inputBlindedUserState,
-                        proof
-                    )
+                const proofNullifier = await unirepContract.hashProof(
+                    input.publicSignals,
+                    input.proof
+                )
                 const proofIndex = await unirepContract.getProofIndex(
                     proofNullifier
                 )
@@ -317,7 +297,11 @@ describe('Epoch Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        const tx = await unirepContract.updateUserStateRoot(input, proofIndexes)
+        const tx = await unirepContract.updateUserStateRoot(
+            input.publicSignals,
+            input.proof,
+            proofIndexes
+        )
         const receipt = await tx.wait()
         expect(
             receipt.status,

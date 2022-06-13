@@ -1,8 +1,13 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
+import {
+    genRandomSalt,
+    SnarkPublicSignals,
+    SNARK_FIELD_SIZE,
+    ZkIdentity,
+} from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
@@ -26,7 +31,7 @@ describe('Attesting', () => {
     const epochKey = genEpochKey(genRandomSalt(), epoch, nonce)
     const publicSignals = [genRandomSalt(), epoch, epochKey]
     const epochKeyProof = new EpochKeyProof(
-        publicSignals as BigNumberish[],
+        publicSignals as SnarkPublicSignals,
         formatProofForSnarkjsVerification(proof)
     )
     let epochKeyProofIndex
@@ -64,12 +69,16 @@ describe('Attesting', () => {
     })
 
     it('submit an epoch key proof should succeed', async () => {
-        const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+        const tx = await unirepContract.submitEpochKeyProof(
+            epochKeyProof.publicSignals,
+            epochKeyProof.proof
+        )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashEpochKeyProof(
-            epochKeyProof
+        const proofNullifier = await unirepContract.hashProof(
+            epochKeyProof.publicSignals,
+            epochKeyProof.proof
         )
         expect(receipt.status).equal(1)
         const _proofNullifier = epochKeyProof.hash()
@@ -80,18 +89,24 @@ describe('Attesting', () => {
 
     it('submit an epoch key proof again should fail', async () => {
         await expect(
-            unirepContract.submitEpochKeyProof(epochKeyProof)
+            unirepContract.submitEpochKeyProof(
+                epochKeyProof.publicSignals,
+                epochKeyProof.proof
+            )
         ).to.be.revertedWith('Unirep: the proof has been submitted before')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
         const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
         const wrongEpochKeyProof = new EpochKeyProof(
-            wrongSignals as BigNumberish[],
+            wrongSignals as SnarkPublicSignals,
             formatProofForSnarkjsVerification(proof)
         )
         await expect(
-            unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
+            unirepContract.submitEpochKeyProof(
+                wrongEpochKeyProof.publicSignals,
+                wrongEpochKeyProof.proof
+            )
         ).to.be.revertedWith(
             'Unirep: submit an epoch key proof with incorrect epoch'
         )
@@ -100,11 +115,14 @@ describe('Attesting', () => {
     it('submit an invalid epoch key should fail', async () => {
         const wrongEpochKey = genRandomSalt()
         const wrongEpochKeyProof = new EpochKeyProof(
-            [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
+            [genRandomSalt(), epoch, wrongEpochKey] as SnarkPublicSignals,
             formatProofForSnarkjsVerification(proof)
         )
         await expect(
-            unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
+            unirepContract.submitEpochKeyProof(
+                wrongEpochKeyProof.publicSignals,
+                wrongEpochKeyProof.proof
+            )
         ).to.be.revertedWith('Unirep: invalid epoch key range')
     })
 
