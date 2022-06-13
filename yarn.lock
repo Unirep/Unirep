@@ -1508,7 +1508,6 @@ __metadata:
     hardhat: ^2.9.9
     hardhat-gas-reporter: ^1.0.8
     typechain: ^8.1.0
-    typescript: ^4.7.3
   languageName: unknown
   linkType: soft
 
