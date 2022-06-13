@@ -177,8 +177,8 @@ const genReputationCircuitInput = (
 
     // selectors and karma nonce
     const nonceStarter = 0
-    const selectors: bigint[] = []
-    const nonceList: bigint[] = []
+    const selectors: BigInt[] = []
+    const nonceList: BigInt[] = []
     for (let i = 0; i < repNullifiersAmount; i++) {
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))

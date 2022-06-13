@@ -79,7 +79,7 @@ describe('EventSequencing', () => {
         expect(epochKeyProof).not.equal(null)
 
         // 2. Submit reputation nullifiers
-        const reputationNullifiers: bigint[] = []
+        const reputationNullifiers: BigInt[] = []
         const minRep = 0
         const proveGraffiti = 1
         for (let i = 0; i < MAX_REPUTATION_BUDGET; i++) {
@@ -151,10 +151,10 @@ describe('EventSequencing', () => {
 
         // 6. Second user starts transition
         let transitionFromEpoch = 1
-        const epkNullifiers: bigint[] = []
-        const blindedHashChains: bigint[] = []
-        const blindedUserStates: bigint[] = []
-        const indexes: bigint[] = []
+        const epkNullifiers: BigInt[] = []
+        const blindedHashChains: BigInt[] = []
+        const blindedUserStates: BigInt[] = []
+        const indexes: BigInt[] = []
         for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             epkNullifiers.push(BigInt(255))
             blindedHashChains.push(BigInt(255))

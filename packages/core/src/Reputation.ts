@@ -12,10 +12,10 @@ export default class Reputation implements IReputation {
     public signUp: BigNumber
 
     constructor(
-        _posRep: bigint | BigNumberish,
-        _negRep: bigint | BigNumberish,
-        _graffiti: bigint | BigNumberish,
-        _signUp: bigint | BigNumberish
+        _posRep: BigInt | BigNumberish,
+        _negRep: BigInt | BigNumberish,
+        _graffiti: BigInt | BigNumberish,
+        _signUp: BigInt | BigNumberish
     ) {
         this.posRep = BigNumber.from(_posRep)
         this.negRep = BigNumber.from(_negRep)
@@ -55,7 +55,7 @@ export default class Reputation implements IReputation {
         this.graffitiPreImage = _graffitiPreImage
     }
 
-    public hash = (): bigint => {
+    public hash = (): BigInt => {
         return hash5([
             this.posRep.toBigInt(),
             this.negRep.toBigInt(),

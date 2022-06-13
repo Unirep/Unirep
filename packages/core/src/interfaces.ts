@@ -1,8 +1,8 @@
 import { BigNumber, ethers } from 'ethers'
 
 export interface IEpochTreeLeaf {
-    epochKey: bigint
-    hashchainResult: bigint
+    epochKey: BigInt
+    hashchainResult: BigInt
 }
 
 export interface ISettings {
@@ -26,7 +26,7 @@ export interface IUnirepState {
 }
 
 export interface IUserStateLeaf {
-    attesterId: bigint
+    attesterId: BigInt
     reputation: IReputation
 }
 
@@ -36,7 +36,7 @@ export interface IReputation {
     graffiti: BigNumber
     signUp: BigNumber
     toJSON(): string
-    hash(): bigint
+    hash(): BigInt
     update(
         _posRep: BigNumber,
         _negRep: BigNumber,
@@ -47,8 +47,8 @@ export interface IReputation {
 }
 
 export interface IUserState {
-    idNullifier: bigint
-    idCommitment: bigint
+    idNullifier: BigInt
+    idCommitment: BigInt
     hasSignedUp: boolean
     latestTransitionedEpoch: number
     latestGSTLeafIndex: number

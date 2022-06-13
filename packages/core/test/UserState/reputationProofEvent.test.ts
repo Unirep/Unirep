@@ -33,7 +33,7 @@ describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: bigint[] = []
+    let userCommitments: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
@@ -168,7 +168,7 @@ describe('Reputation proof events in Unirep User State', function () {
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const nonceList: bigint[] = []
+            const nonceList: BigInt[] = []
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }
@@ -262,7 +262,7 @@ describe('Reputation proof events in Unirep User State', function () {
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const nonceList: bigint[] = []
+            const nonceList: BigInt[] = []
             for (let i = 0; i < spendReputation; i++) {
                 nonceList.push(BigInt(i))
             }

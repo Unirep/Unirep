@@ -39,7 +39,7 @@ describe('Unirep State', function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: bigint[] = []
+        const rootHistories: BigInt[] = []
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
                 const commitment = genRandomSalt()
@@ -266,7 +266,7 @@ describe('Unirep State', function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: bigint[] = []
+        const rootHistories: BigInt[] = []
 
         it('epoch transition', async () => {
             await unirepState.epochTransition(epoch)
@@ -305,7 +305,7 @@ describe('Unirep State', function () {
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
                 const GSTLeaf = genRandomSalt()
-                const nullifiers: bigint[] = []
+                const nullifiers: BigInt[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
                     nullifiers.push(genRandomSalt())
                 }
@@ -357,7 +357,7 @@ describe('Unirep State', function () {
         it('user state transition with wrong epoch should fail', async () => {
             const wrongEpoch = epoch + 1
             const GSTLeaf = genRandomSalt()
-            const nullifiers: bigint[] = []
+            const nullifiers: BigInt[] = []
             for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
                 nullifiers.push(genRandomSalt())
             }
@@ -376,7 +376,7 @@ describe('Unirep State', function () {
 
         it('user state transition with wrong nullifiers amount should fail', async () => {
             const GSTLeaf = genRandomSalt()
-            const nullifiers: bigint[] = []
+            const nullifiers: BigInt[] = []
             const wrongEpkNullifierAmount = NUM_EPOCH_KEY_NONCE_PER_EPOCH + 1
             for (let i = 0; i < wrongEpkNullifierAmount; i++) {
                 nullifiers.push(genRandomSalt())
@@ -479,7 +479,7 @@ describe('Unirep State', function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: bigint[] = []
+        const rootHistories: BigInt[] = []
 
         it('epoch transition', async () => {
             await unirepState.epochTransition(epoch)
@@ -504,7 +504,7 @@ describe('Unirep State', function () {
         it('update Unirep state should success', async () => {
             for (let i = 0; i < userNum; i++) {
                 const GSTLeaf = genRandomSalt()
-                const nullifiers: bigint[] = []
+                const nullifiers: BigInt[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
                     nullifiers.push(genRandomSalt())
                 }

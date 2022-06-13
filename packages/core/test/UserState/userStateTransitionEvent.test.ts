@@ -26,7 +26,7 @@ describe('User state transition events in Unirep User State', async function () 
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: bigint[] = []
+    let userCommitments: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
     let attestations: Reputation[] = []
 

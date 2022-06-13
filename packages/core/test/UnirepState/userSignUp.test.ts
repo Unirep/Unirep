@@ -16,15 +16,15 @@ describe('User sign up events in Unirep State', function () {
     this.timeout(0)
 
     let userIds: any[] = []
-    let userCommitments: bigint[] = []
-    let userStateTreeRoots: bigint[] = []
+    let userCommitments: BigInt[] = []
+    let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
     let unirepContractCalledByAttester: Unirep
     let treeDepths
     let GSTree: IncrementalMerkleTree
-    const rootHistories: bigint[] = []
+    const rootHistories: BigInt[] = []
 
     let accounts: ethers.Signer[]
     const attester = new Object()

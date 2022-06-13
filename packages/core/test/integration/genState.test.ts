@@ -35,7 +35,7 @@ describe('Generate user state', function () {
     const firstUser = 0
     const secondUser = 1
     let userIds: ZkIdentity[] = []
-    let userCommitments: bigint[] = []
+    let userCommitments: BigInt[] = []
     let savedUserState: IUserState
     let secondUserState: IUserState
 

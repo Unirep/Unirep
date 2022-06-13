@@ -21,13 +21,13 @@ export default class UnirepState {
     public readonly settings: ISettings
 
     public currentEpoch: number = 1
-    private epochTreeRoot: { [key: number]: bigint } = {}
-    private GSTLeaves: { [key: number]: bigint[] } = {}
+    private epochTreeRoot: { [key: number]: BigInt } = {}
+    private GSTLeaves: { [key: number]: BigInt[] } = {}
     private epochTreeLeaves: { [key: number]: IEpochTreeLeaf[] } = {}
     private nullifiers: { [key: string]: boolean } = {}
     private globalStateTree: { [key: number]: IncrementalMerkleTree } = {}
     private epochTree: { [key: number]: SparseMerkleTree } = {}
-    private defaultGSTLeaf: bigint
+    private defaultGSTLeaf: BigInt
 
     public latestProcessedBlock: number = 0
     private sealedEpochKey: { [key: string]: boolean } = {}
@@ -39,7 +39,7 @@ export default class UnirepState {
         _settings: ISettings,
         _currentEpoch?: number,
         _latestBlock?: number,
-        _GSTLeaves?: { [key: number]: bigint[] },
+        _GSTLeaves?: { [key: number]: BigInt[] },
         _epochTreeLeaves?: { [key: number]: IEpochTreeLeaf[] },
         _epochKeyToAttestationsMap?: { [key: string]: IAttestation[] },
         _nullifiers?: { [key: string]: boolean }
@@ -225,7 +225,7 @@ export default class UnirepState {
     /**
      * Check if given nullifier exists in Unirep State
      */
-    public nullifierExist = (nullifier: bigint): boolean => {
+    public nullifierExist = (nullifier: BigInt): boolean => {
         // Nullifier 0 exists because it is reserved
         if (nullifier === BigInt(0)) return true
         if (this.nullifiers[nullifier.toString()]) return true
@@ -235,7 +235,7 @@ export default class UnirepState {
     /**
      * If one of the nullifiers exist in Unirep state, return true
      */
-    public nullifiersExist = (nullifiers: bigint[]): boolean => {
+    public nullifiersExist = (nullifiers: BigInt[]): boolean => {
         let exist = false
         for (let nullifier of nullifiers) {
             exist = this.nullifierExist(nullifier)
@@ -281,7 +281,7 @@ export default class UnirepState {
     /**
      * Check if nullifier has been submitted before
      */
-    private _checkNullifier = (nullifier: bigint) => {
+    private _checkNullifier = (nullifier: BigInt) => {
         assert(
             this.nullifierExist(nullifier) === false,
             `UnirepState: Nullifier ${nullifier.toString()} has been submitted before`
@@ -311,7 +311,7 @@ export default class UnirepState {
     /**
      * Update Unirep global state tree in the given epoch
      */
-    private _updateGSTree = (epoch: number, GSTLeaf: bigint) => {
+    private _updateGSTree = (epoch: number, GSTLeaf: BigInt) => {
         // Only insert non-zero GST leaf (zero GST leaf means the user has epoch keys left to process)
         if (GSTLeaf <= BigInt(0)) return
         this.GSTLeaves[epoch].push(GSTLeaf)
@@ -354,7 +354,7 @@ export default class UnirepState {
      * Check if the root is one of the Global state tree roots in the given epoch
      */
     public GSTRootExists = (
-        GSTRoot: bigint | string,
+        GSTRoot: BigInt | string,
         epoch: number
     ): boolean => {
         this._checkValidEpoch(epoch)
@@ -365,7 +365,7 @@ export default class UnirepState {
      * Check if the root is one of the epoch tree roots in the given epoch
      */
     public epochTreeRootExists = (
-        _epochTreeRoot: bigint | string,
+        _epochTreeRoot: BigInt | string,
         epoch: number
     ): boolean => {
         this._checkValidEpoch(epoch)
@@ -381,7 +381,7 @@ export default class UnirepState {
      */
     public signUp = (
         epoch: number,
-        idCommitment: bigint,
+        idCommitment: BigInt,
         attesterId?: number,
         airdropAmount?: number,
         blockNumber?: number
@@ -422,7 +422,7 @@ export default class UnirepState {
      * Add reputation nullifiers to the map state
      */
     public addReputationNullifiers = (
-        nullifier: bigint,
+        nullifier: BigInt,
         blockNumber?: number
     ) => {
         this._checkBlockNumber(blockNumber)
@@ -449,7 +449,7 @@ export default class UnirepState {
             this._checkEpochKeyRange(epochKey)
             this._isEpochKeySealed(epochKey)
 
-            let hashChain: bigint = BigInt(0)
+            let hashChain: BigInt = BigInt(0)
             for (
                 let i = 0;
                 i < this.epochKeyToAttestationsMap[epochKey].length;
@@ -492,8 +492,8 @@ export default class UnirepState {
      */
     public userStateTransition = (
         fromEpoch: number,
-        GSTLeaf: bigint,
-        nullifiers: bigint[],
+        GSTLeaf: BigInt,
+        nullifiers: BigInt[],
         blockNumber?: number
     ) => {
         this._checkValidEpoch(fromEpoch)

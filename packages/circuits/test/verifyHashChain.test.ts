@@ -15,7 +15,7 @@ describe('Hash chain circuit', function () {
 
     const NUM_ELEMENT = 10
     const elements: SnarkBigInt[] = []
-    let cur: bigint = BigInt(0)
+    let cur: BigInt = BigInt(0)
     let result
     const selectors: number[] = []
 

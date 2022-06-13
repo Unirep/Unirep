@@ -22,7 +22,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: bigint[] = []
+    let userCommitments: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep

@@ -23,8 +23,8 @@ describe('Epoch key proof events in Unirep State', function () {
 
     let users: UserState[] = new Array(2)
     let userIds: ZkIdentity[] = []
-    let userCommitments: bigint[] = []
-    let userStateTreeRoots: bigint[] = []
+    let userCommitments: BigInt[] = []
+    let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep

@@ -35,8 +35,8 @@ describe('Reputation proof events in Unirep State', function () {
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: bigint[] = []
-    let userStateTreeRoots: bigint[] = []
+    let userCommitments: BigInt[] = []
+    let userStateTreeRoots: BigInt[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep

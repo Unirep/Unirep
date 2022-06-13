@@ -56,7 +56,7 @@ describe('User State', async function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: bigint[] = []
+        const rootHistories: BigInt[] = []
 
         it('sign up other users', async () => {
             for (let i = 0; i < userNum; i++) {
@@ -471,7 +471,7 @@ describe('User State', async function () {
                 Math.random() * setting.numEpochKeyNoncePerEpoch
             )
             const proveNullifiers = Math.floor(Math.random() * signedUpAirdrop)
-            const nonceList: bigint[] = []
+            const nonceList: BigInt[] = []
             for (let i = 0; i < setting.maxReputationBudget; i++) {
                 if (i < proveNullifiers) nonceList.push(BigInt(i))
                 else nonceList.push(BigInt(-1))
@@ -637,7 +637,7 @@ describe('User State', async function () {
             setting.globalStateTreeDepth,
             setting.userStateTreeDepth
         )
-        const rootHistories: bigint[] = []
+        const rootHistories: BigInt[] = []
 
         it('epoch transition', async () => {
             await userState.epochTransition(epoch)
@@ -686,7 +686,7 @@ describe('User State', async function () {
             for (let i = 0; i < userNum; i++) {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
-                const epkNullifiers: bigint[] = []
+                const epkNullifiers: BigInt[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
                     epkNullifiers.push(genRandomSalt())
                 }
@@ -856,7 +856,7 @@ describe('User State', async function () {
             for (let i = 0; i < maxUsers - userNum - 3; i++) {
                 const fromEpoch = 1
                 const newGSTLeaf = genRandomSalt()
-                const epkNullifiers: bigint[] = []
+                const epkNullifiers: BigInt[] = []
                 for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
                     epkNullifiers.push(genRandomSalt())
                 }
