@@ -1,11 +1,7 @@
 import { createHash } from 'crypto'
+const { poseidon } = require('circomlibjs')
+import { genRandomSalt, SnarkBigInt } from 'maci-crypto'
 
-import { poseidon } from './poseidon'
-import { genRandomSalt, SnarkBigInt } from './crypto'
-
-type EddsaPrivateKey = Buffer
-type EddsaPublicKey = SnarkBigInt[]
-type SnarkWitness = Array<SnarkBigInt>
 type SnarkPublicSignals = SnarkBigInt[]
 
 interface SnarkProof {
@@ -60,8 +56,8 @@ class ZkIdentity {
     ) {
         switch (strategy) {
             case Strategy.RANDOM: {
-                this._identityTrapdoor = genRandomSalt()
-                this._identityNullifier = genRandomSalt()
+                this._identityTrapdoor = genRandomSalt().valueOf()
+                this._identityNullifier = genRandomSalt().valueOf()
                 this._secret = [this._identityNullifier, this._identityTrapdoor]
                 break
             }
@@ -178,13 +174,4 @@ class ZkIdentity {
     }
 }
 
-export {
-    EddsaPrivateKey,
-    EddsaPublicKey,
-    SnarkWitness,
-    SnarkPublicSignals,
-    SnarkProof,
-    SnarkBigInt,
-    ZkIdentity,
-    Strategy,
-}
+export { SnarkPublicSignals, SnarkProof, ZkIdentity, Strategy }

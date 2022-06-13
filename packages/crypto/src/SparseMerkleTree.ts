@@ -1,8 +1,5 @@
-/* External Imports */
 import assert from 'assert'
-
-/* Internal Imports */
-import { hashLeftRight, hashOne, SnarkBigInt } from './crypto'
+import { hashLeftRight, hashOne, SnarkBigInt } from 'maci-crypto'
 
 const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
     let result: SnarkBigInt
@@ -20,13 +17,13 @@ const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
 }
 
 export class SparseMerkleTree {
-    protected _root: bigint
-    private zeroHashes!: bigint[]
+    protected _root: BigInt
+    private zeroHashes!: BigInt[]
     private node: { [key: string]: string } = {}
 
-    public readonly numLeaves: bigint
+    public readonly numLeaves: BigInt
 
-    constructor(private _height: number, zeroHash: bigint) {
+    constructor(private _height: number, zeroHash: BigInt) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
         this._root = BigInt(0)
@@ -36,7 +33,7 @@ export class SparseMerkleTree {
         this.numLeaves = BigInt(2 ** _height)
     }
 
-    private init(zeroHash: bigint): void {
+    private init(zeroHash: BigInt): void {
         this.populateZeroHashesAndRoot(zeroHash)
     }
 
@@ -48,11 +45,11 @@ export class SparseMerkleTree {
         return this._root
     }
 
-    public getZeroHash(index: number): bigint {
+    public getZeroHash(index: number): BigInt {
         return this.zeroHashes[index]
     }
 
-    public update(leafKey: bigint, leafHash: bigint): void {
+    public update(leafKey: BigInt, leafHash: BigInt): void {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -94,13 +91,13 @@ export class SparseMerkleTree {
         this._root = parentHash
     }
 
-    public createProof(leafKey: bigint): bigint[] {
+    public createProof(leafKey: BigInt): BigInt[] {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
         )
 
-        const siblingNodeHashes: bigint[] = []
+        const siblingNodeHashes: BigInt[] = []
         let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
         let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
         let sibNodeIndex = isLeftNode
@@ -126,7 +123,7 @@ export class SparseMerkleTree {
         return siblingNodeHashes
     }
 
-    public verifyProof(leafKey: bigint, proof: bigint[]): boolean {
+    public verifyProof(leafKey: BigInt, proof: BigInt[]): boolean {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -151,8 +148,8 @@ export class SparseMerkleTree {
         else return false
     }
 
-    private populateZeroHashesAndRoot(zeroHash: bigint): void {
-        const hashes: bigint[] = [zeroHash]
+    private populateZeroHashesAndRoot(zeroHash: BigInt): void {
+        const hashes: BigInt[] = [zeroHash]
 
         for (let i = 1; i < this.height; i++) {
             hashes[i] = newWrappedPoseidonT3Hash(hashes[i - 1], hashes[i - 1])

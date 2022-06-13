@@ -1,8 +1,8 @@
+const { poseidon } = require('circomlibjs')
 import {
     IncrementalMerkleTree as zkIncrementalMerkleTree,
     Node,
 } from '@zk-kit/incremental-merkle-tree'
-import { poseidon } from './poseidon'
 
 /**
  * The modified IncrementalMerkleTree which is used in Unirep protocol to generate global state tree. It inherited from `IncrementalMerkleTree` from `@zk-kit/incremental-merkle-tree`

@@ -18,7 +18,7 @@ describe('crypto utils', function () {
         const values: bigint[] = []
         const elementNum = Math.ceil(Math.random() * 5)
         for (let num = 0; num < elementNum; num++) {
-            values.push(genRandomSalt())
+            values.push(genRandomSalt().valueOf())
         }
         const hash = hash5(values)
         expect(typeof hash).equal('bigint')
