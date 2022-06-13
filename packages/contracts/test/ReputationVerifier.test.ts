@@ -21,8 +21,9 @@ import { Unirep } from '../typechain'
 describe('Verify reputation verifier', function () {
     this.timeout(30000)
     let unirepContract: Unirep
-    let unirepContractCalledByAttester: Unirep
+
     let accounts: ethers.Signer[]
+    let attester: ethers.Signer
     const epoch = 1
     const nonce = 1
     const user = new ZkIdentity()
@@ -249,10 +250,10 @@ describe('Verify reputation verifier', function () {
     })
 
     it('sign up should succeed', async () => {
-        const attester = accounts[1]
+        attester = accounts[1]
         const attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
-        const tx = await unirepContractCalledByAttester.attesterSignUp()
+
+        const tx = await unirepContract.connect(attester).attesterSignUp()
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
         attesterId = (
@@ -275,9 +276,11 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        const tx = await unirepContractCalledByAttester.spendReputation(input, {
-            value: attestingFee,
-        })
+        const tx = await unirepContract
+            .connect(attester)
+            .spendReputation(input, {
+                value: attestingFee,
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -306,7 +309,7 @@ describe('Verify reputation verifier', function () {
         )
         input.repNullifiers = wrongNullifiers
         await expect(
-            unirepContractCalledByAttester.spendReputation(input, {
+            unirepContract.connect(attester).spendReputation(input, {
                 value: attestingFee,
             })
         ).to.be.revertedWith('InvalidNumberNullifiers()')
@@ -329,7 +332,7 @@ describe('Verify reputation verifier', function () {
         )
         input.epochKey = genRandomSalt() as BigNumberish
         await expect(
-            unirepContractCalledByAttester.spendReputation(input, {
+            unirepContract.connect(attester).spendReputation(input, {
                 value: attestingFee,
             })
         ).to.be.revertedWith('InvalidEpochKey()')

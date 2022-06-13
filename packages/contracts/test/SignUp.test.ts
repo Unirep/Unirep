@@ -96,13 +96,12 @@ describe('Signup', () => {
         let attester2: Signer
         let attester2Address: string
         let attester2Sig
-        let unirepContractCalledByAttester: Unirep
 
         it('sign up should succeed', async () => {
             attester = accounts[1]
             attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(attester)
-            const tx = await unirepContractCalledByAttester.attesterSignUp()
+
+            const tx = await unirepContract.connect(attester).attesterSignUp()
             const receipt = await tx.wait()
 
             expect(receipt.status).equal(1)
@@ -156,7 +155,7 @@ describe('Signup', () => {
 
         it('double sign up should fail', async () => {
             await expect(
-                unirepContractCalledByAttester.attesterSignUp()
+                unirepContract.connect(attester).attesterSignUp()
             ).to.be.revertedWith(
                 `AttesterAlreadySignUp("${await attester.getAddress()}")`
             )
@@ -173,9 +172,10 @@ describe('Signup', () => {
             for (let i = 3; i < testMaxUser; i++) {
                 attester = accounts[i]
                 attesterAddress = await attester.getAddress()
-                unirepContractCalledByAttester =
-                    unirepContract.connect(attester)
-                const tx = await unirepContractCalledByAttester.attesterSignUp()
+
+                const tx = await unirepContract
+                    .connect(attester)
+                    .attesterSignUp()
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
                 signedUpAttesters++
@@ -189,9 +189,9 @@ describe('Signup', () => {
             }
             attester = accounts[5]
             attesterAddress = await attester.getAddress()
-            unirepContractCalledByAttester = unirepContract.connect(attester)
+
             await expect(
-                unirepContractCalledByAttester.attesterSignUp()
+                unirepContract.connect(attester).attesterSignUp()
             ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
         })
     })
