@@ -32,7 +32,7 @@ export default class UserState {
     private unirepState: UnirepState
 
     public id: ZkIdentity
-    public commitment: BigInt
+    public commitment: bigint
     private hasSignedUp: boolean = false
 
     public latestTransitionedEpoch: number // Latest epoch where the user has a record in the GST of that epoch

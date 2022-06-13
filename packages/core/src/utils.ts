@@ -679,11 +679,10 @@ const genUnirepState = async (
 
                 // Check if epoch tree root matches
                 const epochTreeRoot = proofArgs?.fromEpochTree
-                const isEpochTreeExisted =
-                    await unirepState.epochTreeRootExists(
-                        epochTreeRoot,
-                        fromEpoch
-                    )
+                const isEpochTreeExisted = unirepState.epochTreeRootExists(
+                    epochTreeRoot,
+                    fromEpoch
+                )
                 if (!isEpochTreeExisted) {
                     console.log('Epoch tree root mismatches')
                     isProofIndexValid[proofIndex] = false
@@ -1112,7 +1111,7 @@ const genUserState = async (
 
                 // Check if epoch tree root matches
                 const epochTreeRoot = proofArgs?.fromEpochTree
-                const isEpochTreeExisted = await userState.epochTreeRootExists(
+                const isEpochTreeExisted = userState.epochTreeRootExists(
                     epochTreeRoot,
                     fromEpoch
                 )
