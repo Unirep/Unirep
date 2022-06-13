@@ -129,34 +129,24 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     // Verify input data - Should found better way to handle it.
 
     function verifyAstesterSignUp(address attester) private view {
-        require(
-            attesters[attester] > 0,
-            'Unirep: attester has not signed up yet'
-        );
+        if (attesters[attester] == 0) revert AttesterNotSignUp(attester);
     }
 
     function verifyProofNullilier(bytes32 proofNullifier) private view {
-        require(
-            getProofIndex[proofNullifier] == 0,
-            'Unirep: the proof has been submitted before'
-        );
+        if (getProofIndex[proofNullifier] != 0)
+            revert NullilierAlreadyUsed(proofNullifier);
     }
 
     function verifyAttesterFee() private view {
-        require(
-            msg.value >= attestingFee,
-            'Unirep: no attesting fee or incorrect amount'
-        );
+        if (msg.value < attestingFee) revert AttestingFeeInvalid();
     }
 
     function verifyAttesterIndex(address attester, uint256 attesterId)
         private
         view
     {
-        require(
-            attesters[attester] == attesterId,
-            'Unirep: mismatched attesterId'
-        );
+        if (attesters[attester] != attesterId)
+            revert AttesterIdNotMatch(attesterId);
     }
 
     /**
@@ -166,14 +156,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * @param identityCommitment Commitment of the user's identity which is a semaphore identity.
      */
     function userSignUp(uint256 identityCommitment) external {
-        require(
-            hasUserSignedUp[identityCommitment] == false,
-            'Unirep: the user has already signed up'
-        );
-        require(
-            numUserSignUps < maxUsers,
-            'Unirep: maximum number of user signups reached'
-        );
+        if (hasUserSignedUp[identityCommitment] == true)
+            revert UserAlreadySignedUp(identityCommitment);
+        if (numUserSignUps >= maxUsers)
+            revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
         uint256 airdropPosRep = airdropAmount[msg.sender];
@@ -191,14 +177,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     }
 
     function _attesterSignUp(address attester) private {
-        require(
-            attesters[attester] == 0,
-            'Unirep: attester has already signed up'
-        );
-        require(
-            nextAttesterId < maxAttesters,
-            'Unirep: maximum number of attester signups reached'
-        );
+        if (attesters[attester] != 0) revert AttesterAlreadySignUp(attester);
+
+        if (nextAttesterId >= maxAttesters)
+            revert ReachedMaximumNumberUserSignedUp();
 
         attesters[attester] = nextAttesterId;
         nextAttesterId++;
@@ -220,10 +202,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         address attester,
         bytes calldata signature
     ) external override {
-        require(
-            verifySignature(attester, signature),
-            'Unirep: invalid attester sign up signature'
-        );
+        if (!isValidSignature(attester, signature)) revert InvalidSignature();
         _attesterSignUp(attester);
     }
 
@@ -255,17 +234,16 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         verifyAttesterIndex(attester, attestation.attesterId);
         verifyAttesterFee();
 
-        require(
-            toProofIndex != 0 &&
+        if (
+            !(toProofIndex != 0 &&
                 toProofIndex < proofIndex &&
-                fromProofIndex < proofIndex,
-            'Unirep: invalid proof index'
-        );
-        require(
-            attestation.signUp == 0 || attestation.signUp == 1,
-            'Unirep: invalid sign up flag'
-        );
-        require(epochKey <= maxEpochKey, 'Unirep: invalid epoch key range');
+                fromProofIndex < proofIndex)
+        ) revert InvalidProofIndex();
+
+        if (!(attestation.signUp == 0 || attestation.signUp == 1))
+            revert InvalidSignUpFlag();
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -320,7 +298,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) external payable {
-        verifySignature(attester, signature);
+        if (!isValidSignature(attester, signature)) revert InvalidSignature();
+
         _submitAttestation(
             attester,
             attestation,
@@ -344,14 +323,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     ) external {
         bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
         verifyProofNullilier(proofNullifier);
-        require(
-            publicSignals[1] == currentEpoch,
-            'Unirep: submit an epoch key proof with incorrect epoch'
-        );
-        require(
-            publicSignals[2] <= maxEpochKey,
-            'Unirep: invalid epoch key range'
-        );
+        if (publicSignals[1] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[2] > maxEpochKey) revert InvalidEpochKey();
 
         // emit proof event
         uint256 _proofIndex = proofIndex;
@@ -387,14 +360,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         verifyAttesterIndex(sender, publicSignals[3]);
         verifyAttesterFee();
 
-        require(
-            publicSignals[0] == currentEpoch,
-            'Unirep: submit an airdrop proof with incorrect epoch'
-        );
-        require(
-            publicSignals[1] <= maxEpochKey,
-            'Unirep: invalid epoch key range'
-        );
+        if (publicSignals[0] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[1] > maxEpochKey) revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -452,18 +419,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         verifyAttesterIndex(msg.sender, publicSignals[maxReputationBudget + 3]);
         verifyAttesterFee();
 
-        require(
-            publicSignals[maxReputationBudget] == currentEpoch,
-            'Unirep: submit a reputation proof with incorrect epoch'
-        );
-        require(
-            attesters[msg.sender] == publicSignals[maxReputationBudget + 3],
-            'Unirep: incorrect attester ID in the reputation proof'
-        );
-        require(
-            publicSignals[maxReputationBudget + 1] <= maxEpochKey,
-            'Unirep: invalid epoch key range'
-        );
+        if (publicSignals[maxReputationBudget] != currentEpoch)
+            revert EpochNotMatch();
+        if (attesters[msg.sender] != publicSignals[maxReputationBudget + 3])
+            revert AttesterIdNotMatch(publicSignals[maxReputationBudget + 3]);
+
+        if (publicSignals[maxReputationBudget + 1] > maxEpochKey)
+            revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -504,18 +466,14 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         AttestationEvent _event
     ) internal {
         // Validate attestation data
-        require(
-            isSNARKField(attestation.posRep),
-            'Unirep: invalid attestation posRep'
-        );
-        require(
-            isSNARKField(attestation.negRep),
-            'Unirep: invalid attestation negRep'
-        );
-        require(
-            isSNARKField(attestation.graffiti),
-            'Unirep: invalid attestation graffiti'
-        );
+        if (!isSNARKField(attestation.posRep))
+            revert InvalidSNARKField(AttestationFieldError.POS_REP);
+
+        if (!isSNARKField(attestation.negRep))
+            revert InvalidSNARKField(AttestationFieldError.NEG_REP);
+
+        if (!isSNARKField(attestation.graffiti))
+            revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
 
         // Emit epoch key proof with attestation submitted event
         // And user can verify if the epoch key is valid or not
@@ -537,10 +495,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
 
-        require(
-            block.timestamp - latestEpochTransitionTime >= epochLength,
-            'Unirep: epoch not yet ended'
-        );
+        if (block.timestamp - latestEpochTransitionTime < epochLength)
+            revert EpochNotEndYet();
 
         // Mark epoch transitioned as complete and increase currentEpoch
         emit Sequencer(currentEpoch, Event.EpochEnded);
@@ -633,16 +589,14 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
         verifyProofNullilier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
-        require(
-            publicSignals[1 + numEpochKeyNoncePerEpoch] < currentEpoch,
-            "Can not transition from epoch that's greater or equal to current epoch"
-        );
+        if (publicSignals[1 + numEpochKeyNoncePerEpoch] >= currentEpoch)
+            revert InvalidTransitionEpoch();
+
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {
-            require(
-                proofIndexRecords[i] != 0 &&
-                    (proofIndexRecords[i] < proofIndex),
-                'Unirep: invalid proof index'
-            );
+            if (
+                !(proofIndexRecords[i] != 0 &&
+                    (proofIndexRecords[i] < proofIndex))
+            ) revert InvalidProofIndex();
         }
 
         uint256 _proofIndex = proofIndex;
@@ -680,10 +634,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        require(
-            isValidSignals(publicSignals),
-            'Unirep: invalid public signals when verifyEpochKeyValidity'
-        );
+        if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
         return epkValidityVerifier.verifyProof(proof, publicSignals);
@@ -704,10 +655,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
-        require(
-            isValidSignals(publicSignals),
-            'Unirep: invalid public signals when verify StartTransition Proof'
-        );
+        if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
         return startTransitionVerifier.verifyProof(proof, publicSignals);
@@ -727,10 +675,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     ) external view returns (bool) {
         // Ensure that each public input is within range of the snark scalar
         // field.
-        require(
-            isValidSignals(publicSignals),
-            'Unirep: invalid public signals when verify ProcessAttestation Proof'
-        );
+        if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
         return processAttestationsVerifier.verifyProof(proof, publicSignals);
@@ -759,10 +704,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // Ensure that each public input is within range of the snark scalar
         // field.
 
-        require(
-            isValidSignals(publicSignals),
-            'Unirep: invalid public signals when verify UserStateTransition'
-        );
+        if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
         return userStateTransitionVerifier.verifyProof(proof, publicSignals);
@@ -795,10 +737,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-        require(
-            isValidSignals(publicSignals),
-            'Unirep: invalid public signals when verify Reputation'
-        );
+        if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
         return reputationVerifier.verifyProof(proof, publicSignals);
@@ -825,10 +764,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-        require(
-            isValidSignals(publicSignals),
-            'Unirep: invalid public signals when verify UserSignUp'
-        );
+        if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
         return userSignUpVerifier.verifyProof(proof, publicSignals);

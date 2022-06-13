@@ -45,7 +45,7 @@ describe('EventFilters', () => {
 
     let userId, userCommitment
 
-    let attester, attesterAddress, attesterId, unirepContractCalledByAttester
+    let attester, attesterAddress, attesterId
 
     const signedUpInLeaf = 1
     const indexes: BigNumber[] = []
@@ -76,8 +76,8 @@ describe('EventFilters', () => {
         console.log('Attesters sign up')
         attester = accounts[1]
         attesterAddress = await attester.getAddress()
-        unirepContractCalledByAttester = unirepContract.connect(attester)
-        tx = await unirepContractCalledByAttester.attesterSignUp()
+
+        tx = await unirepContract.connect(attester).attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
         attesterId = await unirepContract.attesters(attesterAddress)
@@ -132,13 +132,11 @@ describe('EventFilters', () => {
         )
 
         const senderPfIdx = 0
-        const tx = await unirepContractCalledByAttester.submitAttestation(
-            attestation,
-            epochKey,
-            proofIndex,
-            senderPfIdx,
-            { value: attestingFee }
-        )
+        const tx = await unirepContract
+            .connect(attester)
+            .submitAttestation(attestation, epochKey, proofIndex, senderPfIdx, {
+                value: attestingFee,
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
     })
@@ -156,13 +154,11 @@ describe('EventFilters', () => {
             Circuit.proveReputation,
             circuitInputs
         )
-        const tx = await unirepContractCalledByAttester.spendReputation(
-            input.publicSignals,
-            input.proof,
-            {
+        const tx = await unirepContract
+            .connect(attester)
+            .spendReputation(input.publicSignals, input.proof, {
                 value: attestingFee,
-            }
-        )
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -188,13 +184,11 @@ describe('EventFilters', () => {
             circuitInputs
         )
 
-        let tx = await unirepContractCalledByAttester.airdropEpochKey(
-            input.publicSignals,
-            input.proof,
-            {
+        let tx = await unirepContract
+            .connect(attester)
+            .airdropEpochKey(input.publicSignals, input.proof, {
                 value: attestingFee,
-            }
-        )
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 

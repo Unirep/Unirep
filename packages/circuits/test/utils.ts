@@ -31,6 +31,11 @@ const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
 const EPOCH_KEY_NULLIFIER_DOMAIN = BigInt(1)
 const GSTZERO_VALUE = 0
 
+type UserStates = {
+    userStateTree: SparseMerkleTree
+    reputationRecords: { [key: string]: IReputation }
+}
+
 interface IAttestation {
     attesterId: BigInt
     posRep: BigInt
@@ -90,6 +95,7 @@ interface IReputation {
     posRep: BigInt
     negRep: BigInt
     graffiti: BigInt
+    signUp: BigInt
 }
 
 class Reputation implements IReputation {
@@ -266,7 +272,7 @@ const genStartTransitionCircuitInput = (
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
+const bootstrapRandomUSTree = async (): Promise<UserStates> => {
     const expectedNumAttestationsMade = 5
     const userStateTree = await genNewUserStateTree()
     let reputationRecords = {}
@@ -289,7 +295,7 @@ const bootstrapRandomUSTree = async (): Promise<crypto.SparseMerkleTree> => {
             reputationRecords[attesterId.toString()].hash()
         )
     }
-    return userStateTree
+    return { userStateTree, reputationRecords }
 }
 
 const genProcessAttestationsCircuitInput = async (
@@ -480,7 +486,7 @@ const genUserStateTransitionCircuitInput = async (
     const epochTree = await genNewEpochTree()
 
     // User state tree
-    const userStateTree = await bootstrapRandomUSTree()
+    const { userStateTree } = await bootstrapRandomUSTree()
     const intermediateUserStateTreeRoots: BigInt[] = []
     const blindedUserState: BigInt[] = []
     const blindedHashChain: BigInt[] = []
@@ -599,12 +605,17 @@ const genReputationCircuitInput = async (
     _graffitiPreImage?
 ) => {
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-    const repNullifiersAmount =
-        _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
-    const minRep = _minRep === undefined ? 0 : _minRep
-    const proveGraffiti = _proveGraffiti === undefined ? 0 : _proveGraffiti
-    const graffitiPreImage =
-        _graffitiPreImage === undefined ? 0 : _graffitiPreImage
+    const repNullifiersAmount = _repNullifiersAmount ?? 0
+    const minRep = _minRep ?? 0
+    const proveGraffiti = _proveGraffiti ?? 0
+    let graffitiPreImage
+    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
+        graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
+    }
+    graffitiPreImage = _graffitiPreImage ?? 0
+    if (reputationRecords[attesterId] === undefined) {
+        reputationRecords[attesterId] = Reputation.default()
+    }
 
     // User state tree
     const userStateTree = await genNewUserStateTree()
@@ -679,6 +690,9 @@ const genProveSignUpCircuitInput = async (
 ) => {
     const nonce = 0
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+    if (reputationRecords[attesterId] === undefined) {
+        reputationRecords[attesterId] = Reputation.default()
+    }
 
     // User state tree
     const userStateTree = await genNewUserStateTree()
@@ -787,6 +801,7 @@ export {
     Reputation,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
+    GSTZERO_VALUE,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     genNewEpochTree,
