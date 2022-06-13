@@ -144,18 +144,18 @@ const root = tree.root
 ```typescript
 const leafKey = BigInt(3)
 const leafValue = BigInt(4)
-await tree.update(leafKey, leafValue)
+tree.update(leafKey, leafValue)
 ```
 
 **Generate merkle proof**
 ```typescript
 const leafKey = Bigint(1)
-const proof = await tree.createProof(leafKey)
+const proof = tree.createProof(leafKey)
 ```
 
 **Verify merkle proof**
 ```typescript
-const isValid = await tree.verifyProof(proof)
+const isValid = tree.verifyProof(proof)
 ```
 
 ### Crypto utils
