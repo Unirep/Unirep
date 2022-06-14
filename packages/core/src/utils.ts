@@ -1,16 +1,18 @@
 import { BigNumber, ethers } from 'ethers'
 import Keyv from 'keyv'
-import {
-    Circuit,
-    formatProofForSnarkjsVerification,
-    verifyProof,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
     Attestation,
     getUnirepContract,
     Event,
     AttestationEvent,
     Unirep,
+    EpochKeyProof,
+    ReputationProof,
+    SignUpProof,
+    UserTransitionProof,
+    StartTransitionProof,
+    ProcessAttestationsProof,
 } from '@unirep/contracts'
 import {
     hash5,
@@ -125,161 +127,43 @@ const genNewSMT = async (
     return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
 }
 
-const verifyEpochKeyProofEvent = async (
-    event: ethers.Event
-): Promise<boolean> => {
-    const args = event?.args?.proof
-    const emptyArray: BigNumber[] = []
-    const formatPublicSignals = emptyArray
-        .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
-        .map((n) => n.toBigInt())
-    const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
-        Circuit.verifyEpochKey,
-        formatProof,
-        formatPublicSignals
-    )
-    return isProofValid
-}
-
-const verifyReputationProofEvent = async (
-    event: ethers.Event
-): Promise<boolean> => {
-    const args = event?.args?.proof
-    const emptyArray: BigNumber[] = []
-    const formatPublicSignals = emptyArray
-        .concat(
-            args?.repNullifiers,
-            args?.epoch,
-            args?.epochKey,
-            args?.globalStateTree,
-            args?.attesterId,
-            args?.proveReputationAmount,
-            args?.minRep,
-            args?.proveGraffiti,
-            args?.graffitiPreImage
-        )
-        .map((n) => n.toBigInt())
-    const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
-        Circuit.proveReputation,
-        formatProof,
-        formatPublicSignals
-    )
-    return isProofValid
-}
-
-const verifySignUpProofEvent = async (
-    event: ethers.Event
-): Promise<boolean> => {
-    const args = event?.args?.proof
-    const emptyArray: BigNumber[] = []
-    const formatPublicSignals = emptyArray
-        .concat(
-            args?.epoch,
-            args?.epochKey,
-            args?.globalStateTree,
-            args?.attesterId,
-            args?.userHasSignedUp
-        )
-        .map((n) => n.toBigInt())
-    const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
-        Circuit.proveUserSignUp,
-        formatProof,
-        formatPublicSignals
-    )
-    return isProofValid
-}
-
-const verifyStartTransitionProofEvent = async (
-    event: ethers.Event
-): Promise<boolean> => {
-    const args = event?.args
-    const emptyArray: BigNumber[] = []
-    const formatPublicSignals = emptyArray
-        .concat(
-            args?.blindedUserState,
-            args?.blindedHashChain,
-            args?.globalStateTree
-        )
-        .map((n) => n.toBigInt())
-    const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
-        Circuit.startTransition,
-        formatProof,
-        formatPublicSignals
-    )
-    return isProofValid
-}
-
-const verifyProcessAttestationEvent = async (
-    event: ethers.Event
-): Promise<boolean> => {
-    const args = event?.args
-    const emptyArray: BigNumber[] = []
-    const formatPublicSignals = emptyArray
-        .concat(
-            args?.outputBlindedUserState,
-            args?.outputBlindedHashChain,
-            args?.inputBlindedUserState
-        )
-        .map((n) => n.toBigInt())
-    const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
-        Circuit.processAttestations,
-        formatProof,
-        formatPublicSignals
-    )
-    return isProofValid
-}
-
-const verifyUserStateTransitionEvent = async (
-    event: ethers.Event
-): Promise<boolean> => {
-    const transitionArgs = event?.args?.proof
-    const emptyArray: BigNumber[] = []
-    let formatPublicSignals = emptyArray
-        .concat(
-            transitionArgs.newGlobalStateTreeLeaf,
-            transitionArgs.epkNullifiers,
-            transitionArgs.transitionFromEpoch,
-            transitionArgs.blindedUserStates,
-            transitionArgs.fromGlobalStateTree,
-            transitionArgs.blindedHashChains,
-            transitionArgs.fromEpochTree
-        )
-        .map((n) => n.toBigInt())
-    let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof)
-    const isProofValid = await verifyProof(
-        Circuit.userStateTransition,
-        formatProof,
-        formatPublicSignals
-    )
-    return isProofValid
-}
-
 const verifyUSTEvents = async (
     transitionEvent: ethers.Event,
     startTransitionEvent: ethers.Event,
     processAttestationEvents: ethers.Event[]
 ): Promise<boolean> => {
     // verify the final UST proof
-    const isValid = await verifyUserStateTransitionEvent(transitionEvent)
-    if (!isValid) return false
+    {
+        const args = transitionEvent?.args
+        const format = new UserTransitionProof(
+            args?.publicSignals,
+            formatProofForSnarkjsVerification(args?.proof)
+        )
+        const isValid = await format.verify()
+        if (!isValid) return false
+    }
 
     // verify the start transition proof
-    const isStartTransitionProofValid = await verifyStartTransitionProofEvent(
-        startTransitionEvent
-    )
-    if (!isStartTransitionProofValid) return false
+    {
+        const args = startTransitionEvent?.args
+        const format = new StartTransitionProof(
+            args?.publicSignals,
+            formatProofForSnarkjsVerification(args?.proof)
+        )
+        const isValid = await format.verify()
+        if (!isValid) return false
+    }
 
     // verify process attestations proofs
-    const transitionArgs = transitionEvent?.args?.proof
+    const transitionArgs = transitionEvent?.args
     const isProcessAttestationValid = await verifyProcessAttestationEvents(
         processAttestationEvents,
-        transitionArgs.blindedUserStates[0],
-        transitionArgs.blindedUserStates[1]
+        transitionArgs?.publicSignals[
+        UserTransitionProof.idx.blindedUserStates[0]
+        ],
+        transitionArgs?.publicSignals[
+        UserTransitionProof.idx.blindedUserStates[1] - 1
+        ]
     )
     if (!isProcessAttestationValid) return false
     return true
@@ -294,11 +178,13 @@ const verifyProcessAttestationEvents = async (
     // The rest are process attestations proofs
     for (let i = 0; i < processAttestationEvents.length; i++) {
         const args = processAttestationEvents[i]?.args
-        const isValid = await verifyProcessAttestationEvent(
-            processAttestationEvents[i]
+        const format = new ProcessAttestationsProof(
+            args?.publicSignals,
+            formatProofForSnarkjsVerification(args?.proof)
         )
+        const isValid = await format.verify()
         if (!isValid) return false
-        currentBlindedUserState = args?.outputBlindedUserState
+        currentBlindedUserState = BigNumber.from(format.outputBlindedUserState)
     }
     return currentBlindedUserState.eq(finalBlindedUserState)
 }
@@ -473,22 +359,29 @@ const genUnirepState = async (
             const fromProofIndex = Number(args?.fromProofIndex)
             const attestation_ = args?.attestation
             const event = proofIndexMap[toProofIndex]
-            const results = event?.args?.proof
+            const { publicSignals, proof } = event.args
+            const formatProof = formatProofForSnarkjsVerification(proof)
+            let results
+            if (event.event === 'IndexedEpochKeyProof') {
+                results = new EpochKeyProof(
+                    publicSignals,
+                    formatProof
+                )
+            } else if (event.event === 'IndexedReputationProof') {
+                results = new ReputationProof(
+                    publicSignals,
+                    formatProof
+                )
+            } else if (event.event === 'IndexedUserSignedUpProof') {
+                results = new SignUpProof(publicSignals, formatProof)
+            } else {
+                console.log('Cannot find the attestation event')
+                continue
+            }
 
             if (isProofIndexValid[toProofIndex] === undefined) {
-                let isValid
-                if (event.event === 'IndexedEpochKeyProof') {
-                    isValid = await verifyEpochKeyProofEvent(event)
-                } else if (event.event === 'IndexedReputationProof') {
-                    isValid = await verifyReputationProofEvent(event)
-                } else if (event.event === 'IndexedUserSignedUpProof') {
-                    isValid = await verifySignUpProofEvent(event)
-                } else {
-                    console.log('Cannot find the attestation event')
-                    continue
-                }
-
                 // verify the proof of the given proof index
+                const isValid = await results.verify()
                 if (!isValid) {
                     console.log(
                         'Proof is invalid: ',
@@ -557,7 +450,9 @@ const genUnirepState = async (
                 }
 
                 const proveReputationAmount = Number(
-                    fromEvent?.args?.proof?.proveReputationAmount
+                    fromEvent?.args?.publicSignals[
+                    ReputationProof.idx.proveReputationAmount
+                    ]
                 )
                 const repInAttestation =
                     Number(attestation_.posRep) + Number(attestation_.negRep)
@@ -587,7 +482,7 @@ const genUnirepState = async (
                     attestation_.signUp.toBigInt()
                 )
                 const epochKey = args?.epochKey
-                if (epochKey.eq(results?.epochKey)) {
+                if (epochKey.eq(BigNumber.from(results?.epochKey))) {
                     unirepState.addAttestation(
                         epochKey.toString(),
                         attestation,
@@ -618,8 +513,12 @@ const genUnirepState = async (
             const newLeaf = args?.hashedLeaf.toBigInt()
             const proofIndex = Number(args?.proofIndex)
             const event = proofIndexMap[proofIndex]
-            const proofArgs = event?.args?.proof
-            const fromEpoch = Number(proofArgs?.transitionFromEpoch)
+            const { publicSignals, proof } = event?.args
+            const proofArgs = new UserTransitionProof(
+                publicSignals,
+                formatProofForSnarkjsVerification(proof)
+            )
+            const fromEpoch = Number(proofArgs.transitionFromEpoch)
 
             if (isProofIndexValid[proofIndex] === undefined) {
                 let isValid = false
@@ -635,7 +534,7 @@ const genUnirepState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                        'IndexedStartedTransitionProof'
+                    'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -649,7 +548,7 @@ const genUnirepState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                            'IndexedProcessedAttestationsProof'
+                        'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -672,7 +571,7 @@ const genUnirepState = async (
                     continue
                 }
 
-                const GSTRoot = proofArgs?.fromGlobalStateTree
+                const GSTRoot = proofArgs?.fromGlobalStateTree.toString()
                 // check if GST root matches
                 const isGSTRootExisted = unirepState.GSTRootExists(
                     GSTRoot,
@@ -685,7 +584,7 @@ const genUnirepState = async (
                 }
 
                 // Check if epoch tree root matches
-                const epochTreeRoot = proofArgs?.fromEpochTree
+                const epochTreeRoot = proofArgs?.fromEpochTree.toString()
                 const isEpochTreeExisted =
                     await unirepState.epochTreeRootExists(
                         epochTreeRoot,
@@ -701,7 +600,7 @@ const genUnirepState = async (
 
             if (isProofIndexValid[proofIndex]) {
                 const epkNullifiersInEvent = proofArgs?.epkNullifiers?.map(
-                    (n) => BigInt(n)
+                    (n) => BigInt(n.toString())
                 )
                 let exist = false
                 for (let nullifier of epkNullifiersInEvent) {
@@ -906,22 +805,29 @@ const genUserState = async (
             const fromProofIndex = Number(args?.fromProofIndex)
             const attestation_ = args?.attestation
             const event = proofIndexMap[toProofIndex]
-            const results = event?.args?.proof
+            const { publicSignals, proof } = event.args
+            const formatProof = formatProofForSnarkjsVerification(proof)
+            let results
+            if (event.event === 'IndexedEpochKeyProof') {
+                results = new EpochKeyProof(
+                    publicSignals,
+                    formatProof
+                )
+            } else if (event.event === 'IndexedReputationProof') {
+                results = new ReputationProof(
+                    publicSignals,
+                    formatProof
+                )
+            } else if (event.event === 'IndexedUserSignedUpProof') {
+                results = new SignUpProof(publicSignals, formatProof)
+            } else {
+                console.log('Cannot find the attestation event')
+                continue
+            }
 
             if (isProofIndexValid[toProofIndex] === undefined) {
-                let isValid
-                if (event.event === 'IndexedEpochKeyProof') {
-                    isValid = await verifyEpochKeyProofEvent(event)
-                } else if (event.event === 'IndexedReputationProof') {
-                    isValid = await verifyReputationProofEvent(event)
-                } else if (event.event === 'IndexedUserSignedUpProof') {
-                    isValid = await verifySignUpProofEvent(event)
-                } else {
-                    console.log('Cannot find the attestation event')
-                    continue
-                }
-
                 // verify the proof of the given proof index
+                const isValid = results.verify()
                 if (!isValid) {
                     console.log(
                         'Proof is invalid: ',
@@ -1020,7 +926,7 @@ const genUserState = async (
                     attestation_.signUp.toBigInt()
                 )
                 const epochKey = args?.epochKey
-                if (epochKey.eq(results?.epochKey)) {
+                if (epochKey.eq(BigNumber.from(results?.epochKey))) {
                     userState.addAttestation(
                         epochKey.toString(),
                         attestation,
@@ -1051,8 +957,12 @@ const genUserState = async (
             const newLeaf = args?.hashedLeaf.toBigInt()
             const proofIndex = Number(args?.proofIndex)
             const event = proofIndexMap[proofIndex]
-            const proofArgs = event?.args?.proof
-            const fromEpoch = Number(proofArgs?.transitionFromEpoch)
+            const { publicSignals, proof } = event?.args
+            const proofArgs = new UserTransitionProof(
+                publicSignals,
+                formatProofForSnarkjsVerification(proof)
+            )
+            const fromEpoch = Number(proofArgs.transitionFromEpoch)
 
             if (isProofIndexValid[proofIndex] === undefined) {
                 let isValid = false
@@ -1068,7 +978,7 @@ const genUserState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                        'IndexedStartedTransitionProof'
+                    'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -1082,7 +992,7 @@ const genUserState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                            'IndexedProcessedAttestationsProof'
+                        'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -1105,7 +1015,7 @@ const genUserState = async (
                     continue
                 }
 
-                const GSTRoot = proofArgs?.fromGlobalStateTree
+                const GSTRoot = proofArgs.fromGlobalStateTree.toString()
                 // check if GST root matches
                 const isGSTRootExisted = userState.GSTRootExists(
                     GSTRoot,
@@ -1118,7 +1028,7 @@ const genUserState = async (
                 }
 
                 // Check if epoch tree root matches
-                const epochTreeRoot = proofArgs?.fromEpochTree
+                const epochTreeRoot = proofArgs.fromEpochTree.toString()
                 const isEpochTreeExisted = await userState.epochTreeRootExists(
                     epochTreeRoot,
                     fromEpoch
@@ -1132,8 +1042,8 @@ const genUserState = async (
             }
 
             if (isProofIndexValid[proofIndex]) {
-                const epkNullifiersInEvent = proofArgs?.epkNullifiers?.map(
-                    (n) => n.toBigInt()
+                const epkNullifiersInEvent = proofArgs.epkNullifiers?.map(
+                    (n) => BigInt(n.toString())
                 )
                 let exist = false
                 for (let nullifier of epkNullifiersInEvent) {
@@ -1169,14 +1079,6 @@ export {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     formatProofForSnarkjsVerification,
-    verifyEpochKeyProofEvent,
-    verifyReputationProofEvent,
-    verifySignUpProofEvent,
-    verifyStartTransitionProofEvent,
-    verifyProcessAttestationEvent,
-    verifyProcessAttestationEvents,
-    verifyUserStateTransitionEvent,
-    verifyUSTEvents,
     genEpochKey,
     genEpochKeyNullifier,
     genReputationNullifier,
