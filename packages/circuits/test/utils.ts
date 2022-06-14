@@ -3,7 +3,7 @@
 // @ts-ignore
 import assert from 'assert'
 import { ethers } from 'ethers'
-const circom = require('circom')
+import * as circom from 'circom'
 import * as crypto from '@unirep/crypto'
 
 import {

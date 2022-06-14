@@ -3,9 +3,9 @@ import { stringifyBigInts } from '@unirep/crypto'
 import * as argparse from 'argparse'
 import * as fs from 'fs'
 import * as path from 'path'
-const compiler = require('circom').compiler
-const snarkjs = require('snarkjs')
-const fastFile = require('fastfile')
+import * as circom from 'circom'
+import * as snarkjs from 'snarkjs'
+import * as fastFile from 'fastfile'
 
 const fileExists = (filepath: string): boolean => {
     const currentPath = path.join(__dirname, '..')
@@ -93,7 +93,7 @@ const main = async (): Promise<number> => {
             r1csFileName: circuitOut,
             symWriteStream: fs.createWriteStream(symOut),
         }
-        await compiler(inputFile, options)
+        await circom.compiler(inputFile, options)
         console.log('Generated', circuitOut, 'and', wasmOut)
     }
 
