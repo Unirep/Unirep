@@ -6,7 +6,13 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
-import { ProcessAttestationsProof, StartTransitionProof, Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
+import {
+    ProcessAttestationsProof,
+    StartTransitionProof,
+    Unirep,
+    UnirepFactory,
+    UserTransitionProof,
+} from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUserState } from '../src'
@@ -90,10 +96,7 @@ const userStateTransition = async (args: any) => {
         try {
             tx = await unirepContract
                 .connect(wallet)
-                .startUserStateTransition(
-                    input.publicSignals,
-                    input.proof
-                )
+                .startUserStateTransition(input.publicSignals, input.proof)
             await tx.wait()
         } catch (error) {
             console.log('Transaction Error', error)
@@ -126,10 +129,7 @@ const userStateTransition = async (args: any) => {
         try {
             tx = await unirepContract
                 .connect(wallet)
-                .processAttestations(
-                    input.publicSignals,
-                    input.proof,
-                )
+                .processAttestations(input.publicSignals, input.proof)
             await tx.wait()
         } catch (error) {
             console.log('Transaction Error', error)
@@ -144,7 +144,6 @@ const userStateTransition = async (args: any) => {
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
-
 
     // update user state proof
     const input = new UserTransitionProof(

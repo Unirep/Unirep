@@ -159,10 +159,10 @@ const verifyUSTEvents = async (
     const isProcessAttestationValid = await verifyProcessAttestationEvents(
         processAttestationEvents,
         transitionArgs?.publicSignals[
-        UserTransitionProof.idx.blindedUserStates[0]
+            UserTransitionProof.idx.blindedUserStates[0]
         ],
         transitionArgs?.publicSignals[
-        UserTransitionProof.idx.blindedUserStates[1] - 1
+            UserTransitionProof.idx.blindedUserStates[1] - 1
         ]
     )
     if (!isProcessAttestationValid) return false
@@ -363,15 +363,9 @@ const genUnirepState = async (
             const formatProof = formatProofForSnarkjsVerification(proof)
             let results
             if (event.event === 'IndexedEpochKeyProof') {
-                results = new EpochKeyProof(
-                    publicSignals,
-                    formatProof
-                )
+                results = new EpochKeyProof(publicSignals, formatProof)
             } else if (event.event === 'IndexedReputationProof') {
-                results = new ReputationProof(
-                    publicSignals,
-                    formatProof
-                )
+                results = new ReputationProof(publicSignals, formatProof)
             } else if (event.event === 'IndexedUserSignedUpProof') {
                 results = new SignUpProof(publicSignals, formatProof)
             } else {
@@ -451,7 +445,7 @@ const genUnirepState = async (
 
                 const proveReputationAmount = Number(
                     fromEvent?.args?.publicSignals[
-                    ReputationProof.idx.proveReputationAmount
+                        ReputationProof.idx.proveReputationAmount
                     ]
                 )
                 const repInAttestation =
@@ -534,7 +528,7 @@ const genUnirepState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                    'IndexedStartedTransitionProof'
+                        'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -548,7 +542,7 @@ const genUnirepState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                        'IndexedProcessedAttestationsProof'
+                            'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -809,15 +803,9 @@ const genUserState = async (
             const formatProof = formatProofForSnarkjsVerification(proof)
             let results
             if (event.event === 'IndexedEpochKeyProof') {
-                results = new EpochKeyProof(
-                    publicSignals,
-                    formatProof
-                )
+                results = new EpochKeyProof(publicSignals, formatProof)
             } else if (event.event === 'IndexedReputationProof') {
-                results = new ReputationProof(
-                    publicSignals,
-                    formatProof
-                )
+                results = new ReputationProof(publicSignals, formatProof)
             } else if (event.event === 'IndexedUserSignedUpProof') {
                 results = new SignUpProof(publicSignals, formatProof)
             } else {
@@ -978,7 +966,7 @@ const genUserState = async (
                 if (
                     startTransitionEvent === undefined ||
                     startTransitionEvent?.event !==
-                    'IndexedStartedTransitionProof'
+                        'IndexedStartedTransitionProof'
                 ) {
                     isProofIndexValid[proofIndex] = false
                     continue
@@ -992,7 +980,7 @@ const genUserState = async (
                     if (
                         processAttestationEvent === undefined ||
                         processAttestationEvent?.event !==
-                        'IndexedProcessedAttestationsProof'
+                            'IndexedProcessedAttestationsProof'
                     ) {
                         isProofIndexValid[proofIndex] = false
                         continue
@@ -1042,8 +1030,8 @@ const genUserState = async (
             }
 
             if (isProofIndexValid[proofIndex]) {
-                const epkNullifiersInEvent = proofArgs.epkNullifiers?.map(
-                    (n) => BigInt(n.toString())
+                const epkNullifiersInEvent = proofArgs.epkNullifiers?.map((n) =>
+                    BigInt(n.toString())
                 )
                 let exist = false
                 for (let nullifier of epkNullifiersInEvent) {

@@ -89,9 +89,13 @@ const spendReputation = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .spendReputation(reputationProof.publicSignals, reputationProof.proof, {
-                value: attestingFee,
-            })
+            .spendReputation(
+                reputationProof.publicSignals,
+                reputationProof.proof,
+                {
+                    value: attestingFee,
+                }
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

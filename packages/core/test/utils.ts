@@ -10,10 +10,7 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import {
-    Circuit,
-    verifyProof,
-} from '@unirep/circuits'
+import { Circuit, verifyProof } from '@unirep/circuits'
 import {
     Attestation,
     ProcessAttestationsProof,
