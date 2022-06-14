@@ -3,7 +3,6 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
@@ -13,7 +12,7 @@ import {
     deployUnirep,
     Unirep,
 } from '../src'
-import { NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits/config'
+import { Circuit, NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits'
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)

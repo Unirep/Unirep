@@ -8,10 +8,11 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "yarn UnirepStateTests && yarn UserStateTests && yarn integrationTest",
-        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile --parallel $(find test/integration -name '*.test.ts')",
-        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile --parallel $(find test/UnirepState -name '*.test.ts')",
-        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 npx hardhat test --no-compile --parallel $(find test/UserState -name '*.test.ts')",
+        "test": "yarn synchronizerTests && yarn UnirepStateTests & yarn UserStateTests & yarn integrationTest",
+        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/integration/*.test.ts",
+        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/UnirepState/*.test.ts",
+        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/UserState/*.test.ts",
+        "synchronizerTests": "hardhat test --parallel --no-compile test/synchronizer/*.test.ts",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep",
@@ -27,12 +28,15 @@
         "base64url": "^3.0.1",
         "ethereum-waffle": "^3.4.4",
         "hardhat": "^2.9.9",
-        "shelljs": "^0.8.5"
+        "shelljs": "^0.8.5",
+        "typescript": "^4.7.3"
     },
     "dependencies": {
         "@unirep/circuits": "1.0.0",
         "@unirep/contracts": "1.0.0",
         "@unirep/crypto": "1.0.0",
-        "ethers": "^5.6.8"
+        "anondb": "^0.0.6",
+        "ethers": "^5.6.8",
+        "nanoid": "3"
     }
 }
