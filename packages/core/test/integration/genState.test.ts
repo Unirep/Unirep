@@ -1,23 +1,15 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    verifyProof,
-} from '@unirep/circuits'
+import { ZkIdentity } from '@unirep/crypto'
 import {
     Attestation,
-    computeProcessAttestationsProofHash,
-    computeStartTransitionProofHash,
     deployUnirep,
     EpochKeyProof,
     ReputationProof,
     SignUpProof,
     Unirep,
-    UserTransitionProof,
 } from '@unirep/contracts'
 import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
@@ -26,6 +18,7 @@ import {
     compareEpochTrees,
     compareStates,
     genRandomAttestation,
+    submitUSTProofs,
 } from '../utils'
 
 describe('Generate user state', function () {
@@ -159,7 +152,10 @@ describe('Generate user state', function () {
             const isValid = await epochKeyProof.verify()
             expect(isValid, 'Verify epk proof off-chain failed').to.be.true
 
-            let tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+            let tx = await unirepContract.submitEpochKeyProof(
+                epochKeyProof.publicSignals,
+                epochKeyProof.proof
+            )
             let receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
@@ -172,13 +168,14 @@ describe('Generate user state', function () {
             attesterId = (
                 await unirepContract.attesters(attester['addr'])
             ).toBigInt()
+            const epochKey = epochKeyProof.epochKey.toString()
             const attestation: Attestation = genRandomAttestation()
             attestation.attesterId = attesterId
             tx = await unirepContract
                 .connect(attester['acct'])
                 .submitAttestation(
                     attestation,
-                    epochKeyProof.epochKey,
+                    epochKey,
                     proofIndex,
                     fromProofIndex,
                     { value: attestingFee }
@@ -228,7 +225,11 @@ describe('Generate user state', function () {
 
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .spendReputation(reputationProof, { value: attestingFee })
+                .spendReputation(
+                    reputationProof.publicSignals,
+                    reputationProof.proof,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(
                 receipt.status,
@@ -266,10 +267,14 @@ describe('Generate user state', function () {
 
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .airdropEpochKey(userSignUpProof, {
-                    value: attestingFee,
-                    gasLimit: 1000000,
-                })
+                .airdropEpochKey(
+                    userSignUpProof.publicSignals,
+                    userSignUpProof.proof,
+                    {
+                        value: attestingFee,
+                        gasLimit: 1000000,
+                    }
+                )
             const receipt = await tx.wait()
             expect(receipt.status, 'Submit airdrop proof failed').to.equal(1)
 
@@ -317,150 +322,13 @@ describe('Generate user state', function () {
         })
 
         it('user state transition', async () => {
-            const proofIndexes: ethers.BigNumber[] = []
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[firstUser]
             )
-            const {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            } = await userState.genUserStateTransitionProofs()
-            let isValid = await verifyProof(
-                Circuit.startTransition,
-                startTransitionProof.proof,
-                startTransitionProof.publicSignals
-            )
-            expect(isValid, 'Verify start transition circuit off-chain failed')
-                .to.be.true
-
-            const blindedUserState = startTransitionProof.blindedUserState
-            const blindedHashChain = startTransitionProof.blindedHashChain
-            const globalStateTree = startTransitionProof.globalStateTreeRoot
-            const proof = formatProofForVerifierContract(
-                startTransitionProof.proof
-            )
-            let tx = await unirepContract.startUserStateTransition(
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
-                proof
-            )
-            let receipt = await tx.wait()
-            expect(
-                receipt.status,
-                'Submit user state transition proof failed'
-            ).to.equal(1)
-            console.log(
-                'Gas cost of submit a start transition proof:',
-                receipt.gasUsed.toString()
-            )
-
-            let proofNullifier = computeStartTransitionProofHash(
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
-                proof
-            )
-            let proofIndex = await unirepContract.getProofIndex(proofNullifier)
-            proofIndexes.push(proofIndex)
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProof(
-                    Circuit.processAttestations,
-                    processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
-                )
-                expect(
-                    isValid,
-                    'Verify process attestations circuit off-chain failed'
-                ).to.be.true
-
-                const outputBlindedUserState =
-                    processAttestationProofs[i].outputBlindedUserState
-                const outputBlindedHashChain =
-                    processAttestationProofs[i].outputBlindedHashChain
-                const inputBlindedUserState =
-                    processAttestationProofs[i].inputBlindedUserState
-
-                // submit random process attestations should success and not affect the results
-                const falseInput = BigNumber.from(genRandomSalt())
-                tx = await unirepContract.processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    falseInput,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(
-                    receipt.status,
-                    'Submit process attestations proof failed'
-                ).to.equal(1)
-
-                tx = await unirepContract.processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(
-                    receipt.status,
-                    'Submit process attestations proof failed'
-                ).to.equal(1)
-                console.log(
-                    'Gas cost of submit a process attestations proof:',
-                    receipt.gasUsed.toString()
-                )
-
-                const proofNullifier = computeProcessAttestationsProofHash(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                const proofIndex = await unirepContract.getProofIndex(
-                    proofNullifier
-                )
-                proofIndexes.push(proofIndex)
-            }
-
-            isValid = await verifyProof(
-                Circuit.userStateTransition,
-                finalTransitionProof.proof,
-                finalTransitionProof.publicSignals
-            )
-            expect(
-                isValid,
-                'Verify user state transition circuit off-chain failed'
-            ).to.be.true
-
-            const transitionProof = new UserTransitionProof(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-
-            tx = await unirepContract.updateUserStateRoot(
-                transitionProof,
-                proofIndexes
-            )
-            receipt = await tx.wait()
-            expect(
-                receipt.status,
-                'Submit user state transition proof failed'
-            ).to.equal(1)
-            console.log(
-                'Gas cost of submit a user state transition proof:',
-                receipt.gasUsed.toString()
-            )
+            const proofs = await userState.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, proofs)
         })
 
         it('restored user state should match the user state after user state transition', async () => {
@@ -501,150 +369,13 @@ describe('Generate user state', function () {
         })
 
         it('user state transition', async () => {
-            const proofIndexes: ethers.BigNumber[] = []
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
                 userIds[secondUser]
             )
-            const {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            } = await userState.genUserStateTransitionProofs()
-            let isValid = await verifyProof(
-                Circuit.startTransition,
-                startTransitionProof.proof,
-                startTransitionProof.publicSignals
-            )
-            expect(isValid, 'Verify start transition circuit off-chain failed')
-                .to.be.true
-
-            const blindedUserState = startTransitionProof.blindedUserState
-            const blindedHashChain = startTransitionProof.blindedHashChain
-            const globalStateTree = startTransitionProof.globalStateTreeRoot
-            const proof = formatProofForVerifierContract(
-                startTransitionProof.proof
-            )
-            let tx = await unirepContract.startUserStateTransition(
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
-                proof
-            )
-            let receipt = await tx.wait()
-            expect(
-                receipt.status,
-                'Submit user state transition proof failed'
-            ).to.equal(1)
-            console.log(
-                'Gas cost of submit a start transition proof:',
-                receipt.gasUsed.toString()
-            )
-
-            let proofNullifier = computeStartTransitionProofHash(
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
-                proof
-            )
-            let proofIndex = await unirepContract.getProofIndex(proofNullifier)
-            proofIndexes.push(proofIndex)
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProof(
-                    Circuit.processAttestations,
-                    processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
-                )
-                expect(
-                    isValid,
-                    'Verify process attestations circuit off-chain failed'
-                ).to.be.true
-
-                const outputBlindedUserState =
-                    processAttestationProofs[i].outputBlindedUserState
-                const outputBlindedHashChain =
-                    processAttestationProofs[i].outputBlindedHashChain
-                const inputBlindedUserState =
-                    processAttestationProofs[i].inputBlindedUserState
-
-                // submit random process attestations should success and not affect the results
-                const falseInput = BigNumber.from(genRandomSalt())
-                tx = await unirepContract.processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    falseInput,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(
-                    receipt.status,
-                    'Submit process attestations proof failed'
-                ).to.equal(1)
-
-                tx = await unirepContract.processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                receipt = await tx.wait()
-                expect(
-                    receipt.status,
-                    'Submit process attestations proof failed'
-                ).to.equal(1)
-                console.log(
-                    'Gas cost of submit a process attestations proof:',
-                    receipt.gasUsed.toString()
-                )
-
-                const proofNullifier = computeProcessAttestationsProofHash(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                const proofIndex = await unirepContract.getProofIndex(
-                    proofNullifier
-                )
-                proofIndexes.push(proofIndex)
-            }
-
-            isValid = await verifyProof(
-                Circuit.userStateTransition,
-                finalTransitionProof.proof,
-                finalTransitionProof.publicSignals
-            )
-            expect(
-                isValid,
-                'Verify user state transition circuit off-chain failed'
-            ).to.be.true
-
-            const transitionProof = new UserTransitionProof(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-
-            tx = await unirepContract.updateUserStateRoot(
-                transitionProof,
-                proofIndexes
-            )
-            receipt = await tx.wait()
-            expect(
-                receipt.status,
-                'Submit user state transition proof failed'
-            ).to.equal(1)
-            console.log(
-                'Gas cost of submit a user state transition proof:',
-                receipt.gasUsed.toString()
-            )
+            const proofs = await userState.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, proofs)
         })
 
         it('restored user state should match the user state after user state transition', async () => {

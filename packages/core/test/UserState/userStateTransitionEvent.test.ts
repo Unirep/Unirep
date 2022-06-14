@@ -1,13 +1,12 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/crypto'
 import {
     deployUnirep,
     EpochKeyProof,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
+    hashProof,
     Unirep,
 } from '@unirep/contracts'
 import { EPOCH_LENGTH } from '@unirep/circuits/config'
@@ -290,13 +289,9 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Submit invalid start tranistion proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomBlindedUserState = BigNumber.from(genRandomSalt())
-            const randomBlindedHashChain = BigNumber.from(genRandomSalt())
-            const randomGSTRoot = BigNumber.from(genRandomSalt())
+            const randomPublicSignals: BigNumberish[] = genRandomList(3)
             const tx = await unirepContract.startUserStateTransition(
-                randomBlindedUserState,
-                randomBlindedHashChain,
-                randomGSTRoot,
+                randomPublicSignals,
                 randomProof
             )
             let receipt = await tx.wait()
@@ -309,11 +304,9 @@ describe('User state transition events in Unirep User State', async function () 
             )
             expect(userState.toJSON()).equal(storedUserState)
 
-            let hashedProof = computeStartTransitionProofHash(
-                BigNumber.from(randomBlindedUserState),
-                BigNumber.from(randomBlindedHashChain),
-                BigNumber.from(randomGSTRoot),
-                randomProof.map((p) => BigNumber.from(p))
+            const hashedProof = hashProof(
+                randomPublicSignals.map((n) => n.toString()),
+                randomProof.map((n) => n.toString())
             )
             invalidProofIndexes.push(
                 Number(await unirepContract.getProofIndex(hashedProof))
@@ -322,13 +315,9 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Submit invalid process attestation proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomOutputBlindedUserState = BigNumber.from(genRandomSalt())
-            const randomOutputBlindedHashChain = BigNumber.from(genRandomSalt())
-            const randomInputBlindedUserState = BigNumber.from(genRandomSalt())
+            const randomPublicSignals: BigNumberish[] = genRandomList(3)
             const tx = await unirepContract.processAttestations(
-                randomOutputBlindedUserState,
-                randomOutputBlindedHashChain,
-                randomInputBlindedUserState,
+                randomPublicSignals,
                 randomProof
             )
             let receipt = await tx.wait()
@@ -341,11 +330,9 @@ describe('User state transition events in Unirep User State', async function () 
             )
             expect(userState.toJSON()).equal(storedUserState)
 
-            let hashedProof = computeProcessAttestationsProofHash(
-                BigNumber.from(randomOutputBlindedUserState),
-                BigNumber.from(randomOutputBlindedHashChain),
-                BigNumber.from(randomInputBlindedUserState),
-                randomProof.map((p) => BigNumber.from(p))
+            const hashedProof = hashProof(
+                randomPublicSignals.map((n) => n.toString()),
+                randomProof.map((n) => n.toString())
             )
             invalidProofIndexes.push(
                 Number(await unirepContract.getProofIndex(hashedProof))
@@ -354,26 +341,13 @@ describe('User state transition events in Unirep User State', async function () 
 
         it('Submit invalid user state transition proof should not affect Unirep State', async () => {
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomNullifiers: BigNumberish[] = genRandomList(
-                numEpochKeyNoncePerEpoch
-            )
-            const randomBlindedStates: BigNumberish[] = genRandomList(2)
-            const randomBlindedChains: BigNumberish[] = genRandomList(
-                numEpochKeyNoncePerEpoch
+            const randomPublicSignals: BigNumberish[] = genRandomList(
+                2 * numEpochKeyNoncePerEpoch + 2
             )
 
-            const randomUSTInput = {
-                newGlobalStateTreeLeaf: BigNumber.from(genRandomSalt()),
-                epkNullifiers: randomNullifiers,
-                transitionFromEpoch: 1,
-                blindedUserStates: randomBlindedStates,
-                fromGlobalStateTree: BigNumber.from(genRandomSalt()),
-                blindedHashChains: randomBlindedChains,
-                fromEpochTree: BigNumber.from(genRandomSalt()),
-                proof: randomProof,
-            }
             const tx = await unirepContract.updateUserStateRoot(
-                randomUSTInput,
+                randomPublicSignals,
+                randomProof,
                 invalidProofIndexes
             )
             let receipt = await tx.wait()
@@ -456,13 +430,17 @@ describe('User state transition events in Unirep User State', async function () 
                 const isValid = await epkProofInput.verify()
                 expect(isValid).to.be.true
 
-                let tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+                let tx = await unirepContract.submitEpochKeyProof(
+                    epkProofInput.publicSignals,
+                    epkProofInput.proof
+                )
                 let receipt = await tx.wait()
                 expect(receipt.status).to.equal(1)
 
-                const epochKey = epkProofInput.epochKey
-                const hashedProof = await unirepContract.hashEpochKeyProof(
-                    epkProofInput
+                const epochKey = epkProofInput.epochKey.toString()
+                const hashedProof = await unirepContract.hashProof(
+                    epkProofInput.publicSignals,
+                    epkProofInput.proof
                 )
                 const proofIndex = Number(
                     await unirepContract.getProofIndex(hashedProof)

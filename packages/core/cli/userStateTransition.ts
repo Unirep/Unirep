@@ -6,7 +6,7 @@ import {
     formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
-import { Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
+import { ProcessAttestationsProof, StartTransitionProof, Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUserState } from '../src'
@@ -70,57 +70,29 @@ const userStateTransition = async (args: any) => {
         finalTransitionProof,
     } = await userState.genUserStateTransitionProofs()
 
-    // Start user state transition proof
-    let isValid = await verifyProof(
-        Circuit.startTransition,
-        startTransitionProof.proof,
-        startTransitionProof.publicSignals
-    )
-    if (!isValid) {
-        console.error(
-            'Error: start state transition proof generated is not valid!'
-        )
-    }
-    let tx: ethers.ContractTransaction
-    try {
-        tx = await unirepContract
-            .connect(wallet)
-            .startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-        await tx.wait()
-    } catch (error) {
-        console.log('Transaction Error', error)
-        return
-    }
-    console.log('Transaction hash:', tx.hash)
+    // Record all proof indexes
+    const proofIndexes: ethers.BigNumber[] = []
 
-    // process attestations proof
-    for (let i = 0; i < processAttestationProofs.length; i++) {
-        const isValid = await verifyProof(
-            Circuit.processAttestations,
-            processAttestationProofs[i].proof,
-            processAttestationProofs[i].publicSignals
+    // Start user state transition proof
+    {
+        const input = new StartTransitionProof(
+            startTransitionProof.publicSignals,
+            startTransitionProof.proof
         )
+        const isValid = await input.verify()
         if (!isValid) {
             console.error(
-                'Error: process attestations proof generated is not valid!'
+                'Error: start state transition proof generated is not valid!'
             )
         }
 
+        let tx: ethers.ContractTransaction
         try {
             tx = await unirepContract
                 .connect(wallet)
-                .processAttestations(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
+                .startUserStateTransition(
+                    input.publicSignals,
+                    input.proof
                 )
             await tx.wait()
         } catch (error) {
@@ -128,49 +100,70 @@ const userStateTransition = async (args: any) => {
             return
         }
         console.log('Transaction hash:', tx.hash)
+
+        const proofHash = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
+        )
+        const proofIndex = await unirepContract.getProofIndex(proofHash)
+        proofIndexes.push(proofIndex)
     }
 
-    // Record all proof indexes
-    const proofIndexes: ethers.BigNumber[] = []
-    {
-        const proofHash = await unirepContract.hashStartTransitionProof(
-            startTransitionProof.blindedUserState,
-            startTransitionProof.blindedHashChain,
-            startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(startTransitionProof.proof)
-        )
-        const proofIndex = await unirepContract.getProofIndex(proofHash)
-        proofIndexes.push(proofIndex)
-    }
+    // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const proofHash = await unirepContract.hashProcessAttestationsProof(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
+        const input = new ProcessAttestationsProof(
+            processAttestationProofs[i].publicSignals,
+            processAttestationProofs[i].proof
+        )
+        const isValid = await input.verify()
+        if (!isValid) {
+            console.error(
+                'Error: process attestations proof generated is not valid!'
+            )
+        }
+
+        let tx: ethers.ContractTransaction
+        try {
+            tx = await unirepContract
+                .connect(wallet)
+                .processAttestations(
+                    input.publicSignals,
+                    input.proof,
+                )
+            await tx.wait()
+        } catch (error) {
+            console.log('Transaction Error', error)
+            return
+        }
+        console.log('Transaction hash:', tx.hash)
+
+        const proofHash = await unirepContract.hashProof(
+            input.publicSignals,
+            input.proof
         )
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
+
 
     // update user state proof
-    isValid = await verifyProof(
-        Circuit.userStateTransition,
-        finalTransitionProof.proof,
-        finalTransitionProof.publicSignals
+    const input = new UserTransitionProof(
+        finalTransitionProof.publicSignals,
+        finalTransitionProof.proof
     )
+    const isValid = await input.verify()
     if (!isValid) {
         console.error(
             'Error: user state transition proof generated is not valid!'
         )
     }
 
-    const fromEpoch = finalTransitionProof.transitionedFromEpoch
+    const fromEpoch = Number(input.transitionFromEpoch)
     const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
 
     // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
     for (let i = 0; i < epkNullifiers.length; i++) {
-        const outputNullifier = finalTransitionProof.epochKeyNullifiers[i]
+        const outputNullifier = BigInt(input.epkNullifiers[i].toString())
         if (outputNullifier != epkNullifiers[i]) {
             console.error(
                 `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
@@ -179,13 +172,12 @@ const userStateTransition = async (args: any) => {
     }
 
     // Check if Global state tree root and epoch tree root exist
-    const GSTRoot = finalTransitionProof.fromGSTRoot
-    const inputEpoch = finalTransitionProof.transitionedFromEpoch
-    const epochTreeRoot = finalTransitionProof.fromEpochTree
-    const isGSTRootExisted = userState.GSTRootExists(GSTRoot, inputEpoch)
+    const GSTRoot = input.fromGlobalStateTree.toString()
+    const epochTreeRoot = input.fromEpochTree.toString()
+    const isGSTRootExisted = userState.GSTRootExists(GSTRoot, fromEpoch)
     const isEpochTreeExisted = await userState.epochTreeRootExists(
         epochTreeRoot,
-        inputEpoch
+        fromEpoch
     )
     if (!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
@@ -204,14 +196,11 @@ const userStateTransition = async (args: any) => {
     }
 
     // Submit the user state transition transaction
-    const USTProof = new UserTransitionProof(
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
-    )
+    let tx: ethers.ContractTransaction
     try {
         tx = await unirepContract
             .connect(wallet)
-            .updateUserStateRoot(USTProof, proofIndexes)
+            .updateUserStateRoot(input.publicSignals, input.proof, proofIndexes)
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

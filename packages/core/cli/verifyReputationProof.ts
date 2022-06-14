@@ -88,7 +88,7 @@ const verifyReputationProof = async (args: any) => {
         publicSignals,
         formatProofForSnarkjsVerification(proof)
     )
-    const isProofValid = await unirepContract.verifyReputation(reputationProof)
+    const isProofValid = await unirepContract.verifyReputation(reputationProof.publicSignals, reputationProof.proof)
     if (!isProofValid) {
         console.error('Error: invalid reputation proof')
         return

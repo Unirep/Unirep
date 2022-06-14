@@ -86,7 +86,7 @@ const submitEpochKeyProof = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .submitEpochKeyProof(epochKeyProof)
+            .submitEpochKeyProof(epochKeyProof.publicSignals, epochKeyProof.proof)
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

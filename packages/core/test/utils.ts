@@ -12,13 +12,12 @@ import {
 } from '@unirep/crypto'
 import {
     Circuit,
-    formatProofForVerifierContract,
     verifyProof,
 } from '@unirep/circuits'
 import {
     Attestation,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
+    ProcessAttestationsProof,
+    StartTransitionProof,
     UserTransitionProof,
 } from '@unirep/contracts'
 
@@ -274,86 +273,78 @@ const submitUSTProofs = async (
 ) => {
     const proofIndexes: number[] = []
 
-    let isValid = await verifyStartTransitionProof(startTransitionProof)
-    expect(isValid).to.be.true
-
-    // submit proofs
-    let tx = await contract.startUserStateTransition(
-        startTransitionProof.blindedUserState,
-        startTransitionProof.blindedHashChain,
-        startTransitionProof.globalStateTreeRoot,
-        formatProofForVerifierContract(startTransitionProof.proof)
-    )
-    let receipt = await tx.wait()
-    expect(receipt.status).to.equal(1)
-
-    // submit twice should fail
-    await expect(
-        contract.startUserStateTransition(
-            startTransitionProof.blindedUserState,
-            startTransitionProof.blindedHashChain,
-            startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(startTransitionProof.proof)
+    {
+        // submit proofs
+        const input = new StartTransitionProof(
+            startTransitionProof.publicSignals,
+            startTransitionProof.proof
         )
-    ).to.be.revertedWith('NullilierAlreadyUsed')
-
-    let hashedProof = computeStartTransitionProofHash(
-        startTransitionProof.blindedUserState,
-        startTransitionProof.blindedHashChain,
-        startTransitionProof.globalStateTreeRoot,
-        formatProofForVerifierContract(startTransitionProof.proof)
-    )
-    proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
-
-    for (let i = 0; i < processAttestationProofs.length; i++) {
-        isValid = await verifyProcessAttestationsProof(
-            processAttestationProofs[i]
-        )
+        const isValid = await input.verify()
         expect(isValid).to.be.true
-
-        tx = await contract.processAttestations(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
+        const tx = await contract.startUserStateTransition(
+            input.publicSignals,
+            input.proof
         )
-        receipt = await tx.wait()
+        const receipt = await tx.wait()
         expect(receipt.status).to.equal(1)
 
         // submit twice should fail
         await expect(
-            contract.processAttestations(
-                processAttestationProofs[i].outputBlindedUserState,
-                processAttestationProofs[i].outputBlindedHashChain,
-                processAttestationProofs[i].inputBlindedUserState,
-                formatProofForVerifierContract(
-                    processAttestationProofs[i].proof
-                )
-            )
+            contract.startUserStateTransition(input.publicSignals, input.proof)
         ).to.be.revertedWith('NullilierAlreadyUsed')
 
-        let hashedProof = computeProcessAttestationsProofHash(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
-        )
+        const hashedProof = input.hash()
         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
     }
-    const USTInput = new UserTransitionProof(
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
-    )
-    isValid = await USTInput.verify()
-    expect(isValid).to.be.true
-    tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
-    receipt = await tx.wait()
-    expect(receipt.status).to.equal(1)
 
-    // submit twice should fail
-    await expect(
-        contract.updateUserStateRoot(USTInput, proofIndexes)
-    ).to.be.revertedWith('NullilierAlreadyUsed')
+    for (let i = 0; i < processAttestationProofs.length; i++) {
+        const input = new ProcessAttestationsProof(
+            processAttestationProofs[i].publicSignals,
+            processAttestationProofs[i].proof
+        )
+        const isValid = await input.verify()
+        expect(isValid).to.be.true
+
+        const tx = await contract.processAttestations(
+            input.publicSignals,
+            input.proof
+        )
+        const receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.processAttestations(input.publicSignals, input.proof)
+        ).to.be.revertedWith('NullilierAlreadyUsed')
+
+        const hashedProof = input.hash()
+        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+    }
+
+    {
+        const input = new UserTransitionProof(
+            finalTransitionProof.publicSignals,
+            finalTransitionProof.proof
+        )
+        const isValid = await input.verify()
+        expect(isValid).to.be.true
+        const tx = await contract.updateUserStateRoot(
+            input.publicSignals,
+            input.proof,
+            proofIndexes
+        )
+        const receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.updateUserStateRoot(
+                input.publicSignals,
+                input.proof,
+                proofIndexes
+            )
+        ).to.be.revertedWith('NullilierAlreadyUsed')
+    }
 }
 
 const compareStates = async (

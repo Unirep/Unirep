@@ -89,7 +89,7 @@ const spendReputation = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .spendReputation(reputationProof, {
+            .spendReputation(reputationProof.publicSignals, reputationProof.proof, {
                 value: attestingFee,
             })
         await tx.wait()

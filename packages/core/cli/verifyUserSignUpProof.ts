@@ -83,7 +83,7 @@ const verifyUserSignUpProof = async (args: any) => {
         publicSignals,
         formatProofForSnarkjsVerification(proof)
     )
-    const isProofValid = await unirepContract.verifyUserSignUp(signUpProof)
+    const isProofValid = await unirepContract.verifyUserSignUp(signUpProof.publicSignals, signUpProof.proof)
     if (!isProofValid) {
         console.error('Error: invalid user sign up proof')
         return

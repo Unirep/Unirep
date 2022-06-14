@@ -82,15 +82,22 @@ const giveAirdrop = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .airdropEpochKey(userSignUpProof, {
-                value: attestingFee,
-            })
+            .airdropEpochKey(
+                userSignUpProof.publicSignals,
+                userSignUpProof.proof,
+                {
+                    value: attestingFee,
+                }
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)
         return
     }
-    const hashProof = await unirepContract.hashSignUpProof(userSignUpProof)
+    const hashProof = await unirepContract.hashProof(
+        userSignUpProof.publicSignals,
+        userSignUpProof.proof
+    )
     const proofIndex = await unirepContract.getProofIndex(hashProof)
 
     console.log('Transaction hash:', tx.hash)

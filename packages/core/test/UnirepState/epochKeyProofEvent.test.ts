@@ -192,7 +192,10 @@ describe('Epoch key proof events in Unirep State', function () {
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            const tx = await unirepContract.submitEpochKeyProof(
+                epkProofInput.publicSignals,
+                epkProofInput.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -203,7 +206,10 @@ describe('Epoch key proof events in Unirep State', function () {
 
             // submit the same proof twice should fail
             await expect(
-                unirepContract.submitEpochKeyProof(epkProofInput)
+                unirepContract.submitEpochKeyProof(
+                    epkProofInput.publicSignals,
+                    epkProofInput.proof
+                )
             ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
@@ -258,7 +264,10 @@ describe('Epoch key proof events in Unirep State', function () {
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            const tx = await unirepContract.submitEpochKeyProof(
+                epkProofInput.publicSignals,
+                epkProofInput.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -324,7 +333,10 @@ describe('Epoch key proof events in Unirep State', function () {
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            const tx = await unirepContract.submitEpochKeyProof(
+                epkProofInput.publicSignals,
+                epkProofInput.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -385,7 +397,10 @@ describe('Epoch key proof events in Unirep State', function () {
             expect(isValid).to.be.true
 
             await expect(
-                unirepContract.submitEpochKeyProof(epkProofInput)
+                unirepContract.submitEpochKeyProof(
+                    epkProofInput.publicSignals,
+                    epkProofInput.proof
+                )
             ).to.be.revertedWith('EpochNotMatch()')
         })
     })

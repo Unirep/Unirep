@@ -219,7 +219,11 @@ describe('Reputation proof events in Unirep State', function () {
 
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .spendReputation(repProofInput, { value: attestingFee })
+                .spendReputation(
+                    repProofInput.publicSignals,
+                    repProofInput.proof,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -231,9 +235,13 @@ describe('Reputation proof events in Unirep State', function () {
             await expect(
                 unirepContract
                     .connect(attester['acct'])
-                    .spendReputation(repProofInput, {
-                        value: attestingFee,
-                    })
+                    .spendReputation(
+                        repProofInput.publicSignals,
+                        repProofInput.proof,
+                        {
+                            value: attestingFee,
+                        }
+                    )
             ).to.be.revertedWith('NullilierAlreadyUsed')
         })
 
@@ -300,7 +308,10 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
 
-            let tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            let tx = await unirepContract.submitEpochKeyProof(
+                epkProofInput.publicSignals,
+                epkProofInput.proof
+            )
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -378,7 +389,11 @@ describe('Reputation proof events in Unirep State', function () {
 
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .spendReputation(repProofInput, { value: attestingFee })
+                .spendReputation(
+                    repProofInput.publicSignals,
+                    repProofInput.proof,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -454,7 +469,11 @@ describe('Reputation proof events in Unirep State', function () {
 
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .spendReputation(repProofInput, { value: attestingFee })
+                .spendReputation(
+                    repProofInput.publicSignals,
+                    repProofInput.proof,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -521,7 +540,10 @@ describe('Reputation proof events in Unirep State', function () {
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
 
-            let tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            let tx = await unirepContract.submitEpochKeyProof(
+                epkProofInput.publicSignals,
+                epkProofInput.proof
+            )
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -601,7 +623,11 @@ describe('Reputation proof events in Unirep State', function () {
 
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .spendReputation(repProofInput, { value: attestingFee })
+                .spendReputation(
+                    repProofInput.publicSignals,
+                    repProofInput.proof,
+                    { value: attestingFee }
+                )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -677,9 +703,13 @@ describe('Reputation proof events in Unirep State', function () {
             await expect(
                 unirepContract
                     .connect(attester['acct'])
-                    .spendReputation(repProofInput, {
-                        value: attestingFee,
-                    })
+                    .spendReputation(
+                        repProofInput.publicSignals,
+                        repProofInput.proof,
+                        {
+                            value: attestingFee,
+                        }
+                    )
             ).to.be.revertedWith('EpochNotMatch()')
         })
     })
