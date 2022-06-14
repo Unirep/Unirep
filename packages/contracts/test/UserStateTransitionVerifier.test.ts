@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
@@ -74,8 +74,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[UserTransitionProof.idx.transitionFromEpoch] =
-            wrongEpoch.toString()
+        input.transitionFromEpoch = wrongEpoch.toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof
@@ -93,8 +92,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[UserTransitionProof.idx.fromGlobalStateTree] =
-            wrongGlobalStateTreeRoot
+        input.fromGlobalStateTree = wrongGlobalStateTreeRoot
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof
@@ -112,8 +110,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[UserTransitionProof.idx.fromEpochTree] =
-            wrongEpochTreeRoot
+        input.fromEpochTree = wrongEpochTreeRoot
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof
@@ -166,8 +163,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[UserTransitionProof.idx.newGlobalStateTreeLeaf] =
-            genRandomSalt().toString()
+        input.newGlobalStateTreeLeaf = genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof

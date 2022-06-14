@@ -344,8 +344,7 @@ describe('Airdrop', function () {
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-            input.publicSignals[SignUpProof.idx.epochKey] =
-                genRandomSalt().toString() // epoch key
+            input.epochKey = genRandomSalt().toString() // epoch key
 
             await expect(
                 unirepContract

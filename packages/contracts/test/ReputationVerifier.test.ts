@@ -163,7 +163,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.publicSignals[ReputationProof.idx.epoch] = wrongEpoch.toString()
+        input.epoch = wrongEpoch.toString()
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -192,8 +192,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.publicSignals[ReputationProof.idx.epochKey] =
-            wrongEpochKey.toString() // epoch key
+        input.epochKey = wrongEpochKey.toString() // epoch key
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -217,7 +216,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.publicSignals[ReputationProof.idx.attesterId] = wrongAttesterId // attester id
+        input.attesterId = wrongAttesterId // attester id
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -242,7 +241,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.publicSignals[ReputationProof.idx.minRep] = wrongMinRep.toString() // min rep
+        input.minRep = wrongMinRep.toString() // min rep
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -268,8 +267,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.publicSignals[ReputationProof.idx.graffitiPreImage] =
-            wrongGraffitiPreimage.toString() // graffiti preimage
+        input.graffitiPreImage = wrongGraffitiPreimage.toString() // graffiti preimage
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -332,8 +330,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.publicSignals[ReputationProof.idx.epochKey] =
-            genRandomSalt().toString()
+        input.epochKey = genRandomSalt().toString()
         await expect(
             unirepContract
                 .connect(attester)
