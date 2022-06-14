@@ -21,8 +21,6 @@ REPORT_GAS=true yarn test
 
 ## Utils
 
--   `computeStartTransitionProofHash`
--   `computeProcessAttestationsProofHash`
 -   `deployUnirep`
 -   `getUnirepContract`
 

@@ -16,24 +16,63 @@ export class StartTransitionProof implements IProofStruct {
 
     private _snarkProof: SnarkProof
     private _snarkPublicSignals: SnarkPublicSignals
-    public blindedUserState: BigNumberish
-    public blindedHashChain: BigNumberish
-    public globalStateTree: BigNumberish
+    private _blindedUserState: BigNumberish
+    private _blindedHashChain: BigNumberish
+    private _globalStateTree: BigNumberish
     public proof: string[]
     public publicSignals: string[]
 
-    constructor(_publicSignals: SnarkPublicSignals, _proof: SnarkProof) {
+    constructor(
+        _publicSignals: SnarkPublicSignals | BigNumberish[],
+        _proof: SnarkProof
+    ) {
         this._snarkProof = _proof
-        this._snarkPublicSignals = _publicSignals
+        this._snarkPublicSignals = _publicSignals.map((n) => BigInt(n))
         const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.blindedUserState =
+        this._blindedUserState =
             _publicSignals[StartTransitionProof.idx.blindedUserState].toString()
-        this.blindedHashChain =
+        this._blindedHashChain =
             _publicSignals[StartTransitionProof.idx.blindedHashChain].toString()
-        this.globalStateTree =
+        this._globalStateTree =
             _publicSignals[StartTransitionProof.idx.globalStateTree].toString()
         this.proof = formattedProof
         this.publicSignals = _publicSignals.map((n) => n.toString())
+    }
+
+    get blindedUserState(): BigNumberish {
+        return this._blindedUserState
+    }
+
+    set blindedUserState(value: BigNumberish | BigInt) {
+        this._blindedUserState = value.toString()
+        this.publicSignals[StartTransitionProof.idx.blindedUserState] =
+            value.toString()
+        this._snarkPublicSignals[StartTransitionProof.idx.blindedUserState] =
+            BigInt(value.toString())
+    }
+
+    get blindedHashChain(): BigNumberish {
+        return this._blindedHashChain
+    }
+
+    set blindedHashChain(value: BigNumberish | BigInt) {
+        this._blindedHashChain = value.toString()
+        this.publicSignals[StartTransitionProof.idx.blindedHashChain] =
+            value.toString()
+        this._snarkPublicSignals[StartTransitionProof.idx.blindedHashChain] =
+            BigInt(value.toString())
+    }
+
+    get globalStateTree(): BigNumberish {
+        return this._globalStateTree
+    }
+
+    set globalStateTree(value: BigNumberish | BigInt) {
+        this._globalStateTree = value.toString()
+        this.publicSignals[StartTransitionProof.idx.globalStateTree] =
+            value.toString()
+        this._snarkPublicSignals[StartTransitionProof.idx.globalStateTree] =
+            BigInt(value.toString())
     }
 
     public verify = (): Promise<boolean> => {

@@ -15,22 +15,61 @@ export class EpochKeyProof implements IProofStruct {
     }
     private _snarkProof: SnarkProof
     private _snarkPublicSignals: SnarkPublicSignals
-    public globalStateTree: BigNumberish
-    public epoch: BigNumberish
-    public epochKey: BigNumberish
+    private _globalStateTree: BigNumberish
+    private _epoch: BigNumberish
+    private _epochKey: BigNumberish
     public proof: string[]
     public publicSignals: string[]
 
-    constructor(_publicSignals: SnarkPublicSignals, _proof: SnarkProof) {
+    constructor(
+        _publicSignals: SnarkPublicSignals | BigNumberish[],
+        _proof: SnarkProof
+    ) {
         this._snarkProof = _proof
-        this._snarkPublicSignals = _publicSignals
+        this._snarkPublicSignals = _publicSignals.map((n) => BigInt(n))
         const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.globalStateTree =
+        this._globalStateTree =
             _publicSignals[EpochKeyProof.idx.globalStateTree].toString()
-        this.epoch = _publicSignals[EpochKeyProof.idx.epoch].toString()
-        this.epochKey = _publicSignals[EpochKeyProof.idx.epochKey].toString()
+        this._epoch = _publicSignals[EpochKeyProof.idx.epoch].toString()
+        this._epochKey = _publicSignals[EpochKeyProof.idx.epochKey].toString()
         this.proof = formattedProof
         this.publicSignals = _publicSignals.map((n) => n.toString())
+    }
+
+    get globalStateTree(): BigNumberish {
+        return this._globalStateTree
+    }
+
+    set globalStateTree(value: BigNumberish | BigInt) {
+        this._globalStateTree = value.toString()
+        this.publicSignals[EpochKeyProof.idx.globalStateTree] = value.toString()
+        this._snarkPublicSignals[EpochKeyProof.idx.globalStateTree] = BigInt(
+            value.toString()
+        )
+    }
+
+    get epoch(): BigNumberish {
+        return this._epoch
+    }
+
+    set epoch(value: BigNumberish | BigInt) {
+        this._epoch = value.toString()
+        this.publicSignals[EpochKeyProof.idx.epoch] = value.toString()
+        this._snarkPublicSignals[EpochKeyProof.idx.epoch] = BigInt(
+            value.toString()
+        )
+    }
+
+    get epochKey(): BigNumberish {
+        return this._epochKey
+    }
+
+    set epochKey(value: BigNumberish | BigInt) {
+        this._epochKey = value.toString()
+        this.publicSignals[EpochKeyProof.idx.epochKey] = value.toString()
+        this._snarkPublicSignals[EpochKeyProof.idx.epochKey] = BigInt(
+            value.toString()
+        )
     }
 
     public verify = (): Promise<boolean> => {

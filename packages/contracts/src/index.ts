@@ -202,7 +202,7 @@ export * from './proof/ReputationProof'
 export * from './proof/SignUpProof'
 export * from './proof/StartTransitionProof'
 export * from './proof/ProcessAttestationsProof'
-export * from './proof/UserStateTransitionProof'
+export * from './proof/UserTransitionProof'
 
 export {
     Event,

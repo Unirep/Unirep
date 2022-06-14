@@ -16,30 +16,74 @@ export class ProcessAttestationsProof implements IProofStruct {
 
     private _snarkProof: SnarkProof
     private _snarkPublicSignals: SnarkPublicSignals
-    public outputBlindedUserState: BigNumberish
-    public outputBlindedHashChain: BigNumberish
-    public inputBlindedUserState: BigNumberish
+    private _outputBlindedUserState: BigNumberish
+    private _outputBlindedHashChain: BigNumberish
+    private _inputBlindedUserState: BigNumberish
     public proof: string[]
     public publicSignals: string[]
 
-    constructor(_publicSignals: SnarkPublicSignals, _proof: SnarkProof) {
+    constructor(
+        _publicSignals: SnarkPublicSignals | BigNumberish[],
+        _proof: SnarkProof
+    ) {
         this._snarkProof = _proof
-        this._snarkPublicSignals = _publicSignals
+        this._snarkPublicSignals = _publicSignals.map((n) => BigInt(n))
         const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.outputBlindedUserState =
+        this._outputBlindedUserState =
             _publicSignals[
                 ProcessAttestationsProof.idx.outputBlindedUserState
             ].toString()
-        this.outputBlindedHashChain =
+        this._outputBlindedHashChain =
             _publicSignals[
                 ProcessAttestationsProof.idx.outputBlindedHashChain
             ].toString()
-        this.inputBlindedUserState =
+        this._inputBlindedUserState =
             _publicSignals[
                 ProcessAttestationsProof.idx.inputBlindedUserState
             ].toString()
         this.proof = formattedProof
         this.publicSignals = _publicSignals.map((n) => n.toString())
+    }
+
+    get outputBlindedUserState(): BigNumberish {
+        return this._outputBlindedUserState
+    }
+
+    set outputBlindedUserState(value: BigNumberish | BigInt) {
+        this._outputBlindedUserState = value.toString()
+        this.publicSignals[
+            ProcessAttestationsProof.idx.outputBlindedUserState
+        ] = value.toString()
+        this._snarkPublicSignals[
+            ProcessAttestationsProof.idx.outputBlindedUserState
+        ] = BigInt(value.toString())
+    }
+
+    get outputBlindedHashChain(): BigNumberish {
+        return this._outputBlindedHashChain
+    }
+
+    set outputBlindedHashChain(value: BigNumberish | BigInt) {
+        this._outputBlindedHashChain = value.toString()
+        this.publicSignals[
+            ProcessAttestationsProof.idx.outputBlindedHashChain
+        ] = value.toString()
+        this._snarkPublicSignals[
+            ProcessAttestationsProof.idx.outputBlindedHashChain
+        ] = BigInt(value.toString())
+    }
+
+    get inputBlindedUserState(): BigNumberish {
+        return this._inputBlindedUserState
+    }
+
+    set inputBlindedUserState(value: BigNumberish | BigInt) {
+        this._inputBlindedUserState = value.toString()
+        this.publicSignals[ProcessAttestationsProof.idx.inputBlindedUserState] =
+            value.toString()
+        this._snarkPublicSignals[
+            ProcessAttestationsProof.idx.inputBlindedUserState
+        ] = BigInt(value.toString())
     }
 
     public verify = (): Promise<boolean> => {
