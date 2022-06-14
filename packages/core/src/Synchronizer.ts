@@ -34,6 +34,8 @@ const decodeBigIntArray = (input: string): bigint[] => {
     return unstringifyBigInts(JSON.parse(input))
 }
 
+// For backward compatibility with the old AttestationEvent
+// https://github.com/Unirep/contracts/blob/master/contracts/Unirep.sol#L125
 const LEGACY_ATTESTATION_TOPIC =
     '0xdbd3d665448fee233664f2b549d5d40b93371f736ecc7f9bc421fe927bf0b376'
 
