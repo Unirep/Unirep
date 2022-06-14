@@ -1,7 +1,11 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { UserTransitionProof } from '@unirep/contracts'
+import {
+    UserTransitionProof,
+    Attestation,
+    IAttestation,
+} from '@unirep/contracts'
 import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
@@ -38,62 +42,6 @@ const decodeBigIntArray = (input: string): bigint[] => {
 // https://github.com/Unirep/contracts/blob/master/contracts/Unirep.sol#L125
 const LEGACY_ATTESTATION_TOPIC =
     '0xdbd3d665448fee233664f2b549d5d40b93371f736ecc7f9bc421fe927bf0b376'
-
-interface IAttestation {
-    attesterId: BigInt
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
-    signUp: BigInt
-    hash(): BigInt
-    toJSON(): string
-}
-
-class HAttestation implements IAttestation {
-    public attesterId: BigInt
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public signUp: BigInt
-
-    constructor(
-        _attesterId: BigInt,
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
-    ) {
-        this.attesterId = _attesterId
-        this.posRep = _posRep
-        this.negRep = _negRep
-        this.graffiti = _graffiti
-        this.signUp = _signUp
-    }
-
-    public hash = (): BigInt => {
-        return hash5([
-            this.attesterId,
-            this.posRep,
-            this.negRep,
-            this.graffiti,
-            this.signUp,
-        ])
-    }
-
-    public toJSON = (space = 0): string => {
-        return JSON.stringify(
-            {
-                attesterId: this.attesterId.toString(),
-                posRep: this.posRep.toString(),
-                negRep: this.negRep.toString(),
-                graffiti: this.graffiti.toString(),
-                signUp: this.signUp.toString(),
-            },
-            null,
-            space
-        )
-    }
-}
 
 export class Synchronizer extends EventEmitter {
     protected _db: DB
@@ -441,7 +389,7 @@ export class Synchronizer extends EventEmitter {
         //     })
         //     if (existing) return
         // }
-        const attestation = new HAttestation(
+        const attestation = new Attestation(
             BigInt(decodedData.attestation.attesterId),
             BigInt(decodedData.attestation.posRep),
             BigInt(decodedData.attestation.negRep),
