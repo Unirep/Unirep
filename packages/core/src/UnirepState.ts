@@ -76,8 +76,7 @@ export default class UnirepState {
             this.GSTLeaves[this.currentEpoch] = []
             this.globalStateTree[this.currentEpoch] = new IncrementalMerkleTree(
                 this.settings.globalStateTreeDepth,
-                this.defaultGSTLeaf,
-                2
+                this.defaultGSTLeaf
             )
             this.epochGSTRootMap[this.currentEpoch] = new Map()
         }
@@ -337,18 +336,15 @@ export default class UnirepState {
     /**
      * Computes the epoch tree of given epoch
      */
-    public genEpochTree = async (epoch: number): Promise<SparseMerkleTree> => {
+    public genEpochTree = (epoch: number): SparseMerkleTree => {
         this._checkValidEpoch(epoch)
-        const epochTree = await genNewSMT(
-            this.settings.epochTreeDepth,
-            SMT_ONE_LEAF
-        )
+        const epochTree = genNewSMT(this.settings.epochTreeDepth, SMT_ONE_LEAF)
 
         const leaves = this.epochTreeLeaves[epoch]
         if (!leaves) return epochTree
         else {
             for (const leaf of leaves) {
-                await epochTree.update(leaf.epochKey, leaf.hashchainResult)
+                epochTree.update(leaf.epochKey, leaf.hashchainResult)
             }
             return epochTree
         }
@@ -368,14 +364,14 @@ export default class UnirepState {
     /**
      * Check if the root is one of the epoch tree roots in the given epoch
      */
-    public epochTreeRootExists = async (
+    public epochTreeRootExists = (
         _epochTreeRoot: BigInt | string,
         epoch: number
-    ): Promise<boolean> => {
+    ): boolean => {
         this._checkValidEpoch(epoch)
         if (this.epochTreeRoot[epoch] == undefined) {
-            const epochTree = await this.genEpochTree(epoch)
-            this.epochTreeRoot[epoch] = epochTree.getRootHash()
+            const epochTree = this.genEpochTree(epoch)
+            this.epochTreeRoot[epoch] = epochTree.root
         }
         return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString()
     }
@@ -383,7 +379,7 @@ export default class UnirepState {
     /**
      * Add a new state leaf to the list of GST leaves of given epoch.
      */
-    public signUp = async (
+    public signUp = (
         epoch: number,
         idCommitment: BigInt,
         attesterId?: number,
@@ -394,7 +390,7 @@ export default class UnirepState {
         this._checkBlockNumber(blockNumber)
 
         let GSTLeaf
-        const USTRoot = await computeInitUserStateRoot(
+        const USTRoot = computeInitUserStateRoot(
             this.settings.userStateTreeDepth,
             attesterId,
             airdropAmount
@@ -438,11 +434,11 @@ export default class UnirepState {
     /**
      * Add the leaves of epoch tree of given epoch and increment current epoch number
      */
-    public epochTransition = async (epoch: number, blockNumber?: number) => {
+    public epochTransition = (epoch: number, blockNumber?: number) => {
         this._checkCurrentEpoch(epoch)
         this._checkBlockNumber(blockNumber)
 
-        this.epochTree[epoch] = await genNewSMT(
+        this.epochTree[epoch] = genNewSMT(
             this.settings.epochTreeDepth,
             SMT_ONE_LEAF
         )
@@ -477,20 +473,16 @@ export default class UnirepState {
 
         // Add to epoch key hash chain map
         for (let leaf of epochTreeLeaves) {
-            await this.epochTree[epoch].update(
-                leaf.epochKey,
-                leaf.hashchainResult
-            )
+            this.epochTree[epoch].update(leaf.epochKey, leaf.hashchainResult)
         }
         this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
-        this.epochTreeRoot[epoch] = this.epochTree[epoch].getRootHash()
+        this.epochTreeRoot[epoch] = this.epochTree[epoch].root
         this.currentEpoch++
         this.GSTLeaves[this.currentEpoch] = []
         this.epochKeyInEpoch[this.currentEpoch] = new Map()
         this.globalStateTree[this.currentEpoch] = new IncrementalMerkleTree(
             this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf,
-            2
+            this.defaultGSTLeaf
         )
         this.epochGSTRootMap[this.currentEpoch] = new Map()
     }

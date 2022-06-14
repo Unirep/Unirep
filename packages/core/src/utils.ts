@@ -1,5 +1,4 @@
 import { BigNumber, ethers } from 'ethers'
-import Keyv from 'keyv'
 import {
     Circuit,
     formatProofForSnarkjsVerification,
@@ -15,9 +14,8 @@ import {
 import {
     hash5,
     hashLeftRight,
-    IncrementalMerkleTree,
-    SnarkBigInt,
     SparseMerkleTree,
+    SnarkBigInt,
     ZkIdentity,
 } from '@unirep/crypto'
 
@@ -39,24 +37,19 @@ const defaultUserStateLeaf = hash5([
     BigInt(0),
     BigInt(0),
 ])
-const SMT_ZERO_LEAF = hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new IncrementalMerkleTree(treeDepth, defaultUserStateLeaf, 2)
+    const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     return t.root
 }
 
-const computeInitUserStateRoot = async (
+const computeInitUserStateRoot = (
     treeDepth: number,
     leafIdx?: number,
     airdropPosRep?: number
-): Promise<BigInt> => {
-    const t = await SparseMerkleTree.create(
-        new Keyv(),
-        treeDepth,
-        defaultUserStateLeaf
-    )
+): BigInt => {
+    const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     if (leafIdx && airdropPosRep) {
         const airdropReputation = new Reputation(
             BigInt(airdropPosRep),
@@ -65,9 +58,9 @@ const computeInitUserStateRoot = async (
             BigInt(1)
         )
         const leafValue = airdropReputation.hash()
-        await t.update(BigInt(leafIdx), leafValue)
+        t.update(BigInt(leafIdx), leafValue)
     }
-    return t.getRootHash()
+    return t.root
 }
 
 const genEpochKey = (
@@ -83,9 +76,9 @@ const genEpochKey = (
         BigInt(0),
         BigInt(0),
     ]
-    let epochKey = hash5(values).toString()
+    let epochKey = hash5(values).valueOf()
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = BigInt(epochKey) % BigInt(2 ** epochTreeDepth)
+    const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
 }
 
@@ -118,11 +111,11 @@ const genReputationNullifier = (
     ])
 }
 
-const genNewSMT = async (
+const genNewSMT = (
     treeDepth: number,
     defaultLeafHash: BigInt
-): Promise<SparseMerkleTree> => {
-    return SparseMerkleTree.create(new Keyv(), treeDepth, defaultLeafHash)
+): SparseMerkleTree => {
+    return new SparseMerkleTree(treeDepth, defaultLeafHash)
 }
 
 const verifyEpochKeyProofEvent = async (
@@ -686,11 +679,10 @@ const genUnirepState = async (
 
                 // Check if epoch tree root matches
                 const epochTreeRoot = proofArgs?.fromEpochTree
-                const isEpochTreeExisted =
-                    await unirepState.epochTreeRootExists(
-                        epochTreeRoot,
-                        fromEpoch
-                    )
+                const isEpochTreeExisted = unirepState.epochTreeRootExists(
+                    epochTreeRoot,
+                    fromEpoch
+                )
                 if (!isEpochTreeExisted) {
                     console.log('Epoch tree root mismatches')
                     isProofIndexValid[proofIndex] = false
@@ -1119,7 +1111,7 @@ const genUserState = async (
 
                 // Check if epoch tree root matches
                 const epochTreeRoot = proofArgs?.fromEpochTree
-                const isEpochTreeExisted = await userState.epochTreeRootExists(
+                const isEpochTreeExisted = userState.epochTreeRootExists(
                     epochTreeRoot,
                     fromEpoch
                 )
@@ -1165,7 +1157,6 @@ const genUserState = async (
 export {
     defaultUserStateLeaf,
     SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     formatProofForSnarkjsVerification,

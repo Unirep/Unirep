@@ -39,7 +39,7 @@ describe('Process attestation circuit', function () {
 
     it('successfully process attestations', async () => {
         const { circuitInputs, hashChainResult } =
-            await genProcessAttestationsCircuitInput(user, epoch, nonce, nonce)
+            genProcessAttestationsCircuitInput(user, epoch, nonce, nonce)
 
         const witness = await executeCircuit(circuit, circuitInputs)
         const outputUserState = getSignalByName(
@@ -85,7 +85,7 @@ describe('Process attestation circuit', function () {
             zeroSelectors.push(0)
         }
         const { circuitInputs, hashChainResult } =
-            await genProcessAttestationsCircuitInput(
+            genProcessAttestationsCircuitInput(
                 user,
                 epoch,
                 nonce,
@@ -128,7 +128,7 @@ describe('Process attestation circuit', function () {
 
     it('successfully continue to process attestations', async () => {
         const { circuitInputs, hashChainResult } =
-            await genProcessAttestationsCircuitInput(
+            genProcessAttestationsCircuitInput(
                 user,
                 epoch,
                 nonce,
@@ -171,7 +171,7 @@ describe('Process attestation circuit', function () {
 
     it('successfully continue to process attestations to next epoch key', async () => {
         const { circuitInputs, hashChainResult } =
-            await genProcessAttestationsCircuitInput(
+            genProcessAttestationsCircuitInput(
                 user,
                 epoch,
                 nonce,
@@ -226,7 +226,7 @@ describe('Process attestation circuit', function () {
             attestations.push(attestation)
         }
         const { circuitInputs, hashChainResult } =
-            await genProcessAttestationsCircuitInput(
+            genProcessAttestationsCircuitInput(
                 user,
                 epoch,
                 toNonce,
@@ -298,7 +298,7 @@ describe('Process attestation circuit', function () {
             attestations.push(attestation)
         }
         const { circuitInputs, hashChainResult } =
-            await genProcessAttestationsCircuitInput(
+            genProcessAttestationsCircuitInput(
                 user,
                 epoch,
                 toNonce,
@@ -344,7 +344,7 @@ describe('Process attestation circuit', function () {
         for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
             selectors.push(1)
         }
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             toNonce,
@@ -374,7 +374,7 @@ describe('Process attestation circuit', function () {
     })
 
     it('process attestations with wrong intermediate roots should not work', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             toNonce,
@@ -394,7 +394,7 @@ describe('Process attestation circuit', function () {
     })
 
     it('process attestations with wrong path elements should not work', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             toNonce,
@@ -413,7 +413,7 @@ describe('Process attestation circuit', function () {
     })
 
     it('process attestations with incorrect number of elements should fail', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             toNonce,

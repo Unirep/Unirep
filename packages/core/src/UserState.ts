@@ -182,7 +182,7 @@ export default class UserState {
         return this.unirepState.genGSTree(epoch)
     }
 
-    public getUnirepStateEpochTree = async (epoch: number) => {
+    public getUnirepStateEpochTree = (epoch: number) => {
         return this.unirepState.genEpochTree(epoch)
     }
 
@@ -284,7 +284,7 @@ export default class UserState {
     /**
      * Add a new epoch key to the list of epoch key of current epoch.
      */
-    public signUp = async (
+    public signUp = (
         epoch: number,
         identityCommitment: BigInt,
         attesterId?: number,
@@ -292,7 +292,7 @@ export default class UserState {
         blockNumber?: number
     ) => {
         // update unirep state
-        await this.unirepState.signUp(
+        this.unirepState.signUp(
             epoch,
             identityCommitment,
             attesterId,
@@ -327,16 +327,13 @@ export default class UserState {
     /**
      * Computes the user state tree with given state leaves
      */
-    private _genUserStateTreeFromLeaves = async (
+    private _genUserStateTreeFromLeaves = (
         leaves: IUserStateLeaf[]
-    ): Promise<SparseMerkleTree> => {
-        const USTree = await genNewSMT(
-            this.userStateTreeDepth,
-            defaultUserStateLeaf
-        )
+    ): SparseMerkleTree => {
+        const USTree = genNewSMT(this.userStateTreeDepth, defaultUserStateLeaf)
 
         for (const leaf of leaves) {
-            await USTree.update(leaf.attesterId, leaf.reputation.hash())
+            USTree.update(leaf.attesterId, leaf.reputation.hash())
         }
         return USTree
     }
@@ -344,9 +341,9 @@ export default class UserState {
     /**
      * Computes the user state tree of given epoch
      */
-    public genUserStateTree = async (): Promise<SparseMerkleTree> => {
+    public genUserStateTree = (): SparseMerkleTree => {
         const leaves = this.latestUserStateLeaves
-        return await this._genUserStateTreeFromLeaves(leaves)
+        return this._genUserStateTreeFromLeaves(leaves)
     }
 
     /**
@@ -362,17 +359,17 @@ export default class UserState {
     /**
      * Check if the root is one of the epoch tree roots in the given epoch
      */
-    public epochTreeRootExists = async (
+    public epochTreeRootExists = (
         epochTreeRoot: BigInt | string,
         epoch: number
-    ): Promise<boolean> => {
+    ): boolean => {
         return this.unirepState.epochTreeRootExists(epochTreeRoot, epoch)
     }
 
     /**
      * Update user state and unirep state according to user state transition event
      */
-    public userStateTransition = async (
+    public userStateTransition = (
         fromEpoch: number,
         GSTLeaf: BigInt,
         nullifiers: BigInt[],
@@ -389,7 +386,7 @@ export default class UserState {
             // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
             // stand anymore, below `epkNullifiersMatched` check should be changed.
             if (epkNullifiersMatched == this.numEpochKeyNoncePerEpoch) {
-                await this._transition(GSTLeaf)
+                this._transition(GSTLeaf)
             } else if (epkNullifiersMatched > 0) {
                 console.error(
                     `Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${this.numEpochKeyNoncePerEpoch}`
@@ -416,7 +413,7 @@ export default class UserState {
             epochKeyNonce,
             this.unirepState.settings.epochTreeDepth
         )
-        const userStateTree = await this.genUserStateTree()
+        const userStateTree = this.genUserStateTree()
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTProof = GSTree.createProof(this.latestGSTLeafIndex)
 
@@ -426,7 +423,7 @@ export default class UserState {
             GST_root: GSTree.root,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.root,
             nonce: epochKeyNonce,
             epoch: epoch,
             epoch_key: epochKey,
@@ -492,15 +489,15 @@ export default class UserState {
         }
     }
 
-    public epochTransition = async (epoch: number, blockNumber?: number) => {
-        await this.unirepState.epochTransition(epoch, blockNumber)
+    public epochTransition = (epoch: number, blockNumber?: number) => {
+        this.unirepState.epochTransition(epoch, blockNumber)
         if (epoch === this.latestTransitionedEpoch) {
             // save latest attestations in user state
             this._saveAttestations()
         }
     }
 
-    private _genNewUserStateAfterTransition = async () => {
+    private _genNewUserStateAfterTransition = () => {
         this._checkUserSignUp()
         const fromEpoch = this.latestTransitionedEpoch
 
@@ -535,22 +532,17 @@ export default class UserState {
         }
 
         // Gen new user state tree
-        const newUserStateTree = await this._genUserStateTreeFromLeaves(
-            stateLeaves
-        )
+        const newUserStateTree = this._genUserStateTreeFromLeaves(stateLeaves)
 
         // Gen new GST leaf
-        const newGSTLeaf = hashLeftRight(
-            this.commitment,
-            newUserStateTree.getRootHash()
-        )
+        const newGSTLeaf = hashLeftRight(this.commitment, newUserStateTree.root)
         return {
             newGSTLeaf: newGSTLeaf,
             newUSTLeaves: stateLeaves,
         }
     }
 
-    private _genStartTransitionCircuitInputs = async (
+    private _genStartTransitionCircuitInputs = (
         fromNonce: number,
         userStateTreeRoot: BigInt,
         GSTreeProof: any,
@@ -598,10 +590,9 @@ export default class UserState {
         const fromNonce = 0
 
         // User state tree
-        const fromEpochUserStateTree: SparseMerkleTree =
-            await this.genUserStateTree()
+        const fromEpochUserStateTree: SparseMerkleTree = this.genUserStateTree()
         const intermediateUserStateTreeRoots: BigInt[] = [
-            fromEpochUserStateTree.getRootHash(),
+            fromEpochUserStateTree.root,
         ]
         const userStateLeafPathElements: any[] = []
         // GSTree
@@ -610,13 +601,13 @@ export default class UserState {
         const GSTreeProof = fromEpochGSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
-        const fromEpochTree = await this.unirepState.genEpochTree(fromEpoch)
-        const epochTreeRoot = fromEpochTree.getRootHash()
+        const fromEpochTree = this.unirepState.genEpochTree(fromEpoch)
+        const epochTreeRoot = fromEpochTree.root
         const epochKeyPathElements: any[] = []
 
         // start transition proof
         const startTransitionCircuitInputs =
-            await this._genStartTransitionCircuitInputs(
+            this._genStartTransitionCircuitInputs(
                 fromNonce,
                 intermediateUserStateTreeRoots[0],
                 GSTreeProof,
@@ -678,7 +669,7 @@ export default class UserState {
                     blindedUserState.push(
                         hash5([
                             this.id.identityNullifier,
-                            fromEpochUserStateTree.getRootHash(),
+                            fromEpochUserStateTree.root,
                             BigInt(fromEpoch),
                             BigInt(nonce),
                         ])
@@ -687,7 +678,7 @@ export default class UserState {
 
                 const attestation = attestations[i]
                 const attesterId: BigInt = attestation.attesterId.toBigInt()
-                const rep = this.getRepByAttester(attesterId as BigInt)
+                const rep = this.getRepByAttester(attesterId)
 
                 if (reputationRecords[attesterId.toString()] === undefined) {
                     reputationRecords[attesterId.toString()] = new Reputation(
@@ -707,7 +698,7 @@ export default class UserState {
 
                 // Add UST merkle proof to the list
                 const USTLeafPathElements =
-                    await fromEpochUserStateTree.getMerkleProof(attesterId)
+                    fromEpochUserStateTree.createProof(attesterId)
                 userStateLeafPathElements.push(USTLeafPathElements)
 
                 // Update attestation record
@@ -719,14 +710,12 @@ export default class UserState {
                 )
 
                 // Update UST
-                await fromEpochUserStateTree.update(
+                fromEpochUserStateTree.update(
                     attesterId,
                     reputationRecords[attesterId.toString()].hash()
                 )
                 // Add new UST root to intermediate UST roots
-                intermediateUserStateTreeRoots.push(
-                    fromEpochUserStateTree.getRootHash()
-                )
+                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
 
                 selectors.push(1)
                 attesterIds.push(attesterId)
@@ -762,11 +751,9 @@ export default class UserState {
                 oldSignUps.push(BigInt(0))
 
                 const USTLeafZeroPathElements =
-                    await fromEpochUserStateTree.getMerkleProof(BigInt(0))
+                    fromEpochUserStateTree.createProof(BigInt(0))
                 userStateLeafPathElements.push(USTLeafZeroPathElements)
-                intermediateUserStateTreeRoots.push(
-                    fromEpochUserStateTree.getRootHash()
-                )
+                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
 
                 selectors.push(0)
                 attesterIds.push(BigInt(0))
@@ -776,15 +763,13 @@ export default class UserState {
                 overwriteGraffities.push(BigInt(0))
                 signUps.push(BigInt(0))
             }
-            epochKeyPathElements.push(
-                await fromEpochTree.getMerkleProof(epochKey)
-            )
-            // finalUserState.push(fromEpochUserStateTree.getRootHash())
+            epochKeyPathElements.push(fromEpochTree.createProof(epochKey))
+            // finalUserState.push(fromEpochUserStateTree.root)
             finalHashChain.push(currentHashChain)
             blindedUserState.push(
                 hash5([
                     this.id.identityNullifier,
-                    fromEpochUserStateTree.getRootHash(),
+                    fromEpochUserStateTree.root,
                     BigInt(fromEpoch),
                     BigInt(nonce),
                 ])
@@ -842,7 +827,7 @@ export default class UserState {
         // final user state transition proof
         const startEpochKeyNonce = 0
         const endEpochKeyNonce = this.numEpochKeyNoncePerEpoch - 1
-        finalUserState.push(fromEpochUserStateTree.getRootHash())
+        finalUserState.push(fromEpochUserStateTree.root)
         finalBlindedUserState.push(
             hash5([
                 this.id.identityNullifier,
@@ -946,14 +931,14 @@ export default class UserState {
     /**
      * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
      */
-    private _transition = async (newLeaf: BigInt) => {
+    private _transition = (newLeaf: BigInt) => {
         this._checkUserSignUp()
 
         const fromEpoch = this.latestTransitionedEpoch
         const transitionToEpoch = this.unirepState.currentEpoch
         const transitionToGSTIndex =
             this.unirepState.getNumGSTLeaves(transitionToEpoch)
-        const newState = await this._genNewUserStateAfterTransition()
+        const newState = this._genNewUserStateAfterTransition()
         if (newLeaf !== newState.newGSTLeaf) {
             console.error('UserState: new GST leaf mismatch')
             return
@@ -997,11 +982,11 @@ export default class UserState {
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const signUp = rep.signUp
-        const userStateTree = await this.genUserStateTree()
+        const userStateTree = this.genUserStateTree()
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
-        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
+        const USTPathElements = userStateTree.createProof(attesterId)
         const selectors: BigInt[] = []
         const nonceExist = {}
         let repNullifiersAmount = 0
@@ -1053,7 +1038,7 @@ export default class UserState {
             epoch_key: epochKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.root,
             GST_path_index: GSTreeProof.pathIndices,
             GST_path_elements: GSTreeProof.siblings,
             GST_root: GSTreeRoot,
@@ -1110,18 +1095,18 @@ export default class UserState {
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const signUp = rep.signUp
-        const userStateTree = await this.genUserStateTree()
+        const userStateTree = this.genUserStateTree()
         const GSTree = this.unirepState.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
-        const USTPathElements = await userStateTree.getMerkleProof(attesterId)
+        const USTPathElements = userStateTree.createProof(attesterId)
 
         const circuitInputs = stringifyBigInts({
             epoch: epoch,
             epoch_key: epochKey,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.getRootHash(),
+            user_tree_root: userStateTree.root,
             GST_path_index: GSTreeProof.pathIndices,
             GST_path_elements: GSTreeProof.siblings,
             GST_root: GSTreeRoot,

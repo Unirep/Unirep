@@ -10,8 +10,7 @@ import {
     throwError,
     genProofAndVerify,
 } from './utils'
-import { proveUserSignUpCircuitPath } from '../config'
-import { EPOCH_TREE_DEPTH } from '../config'
+import { proveUserSignUpCircuitPath, EPOCH_TREE_DEPTH } from '../config'
 const circuitPath = path.join(__dirname, proveUserSignUpCircuitPath)
 
 describe('Prove user has signed up circuit', function () {
@@ -63,7 +62,7 @@ describe('Prove user has signed up circuit', function () {
 
     it('successfully prove a user has signed up', async () => {
         const attesterId = signedUpAttesterId
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -81,7 +80,7 @@ describe('Prove user has signed up circuit', function () {
 
     it('user does not sign up should success', async () => {
         const attesterId = nonSignedUpAttesterId
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -100,7 +99,7 @@ describe('Prove user has signed up circuit', function () {
     it('prove with wrong attester id should fail', async () => {
         const attesterId = nonSignedUpAttesterId
         const wrongAttesterId = signedUpAttesterId
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -130,7 +129,7 @@ describe('Prove user has signed up circuit', function () {
             wrongNonce,
             EPOCH_TREE_DEPTH
         )
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -154,7 +153,7 @@ describe('Prove user has signed up circuit', function () {
     it('forge signed up flag should fail', async () => {
         const attesterId = nonSignedUpAttesterId
         const wrongSignUpInfo = 1
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,

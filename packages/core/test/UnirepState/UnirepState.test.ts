@@ -12,7 +12,6 @@ import { Attestation } from '@unirep/contracts'
 
 import { computeInitUserStateRoot, ISettings, UnirepState } from '../../src'
 import { genNewGST, genRandomAttestation } from '../utils'
-
 const ATTESTING_FEE = '0' as any
 
 describe('Unirep State', function () {
@@ -393,17 +392,17 @@ describe('Unirep State', function () {
 
         it('generate epoch tree should succeed', async () => {
             const prevEpoch = 1
-            const epochTree = await unirepState.genEpochTree(prevEpoch)
-            const root = epochTree.getRootHash()
+            const epochTree = unirepState.genEpochTree(prevEpoch)
+            const root = epochTree.root
 
-            const exist = await unirepState.epochTreeRootExists(root, prevEpoch)
+            const exist = unirepState.epochTreeRootExists(root, prevEpoch)
             expect(exist).to.be.true
         })
 
         it('query wrong epoch tree root should fail', async () => {
             const prevEpoch = 1
             const wrongRoot = genRandomSalt()
-            const notExist = await unirepState.epochTreeRootExists(
+            const notExist = unirepState.epochTreeRootExists(
                 wrongRoot,
                 prevEpoch
             )
@@ -415,7 +414,7 @@ describe('Unirep State', function () {
             const root = genRandomSalt()
             let error
             try {
-                await unirepState.epochTreeRootExists(root, wrongEpoch)
+                unirepState.epochTreeRootExists(root, wrongEpoch)
             } catch (e) {
                 error = e
             }
@@ -556,10 +555,10 @@ describe('Unirep State', function () {
 
         it('generate epoch tree should succeed', async () => {
             const prevEpoch = 1
-            const epochTree = await unirepState.genEpochTree(prevEpoch)
-            const root = epochTree.getRootHash()
+            const epochTree = unirepState.genEpochTree(prevEpoch)
+            const root = epochTree.root
 
-            const exist = await unirepState.epochTreeRootExists(root, prevEpoch)
+            const exist = unirepState.epochTreeRootExists(root, prevEpoch)
             expect(exist).to.be.true
         })
     })

@@ -410,7 +410,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 epoch,
                 epkNonce,
@@ -525,10 +525,9 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit valid reputation proof with wrong GST root event', async () => {
             const epkNonce = 1
-            const ZERO_VALUE = 0
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const userStateTree = await genNewUserStateTree()
+            const userStateTree = genNewUserStateTree()
             for (const attester of Object.keys(reputationRecords)) {
                 await userStateTree.update(
                     BigInt(attester),
@@ -536,18 +535,16 @@ describe('Reputation proof events in Unirep User State', function () {
                 )
             }
             const GSTree = new IncrementalMerkleTree(
-                treeDepths.globalStateTreeDepth,
-                ZERO_VALUE,
-                2
+                treeDepths.globalStateTreeDepth
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
-            const stateRoot = userStateTree.getRootHash()
+            const stateRoot = userStateTree.root
             const leafIndex = 0
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
             GSTree.insert(BigInt(hashedStateLeaf.toString()))
 
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 id,
                 epoch,
                 epkNonce,
@@ -623,7 +620,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address
             )
             const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
-            const circuitInputs = await genReputationCircuitInput(
+            const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 wrongEpoch,
                 epkNonce,

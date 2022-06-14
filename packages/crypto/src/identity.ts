@@ -1,13 +1,7 @@
-import { BigNumber } from '@ethersproject/bignumber'
-import { randomBytes } from '@ethersproject/random'
-import _sha256 from 'crypto-js/sha256'
+import { createHash } from 'crypto'
 import { poseidon } from 'circomlibjs'
+import { genRandomSalt, SnarkBigInt } from 'maci-crypto'
 
-import { SnarkBigInt } from './crypto'
-
-type EddsaPrivateKey = Buffer
-type EddsaPublicKey = SnarkBigInt[]
-type SnarkWitness = Array<SnarkBigInt>
 type SnarkPublicSignals = SnarkBigInt[]
 
 interface SnarkProof {
@@ -28,18 +22,9 @@ type SerializedIdentity = {
  * @returns The hexadecimal hash of the message.
  */
 function sha256(message: string): string {
-    const hash = _sha256(message)
-
-    return hash.toString()
-}
-
-/**
- * Generates a random big number.
- * @param numberOfBytes The number of bytes of the number.
- * @returns The generated random number.
- */
-function genRandomNumber(numberOfBytes = 31): bigint {
-    return BigNumber.from(randomBytes(numberOfBytes)).toBigInt()
+    return `0x${createHash('sha256')
+        .update(Buffer.from(message))
+        .digest('hex')}`
 }
 
 // The strategy used to generate the ZK identity.
@@ -71,8 +56,8 @@ class ZkIdentity {
     ) {
         switch (strategy) {
             case Strategy.RANDOM: {
-                this._identityTrapdoor = genRandomNumber()
-                this._identityNullifier = genRandomNumber()
+                this._identityTrapdoor = genRandomSalt().valueOf()
+                this._identityNullifier = genRandomSalt().valueOf()
                 this._secret = [this._identityNullifier, this._identityTrapdoor]
                 break
             }
@@ -87,12 +72,12 @@ class ZkIdentity {
 
                 const messageHash = sha256(metadata)
 
-                this._identityTrapdoor = BigNumber.from(
+                this._identityTrapdoor = BigInt(
                     `0x${sha256(`${messageHash}identity_trapdoor`)}`
-                ).toBigInt()
-                this._identityNullifier = BigNumber.from(
+                )
+                this._identityNullifier = BigInt(
                     `0x${sha256(`${messageHash}identity_nullifier`)}`
-                ).toBigInt()
+                )
                 this._secret = [this._identityNullifier, this._identityTrapdoor]
                 break
             }
@@ -123,15 +108,9 @@ class ZkIdentity {
 
                 const { identityNullifier, identityTrapdoor, secret } = metadata
 
-                this._identityNullifier = BigNumber.from(
-                    `0x${identityNullifier}`
-                ).toBigInt()
-                this._identityTrapdoor = BigNumber.from(
-                    `0x${identityTrapdoor}`
-                ).toBigInt()
-                this._secret = secret.map((item) =>
-                    BigNumber.from(`0x${item}`).toBigInt()
-                )
+                this._identityNullifier = BigInt(`0x${identityNullifier}`)
+                this._identityTrapdoor = BigInt(`0x${identityTrapdoor}`)
+                this._secret = secret.map((item) => BigInt(`0x${item}`))
 
                 break
             }
@@ -195,13 +174,4 @@ class ZkIdentity {
     }
 }
 
-export {
-    EddsaPrivateKey,
-    EddsaPublicKey,
-    SnarkWitness,
-    SnarkPublicSignals,
-    SnarkProof,
-    SnarkBigInt,
-    ZkIdentity,
-    Strategy,
-}
+export { SnarkPublicSignals, SnarkProof, ZkIdentity, Strategy }

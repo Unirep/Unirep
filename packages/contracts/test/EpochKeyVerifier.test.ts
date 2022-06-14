@@ -22,8 +22,6 @@ import { EpochKeyProof, deployUnirep, Unirep } from '../src'
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
 
-    let ZERO_VALUE = 0
-
     const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
 
     let unirepContract: Unirep
@@ -38,7 +36,7 @@ describe('Verify Epoch Key verifier', function () {
         accounts = await hardhatEthers.getSigners()
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
-        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH, ZERO_VALUE, 2)
+        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         id = new ZkIdentity()
         commitment = id.genIdentityCommitment()
         stateRoot = genRandomSalt()

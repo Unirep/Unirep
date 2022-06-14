@@ -9,7 +9,7 @@ import proveUserSignUpVkey from '../zksnarkBuild/proveUserSignUp.vkey.json'
 import startTransitionVkey from '../zksnarkBuild/startTransition.vkey.json'
 import userStateTransitionVkey from '../zksnarkBuild/userStateTransition.vkey.json'
 import verifyEpochKeyVkey from '../zksnarkBuild/verifyEpochKey.vkey.json'
-const snarkjs = require('snarkjs')
+import * as snarkjs from 'snarkjs'
 
 const buildPath = '../zksnarkBuild'
 

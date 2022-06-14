@@ -19,7 +19,6 @@ import {
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
-    GSTZERO_VALUE,
     genReputationCircuitInput,
     bootstrapRandomUSTree,
     genProveSignUpCircuitInput,
@@ -80,11 +79,7 @@ describe('EventFilters', () => {
         expect(receipt.status).equal(1)
         attesterId = await unirepContract.attesters(attesterAddress)
 
-        tree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
-            GSTZERO_VALUE,
-            2
-        )
+        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         stateRoot = genRandomSalt()
         hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))
@@ -135,7 +130,7 @@ describe('EventFilters', () => {
 
     it('spend reputation should succeed', async () => {
         const { reputationRecords } = await bootstrapRandomUSTree()
-        const circuitInputs = await genReputationCircuitInput(
+        const circuitInputs = genReputationCircuitInput(
             userId,
             epoch,
             nonce,
@@ -162,7 +157,7 @@ describe('EventFilters', () => {
 
     it('submit get airdrop should succeed', async () => {
         const { reputationRecords } = await bootstrapRandomUSTree()
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             userId,
             epoch,
             reputationRecords,
@@ -223,7 +218,7 @@ describe('EventFilters', () => {
     })
 
     it('submit process attestation proofs should success', async () => {
-        const { circuitInputs } = await genProcessAttestationsCircuitInput(
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
             userId,
             BigInt(epoch),
             BigInt(nonce),
@@ -273,10 +268,7 @@ describe('EventFilters', () => {
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            userId,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(userId, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs

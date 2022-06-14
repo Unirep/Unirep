@@ -48,7 +48,7 @@ const genNewGST = (
 ): IncrementalMerkleTree => {
     const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
     const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
-    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf, 2)
+    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf)
     return GST
 }
 
@@ -134,7 +134,7 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
     return reputaitonRecord
 }
 
-const genReputationCircuitInput = async (
+const genReputationCircuitInput = (
     id: ZkIdentity,
     epoch: number,
     nonce: number,
@@ -148,31 +148,28 @@ const genReputationCircuitInput = async (
     _graffitiPreImage?
 ) => {
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-    const repNullifiersAmount =
-        _repNullifiersAmount === undefined ? 0 : _repNullifiersAmount
-    const minRep = _minRep === undefined ? 0 : _minRep
-    const proveGraffiti = _proveGraffiti === undefined ? 0 : _proveGraffiti
+    const repNullifiersAmount = _repNullifiersAmount ?? 0
+    const minRep = _minRep ?? 0
+    const proveGraffiti = _proveGraffiti ?? 0
     let graffitiPreImage
-    if (proveGraffiti === 1 && reputationRecords[attesterId] !== undefined) {
+    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
         graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
     }
-    graffitiPreImage = graffitiPreImage === undefined ? 0 : graffitiPreImage
+    graffitiPreImage = _graffitiPreImage ?? 0
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
-        await userStateTree.update(
+        userStateTree.update(
             BigInt(attester),
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const userStateRoot = userStateTree.root
+    const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
@@ -217,7 +214,7 @@ const genReputationCircuitInput = async (
     return stringifyBigInts(circuitInputs)
 }
 
-const genProveSignUpCircuitInput = async (
+const genProveSignUpCircuitInput = (
     id: ZkIdentity,
     epoch: number,
     GSTree: IncrementalMerkleTree,
@@ -233,17 +230,15 @@ const genProveSignUpCircuitInput = async (
     }
 
     // User state tree
-    const userStateTree = await genNewUserStateTree()
+    const userStateTree = genNewUserStateTree()
     for (const attester of Object.keys(reputationRecords)) {
-        await userStateTree.update(
+        userStateTree.update(
             BigInt(attester),
             reputationRecords[attester].hash()
         )
     }
-    const userStateRoot = userStateTree.getRootHash()
-    const USTPathElements = await userStateTree.getMerkleProof(
-        BigInt(attesterId)
-    )
+    const userStateRoot = userStateTree.root
+    const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
@@ -400,7 +395,7 @@ const compareEpochTrees = async (
     epoch: number
 ) => {
     const usWithNoStorage = await genUserState(provider, address, userId)
-    const epochTree1 = await usWithNoStorage.getUnirepStateEpochTree(epoch)
+    const epochTree1 = usWithNoStorage.getUnirepStateEpochTree(epoch)
 
     const usWithStorage = await genUserState(
         provider,
@@ -411,10 +406,10 @@ const compareEpochTrees = async (
     const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
 
     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    const epochTree3 = await usFromJSON.getUnirepStateEpochTree(epoch)
+    const epochTree3 = usFromJSON.getUnirepStateEpochTree(epoch)
 
-    expect(epochTree1.getRootHash()).to.equal(epochTree2.getRootHash())
-    expect(epochTree1.getRootHash()).to.equal(epochTree3.getRootHash())
+    expect(epochTree1.root).to.equal(epochTree2.root)
+    expect(epochTree1.root).to.equal(epochTree3.root)
 
     return usWithNoStorage.toJSON()
 }

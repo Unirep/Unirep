@@ -11,7 +11,6 @@ import {
 import {
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
-    GSTZERO_VALUE,
     Reputation,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
@@ -103,7 +102,6 @@ export {
     Reputation,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
-    GSTZERO_VALUE,
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
     defaultGSTLeaf,

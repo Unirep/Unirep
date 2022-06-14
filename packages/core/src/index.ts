@@ -14,7 +14,6 @@ import UserState from './UserState'
 import {
     defaultUserStateLeaf,
     SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     formatProofForSnarkjsVerification,
@@ -51,7 +50,6 @@ export {
     UserState,
     defaultUserStateLeaf,
     SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     formatProofForSnarkjsVerification,
