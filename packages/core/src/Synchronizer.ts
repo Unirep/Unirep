@@ -346,7 +346,7 @@ export class Synchronizer extends EventEmitter {
             )
         }
         this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
-        this.epochTreeRoot[epoch] = this.epochTree[epoch].getRootHash()
+        this.epochTreeRoot[epoch] = this.epochTree[epoch].root
         this.currentEpoch++
         this.GSTLeaves[this.currentEpoch] = []
         this.epochKeyInEpoch[this.currentEpoch] = new Map()
@@ -362,12 +362,12 @@ export class Synchronizer extends EventEmitter {
             },
             update: {
                 sealed: true,
-                epochRoot: this.epochTree[epoch].getRootHash().toString(),
+                epochRoot: this.epochTree[epoch].root.toString(),
             },
             create: {
                 number: epoch,
                 sealed: true,
-                epochRoot: this.epochTree[epoch].getRootHash().toString(),
+                epochRoot: this.epochTree[epoch].root.toString(),
             },
         })
     }
