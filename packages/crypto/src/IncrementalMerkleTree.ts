@@ -1,4 +1,4 @@
-const { poseidon } = require('circomlibjs')
+import { poseidon } from 'circomlibjs'
 import {
     IncrementalMerkleTree as zkIncrementalMerkleTree,
     Node,

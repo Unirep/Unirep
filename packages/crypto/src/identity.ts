@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-const { poseidon } = require('circomlibjs')
+import { poseidon } from 'circomlibjs'
 import { genRandomSalt, SnarkBigInt } from 'maci-crypto'
 
 type SnarkPublicSignals = SnarkBigInt[]
