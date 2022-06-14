@@ -22,7 +22,6 @@ import {
     genInputForContract,
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
-    GSTZERO_VALUE,
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
@@ -30,8 +29,6 @@ import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
-
-    let ZERO_VALUE = 0
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
@@ -60,11 +57,7 @@ describe('Epoch Transition', function () {
         console.log('User sign up')
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
-        const tree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
-            ZERO_VALUE,
-            2
-        )
+        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         const stateRoot = genRandomSalt()
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))
@@ -186,16 +179,9 @@ describe('Epoch Transition', function () {
         userStateTree = results.userStateTree
 
         // Global state tree
-        GSTree = new IncrementalMerkleTree(
-            GLOBAL_STATE_TREE_DEPTH,
-            GSTZERO_VALUE,
-            2
-        )
+        GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         const commitment = userId.genIdentityCommitment()
-        const hashedLeaf = hashLeftRight(
-            commitment,
-            userStateTree.getRootHash()
-        )
+        const hashedLeaf = hashLeftRight(commitment, userStateTree.root)
         GSTree.insert(hashedLeaf)
         leafIndex = 0
     })
@@ -207,7 +193,7 @@ describe('Epoch Transition', function () {
             userId,
             GSTree,
             leafIndex,
-            userStateTree.getRootHash(),
+            userStateTree.root,
             fromEpoch,
             nonce
         )
@@ -252,13 +238,12 @@ describe('Epoch Transition', function () {
                 if (j == prooftNum - 1) toNonce = i + 1
                 // If it it the maximum epoch key nonce, then the next epoch key nonce should not increase
                 if (i == NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1) toNonce = i
-                const { circuitInputs } =
-                    await genProcessAttestationsCircuitInput(
-                        userId,
-                        fromEpoch,
-                        BigInt(i),
-                        BigInt(toNonce)
-                    )
+                const { circuitInputs } = genProcessAttestationsCircuitInput(
+                    userId,
+                    fromEpoch,
+                    BigInt(i),
+                    BigInt(toNonce)
+                )
 
                 const input = await genInputForContract(
                     Circuit.processAttestations,
@@ -291,7 +276,7 @@ describe('Epoch Transition', function () {
     })
 
     it('submit user state transition proofs should succeed', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
+        const circuitInputs = genUserStateTransitionCircuitInput(
             userId,
             fromEpoch
         )

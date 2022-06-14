@@ -13,28 +13,22 @@
         "lint": "prettier --write ."
     },
     "dependencies": {
-        "@openzeppelin/contracts": "4.4.2",
-        "@typechain/ethers-v5": "^9.0.0",
-        "@typechain/hardhat": "^5.0.0",
         "@unirep/circuits": "1.0.0",
         "@unirep/crypto": "1.0.0",
-        "argparse": "^2.0.1",
-        "ethers": "^5.5.3",
-        "typescript": "^4.4.3"
+        "ethers": "^5.6.8"
     },
     "devDependencies": {
-        "@nomiclabs/hardhat-ethers": "^2.0.2",
-        "@nomiclabs/hardhat-waffle": "^2.0.1",
-        "@types/chai": "^4.2.21",
-        "@types/mocha": "^9.0.0",
-        "@types/node": "^16.9.1",
-        "chai": "^4.3.4",
-        "circom": "0.5.45",
-        "ethereum-waffle": "^3.4.0",
-        "hardhat": "^2.8.3",
+        "@ethersproject/abi": "^5.6.3",
+        "@ethersproject/bytes": "^5.6.1",
+        "@ethersproject/providers": "^5.6.8",
+        "@nomiclabs/hardhat-ethers": "^2.0.6",
+        "@nomiclabs/hardhat-waffle": "^2.0.3",
+        "@openzeppelin/contracts": "^4.6.0",
+        "@typechain/ethers-v5": "^10.1.0",
+        "@typechain/hardhat": "^6.1.0",
+        "ethereum-waffle": "^3.4.4",
+        "hardhat": "^2.9.9",
         "hardhat-gas-reporter": "^1.0.8",
-        "keyv": "^4.0.3",
-        "ts-node": "^10.2.1",
-        "typechain": "^7.0.1"
+        "typechain": "^8.1.0"
     }
 }

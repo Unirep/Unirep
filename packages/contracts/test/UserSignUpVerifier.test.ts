@@ -58,7 +58,7 @@ describe('Verify user sign up verifier', function () {
 
     it('successfully prove a user has signed up', async () => {
         const attesterId = signedUpAttesterId
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -82,7 +82,7 @@ describe('Verify user sign up verifier', function () {
     it('wrong attesterId should fail', async () => {
         const attesterId = signedUpAttesterId
         const wrongAttesterId = nonSignedUpAttesterId
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -105,7 +105,7 @@ describe('Verify user sign up verifier', function () {
     it('wrong epoch should fail', async () => {
         const attesterId = signedUpAttesterId
         const wrongEpoch = epoch + 1
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,
@@ -132,7 +132,7 @@ describe('Verify user sign up verifier', function () {
             epoch,
             nonce + 1
         )
-        const circuitInputs = await genProveSignUpCircuitInput(
+        const circuitInputs = genProveSignUpCircuitInput(
             user,
             epoch,
             reputationRecords,

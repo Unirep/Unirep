@@ -27,10 +27,7 @@ describe('User State Transition', function () {
     })
 
     it('Valid user state update inputs should work', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -66,10 +63,7 @@ describe('User State Transition', function () {
 
     it('Proof with wrong epoch should fail', async () => {
         const wrongEpoch = epoch + 1
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -84,10 +78,7 @@ describe('User State Transition', function () {
 
     it('Proof with wrong global state tree root should fail', async () => {
         const wrongGlobalStateTreeRoot = genRandomSalt().toString()
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -102,10 +93,7 @@ describe('User State Transition', function () {
 
     it('Proof with wrong epoch tree root should fail', async () => {
         const wrongEpochTreeRoot = genRandomSalt().toString()
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -119,10 +107,7 @@ describe('User State Transition', function () {
     })
 
     it('Proof with wrong blinded user states should fail', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -137,10 +122,7 @@ describe('User State Transition', function () {
     })
 
     it('Proof with wrong blinded hash chain should fail', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -155,10 +137,7 @@ describe('User State Transition', function () {
     })
 
     it('Proof with wrong global state tree leaf should fail', async () => {
-        const circuitInputs = await genUserStateTransitionCircuitInput(
-            user,
-            epoch
-        )
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
