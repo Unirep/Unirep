@@ -27,6 +27,7 @@
     "devDependencies": {
         "circom": "^0.5.46",
         "circomlib": "0.5.3",
-        "mocha": "^10.0.0"
+        "mocha": "^10.0.0",
+        "typescript": "^4.7.3"
     }
 }

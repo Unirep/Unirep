@@ -29,6 +29,7 @@
         "ethereum-waffle": "^3.4.4",
         "hardhat": "^2.9.9",
         "hardhat-gas-reporter": "^1.0.8",
-        "typechain": "^8.1.0"
+        "typechain": "^8.1.0",
+        "typescript": "^4.7.3"
     }
 }
