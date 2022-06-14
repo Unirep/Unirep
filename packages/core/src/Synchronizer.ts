@@ -340,6 +340,7 @@ export class Synchronizer extends EventEmitter {
                         },
                     })
                 })
+                this.emit(event.topics[0], event)
             } catch (err) {
                 console.log(`Error processing event:`, err)
                 console.log(event)
@@ -1039,7 +1040,7 @@ export class Synchronizer extends EventEmitter {
             proof: proof,
             publicSignals: publicSignals,
             transactionHash: event.transactionHash,
-            globalStateTree: args.globalStateTree,
+            globalStateTree: args.globalStateTree.toString(),
             event: 'IndexedEpochKeyProof',
             valid: isValid,
         })
