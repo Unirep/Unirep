@@ -1573,6 +1573,7 @@ __metadata:
     hardhat: ^2.9.9
     nanoid: 3
     shelljs: ^0.8.5
+    typescript: ^4.7.3
   languageName: unknown
   linkType: soft
 
