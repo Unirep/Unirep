@@ -28,7 +28,7 @@ Pull requests are great if you want to add a feature or fix a bug. Here's a quic
 
 6. Commit your changes.
 
-7. Push to your fork and submit a pull request on our `master` branch. Please provide us with some explanation of why you made the changes you made. For new features make sure to explain a standard use case to us.
+7. Push to your fork and submit a pull request on our `develop` branch. Please provide us with some explanation of why you made the changes you made. For new features make sure to explain a standard use case to us.
 
 ## CI (Github Actions) Tests
 
@@ -41,22 +41,6 @@ When you submit your PR (or later change that code), a CI build will automatical
 ### Code rules
 
 We always use ESLint and Prettier. To check that your code follows the rules, simply run the npm script `yarn lint --write .`.
-
-### Commits rules
-
-For commits it is recommended to use [Conventional Commits](https://www.conventionalcommits.org).
-
-Don't worry if it looks complicated, in our repositories, after `git add`, you can usually run the npm script `yarn commit` to make many of these steps interactive.
-
-Each commit message consists of a **header**, a **body** and a **footer**. The **header** has a special format that includes a **type**, a **scope** and a **subject**:
-
-    <type>(<scope>): <subject>
-    <BLANK LINE>
-    <body>
-    <BLANK LINE>
-    <footer>
-
-The **header** is mandatory and the **scope** of the header is optional.
 
 #### Type
 
@@ -93,7 +77,7 @@ Just as in the subject, use the imperative, present tense: "change" not "changed
 ### Branch rules
 
 -   There must be a `master` branch, used only for the releases.
--   There must be a `dev` branch, used to merge all the branches under it.
+-   There must be a `develop` branch, used to merge all the branches under it.
 -   Avoid long descriptive names for long-lived branches.
 -   Use kebab-case (no CamelCase).
 -   Use grouping tokens (words) at the beginning of your branch names (in a similar way to the `type` of commit).
