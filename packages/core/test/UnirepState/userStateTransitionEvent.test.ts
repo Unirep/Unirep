@@ -12,8 +12,11 @@ import {
     Unirep,
     UserTransitionProof,
 } from '@unirep/contracts'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
-import { EPOCH_LENGTH } from '@unirep/circuits/config'
+import {
+    Circuit,
+    genProofAndPublicSignals,
+    EPOCH_LENGTH,
+} from '@unirep/circuits'
 
 import {
     computeInitUserStateRoot,

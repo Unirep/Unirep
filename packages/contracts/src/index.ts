@@ -10,7 +10,7 @@ import {
     GLOBAL_STATE_TREE_DEPTH,
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
-} from '@unirep/circuits/config'
+} from '@unirep/circuits'
 
 const ATTESTING_FEE = 0
 

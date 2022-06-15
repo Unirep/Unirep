@@ -3,12 +3,12 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, SnarkPublicSignals, ZkIdentity } from '@unirep/crypto'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
     EPOCH_LENGTH,
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits/config'
+    formatProofForSnarkjsVerification,
+} from '@unirep/circuits'
 import { genEpochKey, Attestation } from './utils'
 import { deployUnirep, EpochKeyProof, Event } from '../src'
 import { Unirep } from '../typechain'

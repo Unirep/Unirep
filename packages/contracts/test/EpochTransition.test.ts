@@ -8,13 +8,13 @@ import {
     IncrementalMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
 
 import {
     GLOBAL_STATE_TREE_DEPTH,
     EPOCH_LENGTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits/config'
+    Circuit,
+} from '@unirep/circuits'
 
 import {
     Attestation,

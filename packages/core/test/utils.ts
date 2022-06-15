@@ -10,15 +10,13 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, verifyProof } from '@unirep/circuits'
+import { Circuit, verifyProof, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
 import {
     Attestation,
     ProcessAttestationsProof,
     StartTransitionProof,
     UserTransitionProof,
 } from '@unirep/contracts'
-
-import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
 
 import {
     computeEmptyUserStateRoot,

@@ -8,7 +8,6 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
 import {
     Attestation,
     deployUnirep,
@@ -16,7 +15,11 @@ import {
     ReputationProof,
     Unirep,
 } from '@unirep/contracts'
-import { MAX_REPUTATION_BUDGET } from '@unirep/circuits/config'
+import {
+    Circuit,
+    genProofAndPublicSignals,
+    MAX_REPUTATION_BUDGET,
+} from '@unirep/circuits'
 
 import {
     computeInitUserStateRoot,

@@ -3,6 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
+import { EPOCH_LENGTH } from '@unirep/circuits'
 import {
     Attestation,
     deployUnirep,
@@ -11,7 +12,6 @@ import {
     SignUpProof,
     Unirep,
 } from '@unirep/contracts'
-import { EPOCH_LENGTH } from '@unirep/circuits/config'
 
 import { genUserState, IUserState, UserState } from '../../src'
 import {

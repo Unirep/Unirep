@@ -2,7 +2,6 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
 import {
     genRandomSalt,
     ZkIdentity,
@@ -10,7 +9,12 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
-import { GLOBAL_STATE_TREE_DEPTH, EPOCH_LENGTH } from '@unirep/circuits/config'
+import {
+    GLOBAL_STATE_TREE_DEPTH,
+    EPOCH_LENGTH,
+    MAX_REPUTATION_BUDGET,
+    Circuit,
+} from '@unirep/circuits'
 import {
     Attestation,
     genEpochKeyCircuitInput,

@@ -2,7 +2,6 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
 import {
     genRandomSalt,
     hashLeftRight,
@@ -14,7 +13,8 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
-} from '@unirep/circuits/config'
+    Circuit,
+} from '@unirep/circuits'
 
 import { genEpochKeyCircuitInput, genInputForContract } from './utils'
 import { EpochKeyProof, deployUnirep, Unirep } from '../src'

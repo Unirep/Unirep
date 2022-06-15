@@ -2,12 +2,12 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
     USER_STATE_TREE_DEPTH,
-} from '@unirep/circuits/config'
+    Circuit,
+} from '@unirep/circuits'
 import {
     genEpochKey,
     genInputForContract,
