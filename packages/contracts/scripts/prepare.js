@@ -22,8 +22,6 @@ fs.copyFileSync(
     path.join(__dirname, '../build/README.md')
 )
 
-fs.rmSync(path.join(__dirname, '../build/test'), { recursive: true })
-
 // copy files from contracts recursively
 function copyContracts(currentDir, outPath) {
     if (!path.isAbsolute(currentDir)) throw new Error('Path is not absolute')
