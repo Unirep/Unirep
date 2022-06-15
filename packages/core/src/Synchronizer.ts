@@ -3,8 +3,13 @@ import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import {
     UserTransitionProof,
+    StartTransitionProof,
+    ProcessAttestationsProof,
     Attestation,
     IAttestation,
+    SignUpProof,
+    ReputationProof,
+    EpochKeyProof,
 } from '@unirep/contracts'
 import {
     computeEmptyUserStateRoot,
@@ -14,7 +19,6 @@ import {
 } from './utils'
 import { Circuit, formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
-    hash5,
     hashLeftRight,
     SparseMerkleTree,
     stringifyBigInts,
@@ -618,18 +622,9 @@ export class Synchronizer extends EventEmitter {
         const epkNullifiers = formatProof.epkNullifiers
             .map((n) => n.toString())
             .filter((n) => n !== '0')
-        {
-            const existingRoot = await this._db.findOne('GSTRoot', {
-                where: {
-                    epoch: fromEpoch,
-                    root: gstRoot,
-                },
-            })
-            if (!existingRoot) {
-                console.log('Global state tree root mismatches')
-                return
-            }
-        }
+        const exists = await this.checkGSTRoot(fromEpoch, gstRoot)
+        if (!exists) return
+
         {
             const existingRoot = await this._db.findOne('Epoch', {
                 where: {
@@ -749,26 +744,20 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
-        const args = decodedData.proof
         const proofIndexRecords = decodedData.proofIndexRecords.map((n) =>
             Number(n)
         )
 
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(
-                args.newGlobalStateTreeLeaf,
-                args.epkNullifiers,
-                args.transitionFromEpoch,
-                args.blindedUserStates,
-                args.fromGlobalStateTree,
-                args.blindedHashChains,
-                args.fromEpochTree
-            )
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
+        const formatPublicSignals = decodedData.publicSignals.map((n) =>
+            BigInt(n)
+        )
+        const formattedProof = decodedData.proof.map((n) => BigInt(n))
         const proof = encodeBigIntArray(formattedProof)
         const publicSignals = encodeBigIntArray(formatPublicSignals)
+        const args = new UserTransitionProof(
+            decodedData.publicSignals,
+            formatProofForSnarkjsVerification(decodedData.proof)
+        )
         const isValid = await this.prover.verifyProof(
             Circuit.userStateTransition,
             formatPublicSignals,
@@ -798,22 +787,22 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
-        const _outputBlindedUserState = BigInt(
-            decodedData.outputBlindedUserState
+        const args = new ProcessAttestationsProof(
+            decodedData.publicSignals,
+            formatProofForSnarkjsVerification(decodedData.proof)
         )
-        const _outputBlindedHashChain = BigInt(
-            decodedData.outputBlindedHashChain
+        const _outputBlindedUserState = BigInt(
+            args.outputBlindedUserState.toString()
         )
 
-        const formatPublicSignals = [
-            _outputBlindedUserState,
-            _outputBlindedHashChain,
-            _inputBlindedUserState,
-        ]
+        const _outputBlindedHashChain = BigInt(
+            args.outputBlindedHashChain.toString()
+        )
+
         const formattedProof = decodedData.proof.map((n) => BigInt(n))
         const isValid = await this.prover.verifyProof(
             Circuit.processAttestations,
-            formatPublicSignals,
+            decodedData.publicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
 
@@ -843,16 +832,15 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
-        const _blindedHashChain = BigInt(decodedData.blindedHashChain)
-        const formatPublicSignals = [
-            _blindedUserState,
-            _blindedHashChain,
-            _globalStateTree,
-        ]
+        const args = new StartTransitionProof(
+            decodedData.publicSignals,
+            formatProofForSnarkjsVerification(decodedData.proof)
+        )
+        const _blindedHashChain = args.blindedHashChain
         const formattedProof = decodedData.proof.map((n) => BigInt(n))
         const isValid = await this.prover.verifyProof(
             Circuit.startTransition,
-            formatPublicSignals,
+            decodedData.publicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
 
@@ -880,26 +868,28 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
-        const args = decodedData.proof
+        const args = new SignUpProof(
+            decodedData.publicSignals,
+            formatProofForSnarkjsVerification(decodedData.proof)
+        )
 
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(
-                args.epoch,
-                args.epochKey,
-                args.globalStateTree,
-                args.attesterId,
-                args.userHasSignedUp
-            )
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
+        const formatPublicSignals = decodedData.publicSignals.map((n) =>
+            BigInt(n)
+        )
+        const formattedProof = decodedData.proof.map((n) => BigInt(n))
         const proof = encodeBigIntArray(formattedProof)
         const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
+        let isValid = await this.prover.verifyProof(
             Circuit.proveUserSignUp,
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+
+        const exists = await this.checkGSTRoot(
+            _epoch,
+            args.globalStateTree.toString()
+        )
+        if (!exists) isValid = false
 
         db.create('Proof', {
             index: _proofIndex,
@@ -923,29 +913,29 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
-        const args = decodedData.proof
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(
-                args.repNullifiers,
-                args.epoch,
-                args.epochKey,
-                args.globalStateTree,
-                args.attesterId,
-                args.proveReputationAmount,
-                args.minRep,
-                args.proveGraffiti,
-                args.graffitiPreImage
-            )
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
+        const args = new ReputationProof(
+            decodedData.publicSignals,
+            formatProofForSnarkjsVerification(decodedData.proof)
+        )
+        const formatPublicSignals = decodedData.publicSignals.map((n) =>
+            BigInt(n)
+        )
+        const formattedProof = decodedData.proof.map((n) => BigInt(n))
         const proof = encodeBigIntArray(formattedProof)
         const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
+        let isValid = await this.prover.verifyProof(
             Circuit.proveReputation,
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+
+        const exists = await this.checkGSTRoot(
+            _epoch,
+            args.globalStateTree.toString()
+        )
+        if (!exists) isValid = false
+
+        // TODO: verify reputation nullifiers
 
         db.create('Proof', {
             index: _proofIndex,
@@ -969,20 +959,27 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
-        const args = decodedData.proof
-
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(args.globalStateTree, args.epoch, args.epochKey)
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
+        const args = new EpochKeyProof(
+            decodedData.publicSignals,
+            formatProofForSnarkjsVerification(decodedData.proof)
+        )
+        const formatPublicSignals = decodedData.publicSignals.map((n) =>
+            BigInt(n)
+        )
+        const formattedProof = decodedData.proof.map((n) => BigInt(n))
         const proof = encodeBigIntArray(formattedProof)
         const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
+        let isValid = await this.prover.verifyProof(
             Circuit.verifyEpochKey,
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+
+        const exists = await this.checkGSTRoot(
+            _epoch,
+            args.globalStateTree.toString()
+        )
+        if (!exists) isValid = false
 
         db.create('Proof', {
             index: _proofIndex,
@@ -994,5 +991,19 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedEpochKeyProof',
             valid: isValid,
         })
+    }
+
+    async checkGSTRoot(epoch: number, root: string) {
+        const existingRoot = await this._db.findOne('GSTRoot', {
+            where: {
+                epoch,
+                root,
+            },
+        })
+        if (!existingRoot) {
+            console.log('Global state tree root mismatches')
+            return false
+        }
+        return true
     }
 }
