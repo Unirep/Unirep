@@ -21,6 +21,7 @@ import {
     unstringifyBigInts,
 } from '@unirep/crypto'
 import { IncrementalQuinTree } from 'maci-crypto'
+import { ISettings } from './interfaces'
 
 export interface Prover {
     verifyProof: (
@@ -48,6 +49,7 @@ export class Synchronizer extends EventEmitter {
     prover: Prover
     provider: any
     unirepContract: ethers.Contract
+    public settings: ISettings
     public currentEpoch: number = 1
     private epochTreeRoot: { [key: number]: BigInt } = {}
     private GSTLeaves: { [key: number]: BigInt[] } = {}
@@ -67,9 +69,36 @@ export class Synchronizer extends EventEmitter {
         this.unirepContract = unirepContract
         this.provider = this.unirepContract.provider
         this.prover = prover
+        this.settings = {
+            globalStateTreeDepth: 0,
+            userStateTreeDepth: 0,
+            epochTreeDepth: 0,
+            numEpochKeyNoncePerEpoch: 0,
+            attestingFee: ethers.utils.parseEther('0'),
+            epochLength: 0,
+            maxReputationBudget: 0,
+        }
+    }
+
+    async loadSettings() {
+        const treeDepths = await this.unirepContract.treeDepths()
+        this.settings.globalStateTreeDepth = treeDepths.globalStateTreeDepth
+        this.settings.userStateTreeDepth = treeDepths.userStateTreeDepth
+        this.settings.epochTreeDepth = treeDepths.epochTreeDepth
+        const attestingFee = await this.unirepContract.attestingFee()
+        this.settings.attestingFee = attestingFee
+        const maxReputationBudget =
+            await this.unirepContract.maxReputationBudget()
+        this.settings.maxReputationBudget = maxReputationBudget
+        const numEpochKeyNoncePerEpoch =
+            await this.unirepContract.numEpochKeyNoncePerEpoch()
+        this.settings.numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
+        const epochLength = await this.unirepContract.epochLength()
+        this.settings.epochLength = epochLength
     }
 
     async setup() {
+        await this.loadSettings()
         const treeDepths = await this.unirepContract.treeDepths()
         this.epochKeyInEpoch[this.currentEpoch] = new Map()
         this.epochTreeRoot[this.currentEpoch] = BigInt(0)
@@ -84,6 +113,115 @@ export class Synchronizer extends EventEmitter {
             2
         )
         this.epochGSTRootMap[this.currentEpoch] = new Map()
+    }
+
+    private _checkCurrentEpoch(epoch: number) {
+        if (epoch !== this.currentEpoch) {
+            throw new Error(
+                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${this.currentEpoch}`
+            )
+        }
+    }
+
+    private _checkValidEpoch(epoch: number) {
+        if (epoch > this.currentEpoch) {
+            throw new Error(
+                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${this.currentEpoch}`
+            )
+        }
+    }
+
+    private _checkEpochKeyRange(epochKey: string) {
+        if (BigInt(epochKey) >= BigInt(2 ** this.settings.epochTreeDepth)) {
+            throw new Error(
+                `Synchronizer: Epoch key (${epochKey}) greater than max leaf value(2**epochTreeDepth)`
+            )
+        }
+    }
+
+    private _isEpochKeySealed(epochKey: string) {
+        if (this.sealedEpochKey[epochKey]) {
+            throw new Error(
+                `Synchronizer: Epoch key (${epochKey}) has been sealed`
+            )
+        }
+    }
+
+    genGSTree(epoch: number): IncrementalQuinTree {
+        this._checkValidEpoch(epoch)
+        // TODO: can be load from DB
+        return this.globalStateTree[epoch]
+    }
+
+    genEpochTree(epoch: number): SparseMerkleTree {
+        // TODO: can be load from DB
+        this._checkValidEpoch(epoch)
+        const epochTree = genNewSMT(this.settings.epochTreeDepth, SMT_ONE_LEAF)
+
+        const leaves = this.epochTreeLeaves[epoch]
+        if (!leaves) return epochTree
+        else {
+            for (const leaf of leaves) {
+                epochTree.update(leaf.epochKey, leaf.hashchainResult)
+            }
+            return epochTree
+        }
+    }
+
+    GSTRootExists(GSTRoot: BigInt | string, epoch: number): boolean {
+        this._checkValidEpoch(epoch)
+        // TODO: can be found from DB
+        return this.epochGSTRootMap[epoch].has(GSTRoot.toString())
+    }
+
+    epochTreeRootExists(
+        _epochTreeRoot: BigInt | string,
+        epoch: number
+    ): boolean {
+        this._checkValidEpoch(epoch)
+        // TODO: can be found from DB
+        if (this.epochTreeRoot[epoch] == undefined) {
+            const epochTree = this.genEpochTree(epoch)
+            this.epochTreeRoot[epoch] = epochTree.root
+        }
+        return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString()
+    }
+
+    async checkNullifiers(nullifiers: string[]): Promise<boolean> {
+        // check and save nullifiers
+        const existingNullifier = await this._db.findOne('Nullifier', {
+            where: {
+                nullifier: nullifiers,
+                confirmed: true,
+            },
+        })
+        if (existingNullifier) {
+            return true
+        }
+        return false
+    }
+
+    getNumGSTLeaves(epoch: number) {
+        this._checkValidEpoch(epoch)
+        // TODO: can be found from DB
+        return this.GSTLeaves[epoch].length
+    }
+
+    getAttestations(epochKey: string): IAttestation[] {
+        this._checkEpochKeyRange(epochKey)
+
+        // TODO: can be found from DB
+        const attestations = this.epochKeyToAttestationsMap[epochKey]
+        if (!attestations) return []
+        else return attestations
+    }
+
+    getEpochKeys(epoch: number) {
+        this._checkValidEpoch(epoch)
+
+        // TODO: can be found from DB
+        if (this.epochKeyInEpoch[epoch] == undefined) return []
+        return Array.from(this.epochKeyInEpoch[epoch].keys())
     }
 
     async start() {
@@ -313,10 +451,11 @@ export class Synchronizer extends EventEmitter {
         )
         const epochTreeLeaves = [] as any[]
 
+        this._checkCurrentEpoch(epoch)
         // seal all epoch keys in current epoch
         for (const epochKey of this.epochKeyInEpoch[epoch]?.keys() || []) {
-            // this._checkEpochKeyRange(epochKey)
-            // this._isEpochKeySealed(epochKey)
+            this._checkEpochKeyRange('0x' + epochKey)
+            this._isEpochKeySealed(epochKey)
 
             let hashChain: BigInt = BigInt(0)
             for (
@@ -382,6 +521,11 @@ export class Synchronizer extends EventEmitter {
         )
         const toProofIndex = Number(decodedData.toProofIndex)
         const fromProofIndex = Number(decodedData.fromProofIndex)
+
+        this._checkCurrentEpoch(_epoch)
+        this._checkEpochKeyRange(_epochKey.toString())
+        this._isEpochKeySealed(_epochKey.toString())
+
         // const attestIndex = Number(decodedData.attestIndex)
         // {
         //     const existing = await Attestation.exists({
@@ -618,6 +762,8 @@ export class Synchronizer extends EventEmitter {
         const epkNullifiers = formatProof.epkNullifiers
             .map((n) => n.toString())
             .filter((n) => n !== '0')
+
+        this._checkValidEpoch(fromEpoch)
         {
             const existingRoot = await this._db.findOne('GSTRoot', {
                 where: {
@@ -644,12 +790,7 @@ export class Synchronizer extends EventEmitter {
         }
 
         // check and save nullifiers
-        const existingNullifier = await this._db.findOne('Nullifier', {
-            where: {
-                nullifier: epkNullifiers,
-                confirmed: true,
-            },
-        })
+        const existingNullifier = await this.checkNullifiers(epkNullifiers)
         if (existingNullifier) {
             console.log(`duplicated nullifier`)
             return
@@ -708,6 +849,7 @@ export class Synchronizer extends EventEmitter {
 
         const treeDepths = await this.unirepContract.treeDepths()
 
+        this._checkCurrentEpoch(epoch)
         const USTRoot = await computeInitUserStateRoot(
             treeDepths.userStateTreeDepth,
             attesterId,
@@ -774,6 +916,10 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+        const exist = this.GSTRootExists(
+            args.fromGlobalStateTree.toString(),
+            Number(args.transitionFromEpoch)
+        )
 
         db.create('Proof', {
             index: _proofIndex,
@@ -784,7 +930,7 @@ export class Synchronizer extends EventEmitter {
             proofIndexRecords: proofIndexRecords,
             transactionHash: event.transactionHash,
             event: 'IndexedUserStateTransitionProof',
-            valid: isValid,
+            valid: isValid && exist,
         })
     }
 
@@ -900,6 +1046,10 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+        const exist = this.GSTRootExists(
+            args.globalStateTree.toString(),
+            _epoch
+        )
 
         db.create('Proof', {
             index: _proofIndex,
@@ -909,7 +1059,7 @@ export class Synchronizer extends EventEmitter {
             transactionHash: event.transactionHash,
             globalStateTree: args.globalStateTree.toString(),
             event: 'IndexedUserSignedUpProof',
-            valid: isValid,
+            valid: isValid && exist,
         })
     }
 
@@ -946,6 +1096,14 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+        const exist = this.GSTRootExists(
+            args.globalStateTree.toString(),
+            _epoch
+        )
+        const repNullifiers = args.repNullifiers
+            .map((n) => BigInt(n).toString())
+            .filter((n) => n !== '0')
+        const existingNullifier = await this.checkNullifiers(repNullifiers)
 
         db.create('Proof', {
             index: _proofIndex,
@@ -955,7 +1113,7 @@ export class Synchronizer extends EventEmitter {
             transactionHash: event.transactionHash,
             globalStateTree: args.globalStateTree.toString(),
             event: 'IndexedReputationProof',
-            valid: isValid,
+            valid: isValid && exist && !existingNullifier,
         })
     }
 
@@ -983,6 +1141,10 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
+        const exist = this.GSTRootExists(
+            args.globalStateTree.toString(),
+            _epoch
+        )
 
         db.create('Proof', {
             index: _proofIndex,
@@ -992,7 +1154,7 @@ export class Synchronizer extends EventEmitter {
             transactionHash: event.transactionHash,
             globalStateTree: args.globalStateTree.toString(),
             event: 'IndexedEpochKeyProof',
-            valid: isValid,
+            valid: isValid && exist,
         })
     }
 }
