@@ -19,6 +19,12 @@ Run test with gas report
 REPORT_GAS=true yarn test
 ```
 
+Run test coverage
+
+```bash
+yarn coverage
+```
+
 ## Utils
 
 -   `computeStartTransitionProofHash`
