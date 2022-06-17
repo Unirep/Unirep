@@ -17,6 +17,7 @@
         "build": "yarn workspaces foreach -t run build",
         "test": "yarn workspaces foreach -t run test",
         "lint": "prettier .",
+        "lint:fix": "prettier . --write",
         "prepare": "husky install"
     },
     "devDependencies": {

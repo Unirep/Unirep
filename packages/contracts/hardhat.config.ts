@@ -3,6 +3,7 @@ import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import 'hardhat-gas-reporter'
+import 'solidity-coverage'
 
 const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',
