@@ -1,0 +1,15 @@
+{
+    "name": "@unirep/subgraph",
+    "version": "1.0.0",
+    "description": "",
+    "license": "MIT",
+    "scripts": {
+        "codegen": "graph codegen",
+        "build": "graph build",
+        "deploy": "npm run codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep"
+    },
+    "dependencies": {
+        "@graphprotocol/graph-cli": "0.26.0",
+        "@graphprotocol/graph-ts": "0.24.1"
+    }
+}
