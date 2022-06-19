@@ -14,13 +14,12 @@ import {
 } from './utils'
 import { Circuit, formatProofForSnarkjsVerification } from '@unirep/circuits'
 import {
-    hash5,
     hashLeftRight,
     SparseMerkleTree,
     stringifyBigInts,
     unstringifyBigInts,
+    IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { IncrementalQuinTree } from 'maci-crypto'
 import { ISettings } from './interfaces'
 
 export interface Prover {
@@ -50,19 +49,14 @@ export class Synchronizer extends EventEmitter {
     provider: any
     unirepContract: ethers.Contract
     public settings: ISettings
-    public currentEpoch: number = 1
-    private epochTreeRoot: { [key: number]: BigInt } = {}
-    private GSTLeaves: { [key: number]: BigInt[] } = {}
-    private epochTreeLeaves: { [key: number]: any[] } = {}
-    private globalStateTree: { [key: number]: IncrementalQuinTree } = {}
-    private epochTree: { [key: number]: SparseMerkleTree } = {}
-    private defaultGSTLeaf: BigInt = BigInt(0)
-    public latestProcessedBlock: number = 0
-    private sealedEpochKey: { [key: string]: boolean } = {}
-    private epochKeyInEpoch: { [key: number]: Map<string, boolean> } = {}
-    private epochKeyToAttestationsMap: { [key: string]: IAttestation[] } = {}
-    private epochGSTRootMap: { [key: number]: Map<string, boolean> } = {}
+    // GST for current epoch
+    private globalStateTree: IncrementalMerkleTree
 
+    /**
+     * Maybe we can default the DB argument to an in memory implementation so
+     * that downstream packages don't have to worry about it unless they want
+     * to persist things?
+     **/
     constructor(db: DB, prover: Prover, unirepContract: ethers.Contract) {
         super()
         this._db = db
@@ -80,7 +74,7 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async loadSettings() {
+    async setup() {
         const treeDepths = await this.unirepContract.treeDepths()
         this.settings.globalStateTreeDepth = treeDepths.globalStateTreeDepth
         this.settings.userStateTreeDepth = treeDepths.userStateTreeDepth
@@ -95,43 +89,71 @@ export class Synchronizer extends EventEmitter {
         this.settings.numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
         const epochLength = await this.unirepContract.epochLength()
         this.settings.epochLength = epochLength
+        // load the GST for the current epoch
+        // assume we're resuming a sync using the same database
+        const epoch = await this._db.findMany('Epoch', {
+            where: {
+                sealed: false,
+            },
+        })
+        if (epoch.length > 1) {
+            throw new Error('Multiple unsealed epochs')
+        }
+        this.globalStateTree = new IncrementalMerkleTree(
+            treeDepths.globalStateTreeDepth
+        )
+        if (epoch.length === 0) {
+            // it's a new sync, start with empty GST
+            return
+        }
+        // otherwise load the leaves and insert them
+        // TODO: index consistency verification, ensure that indexes are
+        // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
+        const leaves = await this._db.findMany('GSTLeaf', {
+            where: {
+                epoch: epoch[0].number,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        for (const leaf of leaves) {
+            this.globalStateTree.insert(leaf.hash)
+        }
     }
 
-    async setup() {
-        await this.loadSettings()
-        const treeDepths = await this.unirepContract.treeDepths()
-        this.epochKeyInEpoch[this.currentEpoch] = new Map()
-        this.epochTreeRoot[this.currentEpoch] = BigInt(0)
-        const emptyUserStateRoot = computeEmptyUserStateRoot(
-            treeDepths.userStateTreeDepth
-        )
-        this.defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
-        this.GSTLeaves[this.currentEpoch] = []
-        this.globalStateTree[this.currentEpoch] = new IncrementalQuinTree(
-            treeDepths.globalStateTreeDepth,
-            this.defaultGSTLeaf,
-            2
-        )
-        this.epochGSTRootMap[this.currentEpoch] = new Map()
+    async loadCurrentEpoch() {
+        const currentEpoch = await this._db.findOne('Epoch', {
+            where: {},
+            orderBy: {
+                number: 'desc',
+            },
+        })
+        if (!currentEpoch) {
+            throw new Error(`Synchronizer: no epochs found`)
+        }
+        return currentEpoch
     }
 
-    private _checkCurrentEpoch(epoch: number) {
-        if (epoch !== this.currentEpoch) {
+    private async _checkCurrentEpoch(epoch: number) {
+        const currentEpoch = await this.loadCurrentEpoch()
+        if (epoch !== currentEpoch.number) {
             throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${this.currentEpoch}`
+                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
             )
         }
     }
 
-    private _checkValidEpoch(epoch: number) {
-        if (epoch > this.currentEpoch) {
+    private async _checkValidEpoch(epoch: number) {
+        const currentEpoch = await this.loadCurrentEpoch()
+        if (epoch > currentEpoch.number) {
             throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${this.currentEpoch}`
+                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch.number}`
             )
         }
     }
 
-    private _checkEpochKeyRange(epochKey: string) {
+    private async _checkEpochKeyRange(epochKey: string) {
         if (BigInt(epochKey) >= BigInt(2 ** this.settings.epochTreeDepth)) {
             throw new Error(
                 `Synchronizer: Epoch key (${epochKey}) greater than max leaf value(2**epochTreeDepth)`
@@ -139,52 +161,116 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    private _isEpochKeySealed(epochKey: string) {
-        if (this.sealedEpochKey[epochKey]) {
+    private async _isEpochKeySealed(epoch: number, epochKey: string) {
+        const _epochKey = await this._db.findOne('EpochKey', {
+            where: {
+                epoch,
+                key: epochKey,
+            },
+            include: {
+                epochDoc: true,
+            },
+        })
+        if (!_epochKey) {
+            throw new Error(
+                `Synchronizer: Unable to find epoch key ${epochKey} in epoch ${epoch}`
+            )
+        }
+        if (_epochKey.epochDoc.sealed) {
             throw new Error(
                 `Synchronizer: Epoch key (${epochKey}) has been sealed`
             )
         }
     }
 
-    genGSTree(epoch: number): IncrementalQuinTree {
-        this._checkValidEpoch(epoch)
-        // TODO: can be load from DB
-        return this.globalStateTree[epoch]
-    }
-
-    genEpochTree(epoch: number): SparseMerkleTree {
-        // TODO: can be load from DB
-        this._checkValidEpoch(epoch)
-        const epochTree = genNewSMT(this.settings.epochTreeDepth, SMT_ONE_LEAF)
-
-        const leaves = this.epochTreeLeaves[epoch]
-        if (!leaves) return epochTree
-        else {
-            for (const leaf of leaves) {
-                epochTree.update(leaf.epochKey, leaf.hashchainResult)
-            }
-            return epochTree
+    async genGSTree(epoch: number): Promise<IncrementalMerkleTree> {
+        await this._checkValidEpoch(epoch)
+        const tree = new IncrementalMerkleTree()
+        const leaves = await this._db.findMany('GSTLeaf', {
+            where: {
+                epoch,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        for (const leaf of leaves) {
+            tree.insert(leaf.hash)
         }
+        return tree
     }
 
-    GSTRootExists(GSTRoot: BigInt | string, epoch: number): boolean {
-        this._checkValidEpoch(epoch)
-        // TODO: can be found from DB
-        return this.epochGSTRootMap[epoch].has(GSTRoot.toString())
+    async genEpochTree(epoch: number): Promise<SparseMerkleTree> {
+        await this._checkValidEpoch(epoch)
+        const treeDepths = await this.unirepContract.treeDepths()
+        const epochKeys = await this._db.findMany('EpochKey', {
+            where: {
+                epoch,
+            },
+        })
+        const epochTreeLeaves = [] as any[]
+        for (const epochKey of epochKeys) {
+            await this._checkEpochKeyRange('0x' + epochKey)
+
+            let hashChain: BigInt = BigInt(0)
+            const attestations = await this._db.findMany('Attestation', {
+                where: {
+                    epoch,
+                    epochKey,
+                    valid: true,
+                },
+                orderBy: {
+                    index: 'asc',
+                },
+            })
+            for (const attestation of attestations) {
+                hashChain = hashLeftRight(attestation.hash, hashChain)
+            }
+            const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
+            const epochTreeLeaf = {
+                epochKey: BigInt('0x' + epochKey),
+                hashchainResult: sealedHashChainResult,
+            }
+            epochTreeLeaves.push(epochTreeLeaf)
+        }
+
+        const epochTree = await genNewSMT(
+            treeDepths.epochTreeDepth,
+            SMT_ONE_LEAF
+        )
+        // Add to epoch key hash chain map
+        for (let leaf of epochTreeLeaves) {
+            await epochTree.update(leaf.epochKey, leaf.hashchainResult)
+        }
+        return epochTree
     }
 
-    epochTreeRootExists(
+    async GSTRootExists(
+        GSTRoot: BigInt | string,
+        epoch: number
+    ): Promise<boolean> {
+        await this._checkValidEpoch(epoch)
+        const found = await this._db.findOne('GSTRoot', {
+            where: {
+                epoch,
+                hash: GSTRoot.toString(),
+            },
+        })
+        return !!found
+    }
+
+    async epochTreeRootExists(
         _epochTreeRoot: BigInt | string,
         epoch: number
-    ): boolean {
-        this._checkValidEpoch(epoch)
-        // TODO: can be found from DB
-        if (this.epochTreeRoot[epoch] == undefined) {
-            const epochTree = this.genEpochTree(epoch)
-            this.epochTreeRoot[epoch] = epochTree.root
-        }
-        return this.epochTreeRoot[epoch].toString() == _epochTreeRoot.toString()
+    ): Promise<boolean> {
+        await this._checkValidEpoch(epoch)
+        const found = await this._db.findOne('Epoch', {
+            where: {
+                number: epoch,
+                epochRoot: _epochTreeRoot.toString(),
+            },
+        })
+        return !!found
     }
 
     async checkNullifiers(nullifiers: string[]): Promise<boolean> {
@@ -195,33 +281,46 @@ export class Synchronizer extends EventEmitter {
                 confirmed: true,
             },
         })
-        if (existingNullifier) {
-            return true
-        }
-        return false
+        return !!existingNullifier
     }
 
-    getNumGSTLeaves(epoch: number) {
-        this._checkValidEpoch(epoch)
-        // TODO: can be found from DB
-        return this.GSTLeaves[epoch].length
+    async getNumGSTLeaves(epoch: number) {
+        await this._checkValidEpoch(epoch)
+        return this._db.count('GSTLeaf', {
+            where: {
+                epoch,
+            },
+        })
     }
 
-    getAttestations(epochKey: string): IAttestation[] {
-        this._checkEpochKeyRange(epochKey)
-
-        // TODO: can be found from DB
-        const attestations = this.epochKeyToAttestationsMap[epochKey]
-        if (!attestations) return []
-        else return attestations
+    async getAttestations(epochKey: string): Promise<IAttestation[]> {
+        await this._checkEpochKeyRange(epochKey)
+        // TODO: transform db entries to IAttestation (they're already pretty similar)
+        return this._db.findMany('Attestation', {
+            where: {
+                epochKey,
+                valid: true,
+            },
+        })
     }
 
-    getEpochKeys(epoch: number) {
-        this._checkValidEpoch(epoch)
+    async getEpochKeys(epoch: number) {
+        await this._checkValidEpoch(epoch)
 
-        // TODO: can be found from DB
-        if (this.epochKeyInEpoch[epoch] == undefined) return []
-        return Array.from(this.epochKeyInEpoch[epoch].keys())
+        // db isn't designed to handle epks right now, this is pretty
+        // inefficient
+        const attestations = await this._db.findMany('Attestation', {
+            where: {
+                epoch,
+            },
+        })
+        const epks = attestations.reduce((acc, attestation) => {
+            return {
+                ...acc,
+                [attestation.epochKey]: true,
+            }
+        }, {})
+        return Object.keys(epks)
     }
 
     async start() {
@@ -441,74 +540,26 @@ export class Synchronizer extends EventEmitter {
 
     async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
         console.log('update db from epoch ended event: ')
-        // console.log(event);
-        // update Unirep state
         const epoch = Number(event?.topics[1])
         const treeDepths = await this.unirepContract.treeDepths()
-        this.epochTree[epoch] = await genNewSMT(
-            treeDepths.epochTreeDepth,
-            SMT_ONE_LEAF
-        )
-        const epochTreeLeaves = [] as any[]
-
-        this._checkCurrentEpoch(epoch)
-        // seal all epoch keys in current epoch
-        for (const epochKey of this.epochKeyInEpoch[epoch]?.keys() || []) {
-            this._checkEpochKeyRange('0x' + epochKey)
-            this._isEpochKeySealed(epochKey)
-
-            let hashChain: BigInt = BigInt(0)
-            for (
-                let i = 0;
-                i < this.epochKeyToAttestationsMap[epochKey].length;
-                i++
-            ) {
-                hashChain = hashLeftRight(
-                    this.epochKeyToAttestationsMap[epochKey][i].hash(),
-                    hashChain
-                )
-            }
-            const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
-            const epochTreeLeaf = {
-                epochKey: BigInt('0x' + epochKey),
-                hashchainResult: sealedHashChainResult,
-            }
-            epochTreeLeaves.push(epochTreeLeaf)
-            this.sealedEpochKey[epochKey] = true
-        }
-
-        // Add to epoch key hash chain map
-        for (let leaf of epochTreeLeaves) {
-            await this.epochTree[epoch].update(
-                leaf.epochKey,
-                leaf.hashchainResult
-            )
-        }
-        this.epochTreeLeaves[epoch] = epochTreeLeaves.slice()
-        this.epochTreeRoot[epoch] = this.epochTree[epoch].root
-        this.currentEpoch++
-        this.GSTLeaves[this.currentEpoch] = []
-        this.epochKeyInEpoch[this.currentEpoch] = new Map()
-        this.globalStateTree[this.currentEpoch] = new IncrementalQuinTree(
-            treeDepths.globalStateTreeDepth,
-            this.defaultGSTLeaf,
-            2
-        )
-        this.epochGSTRootMap[this.currentEpoch] = new Map()
+        const tree = await this.genEpochTree(epoch)
         db.upsert('Epoch', {
             where: {
                 number: epoch,
             },
             update: {
                 sealed: true,
-                epochRoot: this.epochTree[epoch].root.toString(),
+                epochRoot: tree.root.toString(),
             },
             create: {
                 number: epoch,
                 sealed: true,
-                epochRoot: this.epochTree[epoch].root.toString(),
+                epochRoot: tree.root.toString(),
             },
         })
+        this.globalStateTree = new IncrementalMerkleTree(
+            treeDepths.globalStateTreeDepth
+        )
     }
 
     async attestationEvent(event: ethers.Event, db: TransactionDB) {
@@ -522,17 +573,10 @@ export class Synchronizer extends EventEmitter {
         const toProofIndex = Number(decodedData.toProofIndex)
         const fromProofIndex = Number(decodedData.fromProofIndex)
 
-        this._checkCurrentEpoch(_epoch)
-        this._checkEpochKeyRange(_epochKey.toString())
-        this._isEpochKeySealed(_epochKey.toString())
+        await this._checkCurrentEpoch(_epoch)
+        await this._checkEpochKeyRange(_epochKey.toString())
+        await this._isEpochKeySealed(_epoch, _epochKey.toString())
 
-        // const attestIndex = Number(decodedData.attestIndex)
-        // {
-        //     const existing = await Attestation.exists({
-        //         index: attestIndex,
-        //     })
-        //     if (existing) return
-        // }
         const attestation = new Attestation(
             BigInt(decodedData.attestation.attesterId),
             BigInt(decodedData.attestation.posRep),
@@ -543,7 +587,7 @@ export class Synchronizer extends EventEmitter {
         db.create('Attestation', {
             epoch: _epoch,
             epochKey: _epochKey.toString(16),
-            // index: attestIndex,
+            index: +`${event.blockNumber}${event.transactionIndex}${event.logIndex}`,
             transactionHash: event.transactionHash,
             attester: _attester,
             proofIndex: toProofIndex,
@@ -621,11 +665,17 @@ export class Synchronizer extends EventEmitter {
                 valid: true,
             },
         })
-        const epochKey = _epochKey.toString(16)
-        const attestations = this.epochKeyToAttestationsMap[epochKey]
-        if (!attestations) this.epochKeyToAttestationsMap[epochKey] = []
-        this.epochKeyToAttestationsMap[epochKey].push(attestation)
-        this.epochKeyInEpoch[_epoch].set(epochKey, true)
+        db.upsert('EpochKey', {
+            where: {
+                epoch: _epoch,
+                epochKey: _epochKey.toString(16),
+            },
+            update: {},
+            create: {
+                epoch: _epoch,
+                epochKey: _epochKey.toString(16),
+            },
+        })
     }
 
     async USTEvent(event: ethers.Event, db: TransactionDB) {
@@ -763,7 +813,7 @@ export class Synchronizer extends EventEmitter {
             .map((n) => n.toString())
             .filter((n) => n !== '0')
 
-        this._checkValidEpoch(fromEpoch)
+        await this._checkValidEpoch(fromEpoch)
         {
             const existingRoot = await this._db.findOne('GSTRoot', {
                 where: {
@@ -810,16 +860,9 @@ export class Synchronizer extends EventEmitter {
             }))
         )
 
-        this.GSTLeaves[epoch].push(leaf)
-
         // update GST when new leaf is inserted
         // keep track of each GST root when verifying proofs
         this.globalStateTree[epoch].insert(leaf)
-        this.epochGSTRootMap[epoch].set(
-            this.globalStateTree[epoch].root.toString(),
-            true
-        )
-
         const leafIndexInEpoch = await this._db.count('GSTLeaf', {
             epoch,
         })
@@ -849,23 +892,17 @@ export class Synchronizer extends EventEmitter {
 
         const treeDepths = await this.unirepContract.treeDepths()
 
-        this._checkCurrentEpoch(epoch)
-        const USTRoot = await computeInitUserStateRoot(
+        await this._checkCurrentEpoch(epoch)
+        const USTRoot = computeInitUserStateRoot(
             treeDepths.userStateTreeDepth,
             attesterId,
             airdrop
         )
         const newGSTLeaf = hashLeftRight(idCommitment, USTRoot)
-        this.GSTLeaves[epoch].push(newGSTLeaf)
 
         // update GST when new leaf is inserted
         // keep track of each GST root when verifying proofs
         this.globalStateTree[epoch].insert(newGSTLeaf)
-        this.epochGSTRootMap[epoch].set(
-            this.globalStateTree[epoch].root.toString(),
-            true
-        )
-
         // save the new leaf
         const leafIndexInEpoch = await this._db.count('GSTLeaf', {
             epoch,
@@ -916,7 +953,7 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
-        const exist = this.GSTRootExists(
+        const exist = await this.GSTRootExists(
             args.fromGlobalStateTree.toString(),
             Number(args.transitionFromEpoch)
         )
@@ -1046,7 +1083,7 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
-        const exist = this.GSTRootExists(
+        const exist = await this.GSTRootExists(
             args.globalStateTree.toString(),
             _epoch
         )
@@ -1096,7 +1133,7 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
-        const exist = this.GSTRootExists(
+        const exist = await this.GSTRootExists(
             args.globalStateTree.toString(),
             _epoch
         )
@@ -1141,7 +1178,7 @@ export class Synchronizer extends EventEmitter {
             formatPublicSignals,
             formatProofForSnarkjsVerification(formattedProof)
         )
-        const exist = this.GSTRootExists(
+        const exist = await this.GSTRootExists(
             args.globalStateTree.toString(),
             _epoch
         )

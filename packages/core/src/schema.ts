@@ -44,6 +44,7 @@ const _schema = [
             ['epochKey', 'String', { optional: true }],
             ['epochKeyToHashchainMap', 'String', { optional: true }],
             // ['index', 'Int'],
+            ['index', 'Int'], // event index, tx index, block index
             ['transactionHash', 'String', { optional: true }],
             ['attester', 'String', { optional: true }],
             ['proofIndex', 'Int', { optional: true }],
@@ -78,6 +79,22 @@ const _schema = [
             ['number', 'Int', { unique: true }],
             ['sealed', 'Bool'],
             ['epochRoot', 'String', { optional: true }],
+        ],
+    },
+    {
+        name: 'EpochKey',
+        primaryKey: ['key', 'epoch'],
+        rows: [
+            ['key', 'String'],
+            ['epoch', 'Int'],
+            {
+                name: 'epochDoc',
+                relation: {
+                    localField: 'epoch',
+                    foreignField: 'number',
+                    foreignTable: 'Epoch',
+                },
+            },
         ],
     },
     {
