@@ -50,7 +50,14 @@ export class Synchronizer extends EventEmitter {
     unirepContract: ethers.Contract
     public settings: ISettings
     // GST for current epoch
-    private globalStateTree: IncrementalMerkleTree
+    private _globalStateTree?: IncrementalMerkleTree
+
+    private get globalStateTree() {
+        if (!this._globalStateTree) {
+            throw new Error('Synchronizer: in memory GST not initialized')
+        }
+        return this._globalStateTree
+    }
 
     /**
      * Maybe we can default the DB argument to an in memory implementation so
@@ -99,7 +106,7 @@ export class Synchronizer extends EventEmitter {
         if (epoch.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
-        this.globalStateTree = new IncrementalMerkleTree(
+        this._globalStateTree = new IncrementalMerkleTree(
             treeDepths.globalStateTreeDepth
         )
         if (epoch.length === 0) {
@@ -546,7 +553,7 @@ export class Synchronizer extends EventEmitter {
                 epochRoot: tree.root.toString(),
             },
         })
-        this.globalStateTree = new IncrementalMerkleTree(
+        this._globalStateTree = new IncrementalMerkleTree(
             treeDepths.globalStateTreeDepth
         )
     }
