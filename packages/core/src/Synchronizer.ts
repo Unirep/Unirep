@@ -273,17 +273,6 @@ export class Synchronizer extends EventEmitter {
         return !!found
     }
 
-    async checkNullifiers(nullifiers: string[]): Promise<boolean> {
-        // check and save nullifiers
-        const existingNullifier = await this._db.findOne('Nullifier', {
-            where: {
-                nullifier: nullifiers,
-                confirmed: true,
-            },
-        })
-        return !!existingNullifier
-    }
-
     async getNumGSTLeaves(epoch: number) {
         await this._checkValidEpoch(epoch)
         return this._db.count('GSTLeaf', {
@@ -840,7 +829,12 @@ export class Synchronizer extends EventEmitter {
         }
 
         // check and save nullifiers
-        const existingNullifier = await this.checkNullifiers(epkNullifiers)
+        const existingNullifier = await this._db.findOne('Nullifier', {
+            where: {
+                nullifier: epkNullifiers,
+                confirmed: true,
+            },
+        })
         if (existingNullifier) {
             console.log(`duplicated nullifier`)
             return
@@ -1140,8 +1134,30 @@ export class Synchronizer extends EventEmitter {
         const repNullifiers = args.repNullifiers
             .map((n) => BigInt(n).toString())
             .filter((n) => n !== '0')
-        const existingNullifier = await this.checkNullifiers(repNullifiers)
 
+        const existingNullifier = await this._db.findOne('Nullifier', {
+            where: {
+                nullifier: repNullifiers,
+                confirmed: true,
+            },
+        })
+        if (existingNullifier) {
+            throw new Error('Duplicate reputation proof nullifier')
+        }
+        // everything checks out, lets start mutating the db
+        db.delete('Nullifier', {
+            where: {
+                nullifier: repNullifiers,
+                confirmed: false,
+            },
+        })
+        db.create(
+            'Nullifier',
+            repNullifiers.map((nullifier) => ({
+                epoch: _epoch,
+                nullifier,
+            }))
+        )
         db.create('Proof', {
             index: _proofIndex,
             epoch: _epoch,
