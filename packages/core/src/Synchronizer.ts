@@ -192,7 +192,9 @@ export class Synchronizer extends EventEmitter {
 
     async genGSTree(epoch: number): Promise<IncrementalMerkleTree> {
         await this._checkValidEpoch(epoch)
-        const tree = new IncrementalMerkleTree()
+        const tree = new IncrementalMerkleTree(
+            this.settings.globalStateTreeDepth
+        )
         const leaves = await this._db.findMany('GSTLeaf', {
             where: {
                 epoch,
