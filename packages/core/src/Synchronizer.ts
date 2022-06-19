@@ -136,10 +136,12 @@ export class Synchronizer extends EventEmitter {
                 number: 'desc',
             },
         })
-        if (!currentEpoch) {
-            throw new Error(`Synchronizer: no epochs found`)
-        }
-        return currentEpoch
+        return (
+            currentEpoch || {
+                number: 1,
+                sealed: false,
+            }
+        )
     }
 
     private async _checkCurrentEpoch(epoch: number) {
@@ -178,12 +180,7 @@ export class Synchronizer extends EventEmitter {
                 epochDoc: true,
             },
         })
-        if (!_epochKey) {
-            throw new Error(
-                `Synchronizer: Unable to find epoch key ${epochKey} in epoch ${epoch}`
-            )
-        }
-        if (_epochKey.epochDoc.sealed) {
+        if (_epochKey && _epochKey.epochDoc.sealed) {
             throw new Error(
                 `Synchronizer: Epoch key (${epochKey}) has been sealed`
             )
@@ -219,13 +216,13 @@ export class Synchronizer extends EventEmitter {
         })
         const epochTreeLeaves = [] as any[]
         for (const epochKey of epochKeys) {
-            await this._checkEpochKeyRange('0x' + epochKey)
+            await this._checkEpochKeyRange('0x' + epochKey.key)
 
             let hashChain: BigInt = BigInt(0)
             const attestations = await this._db.findMany('Attestation', {
                 where: {
                     epoch,
-                    epochKey,
+                    epochKey: epochKey.key,
                     valid: true,
                 },
                 orderBy: {
@@ -237,19 +234,16 @@ export class Synchronizer extends EventEmitter {
             }
             const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
             const epochTreeLeaf = {
-                epochKey: BigInt('0x' + epochKey),
+                epochKey: BigInt('0x' + epochKey.key),
                 hashchainResult: sealedHashChainResult,
             }
             epochTreeLeaves.push(epochTreeLeaf)
         }
 
-        const epochTree = await genNewSMT(
-            treeDepths.epochTreeDepth,
-            SMT_ONE_LEAF
-        )
+        const epochTree = genNewSMT(treeDepths.epochTreeDepth, SMT_ONE_LEAF)
         // Add to epoch key hash chain map
         for (let leaf of epochTreeLeaves) {
-            await epochTree.update(leaf.epochKey, leaf.hashchainResult)
+            epochTree.update(leaf.epochKey, leaf.hashchainResult)
         }
         return epochTree
     }
@@ -262,7 +256,7 @@ export class Synchronizer extends EventEmitter {
         const found = await this._db.findOne('GSTRoot', {
             where: {
                 epoch,
-                hash: GSTRoot.toString(),
+                root: GSTRoot.toString(),
             },
         })
         return !!found
@@ -555,6 +549,11 @@ export class Synchronizer extends EventEmitter {
                 epochRoot: tree.root.toString(),
             },
         })
+        // create the next stub entry
+        db.create('Epoch', {
+            number: epoch + 1,
+            sealed: false,
+        })
         this._globalStateTree = new IncrementalMerkleTree(
             treeDepths.globalStateTreeDepth
         )
@@ -573,7 +572,7 @@ export class Synchronizer extends EventEmitter {
 
         await this._checkCurrentEpoch(_epoch)
         await this._checkEpochKeyRange(_epochKey.toString())
-        await this._isEpochKeySealed(_epoch, _epochKey.toString())
+        await this._isEpochKeySealed(_epoch, _epochKey.toString(16))
 
         const attestation = new Attestation(
             BigInt(decodedData.attestation.attesterId),
@@ -666,12 +665,12 @@ export class Synchronizer extends EventEmitter {
         db.upsert('EpochKey', {
             where: {
                 epoch: _epoch,
-                epochKey: _epochKey.toString(16),
+                key: _epochKey.toString(16),
             },
             update: {},
             create: {
                 epoch: _epoch,
-                epochKey: _epochKey.toString(16),
+                key: _epochKey.toString(16),
             },
         })
     }
@@ -865,7 +864,7 @@ export class Synchronizer extends EventEmitter {
 
         // update GST when new leaf is inserted
         // keep track of each GST root when verifying proofs
-        this.globalStateTree[epoch].insert(leaf)
+        this.globalStateTree.insert(leaf)
         const leafIndexInEpoch = await this._db.count('GSTLeaf', {
             epoch,
         })
@@ -877,7 +876,7 @@ export class Synchronizer extends EventEmitter {
         })
         db.create('GSTRoot', {
             epoch,
-            root: this.globalStateTree[epoch].root.toString(),
+            root: this.globalStateTree.root.toString(),
         })
     }
 
@@ -905,7 +904,7 @@ export class Synchronizer extends EventEmitter {
 
         // update GST when new leaf is inserted
         // keep track of each GST root when verifying proofs
-        this.globalStateTree[epoch].insert(newGSTLeaf)
+        this.globalStateTree.insert(newGSTLeaf)
         // save the new leaf
         const leafIndexInEpoch = await this._db.count('GSTLeaf', {
             epoch,
@@ -918,7 +917,7 @@ export class Synchronizer extends EventEmitter {
         })
         db.create('GSTRoot', {
             epoch,
-            root: this.globalStateTree[epoch].root.toString(),
+            root: this.globalStateTree.root.toString(),
         })
     }
 
