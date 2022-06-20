@@ -64,7 +64,7 @@ const verifyUserSignUpProof = async (args: any) => {
         args.public_signals.slice(signUpPublicSignalsPrefix.length)
     )
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const epoch = publicSignals[0]
+    const epoch = Number(publicSignals[0])
     const epk = publicSignals[1]
     const GSTRoot = publicSignals[2]
     const attesterId = publicSignals[3]
@@ -72,7 +72,7 @@ const verifyUserSignUpProof = async (args: any) => {
     const proof = JSON.parse(decodedProof)
 
     // Check if Global state tree root exists
-    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+    const isGSTRootExisted = await unirepState.GSTRootExists(GSTRoot, epoch)
     if (!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
         return

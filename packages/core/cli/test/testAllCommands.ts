@@ -8,7 +8,7 @@ import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
-import { genUnirepState, UnirepState } from '../../src'
+import { genUnirepState, Synchronizer, UnirepState } from '../../src'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 
@@ -29,7 +29,7 @@ describe('test all CLI subcommands', function () {
     const epochKeyNonce = 0
     const epochLength = 5
     let unirepContract: Unirep
-    let unirepState: UnirepState
+    let unirepState: Synchronizer
 
     let userIdentity, userIdentityCommitment
     const attesterId = 1
