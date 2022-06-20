@@ -167,7 +167,7 @@ describe('Reputation proof events in Unirep User State', function () {
         let repNullifier
         it('submit valid reputation proof event', async () => {
             const epkNonce = 0
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             const nonceList: BigInt[] = []
@@ -264,7 +264,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit valid reputation proof event with same nullifiers', async () => {
             const epkNonce = 1
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             const nonceList: BigInt[] = []
@@ -349,7 +349,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const epkNonce = 0
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
@@ -402,14 +402,14 @@ describe('Reputation proof events in Unirep User State', function () {
             const spendReputation = Math.ceil(
                 Math.random() * maxReputationBudget
             )
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             const unirepState = await genUnirepState(
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 epoch,
@@ -482,7 +482,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const epkNonce = 0
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
@@ -619,7 +619,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 wrongEpoch,

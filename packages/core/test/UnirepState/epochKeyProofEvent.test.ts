@@ -16,7 +16,11 @@ import {
     Reputation,
     UserState,
 } from '../../src'
-import { genEpochKeyCircuitInput, genRandomAttestation } from '../utils'
+import {
+    compareAttestations,
+    genEpochKeyCircuitInput,
+    genRandomAttestation,
+} from '../utils'
 
 describe('Epoch key proof events in Unirep State', function () {
     this.timeout(0)
@@ -105,10 +109,13 @@ describe('Epoch key proof events in Unirep State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = unirepState.currentEpoch
+                const unirepEpoch = (await unirepState.loadCurrentEpoch())
+                    .number
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+                const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                    unirepEpoch
+                )
                 expect(unirepGSTLeaves).equal(i + 1)
 
                 const airdroppedAmount = await unirepContract.airdropAmount(
@@ -148,10 +155,13 @@ describe('Epoch key proof events in Unirep State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = unirepState.currentEpoch
+                const unirepEpoch = (await unirepState.loadCurrentEpoch())
+                    .number
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+                const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                    unirepEpoch
+                )
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
                 const newUSTRoot = await computeInitUserStateRoot(
@@ -173,9 +183,9 @@ describe('Epoch key proof events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch = (await unirepState.loadCurrentEpoch()).number
             const epkNonce = 0
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const circuitInputs = genEpochKeyCircuitInput(
                 userIds[userIdx],
                 GSTree,
@@ -226,11 +236,9 @@ describe('Epoch key proof events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(JSON.stringify(attestations[0])).to.equal(
-                JSON.stringify(attestation)
-            )
+            compareAttestations(attestations[0], attestation)
         })
 
         it('submit invalid epoch key proof event', async () => {
@@ -240,7 +248,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 unirepContract.address
             )
             const epkNonce = 1
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const circuitInputs = genEpochKeyCircuitInput(
                 userIds[userIdx],
                 GSTree,
@@ -287,7 +295,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -350,7 +358,7 @@ describe('Epoch key proof events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -364,7 +372,7 @@ describe('Epoch key proof events in Unirep State', function () {
             const epkNonce = Math.floor(
                 Math.random() * numEpochKeyNoncePerEpoch
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const circuitInputs = genEpochKeyCircuitInput(
                 userIds[userIdx],
                 GSTree,

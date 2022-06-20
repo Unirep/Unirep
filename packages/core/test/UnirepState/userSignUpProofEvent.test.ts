@@ -13,6 +13,7 @@ import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
 import { genUnirepState, Reputation } from '../../src'
 import {
+    compareAttestations,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
@@ -100,10 +101,13 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = unirepState.currentEpoch
+                const unirepEpoch = (await unirepState.loadCurrentEpoch())
+                    .number
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+                const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                    unirepEpoch
+                )
                 expect(unirepGSTLeaves).equal(i + 1)
 
                 const airdroppedAmount = await unirepContract.airdropAmount(
@@ -137,10 +141,13 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = unirepState.currentEpoch
+                const unirepEpoch = (await unirepState.loadCurrentEpoch())
+                    .number
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+                const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                    unirepEpoch
+                )
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
                 signUpAirdrops.push(Reputation.default())
@@ -159,7 +166,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
@@ -204,7 +211,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
         })
 
@@ -227,11 +234,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(JSON.stringify(attestations[1])).to.equal(
-                JSON.stringify(attestation)
-            )
+            compareAttestations(attestations[1], attestation)
         })
 
         it('submit invalid airdrop proof event', async () => {
@@ -240,7 +245,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
@@ -278,7 +283,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
         })
 
@@ -301,7 +306,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
         })
 
@@ -358,7 +363,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -381,7 +386,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -391,7 +396,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 

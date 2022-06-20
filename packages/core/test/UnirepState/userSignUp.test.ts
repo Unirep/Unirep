@@ -76,13 +76,16 @@ describe('User sign up events in Unirep State', function () {
             )
 
             const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.currentEpoch
+            const unirepEpoch = (await initUnirepState.loadCurrentEpoch())
+                .number
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            const unirepGSTLeaves = initUnirepState.getNumGSTLeaves(unirepEpoch)
+            const unirepGSTLeaves = await initUnirepState.getNumGSTLeaves(
+                unirepEpoch
+            )
             expect(unirepGSTLeaves).equal(0)
 
-            const unirepGSTree = initUnirepState.genGSTree(unirepEpoch)
+            const unirepGSTree = await initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = genNewGST(
                 treeDepths.globalStateTreeDepth,
                 treeDepths.userStateTreeDepth
@@ -117,10 +120,13 @@ describe('User sign up events in Unirep State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = unirepState.currentEpoch
+                const unirepEpoch = (await unirepState.loadCurrentEpoch())
+                    .number
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+                const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                    unirepEpoch
+                )
                 expect(unirepGSTLeaves).equal(i + 1)
 
                 const attesterId = await unirepContract.attesters(
@@ -166,10 +172,13 @@ describe('User sign up events in Unirep State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = unirepState.currentEpoch
+                const unirepEpoch = (await unirepState.loadCurrentEpoch())
+                    .number
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+                const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                    unirepEpoch
+                )
                 expect(unirepGSTLeaves).equal(userNum + i + 1)
 
                 const newUSTRoot = await computeInitUserStateRoot(
@@ -188,9 +197,10 @@ describe('User sign up events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const unirepEpoch = unirepStateBefore.currentEpoch
+            const unirepEpoch = (await unirepStateBefore.loadCurrentEpoch())
+                .number
             const unirepGSTLeavesBefore =
-                unirepStateBefore.getNumGSTLeaves(unirepEpoch)
+                await unirepStateBefore.getNumGSTLeaves(unirepEpoch)
 
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
@@ -202,7 +212,9 @@ describe('User sign up events in Unirep State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const unirepGSTLeaves = unirepState.getNumGSTLeaves(unirepEpoch)
+            const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
+                unirepEpoch
+            )
             expect(unirepGSTLeaves).equal(unirepGSTLeavesBefore)
         })
 
@@ -212,9 +224,11 @@ describe('User sign up events in Unirep State', function () {
                 unirepContract.address
             )
             for (let root of rootHistories) {
-                const exist = unirepState.GSTRootExists(
+                const exist = await unirepState.GSTRootExists(
                     root,
-                    unirepState.currentEpoch
+                    (
+                        await unirepState.loadCurrentEpoch()
+                    ).number
                 )
                 expect(exist).to.be.true
             }

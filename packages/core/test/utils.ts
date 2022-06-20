@@ -31,6 +31,7 @@ import {
     genUserState,
     IUserState,
     Reputation,
+    Synchronizer,
     UnirepState,
     UserState,
 } from '../src'
@@ -40,6 +41,7 @@ import {
     genNewUserStateTree,
     toCompleteHexString,
 } from '../../circuits/test/utils'
+import { IAttestation } from '@unirep/contracts'
 
 const genNewGST = (
     GSTDepth: number,
@@ -99,8 +101,11 @@ const verifyProcessAttestationsProof = async (
     )
 }
 
-const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
-    const currentEpoch = unirepState.currentEpoch
+const getReputationRecords = async (
+    id: ZkIdentity,
+    unirepState: Synchronizer
+) => {
+    const currentEpoch = (await unirepState.loadCurrentEpoch()).number
     const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
         for (
@@ -109,7 +114,9 @@ const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
             j++
         ) {
             const epk = genEpochKey(id.identityNullifier, i, j)
-            const attestations = unirepState.getAttestations(epk.toString())
+            const attestations = await unirepState.getAttestations(
+                epk.toString()
+            )
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
                 if (reputaitonRecord[attesterId] === undefined) {
@@ -356,34 +363,43 @@ const compareStates = async (
     userId: ZkIdentity,
     savedUserState: IUserState
 ) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const unirepStateWithNoStorage = await genUnirepState(provider, address)
+    // const usWithNoStorage = await genUserState(provider, address, userId)
+    // const unirepStateWithNoStorage = await genUnirepState(provider, address)
+    // const usWithStorage = await genUserState(
+    //     provider,
+    //     address,
+    //     userId,
+    //     savedUserState
+    // )
+    // const unirepStateWithStorage = await genUnirepState(
+    //     provider,
+    //     address,
+    //     savedUserState.unirepState
+    // )
+    // const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    // const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
+    // expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
+    // expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
+    // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
+    //     unirepStateWithStorage.toJSON()
+    // )
+    // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
+    //     unirepFromJSON.toJSON()
+    // )
+    // return usWithNoStorage.toJSON()
+}
 
-    const usWithStorage = await genUserState(
-        provider,
-        address,
-        userId,
-        savedUserState
+const compareAttestations = (
+    attestDB: IAttestation,
+    attestObj: Attestation
+) => {
+    expect(attestDB.attesterId.toString()).equal(
+        attestObj.attesterId.toString()
     )
-    const unirepStateWithStorage = await genUnirepState(
-        provider,
-        address,
-        savedUserState.unirepState
-    )
-
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
-
-    expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
-    expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
-    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-        unirepStateWithStorage.toJSON()
-    )
-    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-        unirepFromJSON.toJSON()
-    )
-
-    return usWithNoStorage.toJSON()
+    expect(attestDB.posRep.toString()).equal(attestObj.posRep.toString())
+    expect(attestDB.negRep.toString()).equal(attestObj.negRep.toString())
+    expect(attestDB.graffiti.toString()).equal(attestObj.graffiti.toString())
+    expect(attestDB.signUp.toString()).equal(attestObj.signUp.toString())
 }
 
 const compareEpochTrees = async (
@@ -430,5 +446,6 @@ export {
     genProveSignUpCircuitInput,
     submitUSTProofs,
     compareStates,
+    compareAttestations,
     compareEpochTrees,
 }

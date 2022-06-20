@@ -241,7 +241,11 @@ describe('User state transition events in Unirep User State', async function () 
             expect(userState.getUnirepStateCurrentEpoch()).equal(
                 unirepState.currentEpoch
             )
-            for (let i = 1; i <= unirepState.currentEpoch; i++) {
+            for (
+                let i = 1;
+                i <= (await unirepState.loadCurrentEpoch()).number;
+                i++
+            ) {
                 expect(userState.getUnirepStateGSTree(i).root).equal(
                     unirepState.genGSTree(i).root
                 )
@@ -575,7 +579,11 @@ describe('User state transition events in Unirep User State', async function () 
             expect(userState.getUnirepStateCurrentEpoch()).equal(
                 unirepState.currentEpoch
             )
-            for (let i = 1; i <= unirepState.currentEpoch; i++) {
+            for (
+                let i = 1;
+                i <= (await unirepState.loadCurrentEpoch()).number;
+                i++
+            ) {
                 expect(userState.getUnirepStateGSTree(i).root).equal(
                     unirepState.genGSTree(i).root
                 )

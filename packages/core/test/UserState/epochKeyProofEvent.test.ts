@@ -171,7 +171,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const epkNonce = 0
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
@@ -213,7 +213,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
             expect(JSON.stringify(attestations[0])).to.equal(
                 JSON.stringify(attestation)
@@ -226,7 +226,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const epkNonce = 1
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
@@ -264,7 +264,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -327,7 +327,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const attestations = unirepState.getAttestations(epochKey)
+            const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -338,7 +338,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             const wrongEpoch = epoch + 1
             const epkNonce = 1
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const circuitInputs = genEpochKeyCircuitInput(
                 userIds[userIdx],
                 GSTree,

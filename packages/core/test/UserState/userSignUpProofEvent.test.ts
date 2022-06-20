@@ -151,7 +151,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         let epoch
         const userIdx = 3
         it('submit airdrop proof event', async () => {
-            epoch = Number(await unirepContract.currentEpoch())
+            epoch(await unirepState.loadCurrentEpoch()).number
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
@@ -371,7 +371,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 hardhatEthers.provider,
                 unirepContract.address
             )
-            const GSTree = unirepState.genGSTree(unirepState.currentEpoch)
+            const GSTree = await unirepState.genGSTree(epoch)
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
