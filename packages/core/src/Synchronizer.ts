@@ -647,7 +647,7 @@ export class Synchronizer extends EventEmitter {
                     where: {
                         epoch: _epoch,
                         epochKey: _epochKey.toString(),
-                        proofIndex: fromProofIndex
+                        proofIndex: fromProofIndex,
                     },
                     update: {
                         valid: false,
