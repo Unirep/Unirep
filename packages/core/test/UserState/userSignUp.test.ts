@@ -215,9 +215,9 @@ describe('User sign up events in Unirep User State', function () {
                 unirepContract.address
             )
             for (let root of rootHistories) {
-                const exist = unirepState.GSTRootExists(
+                const exist = await unirepState.GSTRootExists(
                     root,
-                    unirepState.currentEpoch
+                    (await unirepState.loadCurrentEpoch()).number
                 )
                 expect(exist).to.be.true
             }

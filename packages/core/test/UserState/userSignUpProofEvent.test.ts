@@ -151,7 +151,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         let epoch
         const userIdx = 3
         it('submit airdrop proof event', async () => {
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,

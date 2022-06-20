@@ -17,7 +17,7 @@ import {
     genUserState,
     Reputation,
 } from '../../src'
-import { genEpochKeyCircuitInput, genRandomAttestation } from '../utils'
+import { compareAttestations, genEpochKeyCircuitInput, genRandomAttestation } from '../utils'
 
 describe('Epoch key proof events in Unirep User State', function () {
     this.timeout(0)
@@ -171,7 +171,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 0
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
@@ -215,9 +215,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             const attestations = await unirepState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
-            expect(JSON.stringify(attestations[0])).to.equal(
-                JSON.stringify(attestation)
-            )
+            compareAttestations(attestations[0], attestation)
         })
 
         it('submit invalid epoch key proof event', async () => {
@@ -226,7 +224,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 1
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)

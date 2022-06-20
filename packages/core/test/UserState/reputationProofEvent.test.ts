@@ -167,7 +167,7 @@ describe('Reputation proof events in Unirep User State', function () {
         let repNullifier
         it('submit valid reputation proof event', async () => {
             const epkNonce = 0
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             const nonceList: BigInt[] = []
@@ -264,7 +264,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit valid reputation proof event with same nullifiers', async () => {
             const epkNonce = 1
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             const nonceList: BigInt[] = []
@@ -349,7 +349,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 0
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
@@ -402,7 +402,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const spendReputation = Math.ceil(
                 Math.random() * maxReputationBudget
             )
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
             const unirepState = await genUnirepState(
@@ -482,7 +482,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            epoch(await unirepState.loadCurrentEpoch()).number
+            epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 0
             const { proof, publicSignals } =
                 await userState.genVerifyEpochKeyProof(epkNonce)

@@ -363,30 +363,30 @@ const compareStates = async (
     userId: ZkIdentity,
     savedUserState: IUserState
 ) => {
-    // const usWithNoStorage = await genUserState(provider, address, userId)
+    const usWithNoStorage = await genUserState(provider, address, userId)
     // const unirepStateWithNoStorage = await genUnirepState(provider, address)
-    // const usWithStorage = await genUserState(
-    //     provider,
-    //     address,
-    //     userId,
-    //     savedUserState
-    // )
+    const usWithStorage = await genUserState(
+        provider,
+        address,
+        userId,
+        savedUserState
+    )
     // const unirepStateWithStorage = await genUnirepState(
     //     provider,
     //     address,
     //     savedUserState.unirepState
     // )
-    // const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
     // const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
-    // expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
-    // expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
+    expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
+    expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
     // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
     //     unirepStateWithStorage.toJSON()
     // )
     // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
     //     unirepFromJSON.toJSON()
     // )
-    // return usWithNoStorage.toJSON()
+    return usWithNoStorage.toJSON()
 }
 
 const compareAttestations = (

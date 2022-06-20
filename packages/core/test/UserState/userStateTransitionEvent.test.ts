@@ -239,7 +239,7 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             expect(userState.getUnirepStateCurrentEpoch()).equal(
-                unirepState.currentEpoch
+                (await unirepState.loadCurrentEpoch()).number
             )
             for (
                 let i = 1;
@@ -247,11 +247,11 @@ describe('User state transition events in Unirep User State', async function () 
                 i++
             ) {
                 expect(userState.getUnirepStateGSTree(i).root).equal(
-                    unirepState.genGSTree(i).root
+                    (await unirepState.genGSTree(i)).root
                 )
             }
             expect(userState.getUnirepStateEpochTree(1).root).equal(
-                unirepState.genEpochTree(1).root
+                (await unirepState.genEpochTree(1)).root
             )
 
             storedUserState = userState.toJSON()
@@ -545,7 +545,7 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const epoch = 2
-            const GSTRoot = unirepStateBefore.genGSTree(epoch).root
+            const GSTRoot = (await unirepStateBefore.genGSTree(epoch)).root
 
             for (let i = 0; i < userIds.length; i++) {
                 const randomUST = Math.round(Math.random())
@@ -577,7 +577,7 @@ describe('User state transition events in Unirep User State', async function () 
                 userIds[0]
             )
             expect(userState.getUnirepStateCurrentEpoch()).equal(
-                unirepState.currentEpoch
+                (await unirepState.loadCurrentEpoch()).number
             )
             for (
                 let i = 1;
@@ -585,11 +585,11 @@ describe('User state transition events in Unirep User State', async function () 
                 i++
             ) {
                 expect(userState.getUnirepStateGSTree(i).root).equal(
-                    unirepState.genGSTree(i).root
+                    (await unirepState.genGSTree(i)).root
                 )
             }
             expect(userState.getUnirepStateEpochTree(2).root).equal(
-                unirepState.genEpochTree(2).root
+                (await unirepState.genEpochTree(2)).root
             )
         })
     })
