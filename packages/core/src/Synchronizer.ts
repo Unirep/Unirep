@@ -223,7 +223,7 @@ export class Synchronizer extends EventEmitter {
         })
         const epochTreeLeaves = [] as any[]
         for (const epochKey of epochKeys) {
-            await this._checkEpochKeyRange('0x' + epochKey.key)
+            await this._checkEpochKeyRange(epochKey.key)
 
             let hashChain: BigInt = BigInt(0)
             const attestations = await this._db.findMany('Attestation', {
@@ -241,7 +241,7 @@ export class Synchronizer extends EventEmitter {
             }
             const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
             const epochTreeLeaf = {
-                epochKey: BigInt('0x' + epochKey.key),
+                epochKey: BigInt(epochKey.key),
                 hashchainResult: sealedHashChainResult,
             }
             epochTreeLeaves.push(epochTreeLeaf)
