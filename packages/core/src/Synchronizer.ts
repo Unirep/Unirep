@@ -51,6 +51,7 @@ export class Synchronizer extends EventEmitter {
     public settings: ISettings
     // GST for current epoch
     private _globalStateTree?: IncrementalMerkleTree
+    private _defaultGSTLeaf?: BigInt
 
     private get globalStateTree() {
         if (!this._globalStateTree) {
@@ -106,8 +107,13 @@ export class Synchronizer extends EventEmitter {
         if (epoch.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
+        const emptyUserStateRoot = computeEmptyUserStateRoot(
+            this.settings.userStateTreeDepth
+        )
+        this._defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
         this._globalStateTree = new IncrementalMerkleTree(
-            treeDepths.globalStateTreeDepth
+            this.settings.globalStateTreeDepth,
+            this._defaultGSTLeaf
         )
         if (epoch.length === 0) {
             // it's a new sync, start with empty GST
@@ -180,7 +186,7 @@ export class Synchronizer extends EventEmitter {
                 epochDoc: true,
             },
         })
-        if (_epochKey && _epochKey.epochDoc.sealed) {
+        if (_epochKey && _epochKey?.epochDoc?.sealed) {
             throw new Error(
                 `Synchronizer: Epoch key (${epochKey}) has been sealed`
             )
@@ -190,7 +196,8 @@ export class Synchronizer extends EventEmitter {
     async genGSTree(epoch: number): Promise<IncrementalMerkleTree> {
         await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth
+            this.settings.globalStateTreeDepth,
+            this._defaultGSTLeaf
         )
         const leaves = await this._db.findMany('GSTLeaf', {
             where: {
@@ -279,10 +286,15 @@ export class Synchronizer extends EventEmitter {
     async getNumGSTLeaves(epoch: number) {
         await this._checkValidEpoch(epoch)
         return this._db.count('GSTLeaf', {
-            where: {
-                epoch,
-            },
+            epoch: epoch,
         })
+    }
+
+    async nullifierExist(nullifier: BigInt) {
+        const count = await this._db.count('Nullifier', {
+            nullifier: nullifier.toString(),
+        })
+        return Boolean(count)
     }
 
     async getAttestations(epochKey: string): Promise<IAttestation[]> {
@@ -555,7 +567,8 @@ export class Synchronizer extends EventEmitter {
             sealed: false,
         })
         this._globalStateTree = new IncrementalMerkleTree(
-            treeDepths.globalStateTreeDepth
+            treeDepths.globalStateTreeDepth,
+            this._defaultGSTLeaf
         )
     }
 
@@ -572,18 +585,18 @@ export class Synchronizer extends EventEmitter {
 
         await this._checkCurrentEpoch(_epoch)
         await this._checkEpochKeyRange(_epochKey.toString())
-        await this._isEpochKeySealed(_epoch, _epochKey.toString(16))
+        await this._isEpochKeySealed(_epoch, _epochKey.toString())
 
         const attestation = new Attestation(
             BigInt(decodedData.attestation.attesterId),
             BigInt(decodedData.attestation.posRep),
             BigInt(decodedData.attestation.negRep),
-            BigInt(decodedData.attestation.graffiti._hex),
+            BigInt(decodedData.attestation.graffiti),
             BigInt(decodedData.attestation.signUp)
         )
         db.create('Attestation', {
             epoch: _epoch,
-            epochKey: _epochKey.toString(16),
+            epochKey: _epochKey.toString(),
             index: +`${event.blockNumber}${event.transactionIndex}${event.logIndex}`,
             transactionHash: event.transactionHash,
             attester: _attester,
@@ -591,7 +604,7 @@ export class Synchronizer extends EventEmitter {
             attesterId: Number(decodedData.attestation.attesterId),
             posRep: Number(decodedData.attestation.posRep),
             negRep: Number(decodedData.attestation.negRep),
-            graffiti: decodedData.attestation.graffiti._hex,
+            graffiti: decodedData.attestation.graffiti.toString(),
             signUp: Boolean(Number(decodedData.attestation?.signUp)),
             hash: attestation.hash().toString(),
         })
@@ -605,12 +618,12 @@ export class Synchronizer extends EventEmitter {
         if (!validProof) {
             throw new Error('Unable to find proof for attestation')
         }
-        if (validProof.valid === false) {
+        if (!validProof.valid) {
             db.update('Attestation', {
                 where: {
                     epoch: _epoch,
-                    epochKey: _epochKey.toString(16),
-                    // index: attestIndex,
+                    epochKey: _epochKey.toString(),
+                    proofIndex: toProofIndex,
                 },
                 update: {
                     valid: false,
@@ -629,12 +642,12 @@ export class Synchronizer extends EventEmitter {
             if (!fromValidProof) {
                 throw new Error('Unable to find from proof')
             }
-            if (fromValidProof.valid === false || fromValidProof.spent) {
+            if (!fromValidProof.valid || fromValidProof.spent) {
                 db.update('Attestation', {
                     where: {
                         epoch: _epoch,
-                        epochKey: _epochKey.toString(16),
-                        // index: attestIndex,
+                        epochKey: _epochKey.toString(),
+                        proofIndex: fromProofIndex
                     },
                     update: {
                         valid: false,
@@ -655,7 +668,7 @@ export class Synchronizer extends EventEmitter {
         db.update('Attestation', {
             where: {
                 epoch: _epoch,
-                epochKey: _epochKey.toString(16),
+                epochKey: _epochKey.toString(),
                 // index: attestIndex,
             },
             update: {
@@ -665,12 +678,12 @@ export class Synchronizer extends EventEmitter {
         db.upsert('EpochKey', {
             where: {
                 epoch: _epoch,
-                key: _epochKey.toString(16),
+                key: _epochKey.toString(),
             },
             update: {},
             create: {
                 epoch: _epoch,
-                key: _epochKey.toString(16),
+                key: _epochKey.toString(),
             },
         })
     }
@@ -1150,22 +1163,23 @@ export class Synchronizer extends EventEmitter {
             },
         })
         if (existingNullifier) {
-            throw new Error('Duplicate reputation proof nullifier')
+            console.log('Duplicate reputation proof nullifier')
+        } else {
+            // everything checks out, lets start mutating the db
+            db.delete('Nullifier', {
+                where: {
+                    nullifier: repNullifiers,
+                    confirmed: false,
+                },
+            })
+            db.create(
+                'Nullifier',
+                repNullifiers.map((nullifier) => ({
+                    epoch: _epoch,
+                    nullifier,
+                }))
+            )
         }
-        // everything checks out, lets start mutating the db
-        db.delete('Nullifier', {
-            where: {
-                nullifier: repNullifiers,
-                confirmed: false,
-            },
-        })
-        db.create(
-            'Nullifier',
-            repNullifiers.map((nullifier) => ({
-                epoch: _epoch,
-                nullifier,
-            }))
-        )
         db.create('Proof', {
             index: _proofIndex,
             epoch: _epoch,
