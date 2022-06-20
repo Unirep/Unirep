@@ -72,7 +72,10 @@ const verifyEpochKeyProof = async (args: any) => {
     }
 
     // Check if Global state tree root exists
-    const isGSTRootExisted = await unirepState.GSTRootExists(GSTRoot, inputEpoch)
+    const isGSTRootExisted = await unirepState.GSTRootExists(
+        GSTRoot,
+        inputEpoch
+    )
     if (!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
         return

@@ -17,7 +17,11 @@ import {
     genUserState,
     Reputation,
 } from '../../src'
-import { compareAttestations, genEpochKeyCircuitInput, genRandomAttestation } from '../utils'
+import {
+    compareAttestations,
+    genEpochKeyCircuitInput,
+    genRandomAttestation,
+} from '../utils'
 
 describe('Epoch key proof events in Unirep User State', function () {
     this.timeout(0)
