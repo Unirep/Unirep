@@ -24,6 +24,7 @@ import {
     Reputation,
 } from '../../src'
 import {
+    compareAttestations,
     genNewUserStateTree,
     genRandomAttestation,
     genReputationCircuitInput,
@@ -116,7 +117,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const airdroppedAmount = await unirepContract.airdropAmount(
@@ -151,7 +152,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 signUpAirdrops.push(Reputation.default())
@@ -162,6 +163,7 @@ describe('Reputation proof events in Unirep User State', function () {
     describe('Reputation proof event', async () => {
         let epochKey
         let proofIndex
+        let invalidProofIndex
         let epoch
         const userIdx = 2
         let repNullifier
@@ -228,11 +230,11 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
 
             // nullifiers should be added to unirepState
-            expect(userState.nullifierExist(repNullifier)).to.be.true
+            expect(await userState.nullifierExist(repNullifier)).to.be.true
         })
 
         it('submit attestations to the epoch key should update User state', async () => {
@@ -255,11 +257,9 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(JSON.stringify(attestations[1])).to.equal(
-                JSON.stringify(attestation)
-            )
+            compareAttestations(attestations[1], attestation)
         })
 
         it('submit valid reputation proof event with same nullifiers', async () => {
@@ -306,6 +306,9 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
 
             epochKey = repProofInput.epochKey
+            invalidProofIndex = await unirepContract.getProofIndex(
+                repProofInput.hash()
+            )
         })
 
         it('duplicated nullifier should not update User state', async () => {
@@ -314,7 +317,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -326,7 +329,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 .submitAttestation(
                     attestation,
                     epochKey,
-                    proofIndex,
+                    invalidProofIndex,
                     fromProofIndex,
                     { value: attestingFee }
                 )
@@ -338,7 +341,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -390,11 +393,11 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[otherUserIdx]
             )
-            const attestations = userStateAfterAttest.getAttestations(epochKey)
-            expect(attestations.length).equal(1)
-            expect(JSON.stringify(attestations[0])).to.equal(
-                JSON.stringify(attestation)
+            const attestations = await userStateAfterAttest.getAttestations(
+                epochKey
             )
+            expect(attestations.length).equal(1)
+            compareAttestations(attestations[0], attestation)
         })
 
         it('submit invalid reputation proof event', async () => {
@@ -447,7 +450,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -471,7 +474,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -579,7 +582,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[userIdx]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -603,7 +606,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 

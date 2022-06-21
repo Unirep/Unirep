@@ -77,17 +77,16 @@ describe('Synchronizer process events', function () {
         const id = new ZkIdentity()
         const commitment = id.genIdentityCommitment()
 
-        const userState = await genUserState(
-            ethers.provider,
-            synchronizer.unirepContract.address,
-            id
-        )
         const tx = await synchronizer.unirepContract
             .connect(accounts[1])
             .userSignUp(commitment)
         const receipt = await tx.wait()
         expect(receipt.status, 'User sign up failed').to.equal(1)
-        await synchronizer.waitForSync()
+        const userState = await genUserState(
+            ethers.provider,
+            synchronizer.unirepContract.address,
+            id
+        )
         const epochKeyNonce = 2
         const { proof, publicSignals } = await userState.genVerifyEpochKeyProof(
             epochKeyNonce

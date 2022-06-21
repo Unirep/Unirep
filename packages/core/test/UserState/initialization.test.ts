@@ -36,11 +36,13 @@ describe('User sign up events in Unirep User State', function () {
             )
 
             const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.getUnirepStateCurrentEpoch()
+            const unirepEpoch =
+                await initUnirepState.getUnirepStateCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            const unirepGSTree =
-                initUnirepState.getUnirepStateGSTree(unirepEpoch)
+            const unirepGSTree = await initUnirepState.getUnirepStateGSTree(
+                unirepEpoch
+            )
             const defaultGSTree = genNewGST(
                 treeDepths.globalStateTreeDepth,
                 treeDepths.userStateTreeDepth

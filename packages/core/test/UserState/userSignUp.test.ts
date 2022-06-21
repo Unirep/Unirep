@@ -85,11 +85,13 @@ describe('User sign up events in Unirep User State', function () {
             )
 
             const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = initUnirepState.getUnirepStateCurrentEpoch()
+            const unirepEpoch =
+                await initUnirepState.getUnirepStateCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            const unirepGSTree =
-                initUnirepState.getUnirepStateGSTree(unirepEpoch)
+            const unirepGSTree = await initUnirepState.getUnirepStateGSTree(
+                unirepEpoch
+            )
             const defaultGSTree = genNewGST(
                 treeDepths.globalStateTreeDepth,
                 treeDepths.userStateTreeDepth
@@ -125,7 +127,7 @@ describe('User sign up events in Unirep User State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const attesterId = await unirepContract.attesters(
@@ -172,7 +174,7 @@ describe('User sign up events in Unirep User State', function () {
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const newUSTRoot = await computeInitUserStateRoot(
@@ -194,7 +196,9 @@ describe('User sign up events in Unirep User State', function () {
                 unirepContract.address,
                 id
             )
-            const GSTRootBefore = userStateBefore.getUnirepStateGSTree(1).root
+            const GSTRootBefore = (
+                await userStateBefore.getUnirepStateGSTree(1)
+            ).root
 
             await expect(
                 unirepContract.userSignUp(commitment)
@@ -205,7 +209,7 @@ describe('User sign up events in Unirep User State', function () {
                 unirepContract.address,
                 id
             )
-            const GSTRoot = userState.getUnirepStateGSTree(1).root
+            const GSTRoot = (await userState.getUnirepStateGSTree(1)).root
             expect(GSTRoot).equal(GSTRootBefore)
         })
 

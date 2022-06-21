@@ -13,6 +13,7 @@ import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
 import { genUnirepState, genUserState, Reputation } from '../../src'
 import {
+    compareAttestations,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
@@ -102,7 +103,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const airdroppedAmount = await unirepContract.airdropAmount(
@@ -137,7 +138,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 )
 
                 const contractEpoch = await unirepContract.currentEpoch()
-                const unirepEpoch = userState.getUnirepStateCurrentEpoch()
+                const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 signUpAirdrops.push(Reputation.default())
@@ -191,7 +192,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
         })
 
@@ -215,11 +216,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
-            expect(JSON.stringify(attestations[1])).to.equal(
-                JSON.stringify(attestation)
-            )
+            compareAttestations(attestations[1], attestation)
         })
 
         it('submit invalid airdrop proof event', async () => {
@@ -255,7 +254,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
         })
 
@@ -279,7 +278,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
         })
 
@@ -337,7 +336,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -361,7 +360,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
-            const attestations = userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 

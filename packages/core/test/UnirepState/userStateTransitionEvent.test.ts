@@ -236,8 +236,11 @@ describe('User state transition events in Unirep State', async function () {
                     notTransitionUsers.push(i)
                     continue
                 }
-                const unirepState = new UnirepState(setting)
-                const userState = new UserState(unirepState, userIds[i])
+                const synchronizer = await genUnirepState(
+                    hardhatEthers.provider,
+                    unirepContract.address
+                )
+                const userState = new UserState(synchronizer, userIds[i])
 
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
@@ -290,8 +293,11 @@ describe('User state transition events in Unirep State', async function () {
 
             if (transitionedUsers.length === 0) return
             const n = transitionedUsers[0]
-            const unirepState = new UnirepState(setting)
-            const userState = new UserState(unirepState, userIds[n])
+            const synchronizer = await genUnirepState(
+                hardhatEthers.provider,
+                unirepContract.address
+            )
+            const userState = new UserState(synchronizer, userIds[n])
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
@@ -412,8 +418,11 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
-            const unirepState = new UnirepState(setting)
-            const userState = new UserState(unirepState, userIds[0])
+            const synchronizer = await genUnirepState(
+                hardhatEthers.provider,
+                unirepContract.address
+            )
+            const userState = new UserState(synchronizer, userIds[0])
 
             const epoch = 1
             const commitment = userIds[0].genIdentityCommitment()
@@ -439,14 +448,16 @@ describe('User state transition events in Unirep State', async function () {
             )
             if (notTransitionUsers.length < 2) return
 
-            const unirepState1 = new UnirepState(setting)
-            const unirepState2 = new UnirepState(setting)
+            const synchronizer = await genUnirepState(
+                hardhatEthers.provider,
+                unirepContract.address
+            )
             const userState1 = new UserState(
-                unirepState1,
+                synchronizer,
                 userIds[notTransitionUsers[0]]
             )
             const userState2 = new UserState(
-                unirepState2,
+                synchronizer,
                 userIds[notTransitionUsers[1]]
             )
 
@@ -632,8 +643,11 @@ describe('User state transition events in Unirep State', async function () {
                 const randomUST = Math.round(Math.random())
                 if (randomUST === 0) continue
                 console.log('transition user', i)
-                const unirepState = new UnirepState(setting)
-                const userState = new UserState(unirepState, userIds[i])
+                const synchronizer = await genUnirepState(
+                    hardhatEthers.provider,
+                    unirepContract.address
+                )
+                const userState = new UserState(synchronizer, userIds[i])
 
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
@@ -670,23 +684,9 @@ describe('User state transition events in Unirep State', async function () {
                     }
                 }
 
-                for (let attestaionEvent of attestationSubmittedEvents) {
-                    const args = attestaionEvent?.args
-                    const epochKey = (args?.epochKey).toString()
-                    const attestation_ = args?.attestation
-                    const attestation = new Attestation(
-                        attestation_.attesterId,
-                        attestation_.posRep,
-                        attestation_.negRep,
-                        attestation_.graffiti,
-                        attestation_.signUp
-                    )
-                    userState.addAttestation(epochKey, attestation)
-                }
-
-                expect(userState.getUnirepStateGSTree(epoch).root).equal(
-                    GSTRoot
-                )
+                expect(
+                    (await userState.getUnirepStateGSTree(epoch)).root
+                ).equal(GSTRoot)
 
                 await userState.epochTransition(2)
 
