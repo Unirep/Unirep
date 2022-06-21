@@ -135,6 +135,19 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    async waitForSync() {
+        const latestBlock = await this.unirepContract.provider.getBlockNumber()
+        for (;;) {
+            const state = await this._db.findOne('SynchronizerState', {
+                where: {
+                    latestCompleteBlock: latestBlock,
+                },
+            })
+            if (state && state.latestCompleteBlock >= latestBlock) return
+            await new Promise((r) => setTimeout(r, 250))
+        }
+    }
+
     async loadCurrentEpoch() {
         const currentEpoch = await this._db.findOne('Epoch', {
             where: {},
@@ -294,7 +307,7 @@ export class Synchronizer extends EventEmitter {
         const count = await this._db.count('Nullifier', {
             nullifier: nullifier.toString(),
         })
-        return Boolean(count)
+        return count > 0
     }
 
     async getAttestations(epochKey: string): Promise<IAttestation[]> {

@@ -9,7 +9,6 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import { IAttestation, Attestation } from '@unirep/contracts'
-
 import {
     defaultUserStateLeaf,
     genEpochKey,
@@ -19,12 +18,12 @@ import {
 } from './utils'
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
-import UnirepState from './UnirepState'
 import {
     Circuit,
     genProofAndPublicSignals,
     NUM_ATTESTATIONS_PER_PROOF,
 } from '@unirep/circuits'
+import { Synchronizer } from './Synchronizer'
 
 export default class UserState {
     public userStateTreeDepth: number
@@ -32,7 +31,7 @@ export default class UserState {
     public numAttestationsPerProof: number
     public maxReputationBudget: number
 
-    private unirepState: UnirepState
+    private unirepState: Synchronizer
 
     public id: ZkIdentity
     public commitment: bigint
@@ -44,7 +43,7 @@ export default class UserState {
     private transitionedFromAttestations: { [key: string]: IAttestation[] } = {} // attestations in the latestTransitionedEpoch
 
     constructor(
-        _unirepState: UnirepState,
+        _unirepState: Synchronizer,
         _id: ZkIdentity,
         _hasSignedUp?: boolean,
         _latestTransitionedEpoch?: number,
@@ -89,9 +88,24 @@ export default class UserState {
             this.latestTransitionedEpoch = 0
             this.latestGSTLeafIndex = 0
         }
+        const [UserSignedUp] =
+            this.unirepState.unirepContract.filters.UserSignedUp()
+                .topics as string[]
+        const [EpochEnded] =
+            this.unirepState.unirepContract.filters.EpochEnded()
+                .topics as string[]
+        this.unirepState.on(UserSignedUp, async (event) => {
+            const epoch = Number(event.topics[1])
+            const commitment = BigInt(event.topics[2])
+            await this.signUp(epoch, commitment)
+        })
+        this.unirepState.on(EpochEnded, async (event) => {
+            const epoch = Number(event.topics[1])
+            await this.epochTransition(epoch)
+        })
     }
 
-    public toJSON = (): IUserState => {
+    public toJSON = () => {
         const userStateLeavesMapToString: { [key: string]: string } = {}
         for (const l of this.latestUserStateLeaves) {
             userStateLeavesMapToString[l.attesterId.toString()] =
@@ -125,13 +139,15 @@ export default class UserState {
             latestGSTLeafIndex: this.latestGSTLeafIndex,
             latestUserStateLeaves: userStateLeavesMapToString,
             transitionedFromAttestations: transitionedFromAttestationsToString,
-            unirepState: this.unirepState.toJSON(),
         }
     }
 
-    public static fromJSON = (identity: ZkIdentity, data: IUserState) => {
+    public static fromJSON = (
+        identity: ZkIdentity,
+        unirepState: Synchronizer,
+        data: IUserState
+    ) => {
         const _userState = typeof data === 'string' ? JSON.parse(data) : data
-        const unirepState = UnirepState.fromJSON(_userState.unirepState)
         const userStateLeaves: IUserStateLeaf[] = []
         const transitionedFromAttestations: { [key: string]: IAttestation[] } =
             {}
@@ -177,15 +193,17 @@ export default class UserState {
     /**
      * Proxy methods to get underlying UnirepState data
      */
-    public getUnirepStateCurrentEpoch = (): number => {
-        return this.unirepState.currentEpoch
+    public getUnirepStateCurrentEpoch = async (): Promise<number> => {
+        return (await this.unirepState.loadCurrentEpoch()).number
     }
 
-    public getUnirepStateGSTree = (epoch: number): IncrementalMerkleTree => {
+    public getUnirepStateGSTree = async (
+        epoch: number
+    ): Promise<IncrementalMerkleTree> => {
         return this.unirepState.genGSTree(epoch)
     }
 
-    public getUnirepStateEpochTree = (epoch: number) => {
+    public getUnirepStateEpochTree = async (epoch: number) => {
         return this.unirepState.genEpochTree(epoch)
     }
 
@@ -196,23 +214,8 @@ export default class UserState {
     /**
      * Get the attestations of given epoch key
      */
-    public getAttestations = (epochKey: string): IAttestation[] => {
+    public getAttestations = (epochKey: string): Promise<IAttestation[]> => {
         return this.unirepState.getAttestations(epochKey)
-    }
-
-    public addAttestation = (
-        epochKey: string,
-        attestation: IAttestation,
-        blockNumber?: number
-    ) => {
-        this.unirepState.addAttestation(epochKey, attestation, blockNumber)
-    }
-
-    public addReputationNullifiers = (
-        nullifier: BigInt,
-        blockNumber?: number
-    ) => {
-        this.unirepState.addReputationNullifiers(nullifier, blockNumber)
     }
 
     /**
@@ -242,7 +245,7 @@ export default class UserState {
     /**
      * Check if given nullifier exists in nullifier tree
      */
-    public nullifierExist = (nullifier: BigInt): boolean => {
+    public nullifierExist = async (nullifier: BigInt): Promise<boolean> => {
         return this.unirepState.nullifierExist(nullifier)
     }
 
@@ -287,22 +290,13 @@ export default class UserState {
     /**
      * Add a new epoch key to the list of epoch key of current epoch.
      */
-    public signUp = (
+    public signUp = async (
         epoch: number,
         identityCommitment: BigInt,
         attesterId?: number,
         airdropAmount?: number,
         blockNumber?: number
     ) => {
-        // update unirep state
-        this.unirepState.signUp(
-            epoch,
-            identityCommitment,
-            attesterId,
-            airdropAmount,
-            blockNumber
-        )
-
         // if commitment matches the user's commitment, update user state
         if (identityCommitment === this.commitment) {
             this._checkUserNotSignUp()
@@ -322,7 +316,7 @@ export default class UserState {
             }
             this.latestTransitionedEpoch = epoch
             this.latestGSTLeafIndex =
-                this.unirepState.getNumGSTLeaves(epoch) - 1
+                (await this.unirepState.getNumGSTLeaves(epoch)) - 1
             this.hasSignedUp = true
         }
     }
@@ -355,7 +349,7 @@ export default class UserState {
     public GSTRootExists = (
         GSTRoot: BigInt | string,
         epoch: number
-    ): boolean => {
+    ): Promise<boolean> => {
         return this.unirepState.GSTRootExists(GSTRoot, epoch)
     }
 
@@ -365,18 +359,17 @@ export default class UserState {
     public epochTreeRootExists = (
         epochTreeRoot: BigInt | string,
         epoch: number
-    ): boolean => {
+    ): Promise<boolean> => {
         return this.unirepState.epochTreeRootExists(epochTreeRoot, epoch)
     }
 
     /**
      * Update user state and unirep state according to user state transition event
      */
-    public userStateTransition = (
+    public userStateTransition = async (
         fromEpoch: number,
         GSTLeaf: BigInt,
-        nullifiers: BigInt[],
-        blockNumber?: number
+        nullifiers: BigInt[]
     ) => {
         if (this.hasSignedUp && this.latestTransitionedEpoch === fromEpoch) {
             // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
@@ -389,7 +382,7 @@ export default class UserState {
             // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
             // stand anymore, below `epkNullifiersMatched` check should be changed.
             if (epkNullifiersMatched == this.numEpochKeyNoncePerEpoch) {
-                this._transition(GSTLeaf)
+                await this._transition(GSTLeaf)
             } else if (epkNullifiersMatched > 0) {
                 console.error(
                     `Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${this.numEpochKeyNoncePerEpoch}`
@@ -397,13 +390,6 @@ export default class UserState {
                 return
             }
         }
-
-        this.unirepState.userStateTransition(
-            fromEpoch,
-            GSTLeaf,
-            nullifiers,
-            blockNumber
-        )
     }
 
     public genVerifyEpochKeyProof = async (epochKeyNonce: number) => {
@@ -417,7 +403,7 @@ export default class UserState {
             this.unirepState.settings.epochTreeDepth
         )
         const userStateTree = this.genUserStateTree()
-        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTree = await this.unirepState.genGSTree(epoch)
         const GSTProof = GSTree.createProof(this.latestGSTLeafIndex)
 
         const circuitInputs = stringifyBigInts({
@@ -476,7 +462,7 @@ export default class UserState {
         return stateLeaves
     }
 
-    private _saveAttestations = () => {
+    private _saveAttestations = async () => {
         this._checkUserSignUp()
         const fromEpoch = this.latestTransitionedEpoch
 
@@ -487,20 +473,21 @@ export default class UserState {
                 nonce,
                 this.unirepState.settings.epochTreeDepth
             ).toString()
-            const attestations = this.unirepState.getAttestations(epochKey)
+            const attestations = await this.unirepState.getAttestations(
+                epochKey
+            )
             this.transitionedFromAttestations[epochKey] = attestations
         }
     }
 
-    public epochTransition = (epoch: number, blockNumber?: number) => {
-        this.unirepState.epochTransition(epoch, blockNumber)
+    public epochTransition = async (epoch: number) => {
         if (epoch === this.latestTransitionedEpoch) {
             // save latest attestations in user state
-            this._saveAttestations()
+            await this._saveAttestations()
         }
     }
 
-    private _genNewUserStateAfterTransition = () => {
+    private _genNewUserStateAfterTransition = async () => {
         this._checkUserSignUp()
         const fromEpoch = this.latestTransitionedEpoch
 
@@ -514,7 +501,7 @@ export default class UserState {
                 nonce
             )
             assert(
-                !this.unirepState.nullifierExist(epkNullifier),
+                !(await this.unirepState.nullifierExist(epkNullifier)),
                 `Epoch key with nonce ${nonce} is already processed, it's nullifier: ${epkNullifier}`
             )
 
@@ -600,11 +587,11 @@ export default class UserState {
         const userStateLeafPathElements: any[] = []
         // GSTree
         const fromEpochGSTree: IncrementalMerkleTree =
-            this.unirepState.genGSTree(fromEpoch)
+            await this.unirepState.genGSTree(fromEpoch)
         const GSTreeProof = fromEpochGSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
-        const fromEpochTree = this.unirepState.genEpochTree(fromEpoch)
+        const fromEpochTree = await this.unirepState.genEpochTree(fromEpoch)
         const epochTreeRoot = fromEpochTree.root
         const epochKeyPathElements: any[] = []
 
@@ -656,9 +643,10 @@ export default class UserState {
             hashChainStarter.push(currentHashChain)
 
             // Attestations
-            const attestations = this.unirepState.getAttestations(
+            const attestations = await this.unirepState.getAttestations(
                 epochKey.toString()
             )
+            // TODO: update attestation types
             for (let i = 0; i < attestations.length; i++) {
                 // Include a blinded user state and blinded hash chain per proof
                 if (
@@ -934,14 +922,16 @@ export default class UserState {
     /**
      * Update transition data including latest transition epoch, GST leaf index and user state tree leaves.
      */
-    private _transition = (newLeaf: BigInt) => {
+    private _transition = async (newLeaf: BigInt) => {
         this._checkUserSignUp()
 
         const fromEpoch = this.latestTransitionedEpoch
-        const transitionToEpoch = this.unirepState.currentEpoch
-        const transitionToGSTIndex =
-            this.unirepState.getNumGSTLeaves(transitionToEpoch)
-        const newState = this._genNewUserStateAfterTransition()
+        const transitionToEpoch = (await this.unirepState.loadCurrentEpoch())
+            .number
+        const transitionToGSTIndex = await this.unirepState.getNumGSTLeaves(
+            transitionToEpoch
+        )
+        const newState = await this._genNewUserStateAfterTransition()
         if (newLeaf !== newState.newGSTLeaf) {
             console.error('UserState: new GST leaf mismatch')
             return
@@ -986,7 +976,7 @@ export default class UserState {
         const graffiti = rep.graffiti
         const signUp = rep.signUp
         const userStateTree = this.genUserStateTree()
-        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTree = await this.unirepState.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
         const USTPathElements = userStateTree.createProof(attesterId)
@@ -1022,7 +1012,11 @@ export default class UserState {
                     n,
                     attesterId
                 )
-                if (!this.unirepState.nullifierExist(reputationNullifier)) {
+                if (
+                    !(await this.unirepState.nullifierExist(
+                        reputationNullifier
+                    ))
+                ) {
                     nonceStarter = n
                     break
                 }
@@ -1099,7 +1093,7 @@ export default class UserState {
         const graffiti = rep.graffiti
         const signUp = rep.signUp
         const userStateTree = this.genUserStateTree()
-        const GSTree = this.unirepState.genGSTree(epoch)
+        const GSTree = await this.unirepState.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
         const USTPathElements = userStateTree.createProof(attesterId)

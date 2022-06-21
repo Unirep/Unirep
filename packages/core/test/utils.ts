@@ -27,12 +27,10 @@ import {
     computeEmptyUserStateRoot,
     genEpochKey,
     genNewSMT,
-    genUnirepState,
     genUserState,
     IUserState,
     Reputation,
     Synchronizer,
-    UnirepState,
     UserState,
 } from '../src'
 import {
@@ -269,125 +267,125 @@ const genProveSignUpCircuitInput = (
     return stringifyBigInts(circuitInputs)
 }
 
-const submitUSTProofs = async (
-    contract: ethers.Contract,
-    { startTransitionProof, processAttestationProofs, finalTransitionProof }
-) => {
-    const proofIndexes: number[] = []
+// const submitUSTProofs = async (
+//     contract: ethers.Contract,
+//     { startTransitionProof, processAttestationProofs, finalTransitionProof }
+// ) => {
+//     const proofIndexes: number[] = []
+//
+//     let isValid = await verifyStartTransitionProof(startTransitionProof)
+//     expect(isValid).to.be.true
+//
+//     // submit proofs
+//     let tx = await contract.startUserStateTransition(
+//         startTransitionProof.blindedUserState,
+//         startTransitionProof.blindedHashChain,
+//         startTransitionProof.globalStateTreeRoot,
+//         formatProofForVerifierContract(startTransitionProof.proof)
+//     )
+//     let receipt = await tx.wait()
+//     expect(receipt.status).to.equal(1)
+//
+//     // submit twice should fail
+//     await expect(
+//         contract.startUserStateTransition(
+//             startTransitionProof.blindedUserState,
+//             startTransitionProof.blindedHashChain,
+//             startTransitionProof.globalStateTreeRoot,
+//             formatProofForVerifierContract(startTransitionProof.proof)
+//         )
+//     ).to.be.revertedWith('NullilierAlreadyUsed')
+//
+//     let hashedProof = computeStartTransitionProofHash(
+//         startTransitionProof.blindedUserState,
+//         startTransitionProof.blindedHashChain,
+//         startTransitionProof.globalStateTreeRoot,
+//         formatProofForVerifierContract(startTransitionProof.proof)
+//     )
+//     proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+//
+//     for (let i = 0; i < processAttestationProofs.length; i++) {
+//         isValid = await verifyProcessAttestationsProof(
+//             processAttestationProofs[i]
+//         )
+//         expect(isValid).to.be.true
+//
+//         tx = await contract.processAttestations(
+//             processAttestationProofs[i].outputBlindedUserState,
+//             processAttestationProofs[i].outputBlindedHashChain,
+//             processAttestationProofs[i].inputBlindedUserState,
+//             formatProofForVerifierContract(processAttestationProofs[i].proof)
+//         )
+//         receipt = await tx.wait()
+//         expect(receipt.status).to.equal(1)
+//
+//         // submit twice should fail
+//         await expect(
+//             contract.processAttestations(
+//                 processAttestationProofs[i].outputBlindedUserState,
+//                 processAttestationProofs[i].outputBlindedHashChain,
+//                 processAttestationProofs[i].inputBlindedUserState,
+//                 formatProofForVerifierContract(
+//                     processAttestationProofs[i].proof
+//                 )
+//             )
+//         ).to.be.revertedWith('NullilierAlreadyUsed')
+//
+//         let hashedProof = computeProcessAttestationsProofHash(
+//             processAttestationProofs[i].outputBlindedUserState,
+//             processAttestationProofs[i].outputBlindedHashChain,
+//             processAttestationProofs[i].inputBlindedUserState,
+//             formatProofForVerifierContract(processAttestationProofs[i].proof)
+//         )
+//         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+//     }
+//     const USTInput = new UserTransitionProof(
+//         finalTransitionProof.publicSignals,
+//         finalTransitionProof.proof
+//     )
+//     isValid = await USTInput.verify()
+//     expect(isValid).to.be.true
+//     tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
+//     receipt = await tx.wait()
+//     expect(receipt.status).to.equal(1)
+//
+//     // submit twice should fail
+//     await expect(
+//         contract.updateUserStateRoot(USTInput, proofIndexes)
+//     ).to.be.revertedWith('NullilierAlreadyUsed')
+// }
 
-    let isValid = await verifyStartTransitionProof(startTransitionProof)
-    expect(isValid).to.be.true
-
-    // submit proofs
-    let tx = await contract.startUserStateTransition(
-        startTransitionProof.blindedUserState,
-        startTransitionProof.blindedHashChain,
-        startTransitionProof.globalStateTreeRoot,
-        formatProofForVerifierContract(startTransitionProof.proof)
-    )
-    let receipt = await tx.wait()
-    expect(receipt.status).to.equal(1)
-
-    // submit twice should fail
-    await expect(
-        contract.startUserStateTransition(
-            startTransitionProof.blindedUserState,
-            startTransitionProof.blindedHashChain,
-            startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(startTransitionProof.proof)
-        )
-    ).to.be.revertedWith('NullilierAlreadyUsed')
-
-    let hashedProof = computeStartTransitionProofHash(
-        startTransitionProof.blindedUserState,
-        startTransitionProof.blindedHashChain,
-        startTransitionProof.globalStateTreeRoot,
-        formatProofForVerifierContract(startTransitionProof.proof)
-    )
-    proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
-
-    for (let i = 0; i < processAttestationProofs.length; i++) {
-        isValid = await verifyProcessAttestationsProof(
-            processAttestationProofs[i]
-        )
-        expect(isValid).to.be.true
-
-        tx = await contract.processAttestations(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
-        )
-        receipt = await tx.wait()
-        expect(receipt.status).to.equal(1)
-
-        // submit twice should fail
-        await expect(
-            contract.processAttestations(
-                processAttestationProofs[i].outputBlindedUserState,
-                processAttestationProofs[i].outputBlindedHashChain,
-                processAttestationProofs[i].inputBlindedUserState,
-                formatProofForVerifierContract(
-                    processAttestationProofs[i].proof
-                )
-            )
-        ).to.be.revertedWith('NullilierAlreadyUsed')
-
-        let hashedProof = computeProcessAttestationsProofHash(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
-        )
-        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
-    }
-    const USTInput = new UserTransitionProof(
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
-    )
-    isValid = await USTInput.verify()
-    expect(isValid).to.be.true
-    tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
-    receipt = await tx.wait()
-    expect(receipt.status).to.equal(1)
-
-    // submit twice should fail
-    await expect(
-        contract.updateUserStateRoot(USTInput, proofIndexes)
-    ).to.be.revertedWith('NullilierAlreadyUsed')
-}
-
-const compareStates = async (
-    provider: ethers.providers.Provider,
-    address: string,
-    userId: ZkIdentity,
-    savedUserState: IUserState
-) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    // const unirepStateWithNoStorage = await genUnirepState(provider, address)
-    const usWithStorage = await genUserState(
-        provider,
-        address,
-        userId,
-        savedUserState
-    )
-    // const unirepStateWithStorage = await genUnirepState(
-    //     provider,
-    //     address,
-    //     savedUserState.unirepState
-    // )
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    // const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
-    expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
-    expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
-    // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-    //     unirepStateWithStorage.toJSON()
-    // )
-    // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-    //     unirepFromJSON.toJSON()
-    // )
-    return usWithNoStorage.toJSON()
-}
+// const compareStates = async (
+//     provider: ethers.providers.Provider,
+//     address: string,
+//     userId: ZkIdentity,
+//     savedUserState: IUserState
+// ) => {
+//     const usWithNoStorage = await genUserState(provider, address, userId)
+//     // const unirepStateWithNoStorage = await genUnirepState(provider, address)
+//     const usWithStorage = await genUserState(
+//         provider,
+//         address,
+//         userId,
+//         savedUserState
+//     )
+//     // const unirepStateWithStorage = await genUnirepState(
+//     //     provider,
+//     //     address,
+//     //     savedUserState.unirepState
+//     // )
+//     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+//     // const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
+//     expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
+//     expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
+//     // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
+//     //     unirepStateWithStorage.toJSON()
+//     // )
+//     // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
+//     //     unirepFromJSON.toJSON()
+//     // )
+//     return usWithNoStorage.toJSON()
+// }
 
 const compareAttestations = (
     attestDB: IAttestation,
@@ -402,32 +400,32 @@ const compareAttestations = (
     expect(attestDB.signUp.toString()).equal(attestObj.signUp.toString())
 }
 
-const compareEpochTrees = async (
-    provider: ethers.providers.Provider,
-    address: string,
-    userId: ZkIdentity,
-    savedUserState: any,
-    epoch: number
-) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const epochTree1 = usWithNoStorage.getUnirepStateEpochTree(epoch)
-
-    const usWithStorage = await genUserState(
-        provider,
-        address,
-        userId,
-        savedUserState
-    )
-    const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
-
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    const epochTree3 = usFromJSON.getUnirepStateEpochTree(epoch)
-
-    expect(epochTree1.root).to.equal(epochTree2.root)
-    expect(epochTree1.root).to.equal(epochTree3.root)
-
-    return usWithNoStorage.toJSON()
-}
+// const compareEpochTrees = async (
+//     provider: ethers.providers.Provider,
+//     address: string,
+//     userId: ZkIdentity,
+//     savedUserState: any,
+//     epoch: number
+// ) => {
+//     const usWithNoStorage = await genUserState(provider, address, userId)
+//     const epochTree1 = usWithNoStorage.getUnirepStateEpochTree(epoch)
+//
+//     const usWithStorage = await genUserState(
+//         provider,
+//         address,
+//         userId,
+//         savedUserState
+//     )
+//     const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
+//
+//     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
+//     const epochTree3 = usFromJSON.getUnirepStateEpochTree(epoch)
+//
+//     expect(epochTree1.root).to.equal(epochTree2.root)
+//     expect(epochTree1.root).to.equal(epochTree3.root)
+//
+//     return usWithNoStorage.toJSON()
+// }
 
 export {
     genNewEpochTree,
@@ -444,8 +442,8 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
-    submitUSTProofs,
-    compareStates,
+    // submitUSTProofs,
+    // compareStates,
     compareAttestations,
-    compareEpochTrees,
+    // compareEpochTrees,
 }
