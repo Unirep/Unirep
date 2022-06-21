@@ -39,7 +39,7 @@ interface IAttestation {
     negRep: BigInt
     graffiti: BigInt
     signUp: BigInt
-    hash(): BigInt
+    hash: BigInt | string
 }
 
 class Attestation implements IAttestation {
@@ -63,7 +63,7 @@ class Attestation implements IAttestation {
         this.signUp = _signUp
     }
 
-    public hash = (): BigInt => {
+    get hash() {
         return crypto.hash5([
             this.attesterId,
             this.posRep,
@@ -410,7 +410,7 @@ const genProcessAttestationsCircuitInput = (
                 reputationRecords[attesterId.toString()].hash()
             )
 
-            const attestation_hash = attestation.hash()
+            const attestation_hash = attestation.hash
             hashChainResult = crypto.hashLeftRight(
                 attestation_hash,
                 hashChainResult
