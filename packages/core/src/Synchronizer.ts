@@ -612,6 +612,7 @@ export class Synchronizer extends EventEmitter {
             epochKey: _epochKey.toString(),
             index: +`${event.blockNumber}${event.transactionIndex}${event.logIndex}`,
             transactionHash: event.transactionHash,
+            attester: _attester,
             proofIndex: toProofIndex,
             attesterId: Number(decodedData.attestation.attesterId),
             posRep: Number(decodedData.attestation.posRep),

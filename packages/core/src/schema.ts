@@ -46,7 +46,7 @@ const _schema = [
             // ['index', 'Int'],
             ['index', 'Int'], // event index, tx index, block index
             ['transactionHash', 'String', { optional: true }],
-            ['attesterId', 'String', { optional: true }],
+            ['attester', 'String', { optional: true }],
             ['proofIndex', 'Int', { optional: true }],
             ['attesterId', 'Int', { optional: true }],
             ['posRep', 'Int', { optional: true }],
