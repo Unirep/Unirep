@@ -595,6 +595,8 @@ export class Synchronizer extends EventEmitter {
         )
         const toProofIndex = Number(decodedData.toProofIndex)
         const fromProofIndex = Number(decodedData.fromProofIndex)
+        const index =
+            +`${event.blockNumber}${event.transactionIndex}${event.logIndex}`
 
         await this._checkCurrentEpoch(_epoch)
         await this._checkEpochKeyRange(_epochKey.toString())
@@ -610,7 +612,7 @@ export class Synchronizer extends EventEmitter {
         db.create('Attestation', {
             epoch: _epoch,
             epochKey: _epochKey.toString(),
-            index: +`${event.blockNumber}${event.transactionIndex}${event.logIndex}`,
+            index: index,
             transactionHash: event.transactionHash,
             attester: _attester,
             proofIndex: toProofIndex,
@@ -642,7 +644,6 @@ export class Synchronizer extends EventEmitter {
                     valid: false,
                 },
             })
-            console.log('Attestion proof is invalid')
             return
         }
         if (fromProofIndex) {
@@ -660,7 +661,18 @@ export class Synchronizer extends EventEmitter {
                     where: {
                         epoch: _epoch,
                         epochKey: _epochKey.toString(),
-                        proofIndex: fromProofIndex,
+                        index: index,
+                    },
+                    update: {
+                        valid: false,
+                    },
+                })
+
+                db.update('Attestation', {
+                    where: {
+                        epoch: _epoch,
+                        epochKey: _epochKey.toString(),
+                        proofIndex: toProofIndex,
                     },
                     update: {
                         valid: false,
@@ -682,7 +694,7 @@ export class Synchronizer extends EventEmitter {
             where: {
                 epoch: _epoch,
                 epochKey: _epochKey.toString(),
-                // index: attestIndex,
+                index: index,
             },
             update: {
                 valid: true,
@@ -1175,9 +1187,7 @@ export class Synchronizer extends EventEmitter {
                 confirmed: true,
             },
         })
-        if (existingNullifier) {
-            console.log('Duplicate reputation proof nullifier')
-        } else {
+        if (!existingNullifier) {
             // everything checks out, lets start mutating the db
             db.delete('Nullifier', {
                 where: {

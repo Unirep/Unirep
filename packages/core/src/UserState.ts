@@ -94,14 +94,46 @@ export default class UserState {
         const [EpochEnded] =
             this.unirepState.unirepContract.filters.EpochEnded()
                 .topics as string[]
+        const [UserStateTransitioned] =
+            this.unirepState.unirepContract.filters.UserStateTransitioned()
+                .topics as string[]
         this.unirepState.on(UserSignedUp, async (event) => {
+            const decodedData =
+                this.unirepState.unirepContract.interface.decodeEventLog(
+                    'UserSignedUp',
+                    event.data
+                )
+
             const epoch = Number(event.topics[1])
             const commitment = BigInt(event.topics[2])
-            await this.signUp(epoch, commitment)
+            const attesterId = Number(decodedData.attesterId)
+            const airdrop = Number(decodedData.airdropAmount)
+            await this.signUp(epoch, commitment, attesterId, airdrop)
         })
         this.unirepState.on(EpochEnded, async (event) => {
             const epoch = Number(event.topics[1])
             await this.epochTransition(epoch)
+        })
+        this.unirepState.on(UserStateTransitioned, async (event) => {
+            const decodedData =
+                this.unirepState.unirepContract.interface.decodeEventLog(
+                    'UserStateTransitioned',
+                    event.data
+                )
+            const epoch = Number(event.topics[1])
+            const GSTLeaf = BigInt(event.topics[2])
+            const proofIndex = Number(decodedData.proofIndex)
+            // get proof index data from db
+            const proofFilter =
+                this.unirepState.unirepContract.filters.IndexedUserStateTransitionProof(
+                    proofIndex
+                )
+            const proofEvents =
+                await this.unirepState.unirepContract.queryFilter(proofFilter)
+            const nullifiers = proofEvents[0]?.args?.proof?.epkNullifiers.map(
+                (n) => BigInt(n)
+            )
+            await this.userStateTransition(epoch, GSTLeaf, nullifiers)
         })
     }
 
@@ -628,7 +660,6 @@ export default class UserState {
         const finalBlindedUserState: BigInt[] = []
         const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
         const finalHashChain: BigInt[] = []
-
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
             const epochKey = genEpochKey(
                 this.id.identityNullifier,
@@ -668,7 +699,9 @@ export default class UserState {
                 }
 
                 const attestation = attestations[i]
-                const attesterId: BigInt = attestation.attesterId.toBigInt()
+                const attesterId: BigInt = BigInt(
+                    attestation.attesterId.toString()
+                )
                 const rep = this.getRepByAttester(attesterId)
 
                 if (reputationRecords[attesterId.toString()] === undefined) {

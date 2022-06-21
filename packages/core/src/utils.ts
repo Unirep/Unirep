@@ -318,7 +318,8 @@ const genUnirepState = async (
         verifyProof: () => Promise.resolve(true),
     }
     synchronizer = new Synchronizer(db, mockProver, unirepContract)
-    await synchronizer.setup()
+    await synchronizer.start()
+    await synchronizer.waitForSync()
     return synchronizer
 }
 
@@ -334,17 +335,23 @@ const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: ZkIdentity,
-    _userState?: IUserState
+    _userState?: IUserState,
+    _db?: DB
 ) => {
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
     let userState: UserState
-    const synchronizer = await genUnirepState(provider, address)
-
+    let synchronizer: Synchronizer
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    const mockProver = {
+        verifyProof: () => Promise.resolve(true),
+    }
+    synchronizer = new Synchronizer(db, mockProver, unirepContract)
+    await synchronizer.start()
     if (!_userState) {
         userState = new UserState(synchronizer, userIdentity)
     } else {
         userState = UserState.fromJSON(userIdentity, synchronizer, _userState)
     }
-    await synchronizer.start()
     await synchronizer.waitForSync()
     return userState
 }
