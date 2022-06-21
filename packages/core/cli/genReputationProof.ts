@@ -88,7 +88,7 @@ const genReputationProof = async (args: any) => {
     const maxReputationBudget = await unirepContract.maxReputationBudget()
 
     // Proving content
-    const epoch = userState.getUnirepStateCurrentEpoch()
+    const epoch = await userState.getUnirepStateCurrentEpoch()
     const attesterId = BigInt(args.attester_id)
     const epkNonce = args.epoch_key_nonce
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)

@@ -180,9 +180,9 @@ const userStateTransition = async (args: any) => {
 
     // Check if Global state tree root and epoch tree root exist
     const GSTRoot = finalTransitionProof.fromGSTRoot
-    const inputEpoch = finalTransitionProof.transitionedFromEpoch
+    const inputEpoch = Number(finalTransitionProof.transitionedFromEpoch)
     const epochTreeRoot = finalTransitionProof.fromEpochTree
-    const isGSTRootExisted = userState.GSTRootExists(GSTRoot, inputEpoch)
+    const isGSTRootExisted = await userState.GSTRootExists(GSTRoot, inputEpoch)
     const isEpochTreeExisted = await userState.epochTreeRootExists(
         epochTreeRoot,
         inputEpoch
@@ -197,7 +197,7 @@ const userStateTransition = async (args: any) => {
     }
     // Check if nullifiers submitted before
     for (const nullifier of epkNullifiers) {
-        if (userState.nullifierExist(nullifier)) {
+        if (await userState.nullifierExist(nullifier)) {
             console.error('Error: nullifier submitted before')
             return
         }

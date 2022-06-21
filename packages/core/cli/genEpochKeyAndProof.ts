@@ -76,7 +76,7 @@ const genEpochKeyAndProof = async (args: any) => {
     // Gen User State
     const userState = await genUserState(provider, args.contract, id)
     const results = await userState.genVerifyEpochKeyProof(epkNonce)
-    const currentEpoch = userState.getUnirepStateCurrentEpoch()
+    const currentEpoch = await userState.getUnirepStateCurrentEpoch()
     const epk = genEpochKey(
         id.identityNullifier,
         currentEpoch,
