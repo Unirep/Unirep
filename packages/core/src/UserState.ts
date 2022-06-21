@@ -31,11 +31,11 @@ export default class UserState {
     public numAttestationsPerProof: number
     public maxReputationBudget: number
 
-    private unirepState: Synchronizer
+    readonly unirepState: Synchronizer
 
     public id: ZkIdentity
     public commitment: bigint
-    private hasSignedUp: boolean = false
+    private _hasSignedUp: boolean = false
 
     public latestTransitionedEpoch: number // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number // Leaf index of the latest GST where the user has a record in
@@ -83,7 +83,7 @@ export default class UserState {
             if (_transitionedFromAttestations !== undefined)
                 this.transitionedFromAttestations =
                     _transitionedFromAttestations
-            this.hasSignedUp = _hasSignedUp
+            this._hasSignedUp = _hasSignedUp
         } else {
             this.latestTransitionedEpoch = 0
             this.latestGSTLeafIndex = 0
@@ -222,6 +222,10 @@ export default class UserState {
         return userState
     }
 
+    get hasSignedUp() {
+        return this._hasSignedUp
+    }
+
     /**
      * Proxy methods to get underlying UnirepState data
      */
@@ -349,7 +353,7 @@ export default class UserState {
             this.latestTransitionedEpoch = epoch
             this.latestGSTLeafIndex =
                 (await this.unirepState.getNumGSTLeaves(epoch)) - 1
-            this.hasSignedUp = true
+            this._hasSignedUp = true
         }
     }
 

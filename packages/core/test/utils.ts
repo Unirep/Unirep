@@ -446,4 +446,5 @@ export {
     // compareStates,
     compareAttestations,
     // compareEpochTrees,
+    genUserState,
 }
