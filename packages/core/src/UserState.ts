@@ -7,6 +7,7 @@ import {
     hashLeftRight,
     SparseMerkleTree,
     ZkIdentity,
+    unstringifyBigInts,
 } from '@unirep/crypto'
 import { IAttestation, Attestation } from '@unirep/contracts'
 import {
@@ -24,6 +25,10 @@ import {
     NUM_ATTESTATIONS_PER_PROOF,
 } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
+
+const decodeBigIntArray = (input: string): bigint[] => {
+    return unstringifyBigInts(JSON.parse(input))
+}
 
 export default class UserState {
     public userStateTreeDepth: number
@@ -108,11 +113,19 @@ export default class UserState {
             const commitment = BigInt(event.topics[2])
             const attesterId = Number(decodedData.attesterId)
             const airdrop = Number(decodedData.airdropAmount)
-            await this.signUp(epoch, commitment, attesterId, airdrop)
+            try {
+                await this.signUp(epoch, commitment, attesterId, airdrop)
+            } catch (err) {
+                console.log(err)
+            }
         })
         this.unirepState.on(EpochEnded, async (event) => {
             const epoch = Number(event.topics[1])
-            await this.epochTransition(epoch)
+            try {
+                await this.epochTransition(epoch)
+            } catch (err) {
+                console.log(err)
+            }
         })
         this.unirepState.on(UserStateTransitioned, async (event) => {
             const decodedData =
@@ -139,7 +152,18 @@ export default class UserState {
             const nullifiers = proofEvents[0]?.args?.proof?.epkNullifiers.map(
                 (n) => BigInt(n)
             )
-            await this.userStateTransition(epoch, GSTLeaf, nullifiers)
+            const proof = await this.unirepState.loadUSTProof(proofIndex)
+            const publicSignals = decodeBigIntArray(proof.publicSignals)
+            const fromEpochSignalIndex = 4
+            try {
+                await this.userStateTransition(
+                    Number(publicSignals[fromEpochSignalIndex]),
+                    GSTLeaf,
+                    nullifiers
+                )
+            } catch (err) {
+                console.log(err)
+            }
         })
     }
 
