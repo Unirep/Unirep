@@ -123,6 +123,12 @@ export default class UserState {
             const epoch = Number(event.topics[1])
             const GSTLeaf = BigInt(event.topics[2])
             const proofIndex = Number(decodedData.proofIndex)
+            const tree = this.genUserStateTree()
+            const GSTLeaf_ = hashLeftRight(
+                this.id.genIdentityCommitment(),
+                tree.root
+            )
+            if (GSTLeaf_ !== GSTLeaf) return
             // get proof index data from db
             const proofFilter =
                 this.unirepState.unirepContract.filters.IndexedUserStateTransitionProof(
