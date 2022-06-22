@@ -561,16 +561,6 @@ export default class UserState {
         stateLeaves = this.latestUserStateLeaves.slice()
 
         for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
-            const epkNullifier = genEpochKeyNullifier(
-                this.id.identityNullifier,
-                fromEpoch,
-                nonce
-            )
-            assert(
-                !(await this.unirepState.nullifierExist(epkNullifier)),
-                `Epoch key with nonce ${nonce} is already processed, it's nullifier: ${epkNullifier}`
-            )
-
             const epochKey = genEpochKey(
                 this.id.identityNullifier,
                 fromEpoch,

@@ -51,6 +51,7 @@ export class Synchronizer extends EventEmitter {
     public settings: ISettings
     // GST for current epoch
     private _globalStateTree?: IncrementalMerkleTree
+    protected defaultGSTLeaf?: BigInt
 
     private get globalStateTree() {
         if (!this._globalStateTree) {
@@ -106,8 +107,13 @@ export class Synchronizer extends EventEmitter {
         if (epoch.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
+        const emptyUserStateRoot = computeEmptyUserStateRoot(
+            this.settings.userStateTreeDepth
+        )
+        this.defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
         this._globalStateTree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth
+            this.settings.globalStateTreeDepth,
+            this.defaultGSTLeaf
         )
         if (epoch.length === 0) {
             // it's a new sync, start with empty GST
@@ -212,7 +218,8 @@ export class Synchronizer extends EventEmitter {
     async genGSTree(epoch: number): Promise<IncrementalMerkleTree> {
         await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth
+            this.settings.globalStateTreeDepth,
+            this.defaultGSTLeaf
         )
         const leaves = await this._db.findMany('GSTLeaf', {
             where: {
@@ -582,7 +589,8 @@ export class Synchronizer extends EventEmitter {
             sealed: false,
         })
         this._globalStateTree = new IncrementalMerkleTree(
-            treeDepths.globalStateTreeDepth
+            treeDepths.globalStateTreeDepth,
+            this.defaultGSTLeaf
         )
     }
 
