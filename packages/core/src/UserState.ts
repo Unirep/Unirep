@@ -136,12 +136,6 @@ export default class UserState {
             const epoch = Number(event.topics[1])
             const GSTLeaf = BigInt(event.topics[2])
             const proofIndex = Number(decodedData.proofIndex)
-            const tree = this.genUserStateTree()
-            const GSTLeaf_ = hashLeftRight(
-                this.id.genIdentityCommitment(),
-                tree.root
-            )
-            if (GSTLeaf_ !== GSTLeaf) return
             // get proof index data from db
             const proofFilter =
                 this.unirepState.unirepContract.filters.IndexedUserStateTransitionProof(
@@ -502,7 +496,7 @@ export default class UserState {
         attestation: IAttestation,
         stateLeaves: IUserStateLeaf[]
     ): IUserStateLeaf[] => {
-        const attesterId = attestation.attesterId.toBigInt()
+        const attesterId = BigInt(attestation.attesterId.toString())
         for (const leaf of stateLeaves) {
             if (leaf.attesterId === attesterId) {
                 leaf.reputation = leaf.reputation.update(
@@ -542,7 +536,16 @@ export default class UserState {
             const attestations = await this.unirepState.getAttestations(
                 epochKey
             )
-            this.transitionedFromAttestations[epochKey] = attestations
+            this.transitionedFromAttestations[epochKey] = attestations.map(
+                (attest) =>
+                    new Attestation(
+                        attest.attesterId,
+                        attest.posRep,
+                        attest.negRep,
+                        attest.graffiti,
+                        attest.signUp
+                    )
+            )
         }
     }
 
@@ -671,16 +674,16 @@ export default class UserState {
         const blindedHashChain: BigInt[] = []
         let reputationRecords = {}
         const selectors: number[] = []
-        const attesterIds: BigInt[] = []
-        const oldPosReps: BigInt[] = [],
-            oldNegReps: BigInt[] = [],
-            oldGraffities: BigInt[] = [],
-            oldSignUps: BigInt[] = []
-        const posReps: BigInt[] = [],
-            negReps: BigInt[] = [],
-            graffities: BigInt[] = [],
+        const attesterIds: string[] = []
+        const oldPosReps: string[] = [],
+            oldNegReps: string[] = [],
+            oldGraffities: string[] = [],
+            oldSignUps: string[] = []
+        const posReps: string[] = [],
+            negReps: string[] = [],
+            graffities: string[] = [],
             overwriteGraffities: any[] = [],
-            signUps: BigInt[] = []
+            signUps: string[] = []
         const finalBlindedUserState: BigInt[] = []
         const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
         const finalHashChain: BigInt[] = []
@@ -722,7 +725,13 @@ export default class UserState {
                     )
                 }
 
-                const attestation = attestations[i]
+                const attestation = new Attestation(
+                    attestations[i].attesterId,
+                    attestations[i].posRep,
+                    attestations[i].negRep,
+                    attestations[i].graffiti,
+                    attestations[i].signUp
+                )
                 const attesterId: BigInt = BigInt(
                     attestation.attesterId.toString()
                 )
@@ -766,14 +775,12 @@ export default class UserState {
                 intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
 
                 selectors.push(1)
-                attesterIds.push(attesterId)
-                posReps.push(attestation.posRep.toBigInt())
-                negReps.push(attestation.negRep.toBigInt())
-                graffities.push(attestation.graffiti.toBigInt())
-                overwriteGraffities.push(
-                    attestation.graffiti.toBigInt() != BigInt(0)
-                )
-                signUps.push(attestation.signUp.toBigInt())
+                attesterIds.push(attesterId.toString())
+                posReps.push(attestation.posRep.toString())
+                negReps.push(attestation.negRep.toString())
+                graffities.push(attestation.graffiti.toString())
+                overwriteGraffities.push(attestation.graffiti.toString() != '0')
+                signUps.push(attestation.signUp.toString())
 
                 // Update current hashchain result
                 const attestationHash = attestation.hash()
@@ -793,10 +800,10 @@ export default class UserState {
                 i < filledAttestationNum - attestations.length;
                 i++
             ) {
-                oldPosReps.push(BigInt(0))
-                oldNegReps.push(BigInt(0))
-                oldGraffities.push(BigInt(0))
-                oldSignUps.push(BigInt(0))
+                oldPosReps.push('0')
+                oldNegReps.push('0')
+                oldGraffities.push('0')
+                oldSignUps.push('0')
 
                 const USTLeafZeroPathElements =
                     fromEpochUserStateTree.createProof(BigInt(0))
@@ -804,12 +811,12 @@ export default class UserState {
                 intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
 
                 selectors.push(0)
-                attesterIds.push(BigInt(0))
-                posReps.push(BigInt(0))
-                negReps.push(BigInt(0))
-                graffities.push(BigInt(0))
-                overwriteGraffities.push(BigInt(0))
-                signUps.push(BigInt(0))
+                attesterIds.push('0')
+                posReps.push('0')
+                negReps.push('0')
+                graffities.push('0')
+                overwriteGraffities.push('0')
+                signUps.push('0')
             }
             epochKeyPathElements.push(fromEpochTree.createProof(epochKey))
             // finalUserState.push(fromEpochUserStateTree.root)
@@ -985,9 +992,8 @@ export default class UserState {
         const fromEpoch = this.latestTransitionedEpoch
         const transitionToEpoch = (await this.unirepState.loadCurrentEpoch())
             .number
-        const transitionToGSTIndex = await this.unirepState.getNumGSTLeaves(
-            transitionToEpoch
-        )
+        const transitionToGSTIndex =
+            (await this.unirepState.getNumGSTLeaves(transitionToEpoch)) - 1
         const newState = await this._genNewUserStateAfterTransition()
         if (newLeaf !== newState.newGSTLeaf) {
             console.error('UserState: new GST leaf mismatch')
