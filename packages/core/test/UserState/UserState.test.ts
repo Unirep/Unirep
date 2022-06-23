@@ -1199,117 +1199,130 @@ describe('User State', async function () {
         //             rootHistories.push(GSTree.root)
         //         }
         //     })
-    })
 
-    describe('Generate proofs in the next epoch', async () => {
-        //     it('generate epoch key proof should succeed', async () => {
-        //         for (let i = 0; i < setting.numEpochKeyNoncePerEpoch; i++) {
-        //             const results = await userState.genVerifyEpochKeyProof(i)
-        //             const expectedEpk = genEpochKey(
-        //                 user.identityNullifier,
-        //                 epoch,
-        //                 i
-        //             ).toString()
-        //             const isValid = await verifyProof(
-        //                 Circuit.verifyEpochKey,
-        //                 results.proof,
-        //                 results.publicSignals
-        //             )
-        //
-        //             expect(isValid).to.be.true
-        //             expect(results.epochKey).equal(expectedEpk)
-        //             expect(results.epoch).equal(epoch.toString())
-        //             const outputGSTRoot = results.globalStateTree
-        //             const exist = userState.GSTRootExists(outputGSTRoot, epoch)
-        //             expect(exist).to.be.true
-        //         }
-        //     })
-        //
-        //     it('generate epoch key proof with invalid nonce should fail', async () => {
-        //         let error
-        //         const invalidNonce = setting.numEpochKeyNoncePerEpoch
-        //         try {
-        //             await userState.genVerifyEpochKeyProof(invalidNonce)
-        //         } catch (e) {
-        //             error = e
-        //         }
-        //         expect(error).not.to.be.undefined
-        //     })
-        //
-        //     it('non signed up user should not generate epoch key proof', async () => {
-        //         let error
-        //         const invalidUserState = new UserState(
-        //             unirepState,
-        //             new ZkIdentity()
-        //         )
-        //         const epkNonce = 0
-        //         try {
-        //             await invalidUserState.genVerifyEpochKeyProof(epkNonce)
-        //         } catch (e) {
-        //             error = e
-        //         }
-        //         expect(error).not.to.be.undefined
-        //     })
-        //
-        //     it('generate reputation proof should succeed', async () => {
-        //         const epkNonce = Math.floor(
-        //             Math.random() * setting.numEpochKeyNoncePerEpoch
-        //         )
-        //         const rep = userState.getRepByAttester(BigInt(signedUpAttesterId))
-        //         let proveMinRep
-        //         if (Number(rep.posRep) - Number(rep.negRep) > 0) {
-        //             proveMinRep = Number(rep.posRep) - Number(rep.negRep)
-        //         } else {
-        //             proveMinRep = 0
-        //         }
-        //         const results = await userState.genProveReputationProof(
-        //             BigInt(signedUpAttesterId),
-        //             epkNonce,
-        //             proveMinRep
-        //         )
-        //         const expectedEpk = genEpochKey(
-        //             user.identityNullifier,
-        //             epoch,
-        //             epkNonce
-        //         ).toString()
-        //         const isValid = await verifyProof(
-        //             Circuit.proveReputation,
-        //             results.proof,
-        //             results.publicSignals
-        //         )
-        //
-        //         expect(isValid).to.be.true
-        //         expect(results.epochKey).equal(expectedEpk)
-        //         expect(results.epoch).equal(epoch.toString())
-        //         const outputGSTRoot = results.globalStatetreeRoot
-        //         const exist = userState.GSTRootExists(outputGSTRoot, epoch)
-        //         expect(exist).to.be.true
-        //         expect(Number(results.minRep)).equal(proveMinRep)
-        //     })
-        //
-        //     it('generate sign up proof should succeed', async () => {
-        //         const epkNonce = 0
-        //         const results = await userState.genUserSignUpProof(
-        //             BigInt(signedUpAttesterId)
-        //         )
-        //         const expectedEpk = genEpochKey(
-        //             user.identityNullifier,
-        //             epoch,
-        //             epkNonce
-        //         ).toString()
-        //         const isValid = await verifyProof(
-        //             Circuit.proveUserSignUp,
-        //             results.proof,
-        //             results.publicSignals
-        //         )
-        //
-        //         expect(isValid).to.be.true
-        //         expect(results.epochKey).equal(expectedEpk)
-        //         expect(results.epoch).equal(epoch.toString())
-        //         const outputGSTRoot = results.globalStateTreeRoot
-        //         const exist = userState.GSTRootExists(outputGSTRoot, epoch)
-        //         expect(exist).to.be.true
-        //         expect(Number(results.userHasSignedUp)).equal(1)
-        //     })
+        describe('Generate proofs in the next epoch', async () => {
+            it('generate epoch key proof should succeed', async () => {
+                const currentEpoch =
+                    await userState.getUnirepStateCurrentEpoch()
+                for (let i = 0; i < setting.numEpochKeyNoncePerEpoch; i++) {
+                    const results = await userState.genVerifyEpochKeyProof(i)
+                    const expectedEpk = genEpochKey(
+                        id.identityNullifier,
+                        currentEpoch,
+                        i
+                    ).toString()
+                    const isValid = await verifyProof(
+                        Circuit.verifyEpochKey,
+                        results.proof,
+                        results.publicSignals
+                    )
+
+                    expect(isValid).to.be.true
+                    expect(results.epochKey).equal(expectedEpk)
+                    expect(results.epoch).equal(currentEpoch.toString())
+                    const outputGSTRoot = results.globalStateTree
+                    const exist = await userState.GSTRootExists(
+                        outputGSTRoot,
+                        currentEpoch
+                    )
+                    expect(exist).to.be.true
+                }
+            })
+
+            it('generate epoch key proof with invalid nonce should fail', async () => {
+                const invalidNonce = setting.numEpochKeyNoncePerEpoch
+                try {
+                    await userState.genVerifyEpochKeyProof(invalidNonce)
+                    expect(false).to.be.true
+                } catch (e) {
+                    expect(e).not.to.be.undefined
+                }
+            })
+
+            it('non signed up user should not generate epoch key proof', async () => {
+                const invalidUserState = await genUserState(
+                    unirepContract.provider,
+                    unirepContract.address,
+                    new ZkIdentity()
+                )
+                const epkNonce = 0
+                try {
+                    await invalidUserState.genVerifyEpochKeyProof(epkNonce)
+                } catch (e) {
+                    expect(e).not.to.be.undefined
+                }
+            })
+
+            it('generate reputation proof should succeed', async () => {
+                const epkNonce = Math.floor(
+                    Math.random() * setting.numEpochKeyNoncePerEpoch
+                )
+                const rep = userState.getRepByAttester(BigInt(attesterId))
+                const currentEpoch =
+                    await userState.getUnirepStateCurrentEpoch()
+                let proveMinRep
+                if (Number(rep.posRep) - Number(rep.negRep) > 0) {
+                    proveMinRep = Number(rep.posRep) - Number(rep.negRep)
+                } else {
+                    proveMinRep = 0
+                }
+                const results = await userState.genProveReputationProof(
+                    BigInt(attesterId),
+                    epkNonce,
+                    proveMinRep
+                )
+                const expectedEpk = genEpochKey(
+                    id.identityNullifier,
+                    currentEpoch,
+                    epkNonce
+                ).toString()
+                const isValid = await verifyProof(
+                    Circuit.proveReputation,
+                    results.proof,
+                    results.publicSignals
+                )
+
+                expect(isValid).to.be.true
+                expect(results.epochKey).equal(expectedEpk)
+                expect(results.epoch).equal(currentEpoch.toString())
+                const outputGSTRoot = results.globalStatetreeRoot
+                const exist = await userState.GSTRootExists(
+                    outputGSTRoot,
+                    currentEpoch
+                )
+                expect(exist).to.be.true
+                expect(Number(results.minRep)).equal(proveMinRep)
+            })
+
+            it('generate sign up proof should succeed', async () => {
+                const currentEpoch =
+                    await userState.getUnirepStateCurrentEpoch()
+                const epkNonce = 0
+                const results = await userState.genUserSignUpProof(
+                    BigInt(attesterId)
+                )
+                const expectedEpk = genEpochKey(
+                    id.identityNullifier,
+                    currentEpoch,
+                    epkNonce
+                ).toString()
+                const isValid = await verifyProof(
+                    Circuit.proveUserSignUp,
+                    results.proof,
+                    results.publicSignals
+                )
+
+                expect(isValid).to.be.true
+                expect(results.epochKey).equal(expectedEpk)
+                expect(results.epoch).equal(currentEpoch.toString())
+                const outputGSTRoot = results.globalStateTreeRoot
+                const exist = await userState.GSTRootExists(
+                    outputGSTRoot,
+                    currentEpoch
+                )
+                expect(exist).to.be.true
+                expect(Number(results.userHasSignedUp)).equal(1)
+            })
+        })
     })
 })
