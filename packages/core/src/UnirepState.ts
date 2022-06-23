@@ -13,7 +13,6 @@ import { IEpochTreeLeaf, ISettings, IUnirepState } from './interfaces'
 import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
-    genNewSMT,
     SMT_ONE_LEAF,
 } from './utils'
 
@@ -338,7 +337,10 @@ export default class UnirepState {
      */
     public genEpochTree = (epoch: number): SparseMerkleTree => {
         this._checkValidEpoch(epoch)
-        const epochTree = genNewSMT(this.settings.epochTreeDepth, SMT_ONE_LEAF)
+        const epochTree = new SparseMerkleTree(
+            this.settings.epochTreeDepth,
+            SMT_ONE_LEAF
+        )
 
         const leaves = this.epochTreeLeaves[epoch]
         if (!leaves) return epochTree
@@ -438,7 +440,7 @@ export default class UnirepState {
         this._checkCurrentEpoch(epoch)
         this._checkBlockNumber(blockNumber)
 
-        this.epochTree[epoch] = genNewSMT(
+        this.epochTree[epoch] = new SparseMerkleTree(
             this.settings.epochTreeDepth,
             SMT_ONE_LEAF
         )

@@ -14,7 +14,6 @@ import { IAttestation, Attestation } from '@unirep/contracts'
 import {
     defaultUserStateLeaf,
     genEpochKey,
-    genNewSMT,
     genEpochKeyNullifier,
     genReputationNullifier,
 } from './utils'
@@ -429,7 +428,7 @@ export default class UserState extends Synchronizer {
     private _genUserStateTreeFromLeaves = (
         leaves: IUserStateLeaf[]
     ): SparseMerkleTree => {
-        const USTree = genNewSMT(
+        const USTree = new SparseMerkleTree(
             this.settings.userStateTreeDepth,
             defaultUserStateLeaf
         )

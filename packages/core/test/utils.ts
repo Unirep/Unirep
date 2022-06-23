@@ -26,11 +26,8 @@ import {
 import {
     computeEmptyUserStateRoot,
     genEpochKey,
-    genNewSMT,
     genUserState,
-    IUserState,
     Reputation,
-    Synchronizer,
     UserState,
 } from '../src'
 import {
@@ -421,7 +418,6 @@ const compareAttestations = (
 export {
     genNewEpochTree,
     genNewUserStateTree,
-    genNewSMT,
     genNewGST,
     genRandomAttestation,
     genRandomList,

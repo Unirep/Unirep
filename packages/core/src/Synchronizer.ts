@@ -1,15 +1,10 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import {
-    UserTransitionProof,
-    Attestation,
-    IAttestation,
-} from '@unirep/contracts'
+import { UserTransitionProof, Attestation } from '@unirep/contracts'
 import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
-    genNewSMT,
     SMT_ONE_LEAF,
 } from './utils'
 import {
@@ -236,7 +231,10 @@ export class Synchronizer extends EventEmitter {
             epochTreeLeaves.push(epochTreeLeaf)
         }
 
-        const epochTree = genNewSMT(treeDepths.epochTreeDepth, SMT_ONE_LEAF)
+        const epochTree = new SparseMerkleTree(
+            treeDepths.epochTreeDepth,
+            SMT_ONE_LEAF
+        )
         // Add to epoch key hash chain map
         for (let leaf of epochTreeLeaves) {
             epochTree.update(leaf.epochKey, leaf.hashchainResult)

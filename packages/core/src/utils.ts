@@ -1,11 +1,5 @@
 import { BigNumber, ethers } from 'ethers'
-import {
-    Attestation,
-    getUnirepContract,
-    Event,
-    AttestationEvent,
-    Unirep,
-} from '@unirep/contracts'
+import { getUnirepContract, Event, Unirep } from '@unirep/contracts'
 import {
     hash5,
     hashLeftRight,
@@ -14,15 +8,13 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 
-import { ISettings, IUnirepState, IUserState } from './interfaces'
-import UnirepState from './UnirepState'
+import { IUserState } from './interfaces'
 import Reputation from './Reputation'
 import UserState from './UserState'
 import {
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
 } from '../config/nullifierDomainSeparator'
-import { DEFAULT_START_BLOCK } from '../cli/defaults'
 import {
     Circuit,
     formatProofForSnarkjsVerification,
@@ -113,13 +105,6 @@ const genReputationNullifier = (
         BigInt(nonce),
         attesterId,
     ])
-}
-
-const genNewSMT = (
-    treeDepth: number,
-    defaultLeafHash: BigInt
-): SparseMerkleTree => {
-    return new SparseMerkleTree(treeDepth, defaultLeafHash)
 }
 
 const verifyEpochKeyProofEvent = async (
@@ -376,7 +361,6 @@ export {
     genEpochKey,
     genEpochKeyNullifier,
     genReputationNullifier,
-    genNewSMT,
     genUnirepState,
     genUserState,
 }
