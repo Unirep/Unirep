@@ -17,7 +17,6 @@ import {
     genNewSMT,
     genEpochKeyNullifier,
     genReputationNullifier,
-    SMT_ONE_LEAF,
 } from './utils'
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
@@ -33,11 +32,6 @@ const decodeBigIntArray = (input: string): bigint[] => {
 }
 
 export default class UserState extends Synchronizer {
-    public userStateTreeDepth: number = 0
-    public numEpochKeyNoncePerEpoch: number = 0
-    public numAttestationsPerProof: number = 0
-    public maxReputationBudget: number = 0
-
     public id: ZkIdentity
     public commitment: bigint
     private _hasSignedUp: boolean = false
@@ -97,10 +91,6 @@ export default class UserState extends Synchronizer {
 
     async start() {
         await super.start()
-        this.userStateTreeDepth = this.settings.userStateTreeDepth
-        this.numEpochKeyNoncePerEpoch = this.settings.numEpochKeyNoncePerEpoch
-        this.numAttestationsPerProof = NUM_ATTESTATIONS_PER_PROOF
-        this.maxReputationBudget = this.settings.maxReputationBudget
 
         const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
             .topics as string[]
@@ -341,7 +331,11 @@ export default class UserState extends Synchronizer {
      */
     public getEpochKeyNullifiers = (epoch: number): BigInt[] => {
         const nullifiers: BigInt[] = []
-        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.settings.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const nullifier = genEpochKeyNullifier(
                 this.id.identityNullifier,
                 epoch,
@@ -379,7 +373,7 @@ export default class UserState extends Synchronizer {
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
         assert(
-            epochKeyNonce < this.numEpochKeyNoncePerEpoch,
+            epochKeyNonce < this.settings.numEpochKeyNoncePerEpoch,
             `epochKeyNonce (${epochKeyNonce}) must be less than max epoch nonce`
         )
     }
@@ -393,7 +387,7 @@ export default class UserState extends Synchronizer {
             `UserState: attesterId must be greater than zero`
         )
         assert(
-            attesterId < BigInt(2 ** this.userStateTreeDepth),
+            attesterId < BigInt(2 ** this.settings.userStateTreeDepth),
             `UserState: attesterId exceeds total number of attesters`
         )
     }
@@ -437,7 +431,10 @@ export default class UserState extends Synchronizer {
     private _genUserStateTreeFromLeaves = (
         leaves: IUserStateLeaf[]
     ): SparseMerkleTree => {
-        const USTree = genNewSMT(this.userStateTreeDepth, defaultUserStateLeaf)
+        const USTree = genNewSMT(
+            this.settings.userStateTreeDepth,
+            defaultUserStateLeaf
+        )
 
         for (const leaf of leaves) {
             USTree.update(leaf.attesterId, leaf.reputation.hash())
@@ -557,7 +554,11 @@ export default class UserState extends Synchronizer {
         this._checkUserSignUp()
         const fromEpoch = this.latestTransitionedEpoch
 
-        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.settings.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const epochKey = genEpochKey(
                 this.id.identityNullifier,
                 fromEpoch,
@@ -593,7 +594,11 @@ export default class UserState extends Synchronizer {
         let stateLeaves: IUserStateLeaf[]
         stateLeaves = this.latestUserStateLeaves.slice()
 
-        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.settings.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const epochKey = genEpochKey(
                 this.id.identityNullifier,
                 fromEpoch,
@@ -718,7 +723,11 @@ export default class UserState extends Synchronizer {
         const finalBlindedUserState: BigInt[] = []
         const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
         const finalHashChain: BigInt[] = []
-        for (let nonce = 0; nonce < this.numEpochKeyNoncePerEpoch; nonce++) {
+        for (
+            let nonce = 0;
+            nonce < this.settings.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
             const epochKey = genEpochKey(
                 this.id.identityNullifier,
                 fromEpoch,
@@ -738,8 +747,8 @@ export default class UserState extends Synchronizer {
                 // Include a blinded user state and blinded hash chain per proof
                 if (
                     i &&
-                    i % this.numAttestationsPerProof == 0 &&
-                    i != this.numAttestationsPerProof - 1
+                    i % NUM_ATTESTATIONS_PER_PROOF == 0 &&
+                    i != NUM_ATTESTATIONS_PER_PROOF - 1
                 ) {
                     toNonces.push(nonce)
                     fromNonces.push(nonce)
@@ -820,10 +829,9 @@ export default class UserState extends Synchronizer {
             }
             // Fill in blank data for non-exist attestation
             const filledAttestationNum = attestations.length
-                ? Math.ceil(
-                      attestations.length / this.numAttestationsPerProof
-                  ) * this.numAttestationsPerProof
-                : this.numAttestationsPerProof
+                ? Math.ceil(attestations.length / NUM_ATTESTATIONS_PER_PROOF) *
+                  NUM_ATTESTATIONS_PER_PROOF
+                : NUM_ATTESTATIONS_PER_PROOF
             for (
                 let i = 0;
                 i < filledAttestationNum - attestations.length;
@@ -866,13 +874,13 @@ export default class UserState extends Synchronizer {
                     BigInt(nonce),
                 ])
             )
-            if (nonce != this.numEpochKeyNoncePerEpoch - 1)
+            if (nonce != this.settings.numEpochKeyNoncePerEpoch - 1)
                 fromNonces.push(nonce)
         }
 
         for (let i = 0; i < fromNonces.length; i++) {
-            const startIdx = this.numAttestationsPerProof * i
-            const endIdx = this.numAttestationsPerProof * (i + 1)
+            const startIdx = NUM_ATTESTATIONS_PER_PROOF * i
+            const endIdx = NUM_ATTESTATIONS_PER_PROOF * (i + 1)
             processAttestationCircuitInputs.push(
                 stringifyBigInts({
                     epoch: fromEpoch,
@@ -910,7 +918,7 @@ export default class UserState extends Synchronizer {
 
         // final user state transition proof
         const startEpochKeyNonce = 0
-        const endEpochKeyNonce = this.numEpochKeyNoncePerEpoch - 1
+        const endEpochKeyNonce = this.settings.numEpochKeyNoncePerEpoch - 1
         finalUserState.push(fromEpochUserStateTree.root)
         finalBlindedUserState.push(
             hash5([
@@ -986,27 +994,27 @@ export default class UserState extends Synchronizer {
                 newGlobalStateTreeLeaf: finalProofResults.publicSignals[0],
                 epochKeyNullifiers: finalProofResults.publicSignals.slice(
                     1,
-                    1 + this.numEpochKeyNoncePerEpoch
+                    1 + this.settings.numEpochKeyNoncePerEpoch
                 ),
                 transitionedFromEpoch:
                     finalProofResults.publicSignals[
-                        1 + this.numEpochKeyNoncePerEpoch
+                        1 + this.settings.numEpochKeyNoncePerEpoch
                     ],
                 blindedUserStates: finalProofResults.publicSignals.slice(
-                    2 + this.numEpochKeyNoncePerEpoch,
-                    4 + this.numEpochKeyNoncePerEpoch
+                    2 + this.settings.numEpochKeyNoncePerEpoch,
+                    4 + this.settings.numEpochKeyNoncePerEpoch
                 ),
                 fromGSTRoot:
                     finalProofResults.publicSignals[
-                        4 + this.numEpochKeyNoncePerEpoch
+                        4 + this.settings.numEpochKeyNoncePerEpoch
                     ],
                 blindedHashChains: finalProofResults.publicSignals.slice(
-                    5 + this.numEpochKeyNoncePerEpoch,
-                    5 + 2 * this.numEpochKeyNoncePerEpoch
+                    5 + this.settings.numEpochKeyNoncePerEpoch,
+                    5 + 2 * this.settings.numEpochKeyNoncePerEpoch
                 ),
                 fromEpochTree:
                     finalProofResults.publicSignals[
-                        5 + 2 * this.numEpochKeyNoncePerEpoch
+                        5 + 2 * this.settings.numEpochKeyNoncePerEpoch
                     ],
             },
         }
@@ -1147,20 +1155,24 @@ export default class UserState extends Synchronizer {
             publicSignals: results['publicSignals'],
             reputationNullifiers: results['publicSignals'].slice(
                 0,
-                this.maxReputationBudget
+                this.settings.maxReputationBudget
             ),
-            epoch: results['publicSignals'][this.maxReputationBudget],
-            epochKey: results['publicSignals'][this.maxReputationBudget + 1],
+            epoch: results['publicSignals'][this.settings.maxReputationBudget],
+            epochKey:
+                results['publicSignals'][this.settings.maxReputationBudget + 1],
             globalStatetreeRoot:
-                results['publicSignals'][this.maxReputationBudget + 2],
-            attesterId: results['publicSignals'][this.maxReputationBudget + 3],
+                results['publicSignals'][this.settings.maxReputationBudget + 2],
+            attesterId:
+                results['publicSignals'][this.settings.maxReputationBudget + 3],
             proveReputationAmount:
-                results['publicSignals'][this.maxReputationBudget + 4],
-            minRep: results['publicSignals'][this.maxReputationBudget + 5],
+                results['publicSignals'][this.settings.maxReputationBudget + 4],
+            minRep: results['publicSignals'][
+                this.settings.maxReputationBudget + 5
+            ],
             proveGraffiti:
-                results['publicSignals'][this.maxReputationBudget + 6],
+                results['publicSignals'][this.settings.maxReputationBudget + 6],
             graffitiPreImage:
-                results['publicSignals'][this.maxReputationBudget + 7],
+                results['publicSignals'][this.settings.maxReputationBudget + 7],
         }
     }
 
