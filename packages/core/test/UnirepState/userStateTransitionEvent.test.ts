@@ -702,9 +702,7 @@ describe('User state transition events in Unirep State', async function () {
                     }
                 }
 
-                expect(
-                    (await userState.getUnirepStateGSTree(epoch)).root
-                ).equal(GSTRoot)
+                expect((await userState.genGSTree(epoch)).root).equal(GSTRoot)
 
                 await userState.epochTransition(2)
 

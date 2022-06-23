@@ -144,7 +144,7 @@ describe('User State', async function () {
                     USTRoot
                 )
                 GSTree.insert(GSTLeaf)
-                const unirepGSTree = await userState.getUnirepStateGSTree(epoch)
+                const unirepGSTree = await userState.genGSTree(epoch)
                 expect(GSTree.root, 'GST root mismatches').equal(
                     unirepGSTree.root
                 )
@@ -156,7 +156,7 @@ describe('User State', async function () {
             const epoch = await userState.getUnirepStateCurrentEpoch()
             const wrongEpoch = epoch + 1
             try {
-                await userState.getUnirepStateGSTree(wrongEpoch)
+                await userState.genGSTree(wrongEpoch)
                 expect(false).to.be.true
             } catch (e) {
                 expect(e).not.to.be.undefined
@@ -223,7 +223,7 @@ describe('User State', async function () {
             )
             const GSTLeaf = hashLeftRight(id.genIdentityCommitment(), USTRoot)
             GSTree.insert(GSTLeaf)
-            const unirepGSTree = await userState.getUnirepStateGSTree(epoch)
+            const unirepGSTree = await userState.genGSTree(epoch)
             expect(GSTree.root, 'GST root mismatches').equal(unirepGSTree.root)
             rootHistories.push(GSTree.root)
         })
@@ -303,7 +303,7 @@ describe('User State', async function () {
                     USTRoot
                 )
                 GSTree.insert(GSTLeaf)
-                const unirepGSTree = await userState.getUnirepStateGSTree(epoch)
+                const unirepGSTree = await userState.genGSTree(epoch)
                 expect(GSTree.root, 'GST root mismatches').equal(
                     unirepGSTree.root
                 )
@@ -925,9 +925,7 @@ describe('User State', async function () {
             )
 
             GSTree.insert(GSTLeaf_)
-            const unirepGSTree = await userState.getUnirepStateGSTree(
-                currentEpoch
-            )
+            const unirepGSTree = await userState.genGSTree(currentEpoch)
             expect(GSTree.root, 'GST root mismatches').equal(unirepGSTree.root)
             rootHistories.push(GSTree.root)
         })
@@ -1108,9 +1106,7 @@ describe('User State', async function () {
             )
 
             GSTree.insert(GSTLeaf_)
-            const unirepGSTree = await userState.getUnirepStateGSTree(
-                currentEpoch
-            )
+            const unirepGSTree = await userState.genGSTree(currentEpoch)
             expect(GSTree.root, 'GST root mismatches').equal(unirepGSTree.root)
             rootHistories.push(GSTree.root)
         })
@@ -1192,7 +1188,7 @@ describe('User State', async function () {
         //             ).equal(userNum + 2 + i)
         //
         //             GSTree.insert(newGSTLeaf)
-        //             const unirepGSTree = userState.getUnirepStateGSTree(epoch)
+        //             const unirepGSTree = userState.genGSTree(epoch)
         //             expect(GSTree.root, 'GST root mismatches').equal(
         //                 unirepGSTree.root
         //             )

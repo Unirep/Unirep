@@ -99,22 +99,13 @@ const verifyProcessAttestationsProof = async (
     )
 }
 
-const getReputationRecords = async (
-    id: ZkIdentity,
-    unirepState: Synchronizer
-) => {
-    const currentEpoch = (await unirepState.loadCurrentEpoch()).number
+const getReputationRecords = async (id: ZkIdentity, userState: UserState) => {
+    const currentEpoch = (await userState.loadCurrentEpoch()).number
     const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
-        for (
-            let j = 0;
-            j < unirepState.settings.numEpochKeyNoncePerEpoch;
-            j++
-        ) {
+        for (let j = 0; j < userState.settings.numEpochKeyNoncePerEpoch; j++) {
             const epk = genEpochKey(id.identityNullifier, i, j)
-            const attestations = await unirepState.getAttestations(
-                epk.toString()
-            )
+            const attestations = await userState.getAttestations(epk.toString())
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
                 if (reputaitonRecord[attesterId] === undefined) {

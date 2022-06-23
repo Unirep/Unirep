@@ -256,7 +256,7 @@ describe('User state transition events in Unirep User State', async function () 
                 i <= (await unirepState.loadCurrentEpoch()).number;
                 i++
             ) {
-                expect((await userState.getUnirepStateGSTree(i)).root).equal(
+                expect((await userState.genGSTree(i)).root).equal(
                     (await unirepState.genGSTree(i)).root
                 )
             }
@@ -577,9 +577,7 @@ describe('User state transition events in Unirep User State', async function () 
                     userIds[i]
                 )
 
-                expect(
-                    (await userState.getUnirepStateGSTree(epoch)).root
-                ).equal(GSTRoot)
+                expect((await userState.genGSTree(epoch)).root).equal(GSTRoot)
 
                 const proofs = await userState.genUserStateTransitionProofs()
                 await submitUSTProofs(unirepContract, proofs)
@@ -604,7 +602,7 @@ describe('User state transition events in Unirep User State', async function () 
                 i <= (await unirepState.loadCurrentEpoch()).number;
                 i++
             ) {
-                expect((await userState.getUnirepStateGSTree(i)).root).equal(
+                expect((await userState.genGSTree(i)).root).equal(
                     (await unirepState.genGSTree(i)).root
                 )
             }
