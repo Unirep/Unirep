@@ -31,15 +31,14 @@ describe('User sign up events in Unirep User State', function () {
     let GSTree: IncrementalMerkleTree
     const rootHistories: BigInt[] = []
 
-    let accounts: ethers.Signer[]
-    const attester = new Object()
+    let accounts: any[]
     const maxUsers = 10
     const userNum = Math.ceil(Math.random() * maxUsers)
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+        unirepContract = await deployUnirep(accounts[0], {
             maxUsers,
         })
         treeDepths = await unirepContract.treeDepths()
@@ -51,12 +50,7 @@ describe('User sign up events in Unirep User State', function () {
 
     describe('Attester sign up and set airdrop', async () => {
         it('attester sign up', async () => {
-            attester['acct'] = accounts[2]
-            attester['addr'] = await attester['acct'].getAddress()
-
-            let tx = await unirepContract
-                .connect(attester['acct'])
-                .attesterSignUp()
+            let tx = await unirepContract.connect(accounts[1]).attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
         })
@@ -64,12 +58,12 @@ describe('User sign up events in Unirep User State', function () {
         it('attester set airdrop amount', async () => {
             const airdropPosRep = 10
             const tx = await unirepContract
-                .connect(attester['acct'])
+                .connect(accounts[1])
                 .setAirdropAmount(airdropPosRep)
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const airdroppedAmount = await unirepContract.airdropAmount(
-                attester['addr']
+                accounts[1].address
             )
             expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
@@ -107,16 +101,17 @@ describe('User sign up events in Unirep User State', function () {
                 userCommitments.push(commitment)
 
                 const tx = await unirepContract
-                    .connect(attester['acct'])
+                    .connect(accounts[1])
                     .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
-                    unirepContract
-                        .connect(attester['acct'])
-                        .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                    unirepContract.connect(accounts[1]).userSignUp(commitment)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -129,10 +124,10 @@ describe('User sign up events in Unirep User State', function () {
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const attesterId = await unirepContract.attesters(
-                    attester['addr']
+                    accounts[1].address
                 )
                 const airdroppedAmount = await unirepContract.airdropAmount(
-                    attester['addr']
+                    accounts[1].address
                 )
                 const newUSTRoot = await computeInitUserStateRoot(
                     treeDepths.userStateTreeDepth,
@@ -198,7 +193,10 @@ describe('User sign up events in Unirep User State', function () {
 
             await expect(
                 unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'ReachedMaximumNumberUserSignedUp'
+            )
 
             const userState = await genUserState(
                 hardhatEthers.provider,
