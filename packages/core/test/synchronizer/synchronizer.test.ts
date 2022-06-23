@@ -27,7 +27,7 @@ import { SQLiteConnector } from 'anondb/node'
 let synchronizer: Synchronizer
 
 describe('Synchronizer process events', function () {
-    this.timeout(100000)
+    this.timeout(200000)
 
     before(async () => {
         const accounts = await ethers.getSigners()
