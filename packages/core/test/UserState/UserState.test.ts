@@ -43,7 +43,7 @@ describe('User State', async function () {
         maxReputationBudget: MAX_REPUTATION_BUDGET,
     }
     const maxUsers = 10
-    const userNum = Math.ceil(Math.random() * maxUsers)
+    const userNum = Math.ceil(Math.random() * (maxUsers / 2))
 
     describe('Users sign up', async function () {
         let unirepContract
@@ -1086,7 +1086,6 @@ describe('User State', async function () {
             await otherUser.waitForSync()
             await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
-            console.log('asserting')
             expect(
                 Number(userState.latestTransitionedEpoch),
                 `User state mismatches current epoch: ${currentEpoch}`
