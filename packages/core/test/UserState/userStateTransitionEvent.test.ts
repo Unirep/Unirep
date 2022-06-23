@@ -116,7 +116,10 @@ describe('User state transition events in Unirep User State', async function () 
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -257,7 +260,7 @@ describe('User state transition events in Unirep User State', async function () 
                 i++
             ) {
                 expect((await userState.genGSTree(i)).root).equal(
-                    (await unirepState.genGSTree(i)).root
+                    (await userState.genGSTree(i)).root
                 )
             }
             expect((await userState.getUnirepStateEpochTree(1)).root).equal(
@@ -560,12 +563,13 @@ describe('User state transition events in Unirep User State', async function () 
 
     describe('User state transition events with attestations', async () => {
         it('Users should successfully perform user state transition', async () => {
-            const unirepStateBefore = await genUnirepState(
+            const userStateBefore = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
             const epoch = 2
-            const GSTRoot = (await unirepStateBefore.genGSTree(epoch)).root
+            const GSTRoot = (await userStateBefore.genGSTree(epoch)).root
 
             for (let i = 0; i < userIds.length; i++) {
                 const randomUST = Math.round(Math.random())
@@ -603,7 +607,7 @@ describe('User state transition events in Unirep User State', async function () 
                 i++
             ) {
                 expect((await userState.genGSTree(i)).root).equal(
-                    (await unirepState.genGSTree(i)).root
+                    (await userState.genGSTree(i)).root
                 )
             }
             expect((await userState.getUnirepStateEpochTree(2)).root).equal(

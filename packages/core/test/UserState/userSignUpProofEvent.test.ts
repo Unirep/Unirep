@@ -94,7 +94,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -183,7 +186,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     .airdropEpochKey(airdropProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('NullilierAlreadyUsed')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'NullilierAlreadyUsed'
+            )
         })
 
         it('airdropEpochKey event should update Unirep state', async () => {
@@ -366,11 +372,12 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
         it('submit valid sign up proof event in wrong epoch should fail', async () => {
             const wrongEpoch = epoch + 1
-            const unirepState = await genUnirepState(
+            const userState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
-            const GSTree = await unirepState.genGSTree(epoch)
+            const GSTree = await userState.genGSTree(epoch)
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
@@ -396,7 +403,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     .airdropEpochKey(airdropProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })
 })

@@ -108,7 +108,10 @@ describe('Reputation proof events in Unirep User State', function () {
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -221,7 +224,10 @@ describe('Reputation proof events in Unirep User State', function () {
                     .spendReputation(repProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('NullilierAlreadyUsed')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'NullilierAlreadyUsed'
+            )
         })
 
         it('spendReputation event should update User state', async () => {
@@ -408,11 +414,12 @@ describe('Reputation proof events in Unirep User State', function () {
             epoch = Number(await unirepContract.currentEpoch())
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const unirepState = await genUnirepState(
+            const userState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
-            const GSTree = await unirepState.genGSTree(epoch)
+            const GSTree = await userState.genGSTree(epoch)
             const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 epoch,
@@ -618,11 +625,12 @@ describe('Reputation proof events in Unirep User State', function () {
             const wrongEpoch = epoch + 1
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
-            const unirepState = await genUnirepState(
+            const userState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
-            const GSTree = await unirepState.genGSTree(epoch)
+            const GSTree = await userState.genGSTree(epoch)
             const circuitInputs = genReputationCircuitInput(
                 userIds[userIdx],
                 wrongEpoch,
@@ -647,7 +655,7 @@ describe('Reputation proof events in Unirep User State', function () {
                     .spendReputation(repProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })
 })

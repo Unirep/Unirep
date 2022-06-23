@@ -99,7 +99,10 @@ describe('Epoch key proof events in Unirep User State', function () {
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const userState = await genUserState(
                     hardhatEthers.provider,
@@ -195,7 +198,10 @@ describe('Epoch key proof events in Unirep User State', function () {
             // submit the same proof twice should fail
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith('NullilierAlreadyUsed')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'NullilierAlreadyUsed'
+            )
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
@@ -213,11 +219,12 @@ describe('Epoch key proof events in Unirep User State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepState(
+            const userState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
-            const attestations = await unirepState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
             compareAttestations(attestations[0], attestation)
         })
@@ -262,11 +269,12 @@ describe('Epoch key proof events in Unirep User State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepState(
+            const userState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
-            const attestations = await unirepState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
@@ -325,18 +333,20 @@ describe('Epoch key proof events in Unirep User State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const unirepState = await genUnirepState(
+            const userState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
-            const attestations = await unirepState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
         })
 
         it('submit valid epoch key proof event in wrong epoch', async () => {
-            const unirepState = await genUnirepState(
+            const unirepState = await genUserState(
                 hardhatEthers.provider,
-                unirepContract.address
+                unirepContract.address,
+                new ZkIdentity()
             )
             const wrongEpoch = epoch + 1
             const epkNonce = 1
@@ -360,7 +370,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })
 })
