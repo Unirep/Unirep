@@ -1,8 +1,10 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "./dist"
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
     },
     "exclude": ["node_modules/**"],
-    "include": ["./circuits", "./config"]
+    "include": ["./src", "./config"]
 }

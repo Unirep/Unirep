@@ -6,7 +6,7 @@ import * as crypto from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    genProofAndPublicSignals,
+    defaultProver,
 } from '@unirep/circuits'
 import {
     computeEmptyUserStateRoot,
@@ -82,10 +82,8 @@ const formatProofAndPublicSignals = (
 
 const genInputForContract = async (circuit: Circuit, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
-        circuit,
-        circuitInputs
-    )
+    const { proof, publicSignals } =
+        await defaultProver.genProofAndPublicSignals(circuit, circuitInputs)
     const endTime = new Date().getTime()
     console.log(
         `Gen Proof time: ${endTime - startTime} ms (${Math.floor(

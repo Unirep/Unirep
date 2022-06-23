@@ -13,5 +13,5 @@ export {
 
 export { UnirepState, Reputation, UserState }
 
-export { Synchronizer, Prover } from './Synchronizer'
+export { Synchronizer } from './Synchronizer'
 export { schema } from './schema'

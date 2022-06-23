@@ -3,7 +3,7 @@ import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
@@ -60,10 +60,10 @@ const genUserSignUpProof = async (args: any) => {
     const results = await userState.genUserSignUpProof(attesterId)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(
+    const isValid = await defaultProver.verifyProof(
         Circuit.proveUserSignUp,
-        results.proof,
-        results.publicSignals
+        results.publicSignals,
+        results.proof
     )
     if (!isValid) {
         console.error('Error: user sign up proof generated is not valid!')

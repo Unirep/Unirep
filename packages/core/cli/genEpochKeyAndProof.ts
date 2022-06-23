@@ -3,7 +3,7 @@ import { Strategy, ZkIdentity } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 import { Unirep, UnirepFactory } from '@unirep/contracts'
 
@@ -84,10 +84,10 @@ const genEpochKeyAndProof = async (args: any) => {
     ).toString()
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(
+    const isValid = await defaultProver.verifyProof(
         Circuit.verifyEpochKey,
-        results.proof,
-        results.publicSignals
+        results.publicSignals,
+        results.proof
     )
     if (!isValid) {
         console.error('Error: epoch key proof generated is not valid!')

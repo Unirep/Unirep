@@ -5,8 +5,8 @@ import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
     EPOCH_LENGTH,
+    defaultProver,
 } from '@unirep/circuits'
 import {
     computeProcessAttestationsProofHash,
@@ -25,9 +25,6 @@ import { genRandomAttestation } from '../utils'
 import { SQLiteConnector } from 'anondb/node'
 
 let synchronizer: Synchronizer
-const mockProver = {
-    verifyProof: () => Promise.resolve(true),
-}
 
 describe('Synchronizer process events', function () {
     this.timeout(100000)
@@ -38,7 +35,7 @@ describe('Synchronizer process events', function () {
             attestingFee,
         })
         const db = await SQLiteConnector.create(schema, ':memory:')
-        synchronizer = new Synchronizer(db, mockProver, unirepContract)
+        synchronizer = new Synchronizer(db, defaultProver, unirepContract)
         // now create an attester
         await unirepContract
             .connect(accounts[1])
@@ -260,10 +257,10 @@ describe('Synchronizer process events', function () {
             processAttestationProofs,
             finalTransitionProof,
         } = await userState.genUserStateTransitionProofs()
-        let isValid = await verifyProof(
+        let isValid = await defaultProver.verifyProof(
             Circuit.startTransition,
-            startTransitionProof.proof,
-            startTransitionProof.publicSignals
+            startTransitionProof.publicSignals,
+            startTransitionProof.proof
         )
         expect(isValid, 'Verify start transition circuit off-chain failed').to
             .be.true
@@ -303,10 +300,10 @@ describe('Synchronizer process events', function () {
         proofIndexes.push(proofIndex)
 
         for (let i = 0; i < processAttestationProofs.length; i++) {
-            isValid = await verifyProof(
+            isValid = await defaultProver.verifyProof(
                 Circuit.processAttestations,
-                processAttestationProofs[i].proof,
-                processAttestationProofs[i].publicSignals
+                processAttestationProofs[i].publicSignals,
+                processAttestationProofs[i].proof
             )
             expect(
                 isValid,
@@ -373,10 +370,10 @@ describe('Synchronizer process events', function () {
             proofIndexes.push(proofIndex)
         }
 
-        isValid = await verifyProof(
+        isValid = await defaultProver.verifyProof(
             Circuit.userStateTransition,
-            finalTransitionProof.proof,
-            finalTransitionProof.publicSignals
+            finalTransitionProof.publicSignals,
+            finalTransitionProof.proof
         )
         expect(isValid, 'Verify user state transition circuit off-chain failed')
             .to.be.true

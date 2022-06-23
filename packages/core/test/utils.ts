@@ -13,8 +13,8 @@ import {
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
     MAX_REPUTATION_BUDGET,
+    defaultProver,
 } from '@unirep/circuits'
 import {
     Attestation,
@@ -82,20 +82,20 @@ const computeEpochKeyProofHash = (epochKeyProof: any) => {
 const verifyStartTransitionProof = async (
     startTransitionProof
 ): Promise<boolean> => {
-    return await verifyProof(
+    return await defaultProver.verifyProof(
         Circuit.startTransition,
-        startTransitionProof.proof,
-        startTransitionProof.publicSignals
+        startTransitionProof.publicSignals,
+        startTransitionProof.proof
     )
 }
 
 const verifyProcessAttestationsProof = async (
     processAttestationProof
 ): Promise<boolean> => {
-    return await verifyProof(
+    return await defaultProver.verifyProof(
         Circuit.processAttestations,
-        processAttestationProof.proof,
-        processAttestationProof.publicSignals
+        processAttestationProof.publicSignals,
+        processAttestationProof.proof
     )
 }
 

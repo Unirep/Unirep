@@ -8,7 +8,7 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { Circuit, defaultProver } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 
 import {
@@ -300,10 +300,11 @@ describe('Epoch key proof events in Unirep User State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
@@ -360,10 +361,11 @@ describe('Epoch key proof events in Unirep User State', function () {
                 epkNonce
             )
 
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true

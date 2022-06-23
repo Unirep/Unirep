@@ -1,12 +1,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import {
-    IncrementalMerkleTree,
-    ZkIdentity,
-    hashLeftRight,
-} from '@unirep/crypto'
-import {
-    Attestation,
     deployUnirep,
     UserTransitionProof,
     computeProcessAttestationsProofHash,
@@ -20,8 +15,8 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
     Circuit,
-    verifyProof,
     formatProofForVerifierContract,
+    defaultProver,
 } from '@unirep/circuits'
 
 const ATTESTING_FEE = '0' as any
@@ -415,10 +410,10 @@ describe('User State', async function () {
                     epoch,
                     i
                 ).toString()
-                const isValid = await verifyProof(
+                const isValid = await defaultProver.verifyProof(
                     Circuit.verifyEpochKey,
-                    results.proof,
-                    results.publicSignals
+                    results.publicSignals,
+                    results.proof
                 )
 
                 expect(isValid).to.be.true
@@ -474,10 +469,10 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await verifyProof(
+            const isValid = await defaultProver.verifyProof(
                 Circuit.proveReputation,
-                results.proof,
-                results.publicSignals
+                results.publicSignals,
+                results.proof
             )
 
             expect(isValid).to.be.true
@@ -513,10 +508,10 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await verifyProof(
+            const isValid = await defaultProver.verifyProof(
                 Circuit.proveReputation,
-                results.proof,
-                results.publicSignals
+                results.publicSignals,
+                results.proof
             )
 
             expect(isValid).to.be.true
@@ -541,10 +536,10 @@ describe('User State', async function () {
                 epkNonce,
                 proveMinRep
             )
-            const isValid = await verifyProof(
+            const isValid = await defaultProver.verifyProof(
                 Circuit.proveReputation,
-                results.proof,
-                results.publicSignals
+                results.publicSignals,
+                results.proof
             )
             expect(isValid).to.be.false
         })
@@ -560,10 +555,10 @@ describe('User State', async function () {
                 epkNonce,
                 proveMinRep
             )
-            const isValid = await verifyProof(
+            const isValid = await defaultProver.verifyProof(
                 Circuit.proveReputation,
-                results.proof,
-                results.publicSignals
+                results.publicSignals,
+                results.proof
             )
             expect(isValid).to.be.false
         })
@@ -601,10 +596,10 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await verifyProof(
+            const isValid = await defaultProver.verifyProof(
                 Circuit.proveUserSignUp,
-                results.proof,
-                results.publicSignals
+                results.publicSignals,
+                results.proof
             )
 
             expect(isValid).to.be.true
@@ -628,10 +623,10 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await verifyProof(
+            const isValid = await defaultProver.verifyProof(
                 Circuit.proveUserSignUp,
-                results.proof,
-                results.publicSignals
+                results.publicSignals,
+                results.proof
             )
 
             expect(isValid).to.be.true
@@ -752,10 +747,10 @@ describe('User State', async function () {
                 finalTransitionProof,
             } = await otherUser.genUserStateTransitionProofs()
 
-            const isStartProofValid = await verifyProof(
+            const isStartProofValid = await defaultProver.verifyProof(
                 Circuit.startTransition,
-                startTransitionProof.proof,
-                startTransitionProof.publicSignals
+                startTransitionProof.publicSignals,
+                startTransitionProof.proof
             )
             expect(isStartProofValid).to.be.true
             const fromGSTRoot = startTransitionProof.globalStateTreeRoot
@@ -764,18 +759,19 @@ describe('User State', async function () {
             expect(exist).to.be.true
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                const isProcessAttestationValid = await verifyProof(
-                    Circuit.processAttestations,
-                    processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
-                )
+                const isProcessAttestationValid =
+                    await defaultProver.verifyProof(
+                        Circuit.processAttestations,
+                        processAttestationProofs[i].publicSignals,
+                        processAttestationProofs[i].proof
+                    )
                 expect(isProcessAttestationValid).to.be.true
             }
 
-            const isUSTProofValid = await verifyProof(
+            const isUSTProofValid = await defaultProver.verifyProof(
                 Circuit.userStateTransition,
-                finalTransitionProof.proof,
-                finalTransitionProof.publicSignals
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof
             )
             expect(isUSTProofValid).to.be.true
             expect(finalTransitionProof.fromGSTRoot).equal(
@@ -825,10 +821,10 @@ describe('User State', async function () {
             let isValid
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProof(
+                isValid = await defaultProver.verifyProof(
                     Circuit.processAttestations,
-                    processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
+                    processAttestationProofs[i].publicSignals,
+                    processAttestationProofs[i].proof
                 )
                 expect(
                     isValid,
@@ -882,10 +878,10 @@ describe('User State', async function () {
                 proofIndexes.push(proofIndex)
             }
 
-            isValid = await verifyProof(
+            isValid = await defaultProver.verifyProof(
                 Circuit.userStateTransition,
-                finalTransitionProof.proof,
-                finalTransitionProof.publicSignals
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof
             )
             expect(
                 isValid,
@@ -937,10 +933,10 @@ describe('User State', async function () {
                 finalTransitionProof,
             } = await userState.genUserStateTransitionProofs()
 
-            const isStartProofValid = await verifyProof(
+            const isStartProofValid = await defaultProver.verifyProof(
                 Circuit.startTransition,
-                startTransitionProof.proof,
-                startTransitionProof.publicSignals
+                startTransitionProof.publicSignals,
+                startTransitionProof.proof
             )
             expect(isStartProofValid).to.be.true
             const fromGSTRoot = startTransitionProof.globalStateTreeRoot
@@ -949,18 +945,19 @@ describe('User State', async function () {
             expect(exist).to.be.true
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                const isProcessAttestationValid = await verifyProof(
-                    Circuit.processAttestations,
-                    processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
-                )
+                const isProcessAttestationValid =
+                    await defaultProver.verifyProof(
+                        Circuit.processAttestations,
+                        processAttestationProofs[i].publicSignals,
+                        processAttestationProofs[i].proof
+                    )
                 expect(isProcessAttestationValid).to.be.true
             }
 
-            const isUSTProofValid = await verifyProof(
+            const isUSTProofValid = await defaultProver.verifyProof(
                 Circuit.userStateTransition,
-                finalTransitionProof.proof,
-                finalTransitionProof.publicSignals
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof
             )
             expect(isUSTProofValid).to.be.true
             expect(finalTransitionProof.fromGSTRoot).equal(
@@ -1011,10 +1008,10 @@ describe('User State', async function () {
             let isValid
 
             for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await verifyProof(
+                isValid = await defaultProver.verifyProof(
                     Circuit.processAttestations,
-                    processAttestationProofs[i].proof,
-                    processAttestationProofs[i].publicSignals
+                    processAttestationProofs[i].publicSignals,
+                    processAttestationProofs[i].proof
                 )
                 expect(
                     isValid,
@@ -1068,10 +1065,10 @@ describe('User State', async function () {
                 proofIndexes.push(proofIndex)
             }
 
-            isValid = await verifyProof(
+            isValid = await defaultProver.verifyProof(
                 Circuit.userStateTransition,
-                finalTransitionProof.proof,
-                finalTransitionProof.publicSignals
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof
             )
             expect(
                 isValid,
@@ -1207,10 +1204,10 @@ describe('User State', async function () {
                         currentEpoch,
                         i
                     ).toString()
-                    const isValid = await verifyProof(
+                    const isValid = await defaultProver.verifyProof(
                         Circuit.verifyEpochKey,
-                        results.proof,
-                        results.publicSignals
+                        results.publicSignals,
+                        results.proof
                     )
 
                     expect(isValid).to.be.true
@@ -1272,10 +1269,10 @@ describe('User State', async function () {
                     currentEpoch,
                     epkNonce
                 ).toString()
-                const isValid = await verifyProof(
+                const isValid = await defaultProver.verifyProof(
                     Circuit.proveReputation,
-                    results.proof,
-                    results.publicSignals
+                    results.publicSignals,
+                    results.proof
                 )
 
                 expect(isValid).to.be.true
@@ -1302,10 +1299,10 @@ describe('User State', async function () {
                     currentEpoch,
                     epkNonce
                 ).toString()
-                const isValid = await verifyProof(
+                const isValid = await defaultProver.verifyProof(
                     Circuit.proveUserSignUp,
-                    results.proof,
-                    results.publicSignals
+                    results.publicSignals,
+                    results.proof
                 )
 
                 expect(isValid).to.be.true

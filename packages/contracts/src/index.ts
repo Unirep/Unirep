@@ -4,7 +4,7 @@ import {
     Circuit,
     formatProofForSnarkjsVerification,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 
 import {
@@ -154,10 +154,10 @@ class EpochKeyProof implements IEpochKeyProof {
         const proof_ = formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
+        return defaultProver.verifyProof(
             Circuit.verifyEpochKey,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
+            this.publicSignals.map((n) => BigInt(n.toString())),
+            proof_
         )
     }
 
@@ -200,10 +200,10 @@ class ReputationProof implements IReputationProof {
         const proof_ = formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
+        return defaultProver.verifyProof(
             Circuit.proveReputation,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
+            this.publicSignals.map((n) => BigInt(n.toString())),
+            proof_
         )
     }
 
@@ -253,10 +253,10 @@ class SignUpProof implements ISignUpProof {
         const proof_ = formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
+        return defaultProver.verifyProof(
             Circuit.proveUserSignUp,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
+            this.publicSignals.map((n) => BigInt(n.toString())),
+            proof_
         )
     }
 
@@ -312,10 +312,10 @@ class UserTransitionProof implements IUserTransitionProof {
         const proof_ = formatProofForSnarkjsVerification(
             this.proof.map((n) => n.toString())
         )
-        return verifyProof(
+        return defaultProver.verifyProof(
             Circuit.userStateTransition,
-            proof_,
-            this.publicSignals.map((n) => BigInt(n.toString()))
+            this.publicSignals.map((n) => BigInt(n.toString())),
+            proof_
         )
     }
 

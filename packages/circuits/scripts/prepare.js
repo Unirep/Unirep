@@ -12,8 +12,8 @@ fs.writeFileSync(
     path.join(__dirname, '../dist/package.json'),
     JSON.stringify({
         ...package,
-        main: 'circuits/utils.js',
-        types: 'circuits/utils.d.ts',
+        main: 'src/index.js',
+        types: 'src/index.d.ts',
     })
 )
 

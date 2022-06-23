@@ -8,7 +8,7 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { Circuit, defaultProver } from '@unirep/circuits'
 import {
     Attestation,
     deployUnirep,
@@ -431,10 +431,11 @@ describe('Reputation proof events in Unirep User State', function () {
                 spendReputation
             )
             circuitInputs.GST_root = genRandomSalt().toString()
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.false
@@ -563,10 +564,11 @@ describe('Reputation proof events in Unirep User State', function () {
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
@@ -641,10 +643,11 @@ describe('Reputation proof events in Unirep User State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true

@@ -8,7 +8,7 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { Circuit, defaultProver } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
 import { genUnirepState, genUserState, Reputation } from '../../src'
@@ -316,10 +316,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveUserSignUp,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveUserSignUp,
+                    circuitInputs
+                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
@@ -389,10 +390,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveUserSignUp,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveUserSignUp,
+                    circuitInputs
+                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true

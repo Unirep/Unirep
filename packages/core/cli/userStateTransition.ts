@@ -4,7 +4,7 @@ import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 import { Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
 
@@ -71,10 +71,10 @@ const userStateTransition = async (args: any) => {
     } = await userState.genUserStateTransitionProofs()
 
     // Start user state transition proof
-    let isValid = await verifyProof(
+    let isValid = await defaultProver.verifyProof(
         Circuit.startTransition,
-        startTransitionProof.proof,
-        startTransitionProof.publicSignals
+        startTransitionProof.publicSignals,
+        startTransitionProof.proof
     )
     if (!isValid) {
         console.error(
@@ -100,10 +100,10 @@ const userStateTransition = async (args: any) => {
 
     // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const isValid = await verifyProof(
+        const isValid = await defaultProver.verifyProof(
             Circuit.processAttestations,
-            processAttestationProofs[i].proof,
-            processAttestationProofs[i].publicSignals
+            processAttestationProofs[i].publicSignals,
+            processAttestationProofs[i].proof
         )
         if (!isValid) {
             console.error(
@@ -154,10 +154,10 @@ const userStateTransition = async (args: any) => {
     }
 
     // update user state proof
-    isValid = await verifyProof(
+    isValid = await defaultProver.verifyProof(
         Circuit.userStateTransition,
-        finalTransitionProof.proof,
-        finalTransitionProof.publicSignals
+        finalTransitionProof.publicSignals,
+        finalTransitionProof.proof
     )
     if (!isValid) {
         console.error(

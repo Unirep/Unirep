@@ -20,12 +20,8 @@ import {
 } from './utils'
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
-import {
-    Circuit,
-    genProofAndPublicSignals,
-    NUM_ATTESTATIONS_PER_PROOF,
-} from '@unirep/circuits'
-import { Prover, Synchronizer } from './Synchronizer'
+import { Circuit, NUM_ATTESTATIONS_PER_PROOF, Prover } from '@unirep/circuits'
+import { Synchronizer } from './Synchronizer'
 
 const decodeBigIntArray = (input: string): bigint[] => {
     return unstringifyBigInts(JSON.parse(input))
@@ -508,7 +504,7 @@ export default class UserState extends Synchronizer {
             epoch_key: epochKey,
         })
 
-        const results = await genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
             circuitInputs
         )
@@ -956,14 +952,15 @@ export default class UserState extends Synchronizer {
         })
 
         // Generate proofs
-        const startTransitionresults = await genProofAndPublicSignals(
-            Circuit.startTransition,
-            startTransitionCircuitInputs.circuitInputs
-        )
+        const startTransitionresults =
+            await this.prover.genProofAndPublicSignals(
+                Circuit.startTransition,
+                startTransitionCircuitInputs.circuitInputs
+            )
 
         const processAttestationProofs: any[] = []
         for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
-            const results = await genProofAndPublicSignals(
+            const results = await this.prover.genProofAndPublicSignals(
                 Circuit.processAttestations,
                 processAttestationCircuitInputs[i]
             )
@@ -976,7 +973,7 @@ export default class UserState extends Synchronizer {
             })
         }
 
-        const finalProofResults = await genProofAndPublicSignals(
+        const finalProofResults = await this.prover.genProofAndPublicSignals(
             Circuit.userStateTransition,
             finalTransitionCircuitInputs
         )
@@ -1147,7 +1144,7 @@ export default class UserState extends Synchronizer {
                 graffitiPreImage === undefined ? 0 : graffitiPreImage,
         })
 
-        const results = await genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.proveReputation,
             circuitInputs
         )
@@ -1211,7 +1208,7 @@ export default class UserState extends Synchronizer {
             sign_up: signUp,
             UST_path_elements: USTPathElements,
         })
-        const results = await genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.proveUserSignUp,
             circuitInputs
         )

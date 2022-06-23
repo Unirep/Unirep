@@ -10,14 +10,13 @@ import {
     computeProcessAttestationsProofHash,
     Unirep,
 } from '@unirep/contracts'
-import { EPOCH_LENGTH } from '@unirep/circuits'
+import { EPOCH_LENGTH, defaultProver } from '@unirep/circuits'
 
 import {
     genUnirepState,
     genUserState,
     ISettings,
     Reputation,
-    UnirepState,
     UserState,
 } from '../../src'
 import { genRandomAttestation, genRandomList, submitUSTProofs } from '../utils'
@@ -49,9 +48,6 @@ describe('User state transition events in Unirep User State', async function () 
     const fromProofIndex = 0
 
     let db: DB
-    const mockProver = {
-        verifyProof: () => Promise.resolve(true),
-    }
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -281,7 +277,7 @@ describe('User state transition events in Unirep User State', async function () 
             const n = transitionedUsers[0]
             const userState = new UserState(
                 db,
-                mockProver,
+                defaultProver,
                 unirepContract,
                 userIds[n]
             )
@@ -412,7 +408,7 @@ describe('User state transition events in Unirep User State', async function () 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
             const userState = new UserState(
                 db,
-                mockProver,
+                defaultProver,
                 unirepContract,
                 userIds[0]
             )

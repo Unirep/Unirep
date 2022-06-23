@@ -12,7 +12,11 @@ import {
     genNewSMT,
     SMT_ONE_LEAF,
 } from './utils'
-import { Circuit, formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    Prover,
+    Circuit,
+    formatProofForSnarkjsVerification,
+} from '@unirep/circuits'
 import {
     hashLeftRight,
     SparseMerkleTree,
@@ -21,14 +25,6 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { ISettings } from './interfaces'
-
-export interface Prover {
-    verifyProof: (
-        name: string | Circuit,
-        publicSignals: any,
-        proof: any
-    ) => Promise<Boolean>
-}
 
 const encodeBigIntArray = (arr: BigInt[]): string => {
     return JSON.stringify(stringifyBigInts(arr))

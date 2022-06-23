@@ -26,8 +26,8 @@ import { DEFAULT_START_BLOCK } from '../cli/defaults'
 import {
     Circuit,
     formatProofForSnarkjsVerification,
-    verifyProof,
     EPOCH_TREE_DEPTH,
+    defaultProver,
 } from '@unirep/circuits'
 import { SQLiteConnector } from 'anondb/node'
 import { Synchronizer } from './Synchronizer'
@@ -131,10 +131,10 @@ const verifyEpochKeyProofEvent = async (
         .concat(args?.globalStateTree, args?.epoch, args?.epochKey)
         .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
+    const isProofValid = await defaultProver.verifyProof(
         Circuit.verifyEpochKey,
-        formatProof,
-        formatPublicSignals
+        formatPublicSignals,
+        formatProof
     )
     return isProofValid
 }
@@ -158,10 +158,10 @@ const verifyReputationProofEvent = async (
         )
         .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
+    const isProofValid = await defaultProver.verifyProof(
         Circuit.proveReputation,
-        formatProof,
-        formatPublicSignals
+        formatPublicSignals,
+        formatProof
     )
     return isProofValid
 }
@@ -181,10 +181,10 @@ const verifySignUpProofEvent = async (
         )
         .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
+    const isProofValid = await defaultProver.verifyProof(
         Circuit.proveUserSignUp,
-        formatProof,
-        formatPublicSignals
+        formatPublicSignals,
+        formatProof
     )
     return isProofValid
 }
@@ -202,10 +202,10 @@ const verifyStartTransitionProofEvent = async (
         )
         .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
+    const isProofValid = await defaultProver.verifyProof(
         Circuit.startTransition,
-        formatProof,
-        formatPublicSignals
+        formatPublicSignals,
+        formatProof
     )
     return isProofValid
 }
@@ -223,10 +223,10 @@ const verifyProcessAttestationEvent = async (
         )
         .map((n) => n.toBigInt())
     const formatProof = formatProofForSnarkjsVerification(args?.proof)
-    const isProofValid = await verifyProof(
+    const isProofValid = await defaultProver.verifyProof(
         Circuit.processAttestations,
-        formatProof,
-        formatPublicSignals
+        formatPublicSignals,
+        formatProof
     )
     return isProofValid
 }
@@ -248,10 +248,10 @@ const verifyUserStateTransitionEvent = async (
         )
         .map((n) => n.toBigInt())
     let formatProof = formatProofForSnarkjsVerification(transitionArgs.proof)
-    const isProofValid = await verifyProof(
+    const isProofValid = await defaultProver.verifyProof(
         Circuit.userStateTransition,
-        formatProof,
-        formatPublicSignals
+        formatPublicSignals,
+        formatProof
     )
     return isProofValid
 }
@@ -314,10 +314,7 @@ const genUnirepState = async (
     const unirepContract: Unirep = await getUnirepContract(address, provider)
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    const mockProver = {
-        verifyProof: () => Promise.resolve(true),
-    }
-    synchronizer = new Synchronizer(db, mockProver, unirepContract)
+    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
     await synchronizer.start()
     await synchronizer.waitForSync()
     return synchronizer
@@ -341,15 +338,17 @@ const genUserState = async (
     const unirepContract: Unirep = await getUnirepContract(address, provider)
     let userState: UserState
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    const mockProver = {
-        verifyProof: () => Promise.resolve(true),
-    }
     if (!_userState) {
-        userState = new UserState(db, mockProver, unirepContract, userIdentity)
+        userState = new UserState(
+            db,
+            defaultProver,
+            unirepContract,
+            userIdentity
+        )
     } else {
         userState = UserState.fromJSON(
             db,
-            mockProver,
+            defaultProver,
             unirepContract,
             userIdentity,
             _userState
