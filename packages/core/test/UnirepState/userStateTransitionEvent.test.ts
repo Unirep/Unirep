@@ -697,8 +697,7 @@ describe('User state transition events in Unirep State', async function () {
                     ) {
                         await userState.userStateTransition(
                             fromEpoch,
-                            newGSTLeaf,
-                            nullifiers
+                            newGSTLeaf
                         )
                     }
                 }

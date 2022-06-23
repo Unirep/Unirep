@@ -211,6 +211,7 @@ export class Synchronizer extends EventEmitter {
             where: {
                 event: 'IndexedUserStateTransitionProof',
                 index,
+                valid: true,
             },
         })
     }

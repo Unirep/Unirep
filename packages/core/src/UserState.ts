@@ -45,6 +45,13 @@ export default class UserState extends Synchronizer {
     public latestGSTLeafIndex: number // Leaf index of the latest GST where the user has a record in
     private latestUserStateLeaves: IUserStateLeaf[] // Latest non-default user state leaves
     private transitionedFromAttestations: { [key: string]: IAttestation[] } = {} // attestations in the latestTransitionedEpoch
+    private newUserState: {
+        newGSTLeaf: BigInt
+        newUSTLeaves: IUserStateLeaf[]
+    } = {
+        newGSTLeaf: BigInt(0),
+        newUSTLeaves: [],
+    }
 
     constructor(
         db: DB,
@@ -101,7 +108,7 @@ export default class UserState extends Synchronizer {
         const [UserStateTransitioned] =
             this.unirepContract.filters.UserStateTransitioned()
                 .topics as string[]
-        super.on(UserSignedUp, async (event) => {
+        this.on(UserSignedUp, async (event) => {
             const decodedData = this.unirepContract.interface.decodeEventLog(
                 'UserSignedUp',
                 event.data
@@ -117,7 +124,7 @@ export default class UserState extends Synchronizer {
                 console.log(err)
             }
         })
-        super.on(EpochEnded, async (event) => {
+        this.on(EpochEnded, async (event) => {
             const epoch = Number(event.topics[1])
             try {
                 await this.epochTransition(epoch)
@@ -125,7 +132,7 @@ export default class UserState extends Synchronizer {
                 console.log(err)
             }
         })
-        super.on(UserStateTransitioned, async (event) => {
+        this.on(UserStateTransitioned, async (event) => {
             const decodedData = this.unirepContract.interface.decodeEventLog(
                 'UserStateTransitioned',
                 event.data
@@ -134,27 +141,19 @@ export default class UserState extends Synchronizer {
             const GSTLeaf = BigInt(event.topics[2])
             const proofIndex = Number(decodedData.proofIndex)
             // get proof index data from db
-            const proofFilter =
-                this.unirepContract.filters.IndexedUserStateTransitionProof(
-                    proofIndex
-                )
-            const proofEvents = await this.unirepContract.queryFilter(
-                proofFilter
-            )
-            const nullifiers = proofEvents[0]?.args?.proof?.epkNullifiers.map(
-                (n) => BigInt(n)
-            )
             const proof = await super.loadUSTProof(proofIndex)
             const publicSignals = decodeBigIntArray(proof.publicSignals)
             const fromEpochSignalIndex = 4
-            try {
-                await this.userStateTransition(
-                    Number(publicSignals[fromEpochSignalIndex]),
-                    GSTLeaf,
-                    nullifiers
-                )
-            } catch (err) {
-                console.log(err)
+            const fromEpoch = Number(publicSignals[fromEpochSignalIndex])
+            if (!proof) {
+                console.log(`Proof index ${proofIndex} is invalid`)
+            }
+            if (GSTLeaf === this.newUserState.newGSTLeaf) {
+                try {
+                    await this.userStateTransition(fromEpoch, GSTLeaf)
+                } catch (err) {
+                    console.log(err)
+                }
             }
         })
     }
@@ -427,29 +426,13 @@ export default class UserState extends Synchronizer {
     /**
      * Update user state and unirep state according to user state transition event
      */
-    public userStateTransition = async (
-        fromEpoch: number,
-        GSTLeaf: BigInt,
-        nullifiers: BigInt[]
-    ) => {
+    public userStateTransition = async (fromEpoch: number, GSTLeaf: BigInt) => {
         if (this.hasSignedUp && this.latestTransitionedEpoch === fromEpoch) {
-            // Latest epoch user transitioned to ends. Generate nullifiers of all epoch key
-            const userEpkNullifiers = this.getEpochKeyNullifiers(fromEpoch)
-            let epkNullifiersMatched = 0
-            for (const nullifier of userEpkNullifiers) {
-                if (nullifiers.indexOf(nullifier) !== -1) epkNullifiersMatched++
-            }
-
-            // Here we assume all epoch keys are processed in the same epoch. If this assumption does not
-            // stand anymore, below `epkNullifiersMatched` check should be changed.
-            if (epkNullifiersMatched == this.numEpochKeyNoncePerEpoch) {
-                await this._transition(GSTLeaf)
-            } else if (epkNullifiersMatched > 0) {
-                console.error(
-                    `Number of epoch key nullifiers matched ${epkNullifiersMatched} not equal to numEpochKeyNoncePerEpoch ${this.numEpochKeyNoncePerEpoch}`
-                )
-                return
-            }
+            await this._transition(GSTLeaf)
+        }
+        this.newUserState = {
+            newGSTLeaf: BigInt(0),
+            newUSTLeaves: [],
         }
     }
 
@@ -552,6 +535,7 @@ export default class UserState extends Synchronizer {
         if (epoch === this.latestTransitionedEpoch) {
             // save latest attestations in user state
             await this._saveAttestations()
+            this.newUserState = await this._genNewUserStateAfterTransition()
         }
     }
 
@@ -993,7 +977,7 @@ export default class UserState extends Synchronizer {
         const transitionToEpoch = (await super.loadCurrentEpoch()).number
         const transitionToGSTIndex =
             (await super.getNumGSTLeaves(transitionToEpoch)) - 1
-        const newState = await this._genNewUserStateAfterTransition()
+        const newState = this.newUserState
         if (newLeaf !== newState.newGSTLeaf) {
             console.error('UserState: new GST leaf mismatch')
             return
