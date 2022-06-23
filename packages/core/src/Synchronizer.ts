@@ -521,8 +521,12 @@ export class Synchronizer extends EventEmitter {
         )
         const toProofIndex = Number(decodedData.toProofIndex)
         const fromProofIndex = Number(decodedData.fromProofIndex)
-        const index =
-            +`${event.blockNumber}${event.transactionIndex}${event.logIndex}`
+
+        const index = +`${event.blockNumber
+            .toString()
+            .padStart(15, '0')}${event.transactionIndex
+            .toString()
+            .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
         await this._checkCurrentEpoch(_epoch)
         await this._checkEpochKeyRange(_epochKey.toString())
