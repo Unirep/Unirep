@@ -8,3 +8,4 @@
 **/*.md
 
 yarn.lock
+.yarn
