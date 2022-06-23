@@ -17,6 +17,7 @@ import {
     genNewSMT,
     genEpochKeyNullifier,
     genReputationNullifier,
+    SMT_ONE_LEAF,
 } from './utils'
 import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
 import Reputation from './Reputation'
@@ -141,7 +142,7 @@ export default class UserState extends Synchronizer {
             const GSTLeaf = BigInt(event.topics[2])
             const proofIndex = Number(decodedData.proofIndex)
             // get proof index data from db
-            const proof = await super.loadUSTProof(proofIndex)
+            const proof = await this.loadUSTProof(proofIndex)
             const publicSignals = decodeBigIntArray(proof.publicSignals)
             const fromEpochSignalIndex = 4
             const fromEpoch = Number(publicSignals[fromEpochSignalIndex])
@@ -255,28 +256,84 @@ export default class UserState extends Synchronizer {
      * Proxy methods to get underlying UnirepState data
      */
     public getUnirepStateCurrentEpoch = async (): Promise<number> => {
-        return (await super.loadCurrentEpoch()).number
+        return (await this.loadCurrentEpoch()).number
     }
 
-    public getUnirepStateGSTree = async (
+    public genGSTree = async (
         epoch: number
     ): Promise<IncrementalMerkleTree> => {
-        return super.genGSTree(epoch)
+        await this._checkValidEpoch(epoch)
+        const tree = new IncrementalMerkleTree(
+            this.settings.globalStateTreeDepth,
+            this.defaultGSTLeaf
+        )
+        const leaves = await this._db.findMany('GSTLeaf', {
+            where: {
+                epoch,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        for (const leaf of leaves) {
+            tree.insert(leaf.hash)
+        }
+        return tree
+    }
+
+    async getNumGSTLeaves(epoch: number) {
+        await this._checkValidEpoch(epoch)
+        return this._db.count('GSTLeaf', {
+            epoch: epoch,
+        })
+    }
+
+    async getAttestations(epochKey: string): Promise<IAttestation[]> {
+        await this._checkEpochKeyRange(epochKey)
+        // TODO: transform db entries to IAttestation (they're already pretty similar)
+        return this._db.findMany('Attestation', {
+            where: {
+                epochKey,
+                valid: true,
+            },
+        })
+    }
+
+    async getEpochKeys(epoch: number) {
+        await this._checkValidEpoch(epoch)
+
+        // db isn't designed to handle epks right now, this is pretty
+        // inefficient
+        const attestations = await this._db.findMany('Attestation', {
+            where: {
+                epoch,
+            },
+        })
+        const epks = attestations.reduce((acc, attestation) => {
+            return {
+                ...acc,
+                [attestation.epochKey]: true,
+            }
+        }, {})
+        return Object.keys(epks)
+    }
+
+    async loadUSTProof(index: number): Promise<any> {
+        return this._db.findOne('Proof', {
+            where: {
+                event: 'IndexedUserStateTransitionProof',
+                index,
+                valid: true,
+            },
+        })
     }
 
     public getUnirepStateEpochTree = async (epoch: number) => {
-        return super.genEpochTree(epoch)
+        return this.genEpochTree(epoch)
     }
 
     public getUnirepState = () => {
         return this
-    }
-
-    /**
-     * Get the attestations of given epoch key
-     */
-    public getAttestations = (epochKey: string): Promise<IAttestation[]> => {
-        return super.getAttestations(epochKey)
     }
 
     /**
@@ -301,13 +358,6 @@ export default class UserState extends Synchronizer {
         )
         if (leaf !== undefined) return leaf.reputation
         else return Reputation.default()
-    }
-
-    /**
-     * Check if given nullifier exists in nullifier tree
-     */
-    public nullifierExist = async (nullifier: BigInt): Promise<boolean> => {
-        return super.nullifierExist(nullifier)
     }
 
     /**
@@ -376,7 +426,7 @@ export default class UserState extends Synchronizer {
                 this.latestUserStateLeaves = [stateLeave]
             }
             this.latestTransitionedEpoch = epoch
-            this.latestGSTLeafIndex = (await super.getNumGSTLeaves(epoch)) - 1
+            this.latestGSTLeafIndex = (await this.getNumGSTLeaves(epoch)) - 1
             this._hasSignedUp = true
         }
     }
@@ -404,23 +454,20 @@ export default class UserState extends Synchronizer {
     }
 
     /**
-     * Check if the root is one of the Global state tree roots in the given epoch
-     */
-    public GSTRootExists = (
-        GSTRoot: BigInt | string,
-        epoch: number
-    ): Promise<boolean> => {
-        return super.GSTRootExists(GSTRoot, epoch)
-    }
-
-    /**
      * Check if the root is one of the epoch tree roots in the given epoch
      */
-    public epochTreeRootExists = (
+    public epochTreeRootExists = async (
         epochTreeRoot: BigInt | string,
         epoch: number
     ): Promise<boolean> => {
-        return super.epochTreeRootExists(epochTreeRoot, epoch)
+        await this._checkValidEpoch(epoch)
+        const found = await this._db.findOne('Epoch', {
+            where: {
+                number: epoch,
+                epochRoot: epochTreeRoot.toString(),
+            },
+        })
+        return !!found
     }
 
     /**
@@ -447,7 +494,7 @@ export default class UserState extends Synchronizer {
             this.settings.epochTreeDepth
         )
         const userStateTree = this.genUserStateTree()
-        const GSTree = await super.genGSTree(epoch)
+        const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(this.latestGSTLeafIndex)
 
         const circuitInputs = stringifyBigInts({
@@ -517,7 +564,7 @@ export default class UserState extends Synchronizer {
                 nonce,
                 this.settings.epochTreeDepth
             ).toString()
-            const attestations = await super.getAttestations(epochKey)
+            const attestations = await this.getAttestations(epochKey)
             this.transitionedFromAttestations[epochKey] = attestations.map(
                 (attest) =>
                     new Attestation(
@@ -628,13 +675,13 @@ export default class UserState extends Synchronizer {
         ]
         const userStateLeafPathElements: any[] = []
         // GSTree
-        const fromEpochGSTree: IncrementalMerkleTree = await super.genGSTree(
+        const fromEpochGSTree: IncrementalMerkleTree = await this.genGSTree(
             fromEpoch
         )
         const GSTreeProof = fromEpochGSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
-        const fromEpochTree = await super.genEpochTree(fromEpoch)
+        const fromEpochTree = await this.genEpochTree(fromEpoch)
         const epochTreeRoot = fromEpochTree.root
         const epochKeyPathElements: any[] = []
 
@@ -685,9 +732,7 @@ export default class UserState extends Synchronizer {
             hashChainStarter.push(currentHashChain)
 
             // Attestations
-            const attestations = await super.getAttestations(
-                epochKey.toString()
-            )
+            const attestations = await this.getAttestations(epochKey.toString())
             // TODO: update attestation types
             for (let i = 0; i < attestations.length; i++) {
                 // Include a blinded user state and blinded hash chain per proof
@@ -974,9 +1019,9 @@ export default class UserState extends Synchronizer {
         this._checkUserSignUp()
 
         const fromEpoch = this.latestTransitionedEpoch
-        const transitionToEpoch = (await super.loadCurrentEpoch()).number
+        const transitionToEpoch = (await this.loadCurrentEpoch()).number
         const transitionToGSTIndex =
-            (await super.getNumGSTLeaves(transitionToEpoch)) - 1
+            (await this.getNumGSTLeaves(transitionToEpoch)) - 1
         const newState = this.newUserState
         if (newLeaf !== newState.newGSTLeaf) {
             console.error('UserState: new GST leaf mismatch')
@@ -1022,7 +1067,7 @@ export default class UserState extends Synchronizer {
         const graffiti = rep.graffiti
         const signUp = rep.signUp
         const userStateTree = this.genUserStateTree()
-        const GSTree = await super.genGSTree(epoch)
+        const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
         const USTPathElements = userStateTree.createProof(attesterId)
@@ -1054,7 +1099,7 @@ export default class UserState extends Synchronizer {
                     n,
                     attesterId
                 )
-                if (!(await super.nullifierExist(reputationNullifier))) {
+                if (!(await this.nullifierExist(reputationNullifier))) {
                     nonceStarter = n
                     break
                 }
@@ -1131,7 +1176,7 @@ export default class UserState extends Synchronizer {
         const graffiti = rep.graffiti
         const signUp = rep.signUp
         const userStateTree = this.genUserStateTree()
-        const GSTree = await super.genGSTree(epoch)
+        const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(this.latestGSTLeafIndex)
         const GSTreeRoot = GSTree.root
         const USTPathElements = userStateTree.createProof(attesterId)
