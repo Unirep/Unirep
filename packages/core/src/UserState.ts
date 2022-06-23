@@ -33,8 +33,11 @@ const decodeBigIntArray = (input: string): bigint[] => {
 
 export default class UserState extends Synchronizer {
     public id: ZkIdentity
-    public commitment: bigint
     private _hasSignedUp: boolean = false
+
+    get commitment() {
+        return this.id.genIdentityCommitment()
+    }
 
     public latestTransitionedEpoch: number // Latest epoch where the user has a record in the GST of that epoch
     public latestGSTLeafIndex: number // Leaf index of the latest GST where the user has a record in
@@ -62,7 +65,6 @@ export default class UserState extends Synchronizer {
         super(db, prover, unirepContract)
 
         this.id = _id
-        this.commitment = this.id.genIdentityCommitment()
         this.latestUserStateLeaves = []
 
         if (_hasSignedUp !== undefined) {
