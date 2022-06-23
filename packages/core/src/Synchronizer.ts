@@ -467,6 +467,11 @@ export class Synchronizer extends EventEmitter {
             [IndexedProcessedAttestationsProof]:
                 this.processAttestationProofEvent.bind(this),
             [IndexedUserStateTransitionProof]: this.USTProofEvent.bind(this),
+        } as {
+            [key: string]: (
+                event: ethers.Event,
+                db: TransactionDB
+            ) => Promise<undefined | boolean>
         }
     }
 
@@ -534,6 +539,7 @@ export class Synchronizer extends EventEmitter {
 
         for (const event of events) {
             try {
+                let success: boolean | undefined
                 await this._db.transaction(async (db) => {
                     const handler = this.topicHandlers[event.topics[0]]
                     if (!handler) {
@@ -542,7 +548,7 @@ export class Synchronizer extends EventEmitter {
                             `Unrecognized event topic "${event.topics[0]}"`
                         )
                     }
-                    await handler(event, db)
+                    success = await handler(event, db)
                     db.update('SynchronizerState', {
                         where: {},
                         update: {
@@ -553,7 +559,7 @@ export class Synchronizer extends EventEmitter {
                         },
                     })
                 })
-                this.emit(event.topics[0], event)
+                if (success) this.emit(event.topics[0], event)
             } catch (err) {
                 console.log(`Error processing event:`, err)
                 console.log(event)
@@ -592,6 +598,7 @@ export class Synchronizer extends EventEmitter {
             treeDepths.globalStateTreeDepth,
             this.defaultGSTLeaf
         )
+        return true
     }
 
     async attestationEvent(event: ethers.Event, db: TransactionDB) {
@@ -720,6 +727,7 @@ export class Synchronizer extends EventEmitter {
                 key: _epochKey.toString(),
             },
         })
+        return true
     }
 
     async USTEvent(event: ethers.Event, db: TransactionDB) {
@@ -925,6 +933,7 @@ export class Synchronizer extends EventEmitter {
             epoch,
             root: this.globalStateTree.root.toString(),
         })
+        return true
     }
 
     async userSignedUpEvent(event: ethers.Event, db: TransactionDB) {
@@ -966,6 +975,7 @@ export class Synchronizer extends EventEmitter {
             epoch,
             root: this.globalStateTree.root.toString(),
         })
+        return true
     }
 
     async USTProofEvent(event: ethers.Event, db: TransactionDB) {
@@ -1018,6 +1028,7 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedUserStateTransitionProof',
             valid: isValid && exist,
         })
+        return true
     }
 
     async processAttestationProofEvent(event: ethers.Event, db: TransactionDB) {
@@ -1062,6 +1073,7 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedProcessedAttestationsProof',
             valid: isValid,
         })
+        return true
     }
 
     async startUSTProofEvent(event: ethers.Event, db: TransactionDB) {
@@ -1100,6 +1112,7 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedStartedTransitionProof',
             valid: isValid,
         })
+        return true
     }
 
     async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
@@ -1147,6 +1160,7 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedUserSignedUpProof',
             valid: isValid && exist,
         })
+        return true
     }
 
     async reputationProofEvent(event: ethers.Event, db: TransactionDB) {
@@ -1222,6 +1236,7 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedReputationProof',
             valid: isValid && exist && !existingNullifier,
         })
+        return true
     }
 
     async epochKeyProofEvent(event: ethers.Event, db: TransactionDB) {
@@ -1263,5 +1278,6 @@ export class Synchronizer extends EventEmitter {
             event: 'IndexedEpochKeyProof',
             valid: isValid && exist,
         })
+        return true
     }
 }
