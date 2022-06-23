@@ -340,19 +340,23 @@ const genUserState = async (
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
     let userState: UserState
-    let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     const mockProver = {
         verifyProof: () => Promise.resolve(true),
     }
-    synchronizer = new Synchronizer(db, mockProver, unirepContract)
-    await synchronizer.start()
     if (!_userState) {
-        userState = new UserState(synchronizer, userIdentity)
+        userState = new UserState(db, mockProver, unirepContract, userIdentity)
     } else {
-        userState = UserState.fromJSON(userIdentity, synchronizer, _userState)
+        userState = UserState.fromJSON(
+            db,
+            mockProver,
+            unirepContract,
+            userIdentity,
+            _userState
+        )
     }
-    await synchronizer.waitForSync()
+    await userState.start()
+    await userState.waitForSync()
     return userState
 }
 
