@@ -16,6 +16,9 @@ import {
     genProofAndPublicSignals,
     EPOCH_LENGTH,
 } from '@unirep/circuits'
+import { SQLiteConnector } from 'anondb/node'
+import { schema } from '../../src/schema'
+import { DB } from 'anondb'
 
 import {
     computeInitUserStateRoot,
@@ -55,6 +58,11 @@ describe('User state transition events in Unirep State', async function () {
     const transitionedUsers: number[] = []
     const fromProofIndex = 0
 
+    let db: DB
+    const mockProver = {
+        verifyProof: () => Promise.resolve(true),
+    }
+
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
@@ -67,6 +75,8 @@ describe('User state transition events in Unirep State', async function () {
         numEpochKeyNoncePerEpoch =
             await unirepContract.numEpochKeyNoncePerEpoch()
         maxReputationBudget = await unirepContract.maxReputationBudget()
+
+        db = await SQLiteConnector.create(schema, ':memory:')
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -236,11 +246,13 @@ describe('User state transition events in Unirep State', async function () {
                     notTransitionUsers.push(i)
                     continue
                 }
-                const synchronizer = await genUnirepState(
-                    hardhatEthers.provider,
-                    unirepContract.address
+                const userState = new UserState(
+                    db,
+                    mockProver,
+                    unirepContract,
+                    userIds[i]
                 )
-                const userState = new UserState(synchronizer, userIds[i])
+                await userState.setup()
 
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args
@@ -293,11 +305,13 @@ describe('User state transition events in Unirep State', async function () {
 
             if (transitionedUsers.length === 0) return
             const n = transitionedUsers[0]
-            const synchronizer = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
+            const userState = new UserState(
+                db,
+                mockProver,
+                unirepContract,
+                userIds[n]
             )
-            const userState = new UserState(synchronizer, userIds[n])
+            await userState.setup()
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
@@ -418,11 +432,12 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
-            const synchronizer = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
+            const userState = new UserState(
+                db,
+                mockProver,
+                unirepContract,
+                userIds[0]
             )
-            const userState = new UserState(synchronizer, userIds[0])
 
             const epoch = 1
             const commitment = userIds[0].genIdentityCommitment()
@@ -448,18 +463,20 @@ describe('User state transition events in Unirep State', async function () {
             )
             if (notTransitionUsers.length < 2) return
 
-            const synchronizer = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
             const userState1 = new UserState(
-                synchronizer,
+                db,
+                mockProver,
+                unirepContract,
                 userIds[notTransitionUsers[0]]
             )
+            await userState1.setup()
             const userState2 = new UserState(
-                synchronizer,
+                db,
+                mockProver,
+                unirepContract,
                 userIds[notTransitionUsers[1]]
             )
+            await userState2.setup()
 
             for (let signUpEvent of userSignedUpEvents) {
                 const args = signUpEvent?.args
@@ -643,11 +660,13 @@ describe('User state transition events in Unirep State', async function () {
                 const randomUST = Math.round(Math.random())
                 if (randomUST === 0) continue
                 console.log('transition user', i)
-                const synchronizer = await genUnirepState(
-                    hardhatEthers.provider,
-                    unirepContract.address
+                const userState = new UserState(
+                    db,
+                    mockProver,
+                    unirepContract,
+                    userIds[i]
                 )
-                const userState = new UserState(synchronizer, userIds[i])
+                await userState.setup()
 
                 for (let signUpEvent of userSignedUpEvents) {
                     const args = signUpEvent?.args

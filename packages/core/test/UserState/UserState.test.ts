@@ -111,7 +111,7 @@ describe('User State', async function () {
                     .connect(tmpWallet)
                     .userSignUp(tmpId.genIdentityCommitment())
                     .then((t) => t.wait())
-                await userState.unirepState.waitForSync()
+                await userState.waitForSync()
 
                 // check the tmp state and the control above
 
@@ -127,7 +127,7 @@ describe('User State', async function () {
                     userState.latestGSTLeafIndex,
                     'User state cannot be changed (latestGSTLeafIndex)'
                 ).equal(0)
-                const tree = await userState.unirepState.genGSTree(epoch)
+                const tree = await userState.genGSTree(epoch)
                 expect(
                     tree.leaves.length,
                     'Unirep state should be changed'
@@ -192,7 +192,7 @@ describe('User State', async function () {
                 .connect(tmpWallet)
                 .userSignUp(id.genIdentityCommitment())
                 .then((t) => t.wait())
-            await userState.unirepState.waitForSync()
+            await userState.waitForSync()
 
             expect(
                 userState.hasSignedUp,
@@ -206,7 +206,7 @@ describe('User State', async function () {
                 userState.latestGSTLeafIndex,
                 'User state should be changed (latestGSTLeafIndex)'
             ).equal(userNum)
-            const tree = await userState.unirepState.genGSTree(epoch)
+            const tree = await userState.genGSTree(epoch)
             expect(tree.leaves.length, 'Unirep state should be changed').equal(
                 userNum + 1
             )
@@ -266,7 +266,7 @@ describe('User State', async function () {
                     .connect(tmpWallet)
                     .userSignUp(tmpId.genIdentityCommitment())
                     .then((t) => t.wait())
-                await userState.unirepState.waitForSync()
+                await userState.waitForSync()
 
                 // check the tmp state and the control above
 
@@ -282,7 +282,7 @@ describe('User State', async function () {
                     userState.latestGSTLeafIndex,
                     'User state cannot be changed (latestGSTLeafIndex)'
                 ).equal(userNum)
-                const tree = await userState.unirepState.genGSTree(epoch)
+                const tree = await userState.genGSTree(epoch)
                 expect(
                     tree.leaves.length,
                     'Unirep state should be changed'
@@ -403,7 +403,7 @@ describe('User State', async function () {
                 .connect(accounts[1])
                 .userSignUp(id.genIdentityCommitment())
                 .then((t) => t.wait())
-            await userState.unirepState.waitForSync()
+            await userState.waitForSync()
         })
 
         it('generate epoch key proof should succeed', async () => {
@@ -706,8 +706,8 @@ describe('User State', async function () {
                 .connect(accounts[1])
                 .userSignUp(otherId.genIdentityCommitment())
                 .then((t) => t.wait())
-            await userState.unirepState.waitForSync()
-            await otherUser.unirepState.waitForSync()
+            await userState.waitForSync()
+            await otherUser.waitForSync()
         })
 
         it('epoch transition', async () => {
@@ -717,7 +717,7 @@ describe('User State', async function () {
             ])
             // now
             await unirepContract.beginEpochTransition().then((t) => t.wait())
-            await userState.unirepState.waitForSync()
+            await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             expect(
                 await userState.getUnirepStateCurrentEpoch(),
@@ -900,8 +900,8 @@ describe('User State', async function () {
             await unirepContract
                 .updateUserStateRoot(transitionProof, proofIndexes)
                 .then((t) => t.wait())
-            await otherUser.unirepState.waitForSync()
-            await userState.unirepState.waitForSync()
+            await otherUser.waitForSync()
+            await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             expect(
                 userState.latestTransitionedEpoch,
@@ -911,7 +911,7 @@ describe('User State', async function () {
                 userState.latestGSTLeafIndex,
                 'User state should not be changed (latestGSTLeafIndex)'
             ).equal(0)
-            const tree = await userState.unirepState.genGSTree(currentEpoch)
+            const tree = await userState.genGSTree(currentEpoch)
             expect(tree.leaves.length, 'Unirep state should be changed').equal(
                 1 // both users signed up in previous epoch, UST is only event so far
             )
@@ -1088,8 +1088,8 @@ describe('User State', async function () {
             await unirepContract
                 .updateUserStateRoot(transitionProof, proofIndexes)
                 .then((t) => t.wait())
-            await otherUser.unirepState.waitForSync()
-            await userState.unirepState.waitForSync()
+            await otherUser.waitForSync()
+            await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             console.log('asserting')
             expect(
@@ -1187,7 +1187,7 @@ describe('User State', async function () {
         //             ).equal(userNum)
         //
         //             expect(
-        //                 userObj.unirepState.GSTLeaves[epoch].length,
+        //                 userObj.GSTLeaves[epoch].length,
         //                 'Unirep state should be changed'
         //             ).equal(userNum + 2 + i)
         //
