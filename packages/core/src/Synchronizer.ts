@@ -484,7 +484,6 @@ export class Synchronizer extends EventEmitter {
     // unirep event handlers
 
     async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
-        console.log('update db from epoch ended event: ')
         const epoch = Number(event?.topics[1])
         const treeDepths = await this.unirepContract.treeDepths()
         const tree = await this.genEpochTree(epoch)
