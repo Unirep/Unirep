@@ -3,7 +3,7 @@ import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 import { Unirep, UnirepFactory } from '@unirep/contracts'
 
@@ -145,10 +145,10 @@ const genReputationProof = async (args: any) => {
     console.log('repnullifier amount', repNullifiersAmount)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(
+    const isValid = await defaultProver.verifyProof(
         Circuit.proveReputation,
-        results.proof,
-        results.publicSignals
+        results.publicSignals,
+        results.proof
     )
     if (!isValid) {
         console.error('Error: reputation proof generated is not valid!')
