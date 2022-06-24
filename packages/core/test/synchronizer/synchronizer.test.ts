@@ -169,7 +169,7 @@ describe('Synchronizer process events', function () {
             )
         const reputationProof = new ReputationProof(publicSignals, proof)
         const isValid = await reputationProof.verify()
-        expect(isValid, 'Verify epk proof off-chain failed').to.be.true
+        expect(isValid, 'Verify rep proof off-chain failed').to.be.true
 
         await synchronizer.unirepContract
             .connect(accounts[1])
@@ -241,11 +241,17 @@ describe('Synchronizer process events', function () {
             .userSignUp(commitment)
             .then((t) => t.wait())
         expect(receipt.status, 'User sign up failed').to.equal(1)
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await synchronizer.unirepContract
+            .beginEpochTransition()
+            .then((t) => t.wait())
+
         const userState = await genUserState(
             ethers.provider,
             synchronizer.unirepContract.address,
             id
         )
+        await userState.waitForSync()
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
 

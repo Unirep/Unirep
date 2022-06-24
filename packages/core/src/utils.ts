@@ -43,10 +43,10 @@ const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
 const computeInitUserStateRoot = (
     treeDepth: number,
     leafIdx?: number,
-    airdropPosRep?: number
+    airdropPosRep: number = 0
 ): BigInt => {
     const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
-    if (leafIdx && airdropPosRep) {
+    if (leafIdx) {
         const airdropReputation = new Reputation(
             BigInt(airdropPosRep),
             BigInt(0),
@@ -317,28 +317,16 @@ const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: ZkIdentity,
-    _userState?: IUserState,
     _db?: DB
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
-    let userState: UserState
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    if (!_userState) {
-        userState = new UserState(
-            db,
-            defaultProver,
-            unirepContract,
-            userIdentity
-        )
-    } else {
-        userState = UserState.fromJSON(
-            db,
-            defaultProver,
-            unirepContract,
-            userIdentity,
-            _userState
-        )
-    }
+    const userState = new UserState(
+        db,
+        defaultProver,
+        unirepContract,
+        userIdentity
+    )
     await userState.start()
     await userState.waitForSync()
     return userState

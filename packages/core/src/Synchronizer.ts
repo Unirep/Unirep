@@ -890,7 +890,7 @@ export class Synchronizer extends EventEmitter {
             root: this.globalStateTree.root.toString(),
         })
         db.create('UserSignUp', {
-            commitment: idCommitment,
+            commitment: idCommitment.toString(),
             epoch,
             attesterId,
             airdrop,

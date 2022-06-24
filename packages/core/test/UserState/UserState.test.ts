@@ -111,15 +111,15 @@ describe('User State', async function () {
                 // check the tmp state and the control above
 
                 expect(
-                    userState.hasSignedUp,
+                    await userState.hasSignedUp(),
                     'User state cannot be changed (hasSignedUp)'
                 ).to.be.false
                 expect(
-                    userState.latestTransitionedEpoch,
+                    await userState.latestTransitionedEpoch(),
                     'User state cannot be changed (latestTransitionedEpoch)'
                 ).equal(0)
                 expect(
-                    userState.latestGSTLeafIndex,
+                    await userState.latestGSTLeafIndex(),
                     'User state cannot be changed (latestGSTLeafIndex)'
                 ).equal(0)
                 const tree = await userState.genGSTree(epoch)
@@ -190,25 +190,21 @@ describe('User State', async function () {
             await userState.waitForSync()
 
             expect(
-                userState.hasSignedUp,
+                await userState.hasSignedUp(),
                 'User state should be changed (hasSignedUp)'
             ).to.be.true
             expect(
-                userState.latestTransitionedEpoch,
+                await userState.latestTransitionedEpoch(),
                 'User state should be changed (latestTransitionedEpoch)'
             ).not.equal(0)
             expect(
-                userState.latestGSTLeafIndex,
+                await userState.latestGSTLeafIndex(),
                 'User state should be changed (latestGSTLeafIndex)'
             ).equal(userNum)
             const tree = await userState.genGSTree(epoch)
             expect(tree.leaves.length, 'Unirep state should be changed').equal(
                 userNum + 1
             )
-            expect(
-                userState.latestUserStateLeaves[0],
-                'Sign up airdrop should be updated'
-            ).not.to.be.undefined
 
             // GST should match
             const USTRoot = computeInitUserStateRoot(
@@ -266,15 +262,15 @@ describe('User State', async function () {
                 // check the tmp state and the control above
 
                 expect(
-                    userState.hasSignedUp,
+                    await userState.hasSignedUp(),
                     'User state cannot be changed (hasSignedUp)'
                 ).to.be.true
                 expect(
-                    userState.latestTransitionedEpoch,
+                    await userState.latestTransitionedEpoch(),
                     'User state cannot be changed (latestTransitionedEpoch)'
                 ).equal(1)
                 expect(
-                    userState.latestGSTLeafIndex,
+                    await userState.latestGSTLeafIndex(),
                     'User state cannot be changed (latestGSTLeafIndex)'
                 ).equal(userNum)
                 const tree = await userState.genGSTree(epoch)
@@ -282,10 +278,6 @@ describe('User State', async function () {
                     tree.leaves.length,
                     'Unirep state should be changed'
                 ).equal(userNum + 2 + i)
-                expect(
-                    userState.latestUserStateLeaves,
-                    'Sign up airdrop should be updated'
-                ).not.to.be.undefined
 
                 // GST should match
                 const USTRoot = computeInitUserStateRoot(
@@ -900,11 +892,11 @@ describe('User State', async function () {
             await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             expect(
-                userState.latestTransitionedEpoch,
+                await userState.latestTransitionedEpoch(),
                 'User state should not be changed (latestTransitionedEpoch)'
             ).equal(1)
             expect(
-                userState.latestGSTLeafIndex,
+                await userState.latestGSTLeafIndex(),
                 'User state should not be changed (latestGSTLeafIndex)'
             ).equal(0)
             const tree = await userState.genGSTree(currentEpoch)
@@ -1087,7 +1079,7 @@ describe('User State', async function () {
             await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             expect(
-                Number(userState.latestTransitionedEpoch),
+                await userState.latestTransitionedEpoch(),
                 `User state mismatches current epoch: ${currentEpoch}`
             ).equal(currentEpoch)
 

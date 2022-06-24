@@ -198,6 +198,8 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract.address,
                 userIds[0]
             )
+            const currentEpoch = await userState.getUnirepStateCurrentEpoch()
+            const [epochKey] = await userState.getEpochKeys(currentEpoch)
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
         })

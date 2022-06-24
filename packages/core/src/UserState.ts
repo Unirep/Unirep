@@ -82,10 +82,9 @@ export default class UserState extends Synchronizer {
         })
     }
 
-    async hasSignedUp(attesterId: number): Promise<boolean> {
+    async hasSignedUp(): Promise<boolean> {
         const signup = await this._db.findOne('UserSignUp', {
             where: {
-                attesterId,
                 commitment: this.commitment.toString(),
             },
         })
@@ -101,43 +100,129 @@ export default class UserState extends Synchronizer {
                 x,
                 0
             )
-            if (
-                await this._db.findOne('Nullifier', {
-                    where: {
-                        nullifier: epkNullifier.toString(),
-                    },
-                })
-            ) {
-                latestTransitionedEpoch = x
-                break
+            const n = await this._db.findOne('Nullifier', {
+                where: {
+                    nullifier: epkNullifier.toString(),
+                },
+            })
+            if (n) {
+              latestTransitionedEpoch = n.epoch
+              break
             }
+        }
+        if (latestTransitionedEpoch === 1) {
+          const signup = await this._db.findOne('UserSignUp', {
+              where: {
+                  commitment: this.commitment.toString(),
+              },
+          })
+          if (!signup) return 0
+          return signup.epoch
         }
         return latestTransitionedEpoch
     }
 
     async latestGSTLeafIndex(): Promise<number> {
-        // TODO
-        return -1
+        const currentEpoch = await this.getUnirepStateCurrentEpoch()
+        const latestTransitionedEpoch = await this.latestTransitionedEpoch()
+        if (latestTransitionedEpoch === 1) {
+          const signup = await this._db.findOne('UserSignUp', {
+            where: {
+              commitment: this.commitment.toString(),
+            }
+          })
+          if (!signup) {
+            throw new Error('user is not signed up')
+          }
+          if (signup.epoch !== currentEpoch) {
+            return 0
+          }
+          const leaf = hashLeftRight(this.commitment, computeInitUserStateRoot(
+            this.settings.userStateTreeDepth,
+            signup.attesterId,
+            signup.airdrop
+          ))
+          const { index } = await this._db.findOne('GSTLeaf', {
+            where: {
+              hash: leaf.toString(),
+            }
+          })
+          return index
+        }
+        if (latestTransitionedEpoch !== currentEpoch) {
+          return 0
+        }
+        const USTree = await this.genUserStateTree(latestTransitionedEpoch)
+        const leaf = hashLeftRight(this.commitment, USTree.root)
+        const { index } = await this._db.findOne('GSTLeaf', {
+          where: {
+            hash: leaf.toString()
+          }
+        })
+        return index
     }
 
     /**
      * Computes the user state tree of given epoch
      */
-    public genUserStateTree = async (): Promise<SparseMerkleTree> => {
-        // TODO
-        // find all attestations and then construct user state leaves
-        // const leaves = this.latestUserStateLeaves
-        // return this._genUserStateTreeFromLeaves(leaves)
-        // const USTree = new SparseMerkleTree(
-        //     this.settings.userStateTreeDepth,
-        //     defaultUserStateLeaf
-        // )
-        //
-        // for (const leaf of leaves) {
-        //     USTree.update(leaf.attesterId, leaf.reputation.hash())
-        // }
-        // return USTree
-        return null as unknown as SparseMerkleTree
+    public genUserStateTree = async (beforeEpoch: number = 2**32): Promise<SparseMerkleTree> => {
+        const allEpks = [] as string[]
+        const latestTransitionedEpoch = await this.latestTransitionedEpoch()
+        for (let x = 1; x <= latestTransitionedEpoch; x++) {
+            const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
+                .fill(null)
+                .map((_, i) =>
+                    genEpochKey(
+                        this.id.identityNullifier,
+                        x,
+                        i,
+                        this.settings.epochTreeDepth
+                    ).toString()
+                )
+            allEpks.push(...epks)
+        }
+        const attestations = await this._db.findMany('Attestation', {
+            where: {
+                epochKey: allEpks,
+                epoch: {
+                  lt: beforeEpoch
+                }
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+          const signup = await this._db.findOne('UserSignUp', {
+            where: {
+              commitment: this.commitment.toString(),
+            }
+          })
+          attestations.push({
+            attesterId: signup.attesterId,
+            posRep: signup.airdrop,
+            negRep: 0,
+            graffiti: 0,
+            signUp: 1,
+          })
+        const attestationsByAttesterId = attestations.reduce((acc, obj) => {
+          return {
+            ...acc,
+            [obj.attesterId]: [...(acc[obj.attesterId]) ?? [], obj],
+          }
+        }, {})
+        const USTree = new SparseMerkleTree(
+            this.settings.userStateTreeDepth,
+            defaultUserStateLeaf
+        )
+        for (const attesterId of Object.keys(attestationsByAttesterId)) {
+          const _attestations = attestationsByAttesterId[attesterId]
+          const r = Reputation.default()
+          for (const a of _attestations) {
+              r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
+          }
+          USTree.update(BigInt(attesterId), r.hash())
+        }
+        return USTree
     }
 
     /**
@@ -164,7 +249,7 @@ export default class UserState extends Synchronizer {
             },
         })
         for (const leaf of leaves) {
-            tree.insert(leaf.hash)
+            tree.insert(BigInt(leaf.hash))
         }
         return tree
     }
@@ -247,6 +332,20 @@ export default class UserState extends Synchronizer {
         attesterId: BigInt
     ): Promise<IReputation> => {
         const r = Reputation.default()
+        const signup = await this._db.findOne('UserSignUp', {
+          where: {
+            attesterId: Number(attesterId),
+            commitment: this.commitment.toString()
+          }
+        })
+        if (signup) {
+          r.update(
+            BigNumber.from(signup.airdrop),
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(1),
+          )
+        }
         const allEpks = [] as string[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         for (let x = 1; x <= latestTransitionedEpoch; x++) {
@@ -265,7 +364,7 @@ export default class UserState extends Synchronizer {
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 epochKey: allEpks,
-                attesterId,
+                attesterId: Number(attesterId),
             },
             orderBy: {
                 index: 'asc',
@@ -280,9 +379,9 @@ export default class UserState extends Synchronizer {
     /**
      * Check if user has signed up in Unirep
      */
-    private _checkUserSignUp = async (attesterId: number) => {
+    private _checkUserSignUp = async () => {
         assert(
-            await this.hasSignedUp(attesterId),
+            await this.hasSignedUp(),
             'UserState: User has not signed up yet'
         )
     }
@@ -434,7 +533,7 @@ export default class UserState extends Synchronizer {
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         // Circuit inputs
         const circuitInputs = stringifyBigInts({
-            epoch: this.latestTransitionedEpoch,
+            epoch: latestTransitionedEpoch,
             nonce: fromNonce,
             user_tree_root: userStateTreeRoot,
             identity_nullifier: this.id.identityNullifier,
@@ -954,7 +1053,7 @@ export default class UserState extends Synchronizer {
     }
 
     public genUserSignUpProof = async (attesterId: BigInt) => {
-        await this._checkUserSignUp(Number(attesterId))
+        await this._checkUserSignUp()
         this._checkAttesterId(attesterId)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
