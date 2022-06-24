@@ -110,6 +110,15 @@ const _schema = [
             },
         ],
     },
+    {
+        name: 'UserSignUp',
+        rows: [
+            ['commitment', 'String'],
+            ['epoch', 'Int'],
+            ['attesterId', 'Int'],
+            ['airdrop', 'Int'],
+        ],
+    },
 ]
 
 export const schema = _schema.map((obj) => ({

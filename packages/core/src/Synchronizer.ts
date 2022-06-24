@@ -889,6 +889,12 @@ export class Synchronizer extends EventEmitter {
             epoch,
             root: this.globalStateTree.root.toString(),
         })
+        db.create('UserSignUp', {
+            commitment: idCommitment,
+            epoch,
+            attesterId,
+            airdrop,
+        })
         return true
     }
 
