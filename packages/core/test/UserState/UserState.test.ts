@@ -42,8 +42,8 @@ describe('User State', async function () {
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         maxReputationBudget: MAX_REPUTATION_BUDGET,
     }
-    const maxUsers = 10
-    const userNum = Math.ceil(Math.random() * (maxUsers / 2))
+    const maxUsers = 100
+    const userNum = 5
 
     describe('Users sign up', async function () {
         let unirepContract
@@ -121,7 +121,7 @@ describe('User State', async function () {
                 expect(
                     await userState.latestGSTLeafIndex(),
                     'User state cannot be changed (latestGSTLeafIndex)'
-                ).equal(0)
+                ).equal(-1)
                 const tree = await userState.genGSTree(epoch)
                 expect(
                     tree.leaves.length,
@@ -222,7 +222,7 @@ describe('User State', async function () {
         it('continue sign up other users', async () => {
             const accounts = await ethers.getSigners()
             const epoch = await userState.getUnirepStateCurrentEpoch()
-            for (let i = 0; i < maxUsers - userNum - 3; i++) {
+            for (let i = 0; i < 5; i++) {
                 const _tmpWallet = ethers.Wallet.createRandom()
                 const tmpWallet = new ethers.Wallet(
                     _tmpWallet.privateKey,
@@ -898,7 +898,7 @@ describe('User State', async function () {
             expect(
                 await userState.latestGSTLeafIndex(),
                 'User state should not be changed (latestGSTLeafIndex)'
-            ).equal(0)
+            ).equal(-1)
             const tree = await userState.genGSTree(currentEpoch)
             expect(tree.leaves.length, 'Unirep state should be changed').equal(
                 1 // both users signed up in previous epoch, UST is only event so far
@@ -1193,7 +1193,8 @@ describe('User State', async function () {
                     const expectedEpk = genEpochKey(
                         id.identityNullifier,
                         currentEpoch,
-                        i
+                        i,
+                        userState.settings.epochTreeDepth
                     ).toString()
                     const isValid = await defaultProver.verifyProof(
                         Circuit.verifyEpochKey,

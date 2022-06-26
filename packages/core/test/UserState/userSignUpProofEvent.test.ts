@@ -20,7 +20,7 @@ import {
 } from '../utils'
 
 describe('User sign up proof (Airdrop proof) events in Unirep User State', function () {
-    this.timeout(0)
+    this.timeout(30 * 60 * 1000)
 
     let userIds: ZkIdentity[] = []
     let userCommitments: BigInt[] = []
@@ -33,8 +33,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
-    const maxUsers = 10
-    const userNum = Math.ceil(Math.random() * maxUsers)
+    const maxUsers = 100
     const attestingFee = ethers.utils.parseEther('0.1')
     const fromProofIndex = 0
 
@@ -78,7 +77,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
     describe('User Sign Up event', async () => {
         it('sign up users through attester who sets airdrop', async () => {
-            for (let i = 0; i < userNum; i++) {
+            for (let i = 0; i < 5; i++) {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
@@ -124,13 +123,15 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('sign up users with no airdrop', async () => {
-            for (let i = 0; i < maxUsers - userNum; i++) {
+            for (let i = 0; i < 5; i++) {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
                 userCommitments.push(commitment)
 
-                const tx = await unirepContract.userSignUp(commitment)
+                const tx = await unirepContract
+                    .connect(attester['acct'])
+                    .userSignUp(commitment)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
@@ -196,11 +197,13 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
-                userIds[0]
+                userIds[userIdx]
             )
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             const [epochKey] = await userState.getEpochKeys(currentEpoch)
-            const attestations = await userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(
+                epochKey.toString()
+            )
             expect(attestations.length).equal(1)
         })
 
@@ -374,32 +377,28 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         })
 
         it('submit valid sign up proof event in wrong epoch should fail', async () => {
-            const wrongEpoch = epoch + 1
+            const _id = new ZkIdentity()
+            await unirepContract
+                .connect(attester['acct'])
+                .userSignUp(_id.genIdentityCommitment())
+                .then((t) => t.wait())
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
-                new ZkIdentity()
+                _id
             )
-            const GSTree = await userState.genGSTree(epoch)
-            const reputationRecords = {}
-            reputationRecords[attesterId.toString()] = signUpAirdrops[userIdx]
 
-            const circuitInputs = genProveSignUpCircuitInput(
-                userIds[userIdx],
-                wrongEpoch,
-                GSTree,
-                userIdx,
-                reputationRecords,
+            const { proof, publicSignals } = await userState.genUserSignUpProof(
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } =
-                await defaultProver.genProofAndPublicSignals(
-                    Circuit.proveUserSignUp,
-                    circuitInputs
-                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
+            const epochLength = await unirepContract.epochLength()
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                epochLength.toNumber(),
+            ])
+            await unirepContract.beginEpochTransition().then((t) => t.wait())
 
             await expect(
                 unirepContract

@@ -38,8 +38,7 @@ describe('Epoch key proof events in Unirep User State', function () {
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
-    const maxUsers = 10
-    const userNum = Math.ceil(Math.random() * maxUsers)
+    const maxUsers = 100
     const attestingFee = ethers.utils.parseEther('0.1')
     const fromProofIndex = 0
 
@@ -83,7 +82,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
     describe('User Sign Up event', async () => {
         it('sign up users through attester who sets airdrop', async () => {
-            for (let i = 0; i < userNum; i++) {
+            for (let i = 0; i < 5; i++) {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
@@ -138,7 +137,7 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
 
         it('sign up users with no airdrop', async () => {
-            for (let i = 0; i < maxUsers - userNum; i++) {
+            for (let i = 0; i < 5; i++) {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
                 userIds.push(id)
@@ -158,7 +157,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
-                const newUSTRoot = await computeInitUserStateRoot(
+                const newUSTRoot = computeInitUserStateRoot(
                     treeDepths.userStateTreeDepth
                 )
                 userStateTreeRoots.push(newUSTRoot)
