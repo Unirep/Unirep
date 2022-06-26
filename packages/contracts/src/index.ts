@@ -181,17 +181,21 @@ class ReputationProof implements IReputationProof {
     public proof: Field[]
     private publicSignals: Field[]
 
-    constructor(_publicSignals: Field[], _proof: SnarkProof) {
+    constructor(
+        _publicSignals: Field[],
+        _proof: SnarkProof,
+        maxRepBudget = MAX_REPUTATION_BUDGET
+    ) {
         const formattedProof: any[] = formatProofForVerifierContract(_proof)
-        this.repNullifiers = _publicSignals.slice(0, MAX_REPUTATION_BUDGET)
-        this.epoch = _publicSignals[MAX_REPUTATION_BUDGET]
-        this.epochKey = _publicSignals[MAX_REPUTATION_BUDGET + 1]
-        this.globalStateTree = _publicSignals[MAX_REPUTATION_BUDGET + 2]
-        this.attesterId = _publicSignals[MAX_REPUTATION_BUDGET + 3]
-        this.proveReputationAmount = _publicSignals[MAX_REPUTATION_BUDGET + 4]
-        this.minRep = _publicSignals[MAX_REPUTATION_BUDGET + 5]
-        this.proveGraffiti = _publicSignals[MAX_REPUTATION_BUDGET + 6]
-        this.graffitiPreImage = _publicSignals[MAX_REPUTATION_BUDGET + 7]
+        this.repNullifiers = _publicSignals.slice(0, maxRepBudget)
+        this.epoch = _publicSignals[maxRepBudget]
+        this.epochKey = _publicSignals[maxRepBudget + 1]
+        this.globalStateTree = _publicSignals[maxRepBudget + 2]
+        this.attesterId = _publicSignals[maxRepBudget + 3]
+        this.proveReputationAmount = _publicSignals[maxRepBudget + 4]
+        this.minRep = _publicSignals[maxRepBudget + 5]
+        this.proveGraffiti = _publicSignals[maxRepBudget + 6]
+        this.graffitiPreImage = _publicSignals[maxRepBudget + 7]
         this.proof = formattedProof
         this.publicSignals = _publicSignals
     }

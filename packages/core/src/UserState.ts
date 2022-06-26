@@ -14,6 +14,7 @@ import {
     IAttestation,
     Attestation,
     UserTransitionProof,
+    ReputationProof,
 } from '@unirep/contracts'
 import {
     defaultUserStateLeaf,
@@ -106,69 +107,80 @@ export default class UserState extends Synchronizer {
                 },
             })
             if (n) {
-              latestTransitionedEpoch = n.epoch
-              break
+                latestTransitionedEpoch = n.epoch
+                break
             }
         }
         if (latestTransitionedEpoch === 1) {
-          const signup = await this._db.findOne('UserSignUp', {
-              where: {
-                  commitment: this.commitment.toString(),
-              },
-          })
-          if (!signup) return 0
-          return signup.epoch
+            const signup = await this._db.findOne('UserSignUp', {
+                where: {
+                    commitment: this.commitment.toString(),
+                },
+            })
+            if (!signup) return 0
+            return signup.epoch
         }
         return latestTransitionedEpoch
     }
 
-    async latestGSTLeafIndex(): Promise<number> {
-        const currentEpoch = await this.getUnirepStateCurrentEpoch()
+    // Get the latest GST leaf index for an epoch
+    async latestGSTLeafIndex(_epoch?: number): Promise<number> {
+        const currentEpoch = _epoch ?? (await this.getUnirepStateCurrentEpoch())
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
+        if (latestTransitionedEpoch !== currentEpoch) return -1
         if (latestTransitionedEpoch === 1) {
-          const signup = await this._db.findOne('UserSignUp', {
-            where: {
-              commitment: this.commitment.toString(),
+            const signup = await this._db.findOne('UserSignUp', {
+                where: {
+                    commitment: this.commitment.toString(),
+                },
+            })
+            if (!signup) {
+                throw new Error('user is not signed up')
             }
-          })
-          if (!signup) {
-            throw new Error('user is not signed up')
-          }
-          if (signup.epoch !== currentEpoch) {
-            return 0
-          }
-          const leaf = hashLeftRight(this.commitment, computeInitUserStateRoot(
-            this.settings.userStateTreeDepth,
-            signup.attesterId,
-            signup.airdrop
-          ))
-          const { index } = await this._db.findOne('GSTLeaf', {
-            where: {
-              hash: leaf.toString(),
+            if (signup.epoch !== currentEpoch) {
+                return 0
             }
-          })
-          return index
-        }
-        if (latestTransitionedEpoch !== currentEpoch) {
-          return 0
+            const leaf = hashLeftRight(
+                this.commitment,
+                computeInitUserStateRoot(
+                    this.settings.userStateTreeDepth,
+                    signup.attesterId,
+                    signup.airdrop
+                )
+            )
+            const foundLeaf = await this._db.findOne('GSTLeaf', {
+                where: {
+                    hash: leaf.toString(),
+                },
+            })
+            if (!foundLeaf) return -1
+            return foundLeaf.index
         }
         const USTree = await this.genUserStateTree(latestTransitionedEpoch)
         const leaf = hashLeftRight(this.commitment, USTree.root)
-        const { index } = await this._db.findOne('GSTLeaf', {
-          where: {
-            hash: leaf.toString()
-          }
+        const foundLeaf = await this._db.findOne('GSTLeaf', {
+            where: {
+                epoch: currentEpoch,
+                hash: leaf.toString(),
+            },
         })
-        return index
+        if (!foundLeaf) return -1
+        return foundLeaf.index
     }
 
     /**
      * Computes the user state tree of given epoch
      */
-    public genUserStateTree = async (beforeEpoch: number = 2**32): Promise<SparseMerkleTree> => {
-        const allEpks = [] as string[]
+    public genUserStateTree = async (
+        beforeEpoch: number = 2 ** 32
+    ): Promise<SparseMerkleTree> => {
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        for (let x = 1; x <= latestTransitionedEpoch; x++) {
+        const orConditions = [] as any
+        for (
+            let x = 1;
+            x <= Math.min(beforeEpoch, latestTransitionedEpoch);
+            x++
+        ) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -179,48 +191,49 @@ export default class UserState extends Synchronizer {
                         this.settings.epochTreeDepth
                     ).toString()
                 )
-            allEpks.push(...epks)
+            orConditions.push({
+                epochKey: epks,
+                epoch: x,
+            })
         }
         const attestations = await this._db.findMany('Attestation', {
             where: {
-                epochKey: allEpks,
-                epoch: {
-                  lt: beforeEpoch
-                }
+                OR: orConditions,
             },
             orderBy: {
                 index: 'asc',
             },
         })
-          const signup = await this._db.findOne('UserSignUp', {
+        const signup = await this._db.findOne('UserSignUp', {
             where: {
-              commitment: this.commitment.toString(),
-            }
-          })
-          attestations.push({
+                commitment: this.commitment.toString(),
+            },
+        })
+        if (!signup) throw new Error('User is not signed up')
+        attestations.push({
             attesterId: signup.attesterId,
             posRep: signup.airdrop,
             negRep: 0,
             graffiti: 0,
             signUp: 1,
-          })
+        })
         const attestationsByAttesterId = attestations.reduce((acc, obj) => {
-          return {
-            ...acc,
-            [obj.attesterId]: [...(acc[obj.attesterId]) ?? [], obj],
-          }
+            return {
+                ...acc,
+                [obj.attesterId]: [...(acc[obj.attesterId] ?? []), obj],
+            }
         }, {})
         const USTree = new SparseMerkleTree(
             this.settings.userStateTreeDepth,
             defaultUserStateLeaf
         )
         for (const attesterId of Object.keys(attestationsByAttesterId)) {
-          const _attestations = attestationsByAttesterId[attesterId]
-          const r = Reputation.default()
-          for (const a of _attestations) {
-              r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
-          }
-          USTree.update(BigInt(attesterId), r.hash())
+            const _attestations = attestationsByAttesterId[attesterId]
+            const r = Reputation.default()
+            for (const a of _attestations) {
+                r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
+            }
+            USTree.update(BigInt(attesterId), r.hash())
         }
         return USTree
     }
@@ -273,21 +286,16 @@ export default class UserState extends Synchronizer {
 
     async getEpochKeys(epoch: number) {
         await this._checkValidEpoch(epoch)
-
-        // db isn't designed to handle epks right now, this is pretty
-        // inefficient
-        const attestations = await this._db.findMany('Attestation', {
-            where: {
-                epoch,
-            },
-        })
-        const epks = attestations.reduce((acc, attestation) => {
-            return {
-                ...acc,
-                [attestation.epochKey]: true,
-            }
-        }, {})
-        return Object.keys(epks)
+        return Array(this.settings.numEpochKeyNoncePerEpoch)
+            .fill(null)
+            .map((_, i) =>
+                genEpochKey(
+                    this.id.identityNullifier,
+                    epoch,
+                    i,
+                    this.settings.epochTreeDepth
+                )
+            )
     }
 
     async loadUSTProof(index: number): Promise<any> {
@@ -333,18 +341,18 @@ export default class UserState extends Synchronizer {
     ): Promise<IReputation> => {
         const r = Reputation.default()
         const signup = await this._db.findOne('UserSignUp', {
-          where: {
-            attesterId: Number(attesterId),
-            commitment: this.commitment.toString()
-          }
+            where: {
+                attesterId: Number(attesterId),
+                commitment: this.commitment.toString(),
+            },
         })
         if (signup) {
-          r.update(
-            BigNumber.from(signup.airdrop),
-            BigNumber.from(0),
-            BigNumber.from(0),
-            BigNumber.from(1),
-          )
+            r.update(
+                BigNumber.from(signup.airdrop),
+                BigNumber.from(0),
+                BigNumber.from(0),
+                BigNumber.from(1)
+            )
         }
         const allEpks = [] as string[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
@@ -464,7 +472,7 @@ export default class UserState extends Synchronizer {
             epochKeyNonce,
             this.settings.epochTreeDepth
         )
-        const userStateTree = await this.genUserStateTree()
+        const userStateTree = await this.genUserStateTree(epoch - 1)
         const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(leafIndex)
 
@@ -492,36 +500,6 @@ export default class UserState extends Synchronizer {
             epoch: results.publicSignals[1],
             epochKey: results.publicSignals[2],
         }
-    }
-
-    private _updateUserStateLeaf = (
-        attestation: IAttestation,
-        stateLeaves: IUserStateLeaf[]
-    ): IUserStateLeaf[] => {
-        const attesterId = BigInt(attestation.attesterId.toString())
-        for (const leaf of stateLeaves) {
-            if (leaf.attesterId === attesterId) {
-                leaf.reputation = leaf.reputation.update(
-                    attestation.posRep,
-                    attestation.negRep,
-                    attestation.graffiti,
-                    attestation.signUp
-                )
-                return stateLeaves
-            }
-        }
-        // If no matching state leaf, insert new one
-        const newLeaf: IUserStateLeaf = {
-            attesterId: attesterId,
-            reputation: Reputation.default().update(
-                attestation.posRep,
-                attestation.negRep,
-                attestation.graffiti,
-                attestation.signUp
-            ),
-        }
-        stateLeaves.push(newLeaf)
-        return stateLeaves
     }
 
     private _genStartTransitionCircuitInputs = async (
@@ -572,7 +550,7 @@ export default class UserState extends Synchronizer {
         // gstree proof unless we are signed up
         // this._checkUserSignUp()
         const fromEpoch = await this.latestTransitionedEpoch()
-        const leafIndex = await this.latestGSTLeafIndex()
+        const leafIndex = await this.latestGSTLeafIndex(fromEpoch)
         const fromNonce = 0
 
         // User state tree
@@ -930,7 +908,7 @@ export default class UserState extends Synchronizer {
         minRep?: number,
         proveGraffiti?: BigInt,
         graffitiPreImage?: BigInt,
-        nonceList?: BigInt[]
+        nonceList?: BigInt[] | number
     ) => {
         this._checkEpkNonce(epkNonce)
 
@@ -938,6 +916,16 @@ export default class UserState extends Synchronizer {
             nonceList = new Array(this.settings.maxReputationBudget).fill(
                 BigInt(-1)
             )
+        if (typeof nonceList === 'number') {
+            const spendRep = nonceList
+            nonceList = [] as BigInt[]
+            for (let i = 0; i < spendRep; i++) {
+                nonceList.push(BigInt(i))
+            }
+            for (let i = spendRep; i < this.settings.maxReputationBudget; i++) {
+                nonceList.push(BigInt(-1))
+            }
+        }
         assert(
             nonceList.length == this.settings.maxReputationBudget,
             `Length of nonce list should be ${this.settings.maxReputationBudget}`
@@ -1027,28 +1015,33 @@ export default class UserState extends Synchronizer {
         )
 
         return {
-            proof: results['proof'],
-            publicSignals: results['publicSignals'],
-            reputationNullifiers: results['publicSignals'].slice(
+            formattedProof: new ReputationProof(
+                results.publicSignals,
+                results.proof,
+                this.settings.maxReputationBudget
+            ),
+            proof: results.proof,
+            publicSignals: results.publicSignals,
+            reputationNullifiers: results.publicSignals.slice(
                 0,
                 this.settings.maxReputationBudget
             ),
-            epoch: results['publicSignals'][this.settings.maxReputationBudget],
+            epoch: results.publicSignals[this.settings.maxReputationBudget],
             epochKey:
-                results['publicSignals'][this.settings.maxReputationBudget + 1],
+                results.publicSignals[this.settings.maxReputationBudget + 1],
             globalStatetreeRoot:
-                results['publicSignals'][this.settings.maxReputationBudget + 2],
+                results.publicSignals[this.settings.maxReputationBudget + 2],
             attesterId:
-                results['publicSignals'][this.settings.maxReputationBudget + 3],
+                results.publicSignals[this.settings.maxReputationBudget + 3],
             proveReputationAmount:
-                results['publicSignals'][this.settings.maxReputationBudget + 4],
-            minRep: results['publicSignals'][
+                results.publicSignals[this.settings.maxReputationBudget + 4],
+            minRep: results.publicSignals[
                 this.settings.maxReputationBudget + 5
             ],
             proveGraffiti:
-                results['publicSignals'][this.settings.maxReputationBudget + 6],
+                results.publicSignals[this.settings.maxReputationBudget + 6],
             graffitiPreImage:
-                results['publicSignals'][this.settings.maxReputationBudget + 7],
+                results.publicSignals[this.settings.maxReputationBudget + 7],
         }
     }
 
