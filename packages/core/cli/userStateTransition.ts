@@ -77,8 +77,8 @@ const userStateTransition = async (args: any) => {
         startTransitionProof.proof
     )
     if (!isValid) {
-        console.error(
-            'Error: start state transition proof generated is not valid!'
+        console.log(
+            /**/ 'Error: start state transition proof generated is not valid!'
         )
     }
     let tx: ethers.ContractTransaction
@@ -97,6 +97,7 @@ const userStateTransition = async (args: any) => {
         return
     }
     console.log('Transaction hash:', tx.hash)
+    await userState.waitForSync()
 
     // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
@@ -106,8 +107,8 @@ const userStateTransition = async (args: any) => {
             processAttestationProofs[i].proof
         )
         if (!isValid) {
-            console.error(
-                'Error: process attestations proof generated is not valid!'
+            console.log(
+                /**/ 'Error: process attestations proof generated is not valid!'
             )
         }
 
@@ -129,6 +130,7 @@ const userStateTransition = async (args: any) => {
         }
         console.log('Transaction hash:', tx.hash)
     }
+    await userState.waitForSync()
 
     // Record all proof indexes
     const proofIndexes: ethers.BigNumber[] = []
@@ -160,8 +162,8 @@ const userStateTransition = async (args: any) => {
         finalTransitionProof.proof
     )
     if (!isValid) {
-        console.error(
-            'Error: user state transition proof generated is not valid!'
+        console.log(
+            /**/ 'Error: user state transition proof generated is not valid!'
         )
     }
 
@@ -172,8 +174,8 @@ const userStateTransition = async (args: any) => {
     for (let i = 0; i < epkNullifiers.length; i++) {
         const outputNullifier = finalTransitionProof.epochKeyNullifiers[i]
         if (outputNullifier != epkNullifiers[i]) {
-            console.error(
-                `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
+            console.log(
+                /**/ `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
             )
         }
     }
@@ -188,17 +190,17 @@ const userStateTransition = async (args: any) => {
         inputEpoch
     )
     if (!isGSTRootExisted) {
-        console.error('Error: invalid global state tree root')
+        console.log(/**/ 'Error: invalid global state tree root')
         return
     }
     if (!isEpochTreeExisted) {
-        console.error('Error: invalid epoch tree root')
+        console.log(/**/ 'Error: invalid epoch tree root')
         return
     }
     // Check if nullifiers submitted before
     for (const nullifier of epkNullifiers) {
         if (await userState.nullifierExist(nullifier)) {
-            console.error('Error: nullifier submitted before')
+            console.log(/**/ 'Error: nullifier submitted before')
             return
         }
     }
@@ -208,6 +210,9 @@ const userStateTransition = async (args: any) => {
         finalTransitionProof.publicSignals,
         finalTransitionProof.proof
     )
+    if (!(await USTProof.verify())) {
+    }
+    console.log(USTProof, proofIndexes)
     try {
         tx = await unirepContract
             .connect(wallet)
@@ -223,6 +228,7 @@ const userStateTransition = async (args: any) => {
     console.log(
         `User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`
     )
+    await userState.waitForSync()
 }
 
 export { userStateTransition, configureSubparser }

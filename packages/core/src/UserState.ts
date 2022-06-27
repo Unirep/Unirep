@@ -73,7 +73,7 @@ export default class UserState extends Synchronizer {
             const fromGSTIndex = 4 + this.settings.numEpochKeyNoncePerEpoch
             const fromEpoch = Number(publicSignals[fromEpochIndex])
             const fromGST = publicSignals[fromGSTIndex]
-            const tree = await this.genUserStateTree()
+            const tree = await this.genUserStateTree(epoch)
             if (GSTLeaf !== hashLeftRight(this.commitment, tree.root)) return
             try {
                 await this.userStateTransition(fromEpoch, GSTLeaf, fromGST)
@@ -172,15 +172,11 @@ export default class UserState extends Synchronizer {
      * Computes the user state tree of given epoch
      */
     public genUserStateTree = async (
-        beforeEpoch: number = 2 ** 32
+        beforeEpoch?: number
     ): Promise<SparseMerkleTree> => {
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         const orConditions = [] as any
-        for (
-            let x = 1;
-            x <= Math.min(beforeEpoch, latestTransitionedEpoch);
-            x++
-        ) {
+        for (let x = 1; x <= (beforeEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -210,13 +206,15 @@ export default class UserState extends Synchronizer {
             },
         })
         if (!signup) throw new Error('User is not signed up')
-        attestations.push({
-            attesterId: signup.attesterId,
-            posRep: signup.airdrop,
-            negRep: 0,
-            graffiti: 0,
-            signUp: 1,
-        })
+        if (signup.attesterId > 0) {
+            attestations.push({
+                attesterId: signup.attesterId,
+                posRep: signup.airdrop,
+                negRep: 0,
+                graffiti: 0,
+                signUp: 1,
+            })
+        }
         const attestationsByAttesterId = attestations.reduce((acc, obj) => {
             return {
                 ...acc,
@@ -243,28 +241,6 @@ export default class UserState extends Synchronizer {
      */
     public getUnirepStateCurrentEpoch = async (): Promise<number> => {
         return (await this.loadCurrentEpoch()).number
-    }
-
-    public genGSTree = async (
-        epoch: number
-    ): Promise<IncrementalMerkleTree> => {
-        await this._checkValidEpoch(epoch)
-        const tree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf
-        )
-        const leaves = await this._db.findMany('GSTLeaf', {
-            where: {
-                epoch,
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-        for (const leaf of leaves) {
-            tree.insert(BigInt(leaf.hash))
-        }
-        return tree
     }
 
     async getNumGSTLeaves(epoch: number) {
@@ -373,6 +349,7 @@ export default class UserState extends Synchronizer {
             where: {
                 epochKey: allEpks,
                 attesterId: Number(attesterId),
+                valid: true,
             },
             orderBy: {
                 index: 'asc',
@@ -449,9 +426,7 @@ export default class UserState extends Synchronizer {
         // await this._checkUserSignUp()
 
         const transitionToEpoch = (await this.loadCurrentEpoch()).number
-        const transitionToGSTIndex =
-            (await this.getNumGSTLeaves(transitionToEpoch)) - 1
-        const newState = await this.genUserStateTree()
+        const newState = await this.genUserStateTree(transitionToEpoch)
         if (GSTLeaf !== newState.root) {
             console.error('UserState: new GST leaf mismatch')
             return
@@ -938,7 +913,7 @@ export default class UserState extends Synchronizer {
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const signUp = rep.signUp
-        const userStateTree = await this.genUserStateTree()
+        const userStateTree = await this.genUserStateTree(epoch - 1)
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
         const GSTreeRoot = GSTree.root
@@ -1057,7 +1032,7 @@ export default class UserState extends Synchronizer {
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const signUp = rep.signUp
-        const userStateTree = await this.genUserStateTree()
+        const userStateTree = await this.genUserStateTree(epoch - 1)
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
         const GSTreeRoot = GSTree.root
