@@ -212,7 +212,7 @@ export default class UserState extends Synchronizer {
                 posRep: signup.airdrop,
                 negRep: 0,
                 graffiti: 0,
-                signUp: 1,
+                signUp: signup.signUp ?? 0,
             })
         }
         const attestationsByAttesterId = attestations.reduce((acc, obj) => {
@@ -327,12 +327,12 @@ export default class UserState extends Synchronizer {
                 BigNumber.from(signup.airdrop),
                 BigNumber.from(0),
                 BigNumber.from(0),
-                BigNumber.from(1)
+                BigNumber.from(signup.signUp ?? 0)
             )
         }
         const allEpks = [] as string[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        for (let x = 1; x <= latestTransitionedEpoch; x++) {
+        for (let x = 1; x < latestTransitionedEpoch; x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -447,7 +447,7 @@ export default class UserState extends Synchronizer {
             epochKeyNonce,
             this.settings.epochTreeDepth
         )
-        const userStateTree = await this.genUserStateTree(epoch - 1)
+        const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(leafIndex)
 
@@ -462,6 +462,7 @@ export default class UserState extends Synchronizer {
             epoch: epoch,
             epoch_key: epochKey,
         })
+        console.log(circuitInputs)
 
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
@@ -530,7 +531,7 @@ export default class UserState extends Synchronizer {
 
         // User state tree
         const fromEpochUserStateTree: SparseMerkleTree =
-            await this.genUserStateTree()
+            await this.genUserStateTree(fromEpoch - 1)
         const intermediateUserStateTreeRoots: BigInt[] = [
             fromEpochUserStateTree.root,
         ]

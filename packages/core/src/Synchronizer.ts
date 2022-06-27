@@ -265,29 +265,7 @@ export class Synchronizer extends EventEmitter {
         }
         return epochTree
     }
-
-    public genGSTree = async (
-        epoch: number
-    ): Promise<IncrementalMerkleTree> => {
-        await this._checkValidEpoch(epoch)
-        const tree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf
-        )
-        const leaves = await this._db.findMany('GSTLeaf', {
-            where: {
-                epoch,
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-        for (const leaf of leaves) {
-            tree.insert(BigInt(leaf.hash))
-        }
-        return tree
-    }
-
+    
     async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         const found = await this._db.findOne('GSTRoot', {
