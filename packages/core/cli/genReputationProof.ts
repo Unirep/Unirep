@@ -96,7 +96,7 @@ const genReputationProof = async (args: any) => {
     const repNullifiersAmount =
         args.reputation_nullifier != null ? args.reputation_nullifier : 0
     const nonceList: BigInt[] = []
-    const rep = userState.getRepByAttester(attesterId)
+    const rep = await userState.getRepByAttester(attesterId)
     let nonceStarter: number = -1
     if (repNullifiersAmount > 0) {
         // find valid nonce starter
