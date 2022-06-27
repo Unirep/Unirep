@@ -15,11 +15,7 @@ import {
     ReputationProof,
     Unirep,
 } from '@unirep/contracts'
-import {
-    Circuit,
-    genProofAndPublicSignals,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits'
+import { Circuit, defaultProver, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
 
 import {
     computeInitUserStateRoot,
@@ -111,7 +107,10 @@ describe('Reputation proof events in Unirep State', function () {
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -219,10 +218,11 @@ describe('Reputation proof events in Unirep State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
@@ -244,7 +244,10 @@ describe('Reputation proof events in Unirep State', function () {
                     .spendReputation(repProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('NullilierAlreadyUsed')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'NullilierAlreadyUsed'
+            )
         })
 
         it('spendReputation event should update Unirep state', async () => {
@@ -300,10 +303,11 @@ describe('Reputation proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
@@ -374,10 +378,11 @@ describe('Reputation proof events in Unirep State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             expect(publicSignals[0]).equal(repNullifier.toString())
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
@@ -451,10 +456,11 @@ describe('Reputation proof events in Unirep State', function () {
                 spendReputation
             )
             circuitInputs.GST_root = genRandomSalt().toString()
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.false
@@ -520,10 +526,11 @@ describe('Reputation proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
@@ -595,10 +602,11 @@ describe('Reputation proof events in Unirep State', function () {
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
@@ -670,10 +678,11 @@ describe('Reputation proof events in Unirep State', function () {
                 Number(attesterId),
                 spendReputation
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveReputation,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
             const repProofInput = new ReputationProof(publicSignals, proof)
             const isValid = await repProofInput.verify()
             expect(isValid).to.be.true
@@ -684,7 +693,7 @@ describe('Reputation proof events in Unirep State', function () {
                     .spendReputation(repProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })
 })
