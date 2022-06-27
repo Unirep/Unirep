@@ -46,7 +46,7 @@ const computeInitUserStateRoot = (
     airdropPosRep: number = 0
 ): BigInt => {
     const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
-    if (leafIdx) {
+    if (typeof leafIdx === 'number' && leafIdx > 0) {
         const airdropReputation = new Reputation(
             BigInt(airdropPosRep),
             BigInt(0),

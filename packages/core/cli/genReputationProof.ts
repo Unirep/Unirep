@@ -100,14 +100,18 @@ const genReputationProof = async (args: any) => {
     let nonceStarter: number = -1
     if (repNullifiersAmount > 0) {
         // find valid nonce starter
-        for (let n = 0; n < Number(rep.posRep) - Number(rep.negRep); n++) {
+        for (
+            let n = 0;
+            n < rep.posRep.toNumber() - rep.negRep.toNumber();
+            n++
+        ) {
             const reputationNullifier = genReputationNullifier(
                 id.identityNullifier,
                 epoch,
                 n,
                 attesterId
             )
-            if (!userState.nullifierExist(reputationNullifier)) {
+            if (!(await userState.nullifierExist(reputationNullifier))) {
                 nonceStarter = n
                 break
             }
@@ -117,7 +121,7 @@ const genReputationProof = async (args: any) => {
         }
         if (
             nonceStarter + repNullifiersAmount >
-            Number(rep.posRep) - Number(rep.negRep)
+            rep.posRep.toNumber() - rep.negRep.toNumber()
         ) {
             console.error('Error: Not enough reputation to spend')
         }

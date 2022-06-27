@@ -209,7 +209,7 @@ describe('User State', async function () {
             // GST should match
             const USTRoot = computeInitUserStateRoot(
                 setting.userStateTreeDepth,
-                attesterId,
+                attesterId.toNumber(),
                 airdropAmount
             )
             const GSTLeaf = hashLeftRight(id.genIdentityCommitment(), USTRoot)

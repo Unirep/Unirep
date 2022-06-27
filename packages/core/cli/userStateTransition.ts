@@ -212,7 +212,6 @@ const userStateTransition = async (args: any) => {
     )
     if (!(await USTProof.verify())) {
     }
-    console.log(USTProof, proofIndexes)
     try {
         tx = await unirepContract
             .connect(wallet)

@@ -212,7 +212,7 @@ export default class UserState extends Synchronizer {
                 posRep: signup.airdrop,
                 negRep: 0,
                 graffiti: 0,
-                signUp: signup.signUp ?? 0,
+                signUp: 1,
             })
         }
         const attestationsByAttesterId = attestations.reduce((acc, obj) => {
@@ -313,7 +313,8 @@ export default class UserState extends Synchronizer {
     }
 
     public getRepByAttester = async (
-        attesterId: BigInt
+        attesterId: BigInt,
+        toEpoch?: number
     ): Promise<IReputation> => {
         const r = Reputation.default()
         const signup = await this._db.findOne('UserSignUp', {
@@ -322,17 +323,17 @@ export default class UserState extends Synchronizer {
                 commitment: this.commitment.toString(),
             },
         })
-        if (signup) {
+        if (signup && signup.attesterId > 0) {
             r.update(
                 BigNumber.from(signup.airdrop),
                 BigNumber.from(0),
                 BigNumber.from(0),
-                BigNumber.from(signup.signUp ?? 0)
+                BigNumber.from(1)
             )
         }
         const allEpks = [] as string[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        for (let x = 1; x < latestTransitionedEpoch; x++) {
+        for (let x = 1; x < (toEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -447,7 +448,7 @@ export default class UserState extends Synchronizer {
             epochKeyNonce,
             this.settings.epochTreeDepth
         )
-        const userStateTree = await this.genUserStateTree(epoch)
+        const userStateTree = await this.genUserStateTree(epoch - 1)
         const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(leafIndex)
 
@@ -462,7 +463,6 @@ export default class UserState extends Synchronizer {
             epoch: epoch,
             epoch_key: epochKey,
         })
-        console.log(circuitInputs)
 
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
@@ -910,10 +910,10 @@ export default class UserState extends Synchronizer {
         const leafIndex = await this.latestGSTLeafIndex()
         const epochKey = genEpochKey(this.id.identityNullifier, epoch, epkNonce)
         const rep = await this.getRepByAttester(attesterId)
-        const posRep = rep.posRep
-        const negRep = rep.negRep
+        const posRep = rep.posRep.toNumber()
+        const negRep = rep.negRep.toNumber()
         const graffiti = rep.graffiti
-        const signUp = rep.signUp
+        const signUp = rep.signUp.toNumber()
         const userStateTree = await this.genUserStateTree(epoch - 1)
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
@@ -940,7 +940,7 @@ export default class UserState extends Synchronizer {
         let nonceStarter = -1
         if (repNullifiersAmount > 0) {
             // find valid nonce starter
-            for (let n = 0; n < Number(posRep) - Number(negRep); n++) {
+            for (let n = 0; n < posRep - negRep; n++) {
                 const reputationNullifier = genReputationNullifier(
                     this.id.identityNullifier,
                     epoch,
@@ -954,8 +954,7 @@ export default class UserState extends Synchronizer {
             }
             assert(nonceStarter != -1, 'All nullifiers are spent')
             assert(
-                nonceStarter + repNullifiersAmount <=
-                    Number(posRep) - Number(negRep),
+                nonceStarter + repNullifiersAmount <= posRep - negRep,
                 'Not enough reputation to spend'
             )
         }
@@ -1061,13 +1060,13 @@ export default class UserState extends Synchronizer {
         )
 
         return {
-            proof: results['proof'],
-            publicSignals: results['publicSignals'],
-            epoch: results['publicSignals'][0],
-            epochKey: results['publicSignals'][1],
-            globalStateTreeRoot: results['publicSignals'][2],
-            attesterId: results['publicSignals'][3],
-            userHasSignedUp: results['publicSignals'][4],
+            proof: results.proof,
+            publicSignals: results.publicSignals,
+            epoch: results.publicSignals[0],
+            epochKey: results.publicSignals[1],
+            globalStateTreeRoot: results.publicSignals[2],
+            attesterId: results.publicSignals[3],
+            userHasSignedUp: results.publicSignals[4],
         }
     }
 }

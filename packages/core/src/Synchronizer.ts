@@ -265,7 +265,7 @@ export class Synchronizer extends EventEmitter {
         }
         return epochTree
     }
-    
+
     async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         const found = await this._db.findOne('GSTRoot', {
