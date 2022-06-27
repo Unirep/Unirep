@@ -1,7 +1,11 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { UserTransitionProof, Attestation } from '@unirep/contracts'
+import {
+    UserTransitionProof,
+    Attestation,
+    IAttestation,
+} from '@unirep/contracts'
 import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
@@ -197,6 +201,26 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    async genGSTree(epoch: number): Promise<IncrementalMerkleTree> {
+        await this._checkValidEpoch(epoch)
+        const tree = new IncrementalMerkleTree(
+            this.settings.globalStateTreeDepth,
+            this.defaultGSTLeaf
+        )
+        const leaves = await this._db.findMany('GSTLeaf', {
+            where: {
+                epoch,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        for (const leaf of leaves) {
+            tree.insert(leaf.hash)
+        }
+        return tree
+    }
+
     async genEpochTree(epoch: number) {
         await this._checkValidEpoch(epoch)
         const treeDepths = await this.unirepContract.treeDepths()
@@ -275,11 +299,43 @@ export class Synchronizer extends EventEmitter {
         return !!found
     }
 
+    async epochTreeRootExists(
+        _epochTreeRoot: BigInt | string,
+        epoch: number
+    ): Promise<boolean> {
+        await this._checkValidEpoch(epoch)
+        const found = await this._db.findOne('Epoch', {
+            where: {
+                number: epoch,
+                epochRoot: _epochTreeRoot.toString(),
+            },
+        })
+        return !!found
+    }
+
+    async getNumGSTLeaves(epoch: number) {
+        await this._checkValidEpoch(epoch)
+        return this._db.count('GSTLeaf', {
+            epoch: epoch,
+        })
+    }
+
     async nullifierExist(nullifier: BigInt) {
         const count = await this._db.count('Nullifier', {
             nullifier: nullifier.toString(),
         })
         return count > 0
+    }
+
+    async getAttestations(epochKey: string): Promise<IAttestation[]> {
+        await this._checkEpochKeyRange(epochKey)
+        // TODO: transform db entries to IAttestation (they're already pretty similar)
+        return this._db.findMany('Attestation', {
+            where: {
+                epochKey,
+                valid: true,
+            },
+        })
     }
 
     async start() {

@@ -4,18 +4,13 @@ import { BigNumber, BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import {
-    Attestation,
     deployUnirep,
     EpochKeyProof,
     computeStartTransitionProofHash,
     computeProcessAttestationsProofHash,
     Unirep,
 } from '@unirep/contracts'
-import {
-    Circuit,
-    genProofAndPublicSignals,
-    EPOCH_LENGTH,
-} from '@unirep/circuits'
+import { Circuit, defaultProver, EPOCH_LENGTH } from '@unirep/circuits'
 import { SQLiteConnector } from 'anondb/node'
 import { schema } from '../../src/schema'
 import { DB } from 'anondb'
@@ -25,7 +20,6 @@ import {
     genUnirepState,
     ISettings,
     Reputation,
-    UnirepState,
     UserState,
 } from '../../src'
 import {
@@ -126,7 +120,10 @@ describe('User state transition events in Unirep State', async function () {
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -233,12 +230,6 @@ describe('User state transition events in Unirep State', async function () {
             maxReputationBudget,
         }
         it('Users should successfully perform user state transition', async () => {
-            // add user state manually
-            const UserSignedUpFilter = unirepContract.filters.UserSignedUp()
-            const userSignedUpEvents = await unirepContract.queryFilter(
-                UserSignedUpFilter
-            )
-
             for (let i = 0; i < userIds.length; i++) {
                 console.log(`process user: ${i + 1}`)
                 const randomUST = Math.round(Math.random())
@@ -248,28 +239,12 @@ describe('User state transition events in Unirep State', async function () {
                 }
                 const userState = new UserState(
                     db,
-                    mockProver,
+                    defaultProver,
                     unirepContract,
                     userIds[i]
                 )
                 await userState.setup()
-
-                for (let signUpEvent of userSignedUpEvents) {
-                    const args = signUpEvent?.args
-                    const epoch = Number(args?.epoch)
-                    const commitment = args?.identityCommitment.toBigInt()
-                    const attesterId = Number(args?.attesterId)
-                    const airdrop = Number(args?.airdropAmount)
-
-                    await userState.signUp(
-                        epoch,
-                        commitment,
-                        attesterId,
-                        airdrop
-                    )
-                }
-
-                await userState.epochTransition(1)
+                await userState.waitForSync()
 
                 const proofs = await userState.genUserStateTransitionProofs()
                 await submitUSTProofs(unirepContract, proofs)
@@ -307,23 +282,12 @@ describe('User state transition events in Unirep State', async function () {
             const n = transitionedUsers[0]
             const userState = new UserState(
                 db,
-                mockProver,
+                defaultProver,
                 unirepContract,
                 userIds[n]
             )
             await userState.setup()
-
-            for (let signUpEvent of userSignedUpEvents) {
-                const args = signUpEvent?.args
-                const epoch = Number(args?.epoch)
-                const commitment = args?.identityCommitment.toBigInt()
-                const attesterId = Number(args?.attesterId)
-                const airdrop = Number(args?.airdropAmount)
-
-                await userState.signUp(epoch, commitment, attesterId, airdrop)
-            }
-
-            await userState.epochTransition(1)
+            await userState.waitForSync()
 
             const proofs = await userState.genUserStateTransitionProofs()
             await submitUSTProofs(unirepContract, proofs)
@@ -434,17 +398,13 @@ describe('User state transition events in Unirep State', async function () {
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
             const userState = new UserState(
                 db,
-                mockProver,
+                defaultProver,
                 unirepContract,
                 userIds[0]
             )
 
-            const epoch = 1
-            const commitment = userIds[0].genIdentityCommitment()
-            const attesterId = 0
-            const airdrop = 0
-            await userState.signUp(epoch, commitment, attesterId, airdrop)
-            await userState.epochTransition(1)
+            await userState.start()
+            await userState.waitForSync()
 
             const proofs = await userState.genUserStateTransitionProofs()
             await submitUSTProofs(unirepContract, proofs)
@@ -457,40 +417,24 @@ describe('User state transition events in Unirep State', async function () {
         })
 
         it('mismatch proof indexes will not affect Unirep state', async () => {
-            const UserSignedUpFilter = unirepContract.filters.UserSignedUp()
-            const userSignedUpEvents = await unirepContract.queryFilter(
-                UserSignedUpFilter
-            )
             if (notTransitionUsers.length < 2) return
 
             const userState1 = new UserState(
                 db,
-                mockProver,
+                defaultProver,
                 unirepContract,
                 userIds[notTransitionUsers[0]]
             )
-            await userState1.setup()
+            await userState1.start()
             const userState2 = new UserState(
                 db,
-                mockProver,
+                defaultProver,
                 unirepContract,
                 userIds[notTransitionUsers[1]]
             )
-            await userState2.setup()
-
-            for (let signUpEvent of userSignedUpEvents) {
-                const args = signUpEvent?.args
-                const epoch = Number(args?.epoch)
-                const commitment = args?.identityCommitment.toBigInt()
-                const attesterId = Number(args?.attesterId)
-                const airdrop = Number(args?.airdropAmount)
-
-                await userState1.signUp(epoch, commitment, attesterId, airdrop)
-                await userState2.signUp(epoch, commitment, attesterId, airdrop)
-            }
-
-            await userState1.epochTransition(1)
-            await userState2.epochTransition(1)
+            await userState2.start()
+            await userState1.waitForSync()
+            await userState2.waitForSync()
 
             const { startTransitionProof, processAttestationProofs } =
                 await userState1.genUserStateTransitionProofs()
@@ -535,10 +479,11 @@ describe('User state transition events in Unirep State', async function () {
                     epkNonce
                 )
 
-                const { proof, publicSignals } = await genProofAndPublicSignals(
-                    Circuit.verifyEpochKey,
-                    circuitInputs
-                )
+                const { proof, publicSignals } =
+                    await defaultProver.genProofAndPublicSignals(
+                        Circuit.verifyEpochKey,
+                        circuitInputs
+                    )
                 const epkProofInput = new EpochKeyProof(publicSignals, proof)
                 const isValid = await epkProofInput.verify()
                 expect(isValid).to.be.true
@@ -662,50 +607,14 @@ describe('User state transition events in Unirep State', async function () {
                 console.log('transition user', i)
                 const userState = new UserState(
                     db,
-                    mockProver,
+                    defaultProver,
                     unirepContract,
                     userIds[i]
                 )
-                await userState.setup()
-
-                for (let signUpEvent of userSignedUpEvents) {
-                    const args = signUpEvent?.args
-                    const epoch = Number(args?.epoch)
-                    const commitment = args?.identityCommitment.toBigInt()
-                    const attesterId = Number(args?.attesterId)
-                    const airdrop = Number(args?.airdropAmount)
-
-                    await userState.signUp(
-                        epoch,
-                        commitment,
-                        attesterId,
-                        airdrop
-                    )
-                }
-
-                await userState.epochTransition(1)
-                for (let USTEvent of USTProofEvents) {
-                    const args = USTEvent?.args?.proof
-                    const fromEpoch = Number(args?.transitionFromEpoch)
-                    const newGSTLeaf = args?.newGlobalStateTreeLeaf.toBigInt()
-                    const nullifiers = args?.epkNullifiers.map((n) =>
-                        n.toBigInt()
-                    )
-                    if (
-                        !userState.nullifierExist(nullifiers[0]) &&
-                        (await unirepStateBefore.nullifierExist(nullifiers[0]))
-                    ) {
-                        await userState.userStateTransition(
-                            fromEpoch,
-                            newGSTLeaf
-                        )
-                    }
-                }
+                await userState.start()
+                await userState.waitForSync()
 
                 expect((await userState.genGSTree(epoch)).root).equal(GSTRoot)
-
-                await userState.epochTransition(2)
-
                 const proofs = await userState.genUserStateTransitionProofs()
                 await submitUSTProofs(unirepContract, proofs)
 

@@ -8,7 +8,7 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { Circuit, defaultProver } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
 import { genUnirepState, Reputation } from '../../src'
@@ -93,7 +93,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -178,10 +181,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveUserSignUp,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveUserSignUp,
+                    circuitInputs
+                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
@@ -203,7 +207,10 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                     .airdropEpochKey(airdropProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('NullilierAlreadyUsed')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'NullilierAlreadyUsed'
+            )
         })
 
         it('airdropEpochKey event should update Unirep state', async () => {
@@ -258,10 +265,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 BigInt(attesterId)
             )
             circuitInputs.GST_root = genRandomSalt().toString()
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveUserSignUp,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveUserSignUp,
+                    circuitInputs
+                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.false
@@ -338,10 +346,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveUserSignUp,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveUserSignUp,
+                    circuitInputs
+                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
@@ -408,10 +417,11 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                 reputationRecords,
                 BigInt(attesterId)
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.proveUserSignUp,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveUserSignUp,
+                    circuitInputs
+                )
             const airdropProofInput = new SignUpProof(publicSignals, proof)
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.true
@@ -422,7 +432,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep State', function (
                     .airdropEpochKey(airdropProofInput, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })
 })

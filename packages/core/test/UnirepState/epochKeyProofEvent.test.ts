@@ -8,7 +8,7 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, genProofAndPublicSignals } from '@unirep/circuits'
+import { Circuit, defaultProver } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 import {
     computeInitUserStateRoot,
@@ -101,7 +101,10 @@ describe('Epoch key proof events in Unirep State', function () {
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -194,10 +197,11 @@ describe('Epoch key proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
@@ -214,7 +218,10 @@ describe('Epoch key proof events in Unirep State', function () {
             // submit the same proof twice should fail
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith('NullilierAlreadyUsed')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'NullilierAlreadyUsed'
+            )
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
@@ -258,10 +265,11 @@ describe('Epoch key proof events in Unirep State', function () {
                 epkNonce
             )
             circuitInputs.GST_root = genRandomSalt().toString()
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.false
@@ -321,10 +329,11 @@ describe('Epoch key proof events in Unirep State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
@@ -381,17 +390,18 @@ describe('Epoch key proof events in Unirep State', function () {
                 wrongEpoch,
                 epkNonce
             )
-            const { proof, publicSignals } = await genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.verifyEpochKey,
+                    circuitInputs
+                )
             const epkProofInput = new EpochKeyProof(publicSignals, proof)
             const isValid = await epkProofInput.verify()
             expect(isValid).to.be.true
 
             await expect(
                 unirepContract.submitEpochKeyProof(epkProofInput)
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })
 })

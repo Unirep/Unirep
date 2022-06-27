@@ -112,7 +112,10 @@ describe('User sign up events in Unirep State', function () {
                     unirepContract
                         .connect(attester['acct'])
                         .userSignUp(commitment)
-                ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    `UserAlreadySignedUp`
+                )
 
                 const unirepState = await genUnirepState(
                     hardhatEthers.provider,
@@ -190,32 +193,6 @@ describe('User sign up events in Unirep State', function () {
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
             }
-        })
-
-        it('Sign up users more than contract capacity will not affect Unirep state', async () => {
-            const unirepStateBefore = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            const unirepEpoch = (await unirepStateBefore.loadCurrentEpoch())
-                .number
-            const unirepGSTLeavesBefore =
-                await unirepStateBefore.getNumGSTLeaves(unirepEpoch)
-
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
-            await expect(
-                unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
-
-            const unirepState = await genUnirepState(
-                hardhatEthers.provider,
-                unirepContract.address
-            )
-            const unirepGSTLeaves = await unirepState.getNumGSTLeaves(
-                unirepEpoch
-            )
-            expect(unirepGSTLeaves).equal(unirepGSTLeavesBefore)
         })
 
         it('Check GST roots match Unirep state', async () => {
