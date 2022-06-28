@@ -1,7 +1,6 @@
 export * from './interfaces'
 
 import Reputation from './Reputation'
-import UnirepState from './UnirepState'
 import UserState from './UserState'
 
 export * from './utils'
@@ -11,7 +10,7 @@ export {
     REPUTATION_NULLIFIER_DOMAIN,
 } from '../config/nullifierDomainSeparator'
 
-export { UnirepState, Reputation, UserState }
+export { Reputation, UserState }
 
 export { Synchronizer } from './Synchronizer'
 export { schema } from './schema'
