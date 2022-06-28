@@ -332,7 +332,8 @@ const submitUSTProofs = async (
     }
     const USTInput = new UserTransitionProof(
         finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
+        finalTransitionProof.proof,
+        defaultProver
     )
     isValid = await USTInput.verify()
     expect(isValid).to.be.true

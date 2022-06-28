@@ -119,7 +119,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 const airdroppedAmount = await unirepContract.airdropAmount(
                     attester['addr']
                 )
-                const newUSTRoot = await computeInitUserStateRoot(
+                const newUSTRoot = computeInitUserStateRoot(
                     treeDepths.userStateTreeDepth,
                     Number(attesterId),
                     Number(airdroppedAmount)
@@ -179,24 +179,24 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 0
-            const { proof, publicSignals } =
-                await userState.genVerifyEpochKeyProof(epkNonce)
-            const epkProofInput = new EpochKeyProof(publicSignals, proof)
-            const isValid = await epkProofInput.verify()
+            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+                epkNonce
+            )
+            const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            const tx = await unirepContract.submitEpochKeyProof(formattedProof)
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            epochKey = epkProofInput.epochKey
+            epochKey = formattedProof.epochKey
             proofIndex = Number(
-                await unirepContract.getProofIndex(epkProofInput.hash())
+                await unirepContract.getProofIndex(formattedProof.hash())
             )
 
             // submit the same proof twice should fail
             await expect(
-                unirepContract.submitEpochKeyProof(epkProofInput)
+                unirepContract.submitEpochKeyProof(formattedProof)
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 'NullilierAlreadyUsed'
@@ -236,20 +236,21 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 1
-            const { proof, publicSignals } =
-                await userState.genVerifyEpochKeyProof(epkNonce)
-            publicSignals[0] = genRandomSalt().toString()
-            const epkProofInput = new EpochKeyProof(publicSignals, proof)
-            const isValid = await epkProofInput.verify()
+            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+                epkNonce
+            )
+            formattedProof.publicSignals[0] = formattedProof.globalStateTree =
+                genRandomSalt().toString()
+            const isValid = await formattedProof.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            const tx = await unirepContract.submitEpochKeyProof(formattedProof)
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            epochKey = epkProofInput.epochKey
+            epochKey = formattedProof.epochKey
             proofIndex = Number(
-                await unirepContract.getProofIndex(epkProofInput.hash())
+                await unirepContract.getProofIndex(formattedProof.hash())
             )
         })
 
@@ -299,22 +300,26 @@ describe('Epoch key proof events in Unirep User State', function () {
                 epoch,
                 epkNonce
             )
-            const { proof, publicSignals } =
+            const { publicSignals, proof } =
                 await defaultProver.genProofAndPublicSignals(
                     Circuit.verifyEpochKey,
                     circuitInputs
                 )
-            const epkProofInput = new EpochKeyProof(publicSignals, proof)
-            const isValid = await epkProofInput.verify()
+            const formattedProof = new EpochKeyProof(
+                publicSignals,
+                proof,
+                defaultProver
+            )
+            const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(epkProofInput)
+            const tx = await unirepContract.submitEpochKeyProof(formattedProof)
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            epochKey = epkProofInput.epochKey
+            epochKey = formattedProof.epochKey
             proofIndex = Number(
-                await unirepContract.getProofIndex(epkProofInput.hash())
+                await unirepContract.getProofIndex(formattedProof.hash())
             )
         })
 
@@ -360,17 +365,21 @@ describe('Epoch key proof events in Unirep User State', function () {
                 epkNonce
             )
 
-            const { proof, publicSignals } =
+            const { publicSignals, proof } =
                 await defaultProver.genProofAndPublicSignals(
                     Circuit.verifyEpochKey,
                     circuitInputs
                 )
-            const epkProofInput = new EpochKeyProof(publicSignals, proof)
-            const isValid = await epkProofInput.verify()
+            const formattedProof = new EpochKeyProof(
+                publicSignals,
+                proof,
+                defaultProver
+            )
+            const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
             await expect(
-                unirepContract.submitEpochKeyProof(epkProofInput)
+                unirepContract.submitEpochKeyProof(formattedProof)
             ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })

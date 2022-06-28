@@ -14,7 +14,7 @@ export interface Prover {
         name: string | Circuit,
         publicSignals: any,
         proof: any
-    ) => Promise<Boolean>
+    ) => Promise<boolean>
 
     genProofAndPublicSignals: (
         proofType: string | Circuit,

@@ -15,6 +15,8 @@ import {
     Attestation,
     UserTransitionProof,
     ReputationProof,
+    EpochKeyProof,
+    SignUpProof,
 } from '@unirep/contracts'
 import {
     defaultUserStateLeaf,
@@ -470,6 +472,11 @@ export default class UserState extends Synchronizer {
         )
 
         return {
+            formattedProof: new EpochKeyProof(
+                results.publicSignals,
+                results.proof,
+                this.prover
+            ),
             proof: results.proof,
             publicSignals: results.publicSignals,
             globalStateTree: results.publicSignals[0],
@@ -993,6 +1000,7 @@ export default class UserState extends Synchronizer {
             formattedProof: new ReputationProof(
                 results.publicSignals,
                 results.proof,
+                this.prover,
                 this.settings.maxReputationBudget
             ),
             proof: results.proof,
@@ -1060,6 +1068,11 @@ export default class UserState extends Synchronizer {
         )
 
         return {
+            formattedProof: new SignUpProof(
+                results.publicSignals,
+                results.proof,
+                this.prover
+            ),
             proof: results.proof,
             publicSignals: results.publicSignals,
             epoch: results.publicSignals[0],

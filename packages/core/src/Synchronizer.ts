@@ -791,7 +791,9 @@ export class Synchronizer extends EventEmitter {
         const proof_ = JSON.parse(proof)
         const formatProof = new UserTransitionProof(
             publicSignals_,
-            formatProofForSnarkjsVerification(proof_)
+            formatProofForSnarkjsVerification(proof_),
+            this.prover,
+            this.settings.numEpochKeyNoncePerEpoch
         )
         for (const blindedHC of formatProof.blindedHashChains) {
             const findBlindHC = await this._db.findOne('Proof', {

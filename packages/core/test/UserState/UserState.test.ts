@@ -882,7 +882,8 @@ describe('User State', async function () {
 
             const transitionProof = new UserTransitionProof(
                 finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
+                finalTransitionProof.proof,
+                defaultProver
             )
 
             await unirepContract
@@ -1069,7 +1070,8 @@ describe('User State', async function () {
 
             const transitionProof = new UserTransitionProof(
                 finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
+                finalTransitionProof.proof,
+                defaultProver
             )
 
             await unirepContract

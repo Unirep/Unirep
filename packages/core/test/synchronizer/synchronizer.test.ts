@@ -12,9 +12,6 @@ import {
     computeProcessAttestationsProofHash,
     computeStartTransitionProofHash,
     deployUnirep,
-    EpochKeyProof,
-    ReputationProof,
-    SignUpProof,
     UserTransitionProof,
 } from '@unirep/contracts'
 
@@ -160,14 +157,13 @@ describe('Synchronizer process events', function () {
         )
         const epoch = await synchronizer.unirepContract.currentEpoch()
         const epochKeyNonce = 2
-        const { proof, publicSignals } = await userState.genVerifyEpochKeyProof(
+        const { formattedProof } = await userState.genVerifyEpochKeyProof(
             epochKeyNonce
         )
-        const epochKeyProof = new EpochKeyProof(publicSignals, proof)
-        const isValid = await epochKeyProof.verify()
+        const isValid = await formattedProof.verify()
         expect(isValid, 'Verify epk proof off-chain failed').to.be.true
         const receipt = await synchronizer.unirepContract
-            .submitEpochKeyProof(epochKeyProof)
+            .submitEpochKeyProof(formattedProof)
             .then((t) => t.wait())
         await proofEvent
         await synchronizer.waitForSync()
@@ -181,22 +177,22 @@ describe('Synchronizer process events', function () {
         expect(storedProofs[0].valid).to.equal(1)
         expect(storedProofs[0].epoch).to.equal(epoch.toNumber())
         expect(storedProofs[0].globalStateTree).to.equal(
-            epochKeyProof.globalStateTree.toString()
+            formattedProof.globalStateTree.toString()
         )
         // compare the proof
         const storedProof = decodeBigIntArray(storedProofs[0].proof)
-        expect(epochKeyProof.proof.length).to.equal(storedProof.length)
-        for (let x = 0; x < epochKeyProof.proof.length; x++) {
-            expect(epochKeyProof.proof[x]).to.equal(storedProof[x].toString())
+        expect(formattedProof.proof.length).to.equal(storedProof.length)
+        for (let x = 0; x < formattedProof.proof.length; x++) {
+            expect(formattedProof.proof[x]).to.equal(storedProof[x].toString())
         }
         const storedPublicSignals = decodeBigIntArray(
             storedProofs[0].publicSignals
         )
-        expect(epochKeyProof.publicSignals.length).to.equal(
+        expect(formattedProof.publicSignals.length).to.equal(
             storedPublicSignals.length
         )
-        for (let x = 0; x < epochKeyProof.publicSignals.length; x++) {
-            expect(epochKeyProof.publicSignals[x]).to.equal(
+        for (let x = 0; x < formattedProof.publicSignals.length; x++) {
+            expect(formattedProof.publicSignals[x]).to.equal(
                 storedPublicSignals[x].toString()
             )
         }
@@ -216,7 +212,7 @@ describe('Synchronizer process events', function () {
             synchronizer.once(AttestationSubmitted, (event) => rs(event))
         )
         const proofIndex = await synchronizer.unirepContract.getProofIndex(
-            epochKeyProof.hash()
+            formattedProof.hash()
         )
         const attestation = genRandomAttestation()
         attestation.attesterId = await synchronizer.unirepContract.attesters(
@@ -226,7 +222,7 @@ describe('Synchronizer process events', function () {
             .connect(accounts[1])
             .submitAttestation(
                 attestation,
-                epochKeyProof.epochKey,
+                formattedProof.epochKey,
                 proofIndex,
                 0, // from proof index
                 { value: attestingFee }
@@ -259,7 +255,7 @@ describe('Synchronizer process events', function () {
         )
         expect(attestations[0].proofIndex).to.equal(proofIndex.toNumber())
         expect(attestations[0].epochKey).to.equal(
-            epochKeyProof.epochKey.toString()
+            formattedProof.epochKey.toString()
         )
         expect(attestations[0].epochKeyToHashchainMap).to.equal(null)
         const finalProofCount = await (synchronizer as any)._db.count(
@@ -304,32 +300,28 @@ describe('Synchronizer process events', function () {
         for (let i = nonceList.length; i < maxReputationBudget; i++) {
             nonceList.push(BigInt(-1))
         }
-        const { proof, publicSignals } =
-            await userState.genProveReputationProof(
-                (
-                    await synchronizer.unirepContract.attesters(
-                        accounts[1].address
-                    )
-                ).toBigInt(),
-                epochKeyNonce,
-                minRep,
-                proveGraffiti,
-                graffitiPreimage,
-                nonceList
-            )
-        const reputationProof = new ReputationProof(publicSignals, proof)
-        const isValid = await reputationProof.verify()
+        const { formattedProof } = await userState.genProveReputationProof(
+            (
+                await synchronizer.unirepContract.attesters(accounts[1].address)
+            ).toBigInt(),
+            epochKeyNonce,
+            minRep,
+            proveGraffiti,
+            graffitiPreimage,
+            nonceList
+        )
+        const isValid = await formattedProof.verify()
         expect(isValid, 'Verify rep proof off-chain failed').to.be.true
 
         const proofCount = await (synchronizer as any)._db.count('Proof', {})
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .spendReputation(reputationProof, { value: attestingFee })
+            .spendReputation(formattedProof, { value: attestingFee })
             .then((t) => t.wait())
         await proofEvent
         await synchronizer.waitForSync()
         const proofIndex = await synchronizer.unirepContract.getProofIndex(
-            reputationProof.hash()
+            formattedProof.hash()
         )
         const storedProofs = await (synchronizer as any)._db.findMany('Proof', {
             where: {
@@ -342,22 +334,22 @@ describe('Synchronizer process events', function () {
         expect(storedProofs[0].valid).to.equal(1)
         expect(storedProofs[0].epoch).to.equal(epoch.toNumber())
         expect(storedProofs[0].globalStateTree).to.equal(
-            reputationProof.globalStateTree.toString()
+            formattedProof.globalStateTree.toString()
         )
         // compare the proof
         const storedProof = decodeBigIntArray(storedProofs[0].proof)
-        expect(reputationProof.proof.length).to.equal(storedProof.length)
-        for (let x = 0; x < reputationProof.proof.length; x++) {
-            expect(reputationProof.proof[x]).to.equal(storedProof[x].toString())
+        expect(formattedProof.proof.length).to.equal(storedProof.length)
+        for (let x = 0; x < formattedProof.proof.length; x++) {
+            expect(formattedProof.proof[x]).to.equal(storedProof[x].toString())
         }
         const storedPublicSignals = decodeBigIntArray(
             storedProofs[0].publicSignals
         )
-        expect(reputationProof.publicSignals.length).to.equal(
+        expect(formattedProof.publicSignals.length).to.equal(
             storedPublicSignals.length
         )
-        for (let x = 0; x < reputationProof.publicSignals.length; x++) {
-            expect(reputationProof.publicSignals[x]).to.equal(
+        for (let x = 0; x < formattedProof.publicSignals.length; x++) {
+            expect(formattedProof.publicSignals[x]).to.equal(
                 storedPublicSignals[x].toString()
             )
         }
@@ -399,25 +391,24 @@ describe('Synchronizer process events', function () {
             synchronizer.unirepContract.address,
             id
         )
-        const { proof, publicSignals } = await userState.genUserSignUpProof(
+        const { formattedProof } = await userState.genUserSignUpProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
             ).toBigInt()
         )
-        const userSignUpProof = new SignUpProof(publicSignals, proof)
-        const isValid = await userSignUpProof.verify()
+        const isValid = await formattedProof.verify()
         expect(isValid, 'Verify sign up proof off-chain failed').to.be.true
 
         const proofCount = await (synchronizer as any)._db.count('Proof', {})
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .airdropEpochKey(userSignUpProof, {
+            .airdropEpochKey(formattedProof, {
                 value: attestingFee,
                 gasLimit: 1000000,
             })
             .then((t) => t.wait())
         const proofIndex = await synchronizer.unirepContract.getProofIndex(
-            userSignUpProof.hash()
+            formattedProof.hash()
         )
         await proofEvent
         await synchronizer.waitForSync()
@@ -432,22 +423,22 @@ describe('Synchronizer process events', function () {
         expect(storedProofs[0].valid).to.equal(1)
         expect(storedProofs[0].epoch).to.equal(epoch.toNumber())
         expect(storedProofs[0].globalStateTree).to.equal(
-            userSignUpProof.globalStateTree.toString()
+            formattedProof.globalStateTree.toString()
         )
         // compare the proof
         const storedProof = decodeBigIntArray(storedProofs[0].proof)
-        expect(userSignUpProof.proof.length).to.equal(storedProof.length)
-        for (let x = 0; x < userSignUpProof.proof.length; x++) {
-            expect(userSignUpProof.proof[x]).to.equal(storedProof[x].toString())
+        expect(formattedProof.proof.length).to.equal(storedProof.length)
+        for (let x = 0; x < formattedProof.proof.length; x++) {
+            expect(formattedProof.proof[x]).to.equal(storedProof[x].toString())
         }
         const storedPublicSignals = decodeBigIntArray(
             storedProofs[0].publicSignals
         )
-        expect(userSignUpProof.publicSignals.length).to.equal(
+        expect(formattedProof.publicSignals.length).to.equal(
             storedPublicSignals.length
         )
-        for (let x = 0; x < userSignUpProof.publicSignals.length; x++) {
-            expect(userSignUpProof.publicSignals[x]).to.equal(
+        for (let x = 0; x < formattedProof.publicSignals.length; x++) {
+            expect(formattedProof.publicSignals[x]).to.equal(
                 storedPublicSignals[x].toString()
             )
         }
@@ -654,7 +645,8 @@ describe('Synchronizer process events', function () {
 
         const transitionProof = new UserTransitionProof(
             finalTransitionProof.publicSignals,
-            finalTransitionProof.proof
+            finalTransitionProof.proof,
+            defaultProver
         )
 
         const [UserStateTransitioned] =

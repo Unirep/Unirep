@@ -3,7 +3,10 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
 import { genEpochKey, Attestation } from './utils'
@@ -27,7 +30,8 @@ describe('Attesting', () => {
     const publicSignals = [genRandomSalt(), epoch, epochKey]
     const epochKeyProof = new EpochKeyProof(
         publicSignals as BigNumberish[],
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     let epochKeyProofIndex
     const senderPfIdx = 0
@@ -88,7 +92,8 @@ describe('Attesting', () => {
         const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
         const wrongEpochKeyProof = new EpochKeyProof(
             wrongSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
@@ -99,7 +104,8 @@ describe('Attesting', () => {
         const wrongEpochKey = genRandomSalt()
         const wrongEpochKeyProof = new EpochKeyProof(
             [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)

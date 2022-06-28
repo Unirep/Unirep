@@ -2,21 +2,10 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import {
-    genRandomSalt,
-    ZkIdentity,
-    hashLeftRight,
-    IncrementalMerkleTree,
-} from '@unirep/crypto'
-import { Circuit, defaultProver } from '@unirep/circuits'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { Attestation, deployUnirep, EpochKeyProof } from '@unirep/contracts'
 
-import {
-    genReputationNullifier,
-    genUnirepState,
-    genUserState,
-    Reputation,
-} from '../../src'
+import { genReputationNullifier, genUserState } from '../../src'
 import { compareAttestations, genRandomAttestation } from '../utils'
 
 // test constants

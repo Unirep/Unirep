@@ -53,11 +53,11 @@ const formatProofAndPublicSignals = (
     let result
     const formattedProof: any[] = formatProofForVerifierContract(proof)
     if (circuit === Circuit.proveReputation) {
-        result = new ReputationProof(publicSignals, proof)
+        result = new ReputationProof(publicSignals, proof, defaultProver)
     } else if (circuit === Circuit.verifyEpochKey) {
-        result = new EpochKeyProof(publicSignals, proof)
+        result = new EpochKeyProof(publicSignals, proof, defaultProver)
     } else if (circuit === Circuit.proveUserSignUp) {
-        result = new SignUpProof(publicSignals, proof)
+        result = new SignUpProof(publicSignals, proof, defaultProver)
     } else if (circuit === Circuit.startTransition) {
         result = {
             blindedUserState: publicSignals[0],
@@ -73,7 +73,7 @@ const formatProofAndPublicSignals = (
             proof: formattedProof,
         }
     } else if (circuit === Circuit.userStateTransition) {
-        result = new UserTransitionProof(publicSignals, proof)
+        result = new UserTransitionProof(publicSignals, proof, defaultProver)
     } else {
         result = publicSignals.concat([formattedProof])
     }

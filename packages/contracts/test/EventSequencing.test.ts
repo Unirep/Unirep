@@ -8,6 +8,7 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     formatProofForSnarkjsVerification,
+    defaultProver,
 } from '@unirep/circuits'
 import { genEpochKey, Attestation } from './utils'
 import { deployUnirep, EpochKeyProof, Event } from '../src'
@@ -68,7 +69,8 @@ describe('EventSequencing', () => {
         let publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         let epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
         receipt = await tx.wait()
@@ -220,7 +222,8 @@ describe('EventSequencing', () => {
         publicSignals = [genRandomSalt(), currentEpoch, epochKey]
         epochKeyProof = new EpochKeyProof(
             publicSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         tx = await unirepContract
             .connect(attester)
