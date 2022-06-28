@@ -139,7 +139,7 @@ class EpochKeyProof implements IEpochKeyProof {
     public epoch: Field
     public epochKey: Field
     public proof: Field[]
-    private publicSignals: Field[]
+    readonly publicSignals: Field[]
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
         const formattedProof: any[] = formatProofForVerifierContract(_proof)
@@ -179,7 +179,7 @@ class ReputationProof implements IReputationProof {
     public proveGraffiti: Field
     public graffitiPreImage: Field
     public proof: Field[]
-    private publicSignals: Field[]
+    readonly publicSignals: Field[]
 
     constructor(
         _publicSignals: Field[],
@@ -240,7 +240,7 @@ class SignUpProof implements ISignUpProof {
     public attesterId: Field
     public userHasSignedUp: Field
     public proof: Field[]
-    private publicSignals: Field[]
+    readonly publicSignals: Field[]
 
     constructor(_publicSignals: Field[], _proof: SnarkProof) {
         const formattedProof: any[] = formatProofForVerifierContract(_proof)

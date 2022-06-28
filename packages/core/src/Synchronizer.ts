@@ -10,6 +10,8 @@ import {
     computeEmptyUserStateRoot,
     computeInitUserStateRoot,
     SMT_ONE_LEAF,
+    encodeBigIntArray,
+    decodeBigIntArray,
 } from './utils'
 import {
     Prover,
@@ -19,19 +21,9 @@ import {
 import {
     hashLeftRight,
     SparseMerkleTree,
-    stringifyBigInts,
-    unstringifyBigInts,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 import { ISettings } from './interfaces'
-
-const encodeBigIntArray = (arr: BigInt[]): string => {
-    return JSON.stringify(stringifyBigInts(arr))
-}
-
-const decodeBigIntArray = (input: string): bigint[] => {
-    return unstringifyBigInts(JSON.parse(input))
-}
 
 // For backward compatibility with the old AttestationEvent
 // https://github.com/Unirep/contracts/blob/master/contracts/Unirep.sol#L125
@@ -335,7 +327,10 @@ export class Synchronizer extends EventEmitter {
         this.provider.on('block', (num) => {
             if (num > latestBlock) latestBlock = num
         })
-        let latestProcessed = 0
+        const startState = await this._db.findOne('SynchronizerState', {
+            where: {},
+        })
+        let latestProcessed = startState?.latestCompleteBlock ?? 0
         // TODO: remove this
         // await this._db.create('BlockNumber', {
         //     number: latestProcessed,

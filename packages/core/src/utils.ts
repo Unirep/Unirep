@@ -6,9 +6,10 @@ import {
     SparseMerkleTree,
     SnarkBigInt,
     ZkIdentity,
+    stringifyBigInts,
+    unstringifyBigInts,
 } from '@unirep/crypto'
 
-import { IUserState } from './interfaces'
 import Reputation from './Reputation'
 import UserState from './UserState'
 import {
@@ -25,6 +26,14 @@ import { SQLiteConnector } from 'anondb/node'
 import { Synchronizer } from './Synchronizer'
 import { schema } from './schema'
 import { DB } from 'anondb'
+
+export const encodeBigIntArray = (arr: BigInt[]): string => {
+    return JSON.stringify(stringifyBigInts(arr))
+}
+
+export const decodeBigIntArray = (input: string): bigint[] => {
+    return unstringifyBigInts(JSON.parse(input))
+}
 
 const defaultUserStateLeaf = hash5([
     BigInt(0),
