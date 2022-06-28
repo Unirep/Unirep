@@ -37,6 +37,9 @@ import {
     toCompleteHexString,
 } from '../../circuits/test/utils'
 import { IAttestation } from '@unirep/contracts'
+import { getUnirepContract } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
+import { SQLiteConnector } from 'anondb/node'
 
 const genNewGST = (
     GSTDepth: number,
@@ -343,37 +346,57 @@ const submitUSTProofs = async (
     ).to.be.revertedWithCustomError(contract, 'NullilierAlreadyUsed')
 }
 
-// const compareStates = async (
-//     provider: ethers.providers.Provider,
-//     address: string,
-//     userId: ZkIdentity,
-//     savedUserState: IUserState
-// ) => {
-//     const usWithNoStorage = await genUserState(provider, address, userId)
-//     // const unirepStateWithNoStorage = await genUnirepState(provider, address)
-//     const usWithStorage = await genUserState(
-//         provider,
-//         address,
-//         userId,
-//         savedUserState
-//     )
-//     // const unirepStateWithStorage = await genUnirepState(
-//     //     provider,
-//     //     address,
-//     //     savedUserState.unirepState
-//     // )
-//     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-//     // const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
-//     expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
-//     expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
-//     // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-//     //     unirepStateWithStorage.toJSON()
-//     // )
-//     // expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-//     //     unirepFromJSON.toJSON()
-//     // )
-//     return usWithNoStorage.toJSON()
-// }
+const compareStates = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userId: ZkIdentity,
+    db: Promise<SQLiteConnector>
+) => {
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+
+    const usWithNoStorage = await genUserState(provider, address, userId)
+    const usWithStorage = await genUserState(
+        provider,
+        address,
+        userId,
+        await db
+    )
+    expect(await usWithNoStorage.latestGSTLeafIndex()).equal(
+        await usWithStorage.latestGSTLeafIndex()
+    )
+
+    expect(await usWithNoStorage.latestTransitionedEpoch()).equal(
+        await usWithStorage.latestTransitionedEpoch()
+    )
+
+    for (let epoch = 1; epoch <= currentEpoch; epoch++) {
+        for (
+            let nonce = 0;
+            nonce < usWithNoStorage.settings.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
+            const epk = genEpochKey(
+                userId.identityNullifier,
+                epoch,
+                nonce,
+                usWithNoStorage.settings.epochTreeDepth
+            ).toString()
+            expect((await usWithNoStorage.getAttestations(epk)).length).equal(
+                (await usWithStorage.getAttestations(epk)).length
+            )
+        }
+        expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
+            await usWithStorage.genGSTree(epoch)
+        )
+    }
+
+    for (let epoch = 1; epoch < currentEpoch; epoch++) {
+        expect(await usWithNoStorage.genEpochTree(epoch)).deep.equal(
+            await usWithStorage.genEpochTree(epoch)
+        )
+    }
+}
 
 const compareAttestations = (
     attestDB: IAttestation,
@@ -387,33 +410,6 @@ const compareAttestations = (
     expect(attestDB.graffiti.toString()).equal(attestObj.graffiti.toString())
     expect(attestDB.signUp.toString()).equal(attestObj.signUp.toString())
 }
-
-// const compareEpochTrees = async (
-//     provider: ethers.providers.Provider,
-//     address: string,
-//     userId: ZkIdentity,
-//     savedUserState: any,
-//     epoch: number
-// ) => {
-//     const usWithNoStorage = await genUserState(provider, address, userId)
-//     const epochTree1 = usWithNoStorage.getUnirepStateEpochTree(epoch)
-//
-//     const usWithStorage = await genUserState(
-//         provider,
-//         address,
-//         userId,
-//         savedUserState
-//     )
-//     const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
-//
-//     const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-//     const epochTree3 = usFromJSON.getUnirepStateEpochTree(epoch)
-//
-//     expect(epochTree1.root).to.equal(epochTree2.root)
-//     expect(epochTree1.root).to.equal(epochTree3.root)
-//
-//     return usWithNoStorage.toJSON()
-// }
 
 export {
     genNewEpochTree,
@@ -430,8 +426,7 @@ export {
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
     submitUSTProofs,
-    // compareStates,
+    compareStates,
     compareAttestations,
-    // compareEpochTrees,
     genUserState,
 }

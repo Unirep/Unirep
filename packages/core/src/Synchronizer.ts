@@ -94,12 +94,12 @@ export class Synchronizer extends EventEmitter {
         this.settings.epochLength = epochLength
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database
-        const epoch = await this._db.findMany('Epoch', {
+        const epochs = await this._db.findMany('Epoch', {
             where: {
                 sealed: false,
             },
         })
-        if (epoch.length > 1) {
+        if (epochs.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
         const emptyUserStateRoot = computeEmptyUserStateRoot(
@@ -110,16 +110,14 @@ export class Synchronizer extends EventEmitter {
             this.settings.globalStateTreeDepth,
             this.defaultGSTLeaf
         )
-        if (epoch.length === 0) {
-            // it's a new sync, start with empty GST
-            return
-        }
+        // if it's a new sync, start with epoch 1
+        const epoch = epochs[0]?.number ?? 1
         // otherwise load the leaves and insert them
         // TODO: index consistency verification, ensure that indexes are
         // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
         const leaves = await this._db.findMany('GSTLeaf', {
             where: {
-                epoch: epoch[0].number,
+                epoch,
             },
             orderBy: {
                 index: 'asc',
