@@ -3,7 +3,7 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { Attestation, deployUnirep, EpochKeyProof } from '@unirep/contracts'
+import { Attestation, deployUnirep } from '@unirep/contracts'
 
 import { genReputationNullifier, genUserState } from '../../src'
 import { compareAttestations, genRandomAttestation } from '../utils'
@@ -242,18 +242,18 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attesterId = await unirepContract.attesters(attester.address)
             const epkNonce = 0
-            const { proof, publicSignals } =
-                await userState.genVerifyEpochKeyProof(epkNonce)
-            const epkProofInput = new EpochKeyProof(publicSignals, proof)
-            const isValid = await epkProofInput.verify()
+            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+                epkNonce
+            )
+            const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
             await unirepContract
-                .submitEpochKeyProof(epkProofInput)
+                .submitEpochKeyProof(formattedProof)
                 .then((t) => t.wait())
 
             const toProofIndex = Number(
-                await unirepContract.getProofIndex(epkProofInput.hash())
+                await unirepContract.getProofIndex(formattedProof.hash())
             )
 
             const attestation = new Attestation(
@@ -267,7 +267,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 .connect(attester)
                 .submitAttestation(
                     attestation,
-                    epkProofInput.epochKey,
+                    formattedProof.epochKey,
                     toProofIndex,
                     fromProofIndex,
                     { value: attestingFee }
@@ -276,7 +276,7 @@ describe('Reputation proof events in Unirep User State', function () {
             await userState.waitForSync()
 
             const attestations = await userState.getAttestations(
-                epkProofInput.epochKey.toString()
+                formattedProof.epochKey.toString()
             )
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
