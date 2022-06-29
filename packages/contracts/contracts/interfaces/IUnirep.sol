@@ -103,7 +103,7 @@ interface IUnirep is UnirepTypes {
     error ReachedMaximumNumberUserSignedUp();
     error AttesterAlreadySignUp(address attester);
     error AttesterNotSignUp(address attester);
-    error NullilierAlreadyUsed(bytes32 nullilier);
+    error NullifierAlreadyUsed(bytes32 nullilier);
     error AttestingFeeInvalid();
     error AttesterIdNotMatch(uint256 attesterId);
 

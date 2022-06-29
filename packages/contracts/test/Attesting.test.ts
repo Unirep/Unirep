@@ -85,7 +85,7 @@ describe('Attesting', () => {
     it('submit an epoch key proof again should fail', async () => {
         await expect(
             unirepContract.submitEpochKeyProof(epochKeyProof)
-        ).to.be.revertedWithCustomError(unirepContract, 'NullilierAlreadyUsed')
+        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {

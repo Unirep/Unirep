@@ -199,7 +199,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 unirepContract.submitEpochKeyProof(formattedProof)
             ).to.be.revertedWithCustomError(
                 unirepContract,
-                'NullilierAlreadyUsed'
+                'NullifierAlreadyUsed'
             )
         })
 

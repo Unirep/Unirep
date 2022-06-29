@@ -188,7 +188,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     })
             ).to.be.revertedWithCustomError(
                 unirepContract,
-                'NullilierAlreadyUsed'
+                'NullifierAlreadyUsed'
             )
         })
 

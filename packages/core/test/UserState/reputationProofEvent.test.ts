@@ -57,7 +57,7 @@ const genIdAndRepProof = async (unirepContract, attester) => {
         unirepContract.connect(attester).spendReputation(formattedProof, {
             value: attestingFee,
         })
-    ).to.be.revertedWithCustomError(unirepContract, 'NullilierAlreadyUsed')
+    ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     const epochKey = formattedProof.epochKey
     await userState.waitForSync()
     const attestations = await userState.getAttestations(epochKey.toString())

@@ -128,13 +128,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     // Verify input data - Should found better way to handle it.
 
-    function verifyAstesterSignUp(address attester) private view {
+    function verifyAttesterSignUp(address attester) private view {
         if (attesters[attester] == 0) revert AttesterNotSignUp(attester);
     }
 
-    function verifyProofNullilier(bytes32 proofNullifier) private view {
+    function verifyProofNullifier(bytes32 proofNullifier) private view {
         if (getProofIndex[proofNullifier] != 0)
-            revert NullilierAlreadyUsed(proofNullifier);
+            revert NullifierAlreadyUsed(proofNullifier);
     }
 
     function verifyAttesterFee() private view {
@@ -212,7 +212,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * @param amount how much pos rep add to user's leaf
      */
     function setAirdropAmount(uint256 amount) external {
-        verifyAstesterSignUp(msg.sender);
+        verifyAttesterSignUp(msg.sender);
         airdropAmount[msg.sender] = amount;
     }
 
@@ -230,7 +230,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) private {
-        verifyAstesterSignUp(attester);
+        verifyAttesterSignUp(attester);
         verifyAttesterIndex(attester, attestation.attesterId);
         verifyAttesterFee();
 
@@ -315,7 +315,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      */
     function submitEpochKeyProof(EpochKeyProof memory input) external {
         bytes32 proofNullifier = Hasher.hashEpochKeyProof(input);
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
         if (input.epoch != currentEpoch) revert EpochNotMatch();
 
         if (input.epochKey > maxEpochKey) revert InvalidEpochKey();
@@ -339,8 +339,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function airdropEpochKey(SignUpProof memory input) external payable {
         bytes32 proofNullifier = Hasher.hashSignUpProof(input);
         address sender = msg.sender;
-        verifyProofNullilier(proofNullifier);
-        verifyAstesterSignUp(sender);
+        verifyProofNullifier(proofNullifier);
+        verifyAttesterSignUp(sender);
         verifyAttesterIndex(sender, input.attesterId);
         verifyAttesterFee();
 
@@ -384,8 +384,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function spendReputation(ReputationProof memory input) external payable {
         bytes32 proofNullifier = Hasher.hashReputationProof(input);
 
-        verifyProofNullilier(proofNullifier);
-        verifyAstesterSignUp(msg.sender);
+        verifyProofNullifier(proofNullifier);
+        verifyAttesterSignUp(msg.sender);
         verifyAttesterIndex(msg.sender, input.attesterId);
         verifyAttesterFee();
 
@@ -502,7 +502,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             proof
         );
 
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
 
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
@@ -536,7 +536,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             proof
         );
 
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
@@ -560,7 +560,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     ) external {
         bytes32 proofNullifier = Hasher.hashUserStateTransitionProof(proof);
 
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
 
         if (proof.transitionFromEpoch >= currentEpoch)

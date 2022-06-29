@@ -235,7 +235,7 @@ describe('Airdrop', function () {
                 unirepContract.connect(attester).airdropEpochKey(input)
             ).to.be.revertedWithCustomError(
                 unirepContract,
-                `NullilierAlreadyUsed`
+                `NullifierAlreadyUsed`
             )
         })
 

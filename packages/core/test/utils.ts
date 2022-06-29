@@ -285,7 +285,7 @@ const submitUSTProofs = async (
             startTransitionProof.globalStateTreeRoot,
             formatProofForVerifierContract(startTransitionProof.proof)
         )
-    ).to.be.revertedWithCustomError(contract, 'NullilierAlreadyUsed')
+    ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 
     let hashedProof = computeStartTransitionProofHash(
         startTransitionProof.blindedUserState,
@@ -320,7 +320,7 @@ const submitUSTProofs = async (
                     processAttestationProofs[i].proof
                 )
             )
-        ).to.be.revertedWithCustomError(contract, 'NullilierAlreadyUsed')
+        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 
         let hashedProof = computeProcessAttestationsProofHash(
             processAttestationProofs[i].outputBlindedUserState,
@@ -344,7 +344,7 @@ const submitUSTProofs = async (
     // submit twice should fail
     await expect(
         contract.updateUserStateRoot(USTInput, proofIndexes)
-    ).to.be.revertedWithCustomError(contract, 'NullilierAlreadyUsed')
+    ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 }
 
 const compareStates = async (
