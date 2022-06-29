@@ -39,7 +39,8 @@ import {
 import { IAttestation } from '@unirep/contracts'
 import { getUnirepContract } from '@unirep/contracts'
 import { Unirep } from '@unirep/contracts'
-import { SQLiteConnector } from 'anondb/node'
+import { DB, SQLiteConnector } from 'anondb/node'
+import * as crypto from 'crypto'
 
 const genNewGST = (
     GSTDepth: number,
@@ -345,6 +346,41 @@ const submitUSTProofs = async (
     await expect(
         contract.updateUserStateRoot(USTInput, proofIndexes)
     ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+}
+
+export const compareDB = async (db1: DB, db2: DB) => {
+    const tables = [
+        'Proof',
+        'Attestation',
+        'GSTLeaf',
+        'GSTRoot',
+        'Epoch',
+        'EpochKey',
+        'Nullifier',
+        'UserSignUp',
+    ]
+    const hash = (obj: any) => {
+        const stringContent = JSON.stringify({
+            ...obj,
+            _id: null,
+            createdAt: null,
+        })
+        return crypto.createHash('sha256').update(stringContent).digest('hex')
+    }
+    for (const table of tables) {
+        const contents1 = await db1.findMany(table, { where: {} })
+        const contents2 = await db2.findMany(table, { where: {} })
+        expect(contents1.length).to.equal(contents2.length)
+        const contentMap = contents1.reduce((acc, obj) => {
+            return {
+                [hash(obj)]: true,
+                ...acc,
+            }
+        }, {})
+        for (const content of contents2) {
+            expect(contentMap[hash(content)], content).to.equal(true)
+        }
+    }
 }
 
 const compareStates = async (

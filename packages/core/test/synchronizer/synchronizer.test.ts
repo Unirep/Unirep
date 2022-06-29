@@ -24,7 +24,7 @@ import {
     decodeBigIntArray,
     computeInitUserStateRoot,
 } from '../../src'
-import { genRandomAttestation } from '../utils'
+import { genRandomAttestation, compareDB } from '../utils'
 import { SQLiteConnector } from 'anondb/node'
 
 let synchronizer: Synchronizer
@@ -45,6 +45,15 @@ describe('Synchronizer process events', function () {
             .attesterSignUp()
             .then((t) => t.wait())
         await synchronizer.start()
+    })
+
+    afterEach(async () => {
+        const state = await genUserState(
+            synchronizer.unirepContract.provider,
+            synchronizer.unirepContract.address,
+            new ZkIdentity()
+        )
+        await compareDB((state as any)._db, (synchronizer as any)._db)
     })
 
     it('should process sign up event', async () => {
