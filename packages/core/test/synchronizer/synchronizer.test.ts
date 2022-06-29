@@ -1,19 +1,9 @@
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    EPOCH_LENGTH,
-    defaultProver,
-} from '@unirep/circuits'
-import {
-    computeProcessAttestationsProofHash,
-    computeStartTransitionProofHash,
-    deployUnirep,
-    UserTransitionProof,
-} from '@unirep/contracts'
+import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
+import { EPOCH_LENGTH, defaultProver } from '@unirep/circuits'
+import { deployUnirep } from '@unirep/contracts'
 
 const attestingFee = ethers.utils.parseEther('0.1')
 
@@ -24,7 +14,7 @@ import {
     decodeBigIntArray,
     computeInitUserStateRoot,
 } from '../../src'
-import { genRandomAttestation, compareDB } from '../utils'
+import { genRandomAttestation, compareDB, submitUSTProofs } from '../utils'
 import { SQLiteConnector } from 'anondb/node'
 
 let synchronizer: Synchronizer
@@ -526,22 +516,9 @@ describe('Synchronizer process events', function () {
         await synchronizer.unirepContract
             .beginEpochTransition()
             .then((t) => t.wait())
-        const {
-            startTransitionProof,
-            processAttestationProofs,
-            finalTransitionProof,
-        } = await userState.genUserStateTransitionProofs()
-        let isValid = await defaultProver.verifyProof(
-            Circuit.startTransition,
-            startTransitionProof.publicSignals,
-            startTransitionProof.proof
-        )
-        expect(isValid, 'Verify start transition circuit off-chain failed').to
-            .be.true
-        const blindedUserState = startTransitionProof.blindedUserState
-        const blindedHashChain = startTransitionProof.blindedHashChain
-        const globalStateTree = startTransitionProof.globalStateTreeRoot
-        const proof = formatProofForVerifierContract(startTransitionProof.proof)
+        const proofs = await userState.genUserStateTransitionProofs()
+        await submitUSTProofs(synchronizer.unirepContract, proofs)
+
         const [IndexedStartedTransitionProof] =
             synchronizer.unirepContract.filters.IndexedStartedTransitionProof()
                 .topics as string[]
@@ -550,123 +527,29 @@ describe('Synchronizer process events', function () {
                 rs(event)
             )
         )
-        await synchronizer.unirepContract
-            .startUserStateTransition(
-                blindedUserState,
-                blindedHashChain,
-                globalStateTree,
-                proof
-            )
-            .then((t) => t.wait())
         await _startTransitionProof
 
-        const proofIndexes: any[] = []
-
-        let proofNullifier = computeStartTransitionProofHash(
-            blindedUserState,
-            blindedHashChain,
-            globalStateTree,
-            proof
+        const [IndexedProcessedAttestationsProof] =
+            synchronizer.unirepContract.filters.IndexedProcessedAttestationsProof()
+                .topics as string[]
+        const _processedAttestations = new Promise((rs, rj) =>
+            synchronizer.once(IndexedProcessedAttestationsProof, (event) =>
+                rs(event)
+            )
         )
-        let proofIndex = await synchronizer.unirepContract.getProofIndex(
-            proofNullifier
+        await _processedAttestations
+        const __processedAttestations = new Promise((rs, rj) =>
+            synchronizer.once(IndexedProcessedAttestationsProof, (event) =>
+                rs(event)
+            )
         )
-        proofIndexes.push(proofIndex)
-
-        for (let i = 0; i < processAttestationProofs.length; i++) {
-            isValid = await defaultProver.verifyProof(
-                Circuit.processAttestations,
-                processAttestationProofs[i].publicSignals,
-                processAttestationProofs[i].proof
-            )
-            expect(
-                isValid,
-                'Verify process attestations circuit off-chain failed'
-            ).to.be.true
-
-            const outputBlindedUserState =
-                processAttestationProofs[i].outputBlindedUserState
-            const outputBlindedHashChain =
-                processAttestationProofs[i].outputBlindedHashChain
-            const inputBlindedUserState =
-                processAttestationProofs[i].inputBlindedUserState
-
-            // submit random process attestations should success and not affect the results
-            const falseInput = BigNumber.from(genRandomSalt())
-            const [IndexedProcessedAttestationsProof] =
-                synchronizer.unirepContract.filters.IndexedProcessedAttestationsProof()
-                    .topics as string[]
-            const _processedAttestations = new Promise((rs, rj) =>
-                synchronizer.once(IndexedProcessedAttestationsProof, (event) =>
-                    rs(event)
-                )
-            )
-            await synchronizer.unirepContract
-                .processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    falseInput,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                .then((t) => t.wait())
-            await _processedAttestations
-
-            const __processedAttestations = new Promise((rs, rj) =>
-                synchronizer.once(IndexedProcessedAttestationsProof, (event) =>
-                    rs(event)
-                )
-            )
-            await synchronizer.unirepContract
-                .processAttestations(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                .then((t) => t.wait())
-            await __processedAttestations
-
-            const proofNullifier = computeProcessAttestationsProofHash(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                formatProofForVerifierContract(
-                    processAttestationProofs[i].proof
-                )
-            )
-            const proofIndex = await synchronizer.unirepContract.getProofIndex(
-                proofNullifier
-            )
-            proofIndexes.push(proofIndex)
-        }
-
-        isValid = await defaultProver.verifyProof(
-            Circuit.userStateTransition,
-            finalTransitionProof.publicSignals,
-            finalTransitionProof.proof
-        )
-        expect(isValid, 'Verify user state transition circuit off-chain failed')
-            .to.be.true
-
-        const transitionProof = new UserTransitionProof(
-            finalTransitionProof.publicSignals,
-            finalTransitionProof.proof,
-            defaultProver
-        )
-
+        await __processedAttestations
         const [UserStateTransitioned] =
             synchronizer.unirepContract.filters.UserStateTransitioned()
                 .topics as string[]
         const ust = new Promise((rs, rj) =>
             synchronizer.once(UserStateTransitioned, (event) => rs(event))
         )
-        await synchronizer.unirepContract
-            .updateUserStateRoot(transitionProof, proofIndexes)
-            .then((t) => t.wait())
         await ust
     })
 })

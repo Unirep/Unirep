@@ -1,12 +1,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import {
-    deployUnirep,
-    UserTransitionProof,
-    computeProcessAttestationsProofHash,
-    computeStartTransitionProofHash,
-} from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -15,7 +10,6 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
     Circuit,
-    formatProofForVerifierContract,
     defaultProver,
 } from '@unirep/circuits'
 
@@ -28,7 +22,7 @@ import {
     computeInitUserStateRoot,
     ISettings,
 } from '../../src'
-import { genNewGST, genUserState } from '../utils'
+import { genNewGST, genUserState, submitUSTProofs } from '../utils'
 
 describe('User State', async function () {
     this.timeout(0)
@@ -733,45 +727,17 @@ describe('User State', async function () {
         })
 
         it('transition other users state should success', async () => {
-            const {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            } = await otherUser.genUserStateTransitionProofs()
+            const proofs = await otherUser.genUserStateTransitionProofs()
 
-            const isStartProofValid = await defaultProver.verifyProof(
-                Circuit.startTransition,
-                startTransitionProof.publicSignals,
-                startTransitionProof.proof
+            const fromGSTRoot = proofs.startTransitionProof.globalStateTreeRoot
+            const fromEpoch = Number(
+                proofs.finalTransitionProof.transitionedFromEpoch
             )
-            expect(isStartProofValid).to.be.true
-            const fromGSTRoot = startTransitionProof.globalStateTreeRoot
-            const fromEpoch = Number(finalTransitionProof.transitionedFromEpoch)
             const exist = await otherUser.GSTRootExists(fromGSTRoot, fromEpoch)
             expect(exist).to.be.true
 
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                const isProcessAttestationValid =
-                    await defaultProver.verifyProof(
-                        Circuit.processAttestations,
-                        processAttestationProofs[i].publicSignals,
-                        processAttestationProofs[i].proof
-                    )
-                expect(isProcessAttestationValid).to.be.true
-            }
-
-            const isUSTProofValid = await defaultProver.verifyProof(
-                Circuit.userStateTransition,
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-            expect(isUSTProofValid).to.be.true
-            expect(finalTransitionProof.fromGSTRoot).equal(
-                startTransitionProof.globalStateTreeRoot
-            )
-
             // epoch tree
-            const fromEpochTree = finalTransitionProof.fromEpochTree
+            const fromEpochTree = proofs.finalTransitionProof.fromEpochTree
             const epochTreeExist = await otherUser.epochTreeRootExists(
                 fromEpochTree,
                 fromEpoch
@@ -789,106 +755,14 @@ describe('User State', async function () {
             )
             for (let nullifier of epkNullifiers) {
                 expect(
-                    finalTransitionProof.epochKeyNullifiers.indexOf(
+                    proofs.finalTransitionProof.epochKeyNullifiers.indexOf(
                         nullifier.toString()
                     )
                 ).not.equal(-1)
             }
 
-            await unirepContract.startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            let proofIndexes = [] as any[]
-            let proofNullifier = computeStartTransitionProofHash(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            let proofIndex = await unirepContract.getProofIndex(proofNullifier)
-            proofIndexes.push(proofIndex)
-            let isValid
+            await submitUSTProofs(unirepContract, proofs)
 
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await defaultProver.verifyProof(
-                    Circuit.processAttestations,
-                    processAttestationProofs[i].publicSignals,
-                    processAttestationProofs[i].proof
-                )
-                expect(
-                    isValid,
-                    'Verify process attestations circuit off-chain failed'
-                ).to.be.true
-
-                const outputBlindedUserState =
-                    processAttestationProofs[i].outputBlindedUserState
-                const outputBlindedHashChain =
-                    processAttestationProofs[i].outputBlindedHashChain
-                const inputBlindedUserState =
-                    processAttestationProofs[i].inputBlindedUserState
-
-                // submit random process attestations should success and not affect the results
-                const falseInput = ethers.BigNumber.from(
-                    new ZkIdentity().identityNullifier
-                )
-                await unirepContract
-                    .processAttestations(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        falseInput,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    .then((t) => t.wait())
-
-                await unirepContract
-                    .processAttestations(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        inputBlindedUserState,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    .then((t) => t.wait())
-
-                const proofNullifier = computeProcessAttestationsProofHash(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                const proofIndex = await unirepContract.getProofIndex(
-                    proofNullifier
-                )
-                proofIndexes.push(proofIndex)
-            }
-
-            isValid = await defaultProver.verifyProof(
-                Circuit.userStateTransition,
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-            expect(
-                isValid,
-                'Verify user state transition circuit off-chain failed'
-            ).to.be.true
-
-            const transitionProof = new UserTransitionProof(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof,
-                defaultProver
-            )
-
-            await unirepContract
-                .updateUserStateRoot(transitionProof, proofIndexes)
-                .then((t) => t.wait())
             await otherUser.waitForSync()
             await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
@@ -910,7 +784,7 @@ describe('User State', async function () {
                 USTree_.root
             )
             expect(GSTLeaf_.toString()).equal(
-                finalTransitionProof.newGlobalStateTreeLeaf
+                proofs.finalTransitionProof.newGlobalStateTreeLeaf
             )
 
             GSTree.insert(GSTLeaf_)
@@ -920,163 +794,8 @@ describe('User State', async function () {
         })
 
         it('generate user state transition proofs and verify them should success', async () => {
-            const {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            } = await userState.genUserStateTransitionProofs()
-
-            const isStartProofValid = await defaultProver.verifyProof(
-                Circuit.startTransition,
-                startTransitionProof.publicSignals,
-                startTransitionProof.proof
-            )
-            expect(isStartProofValid).to.be.true
-            const fromGSTRoot = startTransitionProof.globalStateTreeRoot
-            const fromEpoch = Number(finalTransitionProof.transitionedFromEpoch)
-            const exist = await userState.GSTRootExists(fromGSTRoot, fromEpoch)
-            expect(exist).to.be.true
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                const isProcessAttestationValid =
-                    await defaultProver.verifyProof(
-                        Circuit.processAttestations,
-                        processAttestationProofs[i].publicSignals,
-                        processAttestationProofs[i].proof
-                    )
-                expect(isProcessAttestationValid).to.be.true
-            }
-
-            const isUSTProofValid = await defaultProver.verifyProof(
-                Circuit.userStateTransition,
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-            expect(isUSTProofValid).to.be.true
-            expect(finalTransitionProof.fromGSTRoot).equal(
-                startTransitionProof.globalStateTreeRoot
-            )
-
-            // epoch tree
-            const fromEpochTree = finalTransitionProof.fromEpochTree
-            const epochTreeExist = await userState.epochTreeRootExists(
-                fromEpochTree,
-                fromEpoch
-            )
-            expect(epochTreeExist).to.be.true
-
-            const unirepEpochTree = await userState.getUnirepStateEpochTree(
-                fromEpoch
-            )
-            expect(unirepEpochTree.root.toString()).equal(fromEpochTree)
-
-            // epoch key nullifiers
-            const epkNullifiers = await userState.getEpochKeyNullifiers(
-                fromEpoch
-            )
-            for (let nullifier of epkNullifiers) {
-                expect(
-                    finalTransitionProof.epochKeyNullifiers.indexOf(
-                        nullifier.toString()
-                    )
-                ).not.equal(-1)
-            }
-
-            await unirepContract.startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-
-            let proofIndexes = [] as any[]
-            let proofNullifier = computeStartTransitionProofHash(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-            let proofIndex = await unirepContract.getProofIndex(proofNullifier)
-            proofIndexes.push(proofIndex)
-            let isValid
-
-            for (let i = 0; i < processAttestationProofs.length; i++) {
-                isValid = await defaultProver.verifyProof(
-                    Circuit.processAttestations,
-                    processAttestationProofs[i].publicSignals,
-                    processAttestationProofs[i].proof
-                )
-                expect(
-                    isValid,
-                    'Verify process attestations circuit off-chain failed'
-                ).to.be.true
-
-                const outputBlindedUserState =
-                    processAttestationProofs[i].outputBlindedUserState
-                const outputBlindedHashChain =
-                    processAttestationProofs[i].outputBlindedHashChain
-                const inputBlindedUserState =
-                    processAttestationProofs[i].inputBlindedUserState
-
-                // submit random process attestations should success and not affect the results
-                const falseInput = ethers.BigNumber.from(
-                    new ZkIdentity().identityNullifier
-                )
-                await unirepContract
-                    .processAttestations(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        falseInput,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    .then((t) => t.wait())
-
-                await unirepContract
-                    .processAttestations(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        inputBlindedUserState,
-                        formatProofForVerifierContract(
-                            processAttestationProofs[i].proof
-                        )
-                    )
-                    .then((t) => t.wait())
-
-                const proofNullifier = computeProcessAttestationsProofHash(
-                    outputBlindedUserState,
-                    outputBlindedHashChain,
-                    inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
-                )
-                const proofIndex = await unirepContract.getProofIndex(
-                    proofNullifier
-                )
-                proofIndexes.push(proofIndex)
-            }
-
-            isValid = await defaultProver.verifyProof(
-                Circuit.userStateTransition,
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-            expect(
-                isValid,
-                'Verify user state transition circuit off-chain failed'
-            ).to.be.true
-
-            const transitionProof = new UserTransitionProof(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof,
-                defaultProver
-            )
-
-            await unirepContract
-                .updateUserStateRoot(transitionProof, proofIndexes)
-                .then((t) => t.wait())
+            const proofs = await userState.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, proofs)
             await otherUser.waitForSync()
             await userState.waitForSync()
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
@@ -1092,7 +811,7 @@ describe('User State', async function () {
                 USTree_.root
             )
             expect(GSTLeaf_.toString()).equal(
-                finalTransitionProof.newGlobalStateTreeLeaf
+                proofs.finalTransitionProof.newGlobalStateTreeLeaf
             )
 
             GSTree.insert(GSTLeaf_)

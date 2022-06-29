@@ -265,8 +265,13 @@ const submitUSTProofs = async (
 ) => {
     const proofIndexes: number[] = []
 
-    let isValid = await verifyStartTransitionProof(startTransitionProof)
-    expect(isValid).to.be.true
+    let isValid = await defaultProver.verifyProof(
+        Circuit.startTransition,
+        startTransitionProof.publicSignals,
+        startTransitionProof.proof
+    )
+    expect(isValid, 'Verify start transition circuit off-chain failed').to.be
+        .true
 
     // submit proofs
     let tx = await contract.startUserStateTransition(
@@ -297,10 +302,13 @@ const submitUSTProofs = async (
     proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
 
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        isValid = await verifyProcessAttestationsProof(
-            processAttestationProofs[i]
+        isValid = await defaultProver.verifyProof(
+            Circuit.processAttestations,
+            processAttestationProofs[i].publicSignals,
+            processAttestationProofs[i].proof
         )
-        expect(isValid).to.be.true
+        expect(isValid, 'Verify process attestations circuit off-chain failed')
+            .to.be.true
 
         tx = await contract.processAttestations(
             processAttestationProofs[i].outputBlindedUserState,
@@ -310,6 +318,19 @@ const submitUSTProofs = async (
         )
         receipt = await tx.wait()
         expect(receipt.status).to.equal(1)
+
+        // submit random process attestations should success and not affect the results
+        const falseInput = BigNumber.from(genRandomSalt())
+        await contract
+            .processAttestations(
+                processAttestationProofs[i].outputBlindedUserState,
+                processAttestationProofs[i].outputBlindedHashChain,
+                falseInput,
+                formatProofForVerifierContract(
+                    processAttestationProofs[i].proof
+                )
+            )
+            .then((t) => t.wait())
 
         // submit twice should fail
         await expect(
