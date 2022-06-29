@@ -1,6 +1,9 @@
 import base64url from 'base64url'
 import { SignUpProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepState } from '../src'
@@ -81,7 +84,8 @@ const verifyUserSignUpProof = async (args: any) => {
     // Verify the proof on-chain
     const signUpProof = new SignUpProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     const isProofValid = await unirepContract.verifyUserSignUp(signUpProof)
     if (!isProofValid) {

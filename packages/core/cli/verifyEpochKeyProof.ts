@@ -1,6 +1,9 @@
 import base64url from 'base64url'
 import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepState } from '../src'
@@ -84,7 +87,8 @@ const verifyEpochKeyProof = async (args: any) => {
     // Verify the proof on-chain
     const epkProof: EpochKeyProof = new EpochKeyProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     const isProofValid = await unirepContract.verifyEpochKeyValidity(epkProof)
     if (!isProofValid) {

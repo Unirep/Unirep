@@ -8,6 +8,7 @@ import { getProvider } from './utils'
 import {
     formatProofForSnarkjsVerification,
     MAX_REPUTATION_BUDGET,
+    defaultProver,
 } from '@unirep/circuits'
 
 const configureSubparser = (subparsers: any) => {
@@ -88,7 +89,8 @@ const verifyReputationProof = async (args: any) => {
     // Verify the proof on-chain
     const reputationProof = new ReputationProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     const isProofValid = await unirepContract.verifyReputation(reputationProof)
     if (!isProofValid) {

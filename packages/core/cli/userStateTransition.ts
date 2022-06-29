@@ -208,10 +208,9 @@ const userStateTransition = async (args: any) => {
     // Submit the user state transition transaction
     const USTProof = new UserTransitionProof(
         finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
+        finalTransitionProof.proof,
+        defaultProver
     )
-    if (!(await USTProof.verify())) {
-    }
     try {
         tx = await unirepContract
             .connect(wallet)
