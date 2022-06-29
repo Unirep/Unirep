@@ -16,12 +16,7 @@ import {
 const ATTESTING_FEE = '0' as any
 const attestingFee = ethers.utils.parseEther('0.1')
 
-import {
-    Reputation,
-    genEpochKey,
-    computeInitUserStateRoot,
-    ISettings,
-} from '../../src'
+import { genEpochKey, computeInitUserStateRoot, ISettings } from '../../src'
 import { genNewGST, genUserState, submitUSTProofs } from '../utils'
 
 describe('User State', async function () {

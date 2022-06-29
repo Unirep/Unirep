@@ -13,7 +13,6 @@ import {
 import {
     IAttestation,
     Attestation,
-    UserTransitionProof,
     ReputationProof,
     EpochKeyProof,
     SignUpProof,
@@ -25,7 +24,7 @@ import {
     genReputationNullifier,
     computeInitUserStateRoot,
 } from './utils'
-import { IReputation, IUserState, IUserStateLeaf } from './interfaces'
+import { IReputation } from './interfaces'
 import Reputation from './Reputation'
 import { Circuit, NUM_ATTESTATIONS_PER_PROOF, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
@@ -127,6 +126,7 @@ export default class UserState extends Synchronizer {
 
     // Get the latest GST leaf index for an epoch
     async latestGSTLeafIndex(_epoch?: number): Promise<number> {
+        if (!(await this.hasSignedUp())) return -1
         const currentEpoch = _epoch ?? (await this.getUnirepStateCurrentEpoch())
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         if (latestTransitionedEpoch !== currentEpoch) return -1
@@ -162,7 +162,7 @@ export default class UserState extends Synchronizer {
         const leaf = hashLeftRight(this.commitment, USTree.root)
         const foundLeaf = await this._db.findOne('GSTLeaf', {
             where: {
-                epoch: currentEpoch,
+                epoch: latestTransitionedEpoch,
                 hash: leaf.toString(),
             },
         })
@@ -178,7 +178,7 @@ export default class UserState extends Synchronizer {
     ): Promise<SparseMerkleTree> => {
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         const orConditions = [] as any
-        for (let x = 1; x <= (beforeEpoch ?? latestTransitionedEpoch); x++) {
+        for (let x = 1; x < (beforeEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -450,7 +450,7 @@ export default class UserState extends Synchronizer {
             epochKeyNonce,
             this.settings.epochTreeDepth
         )
-        const userStateTree = await this.genUserStateTree(epoch - 1)
+        const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(leafIndex)
 
@@ -921,7 +921,7 @@ export default class UserState extends Synchronizer {
         const negRep = rep.negRep.toNumber()
         const graffiti = rep.graffiti
         const signUp = rep.signUp.toNumber()
-        const userStateTree = await this.genUserStateTree(epoch - 1)
+        const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
         const GSTreeRoot = GSTree.root
@@ -1040,7 +1040,7 @@ export default class UserState extends Synchronizer {
         const negRep = rep.negRep
         const graffiti = rep.graffiti
         const signUp = rep.signUp
-        const userStateTree = await this.genUserStateTree(epoch - 1)
+        const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
         const GSTreeRoot = GSTree.root
