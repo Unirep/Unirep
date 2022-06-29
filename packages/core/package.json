@@ -8,11 +8,7 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "yarn synchronizerTests && yarn UserStateTests",
-        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/integration/*.test.ts",
-        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/UnirepState/*.test.ts",
-        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/UserState/*.test.ts",
-        "synchronizerTests": "hardhat test --parallel --no-compile test/synchronizer/*.test.ts",
+        "test": "hardhat test --no-compile test/*/*.test.ts",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep",
