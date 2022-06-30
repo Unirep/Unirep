@@ -8,7 +8,7 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "hardhat test --no-compile test/*/*.test.ts",
+        "test": "hardhat test --no-compile --parallel test/*/*.test.ts",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep",
