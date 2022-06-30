@@ -1058,6 +1058,11 @@ export class Synchronizer extends EventEmitter {
         if (!decodedData) {
             throw new Error('Failed to decode data')
         }
+        const existingGSTRoot = await this._db.findOne('GSTRoot', {
+            where: {
+                root: _globalStateTree.toString(),
+            },
+        })
         const _blindedHashChain = BigInt(decodedData.blindedHashChain)
         const formatPublicSignals = [
             _blindedUserState,
@@ -1081,7 +1086,7 @@ export class Synchronizer extends EventEmitter {
             proof: proof,
             transactionHash: event.transactionHash,
             event: 'IndexedStartedTransitionProof',
-            valid: isValid,
+            valid: !!(existingGSTRoot && isValid),
         })
         return true
     }
