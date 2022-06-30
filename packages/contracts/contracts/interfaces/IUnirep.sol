@@ -17,7 +17,6 @@ interface IUnirep is UnirepTypes {
     }
 
     // Events
-    event Sequencer(uint256 indexed epoch, Event userEvent);
 
     // Two global state tree leaf inserted events in Unirep
     // 1. UserSignUp

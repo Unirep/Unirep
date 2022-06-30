@@ -167,7 +167,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
 
-        emit Sequencer(currentEpoch, Event.UserSignedUp);
         emit UserSignedUp(
             currentEpoch,
             identityCommitment,
@@ -448,7 +447,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
         // Emit epoch key proof with attestation submitted event
         // And user can verify if the epoch key is valid or not
-        emit Sequencer(currentEpoch, Event.AttestationSubmitted);
         emit AttestationSubmitted(
             currentEpoch,
             epochKey,
@@ -470,7 +468,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             revert EpochNotEndYet();
 
         // Mark epoch transitioned as complete and increase currentEpoch
-        emit Sequencer(currentEpoch, Event.EpochEnded);
         emit EpochEnded(currentEpoch);
 
         latestEpochTransitionTime = block.timestamp;
@@ -583,7 +580,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         }
 
         uint256 _proofIndex = proofIndex;
-        emit Sequencer(currentEpoch, Event.UserStateTransitioned);
         emit IndexedUserStateTransitionProof(
             _proofIndex,
             proof,
