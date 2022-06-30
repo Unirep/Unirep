@@ -162,7 +162,7 @@ export default class UserState extends Synchronizer {
         const leaf = hashLeftRight(this.commitment, USTree.root)
         const foundLeaf = await this._db.findOne('GSTLeaf', {
             where: {
-                epoch: latestTransitionedEpoch,
+                epoch: currentEpoch,
                 hash: leaf.toString(),
             },
         })
@@ -538,7 +538,7 @@ export default class UserState extends Synchronizer {
 
         // User state tree
         const fromEpochUserStateTree: SparseMerkleTree =
-            await this.genUserStateTree(fromEpoch - 1)
+            await this.genUserStateTree(fromEpoch)
         const intermediateUserStateTreeRoots: BigInt[] = [
             fromEpochUserStateTree.root,
         ]
