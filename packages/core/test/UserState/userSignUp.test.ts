@@ -87,6 +87,7 @@ describe('User sign up events in Unirep User State', function () {
                 treeDepths.userStateTreeDepth
             )
             expect(unirepGSTree.root).equal(defaultGSTree.root)
+            await initUnirepState.stop()
         })
     })
 
@@ -144,6 +145,7 @@ describe('User sign up events in Unirep User State', function () {
                 )
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
+                await userState.stop()
             }
         })
 
@@ -176,6 +178,7 @@ describe('User sign up events in Unirep User State', function () {
                 signUpAirdrops.push(Reputation.default())
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
+                await userState.stop()
             }
         })
 
@@ -193,6 +196,7 @@ describe('User sign up events in Unirep User State', function () {
                 )
                 expect(exist).to.be.true
             }
+            await unirepState.stop()
         })
     })
 })

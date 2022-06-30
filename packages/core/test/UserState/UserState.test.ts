@@ -57,6 +57,8 @@ describe('User State', async function () {
             )
         })
 
+        // after(() => userState.stop())
+
         it('sign up other users', async () => {
             const accounts = await ethers.getSigners()
             const epoch = await userState.getUnirepStateCurrentEpoch()
@@ -86,11 +88,11 @@ describe('User State', async function () {
                     .setAirdropAmount(airdropAmount)
                     .then((t) => t.wait())
                 const tmpId = new ZkIdentity()
-                const tmpUserState = await genUserState(
-                    unirepContract.provider,
-                    unirepContract.address,
-                    tmpId
-                ) // TODO: verify this state too?
+                // const tmpUserState = await genUserState(
+                //     unirepContract.provider,
+                //     unirepContract.address,
+                //     tmpId
+                // ) // TODO: verify this state too?
                 await unirepContract
                     .connect(tmpWallet)
                     .userSignUp(tmpId.genIdentityCommitment())
@@ -237,11 +239,11 @@ describe('User State', async function () {
                     .setAirdropAmount(airdropAmount)
                     .then((t) => t.wait())
                 const tmpId = new ZkIdentity()
-                const tmpUserState = await genUserState(
-                    unirepContract.provider,
-                    unirepContract.address,
-                    tmpId
-                ) // TODO: verify this state too?
+                // const tmpUserState = await genUserState(
+                //     unirepContract.provider,
+                //     unirepContract.address,
+                //     tmpId
+                // ) // TODO: verify this state too?
                 await unirepContract
                     .connect(tmpWallet)
                     .userSignUp(tmpId.genIdentityCommitment())
@@ -381,6 +383,8 @@ describe('User State', async function () {
                 .then((t) => t.wait())
             await userState.waitForSync()
         })
+
+        after(() => userState.stop())
 
         it('generate epoch key proof should succeed', async () => {
             const epoch = await userState.getUnirepStateCurrentEpoch()
@@ -684,6 +688,11 @@ describe('User State', async function () {
                 .then((t) => t.wait())
             await userState.waitForSync()
             await otherUser.waitForSync()
+        })
+
+        after(() => {
+            userState.stop()
+            otherUser.stop()
         })
 
         it('epoch transition', async () => {

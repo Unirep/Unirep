@@ -133,6 +133,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                         BigInt(1)
                     )
                 )
+                await userState.stop()
             }
         })
 
@@ -162,6 +163,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 )
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(Reputation.default())
+                await userState.stop()
             }
         })
     })
@@ -226,6 +228,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(1)
             compareAttestations(attestations[0], attestation)
+            await userState.stop()
         })
 
         it('submit invalid epoch key proof event', async () => {
@@ -252,6 +255,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             proofIndex = Number(
                 await unirepContract.getProofIndex(formattedProof.hash())
             )
+            await userState.stop()
         })
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
@@ -276,6 +280,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
+            await userState.stop()
         })
 
         it('submit valid epoch key proof with wrong GST root event', async () => {
@@ -345,6 +350,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
+            await userState.stop()
         })
 
         it('submit valid epoch key proof event in wrong epoch', async () => {

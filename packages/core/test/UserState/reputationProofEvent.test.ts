@@ -146,6 +146,7 @@ describe('Reputation proof events in Unirep User State', function () {
             //         BigInt(1)
             //     )
             // )
+            await userState.stop()
         })
 
         it('sign up users with no airdrop', async () => {
@@ -167,6 +168,7 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             // signUpAirdrops.push(Reputation.default())
+            await userState.stop()
         })
     })
 
@@ -199,6 +201,7 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
+            await userState.stop()
         })
 
         it('submit attestations to the epoch key should not update User state', async () => {
@@ -229,6 +232,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
+            await userState.stop()
         })
 
         it('spend reputation event can attest to other epoch key and update User state', async () => {
@@ -280,6 +284,7 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
+            await userState.stop()
         })
 
         it('submit invalid reputation proof event', async () => {
@@ -321,6 +326,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 formattedProof.epochKey.toString()
             )
             expect(attestations.length).equal(0)
+            await userState.stop()
         })
 
         it('submit attestations to the epoch key should not update User state', async () => {
@@ -465,6 +471,8 @@ describe('Reputation proof events in Unirep User State', function () {
                 formattedProof.epochKey.toString()
             )
             expect(attestations.length).equal(0)
+            await userState.stop()
+            await userState2.stop()
         })
 
         it('submit valid reputation proof event in wrong epoch should fail', async () => {
@@ -504,6 +512,7 @@ describe('Reputation proof events in Unirep User State', function () {
                         value: attestingFee,
                     })
             ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+            await userState.stop()
         })
     })
 })

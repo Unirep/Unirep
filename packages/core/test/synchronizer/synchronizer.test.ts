@@ -20,7 +20,7 @@ import { SQLiteConnector } from 'anondb/node'
 let synchronizer: Synchronizer
 
 describe('Synchronizer process events', function () {
-    this.timeout(500000)
+    this.timeout(0)
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -44,6 +44,7 @@ describe('Synchronizer process events', function () {
             new ZkIdentity()
         )
         await compareDB((state as any)._db, (synchronizer as any)._db)
+        await state.stop()
     })
 
     it('should process sign up event', async () => {
@@ -262,6 +263,7 @@ describe('Synchronizer process events', function () {
             {}
         )
         expect(finalProofCount).to.equal(proofCount + 1)
+        await userState.stop()
     })
 
     it('should process reputation proof', async () => {
@@ -365,6 +367,7 @@ describe('Synchronizer process events', function () {
             {}
         )
         expect(finalProofCount).to.equal(proofCount + 1)
+        await userState.stop()
     })
 
     it('should process sign up proof', async () => {
@@ -454,6 +457,7 @@ describe('Synchronizer process events', function () {
             {}
         )
         expect(finalProofCount).to.equal(proofCount + 1)
+        await userState.stop()
     })
 
     it('should process epoch transition', async () => {
@@ -551,5 +555,6 @@ describe('Synchronizer process events', function () {
             synchronizer.once(UserStateTransitioned, (event) => rs(event))
         )
         await ust
+        await userState.stop()
     })
 })

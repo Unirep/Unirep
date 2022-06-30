@@ -119,6 +119,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                         BigInt(1)
                     )
                 )
+                await userState.stop()
             }
         })
 
@@ -146,6 +147,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 signUpAirdrops.push(Reputation.default())
+                await userState.stop()
             }
         })
     })
@@ -190,6 +192,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 unirepContract,
                 'NullifierAlreadyUsed'
             )
+            await userState.stop()
         })
 
         it('airdropEpochKey event should update Unirep state', async () => {
@@ -204,6 +207,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 epochKey.toString()
             )
             expect(attestations.length).equal(1)
+            await userState.stop()
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
@@ -229,6 +233,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
+            await userState.stop()
         })
 
         it('submit invalid airdrop proof event', async () => {
@@ -260,6 +265,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             proofIndex = Number(
                 await unirepContract.getProofIndex(airdropProofInput.hash())
             )
+            await userState.stop()
         })
 
         it('airdropEpochKey event should not update User state', async () => {
@@ -270,6 +276,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
+            await userState.stop()
         })
 
         it('submit attestations to the epoch key should update User state', async () => {
@@ -294,6 +301,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(2)
+            await userState.stop()
         })
 
         it('submit valid sign up proof with wrong GST root event', async () => {
@@ -357,6 +365,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
+            await userState.stop()
         })
 
         it('submit attestations to the epoch key should update User state', async () => {
@@ -381,6 +390,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
+            await userState.stop()
         })
 
         it('submit valid sign up proof event in wrong epoch should fail', async () => {
@@ -413,6 +423,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                         value: attestingFee,
                     })
             ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+            await userState.stop()
         })
     })
 })

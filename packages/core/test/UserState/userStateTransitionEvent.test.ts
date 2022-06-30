@@ -120,6 +120,9 @@ describe('User state transition events in Unirep User State', async function () 
                     await userState.latestTransitionedEpoch()
                 )
             }
+            for (const state of userStates) {
+                await state.stop()
+            }
         })
 
         it.skip('User generate two UST proofs should not affect Unirep state', async () => {
@@ -150,6 +153,7 @@ describe('User state transition events in Unirep User State', async function () 
             console.log(diffs)
             expect(diffs.length).to.equal(1)
             expect(diffs[0].valid).to.equal(0)
+            await userState.stop()
         })
 
         it('Submit invalid start tranistion proof should not affect Unirep State', async () => {
@@ -174,6 +178,7 @@ describe('User state transition events in Unirep User State', async function () 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
             expect(diffs.length).to.equal(1)
             expect(diffs[0].valid).to.equal(0)
+            await unirepState.stop()
         })
 
         it('Submit invalid process attestation proof should not affect Unirep State', async () => {
@@ -199,6 +204,7 @@ describe('User state transition events in Unirep User State', async function () 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
             expect(diffs.length).to.equal(1)
             expect(diffs[0].valid).to.equal(0)
+            await unirepState.stop()
         })
 
         it('Submit invalid user state transition proof should not affect Unirep State', async () => {
@@ -292,6 +298,7 @@ describe('User state transition events in Unirep User State', async function () 
             expect(diffs[0].valid).to.equal(0)
             expect(diffs[1].valid).to.equal(0)
             expect(diffs[2].valid).to.equal(0)
+            await unirepState.stop()
         })
 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
@@ -351,6 +358,8 @@ describe('User state transition events in Unirep User State', async function () 
             expect(diffs.length).to.equal(expectedProofs)
             expect(diffs[0].valid).to.equal(0)
             expect(diffs[expectedProofs - 1].valid).to.equal(0)
+            await userState.stop()
+            await unirepState.stop()
         })
 
         it('mismatch proof indexes will not affect Unirep state', async () => {
@@ -433,6 +442,9 @@ describe('User state transition events in Unirep User State', async function () 
             expect(processedAttestationsCount).to.equal(
                 processAttestationProofs.length
             )
+            await unirepState.stop()
+            await userState1.stop()
+            await userState2.stop()
         })
 
         it('Submit attestations to transitioned users', async () => {
@@ -522,6 +534,7 @@ describe('User state transition events in Unirep User State', async function () 
                 attestation.graffiti.toString()
             )
             expect(attestationDoc.hash).to.equal(attestation.hash().toString())
+            await userState.stop()
         })
 
         it('should UST with attestations', async () => {
@@ -639,6 +652,7 @@ describe('User state transition events in Unirep User State', async function () 
                 expect(doc).to.not.be.undefined
                 expect(doc.confirmed).to.equal(1)
             }
+            await userState.stop()
         })
     })
 })

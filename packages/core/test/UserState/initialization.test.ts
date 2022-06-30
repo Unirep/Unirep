@@ -1,9 +1,8 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts'
 
 import { genUserState } from '../../src'
 import { genNewGST } from '../utils'
@@ -11,26 +10,17 @@ import { genNewGST } from '../utils'
 describe('User sign up events in Unirep User State', function () {
     this.timeout(0)
 
-    let accounts: ethers.Signer[]
     const maxUsers = 10
-
-    let unirepContract: Unirep
-    let treeDepths
-
-    before(async () => {
-        accounts = await hardhatEthers.getSigners()
-
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            maxUsers,
-        })
-        treeDepths = await unirepContract.treeDepths()
-    })
 
     describe('Init User State', async () => {
         it('check User state matches the contract', async () => {
+            const accounts = await ethers.getSigners()
+            const unirepContract = await deployUnirep(accounts[0], {
+                maxUsers,
+            })
             const id = new ZkIdentity()
             const initUnirepState = await genUserState(
-                hardhatEthers.provider,
+                ethers.provider,
                 unirepContract.address,
                 id
             )
@@ -42,10 +32,11 @@ describe('User sign up events in Unirep User State', function () {
 
             const unirepGSTree = await initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = genNewGST(
-                treeDepths.globalStateTreeDepth,
-                treeDepths.userStateTreeDepth
+                initUnirepState.settings.globalStateTreeDepth,
+                initUnirepState.settings.userStateTreeDepth
             )
             expect(unirepGSTree.root).equal(defaultGSTree.root)
+            await initUnirepState.stop()
         })
     })
 })
