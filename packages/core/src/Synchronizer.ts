@@ -322,34 +322,45 @@ export class Synchronizer extends EventEmitter {
         this.startDaemon()
     }
 
-    async startDaemon() {
-        let latestBlock = await this.provider.getBlockNumber()
-        this.provider.on('block', (num) => {
-            if (num > latestBlock) latestBlock = num
-        })
+    async stop() {
+        const waitForStopped = new Promise((rs) => this.once('__stopped', rs))
+        if (!this.emit('__stop')) {
+            this.removeAllListeners('__stopped')
+            throw new Error('No daemon is listening')
+        }
+        await waitForStopped
+    }
+
+    private async startDaemon() {
+        const stoppedPromise = new Promise((rs) =>
+            this.once('__stop', () => rs(null))
+        )
+        const waitForNewBlock = (afterBlock: number) =>
+            new Promise(async (rs) => {
+                const _latestBlock = await this.provider.getBlockNumber()
+                if (_latestBlock > afterBlock) return rs(_latestBlock)
+                this.provider.once('block', rs)
+            })
         const startState = await this._db.findOne('SynchronizerState', {
             where: {},
         })
         let latestProcessed = startState?.latestCompleteBlock ?? 0
-        // TODO: remove this
-        // await this._db.create('BlockNumber', {
-        //     number: latestProcessed,
-        // })
         for (;;) {
-            if (latestProcessed === latestBlock) {
-                await new Promise((r) => setTimeout(r, 1000))
-                continue
-            }
-            const newLatest = latestBlock
-            const allEvents = await this.loadNewEvents(
+            const newBlockNumber = await Promise.race([
+                waitForNewBlock(latestProcessed),
+                stoppedPromise,
+            ])
+            // if newBlockNumber is null the daemon has been stopped
+            if (newBlockNumber === null) break
+            const allEvents = await this.unirepContract.queryFilter(
+                this.unirepFilter,
                 latestProcessed + 1,
-                newLatest
+                newBlockNumber as number
             )
             const state = await this._db.findOne('SynchronizerState', {
                 where: {},
             })
             if (!state) throw new Error('State not initialized')
-            // first process historical ones then listen
             const unprocessedEvents = allEvents.filter((e) => {
                 if (e.blockNumber === state.latestProcessedBlock) {
                     if (
@@ -369,19 +380,13 @@ export class Synchronizer extends EventEmitter {
             await this._db.update('SynchronizerState', {
                 where: {},
                 update: {
-                    latestCompleteBlock: newLatest,
+                    latestCompleteBlock: newBlockNumber,
                 },
             })
-            latestProcessed = newLatest
+            latestProcessed = newBlockNumber
         }
-    }
-
-    async loadNewEvents(fromBlock, toBlock) {
-        return this.unirepContract.queryFilter(
-            this.unirepFilter,
-            fromBlock,
-            toBlock
-        )
+        this.removeAllListeners('__stop')
+        this.emit('__stopped')
     }
 
     // get a function that will process an event for a topic
@@ -503,7 +508,6 @@ export class Synchronizer extends EventEmitter {
                 await this._db.transaction(async (db) => {
                     const handler = this.topicHandlers[event.topics[0]]
                     if (!handler) {
-                        console.log(event)
                         throw new Error(
                             `Unrecognized event topic "${event.topics[0]}"`
                         )
