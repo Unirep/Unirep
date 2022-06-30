@@ -369,25 +369,26 @@ const submitUSTProofs = async (
     ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 }
 
+const tables = [
+    'Proof',
+    'Attestation',
+    'GSTLeaf',
+    'GSTRoot',
+    'Epoch',
+    'EpochKey',
+    'Nullifier',
+    'UserSignUp',
+]
+const hash = (obj: any) => {
+    const stringContent = JSON.stringify({
+        ...obj,
+        _id: null,
+        createdAt: null,
+    })
+    return crypto.createHash('sha256').update(stringContent).digest('hex')
+}
+
 export const compareDB = async (db1: DB, db2: DB) => {
-    const tables = [
-        'Proof',
-        'Attestation',
-        'GSTLeaf',
-        'GSTRoot',
-        'Epoch',
-        'EpochKey',
-        'Nullifier',
-        'UserSignUp',
-    ]
-    const hash = (obj: any) => {
-        const stringContent = JSON.stringify({
-            ...obj,
-            _id: null,
-            createdAt: null,
-        })
-        return crypto.createHash('sha256').update(stringContent).digest('hex')
-    }
     for (const table of tables) {
         const contents1 = await db1.findMany(table, { where: {} })
         const contents2 = await db2.findMany(table, { where: {} })
@@ -399,9 +400,57 @@ export const compareDB = async (db1: DB, db2: DB) => {
             }
         }, {})
         for (const content of contents2) {
-            expect(contentMap[hash(content)], content).to.equal(true)
+            expect(contentMap[hash(content)], JSON.stringify(content)).to.equal(
+                true
+            )
         }
     }
+}
+
+export const compareSnapDB = async (snap: Object, db: DB) => {
+    for (const table of tables) {
+        const contents = await db.findMany(table, { where: {} })
+        for (const content of contents) {
+            expect(snap[hash(content)], JSON.stringify(content)).to.equal(true)
+        }
+    }
+}
+
+export const getSnapDBDiffs = async (snap: Object, db: DB) => {
+    const diffs = [] as any[]
+    for (const table of tables) {
+        const contents = await db.findMany(table, { where: {} })
+        for (const content of contents) {
+            if (!snap[hash(content)]) {
+                diffs.push(content)
+            }
+        }
+    }
+    return diffs
+}
+
+export const snapshotDB = async (db: DB) => {
+    const tableSnaps = await Promise.all(
+        tables.map(async (table) => {
+            const contents = await db.findMany(table, { where: {} })
+            return contents.reduce((acc, obj) => {
+                return {
+                    [hash(obj)]: true,
+                    ...acc,
+                }
+            }, {})
+        })
+    )
+    return tableSnaps.reduce((acc, snap) => {
+        const newSnap = {
+            ...snap,
+            ...acc,
+        }
+        expect(Object.keys(newSnap).length, 'duplicate entry').to.equal(
+            Object.keys(acc).length + Object.keys(snap).length
+        )
+        return newSnap
+    }, {})
 }
 
 const compareStates = async (
