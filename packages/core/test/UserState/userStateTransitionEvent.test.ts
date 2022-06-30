@@ -22,7 +22,6 @@ import {
 import {
     compareDB,
     getSnapDBDiffs,
-    compareSnapDB,
     snapshotDB,
     genRandomAttestation,
     genRandomList,
@@ -35,7 +34,6 @@ describe('User state transition events in Unirep User State', async function () 
     let unirepContract: Unirep
 
     let attester: any
-    let attesterId: any
     const maxUsers = 2 ** 7
     const attestingFee = ethers.utils.parseEther('0.1')
 
@@ -56,9 +54,6 @@ describe('User state transition events in Unirep User State', async function () 
             const tx = await unirepContract.connect(attester).attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-            attesterId = (
-                await unirepContract.attesters(attester.address)
-            ).toBigInt()
         })
 
         it('attester set airdrop amount', async () => {
@@ -72,43 +67,6 @@ describe('User state transition events in Unirep User State', async function () 
                 attester.address
             )
             expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
-        })
-    })
-
-    describe('User Sign Up event', async () => {
-        it('sign up users through attester who sets airdrop', async () => {
-            const id = new ZkIdentity()
-            await unirepContract
-                .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
-                .then((t) => t.wait())
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                id
-            )
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester.address
-            )
-        })
-
-        it('sign up users with no airdrop', async () => {
-            const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
-
-            const tx = await unirepContract.userSignUp(commitment)
-            const receipt = await tx.wait()
-            expect(receipt.status, 'User sign up failed').to.equal(1)
-
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                id
-            )
-
-            const contractEpoch = await unirepContract.currentEpoch()
-            const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
-            expect(unirepEpoch).equal(Number(contractEpoch))
         })
     })
 
@@ -389,202 +347,298 @@ describe('User state transition events in Unirep User State', async function () 
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            const expectedProofs = 8
+            const expectedProofs = 2 + proofs.processAttestationProofs.length
             expect(diffs.length).to.equal(expectedProofs)
-            for (let x = 0; x < expectedProofs; x++) {
-                expect(diffs[x].valid, 'Proof should be invalid').to.equal(0)
-            }
+            expect(diffs[0].valid).to.equal(0)
+            expect(diffs[expectedProofs - 1].valid).to.equal(0)
         })
 
-        //     it('mismatch proof indexes will not affect Unirep state', async () => {
-        //         if (notTransitionUsers.length < 2) return
-        //         const userState1 = await genUserState(
-        //             hardhatEthers.provider,
-        //             unirepContract.address,
-        //             userIds[notTransitionUsers[0]]
-        //         )
-        //         const userState2 = await genUserState(
-        //             hardhatEthers.provider,
-        //             unirepContract.address,
-        //             userIds[notTransitionUsers[1]]
-        //         )
-        //
-        //         const { startTransitionProof, processAttestationProofs } =
-        //             await userState1.genUserStateTransitionProofs()
-        //         const { finalTransitionProof } =
-        //             await userState2.genUserStateTransitionProofs()
-        //         await submitUSTProofs(unirepContract, {
-        //             startTransitionProof,
-        //             processAttestationProofs,
-        //             finalTransitionProof,
-        //         })
-        //
-        //         const userState = await genUserState(
-        //             hardhatEthers.provider,
-        //             unirepContract.address,
-        //             userIds[storedUserIdx]
-        //         )
-        //         compareDB((userState as any)._db, (storedUserState as any)._db)
-        //     })
-        //
-        //     it('Submit attestations to transitioned users', async () => {
-        //         const epkNonce = 0
-        //         for (let i = 0; i < transitionedUsers.length; i++) {
-        //             const userIdx = transitionedUsers[i]
-        //             const userState = await genUserState(
-        //                 hardhatEthers.provider,
-        //                 unirepContract.address,
-        //                 userIds[userIdx]
-        //             )
-        //
-        //             const { proof, publicSignals } =
-        //                 await userState.genVerifyEpochKeyProof(epkNonce)
-        //             const epkProofInput = new EpochKeyProof(
-        //                 publicSignals,
-        //                 proof,
-        //                 defaultProver
-        //             )
-        //             const isValid = await epkProofInput.verify()
-        //             expect(isValid).to.be.true
-        //
-        //             let tx = await unirepContract.submitEpochKeyProof(epkProofInput)
-        //             let receipt = await tx.wait()
-        //             expect(receipt.status).to.equal(1)
-        //
-        //             const epochKey = epkProofInput.epochKey
-        //             const hashedProof = await unirepContract.hashEpochKeyProof(
-        //                 epkProofInput
-        //             )
-        //             const proofIndex = Number(
-        //                 await unirepContract.getProofIndex(hashedProof)
-        //             )
-        //
-        //             const attestation = genRandomAttestation()
-        //             attestation.attesterId = attesterId
-        //             tx = await unirepContract
-        //                 .connect(attester)
-        //                 .submitAttestation(
-        //                     attestation,
-        //                     epochKey,
-        //                     proofIndex,
-        //                     fromProofIndex,
-        //                     { value: attestingFee }
-        //                 )
-        //             receipt = await tx.wait()
-        //             expect(receipt.status).to.equal(1)
-        //             attestations[userIdx].update(
-        //                 attestation.posRep,
-        //                 attestation.negRep,
-        //                 attestation.graffiti,
-        //                 attestation.signUp
-        //             )
-        //         }
-        //         await storedUserState.waitForSync()
-        //     })
-        //
-        //     it('User state should store the attestations ', async () => {
-        //         const epkNonce = 0
-        //         const epoch = 2
-        //         for (let i = 0; i < transitionedUsers.length; i++) {
-        //             const epk = genEpochKey(
-        //                 userIds[transitionedUsers[i]].identityNullifier,
-        //                 epoch,
-        //                 epkNonce,
-        //                 storedUserState.settings.epochTreeDepth
-        //             ).toString()
-        //             const userState = await genUserState(
-        //                 hardhatEthers.provider,
-        //                 unirepContract.address,
-        //                 userIds[transitionedUsers[i]]
-        //             )
-        //             expect((await userState.getAttestations(epk)).length).not.equal(
-        //                 0
-        //             )
-        //             compareDB((userState as any)._db, (storedUserState as any)._db)
-        //         }
-        //     })
-        // })
-        //
-        // describe('Epoch transition event with attestations', async () => {
-        //     it('epoch transition should succeed', async () => {
-        //         // Record data before epoch transition so as to compare them with data after epoch transition
-        //         let epoch = await unirepContract.currentEpoch()
-        //
-        //         // Fast-forward epochLength of seconds
-        //         await hardhatEthers.provider.send('evm_increaseTime', [
-        //             EPOCH_LENGTH,
-        //         ])
-        //         // Begin epoch transition
-        //         let tx = await unirepContract
-        //             .connect(attester)
-        //             .beginEpochTransition()
-        //         let receipt = await tx.wait()
-        //         expect(receipt.status).equal(1)
-        //         console.log(
-        //             'Gas cost of epoch transition:',
-        //             receipt.gasUsed.toString()
-        //         )
-        //
-        //         // Complete epoch transition
-        //         expect(await unirepContract.currentEpoch()).to.be.equal(
-        //             epoch.add(1)
-        //         )
-        //         let epoch_ = await unirepContract.currentEpoch()
-        //         expect(epoch_).equal(epoch.add(1))
-        //     })
-        // })
-        //
-        // describe('User state transition events with attestations', async () => {
-        //     it('Users should successfully perform user state transition', async () => {
-        //         const unirepState = await genUnirepState(
-        //             hardhatEthers.provider,
-        //             unirepContract.address
-        //         )
-        //         const epoch = 2
-        //         const GSTRoot = (await unirepState.genGSTree(epoch)).root
-        //
-        //         for (let i = 0; i < userIds.length; i++) {
-        //             const randomUST = Math.round(Math.random())
-        //             if (randomUST === 0) continue
-        //             console.log('transition user', i)
-        //             const userState = await genUserState(
-        //                 hardhatEthers.provider,
-        //                 unirepContract.address,
-        //                 userIds[i]
-        //             )
-        //
-        //             expect((await userState.genGSTree(epoch)).root).equal(GSTRoot)
-        //
-        //             const proofs = await userState.genUserStateTransitionProofs()
-        //             await submitUSTProofs(unirepContract, proofs)
-        //         }
-        //     })
-        //
-        //     it('Users state transition matches current Unirep state', async () => {
-        //         const unirepState = await genUnirepState(
-        //             hardhatEthers.provider,
-        //             unirepContract.address
-        //         )
-        //         const userState = await genUserState(
-        //             hardhatEthers.provider,
-        //             unirepContract.address,
-        //             userIds[0]
-        //         )
-        //         expect(await userState.getUnirepStateCurrentEpoch()).equal(
-        //             (await unirepState.loadCurrentEpoch()).number
-        //         )
-        //         for (
-        //             let i = 1;
-        //             i <= (await unirepState.loadCurrentEpoch()).number;
-        //             i++
-        //         ) {
-        //             expect((await userState.genGSTree(i)).root).equal(
-        //                 (await userState.genGSTree(i)).root
-        //             )
-        //         }
-        //         expect((await userState.getUnirepStateEpochTree(2)).root).equal(
-        //             (await unirepState.genEpochTree(2)).root
-        //         )
-        //     })
+        it('mismatch proof indexes will not affect Unirep state', async () => {
+            const id1 = new ZkIdentity()
+            const id2 = new ZkIdentity()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(id1.genIdentityCommitment())
+                .then((t) => t.wait())
+            await unirepContract
+                .connect(attester)
+                .userSignUp(id2.genIdentityCommitment())
+                .then((t) => t.wait())
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
+            await unirepContract
+                .connect(attester)
+                .beginEpochTransition()
+                .then((t) => t.wait())
+            const userState1 = await genUserState(
+                hardhatEthers.provider,
+                unirepContract.address,
+                id1
+            )
+            const userState2 = await genUserState(
+                hardhatEthers.provider,
+                unirepContract.address,
+                id2
+            )
+            const unirepState = await genUnirepState(
+                hardhatEthers.provider,
+                unirepContract.address
+            )
+            const snap = await snapshotDB((unirepState as any)._db)
+
+            const { startTransitionProof, processAttestationProofs } =
+                await userState1.genUserStateTransitionProofs()
+            const { finalTransitionProof } =
+                await userState2.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, {
+                startTransitionProof,
+                processAttestationProofs,
+                finalTransitionProof,
+            })
+            await unirepState.waitForSync()
+
+            const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
+            const expectedProofs = 2 + processAttestationProofs.length
+            expect(diffs.length).to.equal(expectedProofs)
+            const gstLeafCount = diffs.filter(
+                (d) => d.table === 'GSTLeaf'
+            ).length
+            const gstRootCount = diffs.filter(
+                (d) => d.table === 'GSTRoot'
+            ).length
+            const nullifierCount = diffs.filter(
+                (d) => d.table === 'Nullifier'
+            ).length
+            expect(gstLeafCount).to.equal(0)
+            expect(gstRootCount).to.equal(0)
+            expect(nullifierCount).to.equal(0)
+            const ustProofCount = diffs.filter(
+                (d) =>
+                    d.table === 'Proof' &&
+                    d.event === 'IndexedUserStateTransitionProof'
+            ).length
+            expect(ustProofCount).to.equal(1)
+            const startUstProofCount = diffs.filter(
+                (d) =>
+                    d.table === 'Proof' &&
+                    d.event === 'IndexedStartedTransitionProof'
+            ).length
+            expect(startUstProofCount).to.equal(1)
+            const processedAttestationsCount = diffs.filter(
+                (d) =>
+                    d.table === 'Proof' &&
+                    d.event === 'IndexedProcessedAttestationsProof'
+            ).length
+            expect(processedAttestationsCount).to.equal(
+                processAttestationProofs.length
+            )
+        })
+
+        it('Submit attestations to transitioned users', async () => {
+            const id = new ZkIdentity()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(id.genIdentityCommitment())
+                .then((t) => t.wait())
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
+            await unirepContract
+                .connect(attester)
+                .beginEpochTransition()
+                .then((t) => t.wait())
+            const userState = await genUserState(
+                hardhatEthers.provider,
+                unirepContract.address,
+                id
+            )
+
+            const proofs = await userState.genUserStateTransitionProofs()
+            await submitUSTProofs(unirepContract, proofs)
+            await userState.waitForSync()
+            const snap = await snapshotDB((userState as any)._db)
+            // now we're synced, let's submit some attestations
+            const epkNonce = 0
+
+            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+                epkNonce
+            )
+            const isValid = await formattedProof.verify()
+            expect(isValid).to.be.true
+
+            {
+                const receipt = await unirepContract
+                    .submitEpochKeyProof(formattedProof)
+                    .then((t) => t.wait())
+                expect(receipt.status).to.equal(1)
+            }
+
+            const epochKey = formattedProof.epochKey
+            const hashedProof = await unirepContract.hashEpochKeyProof(
+                formattedProof
+            )
+            const proofIndex = Number(
+                await unirepContract.getProofIndex(hashedProof)
+            )
+
+            const attestation = genRandomAttestation()
+            const attesterId = await unirepContract.attesters(attester.address)
+
+            attestation.attesterId = attesterId
+            const receipt = await unirepContract
+                .connect(attester)
+                .submitAttestation(attestation, epochKey, proofIndex, 0, {
+                    value: attestingFee,
+                })
+                .then((t) => t.wait())
+            expect(receipt.status).to.equal(1)
+            await userState.waitForSync()
+            const epoch = await userState.getUnirepStateCurrentEpoch()
+            const epk = genEpochKey(
+                id.identityNullifier,
+                epoch,
+                epkNonce,
+                userState.settings.epochTreeDepth
+            ).toString()
+            expect(
+                (await userState.getAttestations(epk)).length
+            ).to.be.greaterThan(0)
+            const diffs = await getSnapDBDiffs(snap, (userState as any)._db)
+            // proof, attestation, epoch key
+            expect(diffs.length).to.equal(3)
+            const epkProofDoc = diffs.find((d) => d.table === 'Proof')
+            expect(epkProofDoc.epoch).to.equal(epoch)
+            expect(epkProofDoc.valid).to.equal(1)
+            const attestationDoc = diffs.find((d) => d.table === 'Attestation')
+            expect(attestationDoc.attesterId).to.equal(attesterId.toNumber())
+            expect(attestationDoc.posRep).to.equal(
+                attestation.posRep.toNumber()
+            )
+            expect(attestationDoc.negRep).to.equal(
+                attestation.negRep.toNumber()
+            )
+            expect(attestationDoc.graffiti).to.equal(
+                attestation.graffiti.toString()
+            )
+            expect(attestationDoc.hash).to.equal(attestation.hash().toString())
+        })
+
+        it('should UST with attestations', async () => {
+            const id = new ZkIdentity()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(id.genIdentityCommitment())
+                .then((t) => t.wait())
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
+            await unirepContract
+                .connect(attester)
+                .beginEpochTransition()
+                .then((t) => t.wait())
+            const userState = await genUserState(
+                hardhatEthers.provider,
+                unirepContract.address,
+                id
+            )
+
+            {
+                const proofs = await userState.genUserStateTransitionProofs()
+                await submitUSTProofs(unirepContract, proofs)
+            }
+            await userState.waitForSync()
+            // now we're synced, let's submit some attestations
+            const epkNonce = 0
+
+            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+                epkNonce
+            )
+            const isValid = await formattedProof.verify()
+            expect(isValid).to.be.true
+
+            {
+                const receipt = await unirepContract
+                    .submitEpochKeyProof(formattedProof)
+                    .then((t) => t.wait())
+                expect(receipt.status).to.equal(1)
+            }
+
+            const epochKey = formattedProof.epochKey
+            const hashedProof = await unirepContract.hashEpochKeyProof(
+                formattedProof
+            )
+            const proofIndex = Number(
+                await unirepContract.getProofIndex(hashedProof)
+            )
+
+            const attestation = genRandomAttestation()
+            const attesterId = await unirepContract.attesters(attester.address)
+
+            attestation.attesterId = attesterId
+            const receipt = await unirepContract
+                .connect(attester)
+                .submitAttestation(attestation, epochKey, proofIndex, 0, {
+                    value: attestingFee,
+                })
+                .then((t) => t.wait())
+            expect(receipt.status).to.equal(1)
+            await userState.waitForSync()
+
+            await hardhatEthers.provider.send('evm_increaseTime', [
+                EPOCH_LENGTH,
+            ])
+            await unirepContract
+                .connect(attester)
+                .beginEpochTransition()
+                .then((t) => t.wait())
+
+            await userState.waitForSync()
+            const epoch = await userState.getUnirepStateCurrentEpoch()
+            const expectedGST = await userState.genGSTree(epoch)
+            const snap = await snapshotDB((userState as any)._db)
+
+            const proofs = await userState.genUserStateTransitionProofs()
+            expectedGST.insert(
+                proofs.finalTransitionProof.newGlobalStateTreeLeaf
+            )
+            await submitUSTProofs(unirepContract, proofs)
+            await userState.waitForSync()
+            const diffs = await getSnapDBDiffs(snap, (userState as any)._db)
+            const expectedProofs = 2 + proofs.processAttestationProofs.length
+            const nullifierCount = diffs.filter(
+                (d) => d.table === 'Nullifier'
+            ).length
+            const gstLeafCount = diffs.filter(
+                (d) => d.table === 'GSTLeaf'
+            ).length
+            const gstRootCount = diffs.filter(
+                (d) => d.table === 'GSTRoot'
+            ).length
+            expect(diffs.length).to.equal(
+                expectedProofs + nullifierCount + gstLeafCount + gstRootCount
+            )
+            expect(gstLeafCount).to.equal(1)
+            const gstLeaf = diffs.find((d) => d.table === 'GSTLeaf')
+            expect(gstLeaf.hash).to.equal(
+                proofs.finalTransitionProof.newGlobalStateTreeLeaf.toString()
+            )
+            expect(gstRootCount).to.equal(1)
+            const gstRoot = diffs.find((d) => d.table === 'GSTRoot')
+            expect(gstRoot.root).to.equal(expectedGST.root.toString())
+            expect(nullifierCount).to.equal(
+                proofs.finalTransitionProof.epochKeyNullifiers.length
+            )
+            for (const nullifier of proofs.finalTransitionProof
+                .epochKeyNullifiers) {
+                const doc = diffs.find(
+                    (d) =>
+                        d.table === 'Nullifier' &&
+                        d.nullifier === nullifier.toString()
+                )
+                expect(doc).to.not.be.undefined
+                expect(doc.confirmed).to.equal(1)
+            }
+        })
     })
 })

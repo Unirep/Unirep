@@ -320,17 +320,17 @@ const submitUSTProofs = async (
         expect(receipt.status).to.equal(1)
 
         // submit random process attestations should success and not affect the results
-        const falseInput = BigNumber.from(genRandomSalt())
-        await contract
-            .processAttestations(
-                processAttestationProofs[i].outputBlindedUserState,
-                processAttestationProofs[i].outputBlindedHashChain,
-                falseInput,
-                formatProofForVerifierContract(
-                    processAttestationProofs[i].proof
-                )
-            )
-            .then((t) => t.wait())
+        // const falseInput = BigNumber.from(genRandomSalt())
+        // await contract
+        //     .processAttestations(
+        //         processAttestationProofs[i].outputBlindedUserState,
+        //         processAttestationProofs[i].outputBlindedHashChain,
+        //         falseInput,
+        //         formatProofForVerifierContract(
+        //             processAttestationProofs[i].proof
+        //         )
+        //     )
+        //     .then((t) => t.wait())
 
         // submit twice should fail
         await expect(
@@ -371,14 +371,15 @@ const submitUSTProofs = async (
 
 const tables = [
     'Proof',
-    'Attestation',
+    'Nullifier',
     'GSTLeaf',
     'GSTRoot',
+    'Attestation',
     'Epoch',
     'EpochKey',
-    'Nullifier',
     'UserSignUp',
 ]
+
 const hash = (obj: any) => {
     const stringContent = JSON.stringify({
         ...obj,
@@ -407,22 +408,15 @@ export const compareDB = async (db1: DB, db2: DB) => {
     }
 }
 
-export const compareSnapDB = async (snap: Object, db: DB) => {
-    for (const table of tables) {
-        const contents = await db.findMany(table, { where: {} })
-        for (const content of contents) {
-            expect(snap[hash(content)], JSON.stringify(content)).to.equal(true)
-        }
-    }
-}
-
+// this only returns new and changed documents. It does not account for deleted
+// documents
 export const getSnapDBDiffs = async (snap: Object, db: DB) => {
     const diffs = [] as any[]
     for (const table of tables) {
         const contents = await db.findMany(table, { where: {} })
         for (const content of contents) {
             if (!snap[hash(content)]) {
-                diffs.push(content)
+                diffs.push({ ...content, table })
             }
         }
     }
