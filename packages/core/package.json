@@ -9,6 +9,7 @@
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "hardhat test --no-compile --parallel test/*/*.test.ts",
+        "test-ci": "hardhat test --no-compile --parallel",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep",
