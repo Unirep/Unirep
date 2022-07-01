@@ -520,6 +520,7 @@ describe('Synchronizer process events', function () {
         await synchronizer.unirepContract
             .beginEpochTransition()
             .then((t) => t.wait())
+        await synchronizer.waitForSync()
         const proofs = await userState.genUserStateTransitionProofs()
         await submitUSTProofs(synchronizer.unirepContract, proofs)
 
