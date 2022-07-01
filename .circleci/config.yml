@@ -74,7 +74,7 @@ jobs:
                   name: Lint
                   command: yarn lint --check
     core-test:
-        parallelism: 2
+        parallelism: 1
         resource_class: large
         machine:
             image: ubuntu-2204:2022.04.1
@@ -86,10 +86,7 @@ jobs:
             - run: *check_version
             - run:
                   name: Test
-                  command: |
-                      cd packages/core
-                      TEST_FILES=$(circleci tests glob "test/*/*.test.ts" | circleci tests split)
-                      yarn test-ci $TEST_FILES
+                  command: yarn core test
     core-cli-test:
         resource_class: medium
         machine:
