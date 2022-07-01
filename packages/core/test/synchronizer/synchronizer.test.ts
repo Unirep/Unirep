@@ -513,8 +513,6 @@ describe('Synchronizer process events', function () {
             synchronizer.unirepContract.address,
             id
         )
-        await userState.waitForSync()
-
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
 
         await synchronizer.unirepContract
@@ -522,7 +520,6 @@ describe('Synchronizer process events', function () {
             .then((t) => t.wait())
         await synchronizer.waitForSync()
         const proofs = await userState.genUserStateTransitionProofs()
-        await submitUSTProofs(synchronizer.unirepContract, proofs)
 
         const [IndexedStartedTransitionProof] =
             synchronizer.unirepContract.filters.IndexedStartedTransitionProof()
@@ -532,7 +529,6 @@ describe('Synchronizer process events', function () {
                 rs(event)
             )
         )
-        await _startTransitionProof
 
         const [IndexedProcessedAttestationsProof] =
             synchronizer.unirepContract.filters.IndexedProcessedAttestationsProof()
@@ -542,20 +538,17 @@ describe('Synchronizer process events', function () {
                 rs(event)
             )
         )
-        await _processedAttestations
-        const __processedAttestations = new Promise((rs, rj) =>
-            synchronizer.once(IndexedProcessedAttestationsProof, (event) =>
-                rs(event)
-            )
-        )
-        await __processedAttestations
         const [UserStateTransitioned] =
             synchronizer.unirepContract.filters.UserStateTransitioned()
                 .topics as string[]
         const ust = new Promise((rs, rj) =>
             synchronizer.once(UserStateTransitioned, (event) => rs(event))
         )
+        await submitUSTProofs(synchronizer.unirepContract, proofs)
+        await synchronizer.waitForSync()
         await ust
-        await userState.stop()
+        await _processedAttestations
+        await _processedAttestations
+        await _startTransitionProof
     })
 })
