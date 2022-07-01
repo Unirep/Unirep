@@ -120,6 +120,131 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    async start() {
+        await this.setup()
+        const state = await this._db.findOne('SynchronizerState', {
+            where: {},
+        })
+        if (!state) {
+            await this._db.create('SynchronizerState', {
+                latestProcessedBlock: 0,
+                latestProcessedTransactionIndex: 0,
+                latestProcessedEventIndex: 0,
+                latestCompleteBlock: 0,
+            })
+        }
+        this.startDaemon()
+    }
+
+    async stop() {
+        const waitForStopped = new Promise((rs) => this.once('__stopped', rs))
+        if (!this.emit('__stop')) {
+            this.removeAllListeners('__stopped')
+            throw new Error('No daemon is listening')
+        }
+        await waitForStopped
+    }
+
+    private async startDaemon() {
+        const stoppedPromise = new Promise((rs) =>
+            this.once('__stop', () => rs(null))
+        )
+        const waitForNewBlock = (afterBlock: number) =>
+            new Promise(async (rs) => {
+                const _latestBlock = await this.provider.getBlockNumber()
+                if (_latestBlock > afterBlock) return rs(_latestBlock)
+                this.provider.once('block', rs)
+            })
+        const startState = await this._db.findOne('SynchronizerState', {
+            where: {},
+        })
+        let latestProcessed = startState?.latestCompleteBlock ?? 0
+        for (;;) {
+            const newBlockNumber = await Promise.race([
+                waitForNewBlock(latestProcessed),
+                stoppedPromise,
+            ])
+            // if newBlockNumber is null the daemon has been stopped
+            if (newBlockNumber === null) break
+            const allEvents = await this.unirepContract.queryFilter(
+                this.unirepFilter,
+                latestProcessed + 1,
+                newBlockNumber as number
+            )
+            const state = await this._db.findOne('SynchronizerState', {
+                where: {},
+            })
+            if (!state) throw new Error('State not initialized')
+            const unprocessedEvents = allEvents.filter((e) => {
+                if (e.blockNumber === state.latestProcessedBlock) {
+                    if (
+                        e.transactionIndex ===
+                        state.latestProcessedTransactionIndex
+                    ) {
+                        return e.logIndex > state.latestProcessedEventIndex
+                    }
+                    return (
+                        e.transactionIndex >
+                        state.latestProcessedTransactionIndex
+                    )
+                }
+                return e.blockNumber > state.latestProcessedBlock
+            })
+            await this.processEvents(unprocessedEvents)
+            await this._db.update('SynchronizerState', {
+                where: {},
+                update: {
+                    latestCompleteBlock: newBlockNumber,
+                },
+            })
+            latestProcessed = newBlockNumber
+        }
+        this.removeAllListeners('__stop')
+        this.emit('__stopped')
+    }
+
+    async processEvents(events: ethers.Event[]) {
+        if (events.length === 0) return
+        events.sort((a: any, b: any) => {
+            if (a.blockNumber !== b.blockNumber) {
+                return a.blockNumber - b.blockNumber
+            }
+            if (a.transactionIndex !== b.transactionIndex) {
+                return a.transactionIndex - b.transactionIndex
+            }
+            return a.logIndex - b.logIndex
+        })
+
+        for (const event of events) {
+            try {
+                let success: boolean | undefined
+                await this._db.transaction(async (db) => {
+                    const handler = this.topicHandlers[event.topics[0]]
+                    if (!handler) {
+                        throw new Error(
+                            `Unrecognized event topic "${event.topics[0]}"`
+                        )
+                    }
+                    success = await handler(event, db)
+                    db.update('SynchronizerState', {
+                        where: {},
+                        update: {
+                            latestProcessedBlock: +event.blockNumber,
+                            latestProcessedTransactionIndex:
+                                +event.transactionIndex,
+                            latestProcessedEventIndex: +event.logIndex,
+                        },
+                    })
+                })
+                if (success) this.emit(event.topics[0], event)
+            } catch (err) {
+                console.log(`Error processing event:`, err)
+                console.log(event)
+                throw err
+            }
+        }
+    }
+
     async waitForSync() {
         const latestBlock = await this.unirepContract.provider.getBlockNumber()
         for (;;) {
@@ -306,89 +431,6 @@ export class Synchronizer extends EventEmitter {
         })
     }
 
-    async start() {
-        await this.setup()
-        const state = await this._db.findOne('SynchronizerState', {
-            where: {},
-        })
-        if (!state) {
-            await this._db.create('SynchronizerState', {
-                latestProcessedBlock: 0,
-                latestProcessedTransactionIndex: 0,
-                latestProcessedEventIndex: 0,
-                latestCompleteBlock: 0,
-            })
-        }
-        this.startDaemon()
-    }
-
-    async stop() {
-        const waitForStopped = new Promise((rs) => this.once('__stopped', rs))
-        if (!this.emit('__stop')) {
-            this.removeAllListeners('__stopped')
-            throw new Error('No daemon is listening')
-        }
-        await waitForStopped
-    }
-
-    private async startDaemon() {
-        const stoppedPromise = new Promise((rs) =>
-            this.once('__stop', () => rs(null))
-        )
-        const waitForNewBlock = (afterBlock: number) =>
-            new Promise(async (rs) => {
-                const _latestBlock = await this.provider.getBlockNumber()
-                if (_latestBlock > afterBlock) return rs(_latestBlock)
-                this.provider.once('block', rs)
-            })
-        const startState = await this._db.findOne('SynchronizerState', {
-            where: {},
-        })
-        let latestProcessed = startState?.latestCompleteBlock ?? 0
-        for (;;) {
-            const newBlockNumber = await Promise.race([
-                waitForNewBlock(latestProcessed),
-                stoppedPromise,
-            ])
-            // if newBlockNumber is null the daemon has been stopped
-            if (newBlockNumber === null) break
-            const allEvents = await this.unirepContract.queryFilter(
-                this.unirepFilter,
-                latestProcessed + 1,
-                newBlockNumber as number
-            )
-            const state = await this._db.findOne('SynchronizerState', {
-                where: {},
-            })
-            if (!state) throw new Error('State not initialized')
-            const unprocessedEvents = allEvents.filter((e) => {
-                if (e.blockNumber === state.latestProcessedBlock) {
-                    if (
-                        e.transactionIndex ===
-                        state.latestProcessedTransactionIndex
-                    ) {
-                        return e.logIndex > state.latestProcessedEventIndex
-                    }
-                    return (
-                        e.transactionIndex >
-                        state.latestProcessedTransactionIndex
-                    )
-                }
-                return e.blockNumber > state.latestProcessedBlock
-            })
-            await this.processEvents(unprocessedEvents)
-            await this._db.update('SynchronizerState', {
-                where: {},
-                update: {
-                    latestCompleteBlock: newBlockNumber,
-                },
-            })
-            latestProcessed = newBlockNumber
-        }
-        this.removeAllListeners('__stop')
-        this.emit('__stopped')
-    }
-
     // get a function that will process an event for a topic
     get topicHandlers() {
         const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
@@ -490,77 +532,219 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async processEvents(events: ethers.Event[]) {
-        if (events.length === 0) return
-        events.sort((a: any, b: any) => {
-            if (a.blockNumber !== b.blockNumber) {
-                return a.blockNumber - b.blockNumber
-            }
-            if (a.transactionIndex !== b.transactionIndex) {
-                return a.transactionIndex - b.transactionIndex
-            }
-            return a.logIndex - b.logIndex
-        })
-
-        for (const event of events) {
-            try {
-                let success: boolean | undefined
-                await this._db.transaction(async (db) => {
-                    const handler = this.topicHandlers[event.topics[0]]
-                    if (!handler) {
-                        throw new Error(
-                            `Unrecognized event topic "${event.topics[0]}"`
-                        )
-                    }
-                    success = await handler(event, db)
-                    db.update('SynchronizerState', {
-                        where: {},
-                        update: {
-                            latestProcessedBlock: +event.blockNumber,
-                            latestProcessedTransactionIndex:
-                                +event.transactionIndex,
-                            latestProcessedEventIndex: +event.logIndex,
-                        },
-                    })
-                })
-                if (success) this.emit(event.topics[0], event)
-            } catch (err) {
-                console.log(`Error processing event:`, err)
-                console.log(event)
-                throw err
-            }
-        }
-    }
-
     // unirep event handlers
 
-    async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
-        const epoch = Number(event?.topics[1])
-        const treeDepths = await this.unirepContract.treeDepths()
-        const tree = await this.genEpochTree(epoch)
-        db.upsert('Epoch', {
-            where: {
-                number: epoch,
-            },
-            update: {
-                sealed: true,
-                epochRoot: tree.root.toString(),
-            },
-            create: {
-                number: epoch,
-                sealed: true,
-                epochRoot: tree.root.toString(),
-            },
-        })
-        // create the next stub entry
-        db.create('Epoch', {
-            number: epoch + 1,
-            sealed: false,
-        })
-        this._globalStateTree = new IncrementalMerkleTree(
-            treeDepths.globalStateTreeDepth,
-            this.defaultGSTLeaf
+    async userSignedUpEvent(event: ethers.Event, db: TransactionDB) {
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'UserSignedUp',
+            event.data
         )
+
+        const transactionHash = event.transactionHash
+        const epoch = Number(event.topics[1])
+        const idCommitment = BigInt(event.topics[2])
+        const attesterId = Number(decodedData.attesterId)
+        const airdrop = Number(decodedData.airdropAmount)
+
+        const treeDepths = await this.unirepContract.treeDepths()
+
+        await this._checkCurrentEpoch(epoch)
+        const USTRoot = computeInitUserStateRoot(
+            treeDepths.userStateTreeDepth,
+            attesterId,
+            airdrop
+        )
+        const newGSTLeaf = hashLeftRight(idCommitment, USTRoot)
+
+        // update GST when new leaf is inserted
+        // keep track of each GST root when verifying proofs
+        this.globalStateTree.insert(newGSTLeaf)
+        // save the new leaf
+        const leafIndexInEpoch = await this._db.count('GSTLeaf', {
+            epoch,
+        })
+        db.create('GSTLeaf', {
+            epoch,
+            transactionHash,
+            hash: newGSTLeaf.toString(),
+            index: leafIndexInEpoch,
+        })
+        db.create('GSTRoot', {
+            epoch,
+            root: this.globalStateTree.root.toString(),
+        })
+        db.create('UserSignUp', {
+            commitment: idCommitment.toString(),
+            epoch,
+            attesterId,
+            airdrop,
+        })
+        return true
+    }
+
+    async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
+        const _proofIndex = Number(event.topics[1])
+        const _epoch = Number(event.topics[2])
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'IndexedUserSignedUpProof',
+            event.data
+        )
+        if (!decodedData) {
+            throw new Error('Failed to decode data')
+        }
+        const args = decodedData.proof
+
+        const emptyArray = []
+        const formatPublicSignals = emptyArray
+            .concat(
+                args.epoch,
+                args.epochKey,
+                args.globalStateTree,
+                args.attesterId,
+                args.userHasSignedUp
+            )
+            .map((n) => BigInt(n))
+        const formattedProof = args.proof.map((n) => BigInt(n))
+        const proof = encodeBigIntArray(formattedProof)
+        const publicSignals = encodeBigIntArray(formatPublicSignals)
+        const isValid = await this.prover.verifyProof(
+            Circuit.proveUserSignUp,
+            formatPublicSignals,
+            formatProofForSnarkjsVerification(formattedProof)
+        )
+        const exist = await this.GSTRootExists(
+            args.globalStateTree.toString(),
+            _epoch
+        )
+
+        db.create('Proof', {
+            index: _proofIndex,
+            epoch: _epoch,
+            proof: proof,
+            publicSignals: publicSignals,
+            transactionHash: event.transactionHash,
+            globalStateTree: args.globalStateTree.toString(),
+            event: 'IndexedUserSignedUpProof',
+            valid: isValid && exist,
+        })
+        return true
+    }
+
+    async reputationProofEvent(event: ethers.Event, db: TransactionDB) {
+        const _proofIndex = Number(event.topics[1])
+        const _epoch = Number(event.topics[2])
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'IndexedReputationProof',
+            event.data
+        )
+        if (!decodedData) {
+            throw new Error('Failed to decode data')
+        }
+        const args = decodedData.proof
+        const emptyArray = []
+        const formatPublicSignals = emptyArray
+            .concat(
+                args.repNullifiers,
+                args.epoch,
+                args.epochKey,
+                args.globalStateTree,
+                args.attesterId,
+                args.proveReputationAmount,
+                args.minRep,
+                args.proveGraffiti,
+                args.graffitiPreImage
+            )
+            .map((n) => BigInt(n))
+        const formattedProof = args.proof.map((n) => BigInt(n))
+        const proof = encodeBigIntArray(formattedProof)
+        const publicSignals = encodeBigIntArray(formatPublicSignals)
+        const isValid = await this.prover.verifyProof(
+            Circuit.proveReputation,
+            formatPublicSignals,
+            formatProofForSnarkjsVerification(formattedProof)
+        )
+        const exist = await this.GSTRootExists(
+            args.globalStateTree.toString(),
+            _epoch
+        )
+        const repNullifiers = args.repNullifiers
+            .map((n) => BigInt(n).toString())
+            .filter((n) => n !== '0')
+
+        const existingNullifier = await this._db.findOne('Nullifier', {
+            where: {
+                nullifier: repNullifiers,
+                confirmed: true,
+            },
+        })
+        if (!existingNullifier) {
+            // everything checks out, lets start mutating the db
+            db.delete('Nullifier', {
+                where: {
+                    nullifier: repNullifiers,
+                    confirmed: false,
+                },
+            })
+            db.create(
+                'Nullifier',
+                repNullifiers.map((nullifier) => ({
+                    epoch: _epoch,
+                    nullifier,
+                }))
+            )
+        }
+        db.create('Proof', {
+            index: _proofIndex,
+            epoch: _epoch,
+            proof: proof,
+            publicSignals: publicSignals,
+            transactionHash: event.transactionHash,
+            globalStateTree: args.globalStateTree.toString(),
+            event: 'IndexedReputationProof',
+            valid: isValid && exist && !existingNullifier,
+        })
+        return true
+    }
+
+    async epochKeyProofEvent(event: ethers.Event, db: TransactionDB) {
+        const _proofIndex = Number(event.topics[1])
+        const _epoch = Number(event.topics[2])
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'IndexedEpochKeyProof',
+            event.data
+        )
+        if (!decodedData) {
+            throw new Error('Failed to decode data')
+        }
+        const args = decodedData.proof
+
+        const emptyArray = []
+        const formatPublicSignals = emptyArray
+            .concat(args.globalStateTree, args.epoch, args.epochKey)
+            .map((n) => BigInt(n))
+        const formattedProof = args.proof.map((n) => BigInt(n))
+        const proof = encodeBigIntArray(formattedProof)
+        const publicSignals = encodeBigIntArray(formatPublicSignals)
+        const isValid = await this.prover.verifyProof(
+            Circuit.verifyEpochKey,
+            formatPublicSignals,
+            formatProofForSnarkjsVerification(formattedProof)
+        )
+        const exist = await this.GSTRootExists(
+            args.globalStateTree.toString(),
+            _epoch
+        )
+
+        db.create('Proof', {
+            index: _proofIndex,
+            epoch: _epoch,
+            proof: proof,
+            publicSignals: publicSignals,
+            transactionHash: event.transactionHash,
+            globalStateTree: args.globalStateTree.toString(),
+            event: 'IndexedEpochKeyProof',
+            valid: isValid && exist,
+        })
         return true
     }
 
@@ -693,6 +877,148 @@ export class Synchronizer extends EventEmitter {
                 epoch: _epoch,
                 key: _epochKey.toString(),
             },
+        })
+        return true
+    }
+
+    async startUSTProofEvent(event: ethers.Event, db: TransactionDB) {
+        const _proofIndex = Number(event.topics[1])
+        const _blindedUserState = BigInt(event.topics[2])
+        const _globalStateTree = BigInt(event.topics[3])
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'IndexedStartedTransitionProof',
+            event.data
+        )
+        if (!decodedData) {
+            throw new Error('Failed to decode data')
+        }
+        const existingGSTRoot = await this._db.findOne('GSTRoot', {
+            where: {
+                root: _globalStateTree.toString(),
+            },
+        })
+        const _blindedHashChain = BigInt(decodedData.blindedHashChain)
+        const formatPublicSignals = [
+            _blindedUserState,
+            _blindedHashChain,
+            _globalStateTree,
+        ]
+        const formattedProof = decodedData.proof.map((n) => BigInt(n))
+        const isValid = await this.prover.verifyProof(
+            Circuit.startTransition,
+            formatPublicSignals,
+            formatProofForSnarkjsVerification(formattedProof)
+        )
+
+        const proof = encodeBigIntArray(formattedProof)
+
+        db.create('Proof', {
+            index: _proofIndex,
+            blindedUserState: _blindedUserState.toString(),
+            blindedHashChain: _blindedHashChain.toString(),
+            globalStateTree: _globalStateTree.toString(),
+            proof: proof,
+            transactionHash: event.transactionHash,
+            event: 'IndexedStartedTransitionProof',
+            valid: !!(existingGSTRoot && isValid),
+        })
+        return true
+    }
+
+    async processAttestationProofEvent(event: ethers.Event, db: TransactionDB) {
+        const _proofIndex = Number(event.topics[1])
+        const _inputBlindedUserState = BigInt(event.topics[2])
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'IndexedProcessedAttestationsProof',
+            event.data
+        )
+        if (!decodedData) {
+            throw new Error('Failed to decode data')
+        }
+        const _outputBlindedUserState = BigInt(
+            decodedData.outputBlindedUserState
+        )
+        const _outputBlindedHashChain = BigInt(
+            decodedData.outputBlindedHashChain
+        )
+
+        const formatPublicSignals = [
+            _outputBlindedUserState,
+            _outputBlindedHashChain,
+            _inputBlindedUserState,
+        ]
+        const formattedProof = decodedData.proof.map((n) => BigInt(n))
+        const isValid = await this.prover.verifyProof(
+            Circuit.processAttestations,
+            formatPublicSignals,
+            formatProofForSnarkjsVerification(formattedProof)
+        )
+
+        const proof = encodeBigIntArray(formattedProof)
+
+        db.create('Proof', {
+            index: _proofIndex,
+            outputBlindedUserState: _outputBlindedUserState.toString(),
+            outputBlindedHashChain: _outputBlindedHashChain.toString(),
+            inputBlindedUserState: _inputBlindedUserState.toString(),
+            globalStateTree: '0',
+            proof: proof,
+            transactionHash: event.transactionHash,
+            event: 'IndexedProcessedAttestationsProof',
+            valid: isValid,
+        })
+        return true
+    }
+
+    async USTProofEvent(event: ethers.Event, db: TransactionDB) {
+        const _proofIndex = Number(event.topics[1])
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'IndexedUserStateTransitionProof',
+            event.data
+        )
+        if (!decodedData) {
+            throw new Error('Failed to decode data')
+        }
+        const args = decodedData.proof
+        const proofIndexRecords = decodedData.proofIndexRecords.map((n) =>
+            Number(n)
+        )
+
+        const emptyArray = []
+        const formatPublicSignals = emptyArray
+            .concat(
+                args.newGlobalStateTreeLeaf,
+                args.epkNullifiers,
+                args.transitionFromEpoch,
+                args.blindedUserStates,
+                args.fromGlobalStateTree,
+                args.blindedHashChains,
+                args.fromEpochTree
+            )
+            .map((n) => BigInt(n))
+        const formattedProof = args.proof.map((n) => BigInt(n))
+        const proof = encodeBigIntArray(formattedProof)
+        const publicSignals = encodeBigIntArray(formatPublicSignals)
+        const isValid = await this.prover.verifyProof(
+            Circuit.userStateTransition,
+            formatPublicSignals,
+            formatProofForSnarkjsVerification(formattedProof)
+        )
+        const exist = await this.GSTRootExists(
+            args.fromGlobalStateTree.toString(),
+            Number(args.transitionFromEpoch)
+        )
+
+        db.create('Proof', {
+            index: _proofIndex,
+            proof: proof,
+            publicSignals: publicSignals,
+            blindedUserState: args.blindedUserStates[0].toString(),
+            globalStateTree: args.fromGlobalStateTree.toString(),
+            proofIndexRecords: proofIndexRecords,
+            transactionHash: event.transactionHash,
+            event: 'IndexedUserStateTransitionProof',
+            valid: isValid && exist,
         })
         return true
     }
@@ -905,359 +1231,33 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async userSignedUpEvent(event: ethers.Event, db: TransactionDB) {
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'UserSignedUp',
-            event.data
-        )
-
-        const transactionHash = event.transactionHash
-        const epoch = Number(event.topics[1])
-        const idCommitment = BigInt(event.topics[2])
-        const attesterId = Number(decodedData.attesterId)
-        const airdrop = Number(decodedData.airdropAmount)
-
+    async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
+        const epoch = Number(event?.topics[1])
         const treeDepths = await this.unirepContract.treeDepths()
-
-        await this._checkCurrentEpoch(epoch)
-        const USTRoot = computeInitUserStateRoot(
-            treeDepths.userStateTreeDepth,
-            attesterId,
-            airdrop
-        )
-        const newGSTLeaf = hashLeftRight(idCommitment, USTRoot)
-
-        // update GST when new leaf is inserted
-        // keep track of each GST root when verifying proofs
-        this.globalStateTree.insert(newGSTLeaf)
-        // save the new leaf
-        const leafIndexInEpoch = await this._db.count('GSTLeaf', {
-            epoch,
-        })
-        db.create('GSTLeaf', {
-            epoch,
-            transactionHash,
-            hash: newGSTLeaf.toString(),
-            index: leafIndexInEpoch,
-        })
-        db.create('GSTRoot', {
-            epoch,
-            root: this.globalStateTree.root.toString(),
-        })
-        db.create('UserSignUp', {
-            commitment: idCommitment.toString(),
-            epoch,
-            attesterId,
-            airdrop,
-        })
-        return true
-    }
-
-    async USTProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedUserStateTransitionProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const args = decodedData.proof
-        const proofIndexRecords = decodedData.proofIndexRecords.map((n) =>
-            Number(n)
-        )
-
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(
-                args.newGlobalStateTreeLeaf,
-                args.epkNullifiers,
-                args.transitionFromEpoch,
-                args.blindedUserStates,
-                args.fromGlobalStateTree,
-                args.blindedHashChains,
-                args.fromEpochTree
-            )
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
-        const proof = encodeBigIntArray(formattedProof)
-        const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
-            Circuit.userStateTransition,
-            formatPublicSignals,
-            formatProofForSnarkjsVerification(formattedProof)
-        )
-        const exist = await this.GSTRootExists(
-            args.fromGlobalStateTree.toString(),
-            Number(args.transitionFromEpoch)
-        )
-
-        db.create('Proof', {
-            index: _proofIndex,
-            proof: proof,
-            publicSignals: publicSignals,
-            blindedUserState: args.blindedUserStates[0].toString(),
-            globalStateTree: args.fromGlobalStateTree.toString(),
-            proofIndexRecords: proofIndexRecords,
-            transactionHash: event.transactionHash,
-            event: 'IndexedUserStateTransitionProof',
-            valid: isValid && exist,
-        })
-        return true
-    }
-
-    async processAttestationProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _inputBlindedUserState = BigInt(event.topics[2])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedProcessedAttestationsProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const _outputBlindedUserState = BigInt(
-            decodedData.outputBlindedUserState
-        )
-        const _outputBlindedHashChain = BigInt(
-            decodedData.outputBlindedHashChain
-        )
-
-        const formatPublicSignals = [
-            _outputBlindedUserState,
-            _outputBlindedHashChain,
-            _inputBlindedUserState,
-        ]
-        const formattedProof = decodedData.proof.map((n) => BigInt(n))
-        const isValid = await this.prover.verifyProof(
-            Circuit.processAttestations,
-            formatPublicSignals,
-            formatProofForSnarkjsVerification(formattedProof)
-        )
-
-        const proof = encodeBigIntArray(formattedProof)
-
-        db.create('Proof', {
-            index: _proofIndex,
-            outputBlindedUserState: _outputBlindedUserState.toString(),
-            outputBlindedHashChain: _outputBlindedHashChain.toString(),
-            inputBlindedUserState: _inputBlindedUserState.toString(),
-            globalStateTree: '0',
-            proof: proof,
-            transactionHash: event.transactionHash,
-            event: 'IndexedProcessedAttestationsProof',
-            valid: isValid,
-        })
-        return true
-    }
-
-    async startUSTProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _blindedUserState = BigInt(event.topics[2])
-        const _globalStateTree = BigInt(event.topics[3])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedStartedTransitionProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const existingGSTRoot = await this._db.findOne('GSTRoot', {
+        const tree = await this.genEpochTree(epoch)
+        db.upsert('Epoch', {
             where: {
-                root: _globalStateTree.toString(),
+                number: epoch,
+            },
+            update: {
+                sealed: true,
+                epochRoot: tree.root.toString(),
+            },
+            create: {
+                number: epoch,
+                sealed: true,
+                epochRoot: tree.root.toString(),
             },
         })
-        const _blindedHashChain = BigInt(decodedData.blindedHashChain)
-        const formatPublicSignals = [
-            _blindedUserState,
-            _blindedHashChain,
-            _globalStateTree,
-        ]
-        const formattedProof = decodedData.proof.map((n) => BigInt(n))
-        const isValid = await this.prover.verifyProof(
-            Circuit.startTransition,
-            formatPublicSignals,
-            formatProofForSnarkjsVerification(formattedProof)
-        )
-
-        const proof = encodeBigIntArray(formattedProof)
-
-        db.create('Proof', {
-            index: _proofIndex,
-            blindedUserState: _blindedUserState.toString(),
-            blindedHashChain: _blindedHashChain.toString(),
-            globalStateTree: _globalStateTree.toString(),
-            proof: proof,
-            transactionHash: event.transactionHash,
-            event: 'IndexedStartedTransitionProof',
-            valid: !!(existingGSTRoot && isValid),
+        // create the next stub entry
+        db.create('Epoch', {
+            number: epoch + 1,
+            sealed: false,
         })
-        return true
-    }
-
-    async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _epoch = Number(event.topics[2])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedUserSignedUpProof',
-            event.data
+        this._globalStateTree = new IncrementalMerkleTree(
+            treeDepths.globalStateTreeDepth,
+            this.defaultGSTLeaf
         )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const args = decodedData.proof
-
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(
-                args.epoch,
-                args.epochKey,
-                args.globalStateTree,
-                args.attesterId,
-                args.userHasSignedUp
-            )
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
-        const proof = encodeBigIntArray(formattedProof)
-        const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
-            Circuit.proveUserSignUp,
-            formatPublicSignals,
-            formatProofForSnarkjsVerification(formattedProof)
-        )
-        const exist = await this.GSTRootExists(
-            args.globalStateTree.toString(),
-            _epoch
-        )
-
-        db.create('Proof', {
-            index: _proofIndex,
-            epoch: _epoch,
-            proof: proof,
-            publicSignals: publicSignals,
-            transactionHash: event.transactionHash,
-            globalStateTree: args.globalStateTree.toString(),
-            event: 'IndexedUserSignedUpProof',
-            valid: isValid && exist,
-        })
-        return true
-    }
-
-    async reputationProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _epoch = Number(event.topics[2])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedReputationProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const args = decodedData.proof
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(
-                args.repNullifiers,
-                args.epoch,
-                args.epochKey,
-                args.globalStateTree,
-                args.attesterId,
-                args.proveReputationAmount,
-                args.minRep,
-                args.proveGraffiti,
-                args.graffitiPreImage
-            )
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
-        const proof = encodeBigIntArray(formattedProof)
-        const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
-            Circuit.proveReputation,
-            formatPublicSignals,
-            formatProofForSnarkjsVerification(formattedProof)
-        )
-        const exist = await this.GSTRootExists(
-            args.globalStateTree.toString(),
-            _epoch
-        )
-        const repNullifiers = args.repNullifiers
-            .map((n) => BigInt(n).toString())
-            .filter((n) => n !== '0')
-
-        const existingNullifier = await this._db.findOne('Nullifier', {
-            where: {
-                nullifier: repNullifiers,
-                confirmed: true,
-            },
-        })
-        if (!existingNullifier) {
-            // everything checks out, lets start mutating the db
-            db.delete('Nullifier', {
-                where: {
-                    nullifier: repNullifiers,
-                    confirmed: false,
-                },
-            })
-            db.create(
-                'Nullifier',
-                repNullifiers.map((nullifier) => ({
-                    epoch: _epoch,
-                    nullifier,
-                }))
-            )
-        }
-        db.create('Proof', {
-            index: _proofIndex,
-            epoch: _epoch,
-            proof: proof,
-            publicSignals: publicSignals,
-            transactionHash: event.transactionHash,
-            globalStateTree: args.globalStateTree.toString(),
-            event: 'IndexedReputationProof',
-            valid: isValid && exist && !existingNullifier,
-        })
-        return true
-    }
-
-    async epochKeyProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _epoch = Number(event.topics[2])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedEpochKeyProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const args = decodedData.proof
-
-        const emptyArray = []
-        const formatPublicSignals = emptyArray
-            .concat(args.globalStateTree, args.epoch, args.epochKey)
-            .map((n) => BigInt(n))
-        const formattedProof = args.proof.map((n) => BigInt(n))
-        const proof = encodeBigIntArray(formattedProof)
-        const publicSignals = encodeBigIntArray(formatPublicSignals)
-        const isValid = await this.prover.verifyProof(
-            Circuit.verifyEpochKey,
-            formatPublicSignals,
-            formatProofForSnarkjsVerification(formattedProof)
-        )
-        const exist = await this.GSTRootExists(
-            args.globalStateTree.toString(),
-            _epoch
-        )
-
-        db.create('Proof', {
-            index: _proofIndex,
-            epoch: _epoch,
-            proof: proof,
-            publicSignals: publicSignals,
-            transactionHash: event.transactionHash,
-            globalStateTree: args.globalStateTree.toString(),
-            event: 'IndexedEpochKeyProof',
-            valid: isValid && exist,
-        })
         return true
     }
 }
