@@ -1,0 +1,125 @@
+version: 2.1
+workflows:
+    lint_and_test:
+        jobs:
+            - build
+            - lint
+            - core-test:
+                  requires:
+                      - build
+            - core-cli-test:
+                  requires:
+                      - build
+            - circuits-test:
+                  requires:
+                      - build
+            - contracts-test:
+                  requires:
+                      - build
+            - crypto-test:
+                  requires:
+                      - build
+
+jobs:
+    build:
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - run:
+                  name: Install Yarn
+                  command: curl -o- -L https://yarnpkg.com/install.sh | bash
+            - run:
+                  name: Install Packages
+                  command: yarn
+            - run:
+                  name: Build
+                  command: yarn build
+            - persist_to_workspace:
+                  root: ~/project
+                  paths:
+                      - node_modules
+                      - packages/circuits/zksnarkBuild
+                      - packages/circuits/dist
+                      - packages/contracts/build
+                      - packages/contracts/cache
+                      - packages/contracts/typechain
+                      - packages/contracts/vbuild
+                      - packages/core/build
+                      - packages/core/cache
+                      - packages/crypto/build
+    lint:
+        machine:
+            image: ubuntu-2204:2022.04.1
+        resource_class: medium
+        steps:
+            - checkout
+            - run:
+                  name: Install Yarn
+                  command: curl -o- -L https://yarnpkg.com/install.sh | bash
+            - run:
+                  name: Install
+                  command: yarn
+            - run:
+                  name: Lint
+                  command: yarn lint --check
+    core-test:
+        parallelism: 2
+        resource_class: large
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run:
+                  name: Test
+                  command: |
+                      cd packages/core
+                      TEST_FILES=$(circleci tests glob "test/*/*.test.ts" | circleci tests split)
+                      echo $TEST_FILES
+                      yarn test-ci $TEST_FILES
+    core-cli-test:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run:
+                  name: Test
+                  command: yarn core test-cli
+    circuits-test:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run:
+                  name: Test
+                  command: yarn circuits test
+    contracts-test:
+        resource_class: large
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run:
+                  name: Test
+                  command: yarn contracts test
+    crypto-test:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run:
+                  name: Test
+                  command: yarn crypto test
