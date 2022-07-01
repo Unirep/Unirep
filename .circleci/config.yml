@@ -20,15 +20,26 @@ workflows:
                   requires:
                       - build
 
+# Just for reusing below
+step_defs:
+    - run: &node_version
+          name: Set Node version
+          command: |
+              nvm install v14
+              nvm alias default v14
+              echo "nvm use default" >> $BASH_ENV
+    - run: &check_version
+          name: Check Node version
+          command: node -v | grep v14
+
 jobs:
     build:
         machine:
             image: ubuntu-2204:2022.04.1
         steps:
             - checkout
-            - run:
-                  name: Install Yarn
-                  command: curl -o- -L https://yarnpkg.com/install.sh | bash
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Install Packages
                   command: yarn
@@ -54,9 +65,8 @@ jobs:
         resource_class: medium
         steps:
             - checkout
-            - run:
-                  name: Install Yarn
-                  command: curl -o- -L https://yarnpkg.com/install.sh | bash
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Install
                   command: yarn
@@ -72,12 +82,13 @@ jobs:
             - checkout
             - attach_workspace:
                   at: ~/project
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Test
                   command: |
                       cd packages/core
                       TEST_FILES=$(circleci tests glob "test/*/*.test.ts" | circleci tests split)
-                      echo $TEST_FILES
                       yarn test-ci $TEST_FILES
     core-cli-test:
         resource_class: medium
@@ -87,6 +98,8 @@ jobs:
             - checkout
             - attach_workspace:
                   at: ~/project
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Test
                   command: yarn core test-cli
@@ -98,6 +111,8 @@ jobs:
             - checkout
             - attach_workspace:
                   at: ~/project
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Test
                   command: yarn circuits test
@@ -109,6 +124,8 @@ jobs:
             - checkout
             - attach_workspace:
                   at: ~/project
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Test
                   command: yarn contracts test
@@ -120,6 +137,8 @@ jobs:
             - checkout
             - attach_workspace:
                   at: ~/project
+            - run: *node_version
+            - run: *check_version
             - run:
                   name: Test
                   command: yarn crypto test
