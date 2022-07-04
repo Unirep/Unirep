@@ -364,28 +364,24 @@ describe('Reputation proof events in Unirep User State', function () {
             const epkNonce = 0
             const { formattedProof, epochKey } =
                 await userState.genVerifyEpochKeyProof(epkNonce)
-        
+
             let tx = await unirepContract.submitEpochKeyProof(formattedProof)
             let receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
-        
+
             const hash = await unirepContract.hashEpochKeyProof(formattedProof)
             const toProofIndex = Number(
                 await unirepContract.getProofIndex(hash)
             )
-        
+
             const attesterId = await unirepContract.attesters(attester.address)
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
             tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    toProofIndex,
-                    9,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey, toProofIndex, 9, {
+                    value: attestingFee,
+                })
             receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
