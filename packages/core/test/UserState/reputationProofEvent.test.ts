@@ -350,53 +350,48 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(attestations.length).equal(0)
         })
 
-        // it('invalid reputation proof with from proof index should not update User state', async () => {
-        //     const otherUserIdx = 0
-        //     const userState = await genUserState(
-        //         hardhatEthers.provider,
-        //         unirepContract.address,
-        //         userIds[otherUserIdx]
-        //     )
-        //     epoch = Number(await unirepContract.currentEpoch())
-        //     const epkNonce = 0
-        //     const { proof, publicSignals } =
-        //         await userState.genVerifyEpochKeyProof(epkNonce)
-        //     const epkProofInput = new EpochKeyProof(publicSignals, proof)
-        //     const isValid = await epkProofInput.verify()
-        //     expect(isValid).to.be.true
-        //
-        //     let tx = await unirepContract.submitEpochKeyProof(epkProofInput)
-        //     let receipt = await tx.wait()
-        //     expect(receipt.status).to.equal(1)
-        //
-        //     epochKey = epkProofInput.epochKey
-        //     const toProofIndex = Number(
-        //         await unirepContract.getProofIndex(epkProofInput.hash())
-        //     )
-        //
-        //     const attestation = genRandomAttestation()
-        //     attestation.attesterId = attesterId
-        //     tx = await unirepContract
-        //         .connect(attester)
-        //         .submitAttestation(
-        //             attestation,
-        //             epochKey,
-        //             toProofIndex,
-        //             proofIndex,
-        //             { value: attestingFee }
-        //         )
-        //     receipt = await tx.wait()
-        //     expect(receipt.status).to.equal(1)
-        //
-        //     const userStateAfterAttest = await genUserState(
-        //         hardhatEthers.provider,
-        //         unirepContract.address,
-        //         userIds[otherUserIdx]
-        //     )
-        //     expect(userState.toJSON()).to.deep.equal(
-        //         userStateAfterAttest.toJSON()
-        //     )
-        // })
+        it('invalid reputation proof with from proof index should not update User state', async () => {
+            const id = new ZkIdentity()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(id.genIdentityCommitment())
+                .then((t) => t.wait())
+            const userState = await genUserState(
+                hardhatEthers.provider,
+                unirepContract.address,
+                id
+            )
+            const epkNonce = 0
+            const { formattedProof, epochKey } =
+                await userState.genVerifyEpochKeyProof(epkNonce)
+        
+            let tx = await unirepContract.submitEpochKeyProof(formattedProof)
+            let receipt = await tx.wait()
+            expect(receipt.status).to.equal(1)
+        
+            const hash = await unirepContract.hashEpochKeyProof(formattedProof)
+            const toProofIndex = Number(
+                await unirepContract.getProofIndex(hash)
+            )
+        
+            const attesterId = await unirepContract.attesters(attester.address)
+            const attestation = genRandomAttestation()
+            attestation.attesterId = attesterId
+            tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    attestation,
+                    epochKey,
+                    toProofIndex,
+                    9,
+                    { value: attestingFee }
+                )
+            receipt = await tx.wait()
+            expect(receipt.status).to.equal(1)
+
+            const attestations = await userState.getAttestations(epochKey)
+            expect(attestations.length).equal(0)
+        })
 
         it('submit valid reputation proof with wrong GST root event', async () => {
             const id = new ZkIdentity()
