@@ -5,7 +5,7 @@
     "license": "MIT",
     "scripts": {
         "codegen": "graph codegen",
-        "build": "graph build",
+        "build": "graph codegen && graph build",
         "deploy": "yarn codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep",
         "test": "echo 'No subgraph test'"
     },
