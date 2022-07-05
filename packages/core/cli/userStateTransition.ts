@@ -78,8 +78,8 @@ const userStateTransition = async (args: any) => {
         startTransitionProof.proof
     )
     if (!isValid) {
-        console.log(
-            /**/ 'Error: start state transition proof generated is not valid!'
+        console.error(
+            'Error: start state transition proof generated is not valid!'
         )
     }
     let tx: ethers.ContractTransaction
@@ -108,8 +108,8 @@ const userStateTransition = async (args: any) => {
             processAttestationProofs[i].proof
         )
         if (!isValid) {
-            console.log(
-                /**/ 'Error: process attestations proof generated is not valid!'
+            console.error(
+                'Error: process attestations proof generated is not valid!'
             )
         }
 
@@ -163,8 +163,8 @@ const userStateTransition = async (args: any) => {
         finalTransitionProof.proof
     )
     if (!isValid) {
-        console.log(
-            /**/ 'Error: user state transition proof generated is not valid!'
+        console.error(
+            'Error: user state transition proof generated is not valid!'
         )
     }
 
@@ -175,8 +175,8 @@ const userStateTransition = async (args: any) => {
     for (let i = 0; i < epkNullifiers.length; i++) {
         const outputNullifier = finalTransitionProof.epochKeyNullifiers[i]
         if (outputNullifier != epkNullifiers[i]) {
-            console.log(
-                /**/ `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
+            console.error(
+                `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
             )
         }
     }
@@ -191,17 +191,17 @@ const userStateTransition = async (args: any) => {
         inputEpoch
     )
     if (!isGSTRootExisted) {
-        console.log(/**/ 'Error: invalid global state tree root')
+        console.error('Error: invalid global state tree root')
         return
     }
     if (!isEpochTreeExisted) {
-        console.log(/**/ 'Error: invalid epoch tree root')
+        console.error('Error: invalid epoch tree root')
         return
     }
     // Check if nullifiers submitted before
     for (const nullifier of epkNullifiers) {
         if (await userState.nullifierExist(nullifier)) {
-            console.log(/**/ 'Error: nullifier submitted before')
+            console.error('Error: nullifier submitted before')
             return
         }
     }
