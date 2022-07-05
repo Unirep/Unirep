@@ -18,6 +18,5 @@ type ReputationEntity implements BaseEntity @entity {
     posRep: BigInt!
     negRep: BigInt!
     graffiti: BigInt!
-    # signup: Boolean!
     user: UserEntity!
 }

@@ -6,10 +6,14 @@
     "scripts": {
         "codegen": "graph codegen",
         "build": "graph build",
-        "deploy": "npm run codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep"
+        "deploy": "yarn codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep",
+        "test": "echo 'No subgraph test'"
     },
     "dependencies": {
         "@graphprotocol/graph-cli": "0.26.0",
         "@graphprotocol/graph-ts": "0.24.1"
+    },
+    "devDependencies": {
+        "ts-node": "^10.8.2"
     }
 }
