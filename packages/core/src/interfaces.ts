@@ -6,13 +6,13 @@ export interface IEpochTreeLeaf {
 }
 
 export interface ISettings {
-    readonly globalStateTreeDepth: number
-    readonly userStateTreeDepth: number
-    readonly epochTreeDepth: number
-    readonly attestingFee: ethers.BigNumber
-    readonly epochLength: number
-    readonly numEpochKeyNoncePerEpoch: number
-    readonly maxReputationBudget: number
+    globalStateTreeDepth: number
+    userStateTreeDepth: number
+    epochTreeDepth: number
+    attestingFee: ethers.BigNumber
+    epochLength: number
+    numEpochKeyNoncePerEpoch: number
+    maxReputationBudget: number
 }
 
 export interface IUnirepState {

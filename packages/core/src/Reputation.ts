@@ -49,7 +49,8 @@ export default class Reputation implements IReputation {
 
     public addGraffitiPreImage = (_graffitiPreImage: BigNumber) => {
         assert(
-            hashOne(_graffitiPreImage.toBigInt()) === this.graffiti.toBigInt(),
+            hashOne(_graffitiPreImage.toBigInt()) ===
+                BigInt(this.graffiti.toString()),
             'Graffiti pre-image does not match'
         )
         this.graffitiPreImage = _graffitiPreImage
@@ -57,10 +58,10 @@ export default class Reputation implements IReputation {
 
     public hash = (): BigInt => {
         return hash5([
-            this.posRep.toBigInt(),
-            this.negRep.toBigInt(),
-            this.graffiti.toBigInt(),
-            this.signUp.toBigInt(),
+            BigInt(this.posRep.toString()),
+            BigInt(this.negRep.toString()),
+            BigInt(this.graffiti.toString()),
+            BigInt(this.signUp.toString()),
             BigInt(0),
         ])
     }

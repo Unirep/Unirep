@@ -8,3 +8,5 @@
 **/*.md
 
 yarn.lock
+.yarn
+packages/contracts/coverage

@@ -67,7 +67,10 @@ describe('Signup', () => {
         it('double sign up should fail', async () => {
             await expect(
                 unirepContract.userSignUp(commitment)
-            ).to.be.revertedWith(`UserAlreadySignedUp(${commitment})`)
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                `UserAlreadySignedUp`
+            )
         })
 
         it('sign up should fail if max capacity reached', async () => {
@@ -86,7 +89,10 @@ describe('Signup', () => {
                 unirepContract.userSignUp(
                     new ZkIdentity().genIdentityCommitment()
                 )
-            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'ReachedMaximumNumberUserSignedUp'
+            )
         })
     })
 
@@ -150,14 +156,15 @@ describe('Signup', () => {
                     attester3Address,
                     attester2Sig
                 )
-            ).to.be.revertedWith('InvalidSignature()')
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignature')
         })
 
         it('double sign up should fail', async () => {
             await expect(
                 unirepContract.connect(attester).attesterSignUp()
-            ).to.be.revertedWith(
-                `AttesterAlreadySignUp("${await attester.getAddress()}")`
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                `AttesterAlreadySignUp`
             )
 
             await expect(
@@ -165,7 +172,10 @@ describe('Signup', () => {
                     attester2Address,
                     attester2Sig
                 )
-            ).to.be.revertedWith(`AttesterAlreadySignUp("${attester2Address}")`)
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                `AttesterAlreadySignUp`
+            )
         })
 
         it('sign up should fail if max capacity reached', async () => {
@@ -192,7 +202,10 @@ describe('Signup', () => {
 
             await expect(
                 unirepContract.connect(attester).attesterSignUp()
-            ).to.be.revertedWith('ReachedMaximumNumberUserSignedUp()')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'ReachedMaximumNumberUserSignedUp'
+            )
         })
     })
 })

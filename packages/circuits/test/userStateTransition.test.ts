@@ -7,7 +7,7 @@ import {
     SparseMerkleTree,
     SnarkBigInt,
 } from '@unirep/crypto'
-import { executeCircuit, getSignalByName, Circuit } from '../circuits/utils'
+import { executeCircuit, getSignalByName, Circuit } from '../src'
 import {
     genNewEpochTree,
     genEpochKey,

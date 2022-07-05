@@ -8,7 +8,7 @@ import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
-import { genUnirepState, UnirepState } from '../../src'
+import { genUnirepState, Synchronizer } from '../../src'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
 
@@ -29,7 +29,7 @@ describe('test all CLI subcommands', function () {
     const epochKeyNonce = 0
     const epochLength = 5
     let unirepContract: Unirep
-    let unirepState: UnirepState
+    let unirepState: Synchronizer
 
     let userIdentity, userIdentityCommitment
     const attesterId = 1
@@ -202,7 +202,9 @@ describe('test all CLI subcommands', function () {
                 ` -n ${epochKeyNonce} `
 
             console.log(command)
-            const output = exec(command).stdout.trim()
+            const r = exec(command)
+            console.log(r.stderr)
+            const output = r.stdout.trim()
             console.log(output)
 
             const epkRegMatch = output.match(
@@ -313,7 +315,9 @@ describe('test all CLI subcommands', function () {
                 ` -id ${userIdentity} `
 
             console.log(command)
-            const output = exec(command).stdout.trim()
+            const r = exec(command)
+            console.log(r.stderr)
+            const output = r.stdout.trim()
             console.log(output)
 
             const userTransitionRegMatch = output.match(
@@ -337,7 +341,9 @@ describe('test all CLI subcommands', function () {
             // ` -gp ${graffitiPreimage} `
 
             console.log(command)
-            const output = exec(command).stdout.trim()
+            const r = exec(command)
+            const output = r.stdout.trim()
+            console.log(r.stderr)
             console.log(output)
 
             const userRepProofRegMatch = output.match(

@@ -4,7 +4,7 @@ import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 import { Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
 
@@ -37,6 +37,7 @@ const configureSubparser = (subparsers: any) => {
     })
 
     parser.add_argument('-d', '--eth-privkey', {
+        required: true,
         action: 'store',
         type: 'str',
         help: "The user's Ethereum private key",
@@ -71,10 +72,10 @@ const userStateTransition = async (args: any) => {
     } = await userState.genUserStateTransitionProofs()
 
     // Start user state transition proof
-    let isValid = await verifyProof(
+    let isValid = await defaultProver.verifyProof(
         Circuit.startTransition,
-        startTransitionProof.proof,
-        startTransitionProof.publicSignals
+        startTransitionProof.publicSignals,
+        startTransitionProof.proof
     )
     if (!isValid) {
         console.error(
@@ -97,13 +98,14 @@ const userStateTransition = async (args: any) => {
         return
     }
     console.log('Transaction hash:', tx.hash)
+    await userState.waitForSync()
 
     // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const isValid = await verifyProof(
+        const isValid = await defaultProver.verifyProof(
             Circuit.processAttestations,
-            processAttestationProofs[i].proof,
-            processAttestationProofs[i].publicSignals
+            processAttestationProofs[i].publicSignals,
+            processAttestationProofs[i].proof
         )
         if (!isValid) {
             console.error(
@@ -129,6 +131,7 @@ const userStateTransition = async (args: any) => {
         }
         console.log('Transaction hash:', tx.hash)
     }
+    await userState.waitForSync()
 
     // Record all proof indexes
     const proofIndexes: ethers.BigNumber[] = []
@@ -154,10 +157,10 @@ const userStateTransition = async (args: any) => {
     }
 
     // update user state proof
-    isValid = await verifyProof(
+    isValid = await defaultProver.verifyProof(
         Circuit.userStateTransition,
-        finalTransitionProof.proof,
-        finalTransitionProof.publicSignals
+        finalTransitionProof.publicSignals,
+        finalTransitionProof.proof
     )
     if (!isValid) {
         console.error(
@@ -180,9 +183,9 @@ const userStateTransition = async (args: any) => {
 
     // Check if Global state tree root and epoch tree root exist
     const GSTRoot = finalTransitionProof.fromGSTRoot
-    const inputEpoch = finalTransitionProof.transitionedFromEpoch
+    const inputEpoch = Number(finalTransitionProof.transitionedFromEpoch)
     const epochTreeRoot = finalTransitionProof.fromEpochTree
-    const isGSTRootExisted = userState.GSTRootExists(GSTRoot, inputEpoch)
+    const isGSTRootExisted = await userState.GSTRootExists(GSTRoot, inputEpoch)
     const isEpochTreeExisted = await userState.epochTreeRootExists(
         epochTreeRoot,
         inputEpoch
@@ -197,7 +200,7 @@ const userStateTransition = async (args: any) => {
     }
     // Check if nullifiers submitted before
     for (const nullifier of epkNullifiers) {
-        if (userState.nullifierExist(nullifier)) {
+        if (await userState.nullifierExist(nullifier)) {
             console.error('Error: nullifier submitted before')
             return
         }
@@ -206,7 +209,8 @@ const userStateTransition = async (args: any) => {
     // Submit the user state transition transaction
     const USTProof = new UserTransitionProof(
         finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
+        finalTransitionProof.proof,
+        defaultProver
     )
     try {
         tx = await unirepContract
@@ -223,6 +227,7 @@ const userStateTransition = async (args: any) => {
     console.log(
         `User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`
     )
+    await userState.waitForSync()
 }
 
 export { userStateTransition, configureSubparser }

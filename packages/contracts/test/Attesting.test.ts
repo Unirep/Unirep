@@ -3,7 +3,10 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
 import { genEpochKey, Attestation } from './utils'
@@ -27,7 +30,8 @@ describe('Attesting', () => {
     const publicSignals = [genRandomSalt(), epoch, epochKey]
     const epochKeyProof = new EpochKeyProof(
         publicSignals as BigNumberish[],
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     let epochKeyProofIndex
     const senderPfIdx = 0
@@ -81,29 +85,31 @@ describe('Attesting', () => {
     it('submit an epoch key proof again should fail', async () => {
         await expect(
             unirepContract.submitEpochKeyProof(epochKeyProof)
-        ).to.be.revertedWith('NullilierAlreadyUsed')
+        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
         const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
         const wrongEpochKeyProof = new EpochKeyProof(
             wrongSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
-        ).to.be.revertedWith('EpochNotMatch()')
+        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
     it('submit an invalid epoch key should fail', async () => {
         const wrongEpochKey = genRandomSalt()
         const wrongEpochKeyProof = new EpochKeyProof(
             [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
-            formatProofForSnarkjsVerification(proof)
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         await expect(
             unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
-        ).to.be.revertedWith('InvalidEpochKey()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 
     it('submit attestation should succeed', async () => {
@@ -182,7 +188,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith(`AttesterIdNotMatch(999)`)
+        ).to.be.revertedWithCustomError(unirepContract, `AttesterIdNotMatch`)
     })
 
     it('attestation with invalid repuation should fail', async () => {
@@ -206,7 +212,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSNARKField(0)')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -225,7 +231,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSNARKField(1)')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -244,7 +250,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSNARKField(2)')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -263,7 +269,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSignUpFlag()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignUpFlag')
     })
 
     it('attestation with zero proof index should fail', async () => {
@@ -288,7 +294,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidProofIndex()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
     })
 
     it('attestation with non-existed proof index should fail', async () => {
@@ -313,7 +319,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidProofIndex()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {
@@ -336,7 +342,7 @@ describe('Attesting', () => {
                     epochKeyProofIndex,
                     senderPfIdx
                 )
-        ).to.be.revertedWith('AttestingFeeInvalid()')
+        ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
         await expect(
             unirepContract
                 .connect(attester)
@@ -347,7 +353,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee.sub(1) }
                 )
-        ).to.be.revertedWith('AttestingFeeInvalid()')
+        ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
     })
 
     it('attestation from unregistered attester should fail', async () => {
@@ -377,7 +383,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith(`AttesterNotSignUp("${nonAttesterAddress}")`)
+        ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
     })
 
     it('burn collected attesting fee should work', async () => {
