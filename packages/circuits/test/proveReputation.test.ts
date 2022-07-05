@@ -431,6 +431,12 @@ describe('Prove reputation from attester circuit', function () {
         const posRep = reputationRecords[attesterId]['posRep']
         const negRep = reputationRecords[attesterId]['negRep']
         const wrongMinRep = Number(posRep - negRep) + 1
+        console.log(attesterId)
+        console.log(attesterIds)
+        console.log(posRep)
+        console.log(negRep)
+        console.log(wrongMinRep)
+        console.log(reputationRecords[attesterId])
         const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
