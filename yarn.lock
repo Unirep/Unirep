@@ -1410,6 +1410,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^18.0.1":
+  version: 18.0.1
+  resolution: "@types/node@npm:18.0.1"
+  checksum: be14b251c54cc2b4ca78ac6eadf2fe5e831e487f2e17848f21d576295945b538271dcc674d0bba582b3f8d95b84f6826e99b6ba4710c76f165a8bdd4d4f0618e
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:^8.0.0":
   version: 8.10.66
   resolution: "@types/node@npm:8.10.66"
@@ -1777,7 +1784,9 @@ __metadata:
   dependencies:
     "@graphprotocol/graph-cli": 0.26.0
     "@graphprotocol/graph-ts": 0.24.1
+    "@types/node": ^18.0.1
     ts-node: ^10.8.2
+    typescript: ^4.7.3
   languageName: unknown
   linkType: soft
 

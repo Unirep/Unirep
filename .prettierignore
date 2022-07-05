@@ -6,5 +6,6 @@
 **/typechain
 .github/**
 **/*.md
+**/generated
 
 yarn.lock
