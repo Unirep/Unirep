@@ -17,6 +17,30 @@ import {
 
 const circuitPath = path.join(__dirname, proveReputationCircuitPath)
 
+const NUM_ATTESTERS = 10
+const MIN_POS_REP = 20
+const MAX_NEG_REP = 10
+const signUp = 1
+
+const genReputationRecords = () => {
+    const reputationRecords = {}
+    for (let i = 0; i < NUM_ATTESTERS; i++) {
+        let attesterId: number
+        do {
+            attesterId = Math.floor(Math.random() * 2 ** USER_STATE_TREE_DEPTH)
+        } while (reputationRecords[attesterId] !== undefined)
+        const graffitiPreImage = genRandomSalt()
+        reputationRecords[attesterId] = new Reputation(
+            BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
+            BigInt(Math.floor(Math.random() * MAX_NEG_REP)),
+            hashOne(graffitiPreImage),
+            BigInt(signUp)
+        )
+        reputationRecords[attesterId].addGraffitiPreImage(graffitiPreImage)
+    }
+    return reputationRecords
+}
+
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
 
@@ -25,15 +49,10 @@ describe('Prove reputation from attester circuit', function () {
     const epoch = 1
     const nonce = 1
     const user = new ZkIdentity()
-    const NUM_ATTESTERS = 10
-    let reputationRecords = {}
-    const MIN_POS_REP = 20
-    const MAX_NEG_REP = 10
     const repNullifiersAmount = 3
     const nonceStarter = 0
     let minRep = MIN_POS_REP - MAX_NEG_REP
     const proveGraffiti = 1
-    const signUp = 1
 
     before(async () => {
         const startCompileTime = Math.floor(new Date().getTime() / 1000)
@@ -44,26 +63,10 @@ describe('Prove reputation from attester circuit', function () {
         )
 
         // Bootstrap reputation
-        for (let i = 0; i < NUM_ATTESTERS; i++) {
-            let attesterId = Math.ceil(
-                Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
-            )
-            while (reputationRecords[attesterId] !== undefined)
-                attesterId = Math.floor(
-                    Math.random() * 2 ** USER_STATE_TREE_DEPTH
-                )
-            const graffitiPreImage = genRandomSalt()
-            reputationRecords[attesterId] = new Reputation(
-                BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
-                BigInt(Math.floor(Math.random() * MAX_NEG_REP)),
-                hashOne(graffitiPreImage),
-                BigInt(signUp)
-            )
-            reputationRecords[attesterId].addGraffitiPreImage(graffitiPreImage)
-        }
     })
 
     it('successfully prove a random generated reputation', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -85,12 +88,13 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('successfully prove a reputation with equal positive and negative repuataion', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         const minRep =
-            reputationRecords[attesterId]['posRep'] -
-            reputationRecords[attesterId]['negRep']
+            reputationRecords[attesterId].posRep -
+            reputationRecords[attesterId].negRep
 
         const circuitInputs = genReputationCircuitInput(
             user,
@@ -112,12 +116,12 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('successfully choose to prove only minimun positive reputation', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         const zeroRepNullifiersAmount = 0
-        const graffitiPreImage =
-            reputationRecords[attesterId]['graffitiPreImage']
+        const graffitiPreImage = reputationRecords[attesterId].graffitiPreImage
         const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
@@ -140,6 +144,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('successfully choose to prove only reputation nullifiers', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -164,6 +169,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('successfully choose not to prove graffiti with wrong value', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId =
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -191,6 +197,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with wrong attester Id should fail', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -220,6 +227,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with not exist user state should fail', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -248,14 +256,14 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation nullifiers with insufficient rep score', async () => {
+        const reputationRecords = genReputationRecords()
         // Bootstrap user state
-        let insufficientAttesterId = Math.ceil(
-            Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1)
-        )
-        while (reputationRecords[insufficientAttesterId] !== undefined)
+        let insufficientAttesterId: number
+        do {
             insufficientAttesterId = Math.floor(
                 Math.random() * 2 ** USER_STATE_TREE_DEPTH
             )
+        } while (reputationRecords[insufficientAttesterId] !== undefined)
         const insufficientPosRep = 5
         const insufficientNegRep = 10
         const insufficientGraffitiPreImage = genRandomSalt()
@@ -344,14 +352,13 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation nullifiers with incorrect nonce should fail', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
         )
-        const graffitiPreImage =
-            reputationRecords[attesterId]['graffitiPreImage']
-        const posRep = reputationRecords[attesterId]['posRep']
-        const negRep = reputationRecords[attesterId]['negRep']
+        const { graffitiPreImage, posRep, negRep } =
+            reputationRecords[attesterId]
         const wrongNonceStarter = Number(posRep - negRep) + 1
         const wrongNonceList: number[] = []
         for (let i = 0; i < repNullifiersAmount; i++) {
@@ -387,6 +394,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('mismatch nullifier amount and selectors should fail', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -424,6 +432,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with incorrect reputation should fail', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
@@ -455,6 +464,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('prove reputation with wrong graffiti pre image should fail', async () => {
+        const reputationRecords = genReputationRecords()
         const attesterIds = Object.keys(reputationRecords)
         const attesterId = Number(
             attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]

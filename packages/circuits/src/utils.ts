@@ -11,10 +11,6 @@ export const executeCircuit = async (
     return witness
 }
 
-export const getSignalByName = (
-    circuit: any,
-    witness: any,
-    signal: string
-): Promise<any> => {
+export const getSignalByName = (circuit: any, witness: any, signal: string) => {
     return witness[circuit.symbols[signal].varIdx]
 }
