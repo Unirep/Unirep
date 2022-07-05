@@ -103,10 +103,8 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashEpochKeyProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(proofIndex.toNumber()).greaterThan(0)
     })
 
     it('submit attestation should succeed', async () => {
@@ -129,7 +127,7 @@ describe('EventFilters', () => {
     })
 
     it('spend reputation should succeed', async () => {
-        const { reputationRecords } = await bootstrapRandomUSTree()
+        const { reputationRecords } = bootstrapRandomUSTree()
         const circuitInputs = genReputationCircuitInput(
             userId,
             epoch,
@@ -149,14 +147,12 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashReputationProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(proofIndex.toNumber()).greaterThan(0)
     })
 
     it('submit get airdrop should succeed', async () => {
-        const { reputationRecords } = await bootstrapRandomUSTree()
+        const { reputationRecords } = bootstrapRandomUSTree()
         const circuitInputs = genProveSignUpCircuitInput(
             userId,
             epoch,
@@ -174,10 +170,8 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashSignUpProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(proofIndex.toNumber()).greaterThan(0)
     })
 
     it('submit start user state transition should success', async () => {
@@ -200,21 +194,14 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            GSTRoot,
-            proof
-        )
         const computedHash = computeStartTransitionProofHash(
             blindedUserState,
             blindedHashChain,
             GSTRoot,
             proof
         )
-        expect(computedHash).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(computedHash)
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(proofIndex.toNumber()).greaterThan(0)
     })
 
     it('submit process attestation proofs should success', async () => {
@@ -242,22 +229,14 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier =
-            await unirepContract.hashProcessAttestationsProof(
-                outputBlindedUserState,
-                outputBlindedHashChain,
-                inputBlindedUserState,
-                proof
-            )
         const computedHash = computeProcessAttestationsProofHash(
             outputBlindedUserState,
             outputBlindedHashChain,
             inputBlindedUserState,
             proof
         )
-        expect(computedHash).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(computedHash)
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(proofIndex.toNumber()).greaterThan(0)
     })
 
     it('submit user state transition proofs should success', async () => {
@@ -277,11 +256,8 @@ describe('EventFilters', () => {
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier =
-            await unirepContract.hashUserStateTransitionProof(input)
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(proofIndex.toNumber()).greaterThan(0)
     })
 
     it('submit attestation events should match and correctly emitted', async () => {

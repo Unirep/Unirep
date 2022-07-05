@@ -25,7 +25,13 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import {
+    deployUnirep,
+    Unirep,
+    UserTransitionProof,
+    computeStartTransitionProofHash,
+    computeProcessAttestationsProofHash,
+} from '../src'
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -97,8 +103,8 @@ describe('Epoch Transition', function () {
         tx = await unirepContract.submitEpochKeyProof(input)
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        let proofNullifier = await unirepContract.hashEpochKeyProof(input)
-        epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
+        epochKeyProofIndex = await unirepContract.getProofIndex(input.hash())
+        expect(epochKeyProofIndex.toNumber()).to.not.equal(0)
         const senderPfIdx = 0
 
         // Submit attestations
@@ -169,7 +175,7 @@ describe('Epoch Transition', function () {
     })
 
     it('bootstrap user state and reputations and bootstrap global state tree', async () => {
-        const results = await bootstrapRandomUSTree()
+        const results = bootstrapRandomUSTree()
         userStateTree = results.userStateTree
 
         // Global state tree
@@ -220,13 +226,14 @@ describe('Epoch Transition', function () {
             receipt.gasUsed.toString()
         )
 
-        let proofNullifier = await unirepContract.hashStartTransitionProof(
+        const proofNullifier = computeStartTransitionProofHash(
             blindedUserState,
             blindedHashChain,
             GSTRoot,
             proof
         )
-        let proofIndex = await unirepContract.getProofIndex(proofNullifier)
+        const proofIndex = await unirepContract.getProofIndex(proofNullifier)
+        expect(proofIndex.toNumber()).to.not.equal(0)
         proofIndexes.push(proofIndex)
     })
 
@@ -280,16 +287,16 @@ describe('Epoch Transition', function () {
                     receipt.gasUsed.toString()
                 )
 
-                const proofNullifier =
-                    await unirepContract.hashProcessAttestationsProof(
-                        outputBlindedUserState,
-                        outputBlindedHashChain,
-                        inputBlindedUserState,
-                        proof
-                    )
+                const proofNullifier = computeProcessAttestationsProofHash(
+                    outputBlindedUserState,
+                    outputBlindedHashChain,
+                    inputBlindedUserState,
+                    proof
+                )
                 const proofIndex = await unirepContract.getProofIndex(
                     proofNullifier
                 )
+                expect(proofIndex.toNumber()).to.not.equal(0)
                 proofIndexes.push(proofIndex)
             }
         }

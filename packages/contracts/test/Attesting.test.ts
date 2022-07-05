@@ -71,15 +71,10 @@ describe('Attesting', () => {
         const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        const proofNullifier = await unirepContract.hashEpochKeyProof(
-            epochKeyProof
+        epochKeyProofIndex = await unirepContract.getProofIndex(
+            epochKeyProof.hash()
         )
-        expect(receipt.status).equal(1)
-        const _proofNullifier = epochKeyProof.hash()
-        expect(_proofNullifier).equal(proofNullifier)
-        epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
-        expect(epochKeyProof).not.equal(null)
+        expect(epochKeyProofIndex.toNumber()).not.equal(0)
     })
 
     it('submit an epoch key proof again should fail', async () => {

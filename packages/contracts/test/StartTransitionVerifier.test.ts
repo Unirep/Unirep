@@ -40,7 +40,7 @@ describe('User State Transition circuits', function () {
             unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
 
             // User state tree
-            const results = await bootstrapRandomUSTree()
+            const results = bootstrapRandomUSTree()
             userStateTree = results.userStateTree
 
             // Global state tree
@@ -92,7 +92,7 @@ describe('User State Transition circuits', function () {
                         proof
                     )
                 )
-                expect(Number(pfIdx)).not.eq(0)
+                expect(pfIdx.toNumber()).not.eq(0)
             })
 
             it('User can start with different epoch key nonce', async () => {
@@ -137,7 +137,7 @@ describe('User State Transition circuits', function () {
                         proof
                     )
                 )
-                expect(Number(pfIdx)).not.eq(0)
+                expect(pfIdx.toNumber()).not.eq(0)
             })
         })
     })

@@ -72,7 +72,7 @@ describe('Process attestation circuit', function () {
                 proof
             )
         )
-        expect(Number(pfIdx)).not.eq(0)
+        expect(pfIdx.toNumber()).not.eq(0)
     })
 
     it('successfully process zero attestations', async () => {
@@ -121,6 +121,6 @@ describe('Process attestation circuit', function () {
                 proof
             )
         )
-        expect(Number(pfIdx)).not.eq(0)
+        expect(pfIdx.toNumber()).not.eq(0)
     })
 })

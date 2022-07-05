@@ -79,7 +79,7 @@ describe('Verify Epoch Key verifier', function () {
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
 
             const pfIdx = await unirepContract.getProofIndex(input.hash())
-            expect(Number(pfIdx)).not.eq(0)
+            expect(pfIdx.toNumber()).not.eq(0)
         }
     })
 

@@ -213,7 +213,8 @@ class ReputationProof extends BaseProof implements IReputationProof {
         // array length should be fixed
         const abiEncoder = utils.defaultAbiCoder.encode(
             [
-                `tuple(uint256[${this.maxReputationBudget}] repNullifiers,
+                `tuple(
+                    uint256[] repNullifiers,
                     uint256 epoch,
                     uint256 epochKey,
                     uint256 globalStateTree,
@@ -222,7 +223,8 @@ class ReputationProof extends BaseProof implements IReputationProof {
                     uint256 minRep,
                     uint256 proveGraffiti,
                     uint256 graffitiPreImage,
-                    uint256[8] proof)
+                    uint256[8] proof
+                  )
             `,
             ],
             [this]
@@ -322,11 +324,11 @@ class UserTransitionProof extends BaseProof implements IUserTransitionProof {
         const abiEncoder = utils.defaultAbiCoder.encode(
             [
                 `tuple(uint256 newGlobalStateTreeLeaf,
-                    uint256[${this.numEpochKeyNoncePerEpoch}] epkNullifiers,
+                    uint256[] epkNullifiers,
                     uint256 transitionFromEpoch,
-                    uint256[2] blindedUserStates,
+                    uint256[] blindedUserStates,
                     uint256 fromGlobalStateTree,
-                    uint256[${this.numEpochKeyNoncePerEpoch}] blindedHashChains,
+                    uint256[] blindedHashChains,
                     uint256 fromEpochTree,
                     uint256[8] proof)
             `,

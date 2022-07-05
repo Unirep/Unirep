@@ -8,7 +8,7 @@
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "./scripts/buildVerifiers.sh && yarn compile && hardhat typechain && tsc",
-        "compile": "npx hardhat compile",
+        "compile": "hardhat compile",
         "test": "hardhat test --no-compile",
         "lint": "prettier --write .",
         "coverage": "hardhat coverage"

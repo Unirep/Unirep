@@ -5,14 +5,13 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
-import {Hasher} from './libraries/Hasher.sol';
 import {zkSNARKHelper} from './libraries/zkSNARKHelper.sol';
 import {VerifySignature} from './libraries/VerifySignature.sol';
 
 import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
-contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
+contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     using SafeMath for uint256;
 
     // Verifier Contracts
@@ -312,8 +311,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * A user should submit an epoch key proof and get a proof index
      * @param input The epoch key proof and the public signals
      */
-    function submitEpochKeyProof(EpochKeyProof memory input) external {
-        bytes32 proofNullifier = Hasher.hashEpochKeyProof(input);
+    function submitEpochKeyProof(EpochKeyProof calldata input) external {
+        bytes32 proofNullifier = keccak256(abi.encode(input));
         verifyProofNullifier(proofNullifier);
         if (input.epoch != currentEpoch) revert EpochNotMatch();
 
@@ -335,8 +334,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * An attester submit the airdrop attestation to an epoch key with a sign up proof
      * @param input The epoch key and its proof and the public signals
      */
-    function airdropEpochKey(SignUpProof memory input) external payable {
-        bytes32 proofNullifier = Hasher.hashSignUpProof(input);
+    function airdropEpochKey(SignUpProof calldata input) external payable {
+        bytes32 proofNullifier = keccak256(abi.encode(input));
         address sender = msg.sender;
         verifyProofNullifier(proofNullifier);
         verifyAttesterSignUp(sender);
@@ -380,8 +379,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
      * @param input The epoch key and its proof and the public signals
      */
-    function spendReputation(ReputationProof memory input) external payable {
-        bytes32 proofNullifier = Hasher.hashReputationProof(input);
+    function spendReputation(ReputationProof calldata input) external payable {
+        bytes32 proofNullifier = keccak256(abi.encode(input));
 
         verifyProofNullifier(proofNullifier);
         verifyAttesterSignUp(msg.sender);
@@ -492,11 +491,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 globalStateTree,
         uint256[8] calldata proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            globalStateTree,
-            proof
+        bytes32 proofNullifier = keccak256(
+            abi.encode(
+                blindedUserState,
+                blindedHashChain,
+                globalStateTree,
+                proof
+            )
         );
 
         verifyProofNullifier(proofNullifier);
@@ -526,11 +527,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 inputBlindedUserState,
         uint256[8] calldata proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashProcessAttestationsProof(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+        bytes32 proofNullifier = keccak256(
+            abi.encode(
+                outputBlindedUserState,
+                outputBlindedHashChain,
+                inputBlindedUserState,
+                proof
+            )
         );
 
         verifyProofNullifier(proofNullifier);
@@ -552,10 +555,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
      */
     function updateUserStateRoot(
-        UserTransitionProof memory proof,
+        UserTransitionProof calldata proof,
         uint256[] memory proofIndexRecords
     ) external {
-        bytes32 proofNullifier = Hasher.hashUserStateTransitionProof(proof);
+        bytes32 proofNullifier = keccak256(abi.encode(proof));
 
         verifyProofNullifier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
@@ -599,7 +602,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * Verify epoch transition proof
      * @param input The proof and the public signals of the epoch key proof
      */
-    function verifyEpochKeyValidity(EpochKeyProof memory input)
+    function verifyEpochKeyValidity(EpochKeyProof calldata input)
         external
         view
         returns (bool)
@@ -681,7 +684,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * Verify user state transition proof
      * @param input The proof and the public signals of the user state transition proof
      */
-    function verifyUserStateTransition(UserTransitionProof memory input)
+    function verifyUserStateTransition(UserTransitionProof calldata input)
         external
         view
         returns (bool)
@@ -727,7 +730,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * Verify reputation proof
      * @param input The proof and the public signals of the reputation proof
      */
-    function verifyReputation(ReputationProof memory input)
+    function verifyReputation(ReputationProof calldata input)
         external
         view
         returns (bool)
@@ -764,7 +767,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * Verify user sign up proof
      * @param input The proof and the public signals of the user sign up proof
      */
-    function verifyUserSignUp(SignUpProof memory input)
+    function verifyUserSignUp(SignUpProof calldata input)
         external
         view
         returns (bool)

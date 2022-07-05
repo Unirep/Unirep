@@ -285,7 +285,7 @@ describe('Verify reputation verifier', function () {
         expect(receipt.status).equal(1)
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
-        expect(Number(pfIdx)).not.eq(0)
+        expect(pfIdx.toNumber()).not.eq(0)
     })
 
     it('submit reputation nullifiers with wrong length of nullifiers should fail', async () => {
