@@ -24,6 +24,7 @@ import { verifyEpochKeyCircuitPath } from '../config'
 import {
     compileAndLoadCircuit,
     genEpochKeyCircuitInput,
+    genProofAndVerify,
     throwError,
 } from './utils'
 
@@ -79,34 +80,42 @@ describe('Verify Epoch Key circuits', function () {
             )
 
             await executeCircuit(circuit, circuitInputs)
-            const startTime = new Date().getTime()
-            const { proof, publicSignals } =
-                await defaultProver.genProofAndPublicSignals(
-                    Circuit.verifyEpochKey,
-                    circuitInputs
-                )
-            const endTime = new Date().getTime()
-            console.log(
-                `Gen Proof time: ${endTime - startTime} ms (${Math.floor(
-                    (endTime - startTime) / 1000
-                )} s)`
-            )
-            let isValid = await defaultProver.verifyProof(
+            const isValid = await genProofAndVerify(
                 Circuit.verifyEpochKey,
-                publicSignals,
-                proof
-            )
-            expect(isValid).to.be.true
-
-            const formatProof = formatProofForVerifierContract(proof)
-            const snarkjsProof = formatProofForSnarkjsVerification(formatProof)
-            isValid = await defaultProver.verifyProof(
-                Circuit.verifyEpochKey,
-                publicSignals,
-                snarkjsProof
+                circuitInputs
             )
             expect(isValid).to.be.true
         }
+    })
+
+    it('Format proof should successully be verified', async () => {
+        const n = 0
+        const circuitInputs = genEpochKeyCircuitInput(
+            id,
+            tree,
+            leafIndex,
+            stateRoot,
+            currentEpoch,
+            n
+        )
+        const { proof, publicSignals } =
+            await defaultProver.genProofAndPublicSignals(
+                Circuit.verifyEpochKey,
+                circuitInputs
+            )
+        let isValid = await defaultProver.verifyProof(
+            Circuit.verifyEpochKey,
+            publicSignals,
+            proof
+        )
+        const formatProof = formatProofForVerifierContract(proof)
+        const snarkjsProof = formatProofForSnarkjsVerification(formatProof)
+        isValid = await defaultProver.verifyProof(
+            Circuit.verifyEpochKey,
+            publicSignals,
+            snarkjsProof
+        )
+        expect(isValid).to.be.true
     })
 
     it('Invalid epoch key should not pass check', async () => {
