@@ -1,35 +1,20 @@
-enum Circuit {
-    verifyEpochKey = 'verifyEpochKey',
-    proveReputation = 'proveReputation',
-    proveUserSignUp = 'proveUserSignUp',
-    startTransition = 'startTransition',
-    processAttestations = 'processAttestations',
-    userStateTransition = 'userStateTransition',
-}
+export const verifyEpochKeyCircuitPath =
+    '../zksnarkBuild/verifyEpochKey_main.circom'
 
-const verifyEpochKeyCircuitPath = '../zksnarkBuild/verifyEpochKey_main.circom'
+export const proveReputationCircuitPath =
+    '../zksnarkBuild/proveReputation_main.circom'
 
-const proveReputationCircuitPath = '../zksnarkBuild/proveReputation_main.circom'
+export const proveUserSignUpCircuitPath =
+    '../zksnarkBuild/proveUserSignUp_main.circom'
 
-const proveUserSignUpCircuitPath = '../zksnarkBuild/proveUserSignUp_main.circom'
+export const startTransitionCircuitPath =
+    '../zksnarkBuild/startTransition_main.circom'
 
-const startTransitionCircuitPath = '../zksnarkBuild/startTransition_main.circom'
-
-const processAttestationsCircuitPath =
+export const processAttestationsCircuitPath =
     '../zksnarkBuild/processAttestations_main.circom'
 
-const userStateTransitionCircuitPath =
+export const userStateTransitionCircuitPath =
     '../zksnarkBuild/userStateTransition_main.circom'
-
-export {
-    Circuit,
-    verifyEpochKeyCircuitPath,
-    proveReputationCircuitPath,
-    proveUserSignUpCircuitPath,
-    startTransitionCircuitPath,
-    processAttestationsCircuitPath,
-    userStateTransitionCircuitPath,
-}
 
 export const NUM_EPOCH_KEY_NONCE_PER_EPOCH = 3
 

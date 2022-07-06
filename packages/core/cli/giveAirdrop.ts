@@ -1,6 +1,9 @@
 import base64url from 'base64url'
 import { SignUpProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { verifyUserSignUpProof } from './verifyUserSignUpProof'
@@ -36,6 +39,7 @@ const configureSubparser = (subparsers: any) => {
     })
 
     parser.add_argument('-d', '--eth-privkey', {
+        required: true,
         action: 'store',
         type: 'str',
         help: "The attester's Ethereum private key",
@@ -70,7 +74,8 @@ const giveAirdrop = async (args: any) => {
     const publicSignals = JSON.parse(decodedPublicSignals)
     const userSignUpProof = new SignUpProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
 
     console.log(

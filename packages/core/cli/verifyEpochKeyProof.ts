@@ -1,6 +1,9 @@
 import base64url from 'base64url'
 import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genUnirepState } from '../src'
@@ -58,9 +61,9 @@ const verifyEpochKeyProof = async (args: any) => {
     )
     const proof = JSON.parse(decodedProof)
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const currentEpoch = unirepState.currentEpoch
+    const currentEpoch = (await unirepState.loadCurrentEpoch()).number
     const epk = publicSignals[2]
-    const inputEpoch = publicSignals[1]
+    const inputEpoch = Number(publicSignals[1])
     const GSTRoot = publicSignals[0]
     console.log(
         `Verifying epoch key ${epk} with GSTRoot ${GSTRoot} in epoch ${inputEpoch}`
@@ -72,7 +75,10 @@ const verifyEpochKeyProof = async (args: any) => {
     }
 
     // Check if Global state tree root exists
-    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, inputEpoch)
+    const isGSTRootExisted = await unirepState.GSTRootExists(
+        GSTRoot,
+        inputEpoch
+    )
     if (!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
         return
@@ -81,7 +87,8 @@ const verifyEpochKeyProof = async (args: any) => {
     // Verify the proof on-chain
     const epkProof: EpochKeyProof = new EpochKeyProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     const isProofValid = await unirepContract.verifyEpochKeyValidity(epkProof)
     if (!isProofValid) {

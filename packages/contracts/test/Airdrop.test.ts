@@ -67,9 +67,7 @@ describe('Airdrop', function () {
                 unirepContract
                     .connect(nonSignUpAttester)
                     .setAirdropAmount(airdropPosRep)
-            ).to.be.revertedWith(
-                `AttesterNotSignUp("${await nonSignUpAttester.getAddress()}")`
-            )
+            ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
         })
 
         it('user signs up through a signed up attester with 0 airdrop should not get airdrop', async () => {
@@ -235,7 +233,10 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContract.connect(attester).airdropEpochKey(input)
-            ).to.be.revertedWith(`NullilierAlreadyUsed`)
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                `NullifierAlreadyUsed`
+            )
         })
 
         it('get airdrop through a non-signup attester should fail', async () => {
@@ -257,9 +258,7 @@ describe('Airdrop', function () {
                     .airdropEpochKey(input, {
                         value: attestingFee,
                     })
-            ).to.be.revertedWith(
-                `AttesterNotSignUp("${await nonSignUpAttester.getAddress()}")`
-            )
+            ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
         })
 
         it('get airdrop through a wrong attester should fail', async () => {
@@ -279,7 +278,10 @@ describe('Airdrop', function () {
                 unirepContract.connect(wrongAttester).airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith(`AttesterIdNotMatch(${attesterId_})`)
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                `AttesterIdNotMatch`
+            )
         })
 
         it('get airdrop through a wrong attesting fee should fail', async () => {
@@ -296,7 +298,10 @@ describe('Airdrop', function () {
 
             await expect(
                 unirepContract.connect(attester).airdropEpochKey(input)
-            ).to.be.revertedWith(`AttestingFeeInvalid()`)
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                `AttestingFeeInvalid`
+            )
         })
 
         it('get airdrop through a wrong epoch should fail', async () => {
@@ -319,7 +324,7 @@ describe('Airdrop', function () {
                 unirepContract.connect(attester).airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith('EpochNotMatch()')
+            ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
 
         it('submit an invalid epoch key should fail', async () => {
@@ -340,7 +345,7 @@ describe('Airdrop', function () {
                 unirepContract.connect(attester).airdropEpochKey(input, {
                     value: attestingFee,
                 })
-            ).to.be.revertedWith('InvalidEpochKey()')
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
         })
     })
 })

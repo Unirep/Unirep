@@ -1,4 +1,4 @@
-import { getVKey } from '@unirep/circuits'
+import { getDefaultVKey } from '@unirep/circuits'
 import * as argparse from 'argparse'
 import * as fs from 'fs'
 
@@ -29,7 +29,7 @@ const main = async (): Promise<number> => {
     const solOut = args.sol_out
     const verifierName = args.verifier_name
     const circuitName = args.circuit_name
-    const vKey = await getVKey(circuitName)
+    const vKey = await getDefaultVKey(circuitName)
 
     console.log('Exporting verification contract...')
     const verifier = genSnarkVerifierSol(verifierName, vKey)

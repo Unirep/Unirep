@@ -9,3 +9,5 @@
 **/generated
 
 yarn.lock
+.yarn
+packages/contracts/coverage

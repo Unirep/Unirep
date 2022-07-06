@@ -6,7 +6,7 @@ import * as crypto from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    genProofAndPublicSignals,
+    defaultProver,
 } from '@unirep/circuits'
 import {
     computeEmptyUserStateRoot,
@@ -49,52 +49,47 @@ const formatProofAndPublicSignals = (
     circuit: Circuit,
     proof: crypto.SnarkProof,
     publicSignals: any[]
-) => {
-    let result
+): any => {
     const formattedProof: any[] = formatProofForVerifierContract(proof)
-    if (circuit === Circuit.proveReputation) {
-        result = new ReputationProof(publicSignals, proof)
-    } else if (circuit === Circuit.verifyEpochKey) {
-        result = new EpochKeyProof(publicSignals, proof)
-    } else if (circuit === Circuit.proveUserSignUp) {
-        result = new SignUpProof(publicSignals, proof)
-    } else if (circuit === Circuit.startTransition) {
-        result = {
-            blindedUserState: publicSignals[0],
-            blindedHashChain: publicSignals[1],
-            GSTRoot: publicSignals[2],
-            proof: formattedProof,
-        }
-    } else if (circuit === Circuit.processAttestations) {
-        result = {
-            outputBlindedUserState: publicSignals[0],
-            outputBlindedHashChain: publicSignals[1],
-            inputBlindedUserState: publicSignals[2],
-            proof: formattedProof,
-        }
-    } else if (circuit === Circuit.userStateTransition) {
-        result = new UserTransitionProof(publicSignals, proof)
-    } else {
-        result = publicSignals.concat([formattedProof])
+    switch (circuit) {
+        case Circuit.proveReputation:
+            return new ReputationProof(publicSignals, proof, defaultProver)
+        case Circuit.verifyEpochKey:
+            return new EpochKeyProof(publicSignals, proof, defaultProver)
+        case Circuit.proveUserSignUp:
+            return new SignUpProof(publicSignals, proof, defaultProver)
+        case Circuit.startTransition:
+            return {
+                blindedUserState: publicSignals[0],
+                blindedHashChain: publicSignals[1],
+                GSTRoot: publicSignals[2],
+                proof: formattedProof,
+            }
+        case Circuit.processAttestations:
+            return {
+                outputBlindedUserState: publicSignals[0],
+                outputBlindedHashChain: publicSignals[1],
+                inputBlindedUserState: publicSignals[2],
+                proof: formattedProof,
+            }
+        case Circuit.userStateTransition:
+            return new UserTransitionProof(publicSignals, proof, defaultProver)
+        default:
+            return publicSignals.concat([formattedProof])
     }
-    return result
 }
 
 const genInputForContract = async (circuit: Circuit, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
-        circuit,
-        circuitInputs
-    )
+    const { proof, publicSignals } =
+        await defaultProver.genProofAndPublicSignals(circuit, circuitInputs)
     const endTime = new Date().getTime()
     console.log(
         `Gen Proof time: ${endTime - startTime} ms (${Math.floor(
             (endTime - startTime) / 1000
         )} s)`
     )
-
-    const input = formatProofAndPublicSignals(circuit, proof, publicSignals)
-    return input
+    return formatProofAndPublicSignals(circuit, proof, publicSignals)
 }
 
 export {

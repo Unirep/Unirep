@@ -8,6 +8,7 @@ import { getProvider } from './utils'
 import {
     formatProofForSnarkjsVerification,
     MAX_REPUTATION_BUDGET,
+    defaultProver,
 } from '@unirep/circuits'
 
 const configureSubparser = (subparsers: any) => {
@@ -68,7 +69,7 @@ const verifyReputationProof = async (args: any) => {
     )
     const publicSignals = JSON.parse(decodedPublicSignals)
     const outputNullifiers = publicSignals.slice(0, MAX_REPUTATION_BUDGET)
-    const epoch = publicSignals[MAX_REPUTATION_BUDGET]
+    const epoch = Number(publicSignals[MAX_REPUTATION_BUDGET])
     const epk = publicSignals[MAX_REPUTATION_BUDGET + 1]
     const GSTRoot = publicSignals[MAX_REPUTATION_BUDGET + 2]
     const attesterId = publicSignals[MAX_REPUTATION_BUDGET + 3]
@@ -79,7 +80,7 @@ const verifyReputationProof = async (args: any) => {
     const proof = JSON.parse(decodedProof)
 
     // Check if Global state tree root exists
-    const isGSTRootExisted = unirepState.GSTRootExists(GSTRoot, epoch)
+    const isGSTRootExisted = await unirepState.GSTRootExists(GSTRoot, epoch)
     if (!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
         return
@@ -88,7 +89,8 @@ const verifyReputationProof = async (args: any) => {
     // Verify the proof on-chain
     const reputationProof = new ReputationProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     const isProofValid = await unirepContract.verifyReputation(reputationProof)
     if (!isProofValid) {
