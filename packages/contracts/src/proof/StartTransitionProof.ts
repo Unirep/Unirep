@@ -23,6 +23,6 @@ export class StartTransitionProof extends BaseProof {
         this.blindedUserState = _publicSignals[this.idx.blindedUserState]
         this.blindedHashChain = _publicSignals[this.idx.blindedHashChain]
         this.globalStateTree = _publicSignals[this.idx.globalStateTree]
-        this.circuit = Circuit.processAttestations
+        this.circuit = Circuit.startTransition
     }
 }

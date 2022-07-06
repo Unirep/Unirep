@@ -395,11 +395,7 @@ describe('User State', async function () {
                     epoch,
                     i
                 ).toString()
-                const isValid = await defaultProver.verifyProof(
-                    Circuit.verifyEpochKey,
-                    results.publicSignals,
-                    results.proof
-                )
+                const isValid = await results.verify()
 
                 expect(isValid).to.be.true
                 expect(results.epochKey).equal(expectedEpk)
@@ -454,16 +450,12 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await defaultProver.verifyProof(
-                Circuit.proveReputation,
-                results.publicSignals,
-                results.proof
-            )
+            const isValid = await results.verify()
 
             expect(isValid).to.be.true
             expect(results.epochKey).equal(expectedEpk)
             expect(results.epoch).equal(epoch.toString())
-            const outputGSTRoot = results.globalStatetreeRoot
+            const outputGSTRoot = results.globalStateTree
             const exist = await userState.GSTRootExists(outputGSTRoot, epoch)
             expect(exist).to.be.true
             expect(Number(results.minRep)).equal(proveMinRep)
@@ -493,16 +485,12 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await defaultProver.verifyProof(
-                Circuit.proveReputation,
-                results.publicSignals,
-                results.proof
-            )
+            const isValid = await results.verify()
 
             expect(isValid).to.be.true
             expect(results.epochKey).equal(expectedEpk)
             expect(results.epoch).equal(epoch.toString())
-            const outputGSTRoot = results.globalStatetreeRoot
+            const outputGSTRoot = results.globalStateTree
             const exist = await userState.GSTRootExists(outputGSTRoot, epoch)
             expect(exist).to.be.true
             expect(Number(results.minRep)).equal(proveNullifiers)
@@ -521,11 +509,7 @@ describe('User State', async function () {
                 epkNonce,
                 proveMinRep
             )
-            const isValid = await defaultProver.verifyProof(
-                Circuit.proveReputation,
-                results.publicSignals,
-                results.proof
-            )
+            const isValid = await results.verify()
             expect(isValid).to.be.false
         })
 
@@ -540,11 +524,7 @@ describe('User State', async function () {
                 epkNonce,
                 proveMinRep
             )
-            const isValid = await defaultProver.verifyProof(
-                Circuit.proveReputation,
-                results.publicSignals,
-                results.proof
-            )
+            const isValid = await results.verify()
             expect(isValid).to.be.false
         })
 
@@ -581,16 +561,12 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await defaultProver.verifyProof(
-                Circuit.proveUserSignUp,
-                results.publicSignals,
-                results.proof
-            )
+            const isValid = await results.verify()
 
             expect(isValid).to.be.true
             expect(results.epochKey).equal(expectedEpk)
             expect(results.epoch).equal(epoch.toString())
-            const outputGSTRoot = results.globalStateTreeRoot
+            const outputGSTRoot = results.globalStateTree
             const exist = await userState.GSTRootExists(outputGSTRoot, epoch)
             expect(exist).to.be.true
             expect(Number(results.userHasSignedUp)).equal(1)
@@ -608,16 +584,12 @@ describe('User State', async function () {
                 epoch,
                 epkNonce
             ).toString()
-            const isValid = await defaultProver.verifyProof(
-                Circuit.proveUserSignUp,
-                results.publicSignals,
-                results.proof
-            )
+            const isValid = await results.verify()
 
             expect(isValid).to.be.true
             expect(results.epochKey).equal(expectedEpk)
             expect(results.epoch).equal(epoch.toString())
-            const outputGSTRoot = results.globalStateTreeRoot
+            const outputGSTRoot = results.globalStateTree
             const exist = await userState.GSTRootExists(outputGSTRoot, epoch)
             expect(exist).to.be.true
             expect(Number(results.userHasSignedUp)).equal(0)
@@ -733,9 +705,9 @@ describe('User State', async function () {
         it('transition other users state should success', async () => {
             const proofs = await otherUser.genUserStateTransitionProofs()
 
-            const fromGSTRoot = proofs.startTransitionProof.globalStateTreeRoot
+            const fromGSTRoot = proofs.startTransitionProof.globalStateTree
             const fromEpoch = Number(
-                proofs.finalTransitionProof.transitionedFromEpoch
+                proofs.finalTransitionProof.transitionFromEpoch
             )
             const exist = await otherUser.GSTRootExists(fromGSTRoot, fromEpoch)
             expect(exist).to.be.true
@@ -759,7 +731,7 @@ describe('User State', async function () {
             )
             for (let nullifier of epkNullifiers) {
                 expect(
-                    proofs.finalTransitionProof.epochKeyNullifiers.indexOf(
+                    proofs.finalTransitionProof.epkNullifiers.indexOf(
                         nullifier.toString()
                     )
                 ).not.equal(-1)
@@ -921,11 +893,7 @@ describe('User State', async function () {
                         i,
                         userState.settings.epochTreeDepth
                     ).toString()
-                    const isValid = await defaultProver.verifyProof(
-                        Circuit.verifyEpochKey,
-                        results.publicSignals,
-                        results.proof
-                    )
+                    const isValid = await results.verify()
 
                     expect(isValid).to.be.true
                     expect(results.epochKey).equal(expectedEpk)
@@ -986,16 +954,12 @@ describe('User State', async function () {
                     currentEpoch,
                     epkNonce
                 ).toString()
-                const isValid = await defaultProver.verifyProof(
-                    Circuit.proveReputation,
-                    results.publicSignals,
-                    results.proof
-                )
+                const isValid = await results.verify()
 
                 expect(isValid).to.be.true
                 expect(results.epochKey).equal(expectedEpk)
                 expect(results.epoch).equal(currentEpoch.toString())
-                const outputGSTRoot = results.globalStatetreeRoot
+                const outputGSTRoot = results.globalStateTree
                 const exist = await userState.GSTRootExists(
                     outputGSTRoot,
                     currentEpoch
@@ -1016,16 +980,12 @@ describe('User State', async function () {
                     currentEpoch,
                     epkNonce
                 ).toString()
-                const isValid = await defaultProver.verifyProof(
-                    Circuit.proveUserSignUp,
-                    results.publicSignals,
-                    results.proof
-                )
+                const isValid = await results.verify()
 
                 expect(isValid).to.be.true
                 expect(results.epochKey).equal(expectedEpk)
                 expect(results.epoch).equal(currentEpoch.toString())
-                const outputGSTRoot = results.globalStateTreeRoot
+                const outputGSTRoot = results.globalStateTree
                 const exist = await userState.GSTRootExists(
                     outputGSTRoot,
                     currentEpoch

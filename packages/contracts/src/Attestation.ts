@@ -1,5 +1,5 @@
-import { hash5 } from "@unirep/crypto"
-import { BigNumber, BigNumberish } from "ethers"
+import { hash5 } from '@unirep/crypto'
+import { BigNumber, BigNumberish } from 'ethers'
 
 export interface IAttestation {
     attesterId: BigNumber

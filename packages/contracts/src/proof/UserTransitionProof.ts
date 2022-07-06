@@ -54,8 +54,7 @@ export class UserTransitionProof extends BaseProof {
             this.idx.blindedHashChains[0],
             this.idx.blindedHashChains[1]
         )
-        this.transitionFromEpoch =
-            _publicSignals[this.idx.transitionedFromEpoch]
+        this.transitionFromEpoch = _publicSignals[this.idx.transitionFromEpoch]
         this.fromGlobalStateTree = _publicSignals[this.idx.fromGlobalStateTree]
         this.fromEpochTree = _publicSignals[this.idx.fromEpochTree]
         this.circuit = Circuit.userStateTransition

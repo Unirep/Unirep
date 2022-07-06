@@ -99,10 +99,7 @@ const giveAirdrop = async (args: any) => {
         console.log('Transaction Error', error)
         return
     }
-    const hashProof = await unirepContract.hashProof(
-        userSignUpProof.publicSignals,
-        userSignUpProof.proof
-    )
+    const hashProof = userSignUpProof.hash()
     const proofIndex = await unirepContract.getProofIndex(hashProof)
 
     console.log('Transaction hash:', tx.hash)

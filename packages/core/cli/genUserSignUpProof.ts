@@ -57,26 +57,23 @@ const genUserSignUpProof = async (args: any) => {
     // Gen user sign up proof
     const userState = await genUserState(provider, args.contract, id)
     const attesterId = BigInt(args.attester_id)
-    const results = await userState.genUserSignUpProof(attesterId)
+    const formattedProof = await userState.genUserSignUpProof(attesterId)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await defaultProver.verifyProof(
-        Circuit.proveUserSignUp,
-        results.publicSignals,
-        results.proof
-    )
+    const isValid = await formattedProof.verify()
     if (!isValid) {
         console.error('Error: user sign up proof generated is not valid!')
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results.proof)
-    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    const encodedProof = base64url.encode(JSON.stringify(formattedProof.proof))
     const encodedPublicSignals = base64url.encode(
-        JSON.stringify(results.publicSignals)
+        JSON.stringify(formattedProof.publicSignals)
     )
-    console.log(`Proof of user sign up from attester ${results.attesterId}:`)
-    console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString()}`)
+    console.log(
+        `Proof of user sign up from attester ${formattedProof.attesterId}:`
+    )
+    console.log(`Epoch key of the user: ${formattedProof.epochKey.toString()}`)
     console.log(signUpProofPrefix + encodedProof)
     console.log(signUpPublicSignalsPrefix + encodedPublicSignals)
 }

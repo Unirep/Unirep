@@ -68,7 +68,8 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[input.idx.transitionFromEpoch] = wrongEpoch.toString()
+        input.publicSignals[input.idx.transitionFromEpoch] =
+            wrongEpoch.toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof
@@ -83,7 +84,8 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[input.idx.fromGlobalStateTree] = wrongGlobalStateTreeRoot
+        input.publicSignals[input.idx.fromGlobalStateTree] =
+            wrongGlobalStateTreeRoot
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof
@@ -142,7 +144,8 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[input.idx.newGlobalStateTreeLeaf] = genRandomSalt().toString()
+        input.publicSignals[input.idx.newGlobalStateTreeLeaf] =
+            genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof
