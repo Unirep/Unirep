@@ -1,5 +1,8 @@
 import base64url from 'base64url'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
@@ -66,7 +69,8 @@ const submitEpochKeyProof = async (args: any) => {
     const publicSignals = JSON.parse(decodedPublicSignals)
     const epochKeyProof = new EpochKeyProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     const inputEpoch = epochKeyProof.epoch
     console.log(

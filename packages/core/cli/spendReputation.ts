@@ -1,6 +1,9 @@
 import base64url from 'base64url'
 import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import {
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { verifyReputationProof } from './verifyReputationProof'
@@ -77,7 +80,8 @@ const spendReputation = async (args: any) => {
     const publicSignals = JSON.parse(decodedPublicSignals)
     const reputationProof = new ReputationProof(
         publicSignals,
-        formatProofForSnarkjsVerification(proof)
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
 
     console.log(

@@ -92,7 +92,7 @@ describe('Verify user sign up verifier', function () {
             Circuit.proveUserSignUp,
             circuitInputs
         )
-        input.attesterId = wrongAttesterId.toString()
+        input.publicSignals[input.idx.attesterId] = wrongAttesterId.toString()
 
         const isProofValid = await unirepContract.verifyUserSignUp(
             input.publicSignals,
@@ -115,7 +115,7 @@ describe('Verify user sign up verifier', function () {
             Circuit.proveUserSignUp,
             circuitInputs
         )
-        input.epoch = wrongEpoch.toString()
+        input.publicSignals[input.idx.epoch] = wrongEpoch.toString()
 
         const isProofValid = await unirepContract.verifyUserSignUp(
             input.publicSignals,
@@ -142,7 +142,7 @@ describe('Verify user sign up verifier', function () {
             Circuit.proveUserSignUp,
             circuitInputs
         )
-        input.epochKey = wrongEpochKey.toString()
+        input.publicSignals[input.idx.epochKey] = wrongEpochKey.toString()
 
         const isProofValid = await unirepContract.verifyUserSignUp(
             input.publicSignals,

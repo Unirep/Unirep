@@ -12,7 +12,6 @@ import {
 import {
     GLOBAL_STATE_TREE_DEPTH,
     EPOCH_LENGTH,
-    MAX_REPUTATION_BUDGET,
     Circuit,
 } from '@unirep/circuits'
 import {
@@ -112,11 +111,6 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
@@ -161,11 +155,6 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
@@ -191,11 +180,6 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
@@ -220,11 +204,6 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
@@ -247,12 +226,6 @@ describe('EventFilters', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
-
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })
@@ -278,11 +251,6 @@ describe('EventFilters', () => {
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
-        expect(input.hash()).equal(proofNullifier.toString())
         proofIndex = await unirepContract.getProofIndex(input.hash())
         expect(Number(proofIndex)).greaterThan(0)
     })

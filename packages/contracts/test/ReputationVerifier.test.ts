@@ -134,8 +134,8 @@ describe('Verify reputation verifier', function () {
         )
         // random reputation nullifiers
         for (
-            let i = ReputationProof.idx.repNullifiers[0];
-            i < ReputationProof.idx.repNullifiers[1];
+            let i = input.idx.repNullifiers[0];
+            i < input.idx.repNullifiers[1];
             i++
         ) {
             input.publicSignals[i] = genRandomSalt().toString() // rep nullifiers
@@ -163,7 +163,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epoch = wrongEpoch.toString()
+        input.publicSignals[input.idx.epoch] = wrongEpoch.toString()
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -192,7 +192,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epochKey = wrongEpochKey.toString() // epoch key
+        input.publicSignals[input.idx.epochKey] = wrongEpochKey.toString() // epoch key
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -216,7 +216,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.attesterId = wrongAttesterId // attester id
+        input.publicSignals[input.idx.attesterId] = wrongAttesterId // attester id
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -241,7 +241,7 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.minRep = wrongMinRep.toString() // min rep
+        input.publicSignals[input.idx.minRep] = wrongMinRep.toString() // min rep
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -267,7 +267,8 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.graffitiPreImage = wrongGraffitiPreimage.toString() // graffiti preimage
+        input.publicSignals[input.idx.graffitiPreImage] =
+            wrongGraffitiPreimage.toString() // graffiti preimage
         const isProofValid = await unirepContract.verifyReputation(
             input.publicSignals,
             input.proof
@@ -330,13 +331,13 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        input.epochKey = genRandomSalt().toString()
+        input.publicSignals[input.idx.epochKey] = genRandomSalt().toString()
         await expect(
             unirepContract
                 .connect(attester)
                 .spendReputation(input.publicSignals, input.proof, {
                     value: attestingFee,
                 })
-        ).to.be.revertedWith('InvalidEpochKey()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 })

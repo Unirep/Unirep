@@ -1,8 +1,9 @@
 import { HardhatUserConfig } from 'hardhat/config'
 import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
-import '@nomiclabs/hardhat-waffle'
 import 'hardhat-gas-reporter'
+import 'solidity-coverage'
+import '@nomicfoundation/hardhat-chai-matchers'
 
 const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',

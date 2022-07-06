@@ -3,7 +3,7 @@ import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 import { Unirep, UnirepFactory } from '@unirep/contracts'
 
@@ -88,7 +88,7 @@ const genReputationProof = async (args: any) => {
     const maxReputationBudget = await unirepContract.maxReputationBudget()
 
     // Proving content
-    const epoch = userState.getUnirepStateCurrentEpoch()
+    const epoch = await userState.getUnirepStateCurrentEpoch()
     const attesterId = BigInt(args.attester_id)
     const epkNonce = args.epoch_key_nonce
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
@@ -96,18 +96,22 @@ const genReputationProof = async (args: any) => {
     const repNullifiersAmount =
         args.reputation_nullifier != null ? args.reputation_nullifier : 0
     const nonceList: BigInt[] = []
-    const rep = userState.getRepByAttester(attesterId)
+    const rep = await userState.getRepByAttester(attesterId)
     let nonceStarter: number = -1
     if (repNullifiersAmount > 0) {
         // find valid nonce starter
-        for (let n = 0; n < Number(rep.posRep) - Number(rep.negRep); n++) {
+        for (
+            let n = 0;
+            n < rep.posRep.toNumber() - rep.negRep.toNumber();
+            n++
+        ) {
             const reputationNullifier = genReputationNullifier(
                 id.identityNullifier,
                 epoch,
                 n,
                 attesterId
             )
-            if (!userState.nullifierExist(reputationNullifier)) {
+            if (!(await userState.nullifierExist(reputationNullifier))) {
                 nonceStarter = n
                 break
             }
@@ -117,7 +121,7 @@ const genReputationProof = async (args: any) => {
         }
         if (
             nonceStarter + repNullifiersAmount >
-            Number(rep.posRep) - Number(rep.negRep)
+            rep.posRep.toNumber() - rep.negRep.toNumber()
         ) {
             console.error('Error: Not enough reputation to spend')
         }
@@ -145,10 +149,10 @@ const genReputationProof = async (args: any) => {
     console.log('repnullifier amount', repNullifiersAmount)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await verifyProof(
+    const isValid = await defaultProver.verifyProof(
         Circuit.proveReputation,
-        results.proof,
-        results.publicSignals
+        results.publicSignals,
+        results.proof
     )
     if (!isValid) {
         console.error('Error: reputation proof generated is not valid!')

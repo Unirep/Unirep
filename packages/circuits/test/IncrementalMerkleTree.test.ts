@@ -6,7 +6,7 @@ import {
     hashOne,
     SnarkBigInt,
 } from '@unirep/crypto'
-import { executeCircuit, getSignalByName } from '../circuits/utils'
+import { executeCircuit, getSignalByName } from '../src'
 import { compileAndLoadCircuit } from './utils'
 
 const LEVELS = 4

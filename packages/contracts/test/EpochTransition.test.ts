@@ -100,10 +100,7 @@ describe('Epoch Transition', function () {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        let proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
+        let proofNullifier = input.hash()
         epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
         const senderPfIdx = 0
 
@@ -132,9 +129,9 @@ describe('Epoch Transition', function () {
     })
 
     it('premature epoch transition should fail', async () => {
-        await expect(unirepContract.beginEpochTransition()).to.be.revertedWith(
-            'EpochNotEndYet()'
-        )
+        await expect(
+            unirepContract.beginEpochTransition()
+        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotEndYet')
     })
 
     it('epoch transition should succeed', async () => {
@@ -221,10 +218,7 @@ describe('Epoch Transition', function () {
             receipt.gasUsed.toString()
         )
 
-        let proofNullifier = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
+        let proofNullifier = input.hash()
         let proofIndex = await unirepContract.getProofIndex(proofNullifier)
         proofIndexes.push(proofIndex)
     })
@@ -263,10 +257,7 @@ describe('Epoch Transition', function () {
                     receipt.gasUsed.toString()
                 )
 
-                const proofNullifier = await unirepContract.hashProof(
-                    input.publicSignals,
-                    input.proof
-                )
+                const proofNullifier = input.hash()
                 const proofIndex = await unirepContract.getProofIndex(
                     proofNullifier
                 )

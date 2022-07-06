@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
-import { Circuit, executeCircuit } from '../circuits/utils'
+import { Circuit, executeCircuit } from '../src'
 import {
     genEpochKey,
     Reputation,

@@ -4,7 +4,7 @@ import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
     Circuit,
     formatProofForVerifierContract,
-    verifyProof,
+    defaultProver,
 } from '@unirep/circuits'
 import {
     ProcessAttestationsProof,
@@ -43,6 +43,7 @@ const configureSubparser = (subparsers: any) => {
     })
 
     parser.add_argument('-d', '--eth-privkey', {
+        required: true,
         action: 'store',
         type: 'str',
         help: "The user's Ethereum private key",
@@ -81,11 +82,7 @@ const userStateTransition = async (args: any) => {
 
     // Start user state transition proof
     {
-        const input = new StartTransitionProof(
-            startTransitionProof.publicSignals,
-            startTransitionProof.proof
-        )
-        const isValid = await input.verify()
+        const isValid = await startTransitionProof.verify()
         if (!isValid) {
             console.error(
                 'Error: start state transition proof generated is not valid!'
@@ -96,7 +93,10 @@ const userStateTransition = async (args: any) => {
         try {
             tx = await unirepContract
                 .connect(wallet)
-                .startUserStateTransition(input.publicSignals, input.proof)
+                .startUserStateTransition(
+                    startTransitionProof.publicSignals,
+                    startTransitionProof.proof
+                )
             await tx.wait()
         } catch (error) {
             console.log('Transaction Error', error)
@@ -104,21 +104,14 @@ const userStateTransition = async (args: any) => {
         }
         console.log('Transaction hash:', tx.hash)
 
-        const proofHash = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
+        const proofHash = startTransitionProof.hash()
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
 
     // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const input = new ProcessAttestationsProof(
-            processAttestationProofs[i].publicSignals,
-            processAttestationProofs[i].proof
-        )
-        const isValid = await input.verify()
+        const isValid = await processAttestationProofs[i].verify()
         if (!isValid) {
             console.error(
                 'Error: process attestations proof generated is not valid!'
@@ -129,7 +122,10 @@ const userStateTransition = async (args: any) => {
         try {
             tx = await unirepContract
                 .connect(wallet)
-                .processAttestations(input.publicSignals, input.proof)
+                .processAttestations(
+                    processAttestationProofs[i].publicSignals,
+                    processAttestationProofs[i].proof
+                )
             await tx.wait()
         } catch (error) {
             console.log('Transaction Error', error)
@@ -137,32 +133,29 @@ const userStateTransition = async (args: any) => {
         }
         console.log('Transaction hash:', tx.hash)
 
-        const proofHash = await unirepContract.hashProof(
-            input.publicSignals,
-            input.proof
-        )
+        await userState.waitForSync()
+
+        const proofHash = processAttestationProofs[i].hash()
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
 
     // update user state proof
-    const input = new UserTransitionProof(
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
-    )
-    const isValid = await input.verify()
+    const isValid = await finalTransitionProof.verify()
     if (!isValid) {
         console.error(
             'Error: user state transition proof generated is not valid!'
         )
     }
 
-    const fromEpoch = Number(input.transitionFromEpoch)
+    const fromEpoch = Number(finalTransitionProof.transitionFromEpoch)
     const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
 
     // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
     for (let i = 0; i < epkNullifiers.length; i++) {
-        const outputNullifier = BigInt(input.epkNullifiers[i].toString())
+        const outputNullifier = BigInt(
+            finalTransitionProof.epkNullifiers[i].toString()
+        )
         if (outputNullifier != epkNullifiers[i]) {
             console.error(
                 `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
@@ -171,9 +164,9 @@ const userStateTransition = async (args: any) => {
     }
 
     // Check if Global state tree root and epoch tree root exist
-    const GSTRoot = input.fromGlobalStateTree.toString()
-    const epochTreeRoot = input.fromEpochTree.toString()
-    const isGSTRootExisted = userState.GSTRootExists(GSTRoot, fromEpoch)
+    const GSTRoot = finalTransitionProof.fromGlobalStateTree.toString()
+    const epochTreeRoot = finalTransitionProof.fromEpochTree.toString()
+    const isGSTRootExisted = await userState.GSTRootExists(GSTRoot, fromEpoch)
     const isEpochTreeExisted = await userState.epochTreeRootExists(
         epochTreeRoot,
         fromEpoch
@@ -188,7 +181,7 @@ const userStateTransition = async (args: any) => {
     }
     // Check if nullifiers submitted before
     for (const nullifier of epkNullifiers) {
-        if (userState.nullifierExist(nullifier)) {
+        if (await userState.nullifierExist(nullifier)) {
             console.error('Error: nullifier submitted before')
             return
         }
@@ -199,7 +192,11 @@ const userStateTransition = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .updateUserStateRoot(input.publicSignals, input.proof, proofIndexes)
+            .updateUserStateRoot(
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof,
+                proofIndexes
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)
@@ -211,6 +208,7 @@ const userStateTransition = async (args: any) => {
     console.log(
         `User transitioned from epoch ${fromEpoch} to epoch ${currentEpoch}`
     )
+    await userState.waitForSync()
 }
 
 export { userStateTransition, configureSubparser }

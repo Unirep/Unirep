@@ -7,21 +7,16 @@ import * as circom from 'circom'
 import * as crypto from '@unirep/crypto'
 
 import {
+    executeCircuit,
+    defaultProver,
+    Circuit,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     USER_STATE_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '../config'
-
-import { Circuit } from '../config'
-
-import {
-    executeCircuit,
-    genProofAndPublicSignals,
-    verifyProof,
-} from '../circuits/utils'
+} from '../src'
 import { expect } from 'chai'
 
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
@@ -39,7 +34,7 @@ interface IAttestation {
     negRep: BigInt
     graffiti: BigInt
     signUp: BigInt
-    hash(): BigInt
+    hash: BigInt | string
 }
 
 class Attestation implements IAttestation {
@@ -63,7 +58,7 @@ class Attestation implements IAttestation {
         this.signUp = _signUp
     }
 
-    public hash = (): BigInt => {
+    get hash() {
         return crypto.hash5([
             this.attesterId,
             this.posRep,
@@ -410,7 +405,7 @@ const genProcessAttestationsCircuitInput = (
                 reputationRecords[attesterId.toString()].hash()
             )
 
-            const attestation_hash = attestation.hash()
+            const attestation_hash = attestation.hash
             hashChainResult = crypto.hashLeftRight(
                 attestation_hash,
                 hashChainResult
@@ -712,17 +707,19 @@ const genProveSignUpCircuitInput = (
 
 const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
     const startTime = new Date().getTime()
-    const { proof, publicSignals } = await genProofAndPublicSignals(
-        circuit,
-        circuitInputs
-    )
+    const { proof, publicSignals } =
+        await defaultProver.genProofAndPublicSignals(circuit, circuitInputs)
     const endTime = new Date().getTime()
     console.log(
         `Gen Proof time: ${endTime - startTime} ms (${Math.floor(
             (endTime - startTime) / 1000
         )} s)`
     )
-    const isValid = await verifyProof(circuit, proof, publicSignals)
+    const isValid = await defaultProver.verifyProof(
+        circuit,
+        publicSignals,
+        proof
+    )
     return isValid
 }
 

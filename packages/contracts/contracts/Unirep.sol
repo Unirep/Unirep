@@ -5,14 +5,13 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
-import {Hasher} from './libraries/Hasher.sol';
 import {zkSNARKHelper} from './libraries/zkSNARKHelper.sol';
 import {VerifySignature} from './libraries/VerifySignature.sol';
 
 import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
-contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
+contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     using SafeMath for uint256;
 
     // Verifier Contracts
@@ -128,13 +127,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     // Verify input data - Should found better way to handle it.
 
-    function verifyAstesterSignUp(address attester) private view {
+    function verifyAttesterSignUp(address attester) private view {
         if (attesters[attester] == 0) revert AttesterNotSignUp(attester);
     }
 
-    function verifyProofNullilier(bytes32 proofNullifier) private view {
+    function verifyProofNullifier(bytes32 proofNullifier) private view {
         if (getProofIndex[proofNullifier] != 0)
-            revert NullilierAlreadyUsed(proofNullifier);
+            revert NullifierAlreadyUsed(proofNullifier);
     }
 
     function verifyAttesterFee() private view {
@@ -167,7 +166,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
 
-        emit Sequencer(currentEpoch, Event.UserSignedUp);
         emit UserSignedUp(
             currentEpoch,
             identityCommitment,
@@ -212,7 +210,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
      * @param amount how much pos rep add to user's leaf
      */
     function setAirdropAmount(uint256 amount) external {
-        verifyAstesterSignUp(msg.sender);
+        verifyAttesterSignUp(msg.sender);
         airdropAmount[msg.sender] = amount;
     }
 
@@ -230,7 +228,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) private {
-        verifyAstesterSignUp(attester);
+        verifyAttesterSignUp(attester);
         verifyAttesterIndex(attester, attestation.attesterId);
         verifyAttesterFee();
 
@@ -321,8 +319,10 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
-        verifyProofNullilier(proofNullifier);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
+        verifyProofNullifier(proofNullifier);
         if (publicSignals[1] != currentEpoch) revert EpochNotMatch();
         if (publicSignals[2] > maxEpochKey) revert InvalidEpochKey();
 
@@ -353,10 +353,12 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external payable {
-        bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
         address sender = msg.sender;
-        verifyProofNullilier(proofNullifier);
-        verifyAstesterSignUp(sender);
+        verifyProofNullifier(proofNullifier);
+        verifyAttesterSignUp(sender);
         verifyAttesterIndex(sender, publicSignals[3]);
         verifyAttesterFee();
 
@@ -412,10 +414,12 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external payable {
-        bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
 
-        verifyProofNullilier(proofNullifier);
-        verifyAstesterSignUp(msg.sender);
+        verifyProofNullifier(proofNullifier);
+        verifyAttesterSignUp(msg.sender);
         verifyAttesterIndex(msg.sender, publicSignals[maxReputationBudget + 3]);
         verifyAttesterFee();
 
@@ -477,7 +481,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
         // Emit epoch key proof with attestation submitted event
         // And user can verify if the epoch key is valid or not
-        emit Sequencer(currentEpoch, Event.AttestationSubmitted);
         emit AttestationSubmitted(
             currentEpoch,
             epochKey,
@@ -499,7 +502,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
             revert EpochNotEndYet();
 
         // Mark epoch transitioned as complete and increase currentEpoch
-        emit Sequencer(currentEpoch, Event.EpochEnded);
         emit EpochEnded(currentEpoch);
 
         latestEpochTransitionTime = block.timestamp;
@@ -523,9 +525,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
 
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
 
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
@@ -551,9 +555,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
 
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
@@ -585,9 +591,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256[8] memory proof,
         uint256[] memory proofIndexRecords
     ) external {
-        bytes32 proofNullifier = Hasher.hashProof(publicSignals, proof);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
 
-        verifyProofNullilier(proofNullifier);
+        verifyProofNullifier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
         if (publicSignals[1 + numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
@@ -600,7 +608,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         }
 
         uint256 _proofIndex = proofIndex;
-        emit Sequencer(currentEpoch, Event.UserStateTransitioned);
         emit IndexedUserStateTransitionProof(
             _proofIndex,
             publicSignals,

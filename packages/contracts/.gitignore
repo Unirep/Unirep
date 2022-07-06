@@ -8,3 +8,5 @@ build
 vbuild
 contracts/verifiers
 artifacts
+coverage
+coverage.json

@@ -44,6 +44,7 @@ const _schema = [
             ['epochKey', 'String', { optional: true }],
             ['epochKeyToHashchainMap', 'String', { optional: true }],
             // ['index', 'Int'],
+            ['index', 'Int'], // event index, tx index, block index
             ['transactionHash', 'String', { optional: true }],
             ['attester', 'String', { optional: true }],
             ['proofIndex', 'Int', { optional: true }],
@@ -81,6 +82,22 @@ const _schema = [
         ],
     },
     {
+        name: 'EpochKey',
+        primaryKey: ['key', 'epoch'],
+        rows: [
+            ['key', 'String'],
+            ['epoch', 'Int'],
+            {
+                name: 'epochDoc',
+                relation: {
+                    localField: 'epoch',
+                    foreignField: 'number',
+                    foreignTable: 'Epoch',
+                },
+            },
+        ],
+    },
+    {
         name: 'Nullifier',
         rows: [
             ['epoch', 'Int'],
@@ -91,6 +108,15 @@ const _schema = [
                 type: 'Bool',
                 default: () => true,
             },
+        ],
+    },
+    {
+        name: 'UserSignUp',
+        rows: [
+            ['commitment', 'String'],
+            ['epoch', 'Int'],
+            ['attesterId', 'Int'],
+            ['airdrop', 'Int'],
         ],
     },
 ]

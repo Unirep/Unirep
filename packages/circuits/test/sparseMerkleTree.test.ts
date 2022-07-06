@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { expect } from 'chai'
 import { genRandomSalt, hashOne, SparseMerkleTree } from '@unirep/crypto'
-import { executeCircuit, getSignalByName } from '../circuits/utils'
+import { executeCircuit, getSignalByName } from '../src'
 import { genNewSMT, compileAndLoadCircuit } from './utils'
 // circuitEpochTreeDepth too large will greatly slow down the test...
 const circuitEpochTreeDepth = 8

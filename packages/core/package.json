@@ -8,11 +8,8 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "yarn synchronizerTests && yarn UnirepStateTests && yarn UserStateTests && yarn integrationTest",
-        "integrationTest": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/integration/*.test.ts",
-        "UnirepStateTests": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/UnirepState/*.test.ts",
-        "UserStateTests": "NODE_OPTIONS=--max-old-space-size=4096 hardhat test --parallel --no-compile test/UserState/*.test.ts",
-        "synchronizerTests": "hardhat test --parallel --no-compile test/synchronizer/*.test.ts",
+        "test": "hardhat test --no-compile --parallel test/*/*.test.ts",
+        "test-ci": "hardhat test --no-compile --parallel",
         "lint": "prettier --write ."
     },
     "repository": "https://github.com/unirep/unirep",
@@ -23,10 +20,10 @@
     },
     "homepage": "https://github.com/unirep/unirep#readme",
     "devDependencies": {
+        "@nomicfoundation/hardhat-chai-matchers": "^1.0.0-beta.3",
         "@nomiclabs/hardhat-ethers": "^2.0.6",
         "@nomiclabs/hardhat-waffle": "^2.0.3",
         "base64url": "^3.0.1",
-        "ethereum-waffle": "^3.4.4",
         "hardhat": "^2.9.9",
         "shelljs": "^0.8.5",
         "typescript": "^4.7.3"
@@ -35,7 +32,7 @@
         "@unirep/circuits": "1.0.0",
         "@unirep/contracts": "1.0.0",
         "@unirep/crypto": "1.0.0",
-        "anondb": "^0.0.6",
+        "anondb": "^0.0.8",
         "ethers": "^5.6.8",
         "nanoid": "3"
     }

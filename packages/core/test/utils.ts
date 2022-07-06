@@ -10,7 +10,7 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, verifyProof, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
+import { Circuit, MAX_REPUTATION_BUDGET, defaultProver } from '@unirep/circuits'
 import {
     Attestation,
     ProcessAttestationsProof,
@@ -21,12 +21,8 @@ import {
 import {
     computeEmptyUserStateRoot,
     genEpochKey,
-    genNewSMT,
-    genUnirepState,
     genUserState,
-    IUserState,
     Reputation,
-    UnirepState,
     UserState,
 } from '../src'
 import {
@@ -35,6 +31,11 @@ import {
     genNewUserStateTree,
     toCompleteHexString,
 } from '../../circuits/test/utils'
+import { IAttestation } from '@unirep/contracts'
+import { getUnirepContract } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
+import { DB, SQLiteConnector } from 'anondb/node'
+import * as crypto from 'crypto'
 
 const genNewGST = (
     GSTDepth: number,
@@ -77,34 +78,30 @@ const computeEpochKeyProofHash = (epochKeyProof: any) => {
 const verifyStartTransitionProof = async (
     startTransitionProof
 ): Promise<boolean> => {
-    return await verifyProof(
+    return await defaultProver.verifyProof(
         Circuit.startTransition,
-        startTransitionProof.proof,
-        startTransitionProof.publicSignals
+        startTransitionProof.publicSignals,
+        startTransitionProof.proof
     )
 }
 
 const verifyProcessAttestationsProof = async (
     processAttestationProof
 ): Promise<boolean> => {
-    return await verifyProof(
+    return await defaultProver.verifyProof(
         Circuit.processAttestations,
-        processAttestationProof.proof,
-        processAttestationProof.publicSignals
+        processAttestationProof.publicSignals,
+        processAttestationProof.proof
     )
 }
 
-const getReputationRecords = (id: ZkIdentity, unirepState: UnirepState) => {
-    const currentEpoch = unirepState.currentEpoch
+const getReputationRecords = async (id: ZkIdentity, userState: UserState) => {
+    const currentEpoch = (await userState.loadCurrentEpoch()).number
     const reputaitonRecord = {}
     for (let i = 0; i < currentEpoch; i++) {
-        for (
-            let j = 0;
-            j < unirepState.settings.numEpochKeyNoncePerEpoch;
-            j++
-        ) {
+        for (let j = 0; j < userState.settings.numEpochKeyNoncePerEpoch; j++) {
             const epk = genEpochKey(id.identityNullifier, i, j)
-            const attestations = unirepState.getAttestations(epk.toString())
+            const attestations = await userState.getAttestations(epk.toString())
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
                 if (reputaitonRecord[attesterId] === undefined) {
@@ -265,62 +262,69 @@ const submitUSTProofs = async (
 
     {
         // submit proofs
-        const input = new StartTransitionProof(
-            startTransitionProof.publicSignals,
-            startTransitionProof.proof
-        )
-        const isValid = await input.verify()
+        const isValid = await startTransitionProof.verify()
         expect(isValid).to.be.true
         const tx = await contract.startUserStateTransition(
-            input.publicSignals,
-            input.proof
+            startTransitionProof.publicSignals,
+            startTransitionProof.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).to.equal(1)
 
         // submit twice should fail
         await expect(
-            contract.startUserStateTransition(input.publicSignals, input.proof)
-        ).to.be.revertedWith('NullilierAlreadyUsed')
+            contract.startUserStateTransition(
+                startTransitionProof.publicSignals,
+                startTransitionProof.proof
+            )
+        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 
-        const hashedProof = input.hash()
+        const hashedProof = startTransitionProof.hash()
         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
     }
 
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const input = new ProcessAttestationsProof(
-            processAttestationProofs[i].publicSignals,
-            processAttestationProofs[i].proof
-        )
-        const isValid = await input.verify()
+        const isValid = await processAttestationProofs[i].verify()
         expect(isValid).to.be.true
 
         const tx = await contract.processAttestations(
-            input.publicSignals,
-            input.proof
+            processAttestationProofs[i].publicSignals,
+            processAttestationProofs[i].proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).to.equal(1)
 
+        // submit random process attestations should success and not affect the results
+        // const falseInput = BigNumber.from(genRandomSalt())
+        // await contract
+        //     .processAttestations(
+        //         processAttestationProofs[i].outputBlindedUserState,
+        //         processAttestationProofs[i].outputBlindedHashChain,
+        //         falseInput,
+        //         formatProofForVerifierContract(
+        //             processAttestationProofs[i].proof
+        //         )
+        //     )
+        //     .then((t) => t.wait())
+
         // submit twice should fail
         await expect(
-            contract.processAttestations(input.publicSignals, input.proof)
-        ).to.be.revertedWith('NullilierAlreadyUsed')
+            contract.processAttestations(
+                processAttestationProofs[i].publicSignals,
+                processAttestationProofs[i].proof
+            )
+        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 
-        const hashedProof = input.hash()
+        const hashedProof = processAttestationProofs[i].hash()
         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
     }
 
     {
-        const input = new UserTransitionProof(
-            finalTransitionProof.publicSignals,
-            finalTransitionProof.proof
-        )
-        const isValid = await input.verify()
+        const isValid = await finalTransitionProof.verify()
         expect(isValid).to.be.true
         const tx = await contract.updateUserStateRoot(
-            input.publicSignals,
-            input.proof,
+            finalTransitionProof.publicSignals,
+            finalTransitionProof.proof,
             proofIndexes
         )
         const receipt = await tx.wait()
@@ -329,81 +333,160 @@ const submitUSTProofs = async (
         // submit twice should fail
         await expect(
             contract.updateUserStateRoot(
-                input.publicSignals,
-                input.proof,
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof,
                 proofIndexes
             )
-        ).to.be.revertedWith('NullilierAlreadyUsed')
+        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
     }
+}
+
+const tables = [
+    'Proof',
+    'Nullifier',
+    'GSTLeaf',
+    'GSTRoot',
+    'Attestation',
+    'Epoch',
+    'EpochKey',
+    'UserSignUp',
+]
+
+const hash = (obj: any) => {
+    const stringContent = JSON.stringify({
+        ...obj,
+        _id: null,
+        createdAt: null,
+    })
+    return crypto.createHash('sha256').update(stringContent).digest('hex')
+}
+
+export const compareDB = async (db1: DB, db2: DB) => {
+    for (const table of tables) {
+        const contents1 = await db1.findMany(table, { where: {} })
+        const contents2 = await db2.findMany(table, { where: {} })
+        expect(contents1.length).to.equal(contents2.length)
+        const contentMap = contents1.reduce((acc, obj) => {
+            return {
+                [hash(obj)]: true,
+                ...acc,
+            }
+        }, {})
+        for (const content of contents2) {
+            expect(contentMap[hash(content)], JSON.stringify(content)).to.equal(
+                true
+            )
+        }
+    }
+}
+
+// this only returns new and changed documents. It does not account for deleted
+// documents
+export const getSnapDBDiffs = async (snap: Object, db: DB) => {
+    const diffs = [] as any[]
+    for (const table of tables) {
+        const contents = await db.findMany(table, { where: {} })
+        for (const content of contents) {
+            if (!snap[hash(content)]) {
+                diffs.push({ ...content, table })
+            }
+        }
+    }
+    return diffs
+}
+
+export const snapshotDB = async (db: DB) => {
+    const tableSnaps = await Promise.all(
+        tables.map(async (table) => {
+            const contents = await db.findMany(table, { where: {} })
+            return contents.reduce((acc, obj) => {
+                return {
+                    [hash(obj)]: true,
+                    ...acc,
+                }
+            }, {})
+        })
+    )
+    return tableSnaps.reduce((acc, snap) => {
+        const newSnap = {
+            ...snap,
+            ...acc,
+        }
+        expect(Object.keys(newSnap).length, 'duplicate entry').to.equal(
+            Object.keys(acc).length + Object.keys(snap).length
+        )
+        return newSnap
+    }, {})
 }
 
 const compareStates = async (
     provider: ethers.providers.Provider,
     address: string,
     userId: ZkIdentity,
-    savedUserState: IUserState
+    db: Promise<SQLiteConnector>
 ) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const unirepStateWithNoStorage = await genUnirepState(provider, address)
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
 
+    const usWithNoStorage = await genUserState(provider, address, userId)
     const usWithStorage = await genUserState(
         provider,
         address,
         userId,
-        savedUserState
+        await db
     )
-    const unirepStateWithStorage = await genUnirepState(
-        provider,
-        address,
-        savedUserState.unirepState
+    expect(await usWithNoStorage.latestGSTLeafIndex()).equal(
+        await usWithStorage.latestGSTLeafIndex()
     )
 
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    const unirepFromJSON = UnirepState.fromJSON(unirepStateWithStorage.toJSON())
-
-    expect(usWithNoStorage.toJSON()).to.deep.equal(usWithStorage.toJSON())
-    expect(usWithNoStorage.toJSON()).to.deep.equal(usFromJSON.toJSON())
-    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-        unirepStateWithStorage.toJSON()
-    )
-    expect(unirepStateWithNoStorage.toJSON()).to.deep.equal(
-        unirepFromJSON.toJSON()
+    expect(await usWithNoStorage.latestTransitionedEpoch()).equal(
+        await usWithStorage.latestTransitionedEpoch()
     )
 
-    return usWithNoStorage.toJSON()
+    for (let epoch = 1; epoch <= currentEpoch; epoch++) {
+        for (
+            let nonce = 0;
+            nonce < usWithNoStorage.settings.numEpochKeyNoncePerEpoch;
+            nonce++
+        ) {
+            const epk = genEpochKey(
+                userId.identityNullifier,
+                epoch,
+                nonce,
+                usWithNoStorage.settings.epochTreeDepth
+            ).toString()
+            expect((await usWithNoStorage.getAttestations(epk)).length).equal(
+                (await usWithStorage.getAttestations(epk)).length
+            )
+        }
+        expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
+            await usWithStorage.genGSTree(epoch)
+        )
+    }
+
+    for (let epoch = 1; epoch < currentEpoch; epoch++) {
+        expect(await usWithNoStorage.genEpochTree(epoch)).deep.equal(
+            await usWithStorage.genEpochTree(epoch)
+        )
+    }
 }
 
-const compareEpochTrees = async (
-    provider: ethers.providers.Provider,
-    address: string,
-    userId: ZkIdentity,
-    savedUserState: any,
-    epoch: number
+const compareAttestations = (
+    attestDB: IAttestation,
+    attestObj: Attestation
 ) => {
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const epochTree1 = usWithNoStorage.getUnirepStateEpochTree(epoch)
-
-    const usWithStorage = await genUserState(
-        provider,
-        address,
-        userId,
-        savedUserState
+    expect(attestDB.attesterId.toString()).equal(
+        attestObj.attesterId.toString()
     )
-    const epochTree2 = await usWithStorage.getUnirepStateEpochTree(epoch)
-
-    const usFromJSON = UserState.fromJSON(userId, usWithStorage.toJSON())
-    const epochTree3 = usFromJSON.getUnirepStateEpochTree(epoch)
-
-    expect(epochTree1.root).to.equal(epochTree2.root)
-    expect(epochTree1.root).to.equal(epochTree3.root)
-
-    return usWithNoStorage.toJSON()
+    expect(attestDB.posRep.toString()).equal(attestObj.posRep.toString())
+    expect(attestDB.negRep.toString()).equal(attestObj.negRep.toString())
+    expect(attestDB.graffiti.toString()).equal(attestObj.graffiti.toString())
+    expect(attestDB.signUp.toString()).equal(attestObj.signUp.toString())
 }
 
 export {
     genNewEpochTree,
     genNewUserStateTree,
-    genNewSMT,
     genNewGST,
     genRandomAttestation,
     genRandomList,
@@ -417,5 +500,6 @@ export {
     genProveSignUpCircuitInput,
     submitUSTProofs,
     compareStates,
-    compareEpochTrees,
+    compareAttestations,
+    genUserState,
 }

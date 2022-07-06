@@ -2,13 +2,11 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
+import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
 import {
-    genRandomSalt,
-    SnarkPublicSignals,
-    SNARK_FIELD_SIZE,
-    ZkIdentity,
-} from '@unirep/crypto'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+    formatProofForSnarkjsVerification,
+    defaultProver,
+} from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '../src'
 
 import { genEpochKey, Attestation } from './utils'
@@ -31,8 +29,9 @@ describe('Attesting', () => {
     const epochKey = genEpochKey(genRandomSalt(), epoch, nonce)
     const publicSignals = [genRandomSalt(), epoch, epochKey]
     const epochKeyProof = new EpochKeyProof(
-        publicSignals as SnarkPublicSignals,
-        formatProofForSnarkjsVerification(proof)
+        publicSignals as BigNumberish[],
+        formatProofForSnarkjsVerification(proof),
+        defaultProver
     )
     let epochKeyProofIndex
     const senderPfIdx = 0
@@ -76,13 +75,7 @@ describe('Attesting', () => {
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashProof(
-            epochKeyProof.publicSignals,
-            epochKeyProof.proof
-        )
-        expect(receipt.status).equal(1)
-        const _proofNullifier = epochKeyProof.hash()
-        expect(_proofNullifier).equal(proofNullifier)
+        const proofNullifier = epochKeyProof.hash()
         epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
         expect(epochKeyProof).not.equal(null)
     })
@@ -93,35 +86,31 @@ describe('Attesting', () => {
                 epochKeyProof.publicSignals,
                 epochKeyProof.proof
             )
-        ).to.be.revertedWith('NullilierAlreadyUsed')
+        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
         const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
-        const wrongEpochKeyProof = new EpochKeyProof(
-            wrongSignals as SnarkPublicSignals,
-            formatProofForSnarkjsVerification(proof)
+        const { publicSignals, proof: proof_ } = new EpochKeyProof(
+            wrongSignals as BigNumberish[],
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         await expect(
-            unirepContract.submitEpochKeyProof(
-                wrongEpochKeyProof.publicSignals,
-                wrongEpochKeyProof.proof
-            )
-        ).to.be.revertedWith('EpochNotMatch()')
+            unirepContract.submitEpochKeyProof(publicSignals, proof_)
+        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
     it('submit an invalid epoch key should fail', async () => {
         const wrongEpochKey = genRandomSalt()
-        const wrongEpochKeyProof = new EpochKeyProof(
-            [genRandomSalt(), epoch, wrongEpochKey] as SnarkPublicSignals,
-            formatProofForSnarkjsVerification(proof)
+        const { publicSignals, proof: proof_ } = new EpochKeyProof(
+            [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
+            formatProofForSnarkjsVerification(proof),
+            defaultProver
         )
         await expect(
-            unirepContract.submitEpochKeyProof(
-                wrongEpochKeyProof.publicSignals,
-                wrongEpochKeyProof.proof
-            )
-        ).to.be.revertedWith('InvalidEpochKey()')
+            unirepContract.submitEpochKeyProof(publicSignals, proof_)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 
     it('submit attestation should succeed', async () => {
@@ -200,7 +189,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith(`AttesterIdNotMatch(999)`)
+        ).to.be.revertedWithCustomError(unirepContract, `AttesterIdNotMatch`)
     })
 
     it('attestation with invalid repuation should fail', async () => {
@@ -224,7 +213,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSNARKField(0)')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -243,7 +232,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSNARKField(1)')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -262,7 +251,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSNARKField(2)')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
             BigInt(attesterId),
@@ -281,7 +270,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidSignUpFlag()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignUpFlag')
     })
 
     it('attestation with zero proof index should fail', async () => {
@@ -306,7 +295,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidProofIndex()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
     })
 
     it('attestation with non-existed proof index should fail', async () => {
@@ -331,7 +320,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee }
                 )
-        ).to.be.revertedWith('InvalidProofIndex()')
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {
@@ -354,7 +343,7 @@ describe('Attesting', () => {
                     epochKeyProofIndex,
                     senderPfIdx
                 )
-        ).to.be.revertedWith('AttestingFeeInvalid()')
+        ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
         await expect(
             unirepContract
                 .connect(attester)
@@ -365,7 +354,7 @@ describe('Attesting', () => {
                     senderPfIdx,
                     { value: attestingFee.sub(1) }
                 )
-        ).to.be.revertedWith('AttestingFeeInvalid()')
+        ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
     })
 
     it('attestation from unregistered attester should fail', async () => {
@@ -395,7 +384,7 @@ describe('Attesting', () => {
                 senderPfIdx,
                 { value: attestingFee }
             )
-        ).to.be.revertedWith(`AttesterNotSignUp("${nonAttesterAddress}")`)
+        ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
     })
 
     it('burn collected attesting fee should work', async () => {
