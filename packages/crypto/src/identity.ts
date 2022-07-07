@@ -28,7 +28,7 @@ function sha256(message: string): string {
 }
 
 // The strategy used to generate the ZK identity.
-enum Strategy {
+export enum ZkIdentityStrategy {
     RANDOM, // Identity is generated randomly.
     MESSAGE, // Identity is generated from a message.
     SERIALIZED, // Identity parameters are passed from outside.
@@ -51,17 +51,17 @@ class ZkIdentity {
      * @param metadata Additional data needed to create identity for given strategy.
      */
     constructor(
-        strategy: Strategy = Strategy.RANDOM,
+        strategy: ZkIdentityStrategy = ZkIdentityStrategy.RANDOM,
         metadata?: string | SerializedIdentity
     ) {
         switch (strategy) {
-            case Strategy.RANDOM: {
+            case ZkIdentityStrategy.RANDOM: {
                 this._identityTrapdoor = genRandomSalt().valueOf()
                 this._identityNullifier = genRandomSalt().valueOf()
                 this._secret = [this._identityNullifier, this._identityTrapdoor]
                 break
             }
-            case Strategy.MESSAGE: {
+            case ZkIdentityStrategy.MESSAGE: {
                 if (!metadata) {
                     throw new Error('The message is not defined')
                 }
@@ -81,7 +81,7 @@ class ZkIdentity {
                 this._secret = [this._identityNullifier, this._identityTrapdoor]
                 break
             }
-            case Strategy.SERIALIZED: {
+            case ZkIdentityStrategy.SERIALIZED: {
                 if (!metadata) {
                     throw new Error('The serialized identity is not defined')
                 }
@@ -174,4 +174,4 @@ class ZkIdentity {
     }
 }
 
-export { SnarkPublicSignals, SnarkProof, ZkIdentity, Strategy }
+export { SnarkPublicSignals, SnarkProof, ZkIdentity, ZkIdentityStrategy }
