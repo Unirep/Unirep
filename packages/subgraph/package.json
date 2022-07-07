@@ -4,8 +4,8 @@
     "description": "",
     "license": "MIT",
     "scripts": {
-        "codegen": "graph codegen",
-        "build": "graph build",
+        "codegen": "./scripts/codegen.sh",
+        "build": "./scripts/build-manifest.sh",
         "deploy": "npm run codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep"
     },
     "dependencies": {
