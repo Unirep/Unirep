@@ -32,7 +32,6 @@ describe('User state transition events in Unirep User State', async function () 
     let attester: any
     const maxUsers = 2 ** 7
     const attestingFee = ethers.utils.parseEther('0.1')
-    let numEpochKeyNoncePerEpoch
 
     before(async () => {
         const accounts = await hardhatEthers.getSigners()
@@ -41,8 +40,6 @@ describe('User state transition events in Unirep User State', async function () 
             maxUsers,
             attestingFee,
         })
-        numEpochKeyNoncePerEpoch =
-            await unirepContract.numEpochKeyNoncePerEpoch()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -235,7 +232,7 @@ describe('User state transition events in Unirep User State', async function () 
             }
             const randomProof: BigNumberish[] = genRandomList(8)
             let randomPublicSignals: BigNumberish[] = genRandomList(
-                2 * numEpochKeyNoncePerEpoch + 6
+                2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6
             )
             const ustProof = new UserTransitionProof(
                 randomPublicSignals,

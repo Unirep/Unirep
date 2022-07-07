@@ -55,7 +55,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
             attesterId = await unirepContract.attesters(
-                await attester.getAddress()
+                attester.address
             )
         })
 
@@ -67,7 +67,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const airdroppedAmount = await unirepContract.airdropAmount(
-                await attester.getAddress()
+                attester.address
             )
             expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
@@ -105,7 +105,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const airdroppedAmount = await unirepContract.airdropAmount(
-                    await attester.getAddress()
+                    attester.address
                 )
                 signUpAirdrops.push(
                     new Reputation(

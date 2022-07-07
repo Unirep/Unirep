@@ -77,7 +77,7 @@ describe('EventFilters', () => {
 
         console.log('Attesters sign up')
         attester = accounts[1]
-        attesterAddress = await attester.getAddress()
+        attesterAddress = attester.address
 
         tx = await unirepContract.connect(attester).attesterSignUp()
         receipt = await tx.wait()

@@ -21,8 +21,8 @@ describe('Verify reputation verifier', function () {
     this.timeout(30000)
     let unirepContract: Unirep
 
-    let accounts: ethers.Signer[]
-    let attester: ethers.Signer
+    let accounts: any[]
+    let attester: any
     const epoch = 1
     const nonce = 1
     const user = new ZkIdentity()
@@ -279,7 +279,7 @@ describe('Verify reputation verifier', function () {
 
     it('sign up should succeed', async () => {
         attester = accounts[1]
-        const attesterAddress = await attester.getAddress()
+        const attesterAddress = attester.address
 
         const tx = await unirepContract.connect(attester).attesterSignUp()
         const receipt = await tx.wait()

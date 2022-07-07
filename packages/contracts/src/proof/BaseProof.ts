@@ -6,12 +6,7 @@ import {
 import { SnarkProof } from '@unirep/crypto'
 import { ethers, BigNumberish } from 'ethers'
 
-export interface IProofStruct {
-    publicSignals: BigNumberish[]
-    proof: BigNumberish[]
-}
-
-export class BaseProof implements IProofStruct {
+export class BaseProof {
     private _snarkProof: SnarkProof
     protected circuit?: Circuit
 

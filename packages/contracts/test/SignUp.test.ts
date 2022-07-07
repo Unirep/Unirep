@@ -18,7 +18,7 @@ import { deployUnirep, Unirep } from '../src'
 describe('Signup', () => {
     const testMaxUser = 5
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
+    let accounts: any[]
 
     let signedUpUsers = 0
     let signedUpAttesters = 0
@@ -97,15 +97,15 @@ describe('Signup', () => {
     })
 
     describe('Attester sign-ups', () => {
-        let attester: Signer
+        let attester: any
         let attesterAddress: string
-        let attester2: Signer
+        let attester2: any
         let attester2Address: string
         let attester2Sig
 
         it('sign up should succeed', async () => {
             attester = accounts[1]
-            attesterAddress = await attester.getAddress()
+            attesterAddress = attester.address
 
             const tx = await unirepContract.connect(attester).attesterSignUp()
             const receipt = await tx.wait()
@@ -181,7 +181,7 @@ describe('Signup', () => {
         it('sign up should fail if max capacity reached', async () => {
             for (let i = 3; i < testMaxUser; i++) {
                 attester = accounts[i]
-                attesterAddress = await attester.getAddress()
+                attesterAddress = attester.address
 
                 const tx = await unirepContract
                     .connect(attester)
@@ -198,7 +198,7 @@ describe('Signup', () => {
                 expect(signedUpAttesters + 1).equal(nextAttesterId_)
             }
             attester = accounts[5]
-            attesterAddress = await attester.getAddress()
+            attesterAddress = attester.address
 
             await expect(
                 unirepContract.connect(attester).attesterSignUp()

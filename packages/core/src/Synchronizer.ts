@@ -1200,18 +1200,4 @@ export class Synchronizer extends EventEmitter {
         )
         return true
     }
-
-    async checkGSTRoot(epoch: number, root: string) {
-        const existingRoot = await this._db.findOne('GSTRoot', {
-            where: {
-                epoch,
-                root,
-            },
-        })
-        if (!existingRoot) {
-            console.log('Global state tree root mismatches')
-            return false
-        }
-        return true
-    }
 }
