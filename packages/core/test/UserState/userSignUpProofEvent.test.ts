@@ -54,9 +54,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             let tx = await unirepContract.connect(attester).attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-            attesterId = await unirepContract.attesters(
-                attester.address
-            )
+            attesterId = await unirepContract.attesters(attester.address)
         })
 
         it('attester set airdrop amount', async () => {
