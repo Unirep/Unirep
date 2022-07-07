@@ -23,25 +23,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     IVerifier internal reputationVerifier;
     IVerifier internal userSignUpVerifier;
 
-    uint256 public currentEpoch = 1;
-
-    uint256 public immutable epochLength;
+    Config public config;
 
     uint256 public immutable maxEpochKey;
 
+    uint256 public currentEpoch = 1;
+
     uint256 public latestEpochTransitionTime;
-
-    // Maximum number of epoch keys allowed for an user to generate in one epoch
-    uint8 public immutable numEpochKeyNoncePerEpoch;
-
-    // Maximum number of reputation nullifiers in a proof
-    uint8 public immutable maxReputationBudget;
-
-    // The maximum number of users allowed
-    uint256 public immutable maxUsers;
-
-    // The maximum number of attesters allowed
-    uint256 public immutable maxAttesters;
 
     uint256 public numUserSignUps = 0;
 
@@ -54,8 +42,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     mapping(uint256 => bool) public hasUserSignedUp;
 
-    // Fee required for submitting an attestation
-    uint256 public immutable attestingFee;
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
     // Mapping of voluteers that execute epoch transition to compensation they earned
@@ -71,23 +57,16 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     // Mapping of the airdrop amount of an attester
     mapping(address => uint256) public airdropAmount;
 
-    TreeDepths public treeDepths;
-
     constructor(
-        TreeDepths memory _treeDepths,
-        MaxValues memory _maxValues,
+        Config memory _config,
         IVerifier _epkValidityVerifier,
         IVerifier _startTransitionVerifier,
         IVerifier _processAttestationsVerifier,
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier,
-        IVerifier _userSignUpVerifier,
-        uint8 _numEpochKeyNoncePerEpoch,
-        uint8 _maxReputationBudget,
-        uint256 _epochLength,
-        uint256 _attestingFee
+        IVerifier _userSignUpVerifier
     ) {
-        treeDepths = _treeDepths;
+        config = _config;
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
@@ -97,33 +76,26 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         reputationVerifier = _reputationVerifier;
         userSignUpVerifier = _userSignUpVerifier;
 
-        numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
-        maxReputationBudget = _maxReputationBudget;
-        epochLength = _epochLength;
         latestEpochTransitionTime = block.timestamp;
 
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
         // is just large enough and not more, or they will waste gas.
-        uint256 GSTMaxLeafIndex = uint256(2)**_treeDepths.globalStateTreeDepth -
+        uint256 GSTMaxLeafIndex = uint256(2)**config.globalStateTreeDepth -
             1;
         require(
-            _maxValues.maxUsers <= GSTMaxLeafIndex,
+            config.maxUsers <= GSTMaxLeafIndex,
             'Unirep: invalid maxUsers value'
         );
-        maxUsers = _maxValues.maxUsers;
 
-        uint256 USTMaxLeafIndex = uint256(2)**_treeDepths.userStateTreeDepth -
+        uint256 USTMaxLeafIndex = uint256(2)**config.userStateTreeDepth -
             1;
         require(
-            _maxValues.maxAttesters <= USTMaxLeafIndex,
+            config.maxAttesters <= USTMaxLeafIndex,
             'Unirep: invalid maxAttesters value'
         );
-        maxAttesters = _maxValues.maxAttesters;
 
-        maxEpochKey = uint256(2)**_treeDepths.epochTreeDepth - 1;
-
-        attestingFee = _attestingFee;
+        maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
     }
 
     // Verify input data - Should found better way to handle it.
@@ -138,7 +110,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     }
 
     function verifyAttesterFee() private view {
-        if (msg.value < attestingFee) revert AttestingFeeInvalid();
+        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
     }
 
     function verifyAttesterIndex(address attester, uint256 attesterId)
@@ -158,7 +130,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function userSignUp(uint256 identityCommitment) external {
         if (hasUserSignedUp[identityCommitment] == true)
             revert UserAlreadySignedUp(identityCommitment);
-        if (numUserSignUps >= maxUsers)
+        if (numUserSignUps >= config.maxUsers)
             revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
@@ -178,7 +150,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function _attesterSignUp(address attester) private {
         if (attesters[attester] != 0) revert AttesterAlreadySignUp(attester);
 
-        if (nextAttesterId >= maxAttesters)
+        if (nextAttesterId >= config.maxAttesters)
             revert ReachedMaximumNumberUserSignedUp();
 
         attesters[attester] = nextAttesterId;
@@ -388,7 +360,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         verifyAttesterIndex(msg.sender, input.attesterId);
         verifyAttesterFee();
 
-        if (input.repNullifiers.length != maxReputationBudget)
+        if (input.repNullifiers.length != config.maxReputationBudget)
             revert InvalidNumberNullifiers();
 
         if (input.epoch != currentEpoch) revert EpochNotMatch();
@@ -464,7 +436,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
 
-        if (block.timestamp - latestEpochTransitionTime < epochLength)
+        if (block.timestamp - latestEpochTransitionTime < config.epochLength)
             revert EpochNotEndYet();
 
         // Mark epoch transitioned as complete and increase currentEpoch
@@ -563,13 +535,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         if (proof.transitionFromEpoch >= currentEpoch)
             revert InvalidTransitionEpoch();
 
-        if (proof.epkNullifiers.length != numEpochKeyNoncePerEpoch)
+        if (proof.epkNullifiers.length != config.numEpochKeyNoncePerEpoch)
             revert InvalidNumberNullifiers();
 
         if (proof.blindedUserStates.length != 2)
             revert InvalidBlindedUserState();
 
-        if (proof.blindedHashChains.length != numEpochKeyNoncePerEpoch)
+        if (proof.blindedHashChains.length != config.numEpochKeyNoncePerEpoch)
             revert InvalidNumberBlindedHashChain();
 
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {
@@ -693,25 +665,25 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
         uint256[] memory publicSignals = new uint256[](
-            6 + numEpochKeyNoncePerEpoch * 2
+            6 + config.numEpochKeyNoncePerEpoch * 2
         );
         publicSignals[0] = input.newGlobalStateTreeLeaf;
-        for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+        for (uint8 i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
             publicSignals[i + 1] = input.epkNullifiers[i];
         }
-        publicSignals[1 + numEpochKeyNoncePerEpoch] = input.transitionFromEpoch;
-        publicSignals[2 + numEpochKeyNoncePerEpoch] = input.blindedUserStates[
+        publicSignals[1 + config.numEpochKeyNoncePerEpoch] = input.transitionFromEpoch;
+        publicSignals[2 + config.numEpochKeyNoncePerEpoch] = input.blindedUserStates[
             0
         ];
-        publicSignals[3 + numEpochKeyNoncePerEpoch] = input.blindedUserStates[
+        publicSignals[3 + config.numEpochKeyNoncePerEpoch] = input.blindedUserStates[
             1
         ];
-        publicSignals[4 + numEpochKeyNoncePerEpoch] = input.fromGlobalStateTree;
-        for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-            publicSignals[5 + numEpochKeyNoncePerEpoch + i] = input
+        publicSignals[4 + config.numEpochKeyNoncePerEpoch] = input.fromGlobalStateTree;
+        for (uint8 i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
+            publicSignals[5 + config.numEpochKeyNoncePerEpoch + i] = input
                 .blindedHashChains[i];
         }
-        publicSignals[5 + numEpochKeyNoncePerEpoch * 2] = input.fromEpochTree;
+        publicSignals[5 + config.numEpochKeyNoncePerEpoch * 2] = input.fromEpochTree;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
@@ -739,17 +711,17 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // 4. (optional) (positive reputation - negative reputation) is greater than `_minRep`
         // 5. (optional) hash of graffiti pre-image matches
         uint256[] memory publicSignals = new uint256[](18);
-        for (uint8 i = 0; i < maxReputationBudget; i++) {
+        for (uint8 i = 0; i < config.maxReputationBudget; i++) {
             publicSignals[i] = input.repNullifiers[i];
         }
-        publicSignals[maxReputationBudget] = input.epoch;
-        publicSignals[maxReputationBudget + 1] = input.epochKey;
-        publicSignals[maxReputationBudget + 2] = input.globalStateTree;
-        publicSignals[maxReputationBudget + 3] = input.attesterId;
-        publicSignals[maxReputationBudget + 4] = input.proveReputationAmount;
-        publicSignals[maxReputationBudget + 5] = input.minRep;
-        publicSignals[maxReputationBudget + 6] = input.proveGraffiti;
-        publicSignals[maxReputationBudget + 7] = input.graffitiPreImage;
+        publicSignals[config.maxReputationBudget] = input.epoch;
+        publicSignals[config.maxReputationBudget + 1] = input.epochKey;
+        publicSignals[config.maxReputationBudget + 2] = input.globalStateTree;
+        publicSignals[config.maxReputationBudget + 3] = input.attesterId;
+        publicSignals[config.maxReputationBudget + 4] = input.proveReputationAmount;
+        publicSignals[config.maxReputationBudget + 5] = input.minRep;
+        publicSignals[config.maxReputationBudget + 6] = input.proveGraffiti;
+        publicSignals[config.maxReputationBudget + 7] = input.graffitiPreImage;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
