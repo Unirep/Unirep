@@ -4,10 +4,10 @@ schema:
 dataSources:
   - kind: ethereum
     name: Unirep
-    network: optimism-kovan
+    network: '{{unirepNetwork}}'
     source:
-      startBlock: 252502
-      address: "0xc5FdF842c5018a328665096C7974157e715f60dc"
+      startBlock: {{startBlock}}
+      address: '{{unirepAddress}}'
       abi: Unirep
     mapping:
       kind: ethereum/events
