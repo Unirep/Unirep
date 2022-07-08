@@ -7,8 +7,8 @@
     "license": "MIT",
     "scripts": {
         "pre": "node scripts/prepare",
-        "build": "npx ts-node ./scripts/buildVerifiers.ts && yarn compile && hardhat typechain && tsc",
-        "compile": "npx hardhat compile",
+        "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && hardhat typechain && tsc",
+        "compile": "hardhat compile",
         "test": "hardhat test --no-compile",
         "lint": "prettier --write .",
         "coverage": "hardhat coverage"
