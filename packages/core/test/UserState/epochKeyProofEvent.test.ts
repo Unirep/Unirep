@@ -11,11 +11,12 @@ import {
 import { Circuit, defaultProver } from '@unirep/circuits'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 
-import { computeInitUserStateRoot, genUserState, Reputation } from '../../src'
+import { computeInitUserStateRoot, Reputation } from '../../src'
 import {
     compareAttestations,
     genEpochKeyCircuitInput,
     genRandomAttestation,
+    genUserState,
 } from '../utils'
 
 describe('Epoch key proof events in Unirep User State', function () {

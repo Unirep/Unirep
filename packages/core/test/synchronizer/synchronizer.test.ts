@@ -8,13 +8,17 @@ import { deployUnirep } from '@unirep/contracts'
 const attestingFee = ethers.utils.parseEther('0.1')
 
 import {
-    genUserState,
     Synchronizer,
     schema,
     decodeBigIntArray,
     computeInitUserStateRoot,
 } from '../../src'
-import { genRandomAttestation, compareDB, submitUSTProofs } from '../utils'
+import {
+    genUserState,
+    genRandomAttestation,
+    compareDB,
+    submitUSTProofs,
+} from '../utils'
 import { SQLiteConnector } from 'anondb/node'
 
 let synchronizer: Synchronizer

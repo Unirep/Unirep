@@ -4,8 +4,7 @@ import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts'
 
-import { genUserState } from '../../src'
-import { genNewGST } from '../utils'
+import { genUserState, genNewGST } from '../utils'
 
 describe('User sign up events in Unirep User State', function () {
     this.timeout(0)

@@ -11,12 +11,14 @@ import {
 import { Circuit, defaultProver } from '@unirep/circuits'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
-import { genUserState, Reputation } from '../../src'
+import { Reputation } from '../../src'
 import {
     compareAttestations,
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
+    genUnirepState,
+    genUserState,
 } from '../utils'
 
 describe('User sign up proof (Airdrop proof) events in Unirep User State', function () {

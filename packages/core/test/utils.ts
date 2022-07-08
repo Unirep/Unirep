@@ -21,7 +21,6 @@ import {
 import {
     computeEmptyUserStateRoot,
     genEpochKey,
-    genUserState,
     Reputation,
     UserState,
 } from '../src'
@@ -36,6 +35,8 @@ import { getUnirepContract } from '@unirep/contracts'
 import { Unirep } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
 import * as crypto from 'crypto'
+import { Synchronizer } from '../src/Synchronizer'
+import { schema } from '../src/schema'
 
 const genNewGST = (
     GSTDepth: number,
@@ -484,6 +485,53 @@ const compareAttestations = (
     expect(attestDB.signUp.toString()).equal(attestObj.signUp.toString())
 }
 
+/**
+ * Retrieves and parses on-chain Unirep contract data to create an off-chain
+ * representation as a UnirepState object.
+ * @param provider An Ethereum provider
+ * @param address The address of the Unirep contract
+ */
+const genUnirepState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    let synchronizer: Synchronizer
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
+    await synchronizer.start()
+    await synchronizer.waitForSync()
+    return synchronizer
+}
+
+/**
+ * This function works mostly the same as genUnirepState,
+ * except that it also updates the user's state during events processing.
+ * @param provider An Ethereum provider
+ * @param address The address of the Unirep contract
+ * @param userIdentity The semaphore identity of the user
+ * @param _userState The stored user state that the function start with
+ */
+const genUserState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userIdentity: ZkIdentity,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = getUnirepContract(address, provider)
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    const userState = new UserState(
+        db,
+        defaultProver,
+        unirepContract,
+        userIdentity
+    )
+    await userState.start()
+    await userState.waitForSync()
+    return userState
+}
+
 export {
     genNewEpochTree,
     genNewUserStateTree,
@@ -502,4 +550,5 @@ export {
     compareStates,
     compareAttestations,
     genUserState,
+    genUnirepState,
 }

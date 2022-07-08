@@ -10,13 +10,15 @@ import {
     formatProofForSnarkjsVerification,
 } from '@unirep/circuits'
 
-import { genEpochKey, genUnirepState, genUserState } from '../../src'
+import { genEpochKey } from '../../src'
 import {
     getSnapDBDiffs,
     snapshotDB,
     genRandomAttestation,
     genRandomList,
     submitUSTProofs,
+    genUnirepState,
+    genUserState,
 } from '../utils'
 import {
     ProcessAttestationsProof,
