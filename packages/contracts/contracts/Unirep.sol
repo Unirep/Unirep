@@ -81,15 +81,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
         // is just large enough and not more, or they will waste gas.
-        uint256 GSTMaxLeafIndex = uint256(2)**config.globalStateTreeDepth -
-            1;
+        uint256 GSTMaxLeafIndex = uint256(2)**config.globalStateTreeDepth - 1;
         require(
             config.maxUsers <= GSTMaxLeafIndex,
             'Unirep: invalid maxUsers value'
         );
 
-        uint256 USTMaxLeafIndex = uint256(2)**config.userStateTreeDepth -
-            1;
+        uint256 USTMaxLeafIndex = uint256(2)**config.userStateTreeDepth - 1;
         require(
             config.maxAttesters <= USTMaxLeafIndex,
             'Unirep: invalid maxAttesters value'
@@ -671,19 +669,20 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         for (uint8 i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
             publicSignals[i + 1] = input.epkNullifiers[i];
         }
-        publicSignals[1 + config.numEpochKeyNoncePerEpoch] = input.transitionFromEpoch;
-        publicSignals[2 + config.numEpochKeyNoncePerEpoch] = input.blindedUserStates[
-            0
-        ];
-        publicSignals[3 + config.numEpochKeyNoncePerEpoch] = input.blindedUserStates[
-            1
-        ];
-        publicSignals[4 + config.numEpochKeyNoncePerEpoch] = input.fromGlobalStateTree;
+        publicSignals[1 + config.numEpochKeyNoncePerEpoch] = input
+            .transitionFromEpoch;
+        publicSignals[2 + config.numEpochKeyNoncePerEpoch] = input
+            .blindedUserStates[0];
+        publicSignals[3 + config.numEpochKeyNoncePerEpoch] = input
+            .blindedUserStates[1];
+        publicSignals[4 + config.numEpochKeyNoncePerEpoch] = input
+            .fromGlobalStateTree;
         for (uint8 i = 0; i < config.numEpochKeyNoncePerEpoch; i++) {
             publicSignals[5 + config.numEpochKeyNoncePerEpoch + i] = input
                 .blindedHashChains[i];
         }
-        publicSignals[5 + config.numEpochKeyNoncePerEpoch * 2] = input.fromEpochTree;
+        publicSignals[5 + config.numEpochKeyNoncePerEpoch * 2] = input
+            .fromEpochTree;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
@@ -718,7 +717,8 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         publicSignals[config.maxReputationBudget + 1] = input.epochKey;
         publicSignals[config.maxReputationBudget + 2] = input.globalStateTree;
         publicSignals[config.maxReputationBudget + 3] = input.attesterId;
-        publicSignals[config.maxReputationBudget + 4] = input.proveReputationAmount;
+        publicSignals[config.maxReputationBudget + 4] = input
+            .proveReputationAmount;
         publicSignals[config.maxReputationBudget + 5] = input.minRep;
         publicSignals[config.maxReputationBudget + 6] = input.proveGraffiti;
         publicSignals[config.maxReputationBudget + 7] = input.graffitiPreImage;

@@ -6,9 +6,9 @@ import { config } from 'hardhat'
 import hardhatConfig from '../hardhat.config'
 import { genSnarkVerifierSol } from './genVerifier'
 
-const verifiersPath = hardhatConfig?.paths?.sources ?
-    path.join(hardhatConfig.paths.sources, 'verifiers') :
-    path.join(config.paths.sources, 'verifiers')
+const verifiersPath = hardhatConfig?.paths?.sources
+    ? path.join(hardhatConfig.paths.sources, 'verifiers')
+    : path.join(config.paths.sources, 'verifiers')
 
 const zkFilesPath = path.join('../../circuits/zksnarkBuild')
 

@@ -92,15 +92,14 @@ export const deployUnirep = async (
             epochLength: _epochLength,
             attestingFee: _attestingFee,
             maxUsers: _maxUsers,
-            maxAttesters: _maxAttesters
+            maxAttesters: _maxAttesters,
         },
         EpochKeyValidityVerifierContract.address,
         StartTransitionVerifierContract.address,
         ProcessAttestationsVerifierContract.address,
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
-        UserSignUpVerifierContract.address,
-        
+        UserSignUpVerifierContract.address
     )
 
     await c.deployTransaction.wait()
