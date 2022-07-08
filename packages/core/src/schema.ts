@@ -39,6 +39,7 @@ const _schema = [
     },
     {
         name: 'Attestation',
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int', { optional: true }],
             ['epochKey', 'String', { optional: true }],
@@ -59,6 +60,7 @@ const _schema = [
     },
     {
         name: 'GSTLeaf',
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int'],
             ['transactionHash', 'String'],
@@ -75,6 +77,7 @@ const _schema = [
     },
     {
         name: 'Epoch',
+        indexes: [{ keys: ['number'] }],
         rows: [
             ['number', 'Int', { unique: true }],
             ['sealed', 'Bool'],
