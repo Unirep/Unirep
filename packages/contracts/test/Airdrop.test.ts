@@ -12,7 +12,7 @@ import {
     genProveSignUpCircuitInput,
     genInputForContract,
 } from './utils'
-import { deployUnirep, Unirep } from '../src'
+import { deployUnirep, SignUpProof, Unirep } from '../src'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -222,17 +222,22 @@ describe('Airdrop', function () {
 
             const tx = await unirepContract
                 .connect(attester)
-                .airdropEpochKey(input, {
+                .airdropEpochKey(input.publicSignals, input.proof, {
                     value: attestingFee,
                 })
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
 
+            const isValid = await input.verify()
+            expect(isValid).to.be.true
+
             const pfIdx = await unirepContract.getProofIndex(input.hash())
             expect(Number(pfIdx)).not.eq(0)
 
             await expect(
-                unirepContract.connect(attester).airdropEpochKey(input)
+                unirepContract
+                    .connect(attester)
+                    .airdropEpochKey(input.publicSignals, input.proof)
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 `NullifierAlreadyUsed`
@@ -255,7 +260,7 @@ describe('Airdrop', function () {
             await expect(
                 unirepContract
                     .connect(nonSignUpAttester)
-                    .airdropEpochKey(input, {
+                    .airdropEpochKey(input.publicSignals, input.proof, {
                         value: attestingFee,
                     })
             ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
@@ -275,9 +280,11 @@ describe('Airdrop', function () {
 
             const wrongAttester = accounts[1]
             await expect(
-                unirepContract.connect(wrongAttester).airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContract
+                    .connect(wrongAttester)
+                    .airdropEpochKey(input.publicSignals, input.proof, {
+                        value: attestingFee,
+                    })
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 `AttesterIdNotMatch`
@@ -297,7 +304,9 @@ describe('Airdrop', function () {
             )
 
             await expect(
-                unirepContract.connect(attester).airdropEpochKey(input)
+                unirepContract
+                    .connect(attester)
+                    .airdropEpochKey(input.publicSignals, input.proof)
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 `AttestingFeeInvalid`
@@ -321,9 +330,11 @@ describe('Airdrop', function () {
             expect(wrongEpoch).not.equal(currentEpoch_)
 
             await expect(
-                unirepContract.connect(attester).airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContract
+                    .connect(attester)
+                    .airdropEpochKey(input.publicSignals, input.proof, {
+                        value: attestingFee,
+                    })
             ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
 
@@ -334,17 +345,18 @@ describe('Airdrop', function () {
                 reputationRecords,
                 attesterId_
             )
-            const input = await genInputForContract(
+            const input: SignUpProof = await genInputForContract(
                 Circuit.proveUserSignUp,
                 signUpCircuitInputs
             )
-
-            input.epochKey = genRandomSalt()
+            input.publicSignals[input.idx.epochKey] = genRandomSalt().toString() // epoch key
 
             await expect(
-                unirepContract.connect(attester).airdropEpochKey(input, {
-                    value: attestingFee,
-                })
+                unirepContract
+                    .connect(attester)
+                    .airdropEpochKey(input.publicSignals, input.proof, {
+                        value: attestingFee,
+                    })
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
         })
     })

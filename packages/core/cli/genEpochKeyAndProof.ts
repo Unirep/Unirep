@@ -85,18 +85,13 @@ const genEpochKeyAndProof = async (args: any) => {
     ).toString()
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await defaultProver.verifyProof(
-        Circuit.verifyEpochKey,
-        results.publicSignals,
-        results.proof
-    )
+    const isValid = await results.verify()
     if (!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results.proof)
-    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    const encodedProof = base64url.encode(JSON.stringify(results.proof))
     const encodedPublicSignals = base64url.encode(
         JSON.stringify(results.publicSignals)
     )

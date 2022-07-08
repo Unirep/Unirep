@@ -90,7 +90,10 @@ const verifyEpochKeyProof = async (args: any) => {
         formatProofForSnarkjsVerification(proof),
         defaultProver
     )
-    const isProofValid = await unirepContract.verifyEpochKeyValidity(epkProof)
+    const isProofValid = await unirepContract.verifyEpochKeyValidity(
+        epkProof.publicSignals,
+        epkProof.proof
+    )
     if (!isProofValid) {
         console.error('Error: invalid epoch key proof')
         return

@@ -16,6 +16,9 @@ import {
     ReputationProof,
     EpochKeyProof,
     SignUpProof,
+    UserTransitionProof,
+    ProcessAttestationsProof,
+    StartTransitionProof,
 } from '@unirep/contracts'
 import {
     defaultUserStateLeaf,
@@ -440,7 +443,9 @@ export default class UserState extends Synchronizer {
         )
     }
 
-    public genVerifyEpochKeyProof = async (epochKeyNonce: number) => {
+    public genVerifyEpochKeyProof = async (
+        epochKeyNonce: number
+    ): Promise<EpochKeyProof> => {
         this._checkEpkNonce(epochKeyNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
@@ -471,18 +476,11 @@ export default class UserState extends Synchronizer {
             circuitInputs
         )
 
-        return {
-            formattedProof: new EpochKeyProof(
-                results.publicSignals,
-                results.proof,
-                this.prover
-            ),
-            proof: results.proof,
-            publicSignals: results.publicSignals,
-            globalStateTree: results.publicSignals[0],
-            epoch: results.publicSignals[1],
-            epochKey: results.publicSignals[2],
-        }
+        return new EpochKeyProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
     }
 
     private _genStartTransitionCircuitInputs = async (
@@ -528,7 +526,11 @@ export default class UserState extends Synchronizer {
         }
     }
 
-    public genUserStateTransitionProofs = async () => {
+    public genUserStateTransitionProofs = async (): Promise<{
+        startTransitionProof: StartTransitionProof
+        processAttestationProofs: ProcessAttestationsProof[]
+        finalTransitionProof: UserTransitionProof
+    }> => {
         // don't need to check sign up because we won't be able to create a
         // gstree proof unless we are signed up
         // this._checkUserSignUp()
@@ -826,19 +828,19 @@ export default class UserState extends Synchronizer {
                 startTransitionCircuitInputs.circuitInputs
             )
 
-        const processAttestationProofs: any[] = []
+        const processAttestationProofs: ProcessAttestationsProof[] = []
         for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
             const results = await this.prover.genProofAndPublicSignals(
                 Circuit.processAttestations,
                 processAttestationCircuitInputs[i]
             )
-            processAttestationProofs.push({
-                proof: results.proof,
-                publicSignals: results.publicSignals,
-                outputBlindedUserState: results.publicSignals[0],
-                outputBlindedHashChain: results.publicSignals[1],
-                inputBlindedUserState: results.publicSignals[2],
-            })
+            processAttestationProofs.push(
+                new ProcessAttestationsProof(
+                    results.publicSignals,
+                    results.proof,
+                    this.prover
+                )
+            )
         }
 
         const finalProofResults = await this.prover.genProofAndPublicSignals(
@@ -847,43 +849,17 @@ export default class UserState extends Synchronizer {
         )
 
         return {
-            startTransitionProof: {
-                proof: startTransitionresults.proof,
-                publicSignals: startTransitionresults.publicSignals,
-                blindedUserState: startTransitionresults.publicSignals[0],
-                blindedHashChain: startTransitionresults.publicSignals[1],
-                globalStateTreeRoot: startTransitionresults.publicSignals[2],
-            },
+            startTransitionProof: new StartTransitionProof(
+                startTransitionresults.publicSignals,
+                startTransitionresults.proof,
+                this.prover
+            ),
             processAttestationProofs: processAttestationProofs,
-            finalTransitionProof: {
-                proof: finalProofResults.proof,
-                publicSignals: finalProofResults.publicSignals,
-                newGlobalStateTreeLeaf: finalProofResults.publicSignals[0],
-                epochKeyNullifiers: finalProofResults.publicSignals.slice(
-                    1,
-                    1 + this.settings.numEpochKeyNoncePerEpoch
-                ),
-                transitionedFromEpoch:
-                    finalProofResults.publicSignals[
-                        1 + this.settings.numEpochKeyNoncePerEpoch
-                    ],
-                blindedUserStates: finalProofResults.publicSignals.slice(
-                    2 + this.settings.numEpochKeyNoncePerEpoch,
-                    4 + this.settings.numEpochKeyNoncePerEpoch
-                ),
-                fromGSTRoot:
-                    finalProofResults.publicSignals[
-                        4 + this.settings.numEpochKeyNoncePerEpoch
-                    ],
-                blindedHashChains: finalProofResults.publicSignals.slice(
-                    5 + this.settings.numEpochKeyNoncePerEpoch,
-                    5 + 2 * this.settings.numEpochKeyNoncePerEpoch
-                ),
-                fromEpochTree:
-                    finalProofResults.publicSignals[
-                        5 + 2 * this.settings.numEpochKeyNoncePerEpoch
-                    ],
-            },
+            finalTransitionProof: new UserTransitionProof(
+                finalProofResults.publicSignals,
+                finalProofResults.proof,
+                this.prover
+            ),
         }
     }
 
@@ -894,7 +870,7 @@ export default class UserState extends Synchronizer {
         proveGraffiti?: BigInt,
         graffitiPreImage?: BigInt,
         nonceList?: BigInt[] | number
-    ) => {
+    ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
         if (nonceList == undefined)
             nonceList = new Array(this.settings.maxReputationBudget).fill(
@@ -997,39 +973,17 @@ export default class UserState extends Synchronizer {
             circuitInputs
         )
 
-        return {
-            formattedProof: new ReputationProof(
-                results.publicSignals,
-                results.proof,
-                this.prover,
-                this.settings.maxReputationBudget
-            ),
-            proof: results.proof,
-            publicSignals: results.publicSignals,
-            reputationNullifiers: results.publicSignals.slice(
-                0,
-                this.settings.maxReputationBudget
-            ),
-            epoch: results.publicSignals[this.settings.maxReputationBudget],
-            epochKey:
-                results.publicSignals[this.settings.maxReputationBudget + 1],
-            globalStatetreeRoot:
-                results.publicSignals[this.settings.maxReputationBudget + 2],
-            attesterId:
-                results.publicSignals[this.settings.maxReputationBudget + 3],
-            proveReputationAmount:
-                results.publicSignals[this.settings.maxReputationBudget + 4],
-            minRep: results.publicSignals[
-                this.settings.maxReputationBudget + 5
-            ],
-            proveGraffiti:
-                results.publicSignals[this.settings.maxReputationBudget + 6],
-            graffitiPreImage:
-                results.publicSignals[this.settings.maxReputationBudget + 7],
-        }
+        return new ReputationProof(
+            results.publicSignals,
+            results.proof,
+            this.prover,
+            this.settings.maxReputationBudget
+        )
     }
 
-    public genUserSignUpProof = async (attesterId: BigInt) => {
+    public genUserSignUpProof = async (
+        attesterId: BigInt
+    ): Promise<SignUpProof> => {
         await this._checkUserSignUp()
         this._checkAttesterId(attesterId)
         const epoch = await this.latestTransitionedEpoch()
@@ -1068,20 +1022,11 @@ export default class UserState extends Synchronizer {
             circuitInputs
         )
 
-        return {
-            formattedProof: new SignUpProof(
-                results.publicSignals,
-                results.proof,
-                this.prover
-            ),
-            proof: results.proof,
-            publicSignals: results.publicSignals,
-            epoch: results.publicSignals[0],
-            epochKey: results.publicSignals[1],
-            globalStateTreeRoot: results.publicSignals[2],
-            attesterId: results.publicSignals[3],
-            userHasSignedUp: results.publicSignals[4],
-        }
+        return new SignUpProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
     }
 }
 

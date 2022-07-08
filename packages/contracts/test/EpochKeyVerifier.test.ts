@@ -70,11 +70,15 @@ describe('Verify Epoch Key verifier', function () {
             const isValid = await input.verify()
             expect(isValid, 'Verify epoch key proof off-chain failed').to.be
                 .true
-            let tx = await unirepContract.submitEpochKeyProof(input)
+            let tx = await unirepContract.submitEpochKeyProof(
+                input.publicSignals,
+                input.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
-                input
+                input.publicSignals,
+                input.proof
             )
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
 
@@ -100,7 +104,10 @@ describe('Verify Epoch Key verifier', function () {
             Circuit.verifyEpochKey,
             invalidCircuitInputs
         )
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
+        const isProofValid = await unirepContract.verifyEpochKeyValidity(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
             .false
     })
@@ -120,7 +127,10 @@ describe('Verify Epoch Key verifier', function () {
             Circuit.verifyEpochKey,
             invalidCircuitInputs
         )
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
+        const isProofValid = await unirepContract.verifyEpochKeyValidity(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
             .false
     })
@@ -140,7 +150,10 @@ describe('Verify Epoch Key verifier', function () {
             Circuit.verifyEpochKey,
             invalidCircuitInputs
         )
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
+        const isProofValid = await unirepContract.verifyEpochKeyValidity(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
             .false
     })
@@ -160,7 +173,10 @@ describe('Verify Epoch Key verifier', function () {
             Circuit.verifyEpochKey,
             invalidCircuitInputs
         )
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(input)
+        const isProofValid = await unirepContract.verifyEpochKeyValidity(
+            input.publicSignals,
+            input.proof
+        )
         expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
             .false
     })

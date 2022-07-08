@@ -175,8 +175,8 @@ contract <%contract_name%> {
      *          above and the public inputs
      */
     function verifyProof(
-        uint256[8] memory _proof,
-        uint256[] memory input
+        uint256[8] calldata _proof,
+        uint256[] calldata input
     ) public view returns (bool) {
 
         Proof memory proof;
