@@ -28,8 +28,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
     let unirepContract: Unirep
 
-    let treeDepths
-
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
@@ -44,8 +42,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             maxUsers,
             attestingFee,
         })
-
-        treeDepths = await unirepContract.treeDepths()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -314,8 +310,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     reputationRecords[attester].hash()
                 )
             }
+            const config = await unirepContract.config()
             const GSTree = new IncrementalMerkleTree(
-                treeDepths.globalStateTreeDepth
+                config.globalStateTreeDepth
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
@@ -410,7 +407,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
-            const epochLength = await unirepContract.epochLength()
+            const epochLength = (await unirepContract.config()).epochLength
             await hardhatEthers.provider.send('evm_increaseTime', [
                 epochLength.toNumber(),
             ])

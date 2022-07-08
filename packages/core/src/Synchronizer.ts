@@ -66,24 +66,23 @@ export class Synchronizer extends EventEmitter {
             attestingFee: ethers.utils.parseEther('0'),
             epochLength: 0,
             maxReputationBudget: 0,
+            numAttestationsPerProof: 0,
         }
     }
 
     async setup() {
-        const treeDepths = await this.unirepContract.treeDepths()
-        this.settings.globalStateTreeDepth = treeDepths.globalStateTreeDepth
-        this.settings.userStateTreeDepth = treeDepths.userStateTreeDepth
-        this.settings.epochTreeDepth = treeDepths.epochTreeDepth
-        const attestingFee = await this.unirepContract.attestingFee()
-        this.settings.attestingFee = attestingFee
-        const maxReputationBudget =
-            await this.unirepContract.maxReputationBudget()
-        this.settings.maxReputationBudget = maxReputationBudget
-        const numEpochKeyNoncePerEpoch =
-            await this.unirepContract.numEpochKeyNoncePerEpoch()
-        this.settings.numEpochKeyNoncePerEpoch = numEpochKeyNoncePerEpoch
-        const epochLength = await this.unirepContract.epochLength()
-        this.settings.epochLength = epochLength
+        const config = await this.unirepContract.config()
+        this.settings.globalStateTreeDepth = config.globalStateTreeDepth
+        this.settings.userStateTreeDepth = config.userStateTreeDepth
+        this.settings.epochTreeDepth = config.epochTreeDepth
+        this.settings.numEpochKeyNoncePerEpoch =
+            config.numEpochKeyNoncePerEpoch.toNumber()
+        this.settings.attestingFee = config.attestingFee
+        this.settings.epochLength = config.epochLength.toNumber()
+        this.settings.maxReputationBudget =
+            config.maxReputationBudget.toNumber()
+        this.settings.numAttestationsPerProof =
+            config.numAttestationsPerProof.toNumber()
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database
         const epochs = await this._db.findMany('Epoch', {
@@ -338,7 +337,6 @@ export class Synchronizer extends EventEmitter {
 
     async genEpochTree(epoch: number) {
         await this._checkValidEpoch(epoch)
-        const treeDepths = await this.unirepContract.treeDepths()
         const epochKeys = await this._db.findMany('EpochKey', {
             where: {
                 epoch,
@@ -371,7 +369,7 @@ export class Synchronizer extends EventEmitter {
         }
 
         const epochTree = new SparseMerkleTree(
-            treeDepths.epochTreeDepth,
+            this.settings.epochTreeDepth,
             SMT_ONE_LEAF
         )
         // Add to epoch key hash chain map
@@ -546,11 +544,9 @@ export class Synchronizer extends EventEmitter {
         const attesterId = Number(decodedData.attesterId)
         const airdrop = Number(decodedData.airdropAmount)
 
-        const treeDepths = await this.unirepContract.treeDepths()
-
         await this._checkCurrentEpoch(epoch)
         const USTRoot = computeInitUserStateRoot(
-            treeDepths.userStateTreeDepth,
+            this.settings.userStateTreeDepth,
             attesterId,
             airdrop
         )
@@ -1233,7 +1229,6 @@ export class Synchronizer extends EventEmitter {
 
     async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event?.topics[1])
-        const treeDepths = await this.unirepContract.treeDepths()
         const tree = await this.genEpochTree(epoch)
         db.upsert('Epoch', {
             where: {
@@ -1255,7 +1250,7 @@ export class Synchronizer extends EventEmitter {
             sealed: false,
         })
         this._globalStateTree = new IncrementalMerkleTree(
-            treeDepths.globalStateTreeDepth,
+            this.settings.globalStateTreeDepth,
             this.defaultGSTLeaf
         )
         return true

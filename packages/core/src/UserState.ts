@@ -26,7 +26,7 @@ import {
 } from './utils'
 import { IReputation } from './interfaces'
 import Reputation from './Reputation'
-import { Circuit, NUM_ATTESTATIONS_PER_PROOF, Prover } from '@unirep/circuits'
+import { Circuit, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 const decodeBigIntArray = (input: string): bigint[] => {
@@ -611,8 +611,8 @@ export default class UserState extends Synchronizer {
                 // Include a blinded user state and blinded hash chain per proof
                 if (
                     i &&
-                    i % NUM_ATTESTATIONS_PER_PROOF == 0 &&
-                    i != NUM_ATTESTATIONS_PER_PROOF - 1
+                    i % this.settings.numAttestationsPerProof == 0 &&
+                    i != this.settings.numAttestationsPerProof - 1
                 ) {
                     toNonces.push(nonce)
                     fromNonces.push(nonce)
@@ -693,9 +693,11 @@ export default class UserState extends Synchronizer {
             }
             // Fill in blank data for non-exist attestation
             const filledAttestationNum = attestations.length
-                ? Math.ceil(attestations.length / NUM_ATTESTATIONS_PER_PROOF) *
-                  NUM_ATTESTATIONS_PER_PROOF
-                : NUM_ATTESTATIONS_PER_PROOF
+                ? Math.ceil(
+                      attestations.length /
+                          this.settings.numAttestationsPerProof
+                  ) * this.settings.numAttestationsPerProof
+                : this.settings.numAttestationsPerProof
             for (
                 let i = 0;
                 i < filledAttestationNum - attestations.length;
@@ -743,8 +745,8 @@ export default class UserState extends Synchronizer {
         }
 
         for (let i = 0; i < fromNonces.length; i++) {
-            const startIdx = NUM_ATTESTATIONS_PER_PROOF * i
-            const endIdx = NUM_ATTESTATIONS_PER_PROOF * (i + 1)
+            const startIdx = this.settings.numAttestationsPerProof * i
+            const endIdx = this.settings.numAttestationsPerProof * (i + 1)
             processAttestationCircuitInputs.push(
                 stringifyBigInts({
                     epoch: fromEpoch,
@@ -894,7 +896,6 @@ export default class UserState extends Synchronizer {
         nonceList?: BigInt[] | number
     ) => {
         this._checkEpkNonce(epkNonce)
-
         if (nonceList == undefined)
             nonceList = new Array(this.settings.maxReputationBudget).fill(
                 BigInt(-1)

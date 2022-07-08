@@ -491,7 +491,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const epochLength = await unirepContract.epochLength()
+            const epochLength = (await unirepContract.config()).epochLength
             await hardhatEthers.provider.send('evm_increaseTime', [
                 epochLength.toNumber(),
             ])

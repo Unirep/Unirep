@@ -33,8 +33,6 @@ describe('Epoch key proof events in Unirep User State', function () {
 
     let unirepContract: Unirep
 
-    let treeDepths
-
     let accounts: ethers.Signer[]
     const attester = new Object()
     let attesterId
@@ -49,8 +47,6 @@ describe('Epoch key proof events in Unirep User State', function () {
             maxUsers,
             attestingFee,
         })
-
-        treeDepths = await unirepContract.treeDepths()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -120,7 +116,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                     attester['addr']
                 )
                 const newUSTRoot = computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
+                    userState.settings.userStateTreeDepth,
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
@@ -159,7 +155,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const newUSTRoot = computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
+                    userState.settings.userStateTreeDepth
                 )
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(Reputation.default())
@@ -284,8 +280,9 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
 
         it('submit valid epoch key proof with wrong GST root event', async () => {
+            const config = await unirepContract.config()
             const GSTree = new IncrementalMerkleTree(
-                treeDepths.globalStateTreeDepth
+                config.globalStateTreeDepth
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()

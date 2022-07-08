@@ -48,7 +48,9 @@ const epochTransition = async (args: any) => {
 
     // Fast-forward to end of epoch if in test environment
     if (args.is_test) {
-        const epochLength = (await unirepContract.epochLength()).toNumber()
+        const epochLength = (
+            await unirepContract.config()
+        ).epochLength.toNumber()
         await (provider as any).send('evm_increaseTime', [epochLength])
     }
 

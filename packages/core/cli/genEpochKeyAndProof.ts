@@ -56,8 +56,9 @@ const genEpochKeyAndProof = async (args: any) => {
         args.contract,
         provider
     )
-    const numEpochKeyNoncePerEpoch =
-        await unirepContract.numEpochKeyNoncePerEpoch()
+    const numEpochKeyNoncePerEpoch = (
+        await unirepContract.config()
+    ).numEpochKeyNoncePerEpoch.toNumber()
 
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce

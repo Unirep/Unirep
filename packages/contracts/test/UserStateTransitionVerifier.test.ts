@@ -42,7 +42,9 @@ describe('User State Transition', function () {
 
         // UST should be performed after epoch transition
         // Fast-forward epochLength of seconds
-        const epochLength = (await unirepContract.epochLength()).toNumber()
+        const epochLength = (
+            await unirepContract.config()
+        ).epochLength.toNumber()
         await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
         let tx = await unirepContract.beginEpochTransition()
         let receipt = await tx.wait()

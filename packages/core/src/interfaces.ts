@@ -13,6 +13,7 @@ export interface ISettings {
     epochLength: number
     numEpochKeyNoncePerEpoch: number
     maxReputationBudget: number
+    numAttestationsPerProof: number
 }
 
 export interface IUnirepState {
