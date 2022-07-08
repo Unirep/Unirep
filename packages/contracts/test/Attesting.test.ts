@@ -53,7 +53,7 @@ describe('Attesting', () => {
 
         console.log('Attesters sign up')
         attester = accounts[1]
-        attesterAddress = await attester.getAddress()
+        attesterAddress = attester.address
 
         tx = await unirepContract.connect(attester).attesterSignUp()
         receipt = await tx.wait()
@@ -68,47 +68,48 @@ describe('Attesting', () => {
     })
 
     it('submit an epoch key proof should succeed', async () => {
-        const tx = await unirepContract.submitEpochKeyProof(epochKeyProof)
+        const tx = await unirepContract.submitEpochKeyProof(
+            epochKeyProof.publicSignals,
+            epochKeyProof.proof
+        )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
-        const proofNullifier = await unirepContract.hashEpochKeyProof(
-            epochKeyProof
-        )
-        expect(receipt.status).equal(1)
-        const _proofNullifier = epochKeyProof.hash()
-        expect(_proofNullifier).equal(proofNullifier)
+        const proofNullifier = epochKeyProof.hash()
         epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
         expect(epochKeyProof).not.equal(null)
     })
 
     it('submit an epoch key proof again should fail', async () => {
         await expect(
-            unirepContract.submitEpochKeyProof(epochKeyProof)
+            unirepContract.submitEpochKeyProof(
+                epochKeyProof.publicSignals,
+                epochKeyProof.proof
+            )
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
         const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
-        const wrongEpochKeyProof = new EpochKeyProof(
+        const { publicSignals, proof: proof_ } = new EpochKeyProof(
             wrongSignals as BigNumberish[],
             formatProofForSnarkjsVerification(proof),
             defaultProver
         )
         await expect(
-            unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
+            unirepContract.submitEpochKeyProof(publicSignals, proof_)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
     it('submit an invalid epoch key should fail', async () => {
         const wrongEpochKey = genRandomSalt()
-        const wrongEpochKeyProof = new EpochKeyProof(
+        const { publicSignals, proof: proof_ } = new EpochKeyProof(
             [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
             formatProofForSnarkjsVerification(proof),
             defaultProver
         )
         await expect(
-            unirepContract.submitEpochKeyProof(wrongEpochKeyProof)
+            unirepContract.submitEpochKeyProof(publicSignals, proof_)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 

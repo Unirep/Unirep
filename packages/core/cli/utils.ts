@@ -1,4 +1,4 @@
-import { ethers, providers } from 'ethers'
+import { ethers } from 'ethers'
 
 const getProvider = (url: string): ethers.providers.Provider => {
     const provider = url.startsWith('http')

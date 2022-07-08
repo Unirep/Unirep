@@ -157,13 +157,16 @@ describe('Synchronizer process events', function () {
         )
         const epoch = await synchronizer.unirepContract.currentEpoch()
         const epochKeyNonce = 2
-        const { formattedProof } = await userState.genVerifyEpochKeyProof(
+        const formattedProof = await userState.genVerifyEpochKeyProof(
             epochKeyNonce
         )
         const isValid = await formattedProof.verify()
         expect(isValid, 'Verify epk proof off-chain failed').to.be.true
         const receipt = await synchronizer.unirepContract
-            .submitEpochKeyProof(formattedProof)
+            .submitEpochKeyProof(
+                formattedProof.publicSignals,
+                formattedProof.proof
+            )
             .then((t) => t.wait())
         await proofEvent
         await synchronizer.waitForSync()
@@ -301,7 +304,7 @@ describe('Synchronizer process events', function () {
         for (let i = nonceList.length; i < maxReputationBudget; i++) {
             nonceList.push(BigInt(-1))
         }
-        const { formattedProof } = await userState.genProveReputationProof(
+        const formattedProof = await userState.genProveReputationProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
             ).toBigInt(),
@@ -317,7 +320,11 @@ describe('Synchronizer process events', function () {
         const proofCount = await (synchronizer as any)._db.count('Proof', {})
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .spendReputation(formattedProof, { value: attestingFee })
+            .spendReputation(
+                formattedProof.publicSignals,
+                formattedProof.proof,
+                { value: attestingFee }
+            )
             .then((t) => t.wait())
         await proofEvent
         await synchronizer.waitForSync()
@@ -393,7 +400,7 @@ describe('Synchronizer process events', function () {
             synchronizer.unirepContract.address,
             id
         )
-        const { formattedProof } = await userState.genUserSignUpProof(
+        const formattedProof = await userState.genUserSignUpProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
             ).toBigInt()
@@ -404,10 +411,14 @@ describe('Synchronizer process events', function () {
         const proofCount = await (synchronizer as any)._db.count('Proof', {})
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .airdropEpochKey(formattedProof, {
-                value: attestingFee,
-                gasLimit: 1000000,
-            })
+            .airdropEpochKey(
+                formattedProof.publicSignals,
+                formattedProof.proof,
+                {
+                    value: attestingFee,
+                    gasLimit: 1000000,
+                }
+            )
             .then((t) => t.wait())
         const proofIndex = await synchronizer.unirepContract.getProofIndex(
             formattedProof.hash()
