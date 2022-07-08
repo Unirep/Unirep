@@ -9,8 +9,6 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
-    Circuit,
-    defaultProver,
 } from '@unirep/circuits'
 
 const ATTESTING_FEE = '0' as any

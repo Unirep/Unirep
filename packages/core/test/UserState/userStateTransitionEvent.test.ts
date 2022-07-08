@@ -1,8 +1,8 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
     defaultProver,

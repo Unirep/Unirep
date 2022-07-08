@@ -28,8 +28,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
     let unirepContract: Unirep
 
-    let treeDepths
-
     let accounts: ethers.Signer[]
     let attester
     let attesterId
@@ -45,8 +43,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             maxUsers,
             attestingFee,
         })
-
-        treeDepths = await unirepContract.treeDepths()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -315,6 +311,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     reputationRecords[attester].hash()
                 )
             }
+            const treeDepths = await unirepContract.treeDepths()
             const GSTree = new IncrementalMerkleTree(
                 treeDepths.globalStateTreeDepth
             )
