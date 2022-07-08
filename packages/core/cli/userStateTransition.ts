@@ -15,9 +15,8 @@ import {
 } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserState } from '../src'
 import { identityPrefix } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUserState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('userStateTransition', {

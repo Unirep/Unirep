@@ -8,9 +8,10 @@ import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
-import { genUnirepState, Synchronizer } from '../../src'
+import { Synchronizer } from '../../src'
 import { identityCommitmentPrefix, identityPrefix } from '../prefix'
 import { exec } from './utils'
+import { genUnirepState } from '../utils'
 
 describe('test all CLI subcommands', function () {
     this.timeout(0)

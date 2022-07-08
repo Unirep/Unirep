@@ -6,9 +6,8 @@ import {
 } from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepState } from '../src'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUnirepState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyUserSignUpProof', {
