@@ -8,23 +8,24 @@ import {
     GLOBAL_STATE_TREE_DEPTH,
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
+    NUM_ATTESTATIONS_PER_PROOF,
 } from '@unirep/circuits'
 
 const ATTESTING_FEE = 0
 
 import {
-    EpochKeyValidityVerifier,
-    EpochKeyValidityVerifier__factory,
+    VerifyEpochKeyVerifier,
+    VerifyEpochKeyVerifier__factory,
     ProcessAttestationsVerifier,
     ProcessAttestationsVerifier__factory,
-    ReputationVerifier,
-    ReputationVerifier__factory,
+    ProveReputationVerifier,
+    ProveReputationVerifier__factory,
     StartTransitionVerifier,
     StartTransitionVerifier__factory,
     Unirep,
     Unirep__factory as UnirepFactory,
-    UserSignUpVerifier,
-    UserSignUpVerifier__factory,
+    ProveUserSignUpVerifier,
+    ProveUserSignUpVerifier__factory,
     UserStateTransitionVerifier,
     UserStateTransitionVerifier__factory,
 } from '../typechain'
@@ -35,16 +36,16 @@ export const deployUnirep = async (
     deployer: ethers.Signer,
     _settings?: any
 ): Promise<Unirep> => {
-    let EpochKeyValidityVerifierContract: EpochKeyValidityVerifier
+    let EpochKeyValidityVerifierContract: VerifyEpochKeyVerifier
     let StartTransitionVerifierContract: StartTransitionVerifier
     let ProcessAttestationsVerifierContract: ProcessAttestationsVerifier
     let UserStateTransitionVerifierContract: UserStateTransitionVerifier
-    let ReputationVerifierContract: ReputationVerifier
-    let UserSignUpVerifierContract: UserSignUpVerifier
+    let ReputationVerifierContract: ProveReputationVerifier
+    let UserSignUpVerifierContract: ProveUserSignUpVerifier
 
     console.log('Deploying EpochKeyValidityVerifier')
     EpochKeyValidityVerifierContract =
-        await new EpochKeyValidityVerifier__factory(deployer).deploy()
+        await new VerifyEpochKeyVerifier__factory(deployer).deploy()
     await EpochKeyValidityVerifierContract.deployTransaction.wait()
 
     console.log('Deploying StartTransitionVerifier')
@@ -63,13 +64,13 @@ export const deployUnirep = async (
     await UserStateTransitionVerifierContract.deployTransaction.wait()
 
     console.log('Deploying ReputationVerifier')
-    ReputationVerifierContract = await new ReputationVerifier__factory(
+    ReputationVerifierContract = await new ProveReputationVerifier__factory(
         deployer
     ).deploy()
     await ReputationVerifierContract.deployTransaction.wait()
 
     console.log('Deploying UserSignUpVerifier')
-    UserSignUpVerifierContract = await new UserSignUpVerifier__factory(
+    UserSignUpVerifierContract = await new ProveUserSignUpVerifier__factory(
         deployer
     ).deploy()
     await UserSignUpVerifierContract.deployTransaction.wait()
@@ -85,10 +86,13 @@ export const deployUnirep = async (
             globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
             userStateTreeDepth: USER_STATE_TREE_DEPTH,
             epochTreeDepth: EPOCH_TREE_DEPTH,
-        },
-        {
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            maxReputationBudget: MAX_REPUTATION_BUDGET,
+            numAttestationsPerProof: NUM_ATTESTATIONS_PER_PROOF,
+            epochLength: _epochLength,
+            attestingFee: _attestingFee,
             maxUsers: _maxUsers,
-            maxAttesters: _maxAttesters,
+            maxAttesters: _maxAttesters
         },
         EpochKeyValidityVerifierContract.address,
         StartTransitionVerifierContract.address,
@@ -96,10 +100,7 @@ export const deployUnirep = async (
         UserStateTransitionVerifierContract.address,
         ReputationVerifierContract.address,
         UserSignUpVerifierContract.address,
-        NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        MAX_REPUTATION_BUDGET,
-        _epochLength,
-        _attestingFee
+        
     )
 
     await c.deployTransaction.wait()
