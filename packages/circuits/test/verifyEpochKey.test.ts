@@ -12,7 +12,7 @@ import {
     formatProofForSnarkjsVerification,
     formatProofForVerifierContract,
 } from '../src'
-import { defaultProver } from '../src/defaultProver'
+import { defaultProver } from '../provers/defaultProver'
 
 import {
     EPOCH_TREE_DEPTH,
