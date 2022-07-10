@@ -8,7 +8,8 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, defaultProver } from '@unirep/circuits'
+import { Circuit } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
 
 import { Reputation } from '../../src'

@@ -10,7 +10,8 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, MAX_REPUTATION_BUDGET, defaultProver } from '@unirep/circuits'
+import { Circuit, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import {
     Attestation,
     ProcessAttestationsProof,

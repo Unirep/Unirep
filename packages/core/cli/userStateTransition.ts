@@ -2,11 +2,6 @@ import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
-import {
     ProcessAttestationsProof,
     StartTransitionProof,
     Unirep,

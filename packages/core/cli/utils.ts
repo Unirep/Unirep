@@ -4,7 +4,7 @@ import { DB, SQLiteConnector } from 'anondb/node'
 import { schema } from '../src/schema'
 import { UserState, Synchronizer } from '../src'
 import { ZkIdentity } from '@unirep/crypto'
-import { defaultProver } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const getProvider = (url: string): ethers.providers.Provider => {
     const provider = url.startsWith('http')

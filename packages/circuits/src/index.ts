@@ -52,6 +52,5 @@ export const formatProofForSnarkjsVerification = (
     }
 }
 
-export { defaultProver, getDefaultVKey } from './defaultProver'
 export * from './utils'
 export * from '../config'

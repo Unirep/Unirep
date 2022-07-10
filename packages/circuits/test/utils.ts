@@ -8,7 +8,6 @@ import * as crypto from '@unirep/crypto'
 
 import {
     executeCircuit,
-    defaultProver,
     Circuit,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
@@ -17,6 +16,7 @@ import {
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../src'
+import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
 
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))

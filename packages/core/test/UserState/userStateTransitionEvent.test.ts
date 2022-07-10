@@ -5,10 +5,10 @@ import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
-    defaultProver,
     EPOCH_LENGTH,
     formatProofForSnarkjsVerification,
 } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genEpochKey } from '../../src'
 import {

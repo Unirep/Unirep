@@ -2,7 +2,8 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import { EPOCH_LENGTH, defaultProver } from '@unirep/circuits'
+import { EPOCH_LENGTH } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts'
 
 const attestingFee = ethers.utils.parseEther('0.1')

@@ -7,8 +7,8 @@ import { getProvider, genUnirepState } from './utils'
 import {
     formatProofForSnarkjsVerification,
     MAX_REPUTATION_BUDGET,
-    defaultProver,
 } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyReputationProof', {
