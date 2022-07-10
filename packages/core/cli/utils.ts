@@ -82,6 +82,7 @@ const contractExists = async (
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
+ * @param _db An optional DB object
  */
 const genUnirepState = async (
     provider: ethers.providers.Provider,
@@ -103,7 +104,7 @@ const genUnirepState = async (
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
  * @param userIdentity The semaphore identity of the user
- * @param _userState The stored user state that the function start with
+ * @param _db An optional DB object
  */
 const genUserState = async (
     provider: ethers.providers.Provider,
