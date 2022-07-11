@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# copy .env
+cp env.sample .env
+
 # Exit script as soon as a command fails.
 set -o errexit
 
