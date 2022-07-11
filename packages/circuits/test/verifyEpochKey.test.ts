@@ -11,8 +11,8 @@ import {
     executeCircuit,
     formatProofForSnarkjsVerification,
     formatProofForVerifierContract,
-    defaultProver,
 } from '../src'
+import { defaultProver } from '../provers/defaultProver'
 
 import {
     EPOCH_TREE_DEPTH,

@@ -3,11 +3,8 @@
 // @ts-ignore
 import { BigNumberish } from 'ethers'
 import * as crypto from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
+import { Circuit, formatProofForVerifierContract } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import {
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,

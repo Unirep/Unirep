@@ -5,8 +5,12 @@ import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { Attestation, deployUnirep } from '@unirep/contracts'
 
-import { genReputationNullifier, genUserState } from '../../src'
-import { compareAttestations, genRandomAttestation } from '../utils'
+import { genReputationNullifier } from '../../src'
+import {
+    compareAttestations,
+    genRandomAttestation,
+    genUserState,
+} from '../utils'
 
 // test constants
 const maxUsers = 2 ** 7

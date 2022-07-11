@@ -8,13 +8,8 @@ import {
 } from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 
-import {
-    computeInitUserStateRoot,
-    genUnirepState,
-    genUserState,
-    Reputation,
-} from '../../src'
-import { genNewGST } from '../utils'
+import { computeInitUserStateRoot, Reputation } from '../../src'
+import { genNewGST, genUnirepState, genUserState } from '../utils'
 
 describe('User sign up events in Unirep User State', function () {
     this.timeout(0)

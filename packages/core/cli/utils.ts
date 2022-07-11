@@ -1,4 +1,10 @@
-import { ethers } from 'ethers'
+import { ethers, providers } from 'ethers'
+import { getUnirepContract, Unirep } from '@unirep/contracts'
+import { DB, SQLiteConnector } from 'anondb/node'
+import { schema } from '../src/schema'
+import { UserState, Synchronizer } from '../src'
+import { ZkIdentity } from '@unirep/crypto'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const getProvider = (url: string): ethers.providers.Provider => {
     const provider = url.startsWith('http')
@@ -71,6 +77,54 @@ const contractExists = async (
     return code.length > 2
 }
 
+/**
+ * Retrieves and parses on-chain Unirep contract data to create an off-chain
+ * representation as a UnirepState object.
+ * @param provider An Ethereum provider
+ * @param address The address of the Unirep contract
+ * @param _db An optional DB object
+ */
+const genUnirepState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    let synchronizer: Synchronizer
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
+    await synchronizer.start()
+    await synchronizer.waitForSync()
+    return synchronizer
+}
+
+/**
+ * This function works mostly the same as genUnirepState,
+ * except that it also updates the user's state during events processing.
+ * @param provider An Ethereum provider
+ * @param address The address of the Unirep contract
+ * @param userIdentity The semaphore identity of the user
+ * @param _db An optional DB object
+ */
+const genUserState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userIdentity: ZkIdentity,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = getUnirepContract(address, provider)
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    const userState = new UserState(
+        db,
+        defaultProver,
+        unirepContract,
+        userIdentity
+    )
+    await userState.start()
+    await userState.waitForSync()
+    return userState
+}
+
 export {
     getProvider,
     checkDeployerProviderConnection,
@@ -78,4 +132,6 @@ export {
     genJsonRpcDeployer,
     validateEthAddress,
     validateEthSk,
+    genUserState,
+    genUnirepState,
 }

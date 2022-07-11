@@ -1,14 +1,11 @@
 import base64url from 'base64url'
 import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import {
-    formatProofForSnarkjsVerification,
-    defaultProver,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepState } from '../src'
 import { epkProofPrefix, epkPublicSignalsPrefix } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUnirepState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyEpochKeyProof', {

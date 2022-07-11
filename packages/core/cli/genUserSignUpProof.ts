@@ -1,19 +1,13 @@
 import base64url from 'base64url'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserState } from '../src'
 import {
     identityPrefix,
     signUpProofPrefix,
     signUpPublicSignalsPrefix,
 } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUserState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('genUserSignUpProof', {

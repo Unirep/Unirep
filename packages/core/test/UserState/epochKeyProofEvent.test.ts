@@ -8,14 +8,16 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, defaultProver } from '@unirep/circuits'
+import { Circuit } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 
-import { computeInitUserStateRoot, genUserState, Reputation } from '../../src'
+import { computeInitUserStateRoot, Reputation } from '../../src'
 import {
     compareAttestations,
     genEpochKeyCircuitInput,
     genRandomAttestation,
+    genUserState,
 } from '../utils'
 
 describe('Epoch key proof events in Unirep User State', function () {

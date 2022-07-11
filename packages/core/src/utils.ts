@@ -1,17 +1,13 @@
-import { ethers } from 'ethers'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
 import {
     hash5,
     hashLeftRight,
     SparseMerkleTree,
     SnarkBigInt,
-    ZkIdentity,
     stringifyBigInts,
     unstringifyBigInts,
 } from '@unirep/crypto'
 
 import Reputation from './Reputation'
-import UserState from './UserState'
 import {
     EPOCH_KEY_NULLIFIER_DOMAIN,
     REPUTATION_NULLIFIER_DOMAIN,
@@ -19,12 +15,7 @@ import {
 import {
     formatProofForSnarkjsVerification,
     EPOCH_TREE_DEPTH,
-    defaultProver,
 } from '@unirep/circuits'
-import { SQLiteConnector } from 'anondb/node'
-import { Synchronizer } from './Synchronizer'
-import { schema } from './schema'
-import { DB } from 'anondb'
 
 export const encodeBigIntArray = (arr: BigInt[]): string => {
     return JSON.stringify(stringifyBigInts(arr))
@@ -115,53 +106,6 @@ const genReputationNullifier = (
     ])
 }
 
-/**
- * Retrieves and parses on-chain Unirep contract data to create an off-chain
- * representation as a UnirepState object.
- * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
- */
-const genUnirepState = async (
-    provider: ethers.providers.Provider,
-    address: string,
-    _db?: DB
-) => {
-    const unirepContract: Unirep = await getUnirepContract(address, provider)
-    let synchronizer: Synchronizer
-    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
-    await synchronizer.start()
-    await synchronizer.waitForSync()
-    return synchronizer
-}
-
-/**
- * This function works mostly the same as genUnirepState,
- * except that it also updates the user's state during events processing.
- * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
- * @param userIdentity The semaphore identity of the user
- * @param _userState The stored user state that the function start with
- */
-const genUserState = async (
-    provider: ethers.providers.Provider,
-    address: string,
-    userIdentity: ZkIdentity,
-    _db?: DB
-) => {
-    const unirepContract: Unirep = await getUnirepContract(address, provider)
-    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    const userState = new UserState(
-        db,
-        defaultProver,
-        unirepContract,
-        userIdentity
-    )
-    await userState.start()
-    await userState.waitForSync()
-    return userState
-}
-
 export {
     defaultUserStateLeaf,
     SMT_ONE_LEAF,
@@ -171,6 +115,4 @@ export {
     genEpochKey,
     genEpochKeyNullifier,
     genReputationNullifier,
-    genUnirepState,
-    genUserState,
 }
