@@ -1,5 +1,5 @@
 import path from 'path'
-import { Circuit } from '.'
+import { Circuit } from '../src'
 import * as snarkjs from 'snarkjs'
 import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
 

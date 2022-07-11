@@ -1,9 +1,7 @@
 import base64url from 'base64url'
 import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import {
-    formatProofForSnarkjsVerification,
-    defaultProver,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { verifyReputationProof } from './verifyReputationProof'
@@ -62,7 +60,7 @@ const spendReputation = async (args: any) => {
         args.contract,
         provider
     )
-    const attestingFee = await unirepContract.attestingFee()
+    const attestingFee = (await unirepContract.config()).attestingFee
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
@@ -93,9 +91,13 @@ const spendReputation = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .spendReputation(reputationProof, {
-                value: attestingFee,
-            })
+            .spendReputation(
+                reputationProof.publicSignals,
+                reputationProof.proof,
+                {
+                    value: attestingFee,
+                }
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

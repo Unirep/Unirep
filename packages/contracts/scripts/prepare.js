@@ -23,7 +23,7 @@ fs.copyFileSync(
 )
 
 // copy files from contracts recursively
-function copyContracts(currentDir, outPath) {
+function copy(currentDir, outPath) {
     if (!path.isAbsolute(currentDir)) throw new Error('Path is not absolute')
     try {
         fs.mkdirSync(outPath)
@@ -33,13 +33,12 @@ function copyContracts(currentDir, outPath) {
         const contentPath = path.join(currentDir, c)
         const stat = fs.statSync(contentPath)
         if (stat.isDirectory()) {
-            copyContracts(path.join(currentDir, c), path.join(outPath, c))
+            copy(path.join(currentDir, c), path.join(outPath, c))
         } else {
             fs.copyFileSync(contentPath, path.join(outPath, c))
         }
     }
 }
-copyContracts(
-    path.join(__dirname, '../contracts'),
-    path.join(__dirname, '../build')
-)
+copy(path.join(__dirname, '../contracts'), path.join(__dirname, '../build'))
+copy(path.join(__dirname, '../abi'), path.join(__dirname, '../build/abi'))
+fs.rmSync(path.join(__dirname, '../build/artifacts'), { recursive: true })

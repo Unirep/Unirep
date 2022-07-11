@@ -8,7 +8,7 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "hardhat test --no-compile --parallel test/*/*.test.ts",
+        "test": "hardhat test --no-compile test/*/*.test.ts",
         "test-ci": "hardhat test --no-compile --parallel",
         "lint": "prettier --write ."
     },
@@ -32,7 +32,7 @@
         "@unirep/circuits": "1.0.0",
         "@unirep/contracts": "1.0.0",
         "@unirep/crypto": "1.0.0",
-        "anondb": "^0.0.8",
+        "anondb": "^0.0.10",
         "ethers": "^5.6.8",
         "nanoid": "3"
     }

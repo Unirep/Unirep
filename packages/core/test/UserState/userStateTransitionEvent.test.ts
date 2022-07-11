@@ -1,32 +1,30 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/crypto'
+import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
-    deployUnirep,
-    EpochKeyProof,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
-    Unirep,
-} from '@unirep/contracts'
-import { EPOCH_LENGTH, defaultProver } from '@unirep/circuits'
+    EPOCH_LENGTH,
+    formatProofForSnarkjsVerification,
+} from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
+import { genEpochKey } from '../../src'
 import {
-    genEpochKey,
-    genUnirepState,
-    genUserState,
-    Reputation,
-    UserState,
-} from '../../src'
-import {
-    compareDB,
     getSnapDBDiffs,
     snapshotDB,
     genRandomAttestation,
     genRandomList,
     submitUSTProofs,
+    genUnirepState,
+    genUserState,
 } from '../utils'
+import {
+    ProcessAttestationsProof,
+    StartTransitionProof,
+    UserTransitionProof,
+} from '@unirep/contracts/src'
 
 describe('User state transition events in Unirep User State', async function () {
     this.timeout(0)
@@ -163,16 +161,9 @@ describe('User state transition events in Unirep User State', async function () 
             )
             const snap = await snapshotDB((unirepState as any)._db)
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomBlindedUserState = BigNumber.from(genRandomSalt())
-            const randomBlindedHashChain = BigNumber.from(genRandomSalt())
-            const randomGSTRoot = BigNumber.from(genRandomSalt())
+            const randomPublicSignals: BigNumberish[] = genRandomList(3)
             await unirepContract
-                .startUserStateTransition(
-                    randomBlindedUserState,
-                    randomBlindedHashChain,
-                    randomGSTRoot,
-                    randomProof
-                )
+                .startUserStateTransition(randomPublicSignals, randomProof)
                 .then((t) => t.wait())
             await unirepState.waitForSync()
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
@@ -188,17 +179,10 @@ describe('User state transition events in Unirep User State', async function () 
             )
             const snap = await snapshotDB((unirepState as any)._db)
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomOutputBlindedUserState = BigNumber.from(genRandomSalt())
-            const randomOutputBlindedHashChain = BigNumber.from(genRandomSalt())
-            const randomInputBlindedUserState = BigNumber.from(genRandomSalt())
-            const tx = await unirepContract.processAttestations(
-                randomOutputBlindedUserState,
-                randomOutputBlindedHashChain,
-                randomInputBlindedUserState,
-                randomProof
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            const randomPublicSignals: BigNumberish[] = genRandomList(3)
+            await unirepContract
+                .processAttestations(randomPublicSignals, randomProof)
+                .then((t) => t.wait())
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
@@ -216,81 +200,57 @@ describe('User state transition events in Unirep User State', async function () 
             const proofIndexes = [] as any[]
             {
                 const randomProof: BigNumberish[] = genRandomList(8)
-                const randomBlindedUserState = BigNumber.from(genRandomSalt())
-                const randomBlindedHashChain = BigNumber.from(genRandomSalt())
-                const randomGSTRoot = BigNumber.from(genRandomSalt())
+                const randomPublicSignals: BigNumberish[] = genRandomList(3)
                 await unirepContract
-                    .startUserStateTransition(
-                        randomBlindedUserState,
-                        randomBlindedHashChain,
-                        randomGSTRoot,
-                        randomProof
-                    )
+                    .startUserStateTransition(randomPublicSignals, randomProof)
                     .then((t) => t.wait())
-                const hashedProof = computeStartTransitionProofHash(
-                    BigNumber.from(randomBlindedUserState),
-                    BigNumber.from(randomBlindedHashChain),
-                    BigNumber.from(randomGSTRoot),
-                    randomProof.map((p) => BigNumber.from(p))
+                const proof = new StartTransitionProof(
+                    randomPublicSignals,
+                    formatProofForSnarkjsVerification(
+                        randomProof.map((n) => n.toString())
+                    ),
+                    defaultProver
                 )
                 proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
+                    Number(await unirepContract.getProofIndex(proof.hash()))
                 )
             }
             {
                 const randomProof: BigNumberish[] = genRandomList(8)
-                const randomOutputBlindedUserState = BigNumber.from(
-                    genRandomSalt()
-                )
-                const randomOutputBlindedHashChain = BigNumber.from(
-                    genRandomSalt()
-                )
-                const randomInputBlindedUserState = BigNumber.from(
-                    genRandomSalt()
-                )
+                const randomPublicSignals: BigNumberish[] = genRandomList(3)
                 await unirepContract
-                    .processAttestations(
-                        randomOutputBlindedUserState,
-                        randomOutputBlindedHashChain,
-                        randomInputBlindedUserState,
-                        randomProof
-                    )
+                    .processAttestations(randomPublicSignals, randomProof)
                     .then((t) => t.wait())
-                const hashedProof = computeProcessAttestationsProofHash(
-                    BigNumber.from(randomOutputBlindedUserState),
-                    BigNumber.from(randomOutputBlindedHashChain),
-                    BigNumber.from(randomInputBlindedUserState),
-                    randomProof.map((p) => BigNumber.from(p))
+                const proof = new ProcessAttestationsProof(
+                    randomPublicSignals,
+                    formatProofForSnarkjsVerification(
+                        randomProof.map((n) => n.toString())
+                    ),
+                    defaultProver
                 )
                 proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(hashedProof))
+                    Number(await unirepContract.getProofIndex(proof.hash()))
                 )
             }
             const randomProof: BigNumberish[] = genRandomList(8)
-            const randomNullifiers: BigNumberish[] = genRandomList(
-                unirepState.settings.numEpochKeyNoncePerEpoch
+            let randomPublicSignals: BigNumberish[] = genRandomList(
+                2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6
             )
-            const randomBlindedStates: BigNumberish[] = genRandomList(2)
-            const randomBlindedChains: BigNumberish[] = genRandomList(
-                unirepState.settings.numEpochKeyNoncePerEpoch
+            const ustProof = new UserTransitionProof(
+                randomPublicSignals,
+                formatProofForSnarkjsVerification(
+                    randomProof.map((n) => n.toString())
+                ),
+                defaultProver
             )
-
-            const randomUSTInput = {
-                newGlobalStateTreeLeaf: BigNumber.from(genRandomSalt()),
-                epkNullifiers: randomNullifiers,
-                transitionFromEpoch: 1,
-                blindedUserStates: randomBlindedStates,
-                fromGlobalStateTree: BigNumber.from(genRandomSalt()),
-                blindedHashChains: randomBlindedChains,
-                fromEpochTree: BigNumber.from(genRandomSalt()),
-                proof: randomProof,
-            }
-            const tx = await unirepContract.updateUserStateRoot(
-                randomUSTInput,
-                proofIndexes
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            ustProof.publicSignals[ustProof.idx.transitionFromEpoch] = 1
+            await unirepContract
+                .updateUserStateRoot(
+                    ustProof.publicSignals,
+                    ustProof.proof,
+                    proofIndexes
+                )
+                .then((t) => t.wait())
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
@@ -473,7 +433,7 @@ describe('User state transition events in Unirep User State', async function () 
             // now we're synced, let's submit some attestations
             const epkNonce = 0
 
-            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+            const formattedProof = await userState.genVerifyEpochKeyProof(
                 epkNonce
             )
             const isValid = await formattedProof.verify()
@@ -481,17 +441,17 @@ describe('User state transition events in Unirep User State', async function () 
 
             {
                 const receipt = await unirepContract
-                    .submitEpochKeyProof(formattedProof)
+                    .submitEpochKeyProof(
+                        formattedProof.publicSignals,
+                        formattedProof.proof
+                    )
                     .then((t) => t.wait())
                 expect(receipt.status).to.equal(1)
             }
 
             const epochKey = formattedProof.epochKey
-            const hashedProof = await unirepContract.hashEpochKeyProof(
-                formattedProof
-            )
             const proofIndex = Number(
-                await unirepContract.getProofIndex(hashedProof)
+                await unirepContract.getProofIndex(formattedProof.hash())
             )
 
             const attestation = genRandomAttestation()
@@ -519,9 +479,9 @@ describe('User state transition events in Unirep User State', async function () 
             const diffs = await getSnapDBDiffs(snap, (userState as any)._db)
             // proof, attestation, epoch key
             expect(diffs.length).to.equal(3)
-            const epkProofDoc = diffs.find((d) => d.table === 'Proof')
-            expect(epkProofDoc.epoch).to.equal(epoch)
-            expect(epkProofDoc.valid).to.equal(1)
+            const formattedProofDoc = diffs.find((d) => d.table === 'Proof')
+            expect(formattedProofDoc.epoch).to.equal(epoch)
+            expect(formattedProofDoc.valid).to.equal(1)
             const attestationDoc = diffs.find((d) => d.table === 'Attestation')
             expect(attestationDoc.attesterId).to.equal(attesterId.toNumber())
             expect(attestationDoc.posRep).to.equal(
@@ -564,7 +524,7 @@ describe('User state transition events in Unirep User State', async function () 
             // now we're synced, let's submit some attestations
             const epkNonce = 0
 
-            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+            const formattedProof = await userState.genVerifyEpochKeyProof(
                 epkNonce
             )
             const isValid = await formattedProof.verify()
@@ -572,17 +532,17 @@ describe('User state transition events in Unirep User State', async function () 
 
             {
                 const receipt = await unirepContract
-                    .submitEpochKeyProof(formattedProof)
+                    .submitEpochKeyProof(
+                        formattedProof.publicSignals,
+                        formattedProof.proof
+                    )
                     .then((t) => t.wait())
                 expect(receipt.status).to.equal(1)
             }
 
             const epochKey = formattedProof.epochKey
-            const hashedProof = await unirepContract.hashEpochKeyProof(
-                formattedProof
-            )
             const proofIndex = Number(
-                await unirepContract.getProofIndex(hashedProof)
+                await unirepContract.getProofIndex(formattedProof.hash())
             )
 
             const attestation = genRandomAttestation()
@@ -640,10 +600,9 @@ describe('User state transition events in Unirep User State', async function () 
             const gstRoot = diffs.find((d) => d.table === 'GSTRoot')
             expect(gstRoot.root).to.equal(expectedGST.root.toString())
             expect(nullifierCount).to.equal(
-                proofs.finalTransitionProof.epochKeyNullifiers.length
+                proofs.finalTransitionProof.epkNullifiers.length
             )
-            for (const nullifier of proofs.finalTransitionProof
-                .epochKeyNullifiers) {
+            for (const nullifier of proofs.finalTransitionProof.epkNullifiers) {
                 const doc = diffs.find(
                     (d) =>
                         d.table === 'Nullifier' &&

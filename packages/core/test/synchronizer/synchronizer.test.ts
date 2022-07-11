@@ -2,19 +2,24 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import { EPOCH_LENGTH, defaultProver } from '@unirep/circuits'
+import { EPOCH_LENGTH } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts'
 
 const attestingFee = ethers.utils.parseEther('0.1')
 
 import {
-    genUserState,
     Synchronizer,
     schema,
     decodeBigIntArray,
     computeInitUserStateRoot,
 } from '../../src'
-import { genRandomAttestation, compareDB, submitUSTProofs } from '../utils'
+import {
+    genUserState,
+    genRandomAttestation,
+    compareDB,
+    submitUSTProofs,
+} from '../utils'
 import { SQLiteConnector } from 'anondb/node'
 
 let synchronizer: Synchronizer
@@ -157,13 +162,16 @@ describe('Synchronizer process events', function () {
         )
         const epoch = await synchronizer.unirepContract.currentEpoch()
         const epochKeyNonce = 2
-        const { formattedProof } = await userState.genVerifyEpochKeyProof(
+        const formattedProof = await userState.genVerifyEpochKeyProof(
             epochKeyNonce
         )
         const isValid = await formattedProof.verify()
         expect(isValid, 'Verify epk proof off-chain failed').to.be.true
         const receipt = await synchronizer.unirepContract
-            .submitEpochKeyProof(formattedProof)
+            .submitEpochKeyProof(
+                formattedProof.publicSignals,
+                formattedProof.proof
+            )
             .then((t) => t.wait())
         await proofEvent
         await synchronizer.waitForSync()
@@ -296,12 +304,13 @@ describe('Synchronizer process events', function () {
         const proveGraffiti = BigInt(0)
         const graffitiPreimage = BigInt(0)
         const nonceList = [] as BigInt[]
-        const maxReputationBudget =
-            await synchronizer.unirepContract.maxReputationBudget()
+        const maxReputationBudget = (
+            await synchronizer.unirepContract.config()
+        ).maxReputationBudget.toNumber()
         for (let i = nonceList.length; i < maxReputationBudget; i++) {
             nonceList.push(BigInt(-1))
         }
-        const { formattedProof } = await userState.genProveReputationProof(
+        const formattedProof = await userState.genProveReputationProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
             ).toBigInt(),
@@ -317,7 +326,11 @@ describe('Synchronizer process events', function () {
         const proofCount = await (synchronizer as any)._db.count('Proof', {})
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .spendReputation(formattedProof, { value: attestingFee })
+            .spendReputation(
+                formattedProof.publicSignals,
+                formattedProof.proof,
+                { value: attestingFee }
+            )
             .then((t) => t.wait())
         await proofEvent
         await synchronizer.waitForSync()
@@ -393,7 +406,7 @@ describe('Synchronizer process events', function () {
             synchronizer.unirepContract.address,
             id
         )
-        const { formattedProof } = await userState.genUserSignUpProof(
+        const formattedProof = await userState.genUserSignUpProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
             ).toBigInt()
@@ -404,10 +417,14 @@ describe('Synchronizer process events', function () {
         const proofCount = await (synchronizer as any)._db.count('Proof', {})
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .airdropEpochKey(formattedProof, {
-                value: attestingFee,
-                gasLimit: 1000000,
-            })
+            .airdropEpochKey(
+                formattedProof.publicSignals,
+                formattedProof.proof,
+                {
+                    value: attestingFee,
+                    gasLimit: 1000000,
+                }
+            )
             .then((t) => t.wait())
         const proofIndex = await synchronizer.unirepContract.getProofIndex(
             formattedProof.hash()

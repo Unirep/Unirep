@@ -8,19 +8,16 @@ import {
     hashLeftRight,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
-import { Circuit, defaultProver } from '@unirep/circuits'
+import { Circuit } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 
-import {
-    computeInitUserStateRoot,
-    genUnirepState,
-    genUserState,
-    Reputation,
-} from '../../src'
+import { computeInitUserStateRoot, Reputation } from '../../src'
 import {
     compareAttestations,
     genEpochKeyCircuitInput,
     genRandomAttestation,
+    genUserState,
 } from '../utils'
 
 describe('Epoch key proof events in Unirep User State', function () {
@@ -32,8 +29,6 @@ describe('Epoch key proof events in Unirep User State', function () {
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
-
-    let treeDepths
 
     let accounts: ethers.Signer[]
     const attester = new Object()
@@ -49,8 +44,6 @@ describe('Epoch key proof events in Unirep User State', function () {
             maxUsers,
             attestingFee,
         })
-
-        treeDepths = await unirepContract.treeDepths()
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -120,7 +113,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                     attester['addr']
                 )
                 const newUSTRoot = computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth,
+                    userState.settings.userStateTreeDepth,
                     Number(attesterId),
                     Number(airdroppedAmount)
                 )
@@ -159,7 +152,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                 expect(unirepEpoch).equal(Number(contractEpoch))
 
                 const newUSTRoot = computeInitUserStateRoot(
-                    treeDepths.userStateTreeDepth
+                    userState.settings.userStateTreeDepth
                 )
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(Reputation.default())
@@ -181,13 +174,16 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 0
-            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+            const formattedProof = await userState.genVerifyEpochKeyProof(
                 epkNonce
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(formattedProof)
+            const tx = await unirepContract.submitEpochKeyProof(
+                formattedProof.publicSignals,
+                formattedProof.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -198,7 +194,10 @@ describe('Epoch key proof events in Unirep User State', function () {
 
             // submit the same proof twice should fail
             await expect(
-                unirepContract.submitEpochKeyProof(formattedProof)
+                unirepContract.submitEpochKeyProof(
+                    formattedProof.publicSignals,
+                    formattedProof.proof
+                )
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 'NullifierAlreadyUsed'
@@ -239,15 +238,18 @@ describe('Epoch key proof events in Unirep User State', function () {
             )
             epoch = Number(await unirepContract.currentEpoch())
             const epkNonce = 1
-            const { formattedProof } = await userState.genVerifyEpochKeyProof(
+            const formattedProof = await userState.genVerifyEpochKeyProof(
                 epkNonce
             )
-            formattedProof.publicSignals[0] = formattedProof.globalStateTree =
+            formattedProof.publicSignals[formattedProof.idx.globalStateTree] =
                 genRandomSalt().toString()
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract.submitEpochKeyProof(formattedProof)
+            const tx = await unirepContract.submitEpochKeyProof(
+                formattedProof.publicSignals,
+                formattedProof.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -284,8 +286,9 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
 
         it('submit valid epoch key proof with wrong GST root event', async () => {
+            const config = await unirepContract.config()
             const GSTree = new IncrementalMerkleTree(
-                treeDepths.globalStateTreeDepth
+                config.globalStateTreeDepth
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
@@ -318,7 +321,10 @@ describe('Epoch key proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(formattedProof)
+            const tx = await unirepContract.submitEpochKeyProof(
+                formattedProof.publicSignals,
+                formattedProof.proof
+            )
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -385,7 +391,10 @@ describe('Epoch key proof events in Unirep User State', function () {
             expect(isValid).to.be.true
 
             await expect(
-                unirepContract.submitEpochKeyProof(formattedProof)
+                unirepContract.submitEpochKeyProof(
+                    formattedProof.publicSignals,
+                    formattedProof.proof
+                )
             ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
         })
     })

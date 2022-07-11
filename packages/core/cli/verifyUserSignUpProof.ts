@@ -1,14 +1,11 @@
 import base64url from 'base64url'
 import { SignUpProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import {
-    formatProofForSnarkjsVerification,
-    defaultProver,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUnirepState } from '../src'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUnirepState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('verifyUserSignUpProof', {
@@ -87,7 +84,10 @@ const verifyUserSignUpProof = async (args: any) => {
         formatProofForSnarkjsVerification(proof),
         defaultProver
     )
-    const isProofValid = await unirepContract.verifyUserSignUp(signUpProof)
+    const isProofValid = await unirepContract.verifyUserSignUp(
+        signUpProof.publicSignals,
+        signUpProof.proof
+    )
     if (!isProofValid) {
         console.error('Error: invalid user sign up proof')
         return

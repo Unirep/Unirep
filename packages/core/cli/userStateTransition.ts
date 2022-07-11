@@ -2,16 +2,16 @@ import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
 import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
-import { Unirep, UnirepFactory, UserTransitionProof } from '@unirep/contracts'
+    ProcessAttestationsProof,
+    StartTransitionProof,
+    Unirep,
+    UnirepFactory,
+    UserTransitionProof,
+} from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserState } from '../src'
 import { identityPrefix } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUserState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('userStateTransition', {
@@ -71,58 +71,25 @@ const userStateTransition = async (args: any) => {
         finalTransitionProof,
     } = await userState.genUserStateTransitionProofs()
 
-    // Start user state transition proof
-    let isValid = await defaultProver.verifyProof(
-        Circuit.startTransition,
-        startTransitionProof.publicSignals,
-        startTransitionProof.proof
-    )
-    if (!isValid) {
-        console.error(
-            'Error: start state transition proof generated is not valid!'
-        )
-    }
-    let tx: ethers.ContractTransaction
-    try {
-        tx = await unirepContract
-            .connect(wallet)
-            .startUserStateTransition(
-                startTransitionProof.blindedUserState,
-                startTransitionProof.blindedHashChain,
-                startTransitionProof.globalStateTreeRoot,
-                formatProofForVerifierContract(startTransitionProof.proof)
-            )
-        await tx.wait()
-    } catch (error) {
-        console.log('Transaction Error', error)
-        return
-    }
-    console.log('Transaction hash:', tx.hash)
-    await userState.waitForSync()
+    // Record all proof indexes
+    const proofIndexes: ethers.BigNumber[] = []
 
-    // process attestations proof
-    for (let i = 0; i < processAttestationProofs.length; i++) {
-        const isValid = await defaultProver.verifyProof(
-            Circuit.processAttestations,
-            processAttestationProofs[i].publicSignals,
-            processAttestationProofs[i].proof
-        )
+    // Start user state transition proof
+    {
+        const isValid = await startTransitionProof.verify()
         if (!isValid) {
             console.error(
-                'Error: process attestations proof generated is not valid!'
+                'Error: start state transition proof generated is not valid!'
             )
         }
 
+        let tx: ethers.ContractTransaction
         try {
             tx = await unirepContract
                 .connect(wallet)
-                .processAttestations(
-                    processAttestationProofs[i].outputBlindedUserState,
-                    processAttestationProofs[i].outputBlindedHashChain,
-                    processAttestationProofs[i].inputBlindedUserState,
-                    formatProofForVerifierContract(
-                        processAttestationProofs[i].proof
-                    )
+                .startUserStateTransition(
+                    startTransitionProof.publicSignals,
+                    startTransitionProof.proof
                 )
             await tx.wait()
         } catch (error) {
@@ -130,50 +97,59 @@ const userStateTransition = async (args: any) => {
             return
         }
         console.log('Transaction hash:', tx.hash)
-    }
-    await userState.waitForSync()
 
-    // Record all proof indexes
-    const proofIndexes: ethers.BigNumber[] = []
-    {
-        const proofHash = await unirepContract.hashStartTransitionProof(
-            startTransitionProof.blindedUserState,
-            startTransitionProof.blindedHashChain,
-            startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(startTransitionProof.proof)
-        )
+        const proofHash = startTransitionProof.hash()
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
+
+    // process attestations proof
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        const proofHash = await unirepContract.hashProcessAttestationsProof(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
-        )
+        const isValid = await processAttestationProofs[i].verify()
+        if (!isValid) {
+            console.error(
+                'Error: process attestations proof generated is not valid!'
+            )
+        }
+
+        let tx: ethers.ContractTransaction
+        try {
+            tx = await unirepContract
+                .connect(wallet)
+                .processAttestations(
+                    processAttestationProofs[i].publicSignals,
+                    processAttestationProofs[i].proof
+                )
+            await tx.wait()
+        } catch (error) {
+            console.log('Transaction Error', error)
+            return
+        }
+        console.log('Transaction hash:', tx.hash)
+
+        await userState.waitForSync()
+
+        const proofHash = processAttestationProofs[i].hash()
         const proofIndex = await unirepContract.getProofIndex(proofHash)
         proofIndexes.push(proofIndex)
     }
 
     // update user state proof
-    isValid = await defaultProver.verifyProof(
-        Circuit.userStateTransition,
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof
-    )
+    const isValid = await finalTransitionProof.verify()
     if (!isValid) {
         console.error(
             'Error: user state transition proof generated is not valid!'
         )
     }
 
-    const fromEpoch = finalTransitionProof.transitionedFromEpoch
+    const fromEpoch = Number(finalTransitionProof.transitionFromEpoch)
     const epkNullifiers = userState.getEpochKeyNullifiers(fromEpoch)
 
     // Verify nullifiers outputted by circuit are the same as the ones computed off-chain
     for (let i = 0; i < epkNullifiers.length; i++) {
-        const outputNullifier = finalTransitionProof.epochKeyNullifiers[i]
+        const outputNullifier = BigInt(
+            finalTransitionProof.epkNullifiers[i].toString()
+        )
         if (outputNullifier != epkNullifiers[i]) {
             console.error(
                 `Error: nullifier outputted by circuit(${outputNullifier}) does not match the ${i}-th computed attestation nullifier(${epkNullifiers[i]})`
@@ -182,13 +158,12 @@ const userStateTransition = async (args: any) => {
     }
 
     // Check if Global state tree root and epoch tree root exist
-    const GSTRoot = finalTransitionProof.fromGSTRoot
-    const inputEpoch = Number(finalTransitionProof.transitionedFromEpoch)
-    const epochTreeRoot = finalTransitionProof.fromEpochTree
-    const isGSTRootExisted = await userState.GSTRootExists(GSTRoot, inputEpoch)
+    const GSTRoot = finalTransitionProof.fromGlobalStateTree.toString()
+    const epochTreeRoot = finalTransitionProof.fromEpochTree.toString()
+    const isGSTRootExisted = await userState.GSTRootExists(GSTRoot, fromEpoch)
     const isEpochTreeExisted = await userState.epochTreeRootExists(
         epochTreeRoot,
-        inputEpoch
+        fromEpoch
     )
     if (!isGSTRootExisted) {
         console.error('Error: invalid global state tree root')
@@ -207,15 +182,15 @@ const userStateTransition = async (args: any) => {
     }
 
     // Submit the user state transition transaction
-    const USTProof = new UserTransitionProof(
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof,
-        defaultProver
-    )
+    let tx: ethers.ContractTransaction
     try {
         tx = await unirepContract
             .connect(wallet)
-            .updateUserStateRoot(USTProof, proofIndexes)
+            .updateUserStateRoot(
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof,
+                proofIndexes
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

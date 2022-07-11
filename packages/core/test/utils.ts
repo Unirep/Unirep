@@ -10,23 +10,18 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    MAX_REPUTATION_BUDGET,
-    defaultProver,
-} from '@unirep/circuits'
+import { Circuit, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import {
     Attestation,
-    computeStartTransitionProofHash,
-    computeProcessAttestationsProofHash,
+    ProcessAttestationsProof,
+    StartTransitionProof,
     UserTransitionProof,
 } from '@unirep/contracts'
 
 import {
     computeEmptyUserStateRoot,
     genEpochKey,
-    genUserState,
     Reputation,
     UserState,
 } from '../src'
@@ -41,6 +36,8 @@ import { getUnirepContract } from '@unirep/contracts'
 import { Unirep } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
 import * as crypto from 'crypto'
+import { Synchronizer } from '../src/Synchronizer'
+import { schema } from '../src/schema'
 
 const genNewGST = (
     GSTDepth: number,
@@ -265,58 +262,38 @@ const submitUSTProofs = async (
 ) => {
     const proofIndexes: number[] = []
 
-    let isValid = await defaultProver.verifyProof(
-        Circuit.startTransition,
-        startTransitionProof.publicSignals,
-        startTransitionProof.proof
-    )
-    expect(isValid, 'Verify start transition circuit off-chain failed').to.be
-        .true
-
-    // submit proofs
-    let tx = await contract.startUserStateTransition(
-        startTransitionProof.blindedUserState,
-        startTransitionProof.blindedHashChain,
-        startTransitionProof.globalStateTreeRoot,
-        formatProofForVerifierContract(startTransitionProof.proof)
-    )
-    let receipt = await tx.wait()
-    expect(receipt.status).to.equal(1)
-
-    // submit twice should fail
-    await expect(
-        contract.startUserStateTransition(
-            startTransitionProof.blindedUserState,
-            startTransitionProof.blindedHashChain,
-            startTransitionProof.globalStateTreeRoot,
-            formatProofForVerifierContract(startTransitionProof.proof)
+    {
+        // submit proofs
+        const isValid = await startTransitionProof.verify()
+        expect(isValid).to.be.true
+        const tx = await contract.startUserStateTransition(
+            startTransitionProof.publicSignals,
+            startTransitionProof.proof
         )
-    ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+        const receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
 
-    let hashedProof = computeStartTransitionProofHash(
-        startTransitionProof.blindedUserState,
-        startTransitionProof.blindedHashChain,
-        startTransitionProof.globalStateTreeRoot,
-        formatProofForVerifierContract(startTransitionProof.proof)
-    )
-    proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+        // submit twice should fail
+        await expect(
+            contract.startUserStateTransition(
+                startTransitionProof.publicSignals,
+                startTransitionProof.proof
+            )
+        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+
+        const hashedProof = startTransitionProof.hash()
+        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
+    }
 
     for (let i = 0; i < processAttestationProofs.length; i++) {
-        isValid = await defaultProver.verifyProof(
-            Circuit.processAttestations,
+        const isValid = await processAttestationProofs[i].verify()
+        expect(isValid).to.be.true
+
+        const tx = await contract.processAttestations(
             processAttestationProofs[i].publicSignals,
             processAttestationProofs[i].proof
         )
-        expect(isValid, 'Verify process attestations circuit off-chain failed')
-            .to.be.true
-
-        tx = await contract.processAttestations(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
-        )
-        receipt = await tx.wait()
+        const receipt = await tx.wait()
         expect(receipt.status).to.equal(1)
 
         // submit random process attestations should success and not affect the results
@@ -335,38 +312,35 @@ const submitUSTProofs = async (
         // submit twice should fail
         await expect(
             contract.processAttestations(
-                processAttestationProofs[i].outputBlindedUserState,
-                processAttestationProofs[i].outputBlindedHashChain,
-                processAttestationProofs[i].inputBlindedUserState,
-                formatProofForVerifierContract(
-                    processAttestationProofs[i].proof
-                )
+                processAttestationProofs[i].publicSignals,
+                processAttestationProofs[i].proof
             )
         ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
 
-        let hashedProof = computeProcessAttestationsProofHash(
-            processAttestationProofs[i].outputBlindedUserState,
-            processAttestationProofs[i].outputBlindedHashChain,
-            processAttestationProofs[i].inputBlindedUserState,
-            formatProofForVerifierContract(processAttestationProofs[i].proof)
-        )
+        const hashedProof = processAttestationProofs[i].hash()
         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
     }
-    const USTInput = new UserTransitionProof(
-        finalTransitionProof.publicSignals,
-        finalTransitionProof.proof,
-        defaultProver
-    )
-    isValid = await USTInput.verify()
-    expect(isValid).to.be.true
-    tx = await contract.updateUserStateRoot(USTInput, proofIndexes)
-    receipt = await tx.wait()
-    expect(receipt.status).to.equal(1)
 
-    // submit twice should fail
-    await expect(
-        contract.updateUserStateRoot(USTInput, proofIndexes)
-    ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+    {
+        const isValid = await finalTransitionProof.verify()
+        expect(isValid).to.be.true
+        const tx = await contract.updateUserStateRoot(
+            finalTransitionProof.publicSignals,
+            finalTransitionProof.proof,
+            proofIndexes
+        )
+        const receipt = await tx.wait()
+        expect(receipt.status).to.equal(1)
+
+        // submit twice should fail
+        await expect(
+            contract.updateUserStateRoot(
+                finalTransitionProof.publicSignals,
+                finalTransitionProof.proof,
+                proofIndexes
+            )
+        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+    }
 }
 
 const tables = [
@@ -512,6 +486,54 @@ const compareAttestations = (
     expect(attestDB.signUp.toString()).equal(attestObj.signUp.toString())
 }
 
+/**
+ * Retrieves and parses on-chain Unirep contract data to create an off-chain
+ * representation as a UnirepState object.
+ * @param provider An Ethereum provider
+ * @param address The address of the Unirep contract
+ * @param _db An optional DB object
+ */
+const genUnirepState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    let synchronizer: Synchronizer
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
+    await synchronizer.start()
+    await synchronizer.waitForSync()
+    return synchronizer
+}
+
+/**
+ * This function works mostly the same as genUnirepState,
+ * except that it also updates the user's state during events processing.
+ * @param provider An Ethereum provider
+ * @param address The address of the Unirep contract
+ * @param userIdentity The semaphore identity of the user
+ * @param _db An optional DB object
+ */
+const genUserState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userIdentity: ZkIdentity,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = getUnirepContract(address, provider)
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    const userState = new UserState(
+        db,
+        defaultProver,
+        unirepContract,
+        userIdentity
+    )
+    await userState.start()
+    await userState.waitForSync()
+    return userState
+}
+
 export {
     genNewEpochTree,
     genNewUserStateTree,
@@ -530,4 +552,5 @@ export {
     compareStates,
     compareAttestations,
     genUserState,
+    genUnirepState,
 }

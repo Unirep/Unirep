@@ -1,8 +1,6 @@
 import base64url from 'base64url'
-import {
-    formatProofForSnarkjsVerification,
-    defaultProver,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EpochKeyProof, Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
@@ -90,7 +88,10 @@ const submitEpochKeyProof = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .submitEpochKeyProof(epochKeyProof)
+            .submitEpochKeyProof(
+                epochKeyProof.publicSignals,
+                epochKeyProof.proof
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

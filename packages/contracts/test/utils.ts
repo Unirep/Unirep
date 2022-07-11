@@ -3,11 +3,8 @@
 // @ts-ignore
 import { BigNumberish } from 'ethers'
 import * as crypto from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
+import { Circuit, formatProofForVerifierContract } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import {
     computeEmptyUserStateRoot,
     defaultUserStateLeaf,
@@ -33,8 +30,10 @@ import {
 import {
     Attestation,
     EpochKeyProof,
+    ProcessAttestationsProof,
     ReputationProof,
     SignUpProof,
+    StartTransitionProof,
     UserTransitionProof,
 } from '../src'
 
@@ -59,19 +58,13 @@ const formatProofAndPublicSignals = (
         case Circuit.proveUserSignUp:
             return new SignUpProof(publicSignals, proof, defaultProver)
         case Circuit.startTransition:
-            return {
-                blindedUserState: publicSignals[0],
-                blindedHashChain: publicSignals[1],
-                GSTRoot: publicSignals[2],
-                proof: formattedProof,
-            }
+            return new StartTransitionProof(publicSignals, proof, defaultProver)
         case Circuit.processAttestations:
-            return {
-                outputBlindedUserState: publicSignals[0],
-                outputBlindedHashChain: publicSignals[1],
-                inputBlindedUserState: publicSignals[2],
-                proof: formattedProof,
-            }
+            return new ProcessAttestationsProof(
+                publicSignals,
+                proof,
+                defaultProver
+            )
         case Circuit.userStateTransition:
             return new UserTransitionProof(publicSignals, proof, defaultProver)
         default:

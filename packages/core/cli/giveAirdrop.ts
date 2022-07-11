@@ -1,9 +1,7 @@
 import base64url from 'base64url'
 import { SignUpProof, Unirep, UnirepFactory } from '@unirep/contracts'
-import {
-    formatProofForSnarkjsVerification,
-    defaultProver,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { verifyUserSignUpProof } from './verifyUserSignUpProof'
@@ -56,7 +54,7 @@ const giveAirdrop = async (args: any) => {
         args.contract,
         provider
     )
-    const attestingFee = await unirepContract.attestingFee()
+    const attestingFee = (await unirepContract.config()).attestingFee
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
@@ -87,15 +85,19 @@ const giveAirdrop = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .airdropEpochKey(userSignUpProof, {
-                value: attestingFee,
-            })
+            .airdropEpochKey(
+                userSignUpProof.publicSignals,
+                userSignUpProof.proof,
+                {
+                    value: attestingFee,
+                }
+            )
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)
         return
     }
-    const hashProof = await unirepContract.hashSignUpProof(userSignUpProof)
+    const hashProof = userSignUpProof.hash()
     const proofIndex = await unirepContract.getProofIndex(hashProof)
 
     console.log('Transaction hash:', tx.hash)

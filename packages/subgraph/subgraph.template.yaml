@@ -6,7 +6,7 @@ dataSources:
       name: Unirep
       network: '{{unirepNetwork}}'
       source:
-          startBlock: { { startBlock } }
+          startBlock: {{startBlock}}
           address: '{{unirepAddress}}'
           abi: Unirep
       mapping:

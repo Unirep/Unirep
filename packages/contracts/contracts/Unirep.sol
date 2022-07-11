@@ -5,14 +5,13 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
-import {Hasher} from './libraries/Hasher.sol';
 import {zkSNARKHelper} from './libraries/zkSNARKHelper.sol';
 import {VerifySignature} from './libraries/VerifySignature.sol';
 
 import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
-contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
+contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     using SafeMath for uint256;
 
     // Verifier Contracts
@@ -23,25 +22,13 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     IVerifier internal reputationVerifier;
     IVerifier internal userSignUpVerifier;
 
-    uint256 public currentEpoch = 1;
-
-    uint256 public immutable epochLength;
+    Config public config;
 
     uint256 public immutable maxEpochKey;
 
+    uint256 public currentEpoch = 1;
+
     uint256 public latestEpochTransitionTime;
-
-    // Maximum number of epoch keys allowed for an user to generate in one epoch
-    uint8 public immutable numEpochKeyNoncePerEpoch;
-
-    // Maximum number of reputation nullifiers in a proof
-    uint8 public immutable maxReputationBudget;
-
-    // The maximum number of users allowed
-    uint256 public immutable maxUsers;
-
-    // The maximum number of attesters allowed
-    uint256 public immutable maxAttesters;
 
     uint256 public numUserSignUps = 0;
 
@@ -54,8 +41,6 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     mapping(uint256 => bool) public hasUserSignedUp;
 
-    // Fee required for submitting an attestation
-    uint256 public immutable attestingFee;
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
     // Mapping of voluteers that execute epoch transition to compensation they earned
@@ -71,23 +56,16 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     // Mapping of the airdrop amount of an attester
     mapping(address => uint256) public airdropAmount;
 
-    TreeDepths public treeDepths;
-
     constructor(
-        TreeDepths memory _treeDepths,
-        MaxValues memory _maxValues,
+        Config memory _config,
         IVerifier _epkValidityVerifier,
         IVerifier _startTransitionVerifier,
         IVerifier _processAttestationsVerifier,
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier,
-        IVerifier _userSignUpVerifier,
-        uint8 _numEpochKeyNoncePerEpoch,
-        uint8 _maxReputationBudget,
-        uint256 _epochLength,
-        uint256 _attestingFee
+        IVerifier _userSignUpVerifier
     ) {
-        treeDepths = _treeDepths;
+        config = _config;
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
@@ -97,33 +75,24 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         reputationVerifier = _reputationVerifier;
         userSignUpVerifier = _userSignUpVerifier;
 
-        numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
-        maxReputationBudget = _maxReputationBudget;
-        epochLength = _epochLength;
         latestEpochTransitionTime = block.timestamp;
 
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
         // is just large enough and not more, or they will waste gas.
-        uint256 GSTMaxLeafIndex = uint256(2)**_treeDepths.globalStateTreeDepth -
-            1;
+        uint256 GSTMaxLeafIndex = uint256(2)**config.globalStateTreeDepth - 1;
         require(
-            _maxValues.maxUsers <= GSTMaxLeafIndex,
+            config.maxUsers <= GSTMaxLeafIndex,
             'Unirep: invalid maxUsers value'
         );
-        maxUsers = _maxValues.maxUsers;
 
-        uint256 USTMaxLeafIndex = uint256(2)**_treeDepths.userStateTreeDepth -
-            1;
+        uint256 USTMaxLeafIndex = uint256(2)**config.userStateTreeDepth - 1;
         require(
-            _maxValues.maxAttesters <= USTMaxLeafIndex,
+            config.maxAttesters <= USTMaxLeafIndex,
             'Unirep: invalid maxAttesters value'
         );
-        maxAttesters = _maxValues.maxAttesters;
 
-        maxEpochKey = uint256(2)**_treeDepths.epochTreeDepth - 1;
-
-        attestingFee = _attestingFee;
+        maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
     }
 
     // Verify input data - Should found better way to handle it.
@@ -138,7 +107,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     }
 
     function verifyAttesterFee() private view {
-        if (msg.value < attestingFee) revert AttestingFeeInvalid();
+        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
     }
 
     function verifyAttesterIndex(address attester, uint256 attesterId)
@@ -158,7 +127,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function userSignUp(uint256 identityCommitment) external {
         if (hasUserSignedUp[identityCommitment] == true)
             revert UserAlreadySignedUp(identityCommitment);
-        if (numUserSignUps >= maxUsers)
+        if (numUserSignUps >= config.maxUsers)
             revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
@@ -178,7 +147,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function _attesterSignUp(address attester) private {
         if (attesters[attester] != 0) revert AttesterAlreadySignUp(attester);
 
-        if (nextAttesterId >= maxAttesters)
+        if (nextAttesterId >= config.maxAttesters)
             revert ReachedMaximumNumberUserSignedUp();
 
         attesters[attester] = nextAttesterId;
@@ -310,22 +279,31 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * A user should submit an epoch key proof and get a proof index
-     * @param input The epoch key proof and the public signals
+     * publicSignals[0] = [ globalStateTree ]
+     * publicSignals[1] = [ epoch ]
+     * publicSignals[2] = [ epochKey ]
+     * @param publicSignals The public signals of the epoch key proof
+     * @param proof The The proof of the epoch key proof
      */
-    function submitEpochKeyProof(EpochKeyProof memory input) external {
-        bytes32 proofNullifier = Hasher.hashEpochKeyProof(input);
+    function submitEpochKeyProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) external {
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
         verifyProofNullifier(proofNullifier);
-        if (input.epoch != currentEpoch) revert EpochNotMatch();
-
-        if (input.epochKey > maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[1] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[2] > maxEpochKey) revert InvalidEpochKey();
 
         // emit proof event
         uint256 _proofIndex = proofIndex;
         emit IndexedEpochKeyProof(
             _proofIndex,
             currentEpoch,
-            input.epochKey,
-            input
+            publicSignals[2],
+            publicSignals,
+            proof
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
@@ -333,18 +311,29 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * An attester submit the airdrop attestation to an epoch key with a sign up proof
-     * @param input The epoch key and its proof and the public signals
+     * publicSignals[0] = [ epoch ]
+     * publicSignals[1] = [ epochKey ]
+     * publicSignals[2] = [ globalStateTree ]
+     * publicSignals[3] = [ attesterId ]
+     * publicSignals[4] = [ userHasSignedUp ]
+     * @param publicSignals The public signals of the sign up proof
+     * @param proof The The proof of the sign up proof
      */
-    function airdropEpochKey(SignUpProof memory input) external payable {
-        bytes32 proofNullifier = Hasher.hashSignUpProof(input);
+    function airdropEpochKey(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) external payable {
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
         address sender = msg.sender;
         verifyProofNullifier(proofNullifier);
         verifyAttesterSignUp(sender);
-        verifyAttesterIndex(sender, input.attesterId);
+        verifyAttesterIndex(sender, publicSignals[3]);
         verifyAttesterFee();
 
-        if (input.epoch != currentEpoch) revert EpochNotMatch();
-        if (input.epochKey > maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[0] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[1] > maxEpochKey) revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -360,14 +349,15 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         emit IndexedUserSignedUpProof(
             _proofIndex,
             currentEpoch,
-            input.epochKey,
-            input
+            publicSignals[1],
+            publicSignals,
+            proof
         );
         // Process attestation
         emitAttestationEvent(
             msg.sender,
             attestation,
-            input.epochKey,
+            publicSignals[1],
             _proofIndex,
             0,
             AttestationEvent.Airdrop
@@ -378,25 +368,38 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
-     * @param input The epoch key and its proof and the public signals
+     * publicSignals[0: maxReputationBudget ] = [ reputationNullifiers ]
+     * publicSignals[maxReputationBudget    ] = [ epoch ]
+     * publicSignals[maxReputationBudget + 1] = [ epochKey ]
+     * publicSignals[maxReputationBudget + 2] = [ globalStateTree ]
+     * publicSignals[maxReputationBudget + 3] = [ attesterId ]
+     * publicSignals[maxReputationBudget + 4] = [ proveReputationAmount ]
+     * publicSignals[maxReputationBudget + 5] = [ minRep ]
+     * publicSignals[maxReputationBudget + 6] = [ proveGraffiti ]
+     * publicSignals[maxReputationBudget + 7] = [ graffitiPreImage ]
+     * @param publicSignals The public signals of the reputation proof
+     * @param proof The The proof of the reputation proof
      */
-    function spendReputation(ReputationProof memory input) external payable {
-        bytes32 proofNullifier = Hasher.hashReputationProof(input);
-
+    function spendReputation(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) external payable {
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
+        uint256 maxReputationBudget = config.maxReputationBudget;
         verifyProofNullifier(proofNullifier);
         verifyAttesterSignUp(msg.sender);
-        verifyAttesterIndex(msg.sender, input.attesterId);
+        verifyAttesterIndex(msg.sender, publicSignals[maxReputationBudget + 3]);
         verifyAttesterFee();
 
-        if (input.repNullifiers.length != maxReputationBudget)
-            revert InvalidNumberNullifiers();
+        if (publicSignals[maxReputationBudget] != currentEpoch)
+            revert EpochNotMatch();
+        if (attesters[msg.sender] != publicSignals[maxReputationBudget + 3])
+            revert AttesterIdNotMatch(publicSignals[maxReputationBudget + 3]);
 
-        if (input.epoch != currentEpoch) revert EpochNotMatch();
-
-        if (attesters[msg.sender] != input.attesterId)
-            revert AttesterIdNotMatch(input.attesterId);
-
-        if (input.epochKey > maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[maxReputationBudget + 1] > maxEpochKey)
+            revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -404,21 +407,22 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         // attestation of spending reputation
         Attestation memory attestation;
         attestation.attesterId = attesters[msg.sender];
-        attestation.negRep = input.proveReputationAmount;
+        attestation.negRep = publicSignals[maxReputationBudget + 4];
 
         uint256 _proofIndex = proofIndex;
         // emit proof event
         emit IndexedReputationProof(
             _proofIndex,
             currentEpoch,
-            input.epochKey,
-            input
+            publicSignals[maxReputationBudget + 1],
+            publicSignals,
+            proof
         );
         // Process attestation
         emitAttestationEvent(
             msg.sender,
             attestation,
-            input.epochKey,
+            publicSignals[maxReputationBudget + 1],
             _proofIndex,
             0,
             AttestationEvent.SpendReputation
@@ -464,7 +468,7 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
 
-        if (block.timestamp - latestEpochTransitionTime < epochLength)
+        if (block.timestamp - latestEpochTransitionTime < config.epochLength)
             revert EpochNotEndYet();
 
         // Mark epoch transitioned as complete and increase currentEpoch
@@ -481,22 +485,18 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * User submit a start user state transition proof
-     * @param blindedUserState The blinded user state that user state transition starts with
-     * @param blindedHashChain The blinded hash chain that user state transition starts with
-     * @param globalStateTree The global state tree from the previous epoch
-     * @param proof The start user state transition proof
+     * publicSignals[0] = [ blindedUserState ]
+     * publicSignals[1] = [ blindedHashChain ]
+     * publicSignals[2] = [ globalStateTree ]
+     * @param publicSignals The public signals of the start user state transition proof
+     * @param proof The The proof of the start user state transition proof
      */
     function startUserStateTransition(
-        uint256 blindedUserState,
-        uint256 blindedHashChain,
-        uint256 globalStateTree,
-        uint256[8] calldata proof
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashStartTransitionProof(
-            blindedUserState,
-            blindedHashChain,
-            globalStateTree,
-            proof
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
         );
 
         verifyProofNullifier(proofNullifier);
@@ -504,9 +504,9 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
             _proofIndex,
-            blindedUserState,
-            globalStateTree,
-            blindedHashChain,
+            publicSignals[0], // indexed blinded user state
+            publicSignals[2], // indexed global state tree
+            publicSignals,
             proof
         );
         getProofIndex[proofNullifier] = _proofIndex;
@@ -515,31 +515,26 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * User submit a process attestations proof
-     * @param outputBlindedUserState The output blinded user state that the current proof processes
-     * @param outputBlindedHashChain The output blinded hash chain that the current proof processes
-     * @param inputBlindedUserState The input blinded user state that the proof starts with
+     * publicSignals[0] = [ outputBlindedUserState ]
+     * publicSignals[1] = [ outputBlindedHashChain ]
+     * publicSignals[2] = [ inputBlindedUserState ]
+     * @param publicSignals The public signals of the process attestations proof
      * @param proof The process attestations proof
      */
     function processAttestations(
-        uint256 outputBlindedUserState,
-        uint256 outputBlindedHashChain,
-        uint256 inputBlindedUserState,
-        uint256[8] calldata proof
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
     ) external {
-        bytes32 proofNullifier = Hasher.hashProcessAttestationsProof(
-            outputBlindedUserState,
-            outputBlindedHashChain,
-            inputBlindedUserState,
-            proof
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
         );
 
         verifyProofNullifier(proofNullifier);
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
-            inputBlindedUserState,
-            outputBlindedUserState,
-            outputBlindedHashChain,
+            publicSignals[2], // input blinded user state
+            publicSignals,
             proof
         );
         getProofIndex[proofNullifier] = _proofIndex;
@@ -548,29 +543,32 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * User submit the latest user state transition proof
-     * @param proof The proof and the public signals of the user state transition proof
+     * publicSignals[0] = [ newGlobalStateTreeLeaf ] 
+     * publicSignals[1:  numEpochKeyNoncePerEpoch] = [ epkNullifiers ] 
+     * publicSignals[1+  numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ] 
+     * publicSignals[2+  numEpochKeyNoncePerEpoch: 
+                     3+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ] 
+     * publicSignals[4+  numEpochKeyNoncePerEpoch] = [ fromGlobalStateTree ] 
+     * publicSignals[5+  numEpochKeyNoncePerEpoch:
+                     4+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ] 
+     * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ] 
+     * @param publicSignals The the public signals of the user state transition proof
+     * @param proof The proof of the user state transition proof
      * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
      */
     function updateUserStateRoot(
-        UserTransitionProof memory proof,
+        uint256[] memory publicSignals,
+        uint256[8] memory proof,
         uint256[] memory proofIndexRecords
     ) external {
-        bytes32 proofNullifier = Hasher.hashUserStateTransitionProof(proof);
+        bytes32 proofNullifier = keccak256(
+            abi.encodePacked(publicSignals, proof)
+        );
 
         verifyProofNullifier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
-
-        if (proof.transitionFromEpoch >= currentEpoch)
+        if (publicSignals[1 + config.numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
-
-        if (proof.epkNullifiers.length != numEpochKeyNoncePerEpoch)
-            revert InvalidNumberNullifiers();
-
-        if (proof.blindedUserStates.length != 2)
-            revert InvalidBlindedUserState();
-
-        if (proof.blindedHashChains.length != numEpochKeyNoncePerEpoch)
-            revert InvalidNumberBlindedHashChain();
 
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {
             if (
@@ -582,14 +580,11 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
         uint256 _proofIndex = proofIndex;
         emit IndexedUserStateTransitionProof(
             _proofIndex,
+            publicSignals,
             proof,
             proofIndexRecords
         );
-        emit UserStateTransitioned(
-            currentEpoch,
-            proof.newGlobalStateTreeLeaf,
-            _proofIndex
-        );
+        emit UserStateTransitioned(currentEpoch, publicSignals[0], _proofIndex);
 
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
@@ -597,195 +592,159 @@ contract Unirep is IUnirep, zkSNARKHelper, Hasher, VerifySignature {
 
     /**
      * Verify epoch transition proof
-     * @param input The proof and the public signals of the epoch key proof
+     * publicSignals[0] = [ globalStateTree ]
+     * publicSignals[1] = [ epoch ]
+     * publicSignals[2] = [ epochKey ]
+     * @param publicSignals The public signals of the epoch key proof
+     * @param proof The The proof of the epoch key proof
      */
-    function verifyEpochKeyValidity(EpochKeyProof memory input)
-        external
-        view
-        returns (bool)
-    {
+    function verifyEpochKeyValidity(
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
+    ) external view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. user has signed up
         // 2. nonce is no greater than numEpochKeyNoncePerEpoch
         // 3. user has transitioned to the epoch(by proving membership in the globalStateTree of that epoch)
         // 4. epoch key is correctly computed
 
-        uint256[] memory publicSignals = new uint256[](3);
-        publicSignals[0] = input.globalStateTree;
-        publicSignals[1] = input.epoch;
-        publicSignals[2] = input.epochKey;
-
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
-        return epkValidityVerifier.verifyProof(input.proof, publicSignals);
+        return epkValidityVerifier.verifyProof(proof, publicSignals);
     }
 
     /**
      * Verify start user state transition proof
-     * @param blindedUserState The blinded user state of the proof
-     * @param blindedHashChain The blinded hash chain of the proof
-     * @param GSTRoot The global state tree of the proof
-     * @param _proof The start user state transition proof
+     * publicSignals[0] = [ blindedUserState ]
+     * publicSignals[1] = [ blindedHashChain ]
+     * publicSignals[2] = [ globalStateTree ]
+     * @param publicSignals The public signals of the start user state transition proof
+     * @param proof The The proof of the start user state transition proof
      */
     function verifyStartTransitionProof(
-        uint256 blindedUserState,
-        uint256 blindedHashChain,
-        uint256 GSTRoot,
-        uint256[8] calldata _proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) external view returns (bool) {
-        uint256[] memory publicSignals = new uint256[](3);
-        publicSignals[0] = blindedUserState;
-        publicSignals[1] = blindedHashChain;
-        publicSignals[2] = GSTRoot;
-
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
-        return startTransitionVerifier.verifyProof(_proof, publicSignals);
+        return startTransitionVerifier.verifyProof(proof, publicSignals);
     }
 
     /**
      * Verify process attestations proof
-     * @param outputBlindedUserState The output blinded user state of the proof
-     * @param outputBlindedHashChain The output blinded hash chain of the proof
-     * @param inputBlindedUserState The input blinded user state of the proof
-     * @param _proof The process attestation proof
+     * publicSignals[0] = [ outputBlindedUserState ]
+     * publicSignals[1] = [ outputBlindedHashChain ]
+     * publicSignals[2] = [ inputBlindedUserState ]
+     * @param publicSignals The public signals of the process attestations proof
+     * @param proof The process attestations proof
      */
     function verifyProcessAttestationProof(
-        uint256 outputBlindedUserState,
-        uint256 outputBlindedHashChain,
-        uint256 inputBlindedUserState,
-        uint256[8] calldata _proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) external view returns (bool) {
-        uint256[] memory publicSignals = new uint256[](3);
-        publicSignals[0] = outputBlindedUserState;
-        publicSignals[1] = outputBlindedHashChain;
-        publicSignals[2] = inputBlindedUserState;
-
         // Ensure that each public input is within range of the snark scalar
         // field.
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
-        return processAttestationsVerifier.verifyProof(_proof, publicSignals);
+        return processAttestationsVerifier.verifyProof(proof, publicSignals);
     }
 
     /**
      * Verify user state transition proof
-     * @param input The proof and the public signals of the user state transition proof
+     * publicSignals[0] = [ epoch ]
+     * publicSignals[1] = [ epochKey ]
+     * publicSignals[2] = [ globalStateTree ]
+     * publicSignals[3] = [ attesterId ]
+     * publicSignals[4] = [ userHasSignedUp ]
+     * @param publicSignals The public signals of the sign up proof
+     * @param proof The The proof of the sign up proof
      */
-    function verifyUserStateTransition(UserTransitionProof memory input)
-        external
-        view
-        returns (bool)
-    {
+    function verifyUserStateTransition(
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
+    ) external view returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state exist in the provided global state tree
         // 2. Global state tree is updated correctly
         // 3. Attestations to each epoch key are processed and processed correctly
         // require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
 
-        uint256[] memory publicSignals = new uint256[](
-            6 + numEpochKeyNoncePerEpoch * 2
-        );
-        publicSignals[0] = input.newGlobalStateTreeLeaf;
-        for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-            publicSignals[i + 1] = input.epkNullifiers[i];
-        }
-        publicSignals[1 + numEpochKeyNoncePerEpoch] = input.transitionFromEpoch;
-        publicSignals[2 + numEpochKeyNoncePerEpoch] = input.blindedUserStates[
-            0
-        ];
-        publicSignals[3 + numEpochKeyNoncePerEpoch] = input.blindedUserStates[
-            1
-        ];
-        publicSignals[4 + numEpochKeyNoncePerEpoch] = input.fromGlobalStateTree;
-        for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
-            publicSignals[5 + numEpochKeyNoncePerEpoch + i] = input
-                .blindedHashChains[i];
-        }
-        publicSignals[5 + numEpochKeyNoncePerEpoch * 2] = input.fromEpochTree;
-
         // Ensure that each public input is within range of the snark scalar
         // field.
 
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
-        return
-            userStateTransitionVerifier.verifyProof(input.proof, publicSignals);
+        return userStateTransitionVerifier.verifyProof(proof, publicSignals);
     }
 
     /**
      * Verify reputation proof
-     * @param input The proof and the public signals of the reputation proof
+     * publicSignals[0: maxReputationBudget ] = [ reputationNullifiers ]
+     * publicSignals[maxReputationBudget    ] = [ epoch ]
+     * publicSignals[maxReputationBudget + 1] = [ epochKey ]
+     * publicSignals[maxReputationBudget + 2] = [ globalStateTree ]
+     * publicSignals[maxReputationBudget + 3] = [ attesterId ]
+     * publicSignals[maxReputationBudget + 4] = [ proveReputationAmount ]
+     * publicSignals[maxReputationBudget + 5] = [ minRep ]
+     * publicSignals[maxReputationBudget + 6] = [ proveGraffiti ]
+     * publicSignals[maxReputationBudget + 7] = [ graffitiPreImage ]
+     * @param publicSignals The public signals of the reputation proof
+     * @param proof The The proof of the reputation proof
      */
-    function verifyReputation(ReputationProof memory input)
-        external
-        view
-        returns (bool)
-    {
+    function verifyReputation(
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
+    ) external view returns (bool) {
         // User prove his reputation by an attester:
         // 1. User exists in GST
         // 2. It is the latest state user transition to
         // 3. (optional) different reputation nullifiers equals to prove reputation amount
         // 4. (optional) (positive reputation - negative reputation) is greater than `_minRep`
         // 5. (optional) hash of graffiti pre-image matches
-        uint256[] memory publicSignals = new uint256[](18);
-        for (uint8 i = 0; i < maxReputationBudget; i++) {
-            publicSignals[i] = input.repNullifiers[i];
-        }
-        publicSignals[maxReputationBudget] = input.epoch;
-        publicSignals[maxReputationBudget + 1] = input.epochKey;
-        publicSignals[maxReputationBudget + 2] = input.globalStateTree;
-        publicSignals[maxReputationBudget + 3] = input.attesterId;
-        publicSignals[maxReputationBudget + 4] = input.proveReputationAmount;
-        publicSignals[maxReputationBudget + 5] = input.minRep;
-        publicSignals[maxReputationBudget + 6] = input.proveGraffiti;
-        publicSignals[maxReputationBudget + 7] = input.graffitiPreImage;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
-
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
-        return reputationVerifier.verifyProof(input.proof, publicSignals);
+        return reputationVerifier.verifyProof(proof, publicSignals);
     }
 
     /**
      * Verify user sign up proof
-     * @param input The proof and the public signals of the user sign up proof
+     * publicSignals[0] = [ epoch ]
+     * publicSignals[1] = [ epochKey ]
+     * publicSignals[2] = [ globalStateTree ]
+     * publicSignals[3] = [ attesterId ]
+     * publicSignals[4] = [ userHasSignedUp ]
+     * @param publicSignals The public signals of the sign up proof
+     * @param proof The The proof of the sign up proof
      */
-    function verifyUserSignUp(SignUpProof memory input)
-        external
-        view
-        returns (bool)
-    {
+    function verifyUserSignUp(
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
+    ) external view returns (bool) {
         // User prove his reputation by an attester:
         // 1. User exists in GST
         // 2. It is the latest state user transition to
         // 3. User has a signUp flag in the attester's leaf
-        uint256[] memory publicSignals = new uint256[](5);
-        publicSignals[0] = input.epoch;
-        publicSignals[1] = input.epochKey;
-        publicSignals[2] = input.globalStateTree;
-        publicSignals[3] = input.attesterId;
-        publicSignals[4] = input.userHasSignedUp;
 
         // Ensure that each public input is within range of the snark scalar
         // field.
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
         // Verify the proof
-        return userSignUpVerifier.verifyProof(input.proof, publicSignals);
+        return userSignUpVerifier.verifyProof(proof, publicSignals);
     }
 
     /**

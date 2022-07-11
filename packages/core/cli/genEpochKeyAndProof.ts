@@ -1,20 +1,15 @@
 import base64url from 'base64url'
 import { Strategy, ZkIdentity } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
 import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genUserState, genEpochKey } from '../src'
+import { genEpochKey } from '../src'
 import {
     epkProofPrefix,
     epkPublicSignalsPrefix,
     identityPrefix,
 } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUserState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('genEpochKeyAndProof', {
@@ -56,8 +51,9 @@ const genEpochKeyAndProof = async (args: any) => {
         args.contract,
         provider
     )
-    const numEpochKeyNoncePerEpoch =
-        await unirepContract.numEpochKeyNoncePerEpoch()
+    const numEpochKeyNoncePerEpoch = (
+        await unirepContract.config()
+    ).numEpochKeyNoncePerEpoch.toNumber()
 
     // Validate epoch key nonce
     const epkNonce = args.epoch_key_nonce
@@ -84,18 +80,13 @@ const genEpochKeyAndProof = async (args: any) => {
     ).toString()
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await defaultProver.verifyProof(
-        Circuit.verifyEpochKey,
-        results.publicSignals,
-        results.proof
-    )
+    const isValid = await results.verify()
     if (!isValid) {
         console.error('Error: epoch key proof generated is not valid!')
         return
     }
 
-    const formattedProof = formatProofForVerifierContract(results.proof)
-    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    const encodedProof = base64url.encode(JSON.stringify(results.proof))
     const encodedPublicSignals = base64url.encode(
         JSON.stringify(results.publicSignals)
     )

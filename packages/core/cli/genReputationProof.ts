@@ -1,20 +1,15 @@
 import base64url from 'base64url'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import {
-    Circuit,
-    formatProofForVerifierContract,
-    defaultProver,
-} from '@unirep/circuits'
 import { Unirep, UnirepFactory } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
-import { genReputationNullifier, genUserState } from '../src'
+import { genReputationNullifier } from '../src'
 import {
     identityPrefix,
     reputationPublicSignalsPrefix,
     reputationProofPrefix,
 } from './prefix'
-import { getProvider } from './utils'
+import { getProvider, genUserState } from './utils'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('genReputationProof', {
@@ -85,7 +80,9 @@ const genReputationProof = async (args: any) => {
         args.contract,
         provider
     )
-    const maxReputationBudget = await unirepContract.maxReputationBudget()
+    const maxReputationBudget = (
+        await unirepContract.config()
+    ).maxReputationBudget.toNumber()
 
     // Proving content
     const epoch = await userState.getUnirepStateCurrentEpoch()
@@ -137,7 +134,7 @@ const genReputationProof = async (args: any) => {
         args.graffiti_preimage != null
             ? BigInt(args.graffiti_preimage)
             : BigInt(0)
-    const results = await userState.genProveReputationProof(
+    const formattedProof = await userState.genProveReputationProof(
         attesterId,
         epkNonce,
         minRep,
@@ -149,22 +146,19 @@ const genReputationProof = async (args: any) => {
     console.log('repnullifier amount', repNullifiersAmount)
 
     // TODO: Not sure if this validation is necessary
-    const isValid = await defaultProver.verifyProof(
-        Circuit.proveReputation,
-        results.publicSignals,
-        results.proof
-    )
+    const isValid = await formattedProof.verify()
     if (!isValid) {
         console.error('Error: reputation proof generated is not valid!')
     }
 
-    const formattedProof = formatProofForVerifierContract(results.proof)
-    const encodedProof = base64url.encode(JSON.stringify(formattedProof))
+    const encodedProof = base64url.encode(JSON.stringify(formattedProof.proof))
     const encodedPublicSignals = base64url.encode(
-        JSON.stringify(results.publicSignals)
+        JSON.stringify(formattedProof.publicSignals)
     )
-    console.log(`Proof of reputation from attester ${results.attesterId}:`)
-    console.log(`Epoch key of the user: ${BigInt(results.epochKey).toString()}`)
+    console.log(
+        `Proof of reputation from attester ${formattedProof.attesterId}:`
+    )
+    console.log(`Epoch key of the user: ${formattedProof.epochKey.toString()}`)
     console.log(reputationProofPrefix + encodedProof)
     console.log(reputationPublicSignalsPrefix + encodedPublicSignals)
 }

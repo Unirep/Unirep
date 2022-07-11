@@ -27,8 +27,6 @@ yarn coverage
 
 ## Utils
 
--   `computeStartTransitionProofHash`
--   `computeProcessAttestationsProofHash`
 -   `deployUnirep`
 -   `getUnirepContract`
 

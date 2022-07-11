@@ -18,7 +18,7 @@ import { deployUnirep, Unirep } from '../src'
 describe('Signup', () => {
     const testMaxUser = 5
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
+    let accounts: any[]
 
     let signedUpUsers = 0
     let signedUpAttesters = 0
@@ -33,20 +33,16 @@ describe('Signup', () => {
     })
 
     it('should have the correct config value', async () => {
-        const attestingFee_ = await unirepContract.attestingFee()
-        expect(ATTESTING_FEE).equal(attestingFee_)
-        const epochLength_ = await unirepContract.epochLength()
-        expect(EPOCH_LENGTH).equal(epochLength_)
-        const numEpochKeyNoncePerEpoch_ =
-            await unirepContract.numEpochKeyNoncePerEpoch()
-        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(numEpochKeyNoncePerEpoch_)
-        const maxUsers_ = await unirepContract.maxUsers()
-        expect(testMaxUser).equal(maxUsers_)
-
-        const treeDepths_ = await unirepContract.treeDepths()
-        expect(EPOCH_TREE_DEPTH).equal(treeDepths_.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(treeDepths_.globalStateTreeDepth)
-        expect(USER_STATE_TREE_DEPTH).equal(treeDepths_.userStateTreeDepth)
+        const config = await unirepContract.config()
+        expect(ATTESTING_FEE).equal(config.attestingFee)
+        expect(EPOCH_LENGTH).equal(config.epochLength)
+        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(
+            config.numEpochKeyNoncePerEpoch
+        )
+        expect(testMaxUser).equal(config.maxUsers)
+        expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
+        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(USER_STATE_TREE_DEPTH).equal(config.userStateTreeDepth)
     })
 
     describe('User sign-ups', () => {
@@ -97,15 +93,15 @@ describe('Signup', () => {
     })
 
     describe('Attester sign-ups', () => {
-        let attester: Signer
+        let attester: any
         let attesterAddress: string
-        let attester2: Signer
+        let attester2: any
         let attester2Address: string
         let attester2Sig
 
         it('sign up should succeed', async () => {
             attester = accounts[1]
-            attesterAddress = await attester.getAddress()
+            attesterAddress = attester.address
 
             const tx = await unirepContract.connect(attester).attesterSignUp()
             const receipt = await tx.wait()
@@ -181,7 +177,7 @@ describe('Signup', () => {
         it('sign up should fail if max capacity reached', async () => {
             for (let i = 3; i < testMaxUser; i++) {
                 attester = accounts[i]
-                attesterAddress = await attester.getAddress()
+                attesterAddress = attester.address
 
                 const tx = await unirepContract
                     .connect(attester)
@@ -198,7 +194,7 @@ describe('Signup', () => {
                 expect(signedUpAttesters + 1).equal(nextAttesterId_)
             }
             attester = accounts[5]
-            attesterAddress = await attester.getAddress()
+            attesterAddress = attester.address
 
             await expect(
                 unirepContract.connect(attester).attesterSignUp()

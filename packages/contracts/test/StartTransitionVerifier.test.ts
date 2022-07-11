@@ -15,7 +15,7 @@ import {
     bootstrapRandomUSTree,
     genInputForContract,
 } from './utils'
-import { computeStartTransitionProofHash, deployUnirep, Unirep } from '../src'
+import { deployUnirep, StartTransitionProof, Unirep } from '../src'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -61,37 +61,25 @@ describe('User State Transition circuits', function () {
                     nonce
                 )
 
-                const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-                    await genInputForContract(
-                        Circuit.startTransition,
-                        circuitInputs
-                    )
+                const input = await genInputForContract(
+                    Circuit.startTransition,
+                    circuitInputs
+                )
                 const isProofValid =
                     await unirepContract.verifyStartTransitionProof(
-                        blindedUserState,
-                        blindedHashChain,
-                        GSTRoot,
-                        proof
+                        input.publicSignals,
+                        input.proof
                     )
                 expect(isProofValid).to.be.true
 
                 const tx = await unirepContract.startUserStateTransition(
-                    blindedUserState,
-                    blindedHashChain,
-                    GSTRoot,
-                    proof
+                    input.publicSignals,
+                    input.proof
                 )
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
 
-                const pfIdx = await unirepContract.getProofIndex(
-                    computeStartTransitionProofHash(
-                        blindedUserState,
-                        blindedHashChain,
-                        GSTRoot,
-                        proof
-                    )
-                )
+                const pfIdx = await unirepContract.getProofIndex(input.hash())
                 expect(Number(pfIdx)).not.eq(0)
             })
 
@@ -106,37 +94,25 @@ describe('User State Transition circuits', function () {
                     newNonce
                 )
 
-                const { blindedUserState, blindedHashChain, GSTRoot, proof } =
-                    await genInputForContract(
-                        Circuit.startTransition,
-                        circuitInputs
-                    )
+                const input: StartTransitionProof = await genInputForContract(
+                    Circuit.startTransition,
+                    circuitInputs
+                )
                 const isProofValid =
                     await unirepContract.verifyStartTransitionProof(
-                        blindedUserState,
-                        blindedHashChain,
-                        GSTRoot,
-                        proof
+                        input.publicSignals,
+                        input.proof
                     )
                 expect(isProofValid).to.be.true
 
                 const tx = await unirepContract.startUserStateTransition(
-                    blindedUserState,
-                    blindedHashChain,
-                    GSTRoot,
-                    proof
+                    input.publicSignals,
+                    input.proof
                 )
                 const receipt = await tx.wait()
                 expect(receipt.status).equal(1)
 
-                const pfIdx = await unirepContract.getProofIndex(
-                    computeStartTransitionProofHash(
-                        blindedUserState,
-                        blindedHashChain,
-                        GSTRoot,
-                        proof
-                    )
-                )
+                const pfIdx = await unirepContract.getProofIndex(input.hash())
                 expect(Number(pfIdx)).not.eq(0)
             })
         })
