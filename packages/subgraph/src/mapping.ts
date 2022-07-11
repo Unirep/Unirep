@@ -37,7 +37,6 @@ export function handleIndexedReputationProof(
 
     reputationEntity.user = userEntity.id
     reputationEntity.createdAt = event.block.timestamp
-    reputationEntity.graffiti = event.params.proof.graffitiPreImage
 
     reputationEntity.save()
 }
