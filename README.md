@@ -13,6 +13,7 @@ For more information, refer to the [documentation](https://unirep.gitbook.io/uni
     -   [`contracts`](./packages/contracts/) - Unirep smart contracts.
     -   [`circuits`](./packages/circuits/) - Circom libaries.
     -   [`crypto`](./packages/crypto) - Crypto utils.
+    -   [`subgraph`](./packages/subgraph/) - Unirep Subgraph
 
 ## Install and test
 

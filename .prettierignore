@@ -6,6 +6,8 @@
 **/typechain
 .github/**
 **/*.md
+**/generated
+**/*.template.yaml
 
 yarn.lock
 .yarn

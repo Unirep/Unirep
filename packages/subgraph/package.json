@@ -1,0 +1,22 @@
+{
+    "name": "@unirep/subgraph",
+    "version": "1.0.0",
+    "description": "",
+    "license": "MIT",
+    "scripts": {
+        "codegen": "./scripts/codegen.sh",
+        "copyABI": "node ./scripts/copyABI.js",
+        "build": "yarn copyABI && ./scripts/build-graph.sh",
+        "deploy": "yarn codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep",
+        "test": "echo 'No subgraph test'"
+    },
+    "dependencies": {
+        "@graphprotocol/graph-cli": "0.26.0",
+        "@graphprotocol/graph-ts": "0.24.1"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.1",
+        "ts-node": "^10.8.2",
+        "typescript": "^4.7.3"
+    }
+}
