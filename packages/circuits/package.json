@@ -7,7 +7,7 @@
         "pre": "node scripts/prepare",
         "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && yarn buildTs && yarn copyCircom",
         "downloadPtau": "./scripts/downloadPtau.sh",
-        "buildCircuits": "npx ts-node scripts/buildCircuits.ts",
+        "buildCircuits": "ts-node scripts/buildCircuits.ts",
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",

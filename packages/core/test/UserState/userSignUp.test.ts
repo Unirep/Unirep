@@ -38,10 +38,10 @@ describe('User sign up events in Unirep User State', function () {
         unirepContract = await deployUnirep(accounts[0], {
             maxUsers,
         })
-        const treeDepths = await unirepContract.treeDepths()
+        const config = await unirepContract.config()
         GSTree = genNewGST(
-            treeDepths.globalStateTreeDepth,
-            treeDepths.userStateTreeDepth
+            config.globalStateTreeDepth,
+            config.userStateTreeDepth
         )
     })
 

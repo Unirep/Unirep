@@ -311,9 +311,9 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                     reputationRecords[attester].hash()
                 )
             }
-            const treeDepths = await unirepContract.treeDepths()
+            const config = await unirepContract.config()
             const GSTree = new IncrementalMerkleTree(
-                treeDepths.globalStateTreeDepth
+                config.globalStateTreeDepth
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
@@ -412,7 +412,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
-            const epochLength = await unirepContract.epochLength()
+            const epochLength = (await unirepContract.config()).epochLength
             await hardhatEthers.provider.send('evm_increaseTime', [
                 epochLength.toNumber(),
             ])

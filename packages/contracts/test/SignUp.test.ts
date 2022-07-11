@@ -33,20 +33,16 @@ describe('Signup', () => {
     })
 
     it('should have the correct config value', async () => {
-        const attestingFee_ = await unirepContract.attestingFee()
-        expect(ATTESTING_FEE).equal(attestingFee_)
-        const epochLength_ = await unirepContract.epochLength()
-        expect(EPOCH_LENGTH).equal(epochLength_)
-        const numEpochKeyNoncePerEpoch_ =
-            await unirepContract.numEpochKeyNoncePerEpoch()
-        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(numEpochKeyNoncePerEpoch_)
-        const maxUsers_ = await unirepContract.maxUsers()
-        expect(testMaxUser).equal(maxUsers_)
-
-        const treeDepths_ = await unirepContract.treeDepths()
-        expect(EPOCH_TREE_DEPTH).equal(treeDepths_.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(treeDepths_.globalStateTreeDepth)
-        expect(USER_STATE_TREE_DEPTH).equal(treeDepths_.userStateTreeDepth)
+        const config = await unirepContract.config()
+        expect(ATTESTING_FEE).equal(config.attestingFee)
+        expect(EPOCH_LENGTH).equal(config.epochLength)
+        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(
+            config.numEpochKeyNoncePerEpoch
+        )
+        expect(testMaxUser).equal(config.maxUsers)
+        expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
+        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(USER_STATE_TREE_DEPTH).equal(config.userStateTreeDepth)
     })
 
     describe('User sign-ups', () => {

@@ -7,6 +7,7 @@ import {
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
+    NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits'
@@ -28,6 +29,7 @@ describe('User State', async function () {
         epochLength: EPOCH_LENGTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         maxReputationBudget: MAX_REPUTATION_BUDGET,
+        numAttestationsPerProof: NUM_ATTESTATIONS_PER_PROOF,
     }
     const maxUsers = 100
     const userNum = 5
@@ -666,7 +668,7 @@ describe('User State', async function () {
         })
 
         it('epoch transition', async () => {
-            const epochLength = await unirepContract.epochLength()
+            const epochLength = (await unirepContract.config()).epochLength
             await ethers.provider.send('evm_increaseTime', [
                 epochLength.toNumber(),
             ])

@@ -16,13 +16,17 @@ interface UnirepTypes {
         uint256 signUp;
     }
 
-    struct TreeDepths {
+    struct Config {
+        // circuit config
         uint8 globalStateTreeDepth;
         uint8 userStateTreeDepth;
         uint8 epochTreeDepth;
-    }
-
-    struct MaxValues {
+        uint256 numEpochKeyNoncePerEpoch;
+        uint256 maxReputationBudget;
+        uint256 numAttestationsPerProof;
+        // contract config
+        uint256 epochLength;
+        uint256 attestingFee;
         uint256 maxUsers;
         uint256 maxAttesters;
     }

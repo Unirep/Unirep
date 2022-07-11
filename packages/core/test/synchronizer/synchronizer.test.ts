@@ -299,8 +299,9 @@ describe('Synchronizer process events', function () {
         const proveGraffiti = BigInt(0)
         const graffitiPreimage = BigInt(0)
         const nonceList = [] as BigInt[]
-        const maxReputationBudget =
-            await synchronizer.unirepContract.maxReputationBudget()
+        const maxReputationBudget = (
+            await synchronizer.unirepContract.config()
+        ).maxReputationBudget.toNumber()
         for (let i = nonceList.length; i < maxReputationBudget; i++) {
             nonceList.push(BigInt(-1))
         }

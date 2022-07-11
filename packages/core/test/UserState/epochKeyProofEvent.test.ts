@@ -284,9 +284,9 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
 
         it('submit valid epoch key proof with wrong GST root event', async () => {
-            const treeDepths = await unirepContract.treeDepths()
+            const config = await unirepContract.config()
             const GSTree = new IncrementalMerkleTree(
-                treeDepths.globalStateTreeDepth
+                config.globalStateTreeDepth
             )
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()

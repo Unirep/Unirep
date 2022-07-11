@@ -22,25 +22,13 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     IVerifier internal reputationVerifier;
     IVerifier internal userSignUpVerifier;
 
-    uint256 public currentEpoch = 1;
-
-    uint256 public immutable epochLength;
+    Config public config;
 
     uint256 public immutable maxEpochKey;
 
+    uint256 public currentEpoch = 1;
+
     uint256 public latestEpochTransitionTime;
-
-    // Maximum number of epoch keys allowed for an user to generate in one epoch
-    uint8 public immutable numEpochKeyNoncePerEpoch;
-
-    // Maximum number of reputation nullifiers in a proof
-    uint8 public immutable maxReputationBudget;
-
-    // The maximum number of users allowed
-    uint256 public immutable maxUsers;
-
-    // The maximum number of attesters allowed
-    uint256 public immutable maxAttesters;
 
     uint256 public numUserSignUps = 0;
 
@@ -53,8 +41,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     mapping(uint256 => bool) public hasUserSignedUp;
 
-    // Fee required for submitting an attestation
-    uint256 public immutable attestingFee;
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
     // Mapping of voluteers that execute epoch transition to compensation they earned
@@ -70,23 +56,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // Mapping of the airdrop amount of an attester
     mapping(address => uint256) public airdropAmount;
 
-    TreeDepths public treeDepths;
-
     constructor(
-        TreeDepths memory _treeDepths,
-        MaxValues memory _maxValues,
+        Config memory _config,
         IVerifier _epkValidityVerifier,
         IVerifier _startTransitionVerifier,
         IVerifier _processAttestationsVerifier,
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier,
-        IVerifier _userSignUpVerifier,
-        uint8 _numEpochKeyNoncePerEpoch,
-        uint8 _maxReputationBudget,
-        uint256 _epochLength,
-        uint256 _attestingFee
+        IVerifier _userSignUpVerifier
     ) {
-        treeDepths = _treeDepths;
+        config = _config;
 
         // Set the verifier contracts
         epkValidityVerifier = _epkValidityVerifier;
@@ -96,33 +75,24 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         reputationVerifier = _reputationVerifier;
         userSignUpVerifier = _userSignUpVerifier;
 
-        numEpochKeyNoncePerEpoch = _numEpochKeyNoncePerEpoch;
-        maxReputationBudget = _maxReputationBudget;
-        epochLength = _epochLength;
         latestEpochTransitionTime = block.timestamp;
 
         // Check and store the maximum number of signups
         // It is the user's responsibility to ensure that the state tree depth
         // is just large enough and not more, or they will waste gas.
-        uint256 GSTMaxLeafIndex = uint256(2)**_treeDepths.globalStateTreeDepth -
-            1;
+        uint256 GSTMaxLeafIndex = uint256(2)**config.globalStateTreeDepth - 1;
         require(
-            _maxValues.maxUsers <= GSTMaxLeafIndex,
+            config.maxUsers <= GSTMaxLeafIndex,
             'Unirep: invalid maxUsers value'
         );
-        maxUsers = _maxValues.maxUsers;
 
-        uint256 USTMaxLeafIndex = uint256(2)**_treeDepths.userStateTreeDepth -
-            1;
+        uint256 USTMaxLeafIndex = uint256(2)**config.userStateTreeDepth - 1;
         require(
-            _maxValues.maxAttesters <= USTMaxLeafIndex,
+            config.maxAttesters <= USTMaxLeafIndex,
             'Unirep: invalid maxAttesters value'
         );
-        maxAttesters = _maxValues.maxAttesters;
 
-        maxEpochKey = uint256(2)**_treeDepths.epochTreeDepth - 1;
-
-        attestingFee = _attestingFee;
+        maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
     }
 
     // Verify input data - Should found better way to handle it.
@@ -137,7 +107,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     function verifyAttesterFee() private view {
-        if (msg.value < attestingFee) revert AttestingFeeInvalid();
+        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
     }
 
     function verifyAttesterIndex(address attester, uint256 attesterId)
@@ -157,7 +127,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function userSignUp(uint256 identityCommitment) external {
         if (hasUserSignedUp[identityCommitment] == true)
             revert UserAlreadySignedUp(identityCommitment);
-        if (numUserSignUps >= maxUsers)
+        if (numUserSignUps >= config.maxUsers)
             revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
@@ -177,7 +147,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function _attesterSignUp(address attester) private {
         if (attesters[attester] != 0) revert AttesterAlreadySignUp(attester);
 
-        if (nextAttesterId >= maxAttesters)
+        if (nextAttesterId >= config.maxAttesters)
             revert ReachedMaximumNumberUserSignedUp();
 
         attesters[attester] = nextAttesterId;
@@ -417,7 +387,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-
+        uint256 maxReputationBudget = config.maxReputationBudget;
         verifyProofNullifier(proofNullifier);
         verifyAttesterSignUp(msg.sender);
         verifyAttesterIndex(msg.sender, publicSignals[maxReputationBudget + 3]);
@@ -498,7 +468,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
 
-        if (block.timestamp - latestEpochTransitionTime < epochLength)
+        if (block.timestamp - latestEpochTransitionTime < config.epochLength)
             revert EpochNotEndYet();
 
         // Mark epoch transitioned as complete and increase currentEpoch
@@ -597,7 +567,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         verifyProofNullifier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
-        if (publicSignals[1 + numEpochKeyNoncePerEpoch] >= currentEpoch)
+        if (publicSignals[1 + config.numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
 
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {

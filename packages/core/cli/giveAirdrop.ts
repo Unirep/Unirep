@@ -56,7 +56,7 @@ const giveAirdrop = async (args: any) => {
         args.contract,
         provider
     )
-    const attestingFee = await unirepContract.attestingFee()
+    const attestingFee = (await unirepContract.config()).attestingFee
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
