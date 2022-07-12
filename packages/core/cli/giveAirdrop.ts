@@ -1,5 +1,6 @@
 import base64url from 'base64url'
-import { SignUpProof, Unirep, UnirepFactory } from '@unirep/contracts'
+import { ethers } from 'ethers'
+import { SignUpProof, Unirep, abi } from '@unirep/contracts'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
@@ -7,7 +8,6 @@ import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { verifyUserSignUpProof } from './verifyUserSignUpProof'
 import { signUpProofPrefix, signUpPublicSignalsPrefix } from './prefix'
 import { getProvider } from './utils'
-import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('giveAirdrop', { add_help: true })
@@ -50,10 +50,7 @@ const giveAirdrop = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
+    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
     const attestingFee = (await unirepContract.config()).attestingFee
 
     // Connect a signer

@@ -1,8 +1,8 @@
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import { ethers } from 'ethers'
+import { Unirep, abi } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { getProvider } from './utils'
-import { ethers } from 'ethers'
 
 const configureSubparser = (subparsers: any) => {
     const parser = subparsers.add_parser('epochTransition', { add_help: true })
@@ -38,10 +38,7 @@ const epochTransition = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
+    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)

@@ -1,9 +1,9 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { Attestation, deployUnirep } from '@unirep/contracts'
+import { Attestation, Unirep } from '@unirep/contracts'
 
 import { genReputationNullifier } from '../../src'
 import {
@@ -86,14 +86,13 @@ const genIdAndRepProof = async (unirepContract, attester) => {
 describe('Reputation proof events in Unirep User State', function () {
     this.timeout(0)
 
-    let unirepContract
-
+    let unirepContract: Unirep
     let attester
 
     before(async () => {
         const accounts = await hardhatEthers.getSigners()
         attester = accounts[2]
-        unirepContract = await deployUnirep(accounts[0], {
+        unirepContract = await run('deploy:Unirep', {
             maxUsers,
             attestingFee,
         })

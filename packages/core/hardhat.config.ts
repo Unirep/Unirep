@@ -2,6 +2,8 @@ import { HardhatUserConfig } from 'hardhat/config'
 import '@nomiclabs/hardhat-ethers'
 import 'hardhat-gas-reporter'
 import '@nomicfoundation/hardhat-chai-matchers'
+import '@unirep/contracts/tasks/deploy-unirep'
+import '@unirep/contracts/tasks/deploy-verifier'
 
 const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',

@@ -1,10 +1,9 @@
-import { ethers } from 'hardhat'
+import { ethers, run } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import { EPOCH_LENGTH } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { deployUnirep } from '@unirep/contracts'
 
 const attestingFee = ethers.utils.parseEther('0.1')
 
@@ -29,14 +28,11 @@ describe('Synchronizer process events', function () {
 
     before(async () => {
         const accounts = await ethers.getSigners()
-        const unirepContract = await deployUnirep(accounts[0], {
-            attestingFee,
-        })
+        const unirepContract = await run('deploy:Unirep', { attestingFee })
         const db = await SQLiteConnector.create(schema, ':memory:')
         synchronizer = new Synchronizer(db, defaultProver, unirepContract)
         // now create an attester
-        await unirepContract
-            .connect(accounts[1])
+        await unirepContract.connect(accounts[1])
             .attesterSignUp()
             .then((t) => t.wait())
         await synchronizer.start()

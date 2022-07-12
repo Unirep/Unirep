@@ -5,7 +5,7 @@ import { ethers } from 'ethers'
 import chai from 'chai'
 const { expect } = chai
 import { ZkIdentity, hashOne, Strategy } from '@unirep/crypto'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
+import { Unirep, abi } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from '../defaults'
 import { Synchronizer } from '../../src'
@@ -26,7 +26,7 @@ describe('test all CLI subcommands', function () {
         '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
     let userAddr
 
-    const attestingFee = ethers.BigNumber.from(10).pow(18)
+    const attestingFee = ethers.utils.parseEther('0.1')
     const epochKeyNonce = 0
     const epochLength = 5
     let unirepContract: Unirep
@@ -78,22 +78,22 @@ describe('test all CLI subcommands', function () {
     describe('deploy CLI subcommand', () => {
         it('should deploy a Unirep contract', async () => {
             const command =
-                `npx ts-node cli/index.ts deploy` +
-                ` -d ${deployerPrivKey} ` +
-                ` -l ${epochLength} ` +
-                ` -f ${attestingFee.toString()} `
+                `npx hardhat --network local deploy:Unirep` +
+                ` --epoch-length ${epochLength} ` +
+                ` --attesting-fee ${attestingFee.toString()} ` +
+                ` --priv-key ${deployerPrivKey} `
 
             console.log(command)
             const output = exec(command).stdout.trim()
             console.log(output)
 
-            const regMatch = output.match(/Unirep: (0x[a-fA-F0-9]{40})$/)
+            const regMatch = output.match(/Unirep contract has been deployed to: (0x[a-fA-F0-9]{40})$/)
             const unirepAddress = regMatch[1]
 
             const provider = new hardhatEthers.providers.JsonRpcProvider(
                 DEFAULT_ETH_PROVIDER
             )
-            unirepContract = getUnirepContract(unirepAddress, provider)
+            unirepContract = (new ethers.Contract(unirepAddress, abi, provider)) as Unirep
 
             unirepState = await genUnirepState(provider, unirepAddress)
 

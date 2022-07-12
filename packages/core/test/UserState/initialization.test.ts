@@ -1,8 +1,7 @@
 // @ts-ignore
-import { ethers } from 'hardhat'
+import { ethers, run } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { deployUnirep } from '@unirep/contracts'
 
 import { genUserState, genNewGST } from '../utils'
 
@@ -13,8 +12,7 @@ describe('User sign up events in Unirep User State', function () {
 
     describe('Init User State', async () => {
         it('check User state matches the contract', async () => {
-            const accounts = await ethers.getSigners()
-            const unirepContract = await deployUnirep(accounts[0], {
+            const unirepContract = await run('deploy:Unirep', {
                 maxUsers,
             })
             const id = new ZkIdentity()

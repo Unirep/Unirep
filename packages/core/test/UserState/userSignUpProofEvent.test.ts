@@ -1,5 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
@@ -10,7 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { deployUnirep, SignUpProof, Unirep } from '@unirep/contracts'
+import { SignUpProof, Unirep } from '@unirep/contracts'
 
 import { Reputation } from '../../src'
 import {
@@ -18,7 +18,6 @@ import {
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
-    genUnirepState,
     genUserState,
 } from '../utils'
 
@@ -31,7 +30,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
 
     let unirepContract: Unirep
 
-    let accounts: ethers.Signer[]
+    let accounts: any[]
     let attester
     let attesterId
     const maxUsers = 100
@@ -42,7 +41,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         accounts = await hardhatEthers.getSigners()
         attester = accounts[2]
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+        unirepContract = await run('deploy:Unirep', {
             maxUsers,
             attestingFee,
         })

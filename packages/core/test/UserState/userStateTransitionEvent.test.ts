@@ -1,9 +1,9 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
 import {
     EPOCH_LENGTH,
     formatProofForSnarkjsVerification,
@@ -36,9 +36,7 @@ describe('User state transition events in Unirep User State', async function () 
     const attestingFee = ethers.utils.parseEther('0.1')
 
     before(async () => {
-        const accounts = await hardhatEthers.getSigners()
-
-        unirepContract = await deployUnirep(accounts[0], {
+        unirepContract = await run('deploy:Unirep', {
             maxUsers,
             attestingFee,
         })
@@ -264,7 +262,7 @@ describe('User state transition events in Unirep User State', async function () 
         it('submit valid proof with wrong GST will not affect Unirep state', async () => {
             const id = new ZkIdentity()
             const accounts = await hardhatEthers.getSigners()
-            const falseUnirepContract = await deployUnirep(accounts[0], {
+            const falseUnirepContract = await run('deploy:Unirep', {
                 maxUsers,
                 attestingFee,
             })

@@ -1,6 +1,6 @@
 import { ethers } from 'ethers'
 import base64url from 'base64url'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import { Unirep, abi } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { identityCommitmentPrefix } from './prefix'
@@ -41,10 +41,7 @@ const userSignUp = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
+    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)

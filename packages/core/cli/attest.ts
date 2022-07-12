@@ -1,5 +1,5 @@
 import { ethers } from 'ethers'
-import { Unirep, UnirepFactory, Attestation } from '@unirep/contracts'
+import { Unirep, abi, Attestation } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { getProvider } from './utils'
@@ -72,10 +72,7 @@ const attest = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
+    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
     const attestingFee = (await unirepContract.config()).attestingFee
 
     // Connect a signer

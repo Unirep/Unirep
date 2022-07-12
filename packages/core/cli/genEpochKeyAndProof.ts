@@ -1,6 +1,7 @@
 import base64url from 'base64url'
+import { ethers } from 'ethers'
 import { Strategy, ZkIdentity } from '@unirep/crypto'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import { Unirep, abi } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genEpochKey } from '../src'
@@ -47,10 +48,7 @@ const genEpochKeyAndProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
+    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
     const numEpochKeyNoncePerEpoch = (
         await unirepContract.config()
     ).numEpochKeyNoncePerEpoch.toNumber()

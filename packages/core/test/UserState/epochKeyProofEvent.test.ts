@@ -1,5 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
@@ -10,7 +10,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
+import { EpochKeyProof, Unirep } from '@unirep/contracts'
 
 import { computeInitUserStateRoot, Reputation } from '../../src'
 import {
@@ -30,7 +30,7 @@ describe('Epoch key proof events in Unirep User State', function () {
 
     let unirepContract: Unirep
 
-    let accounts: ethers.Signer[]
+    let accounts: any[]
     const attester = new Object()
     let attesterId
     const maxUsers = 100
@@ -40,7 +40,7 @@ describe('Epoch key proof events in Unirep User State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+        unirepContract = await run('deploy:Unirep',  {
             maxUsers,
             attestingFee,
         })

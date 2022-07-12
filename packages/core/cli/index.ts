@@ -8,11 +8,6 @@ import {
 } from './genUnirepIdentity'
 
 import {
-    deploy,
-    configureSubparser as configureSubparserForDeploy,
-} from './deploy'
-
-import {
     userSignUp,
     configureSubparser as configureSubparserForUserSignup,
 } from './userSignUp'
@@ -100,9 +95,6 @@ const main = async () => {
     // Subcommand: genUnirepIdentity
     configureSubparserForGenUnirepIdentity(subparsers)
 
-    // Subcommand: deploy
-    configureSubparserForDeploy(subparsers)
-
     // Subcommand: userSignup
     configureSubparserForUserSignup(subparsers)
 
@@ -153,8 +145,6 @@ const main = async () => {
     // Execute the subcommand method
     if (args.subcommand === 'genUnirepIdentity') {
         await genUnirepIdentity(args)
-    } else if (args.subcommand === 'deploy') {
-        await deploy(args)
     } else if (args.subcommand === 'userSignUp') {
         await userSignUp(args)
     } else if (args.subcommand === 'attesterSignUp') {

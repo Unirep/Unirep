@@ -1,8 +1,8 @@
-import { ethers } from 'hardhat'
+import { ethers, run } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import { deployUnirep } from '@unirep/contracts'
 import {
+    Circuit,
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
@@ -33,6 +33,7 @@ describe('User State', async function () {
     }
     const maxUsers = 100
     const userNum = 5
+    let verifiers = {}
 
     describe('Users sign up', async function () {
         let unirepContract
@@ -45,8 +46,17 @@ describe('User State', async function () {
         let userState
 
         before(async () => {
-            const accounts = await ethers.getSigners()
-            unirepContract = await deployUnirep(accounts[0], {
+            for (const circuit of Object.keys(Circuit)) {
+                const c = await run("deploy:Verifier", { circuit })
+                verifiers[circuit] = c.address
+            }
+            unirepContract = await run('deploy:Unirep', {
+                [Circuit.verifyEpochKey]: verifiers[Circuit.verifyEpochKey],
+                [Circuit.processAttestations]: verifiers[Circuit.processAttestations],
+                [Circuit.startTransition]: verifiers[Circuit.startTransition],
+                [Circuit.userStateTransition]: verifiers[Circuit.userStateTransition],
+                [Circuit.proveReputation]: verifiers[Circuit.proveReputation],
+                [Circuit.proveUserSignUp]: verifiers[Circuit.proveUserSignUp],
                 maxUsers,
                 attestingFee,
             })
@@ -71,7 +81,7 @@ describe('User State', async function () {
                 await accounts[1]
                     .sendTransaction({
                         to: tmpWallet.address,
-                        value: ethers.utils.parseEther('0.1'),
+                        value: attestingFee,
                     })
                     .then((t) => t.wait())
                 // now initialize an attester using accounts[0]
@@ -160,7 +170,7 @@ describe('User State', async function () {
             await accounts[1]
                 .sendTransaction({
                     to: tmpWallet.address,
-                    value: ethers.utils.parseEther('0.1'),
+                    value: attestingFee,
                 })
                 .then((t) => t.wait())
             // now initialize an attester using accounts[0]
@@ -222,7 +232,7 @@ describe('User State', async function () {
                 await accounts[1]
                     .sendTransaction({
                         to: tmpWallet.address,
-                        value: ethers.utils.parseEther('0.1'),
+                        value: attestingFee,
                     })
                     .then((t) => t.wait())
                 // now initialize an attester using accounts[0]
@@ -356,7 +366,13 @@ describe('User State', async function () {
 
         before(async () => {
             const accounts = await ethers.getSigners()
-            unirepContract = await deployUnirep(accounts[0], {
+            unirepContract = await run('deploy:Unirep', {
+                [Circuit.verifyEpochKey]: verifiers[Circuit.verifyEpochKey],
+                [Circuit.processAttestations]: verifiers[Circuit.processAttestations],
+                [Circuit.startTransition]: verifiers[Circuit.startTransition],
+                [Circuit.userStateTransition]: verifiers[Circuit.userStateTransition],
+                [Circuit.proveReputation]: verifiers[Circuit.proveReputation],
+                [Circuit.proveUserSignUp]: verifiers[Circuit.proveUserSignUp],
                 maxUsers,
                 attestingFee,
             })
@@ -624,7 +640,13 @@ describe('User State', async function () {
 
         before(async () => {
             const accounts = await ethers.getSigners()
-            unirepContract = await deployUnirep(accounts[0], {
+            unirepContract = await run('deploy:Unirep', {
+                [Circuit.verifyEpochKey]: verifiers[Circuit.verifyEpochKey],
+                [Circuit.processAttestations]: verifiers[Circuit.processAttestations],
+                [Circuit.startTransition]: verifiers[Circuit.startTransition],
+                [Circuit.userStateTransition]: verifiers[Circuit.userStateTransition],
+                [Circuit.proveReputation]: verifiers[Circuit.proveReputation],
+                [Circuit.proveUserSignUp]: verifiers[Circuit.proveUserSignUp],
                 maxUsers,
                 attestingFee,
             })

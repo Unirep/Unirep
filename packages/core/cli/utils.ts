@@ -1,5 +1,5 @@
 import { ethers, providers } from 'ethers'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
+import { Unirep, abi } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
 import { schema } from '../src/schema'
 import { UserState, Synchronizer } from '../src'
@@ -89,7 +89,7 @@ const genUnirepState = async (
     address: string,
     _db?: DB
 ) => {
-    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     synchronizer = new Synchronizer(db, defaultProver, unirepContract)
@@ -112,7 +112,7 @@ const genUserState = async (
     userIdentity: ZkIdentity,
     _db?: DB
 ) => {
-    const unirepContract: Unirep = getUnirepContract(address, provider)
+    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     const userState = new UserState(
         db,

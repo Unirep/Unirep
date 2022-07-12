@@ -1,6 +1,7 @@
 import base64url from 'base64url'
+import { ethers } from 'ethers'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import { Unirep, UnirepFactory } from '@unirep/contracts'
+import { Unirep, abi } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { genReputationNullifier } from '../src'
@@ -76,10 +77,7 @@ const genReputationProof = async (args: any) => {
     const userState = await genUserState(provider, args.contract, id)
 
     // Unirep contract
-    const unirepContract: Unirep = UnirepFactory.connect(
-        args.contract,
-        provider
-    )
+    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
     const maxReputationBudget = (
         await unirepContract.config()
     ).maxReputationBudget.toNumber()
