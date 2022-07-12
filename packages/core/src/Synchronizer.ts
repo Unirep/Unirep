@@ -261,9 +261,7 @@ export class Synchronizer extends EventEmitter {
         const latestBlock = await this.unirepContract.provider.getBlockNumber()
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
-                where: {
-                    latestCompleteBlock: latestBlock,
-                },
+                where: {},
             })
             if (state && state.latestCompleteBlock >= latestBlock) return
             await new Promise((r) => setTimeout(r, 250))
