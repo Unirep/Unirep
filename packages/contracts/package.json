@@ -7,8 +7,7 @@
     "license": "MIT",
     "scripts": {
         "pre": "node scripts/prepare",
-        "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc",
-        "abi": "node ./scripts/abi",
+        "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && hardhat typechain && tsc",
         "compile": "hardhat compile",
         "deploy:Unirep": "hardhat deploy:Unirep",
         "deploy:Verifier": "hardhat deploy:Verifier",

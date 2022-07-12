@@ -25,7 +25,7 @@ import {
     genNewEpochTree,
     genNewUserStateTree,
     toCompleteHexString,
-} from '../../circuits/test/utils'
+} from '@unirep/circuits/test/utils'
 import { DB, SQLiteConnector } from 'anondb/node'
 import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'

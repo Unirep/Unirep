@@ -1,3 +1,4 @@
+import { Contract } from 'ethers'
 import {
     Circuit,
     MAX_USERS,
@@ -11,8 +12,6 @@ import {
     NUM_ATTESTATIONS_PER_PROOF,
 } from '@unirep/circuits'
 import { task, types } from 'hardhat/config'
-import { Unirep } from '../typechain'
-import { UnirepTypes } from '../typechain/Unirep'
 
 const ATTESTING_FEE = '0'
 
@@ -144,7 +143,7 @@ task(`deploy:Unirep`, `Deploy a Unirep contract`)
         undefined,
         types.string
     )
-    .setAction(async (args, hre): Promise<Unirep> => {
+    .setAction(async (args, hre): Promise<Contract> => {
         const verifiers: VerifiersAddress<Circuit, string> = await getVerifiers(
             hre,
             {
@@ -156,10 +155,10 @@ task(`deploy:Unirep`, `Deploy a Unirep contract`)
                 [Circuit.proveUserSignUp]: args?.proveUserSignUp,
             }
         )
-        const deployer = new hre.ethers.Wallet(
-            args.privKey ?? (await hre.ethers.getSigner)[0],
-            hre.ethers.provider
-        )
+        const [signer] = await hre.ethers.getSigners()
+        const deployer = args.privKey
+            ? new hre.ethers.Wallet(args.privKey, hre.ethers.provider)
+            : signer
 
         console.log('Deploying Unirep')
         const f = await hre.ethers.getContractFactory('Unirep')
@@ -177,7 +176,7 @@ task(`deploy:Unirep`, `Deploy a Unirep contract`)
                 ),
                 maxUsers: args?.maxUsers,
                 maxAttesters: args?.maxAttesters,
-            } as UnirepTypes.ConfigStruct,
+            },
             verifiers[Circuit.verifyEpochKey]!,
             verifiers[Circuit.startTransition]!,
             verifiers[Circuit.processAttestations]!,
@@ -206,5 +205,5 @@ task(`deploy:Unirep`, `Deploy a Unirep contract`)
         )
         console.log(`Unirep contract has been deployed to: ${c.address}`)
 
-        return c as Unirep
+        return c
     })

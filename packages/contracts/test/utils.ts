@@ -25,7 +25,7 @@ import {
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
     genProofAndVerify,
-} from '../../circuits/test/utils'
+} from '@unirep/circuits/test/utils'
 
 import {
     Attestation,
