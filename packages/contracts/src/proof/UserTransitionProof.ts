@@ -1,5 +1,4 @@
-import { Circuit, Prover } from '@unirep/circuits'
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits/config'
+import { Circuit, Prover, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits'
 import { SnarkProof } from '@unirep/crypto'
 import { BigNumberish } from 'ethers'
 import { BaseProof } from './BaseProof'

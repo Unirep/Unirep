@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-const genSnarkVerifierSol = (contractName: string, vk: any): string => {
+export const genSnarkVerifierSol = (contractName: string, vk: any): string => {
     const templatePath = path.join(__dirname, './verifier_groth16_template.txt')
 
     let template = fs.readFileSync(templatePath).toString()
@@ -56,4 +56,6 @@ const genSnarkVerifierSol = (contractName: string, vk: any): string => {
     return template
 }
 
-export { genSnarkVerifierSol }
+export const createVerifierName = (circuit: string) => {
+    return `${circuit.charAt(0).toUpperCase() + circuit.slice(1)}Verifier`
+}

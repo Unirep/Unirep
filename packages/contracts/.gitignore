@@ -10,3 +10,4 @@ contracts/verifiers
 artifacts
 coverage
 coverage.json
+src/abi
