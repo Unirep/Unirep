@@ -1,6 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
@@ -9,11 +8,10 @@ import {
     genUserStateTransitionCircuitInput,
     genInputForContract,
 } from './utils'
-import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import { Unirep, UserTransitionProof } from '../src'
 
 describe('User State Transition', function () {
     this.timeout(600000)
-    let accounts: ethers.Signer[]
     let unirepContract: Unirep
 
     const epoch = 1
@@ -21,9 +19,7 @@ describe('User State Transition', function () {
     const proofIndexes = []
 
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
-
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+        unirepContract = await run('deploy:Unirep')
     })
 
     it('Valid user state update inputs should work', async () => {

@@ -1,19 +1,18 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
 } from './utils'
-import { deployUnirep, Unirep } from '../src'
+import { Unirep } from '../src'
 import { Circuit, NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits'
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)
 
-    let accounts: ethers.Signer[]
+    let accounts: any[]
     let unirepContract: Unirep
 
     const epoch = BigInt(1)
@@ -23,7 +22,7 @@ describe('Process attestation circuit', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+        unirepContract = await run('deploy:Unirep')
     })
 
     it('successfully process attestations', async () => {

@@ -1,17 +1,18 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
 import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { deployUnirep, EpochKeyProof, Unirep } from '../src'
+
+import { EpochKeyProof, Unirep } from '../src'
 
 import { genEpochKey, Attestation } from './utils'
 
 describe('Attesting', () => {
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
+    let accounts: any[]
 
     let userId, userCommitment
     let attester, attesterAddress, attesterId
@@ -38,9 +39,7 @@ describe('Attesting', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await run('deploy:Unirep', {attestingFee})
 
         console.log('User sign up')
         userId = new ZkIdentity()

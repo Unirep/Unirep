@@ -1,5 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
@@ -12,14 +12,14 @@ import {
     genProveSignUpCircuitInput,
     genInputForContract,
 } from './utils'
-import { deployUnirep, SignUpProof, Unirep } from '../src'
+import {  SignUpProof, Unirep } from '../src'
 
 describe('Airdrop', function () {
     this.timeout(100000)
 
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
-    let attester: ethers.Signer
+    let accounts: any[]
+    let attester: any
 
     let numUsers = 0
     let attesterAddress: string
@@ -30,9 +30,7 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await run('deploy:Unirep', {attestingFee})
     })
 
     describe('Attesters set airdrop', () => {

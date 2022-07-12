@@ -1,5 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { BigNumber, ethers } from 'ethers'
 import { expect } from 'chai'
 import {
@@ -26,7 +26,6 @@ import {
     genUserStateTransitionCircuitInput,
 } from './utils'
 import {
-    deployUnirep,
     ReputationProof,
     SignUpProof,
     Unirep,
@@ -43,7 +42,7 @@ import {
 
 describe('EventFilters', () => {
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
+    let accounts: any[]
 
     let userId, userCommitment
 
@@ -64,9 +63,7 @@ describe('EventFilters', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await run('deploy:Unirep', {attestingFee})
 
         console.log('User sign up')
         userId = new ZkIdentity()

@@ -1,6 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumberish, ethers } from 'ethers'
+import { run } from 'hardhat'
 import { expect } from 'chai'
 import { Circuit } from '@unirep/circuits'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
@@ -11,12 +10,11 @@ import {
     genProveSignUpCircuitInput,
     Reputation,
 } from './utils'
-import { deployUnirep, SignUpProof, Unirep } from '../src'
+import { SignUpProof, Unirep } from '../src'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
     const epoch = 1
     const nonce = 0
     const user = new ZkIdentity()
@@ -30,9 +28,7 @@ describe('Verify user sign up verifier', function () {
     const nonSignedUpAttesterId = 2
 
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
-
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+        unirepContract = await run('deploy:Unirep')
         // Bootstrap reputation
         const graffitiPreImage = genRandomSalt()
         reputationRecords[signedUpAttesterId] = new Reputation(

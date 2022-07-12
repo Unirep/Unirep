@@ -1,6 +1,6 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers, Signer } from 'ethers'
+import { ethers as hardhatEthers, run } from 'hardhat'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import {
@@ -13,7 +13,7 @@ import {
 
 const ATTESTING_FEE = '0'
 
-import { deployUnirep, Unirep } from '../src'
+import { Unirep } from '../src'
 
 describe('Signup', () => {
     const testMaxUser = 5
@@ -26,7 +26,7 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+        unirepContract = await run('deploy:Unirep', { 
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
         })

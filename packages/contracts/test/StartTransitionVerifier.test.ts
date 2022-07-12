@@ -1,6 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { expect } from 'chai'
 import {
     hashLeftRight,
@@ -15,7 +14,7 @@ import {
     bootstrapRandomUSTree,
     genInputForContract,
 } from './utils'
-import { deployUnirep, StartTransitionProof, Unirep } from '../src'
+import { StartTransitionProof, Unirep } from '../src'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)
@@ -23,7 +22,6 @@ describe('User State Transition circuits', function () {
     const user = new ZkIdentity()
 
     describe('Start User State Transition', () => {
-        let accounts: ethers.Signer[]
         let unirepContract: Unirep
         const epoch = 1
 
@@ -35,9 +33,7 @@ describe('User State Transition circuits', function () {
         const leafIndex = 0
 
         before(async () => {
-            accounts = await hardhatEthers.getSigners()
-
-            unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+            unirepContract = await run('deploy:Unirep')
 
             // User state tree
             const results = await bootstrapRandomUSTree()

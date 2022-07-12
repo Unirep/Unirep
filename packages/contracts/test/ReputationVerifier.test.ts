@@ -1,5 +1,5 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
+import { ethers as hardhatEthers, run } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity, hashOne } from '@unirep/crypto'
@@ -14,7 +14,7 @@ import {
     genReputationCircuitInput,
     Reputation,
 } from './utils'
-import { deployUnirep, ReputationProof } from '../src'
+import { ReputationProof } from '../src'
 import { Unirep } from '../typechain'
 
 describe('Verify reputation verifier', function () {
@@ -41,9 +41,7 @@ describe('Verify reputation verifier', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
-            attestingFee,
-        })
+        unirepContract = await run('deploy:Unirep', { attestingFee })
 
         // Bootstrap reputation
         for (let i = 0; i < NUM_ATTESTERS; i++) {
