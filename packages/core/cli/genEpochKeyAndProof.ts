@@ -48,7 +48,11 @@ const genEpochKeyAndProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(
+        args.contract,
+        abi,
+        provider
+    ) as Unirep
     const numEpochKeyNoncePerEpoch = (
         await unirepContract.config()
     ).numEpochKeyNoncePerEpoch.toNumber()

@@ -47,14 +47,16 @@ describe('User State', async function () {
 
         before(async () => {
             for (const circuit of Object.keys(Circuit)) {
-                const c = await run("deploy:Verifier", { circuit })
+                const c = await run('deploy:Verifier', { circuit })
                 verifiers[circuit] = c.address
             }
             unirepContract = await run('deploy:Unirep', {
                 [Circuit.verifyEpochKey]: verifiers[Circuit.verifyEpochKey],
-                [Circuit.processAttestations]: verifiers[Circuit.processAttestations],
+                [Circuit.processAttestations]:
+                    verifiers[Circuit.processAttestations],
                 [Circuit.startTransition]: verifiers[Circuit.startTransition],
-                [Circuit.userStateTransition]: verifiers[Circuit.userStateTransition],
+                [Circuit.userStateTransition]:
+                    verifiers[Circuit.userStateTransition],
                 [Circuit.proveReputation]: verifiers[Circuit.proveReputation],
                 [Circuit.proveUserSignUp]: verifiers[Circuit.proveUserSignUp],
                 maxUsers,
@@ -368,9 +370,11 @@ describe('User State', async function () {
             const accounts = await ethers.getSigners()
             unirepContract = await run('deploy:Unirep', {
                 [Circuit.verifyEpochKey]: verifiers[Circuit.verifyEpochKey],
-                [Circuit.processAttestations]: verifiers[Circuit.processAttestations],
+                [Circuit.processAttestations]:
+                    verifiers[Circuit.processAttestations],
                 [Circuit.startTransition]: verifiers[Circuit.startTransition],
-                [Circuit.userStateTransition]: verifiers[Circuit.userStateTransition],
+                [Circuit.userStateTransition]:
+                    verifiers[Circuit.userStateTransition],
                 [Circuit.proveReputation]: verifiers[Circuit.proveReputation],
                 [Circuit.proveUserSignUp]: verifiers[Circuit.proveUserSignUp],
                 maxUsers,
@@ -642,9 +646,11 @@ describe('User State', async function () {
             const accounts = await ethers.getSigners()
             unirepContract = await run('deploy:Unirep', {
                 [Circuit.verifyEpochKey]: verifiers[Circuit.verifyEpochKey],
-                [Circuit.processAttestations]: verifiers[Circuit.processAttestations],
+                [Circuit.processAttestations]:
+                    verifiers[Circuit.processAttestations],
                 [Circuit.startTransition]: verifiers[Circuit.startTransition],
-                [Circuit.userStateTransition]: verifiers[Circuit.userStateTransition],
+                [Circuit.userStateTransition]:
+                    verifiers[Circuit.userStateTransition],
                 [Circuit.proveReputation]: verifiers[Circuit.proveReputation],
                 [Circuit.proveUserSignUp]: verifiers[Circuit.proveUserSignUp],
                 maxUsers,

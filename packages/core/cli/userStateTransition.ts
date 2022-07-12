@@ -1,10 +1,7 @@
 import base64url from 'base64url'
 import { ethers } from 'ethers'
 import { ZkIdentity, Strategy } from '@unirep/crypto'
-import {
-    Unirep,
-    abi
-} from '@unirep/contracts'
+import { Unirep, abi } from '@unirep/contracts'
 
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { identityPrefix } from './prefix'
@@ -47,7 +44,11 @@ const userStateTransition = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(
+        args.contract,
+        abi,
+        provider
+    ) as Unirep
 
     // Connect a signer
     const wallet = new ethers.Wallet(args.eth_privkey, provider)

@@ -51,7 +51,11 @@ const submitEpochKeyProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(
+        args.contract,
+        abi,
+        provider
+    ) as Unirep
     const currentEpoch = Number(await unirepContract.currentEpoch())
 
     const decodedProof = base64url.decode(

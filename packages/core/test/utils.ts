@@ -12,9 +12,7 @@ import {
 } from '@unirep/crypto'
 import { Circuit, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import {
-    Attestation, abi, IAttestation, Unirep
-} from '@unirep/contracts'
+import { Attestation, abi, IAttestation, Unirep } from '@unirep/contracts'
 
 import {
     computeEmptyUserStateRoot,
@@ -421,7 +419,7 @@ const compareStates = async (
     userId: ZkIdentity,
     db: Promise<SQLiteConnector>
 ) => {
-    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(address, abi, provider) as Unirep
     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
 
     const usWithNoStorage = await genUserState(provider, address, userId)
@@ -492,7 +490,7 @@ const genUnirepState = async (
     address: string,
     _db?: DB
 ) => {
-    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(address, abi, provider) as Unirep
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     synchronizer = new Synchronizer(db, defaultProver, unirepContract)
@@ -515,7 +513,7 @@ const genUserState = async (
     userIdentity: ZkIdentity,
     _db?: DB
 ) => {
-    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(address, abi, provider) as Unirep
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     const userState = new UserState(
         db,

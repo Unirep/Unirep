@@ -50,7 +50,11 @@ const verifyUserSignUpProof = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(
+        args.contract,
+        abi,
+        provider
+    ) as Unirep
 
     const unirepState = await genUnirepState(provider, args.contract)
 

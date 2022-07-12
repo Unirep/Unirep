@@ -56,7 +56,11 @@ const spendReputation = async (args: any) => {
     const provider = getProvider(ethProvider)
 
     // Unirep contract
-    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(
+        args.contract,
+        abi,
+        provider
+    ) as Unirep
     const attestingFee = (await unirepContract.config()).attestingFee
 
     // Connect a signer

@@ -87,13 +87,19 @@ describe('test all CLI subcommands', function () {
             const output = exec(command).stdout.trim()
             console.log(output)
 
-            const regMatch = output.match(/Unirep contract has been deployed to: (0x[a-fA-F0-9]{40})$/)
+            const regMatch = output.match(
+                /Unirep contract has been deployed to: (0x[a-fA-F0-9]{40})$/
+            )
             const unirepAddress = regMatch[1]
 
             const provider = new hardhatEthers.providers.JsonRpcProvider(
                 DEFAULT_ETH_PROVIDER
             )
-            unirepContract = (new ethers.Contract(unirepAddress, abi, provider)) as Unirep
+            unirepContract = new ethers.Contract(
+                unirepAddress,
+                abi,
+                provider
+            ) as Unirep
 
             unirepState = await genUnirepState(provider, unirepAddress)
 

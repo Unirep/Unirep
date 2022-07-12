@@ -40,7 +40,7 @@ describe('Epoch key proof events in Unirep User State', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await run('deploy:Unirep',  {
+        unirepContract = await run('deploy:Unirep', {
             maxUsers,
             attestingFee,
         })

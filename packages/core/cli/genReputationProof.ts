@@ -77,7 +77,11 @@ const genReputationProof = async (args: any) => {
     const userState = await genUserState(provider, args.contract, id)
 
     // Unirep contract
-    const unirepContract = (new ethers.Contract(args.contract, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(
+        args.contract,
+        abi,
+        provider
+    ) as Unirep
     const maxReputationBudget = (
         await unirepContract.config()
     ).maxReputationBudget.toNumber()

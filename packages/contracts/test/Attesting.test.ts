@@ -39,7 +39,7 @@ describe('Attesting', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await run('deploy:Unirep', {attestingFee})
+        unirepContract = await run('deploy:Unirep', { attestingFee })
 
         console.log('User sign up')
         userId = new ZkIdentity()

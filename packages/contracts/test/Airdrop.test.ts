@@ -12,7 +12,7 @@ import {
     genProveSignUpCircuitInput,
     genInputForContract,
 } from './utils'
-import {  SignUpProof, Unirep } from '../src'
+import { SignUpProof, Unirep } from '../src'
 
 describe('Airdrop', function () {
     this.timeout(100000)
@@ -30,7 +30,7 @@ describe('Airdrop', function () {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await run('deploy:Unirep', {attestingFee})
+        unirepContract = await run('deploy:Unirep', { attestingFee })
     })
 
     describe('Attesters set airdrop', () => {

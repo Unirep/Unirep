@@ -26,7 +26,7 @@ describe('Signup', () => {
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
-        unirepContract = await run('deploy:Unirep', { 
+        unirepContract = await run('deploy:Unirep', {
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
         })

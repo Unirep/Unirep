@@ -89,7 +89,7 @@ const genUnirepState = async (
     address: string,
     _db?: DB
 ) => {
-    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(address, abi, provider) as Unirep
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     synchronizer = new Synchronizer(db, defaultProver, unirepContract)
@@ -112,7 +112,7 @@ const genUserState = async (
     userIdentity: ZkIdentity,
     _db?: DB
 ) => {
-    const unirepContract = (new ethers.Contract(address, abi, provider)) as Unirep
+    const unirepContract = new ethers.Contract(address, abi, provider) as Unirep
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     const userState = new UserState(
         db,

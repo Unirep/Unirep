@@ -32,7 +32,8 @@ describe('Synchronizer process events', function () {
         const db = await SQLiteConnector.create(schema, ':memory:')
         synchronizer = new Synchronizer(db, defaultProver, unirepContract)
         // now create an attester
-        await unirepContract.connect(accounts[1])
+        await unirepContract
+            .connect(accounts[1])
             .attesterSignUp()
             .then((t) => t.wait())
         await synchronizer.start()
