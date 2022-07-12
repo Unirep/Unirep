@@ -4,6 +4,8 @@ import '@nomiclabs/hardhat-ethers'
 import 'hardhat-gas-reporter'
 import 'solidity-coverage'
 import '@nomicfoundation/hardhat-chai-matchers'
+import './tasks/deploy-unirep'
+import './tasks/deploy-verifier'
 
 const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',
