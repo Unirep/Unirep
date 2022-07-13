@@ -36,7 +36,7 @@ function sha256(message: string): string {
         .digest('hex')}`
 }
 
-/** 
+/**
  * The strategy is used to generate the ZK identity.
  */
 enum Strategy {

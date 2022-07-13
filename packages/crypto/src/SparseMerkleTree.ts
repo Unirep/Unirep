@@ -32,10 +32,10 @@ export class SparseMerkleTree {
     public readonly numLeaves: BigInt
 
     /**
-    * Initialize the sparse merkle tree with customized depth and default value of leaves
-    * @param _height The fixed depth of the sparse merkle tree
-    * @param zeroHash The default value of empty leaves
-    */
+     * Initialize the sparse merkle tree with customized depth and default value of leaves
+     * @param _height The fixed depth of the sparse merkle tree
+     * @param zeroHash The default value of empty leaves
+     */
     constructor(private _height: number, zeroHash: BigInt) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
