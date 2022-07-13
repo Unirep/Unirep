@@ -170,8 +170,7 @@ export class Synchronizer extends EventEmitter {
             ])
             // if newBlockNumber is null the daemon has been stopped
             if (newBlockNumber === null) break
-            const allEvents = await this.unirepContract.queryFilter(
-                this.unirepFilter,
+            const allEvents = await this.loadNewEvents(
                 latestProcessed + 1,
                 newBlockNumber as number
             )
@@ -205,6 +204,15 @@ export class Synchronizer extends EventEmitter {
         }
         this.removeAllListeners('__stop')
         this.emit('__stopped')
+    }
+
+    // Overridden in subclasses
+    async loadNewEvents(fromBlock: number, toBlock: number) {
+        return this.unirepContract.queryFilter(
+            this.unirepFilter,
+            fromBlock,
+            toBlock
+        )
     }
 
     async processEvents(events: ethers.Event[]) {
@@ -253,9 +261,7 @@ export class Synchronizer extends EventEmitter {
         const latestBlock = await this.unirepContract.provider.getBlockNumber()
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
-                where: {
-                    latestCompleteBlock: latestBlock,
-                },
+                where: {},
             })
             if (state && state.latestCompleteBlock >= latestBlock) return
             await new Promise((r) => setTimeout(r, 250))
