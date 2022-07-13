@@ -3,15 +3,26 @@
     "version": "1.0.0",
     "main": "build/index.js",
     "types": "build/index.d.ts",
+    "repository": "https://github.com/unirep/unirep.git",
+    "author": "Unirep team <unirepsocial@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Unirep/Unirep/issues/new/choose"
+    },
+    "homepage": "https://github.com/unirep/unirep#readme",
+    "keywords": [
+        "cryptography",
+        "hash",
+        "identity",
+        "merkle-tree",
+        "ethereum"
+    ],
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
-    "repository": "https://github.com/unirep/unirep.git",
-    "author": "vivianjeng <vivi432@yahoo.com.tw>",
-    "license": "MIT",
     "dependencies": {
         "@zk-kit/incremental-merkle-tree": "^0.4.3",
         "circomlibjs": "0.0.8",
