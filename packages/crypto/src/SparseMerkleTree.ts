@@ -1,6 +1,11 @@
 import assert from 'assert'
 import { hashLeftRight, hashOne, SnarkBigInt } from 'maci-crypto'
 
+/**
+ * Compute the poseidon hash of 2 elements
+ * @param elements the inputs that have to be hashed
+ * @returns Hash result of two elements
+ */
 const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
     let result: SnarkBigInt
     if (elements.length == 1) {
@@ -16,6 +21,9 @@ const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
     return result
 }
 
+/**
+ * The SparseMerkleTree class is a TypeScript implementation of sparse merkle tree with specified tree depth and it provides all the functions to create efficient trees and to generate and verify proofs of membership.
+ */
 export class SparseMerkleTree {
     protected _root: BigInt
     private zeroHashes!: BigInt[]
@@ -23,6 +31,11 @@ export class SparseMerkleTree {
 
     public readonly numLeaves: BigInt
 
+    /**
+    * Initialize the sparse merkle tree with customized depth and default value of leaves
+    * @param _height The fixed depth of the sparse merkle tree
+    * @param zeroHash The default value of empty leaves
+    */
     constructor(private _height: number, zeroHash: BigInt) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
@@ -33,23 +46,47 @@ export class SparseMerkleTree {
         this.numLeaves = BigInt(2 ** _height)
     }
 
+    /**
+     * Compute the sparse merkle tree root of given `zeroHash`
+     * @param zeroHash The default value of empty leaves
+     */
     private init(zeroHash: BigInt): void {
-        this.populateZeroHashesAndRoot(zeroHash)
+        const hashes: BigInt[] = [zeroHash]
+
+        for (let i = 1; i < this.height; i++) {
+            hashes[i] = newWrappedPoseidonT3Hash(hashes[i - 1], hashes[i - 1])
+        }
+
+        this.zeroHashes = hashes
+
+        this._root = newWrappedPoseidonT3Hash(
+            hashes[this.height - 1],
+            hashes[this.height - 1]
+        )
     }
 
+    /**
+     * Get the depth of the sparse merkle tree
+     * @returns The depth of the sparse merkle tree
+     */
     get height() {
         return this._height
     }
 
+    /**
+     * Get current sparse merkle tree root
+     * @returns Current sparse mekle tree root
+     */
     get root() {
         return this._root
     }
 
-    public getZeroHash(index: number): BigInt {
-        return this.zeroHashes[index]
-    }
-
-    public update(leafKey: BigInt, leafHash: BigInt): void {
+    /**
+     * Insert a value into a specified index of the sparse merkle tree
+     * @param leafKey The index of the tree leaves that user wants to insert the leaf
+     * @param leafValue The value of the leaf that the user wants to insert
+     */
+    public update(leafKey: BigInt, leafValue: BigInt): void {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -58,8 +95,8 @@ export class SparseMerkleTree {
         let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
         let nodeHash
         const nodeHashString = this.node[nodeIndex.toString()]
-        if (nodeHashString === leafHash.toString()) return
-        else nodeHash = leafHash
+        if (nodeHashString === leafValue.toString()) return
+        else nodeHash = leafValue
 
         this.node[nodeIndex.toString()] = nodeHash.toString()
 
@@ -91,6 +128,11 @@ export class SparseMerkleTree {
         this._root = parentHash
     }
 
+    /**
+     * Creates a merkle proof to prove the membership of a tree entry.
+     * @param leafKey A key of an existing or a non-existing entry.
+     * @returns A merkle proof of a given `leafKey`
+     */
     public createProof(leafKey: BigInt): BigInt[] {
         assert(
             leafKey < this.numLeaves,
@@ -123,6 +165,12 @@ export class SparseMerkleTree {
         return siblingNodeHashes
     }
 
+    /**
+     * Verifies a membership proof.
+     * @param leafKey  A key of an existing or a non-existing entry.
+     * @param proof The merkle proof of given `leafkey`
+     * @returns True if the proof is valid, false otherwise
+     */
     public verifyProof(leafKey: BigInt, proof: BigInt[]): boolean {
         assert(
             leafKey < this.numLeaves,
@@ -146,20 +194,5 @@ export class SparseMerkleTree {
         }
         if (nodeHash === this.root) return true
         else return false
-    }
-
-    private populateZeroHashesAndRoot(zeroHash: BigInt): void {
-        const hashes: BigInt[] = [zeroHash]
-
-        for (let i = 1; i < this.height; i++) {
-            hashes[i] = newWrappedPoseidonT3Hash(hashes[i - 1], hashes[i - 1])
-        }
-
-        this.zeroHashes = hashes
-
-        this._root = newWrappedPoseidonT3Hash(
-            hashes[this.height - 1],
-            hashes[this.height - 1]
-        )
     }
 }
