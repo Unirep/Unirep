@@ -67,7 +67,7 @@ const prover: Prover = {
         inputs: any
     ): Promise<{
         proof: any,
-        publisSignals: any
+        publicSignals: any
     }> => {
         const circuitWasmPath = buildPath + `${proofType}.wasm`
         const zkeyPath = buildPath + `${proofType}.zkey`
