@@ -82,6 +82,16 @@ export class SparseMerkleTree {
     }
 
     /**
+     * Get the value of default leaf that are hashed for `index` times
+     * if index =`0`, return the default leaf value
+     * @param index The index of the `zeroHashes` array, which indicates the `zeroHash` has been hased for `index` times
+     * @returns return the hash value of `zeroHashes` array
+     */
+    public getZeroHash(index: number): BigInt {
+        return this.zeroHashes[index]
+    }
+
+    /**
      * Insert a value into a specified index of the sparse merkle tree
      * @param leafKey The index of the tree leaves that user wants to insert the leaf
      * @param leafValue The value of the leaf that the user wants to insert
