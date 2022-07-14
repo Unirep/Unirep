@@ -4,6 +4,9 @@ import { SnarkProof } from '@unirep/crypto'
 import { BigNumberish } from 'ethers'
 import { BaseProof } from './BaseProof'
 
+/**
+ * The user state transition proof structure that helps to query the public signals
+ */
 export class UserTransitionProof extends BaseProof {
     readonly idx: any
 
@@ -17,6 +20,11 @@ export class UserTransitionProof extends BaseProof {
 
     private numEpochKeyNoncePerEpoch: number
 
+    /**
+     * @param _publicSignals The public signals of the user state transition proof that can be verified by the prover
+     * @param _proof The proof that can be verified by the prover
+     * @param prover The prover that can verify the public signals and the proof
+     */
     constructor(
         _publicSignals: BigNumberish[],
         _proof: SnarkProof,

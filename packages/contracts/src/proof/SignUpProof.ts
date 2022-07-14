@@ -3,6 +3,9 @@ import { SnarkProof } from '@unirep/crypto'
 import { BigNumberish } from 'ethers'
 import { BaseProof } from './BaseProof'
 
+/**
+ * The sign up proof structure that helps to query the public signals
+ */
 export class SignUpProof extends BaseProof {
     readonly idx = {
         epoch: 0,
@@ -18,6 +21,11 @@ export class SignUpProof extends BaseProof {
     public attesterId: BigNumberish
     public userHasSignedUp: BigNumberish
 
+    /**
+     * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover
+     * @param _proof The proof that can be verified by the prover
+     * @param prover The prover that can verify the public signals and the proof
+     */
     constructor(
         _publicSignals: BigNumberish[],
         _proof: SnarkProof,
