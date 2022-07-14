@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma abicoder v2;
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 interface UnirepTypes {

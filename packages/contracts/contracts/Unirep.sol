@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma abicoder v2;
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
@@ -11,10 +10,23 @@ import {VerifySignature} from './libraries/VerifySignature.sol';
 import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
+/**
+ * @title Unirep
+ * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.
+ * Attester can give attestations to users, and users can optionally prove that how much reputation they have.
+ *
+ * In this contract, it stores all events in the Unirep protocol.
+ * They consists of 3 main events:
+ *   1. User sign up events
+ *   2. Attestation events
+ *   3. User state transition events
+ * After events are successfully emitted, everyone can verify the proofs and generate a valid Unirep state
+ * Then users can generate another proofs to interact with Unirep protocol.
+ */
 contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     using SafeMath for uint256;
 
-    // Verifier Contracts
+    // All verifier contracts
     IVerifier internal epkValidityVerifier;
     IVerifier internal startTransitionVerifier;
     IVerifier internal processAttestationsVerifier;
@@ -22,37 +34,33 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     IVerifier internal reputationVerifier;
     IVerifier internal userSignUpVerifier;
 
+    // Circuits configurations and contracts configurations
     Config public config;
 
+    // The max epoch key can be computed by 2** config.epochTreeDepth
     uint256 public immutable maxEpochKey;
-
     uint256 public currentEpoch = 1;
-
     uint256 public latestEpochTransitionTime;
-
     uint256 public numUserSignUps = 0;
 
-    // The index of all proofs,
-    // 0 is reserved for index not found in getProofIndex
+    // The index of all proofs, 0 is reserved for index not found in getProofIndex
     uint256 internal proofIndex = 1;
 
     // Mapping of proof nullifiers and the proof index
     mapping(bytes32 => uint256) public getProofIndex;
-
     mapping(uint256 => bool) public hasUserSignedUp;
 
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
+
     // Mapping of voluteers that execute epoch transition to compensation they earned
     mapping(address => uint256) public epochTransitionCompensation;
 
-    // A mapping between each attesters’ Ethereum address and their attester ID.
+    //  A mapping between each attesters’ address and their attester ID.
     // Attester IDs are incremental and start from 1.
     // No attesters with and ID of 0 should exist.
     mapping(address => uint256) public attesters;
-
     uint256 public nextAttesterId = 1;
-
     // Mapping of the airdrop amount of an attester
     mapping(address => uint256) public airdropAmount;
 
@@ -96,7 +104,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     // Verify input data - Should found better way to handle it.
-
     function verifyAttesterSignUp(address attester) private view {
         if (attesters[attester] == 0) revert AttesterNotSignUp(attester);
     }
@@ -119,8 +126,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * User signs up by providing an identity commitment. It also inserts a fresh state
-     * leaf into the state tree.
+     * @dev User signs up by providing an identity commitment. It also inserts a fresh state leaf into the state tree.
      * if user signs up through an atteser who sets airdrop, Unirep will give the user the airdrop reputation.
      * @param identityCommitment Commitment of the user's identity which is a semaphore identity.
      */
@@ -144,6 +150,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
     }
 
+    /**
+     * @dev Check if attester can successfully sign up in Unirep.
+     */
     function _attesterSignUp(address attester) private {
         if (attesters[attester] != 0) revert AttesterAlreadySignUp(attester);
 
@@ -155,14 +164,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Sign up an attester using the address who sends the transaction
+     * @dev Sign up an attester using the address who sends the transaction
      */
     function attesterSignUp() external override {
         _attesterSignUp(msg.sender);
     }
 
     /**
-     * Sign up an attester using the claimed address and the signature
+     * @dev Sign up an attester using the claimed address and the signature
      * @param attester The address of the attester who wants to sign up
      * @param signature The signature of the attester
      */
@@ -175,7 +184,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * An attester can set the initial airdrop amount when user signs up through this attester
+     * @dev An attester can set the initial airdrop amount when user signs up through this attester
      * Then the contract inserts an airdropped leaf into the user's user state tree
      * @param amount how much pos rep add to user's leaf
      */
@@ -185,11 +194,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
+     * @dev Check the validity of the attestation and the attester, emit the attestation event.
      * @param attester The address of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
+     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof,
+     * reputationProof
+     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the
+     * attest is not from reputationProof, then fromProofIdx = 0
      */
     function _submitAttestation(
         address attester,
@@ -228,11 +240,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * An attester submit the attestation with a proof index
+     * @dev An attester submit the attestation with a proof index that the attestation will be sent to
+     * and(or) a proof index that the attestation is from
+     * If the fromProofIndex is non-zero, it should be valid then the toProofIndex can receive the attestation
      * @param attestation The attestation that the attester wants to send to the epoch key
      * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
+     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof,
+     * signedUpProof, reputationProof
+     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof,
+     * if the attest is not from reputationProof, then fromProofIdx = 0
      */
     function submitAttestation(
         Attestation calldata attestation,
@@ -250,13 +266,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * An attester submit the attestation with an epoch key proof via a relayer
+     * @dev An attester submit the attestation with an epoch key proof via a relayer
      * @param attester The address of the attester
      * @param signature The signature of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the attest is not from reputationProof, then fromProofIdx = 0
+     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof,
+     * signedUpProof, reputationProof
+     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof,
+     * if the attest is not from reputationProof, then fromProofIdx = 0
      */
     function submitAttestationViaRelayer(
         address attester,
@@ -278,7 +296,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * A user should submit an epoch key proof and get a proof index
+     * @dev A user should submit an epoch key proof and get a proof index
      * publicSignals[0] = [ globalStateTree ]
      * publicSignals[1] = [ epoch ]
      * publicSignals[2] = [ epochKey ]
@@ -310,7 +328,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * An attester submit the airdrop attestation to an epoch key with a sign up proof
+     * @dev An attester submit the airdrop attestation to an epoch key with a sign up proof
      * publicSignals[0] = [ epoch ]
      * publicSignals[1] = [ epochKey ]
      * publicSignals[2] = [ globalStateTree ]
@@ -367,7 +385,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
+     * @dev A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
      * publicSignals[0: maxReputationBudget ] = [ reputationNullifiers ]
      * publicSignals[maxReputationBudget    ] = [ epoch ]
      * publicSignals[maxReputationBudget + 1] = [ epochKey ]
@@ -431,6 +449,17 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         proofIndex++;
     }
 
+    /**
+     * @dev Emit the attestation event
+     * @param attester The address of the attester
+     * @param attestation The attestation including positive reputation, negative reputation or graffiti
+     * @param epochKey The epoch key which receives attestation
+     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof,
+     * reputationProof
+     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the
+     * attest is not from reputationProof, then fromProofIdx = 0
+     * @param _event The type of the attestation event. It could be one of [SendAttestation, Airdrop, SpendReputation]
+     */
     function emitAttestationEvent(
         address attester,
         Attestation memory attestation,
@@ -463,7 +492,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Perform an epoch transition, current epoch increases by 1
+     * @dev Perform an epoch transition, current epoch increases by 1
      */
     function beginEpochTransition() external {
         uint256 initGas = gasleft();
@@ -484,7 +513,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * User submit a start user state transition proof
+     * @dev User submit a start user state transition proof
      * publicSignals[0] = [ blindedUserState ]
      * publicSignals[1] = [ blindedHashChain ]
      * publicSignals[2] = [ globalStateTree ]
@@ -514,7 +543,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * User submit a process attestations proof
+     * @dev User submit a process attestations proof
      * publicSignals[0] = [ outputBlindedUserState ]
      * publicSignals[1] = [ outputBlindedHashChain ]
      * publicSignals[2] = [ inputBlindedUserState ]
@@ -542,7 +571,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * User submit the latest user state transition proof
+     * @dev User submit the latest user state transition proof
      * publicSignals[0] = [ newGlobalStateTreeLeaf ] 
      * publicSignals[1:  numEpochKeyNoncePerEpoch] = [ epkNullifiers ] 
      * publicSignals[1+  numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ] 
@@ -591,7 +620,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Verify epoch transition proof
+     * @dev Verify epoch transition proof
      * publicSignals[0] = [ globalStateTree ]
      * publicSignals[1] = [ epoch ]
      * publicSignals[2] = [ epochKey ]
@@ -618,7 +647,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Verify start user state transition proof
+     * @dev Verify start user state transition proof
      * publicSignals[0] = [ blindedUserState ]
      * publicSignals[1] = [ blindedHashChain ]
      * publicSignals[2] = [ globalStateTree ]
@@ -629,6 +658,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external view returns (bool) {
+        // The start transition proof checks that
+        // 1. user has signed up
+        // 2. blinded user state is computed by: hash(identity, UST_root, epoch, epoch_key_nonce)
+        // 3. blinded hash chain is computed by: hash(identity, hash_chain = 0, epoch, epoch_key_nonce)
+        // 4. user has transitioned to some epoch(by proving membership in the globalStateTree of that epoch)
+
         // Ensure that each public input is within range of the snark scalar
         // field.
         // TODO: consider having more granular revert reasons
@@ -639,7 +674,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Verify process attestations proof
+     * @dev Verify process attestations proof
      * publicSignals[0] = [ outputBlindedUserState ]
      * publicSignals[1] = [ outputBlindedHashChain ]
      * publicSignals[2] = [ inputBlindedUserState ]
@@ -650,6 +685,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) external view returns (bool) {
+        // The process attestations proof checks that
+        // 1. user processes attestations correctly and update the hash chain and user state tree
+        // 2. input blinded state is computed by: hash(identity, user_state_tree_root, epoch, from_epk_nonce)
+        // 3. output blinded state is computed by: hash(identity, user_state_tree_root, epoch, to_epk_nonce)
+        // 4. output hash chain is computed by:  hash(identity, hash_chain, epoch, to_epk_nonce)
+
         // Ensure that each public input is within range of the snark scalar
         // field.
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
@@ -659,12 +700,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Verify user state transition proof
-     * publicSignals[0] = [ epoch ]
-     * publicSignals[1] = [ epochKey ]
-     * publicSignals[2] = [ globalStateTree ]
-     * publicSignals[3] = [ attesterId ]
-     * publicSignals[4] = [ userHasSignedUp ]
+     * @dev Verify user state transition proof
+     * publicSignals[0                                    ] = [ newGlobalStateTreeLeaf ]
+     * publicSignals[1: this.numEpochKeyNoncePerEpoch + 1 ] = [ epkNullifiers          ]
+     * publicSignals[this.numEpochKeyNoncePerEpoch + 1    ] = [ transitionFromEpoch    ]
+     * publicSignals[this.numEpochKeyNoncePerEpoch + 2,
+     *               this.numEpochKeyNoncePerEpoch + 4    ] = [ blindedUserStates      ]
+     * publicSignals[4 + this.numEpochKeyNoncePerEpoch    ] = [ fromGlobalStateTree    ]
+     * publicSignals[5 + this.numEpochKeyNoncePerEpoch,
+     *               5 + 2 * this.numEpochKeyNoncePerEpoch] = [ blindedHashChains      ]
+     * publicSignals[5 + 2 * this.numEpochKeyNoncePerEpoch] = [ fromEpochTree          ]
      * @param publicSignals The public signals of the sign up proof
      * @param proof The The proof of the sign up proof
      */
@@ -674,12 +719,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     ) external view returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state exist in the provided global state tree
-        // 2. Global state tree is updated correctly
-        // 3. Attestations to each epoch key are processed and processed correctly
-        // require(_epkNullifiers.length == numEpochKeyNoncePerEpoch, "Unirep: invalid number of epk nullifiers");
-
-        // Ensure that each public input is within range of the snark scalar
-        // field.
+        // 2. All epoch key nonces are processed and blinded hash chains are computed
+        // 3. All epoch key nonces are processed and user state trees are computed
+        // 4. Compute new global state tree leaf: hash(id, user_state_tree_root)
 
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
 
@@ -688,7 +730,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Verify reputation proof
+     * @dev Verify reputation proof
      * publicSignals[0: maxReputationBudget ] = [ reputationNullifiers ]
      * publicSignals[maxReputationBudget    ] = [ epoch ]
      * publicSignals[maxReputationBudget + 1] = [ epochKey ]
@@ -721,7 +763,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Verify user sign up proof
+     * @dev Verify user sign up proof
      * publicSignals[0] = [ epoch ]
      * publicSignals[1] = [ epochKey ]
      * publicSignals[2] = [ globalStateTree ]
@@ -748,7 +790,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * Functions to burn fee and collect compenstation.
+     * @dev Functions to burn fee and collect compenstation.
      * TODO: Should use attester fee, shouldn't burn like this.
      */
     function burnAttestingFee() external {
@@ -757,6 +799,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         Address.sendValue(payable(address(0)), amount);
     }
 
+    /**
+     * @dev Users who helps to perform epoch transition can get compensation
+     */
     function collectEpochTransitionCompensation() external {
         // NOTE: currently there are no revenue to pay for epoch transition compensation
         uint256 amount = epochTransitionCompensation[msg.sender];

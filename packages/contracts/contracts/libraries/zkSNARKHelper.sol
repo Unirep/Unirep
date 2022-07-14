@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 import {SnarkConstants} from './SnarkConstants.sol';
 
-//
-// zk-snark helper
-//
+/**
+ * @dev zkSNARK helper for verifying snark constants
+ */
 contract zkSNARKHelper is SnarkConstants {
     function isSNARKField(uint256 value) internal pure returns (bool) {
         return value < SNARK_SCALAR_FIELD;
