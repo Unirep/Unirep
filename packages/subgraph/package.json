@@ -4,10 +4,10 @@
     "description": "",
     "license": "MIT",
     "scripts": {
-        "codegen": "./scripts/codegen.sh",
+        "codegen": "yarn copyABI && ./scripts/codegen.sh",
         "copyABI": "node ./scripts/copyABI.js",
-        "build": "yarn copyABI && ./scripts/build-graph.sh",
-        "deploy": "yarn codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep",
+        "build": "yarn copyABI && yarn copyABI && ./scripts/build-graph.sh",
+        "deploy": "yarn copyABI && yarn codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep",
         "test": "echo 'No subgraph test'"
     },
     "dependencies": {
