@@ -1,10 +1,8 @@
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
-include "./hasherPoseidon.circom";
-include "./incrementalMerkleTree.circom";
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./modulo.circom";
 include "./sparseMerkleTree.circom";
-include "./processAttestations.circom";
 include "./userExists.circom";
 
 /*
@@ -23,17 +21,17 @@ template EpochKeyExist(epoch_tree_depth) {
     signal input path_elements[epoch_tree_depth][1];
     signal output epoch_key;
 
-    component epochKeyHasher = Hasher5();
-    epochKeyHasher.in[0] <== identity_nullifier;
-    epochKeyHasher.in[1] <== epoch;
-    epochKeyHasher.in[2] <== nonce;
-    epochKeyHasher.in[3] <== 0;
-    epochKeyHasher.in[4] <== 0;
+    component epochKeyHasher = Poseidon(5);
+    epochKeyHasher.inputs[0] <== identity_nullifier;
+    epochKeyHasher.inputs[1] <== epoch;
+    epochKeyHasher.inputs[2] <== nonce;
+    epochKeyHasher.inputs[3] <== 0;
+    epochKeyHasher.inputs[4] <== 0;
 
     signal epkModed;
     // 2.1.2 Mod epoch key
     component modEPK = ModuloTreeDepth(epoch_tree_depth);
-    modEPK.dividend <== epochKeyHasher.hash;
+    modEPK.dividend <== epochKeyHasher.out;
     epkModed <== modEPK.remainder;
 
     // 2.1.6 Check if hash chain of the epoch key exists in epoch tree
@@ -102,25 +100,25 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     component epkExist[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
         // 2.1 Check if blinded hash chain matches hash chain
-        blinded_hash_chain_hasher[n] = Hasher5();
-        blinded_hash_chain_hasher[n].in[0] <== identity_nullifier;
-        blinded_hash_chain_hasher[n].in[1] <== hash_chain_results[n];
-        blinded_hash_chain_hasher[n].in[2] <== epoch;
-        blinded_hash_chain_hasher[n].in[3] <== n;
-        blinded_hash_chain_hasher[n].in[4] <== 0;
-        blinded_hash_chain_results[n] === blinded_hash_chain_hasher[n].hash;
+        blinded_hash_chain_hasher[n] = Poseidon(5);
+        blinded_hash_chain_hasher[n].inputs[0] <== identity_nullifier;
+        blinded_hash_chain_hasher[n].inputs[1] <== hash_chain_results[n];
+        blinded_hash_chain_hasher[n].inputs[2] <== epoch;
+        blinded_hash_chain_hasher[n].inputs[3] <== n;
+        blinded_hash_chain_hasher[n].inputs[4] <== 0;
+        blinded_hash_chain_results[n] === blinded_hash_chain_hasher[n].out;
 
         // 2.2 Sealed the hash chain result
-        seal_hash_chain_hasher[n] = HashLeftRight()
-        seal_hash_chain_hasher[n].left <== 1;
-        seal_hash_chain_hasher[n].right <== hash_chain_results[n];
+        seal_hash_chain_hasher[n] = Poseidon(2)
+        seal_hash_chain_hasher[n].inputs[0] <== 1;
+        seal_hash_chain_hasher[n].inputs[1] <== hash_chain_results[n];
 
         // 2.3 Check if epoch key exists in epoch tree
         epkExist[n] = EpochKeyExist(epoch_tree_depth);
         epkExist[n].identity_nullifier <== identity_nullifier;
         epkExist[n].epoch <== epoch;
         epkExist[n].nonce <== n;
-        epkExist[n].hash_chain_result <== seal_hash_chain_hasher[n].hash;
+        epkExist[n].hash_chain_result <== seal_hash_chain_hasher[n].out;
         epkExist[n].epoch_tree_root <== epoch_tree_root;
         for (var i = 0; i < epoch_tree_depth; i++) {
             epkExist[n].path_elements[i][0] <== epk_path_elements[n][i][0];
@@ -131,41 +129,41 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     /* 3. Check if blinded user state matches */
     component blinded_user_state_hasher[2];
     // 3.1 Check blinded user state when nonce = start_epoch_key_nonce
-    blinded_user_state_hasher[0] = Hasher5();
-    blinded_user_state_hasher[0].in[0] <== identity_nullifier;
-    blinded_user_state_hasher[0].in[1] <== intermediate_user_state_tree_roots[0];
-    blinded_user_state_hasher[0].in[2] <== epoch;
-    blinded_user_state_hasher[0].in[3] <== start_epoch_key_nonce;
-    blinded_user_state_hasher[0].in[4] <== 0;
-    blinded_user_state[0] === blinded_user_state_hasher[0].hash;
+    blinded_user_state_hasher[0] = Poseidon(5);
+    blinded_user_state_hasher[0].inputs[0] <== identity_nullifier;
+    blinded_user_state_hasher[0].inputs[1] <== intermediate_user_state_tree_roots[0];
+    blinded_user_state_hasher[0].inputs[2] <== epoch;
+    blinded_user_state_hasher[0].inputs[3] <== start_epoch_key_nonce;
+    blinded_user_state_hasher[0].inputs[4] <== 0;
+    blinded_user_state[0] === blinded_user_state_hasher[0].out;
     // 3.2 Check blinded user state when nonce = latest_epoch_key_nonce
-    blinded_user_state_hasher[1] = Hasher5();
-    blinded_user_state_hasher[1].in[0] <== identity_nullifier;
-    blinded_user_state_hasher[1].in[1] <== intermediate_user_state_tree_roots[1];
-    blinded_user_state_hasher[1].in[2] <== epoch;
-    blinded_user_state_hasher[1].in[3] <== end_epoch_key_nonce;
-    blinded_user_state_hasher[1].in[4] <== 0;
-    blinded_user_state[1] === blinded_user_state_hasher[1].hash;
+    blinded_user_state_hasher[1] = Poseidon(5);
+    blinded_user_state_hasher[1].inputs[0] <== identity_nullifier;
+    blinded_user_state_hasher[1].inputs[1] <== intermediate_user_state_tree_roots[1];
+    blinded_user_state_hasher[1].inputs[2] <== epoch;
+    blinded_user_state_hasher[1].inputs[3] <== end_epoch_key_nonce;
+    blinded_user_state_hasher[1].inputs[4] <== 0;
+    blinded_user_state[1] === blinded_user_state_hasher[1].out;
     /* End of 3. Check if blinded user state matches*/
 
     /* 4. Compute and output nullifiers and new GST leaf */
     // 4.1 Compute nullifier
     component epoch_key_nullifier_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
-        epoch_key_nullifier_hasher[n] = Hasher5();
-        epoch_key_nullifier_hasher[n].in[0] <== 1;  // 1 is the domain separator for epoch key nullifier
-        epoch_key_nullifier_hasher[n].in[1] <== identity_nullifier;
-        epoch_key_nullifier_hasher[n].in[2] <== epoch;
-        epoch_key_nullifier_hasher[n].in[3] <== n;
-        epoch_key_nullifier_hasher[n].in[4] <== 0;
-        epoch_key_nullifier[n] <== epoch_key_nullifier_hasher[n].hash;
+        epoch_key_nullifier_hasher[n] = Poseidon(5);
+        epoch_key_nullifier_hasher[n].inputs[0] <== 1;  // 1 is the domain separator for epoch key nullifier
+        epoch_key_nullifier_hasher[n].inputs[1] <== identity_nullifier;
+        epoch_key_nullifier_hasher[n].inputs[2] <== epoch;
+        epoch_key_nullifier_hasher[n].inputs[3] <== n;
+        epoch_key_nullifier_hasher[n].inputs[4] <== 0;
+        epoch_key_nullifier[n] <== epoch_key_nullifier_hasher[n].out;
     }
 
     // 4.2 Compute new GST leaf
-    component new_leaf_hasher = HashLeftRight();
-    new_leaf_hasher.left <== user_exist.out;
+    component new_leaf_hasher = Poseidon(2);
+    new_leaf_hasher.inputs[0] <== user_exist.out;
     // Last intermediate root is the new user state tree root
-    new_leaf_hasher.right <== intermediate_user_state_tree_roots[1];
-    new_GST_leaf <== new_leaf_hasher.hash;
+    new_leaf_hasher.inputs[1] <== intermediate_user_state_tree_roots[1];
+    new_GST_leaf <== new_leaf_hasher.out;
     /* End of 4. compute and output nullifiers and new GST leaf */
 }

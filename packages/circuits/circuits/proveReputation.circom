@@ -7,7 +7,7 @@
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
-include "./hasherPoseidon.circom";
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./verifyEpochKey.circom";
 
@@ -69,16 +69,16 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
 
 
     /* 2. Check if the reputation given by the attester is in the user state tree */
-    component reputation_hasher = Hasher5();
-    reputation_hasher.in[0] <== pos_rep;
-    reputation_hasher.in[1] <== neg_rep;
-    reputation_hasher.in[2] <== graffiti;
-    reputation_hasher.in[3] <== sign_up;
-    reputation_hasher.in[4] <== 0;
+    component reputation_hasher = Poseidon(5);
+    reputation_hasher.inputs[0] <== pos_rep;
+    reputation_hasher.inputs[1] <== neg_rep;
+    reputation_hasher.inputs[2] <== graffiti;
+    reputation_hasher.inputs[3] <== sign_up;
+    reputation_hasher.inputs[4] <== 0;
 
     component reputation_membership_check = SMTLeafExists(user_state_tree_depth);
     reputation_membership_check.leaf_index <== attester_id;
-    reputation_membership_check.leaf <== reputation_hasher.hash;
+    reputation_membership_check.leaf <== reputation_hasher.out;
     for (var i = 0; i < user_state_tree_depth; i++) {
         reputation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
     }
@@ -113,14 +113,14 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
 
         // 3.3 Use rep_nonce to compute all reputation nullifiers
         if_output_nullifiers[i] = Mux1();
-        rep_nullifier_hasher[i] = Hasher5();
-        rep_nullifier_hasher[i].in[0] <== 2; // 2 is the domain separator for reputation nullifier
-        rep_nullifier_hasher[i].in[1] <== identity_nullifier;
-        rep_nullifier_hasher[i].in[2] <== epoch;
-        rep_nullifier_hasher[i].in[3] <== rep_nonce[i];
-        rep_nullifier_hasher[i].in[4] <== attester_id; // The reputation nullifier is spent at the attester's app
+        rep_nullifier_hasher[i] = Poseidon(5);
+        rep_nullifier_hasher[i].inputs[0] <== 2; // 2 is the domain separator for reputation nullifier
+        rep_nullifier_hasher[i].inputs[1] <== identity_nullifier;
+        rep_nullifier_hasher[i].inputs[2] <== epoch;
+        rep_nullifier_hasher[i].inputs[3] <== rep_nonce[i];
+        rep_nullifier_hasher[i].inputs[4] <== attester_id; // The reputation nullifier is spent at the attester's app
         if_output_nullifiers[i].c[0] <== default_nullifier_zero;
-        if_output_nullifiers[i].c[1] <== rep_nullifier_hasher[i].hash;
+        if_output_nullifiers[i].c[1] <== rep_nullifier_hasher[i].out;
         if_output_nullifiers[i].s <== selectors[i] * if_prove_rep_nullifiers.out;
         rep_nullifiers[i] <== if_output_nullifiers[i].out;
     }
@@ -145,11 +145,11 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
 
     /* 5. Check pre-image of graffiti */
     component if_check_graffiti = Mux1();
-    component graffiti_hasher = HashLeftRight();
-    graffiti_hasher.left <== graffiti_pre_image;
-    graffiti_hasher.right <== 0;
+    component graffiti_hasher = Poseidon(2);
+    graffiti_hasher.inputs[0] <== graffiti_pre_image;
+    graffiti_hasher.inputs[1] <== 0;
     component graffiti_eq = IsEqual();
-    graffiti_eq.in[0] <== graffiti_hasher.hash;
+    graffiti_eq.in[0] <== graffiti_hasher.out;
     graffiti_eq.in[1] <== graffiti;
     if_check_graffiti.c[0] <== 1;
     if_check_graffiti.c[1] <== graffiti_eq.out;

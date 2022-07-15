@@ -6,7 +6,7 @@
 */
 
 include "../../../node_modules/circomlib/circuits/mux1.circom";
-include "./hasherPoseidon.circom";
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./verifyEpochKey.circom";
 
@@ -49,16 +49,16 @@ template ProveUserSignUp(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     /* End of check 1 */
 
     /* 2. Check if the reputation given by the attester is in the user state tree */
-    component reputation_hasher = Hasher5();
-    reputation_hasher.in[0] <== pos_rep;
-    reputation_hasher.in[1] <== neg_rep;
-    reputation_hasher.in[2] <== graffiti;
-    reputation_hasher.in[3] <== sign_up;
-    reputation_hasher.in[4] <== 0;
+    component reputation_hasher = Poseidon(5);
+    reputation_hasher.inputs[0] <== pos_rep;
+    reputation_hasher.inputs[1] <== neg_rep;
+    reputation_hasher.inputs[2] <== graffiti;
+    reputation_hasher.inputs[3] <== sign_up;
+    reputation_hasher.inputs[4] <== 0;
 
     component reputation_membership_check = SMTLeafExists(user_state_tree_depth);
     reputation_membership_check.leaf_index <== attester_id;
-    reputation_membership_check.leaf <== reputation_hasher.hash;
+    reputation_membership_check.leaf <== reputation_hasher.out;
     for (var i = 0; i < user_state_tree_depth; i++) {
         reputation_membership_check.path_elements[i][0] <== UST_path_elements[i][0];
     }
