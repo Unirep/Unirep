@@ -257,8 +257,9 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async waitForSync() {
-        const latestBlock = await this.unirepContract.provider.getBlockNumber()
+    async waitForSync(blockNumber?: number) {
+        const latestBlock =
+            blockNumber ?? (await this.unirepContract.provider.getBlockNumber())
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
                 where: {},
