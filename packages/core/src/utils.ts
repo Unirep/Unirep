@@ -19,7 +19,7 @@ import {
 
 /**
  * Encode a `BigInt` array to string
- * @param arr The array of `BigInt` elements 
+ * @param arr The array of `BigInt` elements
  * @returns A string of the array
  */
 export const encodeBigIntArray = (arr: BigInt[]): string => {

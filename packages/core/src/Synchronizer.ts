@@ -130,7 +130,7 @@ export class Synchronizer extends EventEmitter {
 
     /**
      * Start synchronize the events with Unirep contract util a `stop()` is called.
-     * The synchronizer will check the database first to check if 
+     * The synchronizer will check the database first to check if
      * there is some states stored in database
      */
     async start() {

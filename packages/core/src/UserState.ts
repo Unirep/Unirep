@@ -105,7 +105,7 @@ export default class UserState extends Synchronizer {
     }
 
     /**
-     * Query the latest user state transition epoch. If user hasn't performed user state transition, 
+     * Query the latest user state transition epoch. If user hasn't performed user state transition,
      * the function will return the epoch which user has signed up in Unirep contract.
      * @returns The latest epoch where user performs user state transition.
      */
@@ -729,9 +729,9 @@ export default class UserState extends Synchronizer {
             // Fill in blank data for non-exist attestation
             const filledAttestationNum = attestations.length
                 ? Math.ceil(
-                    attestations.length /
-                    this.settings.numAttestationsPerProof
-                ) * this.settings.numAttestationsPerProof
+                      attestations.length /
+                          this.settings.numAttestationsPerProof
+                  ) * this.settings.numAttestationsPerProof
                 : this.settings.numAttestationsPerProof
             for (
                 let i = 0;
@@ -903,7 +903,7 @@ export default class UserState extends Synchronizer {
      * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
      * @param proveGraffiti The boolean flag that indicates if user wants to prove graffiti pre-image
      * @param graffitiPreImage The pre-image of the graffiti
-     * @param nonceList The reputation nonce list or the number of spending reputation. It is used to spend reputation. 
+     * @param nonceList The reputation nonce list or the number of spending reputation. It is used to spend reputation.
      * In the circuit, it will compute the reputation nullifiers of the given nonce. If the reputation nullifier is used
      * to spend reputation, it cannot be spent again.
      * @returns The reputation proof of type `ReputationProof`.

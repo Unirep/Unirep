@@ -5,8 +5,8 @@ import { hash5, hashOne } from '@unirep/crypto'
 import { IReputation } from './interfaces'
 
 /**
- * Reputation object in Unirep Protocol. It includes `posRep` (positive reputation), 
- * `negRep` (negative reputation), `graffiti` (graffiti is used to make reputation more flexible), 
+ * Reputation object in Unirep Protocol. It includes `posRep` (positive reputation),
+ * `negRep` (negative reputation), `graffiti` (graffiti is used to make reputation more flexible),
  * `signUp` (whether the attester authenticates the user has signed up in the attester's application).
  */
 export default class Reputation implements IReputation {

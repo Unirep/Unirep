@@ -40,7 +40,7 @@ export interface IUnirepState {
 
 /**
  * The information of a user state tree
- * A user state tree is a sparse merkle tree that the key is the attester ID and the value is 
+ * A user state tree is a sparse merkle tree that the key is the attester ID and the value is
  * the hash value of the accumulated reputation.
  */
 export interface IUserStateLeaf {
