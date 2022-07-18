@@ -48,7 +48,7 @@ describe('Poseidon hash circuits', function () {
             const circuit = await compileAndLoadCircuit(
                 hashleftrightCircuitPath
             )
-            
+
             const left = genRandomSalt()
             const right = genRandomSalt()
 
