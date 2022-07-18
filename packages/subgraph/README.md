@@ -15,13 +15,13 @@ Clone or fork repository from GitHub
 ```bash
   git clone git@github.com:Unirep/Unirep.git
   cd Unirep/packages/subgraph
-  npm install
+  yarn install
 ```
 
 ### Compiling
 
 ```bash
-  npm run codegen && npm run build
+  yarn run codegen && yarn run build
 ```
 
 ### Deploying
@@ -33,7 +33,7 @@ graph auth --product hosted-service <AUTH_TOKEN_HERE>
 ```
 
 ```bash
-  npm run deploy
+  yarn run deploy
 ```
 
 ## Demo
