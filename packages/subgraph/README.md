@@ -21,7 +21,7 @@ Clone or fork repository from GitHub
 ### Compiling
 
 ```bash
-  yarn run codegen && yarn run build
+  yarn run build
 ```
 
 ### Deploying
