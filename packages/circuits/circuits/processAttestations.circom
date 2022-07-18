@@ -9,7 +9,7 @@
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "../../../node_modules/circomlib/circuits/gates.circom";
-include "./hasherPoseidon.circom";
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./verifyHashChain.circom";
 
@@ -47,7 +47,7 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     signal output blinded_hash_chain_result;
 
     component attestation_hashers[NUM_ATTESTATIONS];
-    component hash_chain_hasher = HashChainHaser(NUM_ATTESTATIONS);
+    component hash_chain_hasher = HashChainHasher(NUM_ATTESTATIONS);
     hash_chain_hasher.hash_starter <== hash_chain_starter;
 
     // If the attestation is not to be processed, we check and verify leaf 0 instead.
@@ -88,27 +88,27 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
     /* End of check 0 */
 
     /* 1. Verify blinded input user state */
-    component input_blinded_user_state_hasher = Hasher5();
-    input_blinded_user_state_hasher.in[0] <== identity_nullifier;
-    input_blinded_user_state_hasher.in[1] <== intermediate_user_state_tree_roots[0];
-    input_blinded_user_state_hasher.in[2] <== epoch;
-    input_blinded_user_state_hasher.in[3] <== from_nonce;
-    input_blinded_user_state_hasher.in[4] <== 0;
-    input_blinded_user_state === input_blinded_user_state_hasher.hash;
+    component input_blinded_user_state_hasher = Poseidon(5);
+    input_blinded_user_state_hasher.inputs[0] <== identity_nullifier;
+    input_blinded_user_state_hasher.inputs[1] <== intermediate_user_state_tree_roots[0];
+    input_blinded_user_state_hasher.inputs[2] <== epoch;
+    input_blinded_user_state_hasher.inputs[3] <== from_nonce;
+    input_blinded_user_state_hasher.inputs[4] <== 0;
+    input_blinded_user_state === input_blinded_user_state_hasher.out;
     /* End of 1. Verify blinded input user state*/
 
     component sign_up_or_gate[NUM_ATTESTATIONS];
     for (var i = 0; i < NUM_ATTESTATIONS; i++) {
         /* 2. Verify attestation hash chain */
         // 2.1 Compute hash of the attestation and verify the hash chain of these hashes
-        attestation_hashers[i] = Hasher5();
-        attestation_hashers[i].in[0] <== attester_ids[i];
-        attestation_hashers[i].in[1] <== pos_reps[i];
-        attestation_hashers[i].in[2] <== neg_reps[i];
-        attestation_hashers[i].in[3] <== graffities[i];
-        attestation_hashers[i].in[4] <== sign_ups[i];
+        attestation_hashers[i] = Poseidon(5);
+        attestation_hashers[i].inputs[0] <== attester_ids[i];
+        attestation_hashers[i].inputs[1] <== pos_reps[i];
+        attestation_hashers[i].inputs[2] <== neg_reps[i];
+        attestation_hashers[i].inputs[3] <== graffities[i];
+        attestation_hashers[i].inputs[4] <== sign_ups[i];
         
-        hash_chain_hasher.hashes[i] <== attestation_hashers[i].hash;
+        hash_chain_hasher.hashes[i] <== attestation_hashers[i].out;
         hash_chain_hasher.selectors[i] <== selectors[i];
          /* End of 2. verify attestation hash chain */
 
@@ -121,18 +121,18 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
         which_leaf_index_to_check[i].s <== selectors[i];
         leaf_index_to_check[i] <== which_leaf_index_to_check[i].out;
 
-        old_leaf_value_hasher[i] = Hasher5();
-        old_leaf_value_hasher[i].in[0] <== old_pos_reps[i];
-        old_leaf_value_hasher[i].in[1] <== old_neg_reps[i];
-        old_leaf_value_hasher[i].in[2] <== old_graffities[i];
-        old_leaf_value_hasher[i].in[3] <== old_sign_ups[i];
-        old_leaf_value_hasher[i].in[4] <== 0;
+        old_leaf_value_hasher[i] = Poseidon(5);
+        old_leaf_value_hasher[i].inputs[0] <== old_pos_reps[i];
+        old_leaf_value_hasher[i].inputs[1] <== old_neg_reps[i];
+        old_leaf_value_hasher[i].inputs[2] <== old_graffities[i];
+        old_leaf_value_hasher[i].inputs[3] <== old_sign_ups[i];
+        old_leaf_value_hasher[i].inputs[4] <== 0;
 
         // Attestation record to be checked should have value hash5(pos, neg, graffiti)
         // while leaf 0 should have value hash5(0, 0, 0, 0, 0)
         which_old_leaf_value_to_check[i] = Mux1();
         which_old_leaf_value_to_check[i].c[0] <== default_leaf_zero;
-        which_old_leaf_value_to_check[i].c[1] <== old_leaf_value_hasher[i].hash;
+        which_old_leaf_value_to_check[i].c[1] <== old_leaf_value_hasher[i].out;
         which_old_leaf_value_to_check[i].s <== selectors[i];
 
         // Verify merkle proof against pre_processing_tree_root
@@ -153,18 +153,18 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
         sign_up_or_gate[i] = OR();
         sign_up_or_gate[i].a <== sign_ups[i];
         sign_up_or_gate[i].b <== old_sign_ups[i];
-        new_leaf_value_hasher[i] = Hasher5();
-        new_leaf_value_hasher[i].in[0] <== pos_reps[i] + old_pos_reps[i];
-        new_leaf_value_hasher[i].in[1] <== neg_reps[i] + old_neg_reps[i];
-        new_leaf_value_hasher[i].in[2] <== overwrite_graffiti_muxer[i].out;
-        new_leaf_value_hasher[i].in[3] <== sign_up_or_gate[i].out;
-        new_leaf_value_hasher[i].in[4] <== 0;
+        new_leaf_value_hasher[i] = Poseidon(5);
+        new_leaf_value_hasher[i].inputs[0] <== pos_reps[i] + old_pos_reps[i];
+        new_leaf_value_hasher[i].inputs[1] <== neg_reps[i] + old_neg_reps[i];
+        new_leaf_value_hasher[i].inputs[2] <== overwrite_graffiti_muxer[i].out;
+        new_leaf_value_hasher[i].inputs[3] <== sign_up_or_gate[i].out;
+        new_leaf_value_hasher[i].inputs[4] <== 0;
 
         // Attestation record to be checked should have value hash5(pos, neg, graffiti)
         // while leaf 0 should have value hash5(0, 0, 0, 0, 0)
         which_new_leaf_value_to_check[i] = Mux1();
         which_new_leaf_value_to_check[i].c[0] <== default_leaf_zero;
-        which_new_leaf_value_to_check[i].c[1] <== new_leaf_value_hasher[i].hash;
+        which_new_leaf_value_to_check[i].c[1] <== new_leaf_value_hasher[i].out;
         which_new_leaf_value_to_check[i].s <== selectors[i];
 
         // Verify merkle proof against post_processing_tree_root
@@ -180,21 +180,21 @@ template ProcessAttestations(user_state_tree_depth, NUM_ATTESTATIONS, EPOCH_KEY_
 
     /* 4. Compute blinded public output */
     // 4.1 blinded_user_state = hash5(identity, UST_root, epoch, epoch_key_nonce, 0)
-    component blinded_user_state_hasher = Hasher5();
-    blinded_user_state_hasher.in[0] <== identity_nullifier;
-    blinded_user_state_hasher.in[1] <== intermediate_user_state_tree_roots[NUM_ATTESTATIONS];
-    blinded_user_state_hasher.in[2] <== epoch;
-    blinded_user_state_hasher.in[3] <== to_nonce;
-    blinded_user_state_hasher.in[4] <== 0;
-    blinded_user_state <== blinded_user_state_hasher.hash;
+    component blinded_user_state_hasher = Poseidon(5);
+    blinded_user_state_hasher.inputs[0] <== identity_nullifier;
+    blinded_user_state_hasher.inputs[1] <== intermediate_user_state_tree_roots[NUM_ATTESTATIONS];
+    blinded_user_state_hasher.inputs[2] <== epoch;
+    blinded_user_state_hasher.inputs[3] <== to_nonce;
+    blinded_user_state_hasher.inputs[4] <== 0;
+    blinded_user_state <== blinded_user_state_hasher.out;
 
     // 4.2 blinded_hash_chain_result = hash5(identity, hash_chain_result, epoch, epoch_key_nonce, 0)
-    component blinded_hash_chain_result_hasher = Hasher5();
-    blinded_hash_chain_result_hasher.in[0] <== identity_nullifier;
-    blinded_hash_chain_result_hasher.in[1] <== hash_chain_hasher.result;
-    blinded_hash_chain_result_hasher.in[2] <== epoch;
-    blinded_hash_chain_result_hasher.in[3] <== to_nonce;
-    blinded_hash_chain_result_hasher.in[4] <== 0;
-    blinded_hash_chain_result <== blinded_hash_chain_result_hasher.hash;
+    component blinded_hash_chain_result_hasher = Poseidon(5);
+    blinded_hash_chain_result_hasher.inputs[0] <== identity_nullifier;
+    blinded_hash_chain_result_hasher.inputs[1] <== hash_chain_hasher.result;
+    blinded_hash_chain_result_hasher.inputs[2] <== epoch;
+    blinded_hash_chain_result_hasher.inputs[3] <== to_nonce;
+    blinded_hash_chain_result_hasher.inputs[4] <== 0;
+    blinded_hash_chain_result <== blinded_hash_chain_result_hasher.out;
     /* End of 4. Compute blinded public output */
 }

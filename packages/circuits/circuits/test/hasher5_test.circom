@@ -1,3 +1,3 @@
-include "../hasherPoseidon.circom"
+include "../../../../node_modules/circomlib/circuits/poseidon.circom";
 
-component main = Hasher5();
+component main = Poseidon(5);

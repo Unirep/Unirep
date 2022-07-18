@@ -31,11 +31,11 @@ describe('Poseidon hash circuits', function () {
             }
 
             const circuitInputs = stringifyBigInts({
-                in: preImages,
+                inputs: preImages,
             })
 
             const witness = await executeCircuit(circuit, circuitInputs)
-            const output = getSignalByName(circuit, witness, 'main.hash')
+            const output = getSignalByName(circuit, witness, 'main.out')
 
             const outputJS = hash5(preImages)
 
@@ -52,10 +52,10 @@ describe('Poseidon hash circuits', function () {
             const left = genRandomSalt()
             const right = genRandomSalt()
 
-            const circuitInputs = stringifyBigInts({ left, right })
+            const circuitInputs = stringifyBigInts({ inputs: [left, right] })
 
             const witness = await executeCircuit(circuit, circuitInputs)
-            const output = getSignalByName(circuit, witness, 'main.hash')
+            const output = getSignalByName(circuit, witness, 'main.out')
 
             const outputJS = hashLeftRight(left, right)
 

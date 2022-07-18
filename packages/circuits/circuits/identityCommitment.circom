@@ -1,5 +1,3 @@
-include "../../../node_modules/circomlib/circuits/babyjub.circom";
-include "../../../node_modules/circomlib/circuits/bitify.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 
 template CalculateSecret() {
