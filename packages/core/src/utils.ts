@@ -17,14 +17,27 @@ import {
     EPOCH_TREE_DEPTH,
 } from '@unirep/circuits'
 
+/**
+ * Encode a `BigInt` array to string
+ * @param arr The array of `BigInt` elements 
+ * @returns A string of the array
+ */
 export const encodeBigIntArray = (arr: BigInt[]): string => {
     return JSON.stringify(stringifyBigInts(arr))
 }
 
+/**
+ * Decode an encoded string to a `BigInt` array
+ * @param input The string of the encoded data
+ * @returns The `bigint` array
+ */
 export const decodeBigIntArray = (input: string): bigint[] => {
     return unstringifyBigInts(JSON.parse(input))
 }
 
+/**
+ * Default user state tree leaf is defined by `hash(posRep=0, negRep=0, graffiti=0, signUp=0)`
+ */
 const defaultUserStateLeaf = hash5([
     BigInt(0),
     BigInt(0),
@@ -32,13 +45,29 @@ const defaultUserStateLeaf = hash5([
     BigInt(0),
     BigInt(0),
 ])
+
+/**
+ * Definition of default epoch tree leaf
+ */
 const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
 
+/**
+ * Compute the empty user state tree root where the default leaves are `defaultUserStateLeaf`
+ * @param treeDepth The depth of the user state tree
+ * @returns The root of the user state tree
+ */
 const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
     const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     return t.root
 }
 
+/**
+ * Compute the user state tree root with given attester ID and airdrop positive reputation
+ * @param treeDepth The depth of the user state tree
+ * @param leafIdx The attester ID, which is the index of the user state tree.
+ * @param airdropPosRep The airdrop positive reputation that is set by the attester
+ * @returns The root of the user state tree
+ */
 const computeInitUserStateRoot = (
     treeDepth: number,
     leafIdx?: number,
@@ -58,6 +87,14 @@ const computeInitUserStateRoot = (
     return t.root
 }
 
+/**
+ * Compute the epoch key of given identity, epoch and nonce
+ * @param identityNullifier The identity nullifier of the semaphore identity
+ * @param epoch The epoch of the epoch key
+ * @param nonce The nonce of the epoch key
+ * @param epochTreeDepth The depth of the epoch tree
+ * @returns The moded epoch key
+ */
 const genEpochKey = (
     identityNullifier: SnarkBigInt,
     epoch: number,
@@ -77,6 +114,14 @@ const genEpochKey = (
     return epochKeyModed
 }
 
+/**
+ * Compute the epoch key nullifier of given identity, epoch and nonce. The epoch key
+ * nullifiers are used to prevent double user state transition.
+ * @param identityNullifier The identity nullifier of the semaphore identity
+ * @param epoch The epoch of the epoch key
+ * @param nonce The nonce of the epoch key
+ * @returns The epoch key nullifier
+ */
 const genEpochKeyNullifier = (
     identityNullifier: SnarkBigInt,
     epoch: number,
@@ -91,6 +136,15 @@ const genEpochKeyNullifier = (
     ])
 }
 
+/**
+ * Compute the reputation nullifier of given identity, epoch, nonce and attester ID.
+ * The reputation nullifiers are used to prevent double spending of reputation.
+ * @param identityNullifier The identity nullifier of the semaphore identity
+ * @param epoch The epoch of the epoch key
+ * @param nonce The nonce of the epoch key
+ * @param attesterId The attester ID of the reputation
+ * @returns The reputation nullifier
+ */
 const genReputationNullifier = (
     identityNullifier: SnarkBigInt,
     epoch: number,

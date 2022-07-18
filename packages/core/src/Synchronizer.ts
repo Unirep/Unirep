@@ -35,6 +35,10 @@ import { ISettings } from './interfaces'
 const LEGACY_ATTESTATION_TOPIC =
     '0xdbd3d665448fee233664f2b549d5d40b93371f736ecc7f9bc421fe927bf0b376'
 
+/**
+ * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
+ * the synchronizer will verify the events and then save the states.
+ */
 export class Synchronizer extends EventEmitter {
     protected _db: DB
     prover: Prover
@@ -124,6 +128,11 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    /**
+     * Start synchronize the events with Unirep contract util a `stop()` is called.
+     * The synchronizer will check the database first to check if 
+     * there is some states stored in database
+     */
     async start() {
         await this.setup()
         const state = await this._db.findOne('SynchronizerState', {
@@ -140,6 +149,9 @@ export class Synchronizer extends EventEmitter {
         this.startDaemon()
     }
 
+    /**
+     * Stop synchronizing with Unirep contract.
+     */
     async stop() {
         const waitForStopped = new Promise((rs) => this.once('__stopped', rs))
         if (!this.emit('__stop')) {
@@ -257,6 +269,9 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    /**
+     * Wait the synchronizer to process the events until the latest block.
+     */
     async waitForSync() {
         const latestBlock = await this.unirepContract.provider.getBlockNumber()
         for (;;) {
@@ -346,6 +361,11 @@ export class Synchronizer extends EventEmitter {
         return tree
     }
 
+    /**
+     * Get the epoch tree of a given epoch.
+     * @param epoch Query a epoch tree of the epoch
+     * @returns The epoch tree of the given epoch.
+     */
     async genEpochTree(epoch: number) {
         await this._checkValidEpoch(epoch)
         const epochKeys = await this._db.findMany('EpochKey', {
@@ -390,6 +410,12 @@ export class Synchronizer extends EventEmitter {
         return epochTree
     }
 
+    /**
+     * Check if the global state tree root is stored in the database
+     * @param GSTRoot The queried global state tree root
+     * @param epoch The queried epoch of the global state tree
+     * @returns True if the global state tree root is in the database, false otherwise.
+     */
     async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         const found = await this._db.findOne('GSTRoot', {
@@ -401,6 +427,12 @@ export class Synchronizer extends EventEmitter {
         return !!found
     }
 
+    /**
+     * Check if the epoch tree root is stored in the database.
+     * @param _epochTreeRoot The queried epoch tree root
+     * @param epoch The queried epoch of the epoch tree
+     * @returns True if the epoch tree root is in the database, false otherwise.
+     */
     async epochTreeRootExists(
         _epochTreeRoot: BigInt | string,
         epoch: number
@@ -415,6 +447,11 @@ export class Synchronizer extends EventEmitter {
         return !!found
     }
 
+    /**
+     * Get the number of global state tree leaves in a given epoch.
+     * @param epoch The epoch query
+     * @returns The number of the global state tree leaves
+     */
     async getNumGSTLeaves(epoch: number) {
         await this._checkValidEpoch(epoch)
         return this._db.count('GSTLeaf', {
@@ -422,6 +459,11 @@ export class Synchronizer extends EventEmitter {
         })
     }
 
+    /**
+     * Check if the nullifier is stored in the database
+     * @param nullifier The nullifier query
+     * @returns True is the nullifier is in the database, false otherwise.
+     */
     async nullifierExist(nullifier: BigInt) {
         const count = await this._db.count('Nullifier', {
             nullifier: nullifier.toString(),
@@ -429,6 +471,12 @@ export class Synchronizer extends EventEmitter {
         return count > 0
     }
 
+    /**
+     * Get the list of attestations that is set to the epoch key.
+     * The attestations are verified valid.
+     * @param epochKey The query epoch key
+     * @returns A list of the attestations.
+     */
     async getAttestations(epochKey: string): Promise<IAttestation[]> {
         await this._checkEpochKeyRange(epochKey)
         // TODO: transform db entries to IAttestation (they're already pretty similar)
