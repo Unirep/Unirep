@@ -272,8 +272,9 @@ export class Synchronizer extends EventEmitter {
     /**
      * Wait the synchronizer to process the events until the latest block.
      */
-    async waitForSync() {
-        const latestBlock = await this.unirepContract.provider.getBlockNumber()
+    async waitForSync(blockNumber?: number) {
+        const latestBlock =
+            blockNumber ?? (await this.unirepContract.provider.getBlockNumber())
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
                 where: {},
