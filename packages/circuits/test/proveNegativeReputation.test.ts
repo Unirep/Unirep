@@ -87,6 +87,38 @@ describe('Prove reputation from attester circuit', function () {
         expect(isValid).to.be.true
     })
 
+    it('successfully fail to prove maximum reputation', async () => {
+        const attesterId = 1
+        const reputationRecords = {
+            [attesterId]: new Reputation(
+                BigInt(10),
+                BigInt(20),
+                BigInt(0),
+                BigInt(1)
+            ),
+        }
+        const circuitInputs = genNegativeReputationCircuitInput(
+            new ZkIdentity(),
+            epoch,
+            nonce,
+            reputationRecords,
+            attesterId,
+            -11
+        )
+
+        await throwError(
+            circuit,
+            circuitInputs,
+            'Invalid max should throw error'
+        )
+
+        const isValid = await genProofAndVerify(
+            Circuit.proveNegativeReputation,
+            circuitInputs
+        )
+        expect(isValid).to.be.false
+    })
+
     it('successfully choose not to prove graffiti with wrong value', async () => {
         const graffitiPreImage = genRandomSalt()
 
