@@ -111,6 +111,19 @@ await userState.waitForSync()
 ```typescript
 const nonce = 1
 const epochKeyProof = await userState.genVerifyEpochKeyProof(nonce)
+
+// 1. submit the epoch key proof to smart contract
+const tx = await unirepContract.submitEpochKeyProof(
+    epochKeyProof.publicSignals,
+    epochKeyProof.proof
+)
+
+// 2. get the index of the epoch key proof
+const proofHash = epochKeyProof.hash()
+const index = await unirepContract.getProofIndex(proofHash)
+
+// Then the attester can call `submitAttestation` on Unirep contract
+// to send attestation to the epoch key with a proof index
 ```
 
 ### Utils 🧳
