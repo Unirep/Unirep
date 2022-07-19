@@ -92,6 +92,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     component rep_nullifier_hasher[MAX_REPUTATION_BUDGET];
     component if_above[MAX_REPUTATION_BUDGET];
     for (var i = 0; i < MAX_REPUTATION_BUDGET; i++) {
+        // TODO: check what happens in an overflow condition
         if_above[i] = GreaterThan(8); // use small bit amount because it should be lt 10
         if_above[i].in[0] <== rep_nullifiers_amount;
         if_above[i].in[1] <== i;
@@ -108,32 +109,41 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
 
     /* 4. Check if user has reputation greater than min_rep */
     // 4.1 if proving min_rep > 0, check if pos_rep - neg_rep >= min_rep
-    component if_prove_min_rep = GreaterThan(MAX_REPUTATION_SCORE_BITS);
-    if_prove_min_rep.in[0] <== min_rep;
-    if_prove_min_rep.in[1] <== 0;
+
+    component if_not_prove_min_rep = IsZero();
+    if_not_prove_min_rep.in <== min_rep;
 
     // 4.2 check if pos_rep - neg_rep >= 0 && pos_rep - neg_rep >= min_rep
-    component if_check_min_rep = Mux1();
+
     component rep_get = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
     rep_get.in[0] <== pos_rep - neg_rep;
     rep_get.in[1] <== min_rep;
-    if_check_min_rep.c[0] <== 1;
-    if_check_min_rep.c[1] <== rep_get.out;
-    if_check_min_rep.s <== if_prove_min_rep.out;
-    if_check_min_rep.out === 1;
+
+    component final_min_rep = OR();
+    final_min_rep.a <== if_not_prove_min_rep.out;
+    final_min_rep.b <== rep_get.out;
+
+    final_min_rep.out === 1;
+
     /* End of check 4 */
 
     /* 5. Check pre-image of graffiti */
-    component if_check_graffiti = Mux1();
+    component if_not_check_graffiti = IsZero();
+    if_not_check_graffiti.in <== prove_graffiti;
+
     component graffiti_hasher = Poseidon(2);
     graffiti_hasher.inputs[0] <== graffiti_pre_image;
     graffiti_hasher.inputs[1] <== 0;
+
     component graffiti_eq = IsEqual();
     graffiti_eq.in[0] <== graffiti_hasher.out;
     graffiti_eq.in[1] <== graffiti;
-    if_check_graffiti.c[0] <== 1;
-    if_check_graffiti.c[1] <== graffiti_eq.out;
-    if_check_graffiti.s <== prove_graffiti;
-    if_check_graffiti.out === 1;
+
+    component check_graffiti = OR();
+    check_graffiti.a <== if_not_check_graffiti.out;
+    check_graffiti.b <== graffiti_eq.out;
+
+    check_graffiti.out === 1;
+
     /* End of check 5 */
 }
