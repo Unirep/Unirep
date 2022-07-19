@@ -4,6 +4,9 @@ export const verifyEpochKeyCircuitPath =
 export const proveReputationCircuitPath =
     '../zksnarkBuild/proveReputation_main.circom'
 
+export const proveNegativeReputationCircuitPath =
+    '../zksnarkBuild/proveNegativeReputation_main.circom'
+
 export const proveUserSignUpCircuitPath =
     '../zksnarkBuild/proveUserSignUp_main.circom'
 

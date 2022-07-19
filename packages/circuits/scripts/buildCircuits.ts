@@ -4,6 +4,7 @@ import * as path from 'path'
 import {
     processAttestationsCircuitPath,
     proveReputationCircuitPath,
+    proveNegativeReputationCircuitPath,
     proveUserSignUpCircuitPath,
     startTransitionCircuitPath,
     userStateTransitionCircuitPath,
@@ -41,6 +42,20 @@ const main = async (): Promise<number> => {
 
     // create .circom file
     testCircuitContent = `include "../circuits/proveReputation.circom" \n\ncomponent main = ProveReputation(${GLOBAL_STATE_TREE_DEPTH}, ${USER_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, ${MAX_REPUTATION_BUDGET}, 252)`
+
+    try {
+        fs.mkdirSync(dirPath, { recursive: true })
+    } catch (e) {
+        console.log('Cannot create folder ', e)
+    }
+    fs.writeFileSync(circomPath, testCircuitContent)
+
+    // proveNegativeRepuation circuit
+    dirPath = path.join(__dirname, '../zksnarkBuild')
+    circomPath = path.join(__dirname, proveNegativeReputationCircuitPath)
+
+    // create .circom file
+    testCircuitContent = `include "../circuits/proveNegativeReputation.circom" \n\ncomponent main = ProveNegativeReputation(${GLOBAL_STATE_TREE_DEPTH}, ${USER_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, 252)`
 
     try {
         fs.mkdirSync(dirPath, { recursive: true })

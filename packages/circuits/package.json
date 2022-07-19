@@ -5,12 +5,13 @@
     "types": "dist/src/index.d.ts",
     "scripts": {
         "pre": "node scripts/prepare",
-        "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveUserSignUpSnark && yarn buildTs && yarn copyCircom",
+        "build": "yarn downloadPtau && yarn buildCircuits && yarn buildVerifyEpochKeySnark && yarn buildUserStateTransitionSnark && yarn buildProveReputationSnark && yarn buildProveNegativeReputationSnark && yarn buildProveUserSignUpSnark && yarn buildTs && yarn copyCircom",
         "downloadPtau": "./scripts/downloadPtau.sh",
         "buildCircuits": "ts-node scripts/buildCircuits.ts",
         "buildVerifyEpochKeySnark": "./scripts/buildVerifyEpochKeySnark.sh",
         "buildUserStateTransitionSnark": "./scripts/buildUserStateTransitionSnark.sh",
         "buildProveReputationSnark": "./scripts/buildProveReputationSnark.sh",
+        "buildProveNegativeReputationSnark": "./scripts/buildProveNegativeReputationSnark.sh",
         "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
         "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
@@ -28,6 +29,7 @@
         "circom": "^0.5.46",
         "circomlib": "0.5.3",
         "mocha": "^10.0.0",
+        "ts-node": "^10.9.1",
         "typescript": "^4.7.3"
     }
 }

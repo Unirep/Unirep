@@ -654,6 +654,70 @@ const genReputationCircuitInput = (
     return crypto.stringifyBigInts(circuitInputs)
 }
 
+const genNegativeReputationCircuitInput = (
+    id: crypto.ZkIdentity,
+    epoch: number,
+    nonce: number,
+    reputationRecords,
+    attesterId,
+    _maxRep?,
+    _proveGraffiti?,
+    _graffitiPreImage?
+) => {
+    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+    const maxRep = _maxRep ?? 0
+    const proveGraffiti = _proveGraffiti ?? 0
+    let graffitiPreImage
+    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
+        graffitiPreImage = reputationRecords[attesterId].graffitiPreImage
+    }
+    graffitiPreImage = _graffitiPreImage ?? 0
+    if (reputationRecords[attesterId] === undefined) {
+        reputationRecords[attesterId] = Reputation.default()
+    }
+
+    // User state tree
+    const userStateTree = genNewUserStateTree()
+    for (const attester of Object.keys(reputationRecords)) {
+        userStateTree.update(
+            BigInt(attester),
+            reputationRecords[attester].hash()
+        )
+    }
+    const userStateRoot = userStateTree.root
+    const USTPathElements = userStateTree.createProof(BigInt(attesterId))
+
+    // Global state tree
+    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+    const commitment = id.genIdentityCommitment()
+    const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
+    GSTree.insert(hashedLeaf)
+    const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
+    const GSTreeRoot = GSTree.root
+
+    const circuitInputs = {
+        epoch: epoch,
+        epoch_key_nonce: nonce,
+        epoch_key: epk,
+        identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
+        user_tree_root: userStateRoot,
+        GST_path_index: GSTreeProof.pathIndices,
+        GST_path_elements: GSTreeProof.siblings,
+        GST_root: GSTreeRoot,
+        attester_id: attesterId,
+        pos_rep: reputationRecords[attesterId]['posRep'],
+        neg_rep: reputationRecords[attesterId]['negRep'],
+        graffiti: reputationRecords[attesterId]['graffiti'],
+        sign_up: reputationRecords[attesterId]['signUp'],
+        UST_path_elements: USTPathElements,
+        max_rep: maxRep,
+        prove_graffiti: proveGraffiti,
+        graffiti_pre_image: graffitiPreImage,
+    }
+    return crypto.stringifyBigInts(circuitInputs)
+}
+
 const genProveSignUpCircuitInput = (
     id: crypto.ZkIdentity,
     epoch: number,
@@ -783,6 +847,7 @@ export {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
     genReputationCircuitInput,
+    genNegativeReputationCircuitInput,
     genProveSignUpCircuitInput,
     genEpochKeyNullifier,
     genProofAndVerify,
