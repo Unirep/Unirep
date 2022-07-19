@@ -25,6 +25,7 @@
         "@nomiclabs/hardhat-waffle": "^2.0.3",
         "base64url": "^3.0.1",
         "hardhat": "^2.9.9",
+        "hardhat-gas-reporter": "^1.0.8",
         "shelljs": "^0.8.5",
         "typescript": "^4.7.3"
     },
