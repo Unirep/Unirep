@@ -28,6 +28,7 @@
         "buildProveUserSignUpSnark": "./scripts/buildProveUserSignUpSnark.sh",
         "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
+        "time": "ts-node scripts/time.ts",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
