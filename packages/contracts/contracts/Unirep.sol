@@ -239,6 +239,38 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
     }
 
+    function submitGSTAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey,
+        uint256 gstRoot
+    ) external payable {
+        verifyAttesterSignUp(msg.sender);
+        verifyAttesterIndex(msg.sender, attestation.attesterId);
+        verifyAttesterFee();
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        // Validate attestation data
+        if (!isSNARKField(attestation.posRep))
+            revert InvalidSNARKField(AttestationFieldError.POS_REP);
+
+        if (!isSNARKField(attestation.negRep))
+            revert InvalidSNARKField(AttestationFieldError.NEG_REP);
+
+        if (!isSNARKField(attestation.graffiti))
+            revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
+
+        emit GSTAttestationSubmitted(
+            currentEpoch,
+            epochKey,
+            msg.sender,
+            attestation,
+            gstRoot
+        );
+    }
+
     /**
      * @dev An attester submit the attestation with a proof index that the attestation will be sent to
      * and(or) a proof index that the attestation is from
@@ -572,15 +604,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev User submit the latest user state transition proof
-     * publicSignals[0] = [ newGlobalStateTreeLeaf ] 
-     * publicSignals[1:  numEpochKeyNoncePerEpoch] = [ epkNullifiers ] 
-     * publicSignals[1+  numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ] 
-     * publicSignals[2+  numEpochKeyNoncePerEpoch: 
-                     3+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ] 
-     * publicSignals[4+  numEpochKeyNoncePerEpoch] = [ fromGlobalStateTree ] 
+     * publicSignals[0] = [ newGlobalStateTreeLeaf ]
+     * publicSignals[1:  numEpochKeyNoncePerEpoch] = [ epkNullifiers ]
+     * publicSignals[1+  numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ]
+     * publicSignals[2+  numEpochKeyNoncePerEpoch:
+                     3+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ]
+     * publicSignals[4+  numEpochKeyNoncePerEpoch] = [ fromGlobalStateTree ]
      * publicSignals[5+  numEpochKeyNoncePerEpoch:
-                     4+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ] 
-     * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ] 
+                     4+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ]
+     * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ]
      * @param publicSignals The the public signals of the user state transition proof
      * @param proof The proof of the user state transition proof
      * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs

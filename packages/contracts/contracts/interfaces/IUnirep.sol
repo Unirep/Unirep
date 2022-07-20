@@ -42,6 +42,14 @@ interface IUnirep is UnirepTypes {
         uint256 fromProofIndex
     );
 
+    event GSTAttestationSubmitted(
+        uint256 indexed epoch,
+        uint256 indexed epochKey,
+        address indexed attester,
+        Attestation attestation,
+        uint256 gstRoot
+    );
+
     event EpochEnded(uint256 indexed epoch);
 
     // Proof index events
