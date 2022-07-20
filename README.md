@@ -15,8 +15,8 @@
     <a href="https://prettier.io/">
         <img alt="Code style prettier" src="https://img.shields.io/badge/code%20style-prettier-f8bc45?style=flat-square&logo=prettier">
     </a>
-    <a href="https://dl.circleci.com/status-badge/redirect/gh/Unirep/Unirep/tree/develop">
-        <img alt="Circle CI" src="https://dl.circleci.com/status-badge/img/gh/Unirep/Unirep/tree/develop.svg?style=svg">
+    <a href="https://dl.circleci.com/status-badge/redirect/gh/Unirep/Unirep/tree/main">
+        <img alt="Circle CI" src="https://img.shields.io/circleci/build/github/Unirep/Unirep/main?style=flat-square">
     </a>
 </p>
 
