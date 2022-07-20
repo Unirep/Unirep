@@ -6,6 +6,7 @@ import { SnarkProof } from '@unirep/crypto'
 export enum Circuit {
     verifyEpochKey = 'verifyEpochKey',
     proveReputation = 'proveReputation',
+    proveNegativeReputation = 'proveNegativeReputation',
     proveUserSignUp = 'proveUserSignUp',
     startTransition = 'startTransition',
     processAttestations = 'processAttestations',
