@@ -1,5 +1,5 @@
 /*
-    Prove: 
+    Prove:
         1. if user has a leaf in an existed global state tree
         2. user state tree has a `sign_up` flag given by the attester
         3. output an epoch key with nonce = 0 (ensure one epoch key per user per epoch)
@@ -12,7 +12,7 @@ include "./verifyEpochKey.circom";
 
 template ProveUserSignUp(GST_tree_depth, user_state_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input epoch;
-    signal input epoch_key;
+    signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
     signal private input identity_nullifier;
@@ -21,7 +21,7 @@ template ProveUserSignUp(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     // Global state tree
     signal private input GST_path_index[GST_tree_depth];
     signal private input GST_path_elements[GST_tree_depth][1];
-    signal input GST_root;
+    signal output GST_root;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
@@ -33,19 +33,19 @@ template ProveUserSignUp(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
 
     /* 1. Check if user exists in the Global State Tree and verify epoch key */
     // set epoch_key_nonce = 0 to force user only use one epoch key to receive airdrop
-    var epoch_key_nonce = 0; 
+    var epoch_key_nonce = 0;
     component verify_epoch_key = VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH);
     for (var i = 0; i< GST_tree_depth; i++) {
         verify_epoch_key.GST_path_index[i] <== GST_path_index[i];
-        verify_epoch_key.GST_path_elements[i][0] <== GST_path_elements[i][0];
+        verify_epoch_key.GST_path_elements[i] <== GST_path_elements[i][0];
     }
-    verify_epoch_key.GST_root <== GST_root;
     verify_epoch_key.identity_nullifier <== identity_nullifier;
     verify_epoch_key.identity_trapdoor <== identity_trapdoor;
     verify_epoch_key.user_tree_root <== user_tree_root;
     verify_epoch_key.nonce <== epoch_key_nonce;
     verify_epoch_key.epoch <== epoch;
-    verify_epoch_key.epoch_key <== epoch_key;
+    epoch_key <== verify_epoch_key.epoch_key;
+    GST_root <== verify_epoch_key.GST_root;
     /* End of check 1 */
 
     /* 2. Check if the reputation given by the attester is in the user state tree */

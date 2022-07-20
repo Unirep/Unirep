@@ -148,12 +148,11 @@ describe('Verify Epoch Key circuits', function () {
             currentEpoch,
             nonce
         ))
-
-        await throwError(
-            circuit,
-            invalidCircuitInputs,
-            'Wrong Id should throw error'
+        const { publicSignals } = await defaultProver.genProofAndPublicSignals(
+            Circuit.verifyEpochKey,
+            circuitInputs
         )
+        expect(publicSignals[1]).to.not.equal(stateRoot)
     })
 
     it('Mismatched GST tree root should not pass check', async () => {
@@ -166,12 +165,11 @@ describe('Verify Epoch Key circuits', function () {
             currentEpoch,
             nonce
         ))
-
-        await throwError(
-            circuit,
-            invalidCircuitInputs,
-            'Wrong GST Root should throw error'
+        const { publicSignals } = await defaultProver.genProofAndPublicSignals(
+            Circuit.verifyEpochKey,
+            circuitInputs
         )
+        expect(publicSignals[1]).to.not.equal(stateRoot)
     })
 
     it('Invalid nonce should not pass check', async () => {
@@ -193,8 +191,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('Invalid epoch should not pass check', async () => {
-        let invalidEpoch
-        invalidEpoch = currentEpoch + 1
+        const invalidEpoch = currentEpoch + 1
         const invalidCircuitInputs = genEpochKeyCircuitInput(
             id,
             tree,
@@ -204,11 +201,10 @@ describe('Verify Epoch Key circuits', function () {
             nonce
         )
         invalidCircuitInputs.epoch = invalidEpoch
-
-        await throwError(
-            circuit,
-            invalidCircuitInputs,
-            'Wrong epoch should throw error'
+        const { publicSignals } = await defaultProver.genProofAndPublicSignals(
+            Circuit.verifyEpochKey,
+            circuitInputs
         )
+        expect(publicSignals[1]).to.not.equal(stateRoot)
     })
 })

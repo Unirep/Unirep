@@ -10,10 +10,6 @@ import { executeCircuit, getSignalByName } from '../src'
 import { compileAndLoadCircuit } from './utils'
 
 const LEVELS = 4
-const LeafExistsCircuitPath = path.join(
-    __dirname,
-    '../circuits/test/merkleTreeLeafExists_test.circom'
-)
 const InclusionProofCircuitPath = path.join(
     __dirname,
     '../circuits/test/merkleTreeInclusionProof_test.circom'
@@ -21,72 +17,6 @@ const InclusionProofCircuitPath = path.join(
 
 describe('Merkle Tree circuits', function () {
     this.timeout(30000)
-    describe('LeafExists', () => {
-        let circuit
-
-        before(async () => {
-            circuit = await compileAndLoadCircuit(LeafExistsCircuitPath)
-        })
-
-        it('Valid LeafExists inputs should work', async () => {
-            const tree = new IncrementalMerkleTree(LEVELS)
-            const leaves: SnarkBigInt[] = []
-
-            for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
-                tree.insert(hashOne(randomVal))
-                leaves.push(hashOne(randomVal))
-            }
-
-            const root = tree.root
-
-            for (let i = 0; i < 2 ** LEVELS; i++) {
-                const proof = tree.createProof(i)
-                const circuitInputs = {
-                    leaf: leaves[i],
-                    path_elements: proof.siblings,
-                    path_index: proof.pathIndices,
-                    root,
-                }
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(
-                    circuit,
-                    witness,
-                    'main.root'
-                ).toString()
-                expect(circuitRoot).to.be.equal(root.toString())
-            }
-        })
-
-        it('Invalid LeafExists inputs should not work', async () => {
-            const tree = new IncrementalMerkleTree(LEVELS)
-            const leaves: SnarkBigInt[] = []
-
-            for (let i = 0; i < 2 ** LEVELS; i++) {
-                const randomVal = genRandomSalt()
-                tree.insert(randomVal)
-                leaves.push(hashOne(randomVal))
-            }
-
-            const root = tree.root
-
-            for (let i = 0; i < 2 ** LEVELS; i++) {
-                const proof = tree.createProof(i)
-                const circuitInputs = {
-                    leaf: leaves[i],
-                    // The following are swapped to delibrately create an error
-                    path_elements: proof.siblings,
-                    path_index: proof.pathIndices,
-                    root,
-                }
-                try {
-                    await executeCircuit(circuit, circuitInputs)
-                } catch {
-                    expect(true).to.be.true
-                }
-            }
-        })
-    })
 
     describe('MerkleTreeInclusionProof', () => {
         let circuit

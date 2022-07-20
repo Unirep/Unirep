@@ -24,7 +24,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     // Global state tree
     signal private input GST_path_index[GST_tree_depth];
     signal private input GST_path_elements[GST_tree_depth][1];
-    signal input GST_root;
+    signal output GST_root;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
@@ -47,15 +47,15 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     component verify_epoch_key = VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH);
     for (var i = 0; i< GST_tree_depth; i++) {
         verify_epoch_key.GST_path_index[i] <== GST_path_index[i];
-        verify_epoch_key.GST_path_elements[i][0] <== GST_path_elements[i][0];
+        verify_epoch_key.GST_path_elements[i] <== GST_path_elements[i][0];
     }
-    verify_epoch_key.GST_root <== GST_root;
     verify_epoch_key.identity_nullifier <== identity_nullifier;
     verify_epoch_key.identity_trapdoor <== identity_trapdoor;
     verify_epoch_key.user_tree_root <== user_tree_root;
     verify_epoch_key.nonce <== epoch_key_nonce;
     verify_epoch_key.epoch <== epoch;
     epoch_key <== verify_epoch_key.epoch_key;
+    GST_root <== verify_epoch_key.GST_root;
     /* End of check 1 */
 
 

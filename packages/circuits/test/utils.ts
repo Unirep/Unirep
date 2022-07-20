@@ -229,13 +229,13 @@ const genEpochKeyCircuitInput = (
     const circuitInputs = {
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        GST_root: root,
+        // GST_root: root,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: ustRoot,
         nonce: nonce,
         epoch: epoch,
-        epoch_key: epk,
+        // epoch_key: epk,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -259,7 +259,7 @@ const genStartTransitionCircuitInput = (
         identity_trapdoor: id.trapdoor,
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        GST_root: root,
+        // GST_root: root,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -563,7 +563,7 @@ const genUserStateTransitionCircuitInput = (
         identity_trapdoor: id.trapdoor,
         GST_path_elements: GSTreeProof.siblings,
         GST_path_index: GSTreeProof.pathIndices,
-        GST_root: GSTreeRoot,
+        // GST_root: GSTreeRoot,
         epk_path_elements: epochTreePathElements,
         hash_chain_results: hashChainResults,
         blinded_hash_chain_results: blindedHashChain,
@@ -637,7 +637,7 @@ const genReputationCircuitInput = (
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
+        // GST_root: GSTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
@@ -687,13 +687,13 @@ const genProveSignUpCircuitInput = (
 
     const circuitInputs = {
         epoch: epoch,
-        epoch_key: epk,
+        // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
+        // GST_root: GSTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
