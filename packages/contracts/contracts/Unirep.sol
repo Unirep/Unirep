@@ -297,9 +297,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev A user should submit an epoch key proof and get a proof index
-     * publicSignals[0] = [ globalStateTree ]
-     * publicSignals[1] = [ epoch ]
-     * publicSignals[2] = [ epochKey ]
+     * publicSignals[0] = [ epochKey ]
+     * publicSignals[1] = [ globalStateTree ]
+     * publicSignals[2] = [ epoch ]
      * @param publicSignals The public signals of the epoch key proof
      * @param proof The The proof of the epoch key proof
      */
@@ -311,15 +311,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             abi.encodePacked(publicSignals, proof)
         );
         verifyProofNullifier(proofNullifier);
-        if (publicSignals[1] != currentEpoch) revert EpochNotMatch();
-        if (publicSignals[2] > maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
 
         // emit proof event
         uint256 _proofIndex = proofIndex;
         emit IndexedEpochKeyProof(
             _proofIndex,
             currentEpoch,
-            publicSignals[2],
+            publicSignals[0],
             publicSignals,
             proof
         );
@@ -329,9 +329,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev An attester submit the airdrop attestation to an epoch key with a sign up proof
-     * publicSignals[0] = [ epoch ]
-     * publicSignals[1] = [ epochKey ]
-     * publicSignals[2] = [ globalStateTree ]
+     * publicSignals[0] = [ epochKey ]
+     * publicSignals[1] = [ globalStateTree ]
+     * publicSignals[2] = [ epoch ]
      * publicSignals[3] = [ attesterId ]
      * publicSignals[4] = [ userHasSignedUp ]
      * @param publicSignals The public signals of the sign up proof
@@ -350,8 +350,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         verifyAttesterIndex(sender, publicSignals[3]);
         verifyAttesterFee();
 
-        if (publicSignals[0] != currentEpoch) revert EpochNotMatch();
-        if (publicSignals[1] > maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -367,7 +367,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         emit IndexedUserSignedUpProof(
             _proofIndex,
             currentEpoch,
-            publicSignals[1],
+            publicSignals[0],
             publicSignals,
             proof
         );
@@ -375,7 +375,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         emitAttestationEvent(
             msg.sender,
             attestation,
-            publicSignals[1],
+            publicSignals[0],
             _proofIndex,
             0,
             AttestationEvent.Airdrop
@@ -386,15 +386,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
-     * publicSignals[0: maxReputationBudget ] = [ reputationNullifiers ]
-     * publicSignals[maxReputationBudget    ] = [ epoch ]
-     * publicSignals[maxReputationBudget + 1] = [ epochKey ]
-     * publicSignals[maxReputationBudget + 2] = [ globalStateTree ]
+     * publicSignals[0] = [ epochKey ]
+     * publicSignals[1] = [ globalStateTree ]
+     * publicSignals[2: maxReputationBudget ] = [ reputationNullifiers ]
+     * publicSignals[maxReputationBudget + 2] = [ epoch ]
      * publicSignals[maxReputationBudget + 3] = [ attesterId ]
      * publicSignals[maxReputationBudget + 4] = [ proveReputationAmount ]
      * publicSignals[maxReputationBudget + 5] = [ minRep ]
-     * publicSignals[maxReputationBudget + 6] = [ proveGraffiti ]
-     * publicSignals[maxReputationBudget + 7] = [ graffitiPreImage ]
+     * publicSignals[maxReputationBudget + 6] = [ minRep ]
+     * publicSignals[maxReputationBudget + 7] = [ proveGraffiti ]
+     * publicSignals[maxReputationBudget + 8] = [ graffitiPreImage ]
      * @param publicSignals The public signals of the reputation proof
      * @param proof The The proof of the reputation proof
      */
@@ -411,13 +412,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         verifyAttesterIndex(msg.sender, publicSignals[maxReputationBudget + 3]);
         verifyAttesterFee();
 
-        if (publicSignals[maxReputationBudget] != currentEpoch)
+        if (publicSignals[maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
         if (attesters[msg.sender] != publicSignals[maxReputationBudget + 3])
             revert AttesterIdNotMatch(publicSignals[maxReputationBudget + 3]);
 
-        if (publicSignals[maxReputationBudget + 1] > maxEpochKey)
-            revert InvalidEpochKey();
+        if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -432,7 +432,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         emit IndexedReputationProof(
             _proofIndex,
             currentEpoch,
-            publicSignals[maxReputationBudget + 1],
+            publicSignals[0],
             publicSignals,
             proof
         );
@@ -440,7 +440,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         emitAttestationEvent(
             msg.sender,
             attestation,
-            publicSignals[maxReputationBudget + 1],
+            publicSignals[0],
             _proofIndex,
             0,
             AttestationEvent.SpendReputation
@@ -514,9 +514,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev User submit a start user state transition proof
-     * publicSignals[0] = [ blindedUserState ]
-     * publicSignals[1] = [ blindedHashChain ]
-     * publicSignals[2] = [ globalStateTree ]
+     * publicSignals[0] = [ globalStateTree ]
+     * publicSignals[1] = [ blindedUserState ]
+     * publicSignals[2] = [ blindedHashChain ]
      * @param publicSignals The public signals of the start user state transition proof
      * @param proof The The proof of the start user state transition proof
      */
@@ -533,8 +533,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
             _proofIndex,
-            publicSignals[0], // indexed blinded user state
-            publicSignals[2], // indexed global state tree
+            publicSignals[1], // indexed blinded user state
+            publicSignals[0], // indexed global state tree
             publicSignals,
             proof
         );
@@ -572,15 +572,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev User submit the latest user state transition proof
-     * publicSignals[0] = [ newGlobalStateTreeLeaf ] 
-     * publicSignals[1:  numEpochKeyNoncePerEpoch] = [ epkNullifiers ] 
-     * publicSignals[1+  numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ] 
-     * publicSignals[2+  numEpochKeyNoncePerEpoch: 
-                     3+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ] 
-     * publicSignals[4+  numEpochKeyNoncePerEpoch] = [ fromGlobalStateTree ] 
+     * publicSignals[0] = [ newGlobalStateTreeLeaf ]
+     * publicSignals[1] = [ fromGlobalStateTree ]
+     * publicSignals[2] = [ epkNullifiers ]
+     * publicSignals[2 + numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ]
+     * publicSignals[3 +  numEpochKeyNoncePerEpoch:
+                     4+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ]
+     * publicSignals[4+  numEpochKeyNoncePerEpoch] = [ fromGlobalStateTree ]
      * publicSignals[5+  numEpochKeyNoncePerEpoch:
-                     4+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ] 
-     * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ] 
+                     4+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ]
+     * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ]
      * @param publicSignals The the public signals of the user state transition proof
      * @param proof The proof of the user state transition proof
      * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
@@ -596,7 +597,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         verifyProofNullifier(proofNullifier);
         // NOTE: this impl assumes all attestations are processed in a single snark.
-        if (publicSignals[1 + config.numEpochKeyNoncePerEpoch] >= currentEpoch)
+        if (publicSignals[2 + config.numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
 
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {

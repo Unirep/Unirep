@@ -8,9 +8,9 @@ import { BaseProof } from './BaseProof'
  */
 export class StartTransitionProof extends BaseProof {
     readonly idx = {
-        blindedUserState: 0,
-        blindedHashChain: 1,
-        globalStateTree: 2,
+        globalStateTree: 0,
+        blindedUserState: 1,
+        blindedHashChain: 2,
     }
 
     public blindedUserState: BigNumberish
