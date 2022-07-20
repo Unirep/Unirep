@@ -239,6 +239,38 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
     }
 
+    function submitGSTAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey,
+        uint256 gstRoot
+    ) external payable {
+        verifyAttesterSignUp(msg.sender);
+        verifyAttesterIndex(msg.sender, attestation.attesterId);
+        verifyAttesterFee();
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        // Validate attestation data
+        if (!isSNARKField(attestation.posRep))
+            revert InvalidSNARKField(AttestationFieldError.POS_REP);
+
+        if (!isSNARKField(attestation.negRep))
+            revert InvalidSNARKField(AttestationFieldError.NEG_REP);
+
+        if (!isSNARKField(attestation.graffiti))
+            revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
+
+        emit GSTAttestationSubmitted(
+            currentEpoch,
+            epochKey,
+            msg.sender,
+            attestation,
+            gstRoot
+        );
+    }
+
     /**
      * @dev An attester submit the attestation with a proof index that the attestation will be sent to
      * and(or) a proof index that the attestation is from
