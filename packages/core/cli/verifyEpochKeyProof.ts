@@ -59,9 +59,9 @@ const verifyEpochKeyProof = async (args: any) => {
     const proof = JSON.parse(decodedProof)
     const publicSignals = JSON.parse(decodedPublicSignals)
     const currentEpoch = (await unirepState.loadCurrentEpoch()).number
-    const epk = publicSignals[2]
-    const inputEpoch = Number(publicSignals[1])
-    const GSTRoot = publicSignals[0]
+    const epk = publicSignals[0]
+    const inputEpoch = Number(publicSignals[2])
+    const GSTRoot = publicSignals[1]
     console.log(
         `Verifying epoch key ${epk} with GSTRoot ${GSTRoot} in epoch ${inputEpoch}`
     )
