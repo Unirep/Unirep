@@ -19,7 +19,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
 
     signal private input nonce;
     signal input epoch;
-    signal input epoch_key;
+    signal output epoch_key;
 
     /* 1. Check if user exists in the Global State Tree */
     component user_exist = UserExists(GST_tree_depth);
@@ -52,26 +52,13 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
     epochKeyHasher.inputs[3] <== 0;
     epochKeyHasher.inputs[4] <== 0;
 
-    signal quotient;
+    // signal quotient;
     // 3.1.2 Mod epoch key
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
-    quotient <-- epochKeyHasher.out \ (2 ** epoch_tree_depth);
 
-    // 3.1.3 Range check on epoch key
-    component epk_lt = LessEqThan(epoch_tree_depth);
-    epk_lt.in[0] <== epoch_key;
-    epk_lt.in[1] <== 2 ** epoch_tree_depth - 1;
-    epk_lt.out === 1;
-
-    // 3.1.4 Range check on quotient
-    component quot_lt = LessEqThan(254 - epoch_tree_depth);
-    quot_lt.in[0] <== quotient;
-    quot_lt.in[1] <== 2 ** (254 - epoch_tree_depth) - 1;
-    quot_lt.out === 1;
-
-    // 3.1.5 Check equality
-    epochKeyHasher.out === quotient * (2 ** epoch_tree_depth) + epoch_key;
-    /* End of check 3*/
+    // We should be safe here because we're not handling raw input signals but
+    // rather outputs from the Poseidon hash function and compile time constants
+    epoch_key <-- epochKeyHasher.out % (2 ** epoch_tree_depth);
 }

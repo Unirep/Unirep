@@ -15,7 +15,7 @@ include "./verifyEpochKey.circom";
 template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_BUDGET, MAX_REPUTATION_SCORE_BITS) {
     signal input epoch;
     signal private input epoch_key_nonce;
-    signal input epoch_key;
+    signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
     signal private input identity_nullifier;
@@ -36,12 +36,12 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     // Reputation nullifier
     signal input rep_nullifiers_amount;
     signal private input start_rep_nonce;
-    signal output rep_nullifiers[MAX_REPUTATION_BUDGET];
     // Prove the minimum reputation
     signal input min_rep;
     // Graffiti
     signal input prove_graffiti;
     signal input graffiti_pre_image;
+    signal output rep_nullifiers[MAX_REPUTATION_BUDGET];
 
     /* 1. Check if user exists in the Global State Tree and verify epoch key */
     component verify_epoch_key = VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH);
@@ -55,7 +55,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     verify_epoch_key.user_tree_root <== user_tree_root;
     verify_epoch_key.nonce <== epoch_key_nonce;
     verify_epoch_key.epoch <== epoch;
-    verify_epoch_key.epoch_key <== epoch_key;
+    epoch_key <== verify_epoch_key.epoch_key;
     /* End of check 1 */
 
 

@@ -631,7 +631,7 @@ const genReputationCircuitInput = (
     const circuitInputs = {
         epoch: epoch,
         epoch_key_nonce: nonce,
-        epoch_key: epk,
+        // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
