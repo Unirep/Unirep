@@ -467,11 +467,16 @@ describe('Attesting', () => {
             genRandomSalt(),
             BigInt(signedUpInLeaf)
         )
+        const startAttestingFees = await unirepContract.collectedAttestingFee()
         await unirepContract
             .connect(attester)
             .submitGSTAttestation(attestation, epochKey as BigNumberish, 0, {
                 value: attestingFee,
             })
             .then((t) => t.wait())
+        // Verify attesting fee is collected
+        expect(await unirepContract.collectedAttestingFee()).to.be.equal(
+            startAttestingFees.add(attestingFee)
+        )
     })
 })
