@@ -170,6 +170,61 @@ describe('Synchronizer process events', function () {
             })
             .then((t) => t.wait())
         await attestationEvent
+        const _attestation = await (synchronizer as any)._db.findOne(
+            'Attestation',
+            {
+                where: {
+                    graffiti: attestation.graffiti.toString(),
+                },
+            }
+        )
+        expect(_attestation).to.not.be.null
+        expect(_attestation.valid).to.equal(1)
+    })
+
+    it('should process invalid gst attestation', async () => {
+        const accounts = await ethers.getSigners()
+        const id = new ZkIdentity()
+        const commitment = id.genIdentityCommitment()
+        await synchronizer.unirepContract
+            .connect(accounts[1])
+            .userSignUp(commitment)
+            .then((t) => t.wait())
+
+        const userState = await genUserState(
+            ethers.provider,
+            synchronizer.unirepContract.address,
+            id
+        )
+        const epoch = Number(await synchronizer.unirepContract.currentEpoch())
+        const [epochKey] = await userState.getEpochKeys(epoch)
+        const attestation = genRandomAttestation()
+        attestation.attesterId = await synchronizer.unirepContract.attesters(
+            accounts[1].address
+        )
+        const [GSTAttestationSubmitted] =
+            synchronizer.unirepContract.filters.GSTAttestationSubmitted()
+                .topics as string[]
+        const attestationEvent = new Promise((rs, rj) =>
+            synchronizer.once(GSTAttestationSubmitted, (event) => rs(event))
+        )
+        await synchronizer.unirepContract
+            .connect(accounts[1])
+            .submitGSTAttestation(attestation, epochKey, 0, {
+                value: attestingFee,
+            })
+            .then((t) => t.wait())
+        await attestationEvent
+        const _attestation = await (synchronizer as any)._db.findOne(
+            'Attestation',
+            {
+                where: {
+                    graffiti: attestation.graffiti.toString(),
+                },
+            }
+        )
+        expect(_attestation).to.not.be.null
+        expect(_attestation.valid).to.equal(0)
     })
 
     it('should process epk proof event and attestation', async () => {
