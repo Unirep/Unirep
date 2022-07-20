@@ -383,4 +383,95 @@ describe('Attesting', () => {
             await hardhatEthers.provider.getBalance(unirepContract.address)
         ).to.equal(0)
     })
+
+    it('gst attestation from unregistered attester should fail', async () => {
+        let nonAttester = accounts[5]
+        let nonAttesterAddress = await nonAttester.getAddress()
+        let nonAttesterId = (
+            await unirepContract.attesters(nonAttesterAddress)
+        ).toBigInt()
+        expect((0).toString()).equal(nonAttesterId.toString())
+
+        let unirepContractCalledByNonAttester =
+            unirepContract.connect(nonAttester)
+        let nonce = 0
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        let attestation: Attestation = new Attestation(
+            BigInt(nonAttesterId),
+            BigInt(0),
+            BigInt(1),
+            genRandomSalt(),
+            BigInt(signedUpInLeaf)
+        )
+        await expect(
+            unirepContractCalledByNonAttester.submitGSTAttestation(
+                attestation,
+                ethers.BigNumber.from(epochKey),
+                0,
+                { value: attestingFee }
+            )
+        ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
+    })
+
+    it('gst attestation with incorrect attesterId should fail', async () => {
+        // Increment nonce to get different epoch key
+        let nonce = 1
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        let attestation: Attestation = new Attestation(
+            BigInt(999),
+            BigInt(1),
+            BigInt(0),
+            genRandomSalt(),
+            BigInt(signedUpInLeaf)
+        )
+        await expect(
+            unirepContract
+                .connect(attester)
+                .submitGSTAttestation(
+                    attestation,
+                    epochKey as BigNumberish,
+                    0,
+                    { value: attestingFee }
+                )
+        ).to.be.revertedWithCustomError(unirepContract, `AttesterIdNotMatch`)
+    })
+
+    it('gst attestation with invalid epoch key should fail', async () => {
+        // Increment nonce to get different epoch key
+        let attestation: Attestation = new Attestation(
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
+            genRandomSalt(),
+            BigInt(signedUpInLeaf)
+        )
+        await expect(
+            unirepContract
+                .connect(attester)
+                .submitGSTAttestation(
+                    attestation,
+                    '0xffffffffffffffffffffffffffffff',
+                    0,
+                    { value: attestingFee }
+                )
+        ).to.be.revertedWithCustomError(unirepContract, `InvalidEpochKey`)
+    })
+
+    it('submit gst attestation should succeed', async () => {
+        let nonce = 0
+        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        let attestation: Attestation = new Attestation(
+            BigInt(attesterId),
+            BigInt(1),
+            BigInt(0),
+            genRandomSalt(),
+            BigInt(signedUpInLeaf)
+        )
+        await unirepContract
+            .connect(attester)
+            .submitGSTAttestation(attestation, epochKey as BigNumberish, 0, {
+                value: attestingFee,
+            })
+            .then((t) => t.wait())
+    })
 })
