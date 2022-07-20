@@ -215,12 +215,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         verifyAttesterFee();
 
         if (
-            !(toProofIndex != 0 &&
-                toProofIndex < proofIndex &&
-                fromProofIndex < proofIndex)
+            toProofIndex == 0 ||
+            toProofIndex >= proofIndex ||
+            fromProofIndex >= proofIndex
         ) revert InvalidProofIndex();
 
-        if (!(attestation.signUp == 0 || attestation.signUp == 1))
+        if (attestation.signUp != 0 && attestation.signUp != 1)
             revert InvalidSignUpFlag();
 
         if (epochKey > maxEpochKey) revert InvalidEpochKey();
