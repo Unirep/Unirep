@@ -6,6 +6,7 @@ import * as snarkjs from 'snarkjs'
 import * as fastFile from 'fastfile'
 import url from 'url'
 import https from 'https'
+import readline from 'readline'
 import {
     NUM_ATTESTATIONS_PER_PROOF,
     MAX_REPUTATION_BUDGET,
@@ -29,8 +30,8 @@ if (!ptauExists) {
     await fs.promises.unlink(tmp).catch(() => {})
     await new Promise((rs, rj) => {
         const logPercent = (p) => {
-            process.stdout.clearLine(0)
-            process.stdout.cursorTo(0)
+            readline.clearLine(process.stdout, 0)
+            readline.cursorTo(process.stdout, 0)
             process.stdout.write(`Downloading ptau file, please wait... ${p}%`)
         }
         const file = fs.createWriteStream(tmp, { flags: 'w' })
