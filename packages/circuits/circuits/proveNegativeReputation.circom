@@ -9,6 +9,8 @@ include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/gates.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../../node_modules/circomlib/circuits/bitify.circom";
+include "../../../node_modules/circomlib/circuits/sign.circom";
 include "./sparseMerkleTree.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
@@ -33,7 +35,8 @@ template ProveNegativeReputation(GST_tree_depth, user_state_tree_depth, epoch_tr
     signal private input graffiti;
     signal private input sign_up;
     signal private input UST_path_elements[user_state_tree_depth][1];
-    signal input maxRep;
+    signal private input maxRep;
+    signal output negativeRep;
 
     // we only need to verify that one epk is in the gst
     // we can then simply calculate the others
@@ -97,11 +100,27 @@ template ProveNegativeReputation(GST_tree_depth, user_state_tree_depth, epoch_tr
     /* End of check 3 */
 
     /* 4. Check if user has reputation < maxRep */
-
-    component rep_check = LessThan(MAX_REPUTATION_SCORE_BITS);
+    component rep_check = LessEqThan(MAX_REPUTATION_SCORE_BITS);
     rep_check.in[0] <== pos_rep - neg_rep;
     rep_check.in[1] <== maxRep;
     rep_check.out === 1;
+
+    component zero_check = IsZero();
+    zero_check.in <== maxRep;
+    zero_check.out === 0;
+
+    negativeRep <== 1 + (21888242871839275222246405745257275088548364400416034343698204186575808495616 - maxRep);
+
+    // need to do this so an attacker can't simply pass a large positive value into maxRep
+    component rep_negativity_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    rep_negativity_check.in[0] <== neg_rep;
+    rep_negativity_check.in[1] <== pos_rep;
+    rep_negativity_check.out === 1;
+
+    component output_sanity = LessEqThan(MAX_REPUTATION_SCORE_BITS);
+    output_sanity.in[0] <== negativeRep;
+    output_sanity.in[1] <== neg_rep - pos_rep;
+    output_sanity.out === 1;
 
     /* End of check 4 */
 }

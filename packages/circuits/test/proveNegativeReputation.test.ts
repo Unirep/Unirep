@@ -90,11 +90,11 @@ describe('Prove negative reputation', function () {
     })
 
     it('successfully prove negative reputation', async () => {
-        const rep = new Reputation(BigInt(10), BigInt(11), BigInt(0), BigInt(1))
+        const rep = new Reputation(BigInt(10), BigInt(15), BigInt(0), BigInt(1))
         const attesterId = 10
         const id = new ZkIdentity()
         const epoch = 1
-        const maxRep = 0
+        const maxRep = -2
         const { GSTRoot, inputs } = genInput(id, epoch, rep, attesterId, maxRep)
 
         await executeCircuit(circuit, inputs)
@@ -125,13 +125,13 @@ describe('Prove negative reputation', function () {
             GSTRoot.toString()
         )
         expect(publicSignals[NUM_EPOCH_KEY_NONCE_PER_EPOCH + 1]).to.equal(
-            epoch.toString()
+            (maxRep * -1).toString()
         )
         expect(publicSignals[NUM_EPOCH_KEY_NONCE_PER_EPOCH + 2]).to.equal(
-            attesterId.toString()
+            epoch.toString()
         )
         expect(publicSignals[NUM_EPOCH_KEY_NONCE_PER_EPOCH + 3]).to.equal(
-            maxRep.toString()
+            attesterId.toString()
         )
     })
 
