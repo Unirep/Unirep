@@ -658,6 +658,7 @@ export default class UserState extends Synchronizer {
                             fromEpochUserStateTree.root,
                             BigInt(fromEpoch),
                             BigInt(nonce),
+                            BigInt(0),
                         ])
                     )
                 }
@@ -765,6 +766,7 @@ export default class UserState extends Synchronizer {
                     fromEpochUserStateTree.root,
                     BigInt(fromEpoch),
                     BigInt(nonce),
+                    BigInt(0),
                 ])
             )
             blindedHashChain.push(
@@ -773,6 +775,7 @@ export default class UserState extends Synchronizer {
                     currentHashChain,
                     BigInt(fromEpoch),
                     BigInt(nonce),
+                    BigInt(0),
                 ])
             )
             if (nonce != this.settings.numEpochKeyNoncePerEpoch - 1)
@@ -827,6 +830,7 @@ export default class UserState extends Synchronizer {
                 finalUserState[0],
                 BigInt(fromEpoch),
                 BigInt(startEpochKeyNonce),
+                BigInt(0),
             ])
         )
         finalBlindedUserState.push(
@@ -835,6 +839,7 @@ export default class UserState extends Synchronizer {
                 finalUserState[1],
                 BigInt(fromEpoch),
                 BigInt(endEpochKeyNonce),
+                BigInt(0),
             ])
         )
         const finalTransitionCircuitInputs = stringifyBigInts({

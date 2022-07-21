@@ -421,6 +421,7 @@ const genProcessAttestationsCircuitInput = (
         intermediateUserStateTreeRoots[0],
         epoch,
         fromNonce,
+        BigInt(0),
     ])
 
     const circuitInputs = {
@@ -479,6 +480,7 @@ const genUserStateTransitionCircuitInput = (
             userStateTree.root,
             BigInt(epoch),
             BigInt(startEpochKeyNonce),
+            BigInt(0),
         ])
     )
 
@@ -511,6 +513,7 @@ const genUserStateTransitionCircuitInput = (
                 hashChainResult,
                 BigInt(epoch),
                 BigInt(nonce),
+                BigInt(0),
             ])
         )
 
@@ -532,6 +535,7 @@ const genUserStateTransitionCircuitInput = (
             intermediateUserStateTreeRoot,
             BigInt(epoch),
             BigInt(endEpochKeyNonce),
+            BigInt(0),
         ])
     )
 

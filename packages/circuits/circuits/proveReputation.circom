@@ -131,9 +131,8 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     component if_not_check_graffiti = IsZero();
     if_not_check_graffiti.in <== prove_graffiti;
 
-    component graffiti_hasher = Poseidon(2);
+    component graffiti_hasher = Poseidon(1);
     graffiti_hasher.inputs[0] <== graffiti_pre_image;
-    graffiti_hasher.inputs[1] <== 0;
 
     component graffiti_eq = IsEqual();
     graffiti_eq.in[0] <== graffiti_hasher.out;

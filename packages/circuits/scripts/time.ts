@@ -246,13 +246,7 @@ const genEpochKey = (
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): crypto.SnarkBigInt => {
-    const values: any[] = [
-        identityNullifier,
-        epoch,
-        nonce,
-        BigInt(0),
-        BigInt(0),
-    ]
+    const values: any[] = [identityNullifier, epoch, nonce]
     let epochKey = crypto.hash3(values).valueOf()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
