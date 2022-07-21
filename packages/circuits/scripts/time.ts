@@ -26,8 +26,8 @@ const dirpath = fs.mkdtempSync('/tmp/unirep')
     for (let x = 10; x <= 32; x += 2) {
         // create .circom file
         const GST = 27
-        const UST = 20
-        const testCircuitContent = `include "${provePath}" \n\ncomponent main = ProveReputation(${GST}, ${x}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, ${MAX_REPUTATION_BUDGET}, 252)`
+        const UST = 9
+        const testCircuitContent = `include "${provePath}" \n\ncomponent main = ProveReputation(${x}, ${UST}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, ${MAX_REPUTATION_BUDGET}, 252)`
         fs.writeFileSync(circomPath, testCircuitContent)
         const r1cs = path.join(dirpath, 'proveRep.r1cs')
         const zkey = path.join(dirpath, 'proveRep.zkey')
@@ -65,8 +65,8 @@ const dirpath = fs.mkdtempSync('/tmp/unirep')
                     1: r,
                 },
                 1,
-                GST,
-                x
+                x,
+                UST
             )
             const startTime = performance.now()
             const { proof, publicSignals } = await snarkjs.groth16.fullProve(
@@ -87,7 +87,7 @@ const dirpath = fs.mkdtempSync('/tmp/unirep')
         }
         const average = Math.floor(totalTime / TOTAL_RUNS)
         console.log(
-            `GST depth ${GST}, UST depth ${x}: ${average} ms (${
+            `GST depth ${x}, UST depth ${UST}: ${average} ms (${
                 average / 1000
             } s)`
         )
@@ -246,8 +246,9 @@ const genEpochKey = (
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): BigInt => {
-    const values: any[] = [identityNullifier, epoch, nonce]
-    let epochKey = crypto.hash3(values).valueOf()
+    const epochKey = crypto
+        .hash2([(identityNullifier as any) + BigInt(nonce), epoch])
+        .valueOf()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed

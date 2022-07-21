@@ -1,7 +1,6 @@
 import {
     hash5,
     hash4,
-    hash3,
     hash2,
     hashLeftRight,
     SparseMerkleTree,
@@ -99,8 +98,10 @@ const genEpochKey = (
     nonce: number,
     epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): BigInt => {
-    const values: any[] = [identityNullifier, epoch, nonce]
-    let epochKey = hash3(values).valueOf()
+    const epochKey = hash2([
+        (identityNullifier as any) + BigInt(nonce),
+        epoch,
+    ]).valueOf()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
