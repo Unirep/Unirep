@@ -7,6 +7,7 @@ include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
+include "./modulo.circom";
 
 template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
@@ -59,11 +60,7 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
 
     // signal quotient;
     // 3.1.2 Mod epoch key
-    // circom's best practices state that we should avoid using <-- unless
-    // we know what we are doing. But this is the only way to perform the
-    // modulo operation.
-
-    // We should be safe here because we're not handling raw input signals but
-    // rather outputs from the Poseidon hash function and compile time constants
-    epoch_key <-- epochKeyHasher.out % (2 ** epoch_tree_depth);
+    component modEPK = ModuloTreeDepth(epoch_tree_depth);
+    modEPK.dividend <== epochKeyHasher.out;
+    epoch_key <== modEPK.remainder;
 }
