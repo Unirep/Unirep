@@ -22,12 +22,10 @@ template EpochKeyExist(epoch_tree_depth) {
     signal input path_elements[epoch_tree_depth][1];
     signal output epoch_key;
 
-    component epochKeyHasher = Poseidon(5);
+    component epochKeyHasher = Poseidon(3);
     epochKeyHasher.inputs[0] <== identity_nullifier;
     epochKeyHasher.inputs[1] <== epoch;
     epochKeyHasher.inputs[2] <== nonce;
-    epochKeyHasher.inputs[3] <== 0;
-    epochKeyHasher.inputs[4] <== 0;
 
     signal epkModed;
     // 2.1.2 Mod epoch key

@@ -1,6 +1,6 @@
 /*
     Verify if epoch key is computed correctly
-    epoch_key = hash5(id_nullifier, epoch, nonce);
+    epoch_key = hash3(id_nullifier, epoch, nonce);
 */
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";
@@ -53,12 +53,10 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
 
     /* 3. Check epoch key is computed correctly */
     // 3.1.1 Compute epoch key
-    component epochKeyHasher = Poseidon(5);
+    component epochKeyHasher = Poseidon(3);
     epochKeyHasher.inputs[0] <== identity_nullifier;
     epochKeyHasher.inputs[1] <== epoch;
     epochKeyHasher.inputs[2] <== nonce;
-    epochKeyHasher.inputs[3] <== 0;
-    epochKeyHasher.inputs[4] <== 0;
 
     // signal quotient;
     // 3.1.2 Mod epoch key
