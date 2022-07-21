@@ -36,6 +36,10 @@ const decodeBigIntArray = (input: string): bigint[] => {
     return unstringifyBigInts(JSON.parse(input))
 }
 
+/**
+ * User state is used for a user to generate proofs and obtain the current user status.
+ * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
+ */
 export default class UserState extends Synchronizer {
     public id: ZkIdentity
 
@@ -87,6 +91,10 @@ export default class UserState extends Synchronizer {
         })
     }
 
+    /**
+     * Query if the user is signed up in the unirep state.
+     * @returns True if user has signed up in unirep contract, false otherwise.
+     */
     async hasSignedUp(): Promise<boolean> {
         const signup = await this._db.findOne('UserSignUp', {
             where: {
@@ -96,6 +104,11 @@ export default class UserState extends Synchronizer {
         return !!signup
     }
 
+    /**
+     * Query the latest user state transition epoch. If user hasn't performed user state transition,
+     * the function will return the epoch which user has signed up in Unirep contract.
+     * @returns The latest epoch where user performs user state transition.
+     */
     async latestTransitionedEpoch(): Promise<number> {
         const currentEpoch = await this.unirepContract.currentEpoch()
         let latestTransitionedEpoch = 1
@@ -127,7 +140,11 @@ export default class UserState extends Synchronizer {
         return latestTransitionedEpoch
     }
 
-    // Get the latest GST leaf index for an epoch
+    /**
+     * Get the latest global state tree leaf index for an epoch.
+     * @param _epoch Get the global state tree leaf index of the given epoch
+     * @returns The the latest global state tree leaf index for an epoch.
+     */
     async latestGSTLeafIndex(_epoch?: number): Promise<number> {
         if (!(await this.hasSignedUp())) return -1
         const currentEpoch = _epoch ?? (await this.getUnirepStateCurrentEpoch())
@@ -317,6 +334,12 @@ export default class UserState extends Synchronizer {
         return nullifiers
     }
 
+    /**
+     * Get the reputation object from a given attester
+     * @param attesterId The attester ID that the user queries
+     * @param toEpoch The latest epoch that the reputation is accumulated
+     * @returns The reputation object
+     */
     public getRepByAttester = async (
         attesterId: BigInt,
         toEpoch?: number
@@ -443,6 +466,11 @@ export default class UserState extends Synchronizer {
         )
     }
 
+    /**
+     * Generate the epoch key proof of the current user state.
+     * @param epochKeyNonce The nonce that is used in the epoch key proof.
+     * @returns The epoch key proof of type `EpochKeyProof`.
+     */
     public genVerifyEpochKeyProof = async (
         epochKeyNonce: number
     ): Promise<EpochKeyProof> => {
@@ -526,6 +554,11 @@ export default class UserState extends Synchronizer {
         }
     }
 
+    /**
+     * Generate a set of user state transition proofs of the current user state
+     * @returns A set of `StartTransitionProof`, `ProcessAttestationsProof` and `UserTransitionProof` that
+     * is used to perform a user state transition.
+     */
     public genUserStateTransitionProofs = async (): Promise<{
         startTransitionProof: StartTransitionProof
         processAttestationProofs: ProcessAttestationsProof[]
@@ -863,6 +896,18 @@ export default class UserState extends Synchronizer {
         }
     }
 
+    /**
+     * Generate a reputation proof of current user state and given conditions
+     * @param attesterId The attester ID that the user wants to proof the reputation
+     * @param epkNonce The nonce determines the output of the epoch key
+     * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
+     * @param proveGraffiti The boolean flag that indicates if user wants to prove graffiti pre-image
+     * @param graffitiPreImage The pre-image of the graffiti
+     * @param nonceList The reputation nonce list or the number of spending reputation. It is used to spend reputation.
+     * In the circuit, it will compute the reputation nullifiers of the given nonce. If the reputation nullifier is used
+     * to spend reputation, it cannot be spent again.
+     * @returns The reputation proof of type `ReputationProof`.
+     */
     public genProveReputationProof = async (
         attesterId: BigInt,
         epkNonce: number,
@@ -981,6 +1026,11 @@ export default class UserState extends Synchronizer {
         )
     }
 
+    /**
+     * Generate a user sign up proof of current user state and the given attester ID
+     * @param attesterId The attester ID that the user wants to prove the sign up status
+     * @returns The sign up proof of type `SignUpProof`.
+     */
     public genUserSignUpProof = async (
         attesterId: BigInt
     ): Promise<SignUpProof> => {

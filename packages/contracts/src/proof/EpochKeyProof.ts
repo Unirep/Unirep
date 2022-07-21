@@ -3,6 +3,9 @@ import { SnarkProof } from '@unirep/crypto'
 import { BigNumberish } from 'ethers'
 import { BaseProof } from './BaseProof'
 
+/**
+ * The epoch key proof structure that helps to query the public signals
+ */
 export class EpochKeyProof extends BaseProof {
     readonly idx = {
         globalStateTree: 0,
@@ -13,6 +16,11 @@ export class EpochKeyProof extends BaseProof {
     public epoch: BigNumberish
     public epochKey: BigNumberish
 
+    /**
+     * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
+     * @param _proof The proof that can be verified by the prover
+     * @param prover The prover that can verify the public signals and the proof
+     */
     constructor(
         _publicSignals: BigNumberish[],
         _proof: SnarkProof,

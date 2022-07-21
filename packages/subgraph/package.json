@@ -2,7 +2,17 @@
     "name": "@unirep/subgraph",
     "version": "1.0.0",
     "description": "",
+    "repository": "https://github.com/unirep/unirep.git",
+    "author": "Unirep team <unirepsocial@gmail.com>",
     "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Unirep/Unirep/issues/new/choose"
+    },
+    "homepage": "https://github.com/unirep/unirep#readme",
+    "keywords": [
+        "subgraph",
+        "ethereum"
+    ],
     "scripts": {
         "codegen": "./scripts/codegen.sh",
         "copyABI": "node ./scripts/copyABI.js",

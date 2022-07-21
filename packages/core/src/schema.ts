@@ -124,6 +124,9 @@ const _schema = [
     },
 ]
 
+/**
+ * The schema of the database that is used in storing Unirep data
+ */
 export const schema = _schema.map((obj) => ({
     primaryKey: '_id',
     ...obj,
