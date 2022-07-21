@@ -21,7 +21,6 @@
         "test": "echo 'No subgraph test'"
     },
     "dependencies": {
-        "@graphprotocol/graph-cli": "0.26.0",
         "@graphprotocol/graph-ts": "0.24.1"
     },
     "devDependencies": {
