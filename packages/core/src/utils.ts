@@ -2,18 +2,14 @@ import {
     hash5,
     hash4,
     hash3,
+    hash2,
     hashLeftRight,
     SparseMerkleTree,
-    SnarkBigInt,
     stringifyBigInts,
     unstringifyBigInts,
 } from '@unirep/crypto'
 
 import Reputation from './Reputation'
-import {
-    EPOCH_KEY_NULLIFIER_DOMAIN,
-    REPUTATION_NULLIFIER_DOMAIN,
-} from '../config/nullifierDomainSeparator'
 import {
     formatProofForSnarkjsVerification,
     EPOCH_TREE_DEPTH,
@@ -98,11 +94,11 @@ const computeInitUserStateRoot = (
  * @returns The moded epoch key
  */
 const genEpochKey = (
-    identityNullifier: SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     epochTreeDepth: number = EPOCH_TREE_DEPTH
-): SnarkBigInt => {
+): BigInt => {
     const values: any[] = [identityNullifier, epoch, nonce]
     let epochKey = hash3(values).valueOf()
     // Adjust epoch key size according to epoch tree depth
@@ -119,17 +115,11 @@ const genEpochKey = (
  * @returns The epoch key nullifier
  */
 const genEpochKeyNullifier = (
-    identityNullifier: SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number
-): SnarkBigInt => {
-    return hash5([
-        EPOCH_KEY_NULLIFIER_DOMAIN,
-        identityNullifier,
-        BigInt(epoch),
-        BigInt(nonce),
-        BigInt(0),
-    ])
+): BigInt => {
+    return hash2([BigInt(epoch), (identityNullifier as any) + BigInt(nonce)])
 }
 
 /**
@@ -142,11 +132,11 @@ const genEpochKeyNullifier = (
  * @returns The reputation nullifier
  */
 const genReputationNullifier = (
-    identityNullifier: SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     attesterId: BigInt
-): SnarkBigInt => {
+): BigInt => {
     return hash4([identityNullifier, BigInt(epoch), BigInt(nonce), attesterId])
 }
 

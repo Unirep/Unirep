@@ -241,11 +241,11 @@ class Reputation {
 }
 
 const genEpochKey = (
-    identityNullifier: crypto.SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
-): crypto.SnarkBigInt => {
+): BigInt => {
     const values: any[] = [identityNullifier, epoch, nonce]
     let epochKey = crypto.hash3(values).valueOf()
     // Adjust epoch key size according to epoch tree depth

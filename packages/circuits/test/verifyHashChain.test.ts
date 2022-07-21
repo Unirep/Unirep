@@ -1,4 +1,4 @@
-import { genRandomSalt, hashLeftRight, SnarkBigInt } from '@unirep/crypto'
+import { genRandomSalt, hashLeftRight } from '@unirep/crypto'
 import * as path from 'path'
 
 import { executeCircuit } from '../src'
@@ -14,7 +14,7 @@ describe('Hash chain circuit', function () {
     let circuit
 
     const NUM_ELEMENT = 10
-    const elements: SnarkBigInt[] = []
+    const elements: BigInt[] = []
     let cur: BigInt = BigInt(0)
     let result
     const selectors: number[] = []

@@ -1,19 +1,19 @@
 import { createHash } from 'crypto'
 import { poseidon } from 'circomlibjs'
-import { genRandomSalt, SnarkBigInt } from 'maci-crypto'
+import { genRandomSalt } from 'maci-crypto'
 
 /**
  * Type of snark public signals
  */
-type SnarkPublicSignals = SnarkBigInt[]
+type SnarkPublicSignals = BigInt[]
 
 /**
  * Interface of snark proof
  */
 interface SnarkProof {
-    pi_a: SnarkBigInt[]
-    pi_b: SnarkBigInt[][]
-    pi_c: SnarkBigInt[]
+    pi_a: BigInt[]
+    pi_b: BigInt[][]
+    pi_c: BigInt[]
 }
 
 /**

@@ -1,6 +1,5 @@
 import {
     SNARK_FIELD_SIZE,
-    SnarkBigInt,
     genRandomSalt,
     stringifyBigInts,
     unstringifyBigInts,
@@ -23,10 +22,4 @@ export const hashLeftRight = (input1: any, input2: any) =>
     hash2([input1, input2])
 export const hashOne = (input: any) => hash1([input])
 
-export {
-    SNARK_FIELD_SIZE,
-    SnarkBigInt,
-    genRandomSalt,
-    stringifyBigInts,
-    unstringifyBigInts,
-}
+export { SNARK_FIELD_SIZE, genRandomSalt, stringifyBigInts, unstringifyBigInts }

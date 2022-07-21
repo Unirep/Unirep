@@ -1,11 +1,6 @@
 import * as path from 'path'
 import { expect } from 'chai'
-import {
-    genRandomSalt,
-    IncrementalMerkleTree,
-    hashOne,
-    SnarkBigInt,
-} from '@unirep/crypto'
+import { genRandomSalt, IncrementalMerkleTree, hashOne } from '@unirep/crypto'
 import { executeCircuit, getSignalByName } from '../src'
 import { compileAndLoadCircuit } from './utils'
 

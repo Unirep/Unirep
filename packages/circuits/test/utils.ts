@@ -196,11 +196,11 @@ const genNewUserStateTree = (
 }
 
 const genEpochKey = (
-    identityNullifier: crypto.SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
-): crypto.SnarkBigInt => {
+): BigInt => {
     const values: any[] = [identityNullifier, epoch, nonce]
     let epochKey = crypto.hash3(values).valueOf()
     // Adjust epoch key size according to epoch tree depth
@@ -721,16 +721,13 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
 }
 
 const genEpochKeyNullifier = (
-    identityNullifier: crypto.SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number
-): crypto.SnarkBigInt => {
-    return crypto.hash5([
-        EPOCH_KEY_NULLIFIER_DOMAIN,
-        identityNullifier,
+): BigInt => {
+    return crypto.hash2([
         BigInt(epoch),
-        BigInt(nonce),
-        BigInt(0),
+        (identityNullifier as any) + BigInt(nonce),
     ])
 }
 

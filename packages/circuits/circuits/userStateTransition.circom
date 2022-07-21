@@ -157,12 +157,9 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     // 4.1 Compute nullifier
     component epoch_key_nullifier_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
-        epoch_key_nullifier_hasher[n] = Poseidon(5);
-        epoch_key_nullifier_hasher[n].inputs[0] <== 1;  // 1 is the domain separator for epoch key nullifier
-        epoch_key_nullifier_hasher[n].inputs[1] <== identity_nullifier;
-        epoch_key_nullifier_hasher[n].inputs[2] <== epoch;
-        epoch_key_nullifier_hasher[n].inputs[3] <== n;
-        epoch_key_nullifier_hasher[n].inputs[4] <== 0;
+        epoch_key_nullifier_hasher[n] = Poseidon(2);
+        epoch_key_nullifier_hasher[n].inputs[0] <== epoch;
+        epoch_key_nullifier_hasher[n].inputs[1] <== identity_nullifier + n;
         epoch_key_nullifier[n] <== epoch_key_nullifier_hasher[n].out;
     }
 
