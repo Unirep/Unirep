@@ -96,13 +96,12 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
         if_above[i] = GreaterThan(8); // use small bit amount because it should be lt 10
         if_above[i].in[0] <== rep_nullifiers_amount;
         if_above[i].in[1] <== i;
-        rep_nullifier_hasher[i] = Poseidon(5);
+        rep_nullifier_hasher[i] = Poseidon(4);
         var nonce = i + start_rep_nonce;
-        rep_nullifier_hasher[i].inputs[0] <== 2; // 2 is the domain separator for reputation nullifier
-        rep_nullifier_hasher[i].inputs[1] <== identity_nullifier;
-        rep_nullifier_hasher[i].inputs[2] <== epoch;
-        rep_nullifier_hasher[i].inputs[3] <== nonce;
-        rep_nullifier_hasher[i].inputs[4] <== attester_id; // The reputation nullifier is spent at the attester's app
+        rep_nullifier_hasher[i].inputs[0] <== identity_nullifier;
+        rep_nullifier_hasher[i].inputs[1] <== epoch;
+        rep_nullifier_hasher[i].inputs[2] <== nonce;
+        rep_nullifier_hasher[i].inputs[3] <== attester_id; // The reputation nullifier is spent at the attester's app
         rep_nullifiers[i] <== rep_nullifier_hasher[i].out * if_above[i].out;
     }
     /* End of check 3 */

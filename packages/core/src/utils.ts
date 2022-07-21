@@ -1,5 +1,6 @@
 import {
     hash5,
+    hash4,
     hash3,
     hashLeftRight,
     SparseMerkleTree,
@@ -146,13 +147,7 @@ const genReputationNullifier = (
     nonce: number,
     attesterId: BigInt
 ): SnarkBigInt => {
-    return hash5([
-        REPUTATION_NULLIFIER_DOMAIN,
-        identityNullifier,
-        BigInt(epoch),
-        BigInt(nonce),
-        attesterId,
-    ])
+    return hash4([identityNullifier, BigInt(epoch), BigInt(nonce), attesterId])
 }
 
 export {
