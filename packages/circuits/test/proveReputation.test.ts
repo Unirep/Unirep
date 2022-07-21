@@ -8,6 +8,7 @@ import {
     genReputationCircuitInput,
     throwError,
     genProofAndVerify,
+    genEpochKey,
 } from './utils'
 import {
     proveReputationCircuitPath,
@@ -406,6 +407,39 @@ describe('Prove reputation from attester circuit', function () {
             circuit,
             circuitInputs,
             'Wrong graffiti pre-image should throw error'
+        )
+
+        const isValid = await genProofAndVerify(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+        expect(isValid).to.be.false
+    })
+
+    it('prove reputation with own not_epoch_key should fail', async () => {
+        const reputationRecords = genReputationRecords()
+        const attesterIds = Object.keys(reputationRecords)
+        const attesterId = Number(
+            attesterIds[Math.floor(Math.random() * NUM_ATTESTERS)]
+        )
+        const epochKey = genEpochKey(user.identityNullifier, epoch, 2)
+        const circuitInputs = genReputationCircuitInput(
+            user,
+            epoch,
+            nonce,
+            reputationRecords,
+            attesterId,
+            undefined,
+            undefined,
+            0,
+            0,
+            epochKey
+        )
+
+        await throwError(
+            circuit,
+            circuitInputs,
+            'Own epoch key should throw error'
         )
 
         const isValid = await genProofAndVerify(

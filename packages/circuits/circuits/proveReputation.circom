@@ -42,6 +42,7 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     signal input prove_graffiti;
     signal input graffiti_pre_image;
     signal output rep_nullifiers[MAX_REPUTATION_BUDGET];
+    signal input not_epoch_key;
 
     /* 1. Check if user exists in the Global State Tree and verify epoch key */
     component verify_epoch_key = VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH);
@@ -144,4 +145,25 @@ template ProveReputation(GST_tree_depth, user_state_tree_depth, epoch_tree_depth
     check_graffiti.out === 1;
 
     /* End of check 5 */
+
+    /* 6. Prove that user does not control a certain epoch key */
+
+    component not_equal_check[EPOCH_KEY_NONCE_PER_EPOCH];
+    component epoch_key_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
+    component epoch_key_mod[EPOCH_KEY_NONCE_PER_EPOCH];
+
+    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+      epoch_key_hasher[i] = Poseidon(2);
+      epoch_key_hasher[i].inputs[0] <== identity_nullifier + i;
+      epoch_key_hasher[i].inputs[1] <== epoch;
+
+      epoch_key_mod[i] = ModuloTreeDepth(epoch_tree_depth);
+      epoch_key_mod[i].dividend <== epoch_key_hasher[i].out;
+      not_equal_check[i] = IsEqual();
+      not_equal_check[i].in[0] <== not_epoch_key;
+      not_equal_check[i].in[1] <== epoch_key_mod[i].remainder;
+      not_equal_check[i].out === 0;
+    }
+
+    /* End of check 6 */
 }

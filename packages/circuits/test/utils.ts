@@ -580,7 +580,8 @@ const genReputationCircuitInput = (
     _repNullifiersAmount?,
     _minRep?,
     _proveGraffiti?,
-    _graffitiPreImage?
+    _graffitiPreImage?,
+    not_epoch_key: any = BigInt(0)
 ) => {
     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     const repNullifiersAmount = _repNullifiersAmount ?? 0
@@ -648,6 +649,7 @@ const genReputationCircuitInput = (
         min_rep: minRep,
         prove_graffiti: proveGraffiti,
         graffiti_pre_image: graffitiPreImage,
+        not_epoch_key,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }

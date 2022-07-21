@@ -1017,6 +1017,7 @@ export default class UserState extends Synchronizer {
             prove_graffiti: proveGraffiti === undefined ? 0 : proveGraffiti,
             graffiti_pre_image:
                 graffitiPreImage === undefined ? 0 : graffitiPreImage,
+            not_epoch_key: BigInt(0),
         })
 
         const results = await this.prover.genProofAndPublicSignals(
