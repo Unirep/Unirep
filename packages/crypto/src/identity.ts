@@ -2,14 +2,23 @@ import { createHash } from 'crypto'
 import { poseidon } from 'circomlibjs'
 import { genRandomSalt, SnarkBigInt } from 'maci-crypto'
 
+/**
+ * Type of snark public signals
+ */
 type SnarkPublicSignals = SnarkBigInt[]
 
+/**
+ * Interface of snark proof
+ */
 interface SnarkProof {
     pi_a: SnarkBigInt[]
     pi_b: SnarkBigInt[][]
     pi_c: SnarkBigInt[]
 }
 
+/**
+ * Definition of type of serialized ZKIdentity
+ */
 type SerializedIdentity = {
     identityNullifier: string
     identityTrapdoor: string
@@ -27,27 +36,37 @@ function sha256(message: string): string {
         .digest('hex')}`
 }
 
-// The strategy used to generate the ZK identity.
+/**
+ * The strategy is used to generate the ZK identity.
+ */
 enum Strategy {
-    RANDOM, // Identity is generated randomly.
-    MESSAGE, // Identity is generated from a message.
-    SERIALIZED, // Identity parameters are passed from outside.
+    /**
+     * Identity is generated randomly.
+     */
+    RANDOM,
+    /**
+     * Identity is generated from a message.
+     */
+    MESSAGE,
+    /**
+     * Identity parameters are passed from outside.
+     */
+    SERIALIZED,
 }
 
 /**
  * ZkIdentity is a class which can be used by protocols supported by the
- * @zk-key/protocols package and it simplifies the management of
+ * @zk-kit/protocols package and it simplifies the management of
  * identity-related witness parameters.
  */
 class ZkIdentity {
     private _identityTrapdoor: bigint
     private _identityNullifier: bigint
-
     private _secret: bigint[] = []
 
     /**
      * Initializes the class attributes based on the strategy passed as parameter.
-     * @param strategy The strategy for identity generation.
+     * @param strategy The strategy for identity generation. Default: `Strategy.RANDOM`
      * @param metadata Additional data needed to create identity for given strategy.
      */
     constructor(

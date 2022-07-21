@@ -1,3 +1,3 @@
-include "../hasherPoseidon.circom"
+include "../../../../node_modules/circomlib/circuits/poseidon.circom";
 
-component main = HashLeftRight();
+component main = Poseidon(2);

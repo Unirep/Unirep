@@ -4,8 +4,7 @@
 */
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";
-include "./hasherPoseidon.circom";
-include "./incrementalMerkleTree.circom";
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./userExists.circom";
 
 template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
@@ -46,19 +45,19 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
 
     /* 3. Check epoch key is computed correctly */
     // 3.1.1 Compute epoch key
-    component epochKeyHasher = Hasher5();
-    epochKeyHasher.in[0] <== identity_nullifier;
-    epochKeyHasher.in[1] <== epoch;
-    epochKeyHasher.in[2] <== nonce;
-    epochKeyHasher.in[3] <== 0;
-    epochKeyHasher.in[4] <== 0;
+    component epochKeyHasher = Poseidon(5);
+    epochKeyHasher.inputs[0] <== identity_nullifier;
+    epochKeyHasher.inputs[1] <== epoch;
+    epochKeyHasher.inputs[2] <== nonce;
+    epochKeyHasher.inputs[3] <== 0;
+    epochKeyHasher.inputs[4] <== 0;
 
     signal quotient;
     // 3.1.2 Mod epoch key
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
-    quotient <-- epochKeyHasher.hash \ (2 ** epoch_tree_depth);
+    quotient <-- epochKeyHasher.out \ (2 ** epoch_tree_depth);
 
     // 3.1.3 Range check on epoch key
     component epk_lt = LessEqThan(epoch_tree_depth);
@@ -73,6 +72,6 @@ template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EP
     quot_lt.out === 1;
 
     // 3.1.5 Check equality
-    epochKeyHasher.hash === quotient * (2 ** epoch_tree_depth) + epoch_key;
+    epochKeyHasher.out === quotient * (2 ** epoch_tree_depth) + epoch_key;
     /* End of check 3*/
 }

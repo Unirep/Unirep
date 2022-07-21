@@ -3,8 +3,19 @@
     "version": "1.0.0",
     "main": "build/src/index.js",
     "types": "build/src/index.d.ts",
-    "author": "vivianjeng <vivi432@yahoo.com.tw>",
+    "author": "Unirep team <unirepsocial@gmail.com>",
     "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Unirep/Unirep/issues/new/choose"
+    },
+    "homepage": "https://github.com/unirep/unirep#readme",
+    "keywords": [
+        "ethereum",
+        "smart-contracts",
+        "solidity",
+        "ethers",
+        "zksnark"
+    ],
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc",

@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { BigNumberish, ethers } from 'ethers'
 import {
     MAX_USERS,
     MAX_ATTESTERS,
@@ -32,9 +32,20 @@ import {
 
 export { Unirep, UnirepFactory }
 
+/**
+ * Deploy the unirep contract and verifier contracts with given `deployer` and settings
+ * @param deployer A signer who will deploy the contracts
+ * @param _settings The settings that the signer can define: `epochLength`, `attestingFee`, `maxUsers`, `maxAttesters`
+ * @returns The Unirep smart contract
+ */
 export const deployUnirep = async (
     deployer: ethers.Signer,
-    _settings?: any
+    _settings?: {
+        epochLength?: BigNumberish
+        attestingFee?: BigNumberish
+        maxUsers?: BigNumberish
+        maxAttesters?: BigNumberish
+    }
 ): Promise<Unirep> => {
     let EpochKeyValidityVerifierContract: VerifyEpochKeyVerifier
     let StartTransitionVerifierContract: StartTransitionVerifier
@@ -124,9 +135,15 @@ export const deployUnirep = async (
     return c
 }
 
+/**
+ * Get Unirep smart contract from a given address
+ * @param address The address if the Unirep contract
+ * @param signerOrProvider The signer or provider that connect to the Unirep smart contract
+ * @returns The Unirep smart contract
+ */
 export const getUnirepContract = (
-    addressOrName: string,
+    address: string,
     signerOrProvider: ethers.Signer | ethers.providers.Provider
 ): Unirep => {
-    return UnirepFactory.connect(addressOrName, signerOrProvider)
+    return UnirepFactory.connect(address, signerOrProvider)
 }

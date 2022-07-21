@@ -7,11 +7,7 @@
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
-include "./hasherPoseidon.circom";
-include "./incrementalMerkleTree.circom";
-include "./modulo.circom";
-include "./sparseMerkleTree.circom";
-include "./processAttestations.circom";
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./userExists.circom";
 
 template StartTransition(GST_tree_depth) {
@@ -48,21 +44,21 @@ template StartTransition(GST_tree_depth) {
 
     /* 2. Compute blinded public output */
     // 2.1 blinded_user_state = hash5(identity, UST_root, epoch, epoch_key_nonce)
-    component blinded_user_state_hasher = Hasher5();
-    blinded_user_state_hasher.in[0] <== identity_nullifier;
-    blinded_user_state_hasher.in[1] <== user_tree_root;
-    blinded_user_state_hasher.in[2] <== epoch;
-    blinded_user_state_hasher.in[3] <== nonce;
-    blinded_user_state_hasher.in[4] <== 0;
-    blinded_user_state <== blinded_user_state_hasher.hash;
+    component blinded_user_state_hasher = Poseidon(5);
+    blinded_user_state_hasher.inputs[0] <== identity_nullifier;
+    blinded_user_state_hasher.inputs[1] <== user_tree_root;
+    blinded_user_state_hasher.inputs[2] <== epoch;
+    blinded_user_state_hasher.inputs[3] <== nonce;
+    blinded_user_state_hasher.inputs[4] <== 0;
+    blinded_user_state <== blinded_user_state_hasher.out;
 
     // 2.2 blinded_hash_chain_result = hash5(identity, hash_chain_result, epoch, epoch_key_nonce)
-    component blinded_hash_chain_result_hasher = Hasher5();
-    blinded_hash_chain_result_hasher.in[0] <== identity_nullifier;
-    blinded_hash_chain_result_hasher.in[1] <== 0; // hashchain start from 0
-    blinded_hash_chain_result_hasher.in[2] <== epoch;
-    blinded_hash_chain_result_hasher.in[3] <== nonce;
-    blinded_hash_chain_result_hasher.in[4] <== 0;
-    blinded_hash_chain_result <== blinded_hash_chain_result_hasher.hash;
+    component blinded_hash_chain_result_hasher = Poseidon(5);
+    blinded_hash_chain_result_hasher.inputs[0] <== identity_nullifier;
+    blinded_hash_chain_result_hasher.inputs[1] <== 0; // hashchain start from 0
+    blinded_hash_chain_result_hasher.inputs[2] <== epoch;
+    blinded_hash_chain_result_hasher.inputs[3] <== nonce;
+    blinded_hash_chain_result_hasher.inputs[4] <== 0;
+    blinded_hash_chain_result <== blinded_hash_chain_result_hasher.out;
     /* End of 2. Compute blinded public output */
 }
