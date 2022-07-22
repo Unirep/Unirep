@@ -425,9 +425,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * publicSignals[maxReputationBudget + 3] = [ attesterId ]
      * publicSignals[maxReputationBudget + 4] = [ proveReputationAmount ]
      * publicSignals[maxReputationBudget + 5] = [ minRep ]
-     * publicSignals[maxReputationBudget + 6] = [ minRep ]
-     * publicSignals[maxReputationBudget + 7] = [ proveGraffiti ]
-     * publicSignals[maxReputationBudget + 8] = [ graffitiPreImage ]
+     * publicSignals[maxReputationBudget + 6] = [ proveGraffiti ]
+     * publicSignals[maxReputationBudget + 7] = [ graffitiPreImage ]
      * @param publicSignals The public signals of the reputation proof
      * @param proof The The proof of the reputation proof
      */
