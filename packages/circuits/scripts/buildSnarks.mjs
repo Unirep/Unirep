@@ -8,35 +8,14 @@ import url from 'url'
 import https from 'https'
 import readline from 'readline'
 import child_process from 'child_process'
-import {
-    NUM_ATTESTATIONS_PER_PROOF,
-    MAX_REPUTATION_BUDGET,
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '../dist/config/index.js'
+import { circuitContents } from './circuits.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-const downloadProcess = child_process.fork(
-    path.join(__dirname, 'downloadPtau.mjs')
-)
-await new Promise((rs, rj) =>
-    downloadProcess.on('exit', (code) => (code === 0 ? rs() : rj()))
-)
+await import('./downloadPtau.mjs')
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
 await fs.promises.mkdir(outDir, { recursive: true })
-
-const circuitContents = {
-    verifyEpochKey: `include "../circuits/verifyEpochKey.circom" \n\ncomponent main = VerifyEpochKey(${GLOBAL_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH})`,
-    proveReputation: `include "../circuits/proveReputation.circom" \n\ncomponent main = ProveReputation(${GLOBAL_STATE_TREE_DEPTH}, ${USER_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, ${MAX_REPUTATION_BUDGET}, 252)`,
-    proveUserSignUp: `include "../circuits/proveUserSignUp.circom" \n\ncomponent main = ProveUserSignUp(${GLOBAL_STATE_TREE_DEPTH}, ${USER_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH})`,
-    startTransition: `include "../circuits/startTransition.circom" \n\ncomponent main = StartTransition(${GLOBAL_STATE_TREE_DEPTH})`,
-    processAttestations: `include "../circuits/processAttestations.circom" \n\ncomponent main = ProcessAttestations(${USER_STATE_TREE_DEPTH}, ${NUM_ATTESTATIONS_PER_PROOF}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH})`,
-    userStateTransition: `include "../circuits/userStateTransition.circom" \n\ncomponent main = UserStateTransition(${GLOBAL_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${USER_STATE_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH})`,
-}
 
 // pass a space separated list of circuit names to this executable
 const [, , ...circuits] = process.argv
@@ -103,4 +82,4 @@ for (const name of circuits) {
     }
 }
 
-process.exit()
+process.exit(0)
