@@ -397,18 +397,18 @@ describe('Attesting', () => {
     })
 
     it('gst attestation from unregistered attester should fail', async () => {
-        let nonAttester = accounts[5]
-        let nonAttesterAddress = await nonAttester.getAddress()
-        let nonAttesterId = (
+        const nonAttester = accounts[5]
+        const nonAttesterAddress = await nonAttester.getAddress()
+        const nonAttesterId = (
             await unirepContract.attesters(nonAttesterAddress)
         ).toBigInt()
         expect((0).toString()).equal(nonAttesterId.toString())
 
-        let unirepContractCalledByNonAttester =
+        const unirepContractCalledByNonAttester =
             unirepContract.connect(nonAttester)
-        let nonce = 0
-        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        let attestation: Attestation = new Attestation(
+        const nonce = 0
+        const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        const attestation: Attestation = new Attestation(
             BigInt(nonAttesterId),
             BigInt(0),
             BigInt(1),
@@ -427,9 +427,9 @@ describe('Attesting', () => {
 
     it('gst attestation with incorrect attesterId should fail', async () => {
         // Increment nonce to get different epoch key
-        let nonce = 1
-        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        let attestation: Attestation = new Attestation(
+        const nonce = 1
+        const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        const attestation: Attestation = new Attestation(
             BigInt(999),
             BigInt(1),
             BigInt(0),
@@ -450,7 +450,7 @@ describe('Attesting', () => {
 
     it('gst attestation with invalid epoch key should fail', async () => {
         // Increment nonce to get different epoch key
-        let attestation: Attestation = new Attestation(
+        const attestation: Attestation = new Attestation(
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
@@ -470,9 +470,9 @@ describe('Attesting', () => {
     })
 
     it('submit gst attestation should succeed', async () => {
-        let nonce = 0
-        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        let attestation: Attestation = new Attestation(
+        const nonce = 0
+        const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
+        const attestation: Attestation = new Attestation(
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
