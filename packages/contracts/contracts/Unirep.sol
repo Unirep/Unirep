@@ -61,8 +61,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // No attesters with and ID of 0 should exist.
     mapping(address => uint256) public attesters;
     uint256 public nextAttesterId = 1;
-    // Mapping of the airdrop amount of an attester
-    mapping(address => uint256) public airdropAmount;
 
     constructor(
         Config memory _config,
@@ -127,17 +125,23 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     /**
      * @dev User signs up by providing an identity commitment. It also inserts a fresh state leaf into the state tree.
-     * if user signs up through an atteser who sets airdrop, Unirep will give the user the airdrop reputation.
+     * An attester may specify an `initBalance` of reputation the user can use in the current epoch
      * @param identityCommitment Commitment of the user's identity which is a semaphore identity.
+     * @param initBalance the starting reputation balance
      */
-    function userSignUp(uint256 identityCommitment) external {
+    function userSignUp(uint256 identityCommitment, uint256 initBalance)
+        public
+    {
         if (hasUserSignedUp[identityCommitment] == true)
             revert UserAlreadySignedUp(identityCommitment);
         if (numUserSignUps >= config.maxUsers)
             revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
-        uint256 airdropPosRep = airdropAmount[msg.sender];
+        require(
+            attesterId != 0 || initBalance == 0,
+            'Unirep: must sign up through attester to create initBalance'
+        );
 
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
@@ -146,8 +150,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             identityCommitment,
             attesterId,
-            airdropPosRep
+            initBalance
         );
+    }
+
+    /**
+     * overload, see above
+     */
+    function userSignUp(uint256 identityCommitment) public {
+        userSignUp(identityCommitment, 0);
     }
 
     /**
@@ -184,17 +195,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * @dev An attester can set the initial airdrop amount when user signs up through this attester
-     * Then the contract inserts an airdropped leaf into the user's user state tree
-     * @param amount how much pos rep add to user's leaf
-     */
-    function setAirdropAmount(uint256 amount) external {
-        verifyAttesterSignUp(msg.sender);
-        airdropAmount[msg.sender] = amount;
-    }
-
-    /**
-     * @dev Check the validity of the attestation and the attester
+     * @dev Check the validity of the attestation and the attester, emit the attestation event.
      * @param attester The address of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
@@ -258,7 +259,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             msg.sender,
-            AttestationEvent.SendAttestation,
             attestation,
             0,
             0
@@ -295,7 +295,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             msg.sender,
-            AttestationEvent.SendAttestation,
             attestation,
             toProofIndex,
             fromProofIndex
@@ -336,7 +335,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             attester,
-            AttestationEvent.SendAttestation,
             attestation,
             toProofIndex,
             fromProofIndex
@@ -370,60 +368,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             publicSignals[0],
             publicSignals,
             proof
-        );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
-    }
-
-    /**
-     * @dev An attester submit the airdrop attestation to an epoch key with a sign up proof
-     * publicSignals[0] = [ epochKey ]
-     * publicSignals[1] = [ globalStateTree ]
-     * publicSignals[2] = [ epoch ]
-     * publicSignals[3] = [ attesterId ]
-     * publicSignals[4] = [ userHasSignedUp ]
-     * @param publicSignals The public signals of the sign up proof
-     * @param proof The The proof of the sign up proof
-     */
-    function airdropEpochKey(
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
-    ) external payable {
-        bytes32 proofNullifier = keccak256(
-            abi.encodePacked(publicSignals, proof)
-        );
-        verifyProofNullifier(proofNullifier);
-
-        if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
-
-        // attestation of airdrop
-        Attestation memory attestation;
-        attestation.attesterId = publicSignals[3];
-        attestation.posRep = airdropAmount[msg.sender];
-        attestation.signUp = 1;
-
-        assertValidAttestation(msg.sender, attestation, publicSignals[0]);
-
-        // Add to the cumulated attesting fee
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-        uint256 _proofIndex = proofIndex;
-        // emit proof event
-        emit IndexedUserSignedUpProof(
-            _proofIndex,
-            currentEpoch,
-            publicSignals[0],
-            publicSignals,
-            proof
-        );
-        emit AttestationSubmitted(
-            currentEpoch,
-            publicSignals[0],
-            msg.sender,
-            AttestationEvent.Airdrop,
-            attestation,
-            _proofIndex,
-            0
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
@@ -480,7 +424,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             publicSignals[0],
             msg.sender,
-            AttestationEvent.SpendReputation,
             attestation,
             _proofIndex,
             0

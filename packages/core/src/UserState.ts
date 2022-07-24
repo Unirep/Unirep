@@ -918,7 +918,7 @@ export default class UserState extends Synchronizer {
         minRep?: number,
         proveGraffiti?: BigInt,
         graffitiPreImage?: BigInt,
-        spendAmount = 0
+        spendAmount: BigInt | number = 0
     ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
         assert(
@@ -940,26 +940,27 @@ export default class UserState extends Synchronizer {
 
         // check if the nullifiers are submitted before
         let nonceStarter = -1
-        if (spendAmount > 0) {
-            // find valid nonce starter
-            for (let n = 0; n < posRep - negRep; n++) {
-                const reputationNullifier = genReputationNullifier(
-                    this.id.identityNullifier,
-                    epoch,
-                    n,
-                    attesterId
-                )
-                if (!(await this.nullifierExist(reputationNullifier))) {
-                    nonceStarter = n
-                    break
-                }
-            }
-            assert(nonceStarter != -1, 'All nullifiers are spent')
-            assert(
-                nonceStarter + spendAmount <= posRep - negRep,
-                'Not enough reputation to spend'
+        // find valid nonce starter
+        for (let n = 0; n < posRep - negRep; n++) {
+            const reputationNullifier = genReputationNullifier(
+                this.id.identityNullifier,
+                epoch,
+                n,
+                attesterId
             )
+            if (!(await this.nullifierExist(reputationNullifier))) {
+                nonceStarter = n
+                break
+            }
         }
+        assert(
+            spendAmount == 0 || nonceStarter != -1,
+            'All nullifiers are spent'
+        )
+        assert(
+            nonceStarter + Number(spendAmount) <= posRep - negRep,
+            'Not enough reputation to spend'
+        )
 
         const circuitInputs = stringifyBigInts({
             epoch: epoch,
