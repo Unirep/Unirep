@@ -56,6 +56,7 @@ describe('Process attestation circuit', function () {
             outputUserStateTreeRoot,
             epoch,
             nonce,
+            BigInt(0),
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
@@ -69,6 +70,7 @@ describe('Process attestation circuit', function () {
             hashChainResult,
             epoch,
             nonce,
+            BigInt(0),
         ])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
 
@@ -108,6 +110,7 @@ describe('Process attestation circuit', function () {
             outputUserStateTreeRoot,
             epoch,
             nonce,
+            BigInt(0),
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
@@ -121,6 +124,7 @@ describe('Process attestation circuit', function () {
             noAttestationHashChainResult,
             epoch,
             nonce,
+            BigInt(0),
         ])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
@@ -151,6 +155,7 @@ describe('Process attestation circuit', function () {
             outputUserStateTreeRoot,
             epoch,
             nonce,
+            BigInt(0),
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
@@ -164,6 +169,7 @@ describe('Process attestation circuit', function () {
             hashChainResult,
             epoch,
             nonce,
+            BigInt(0),
         ])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
@@ -194,6 +200,7 @@ describe('Process attestation circuit', function () {
             outputUserStateTreeRoot,
             epoch,
             toNonce,
+            BigInt(0),
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
@@ -207,6 +214,7 @@ describe('Process attestation circuit', function () {
             hashChainResult,
             epoch,
             toNonce,
+            BigInt(0),
         ])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
@@ -251,6 +259,7 @@ describe('Process attestation circuit', function () {
             outputUserStateTreeRoot,
             epoch,
             toNonce,
+            BigInt(0),
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
@@ -264,6 +273,7 @@ describe('Process attestation circuit', function () {
             hashChainResult,
             epoch,
             toNonce,
+            BigInt(0),
         ])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
         hashChainStarter = hashChainResult
@@ -322,6 +332,7 @@ describe('Process attestation circuit', function () {
             outputUserStateTreeRoot,
             epoch,
             toNonce,
+            BigInt(0),
         ])
         expect(outputUserState).to.equal(expectedUserState)
 
@@ -335,6 +346,7 @@ describe('Process attestation circuit', function () {
             hashChainResult,
             epoch,
             toNonce,
+            BigInt(0),
         ])
         expect(outputHashChainResult).to.equal(expectedHashChainResult)
     })

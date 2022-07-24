@@ -8,7 +8,8 @@
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
-include "./userExists.circom";
+include "./identityCommitment.circom";
+include "./incrementalMerkleTree.circom";
 
 template StartTransition(GST_tree_depth) {
     // Start from which epoch key nonce
@@ -25,21 +26,28 @@ template StartTransition(GST_tree_depth) {
     // Global state tree
     signal private input GST_path_elements[GST_tree_depth][1];
     signal private input GST_path_index[GST_tree_depth];
-    signal input GST_root;
+    signal output GST_root;
 
     signal output blinded_user_state;
     signal output blinded_hash_chain_result;
 
     /* 1. Check if user exists in the Global State Tree */
-    component user_exist = UserExists(GST_tree_depth);
-    for (var i = 0; i< GST_tree_depth; i++) {
-        user_exist.GST_path_index[i] <== GST_path_index[i];
-        user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
+    component identity_commitment = IdentityCommitment();
+    identity_commitment.identity_nullifier <== identity_nullifier;
+    identity_commitment.identity_trapdoor <== identity_trapdoor;
+
+    // Compute user state tree root
+    component leaf_hasher = Poseidon(2);
+    leaf_hasher.inputs[0] <== identity_commitment.out;
+    leaf_hasher.inputs[1] <== user_tree_root;
+
+    component merkletree = MerkleTreeInclusionProof(GST_tree_depth);
+    merkletree.leaf <== leaf_hasher.out;
+    for (var i = 0; i < GST_tree_depth; i++) {
+        merkletree.path_index[i] <== GST_path_index[i];
+        merkletree.path_elements[i] <== GST_path_elements[i][0];
     }
-    user_exist.GST_root <== GST_root;
-    user_exist.identity_nullifier <== identity_nullifier;
-    user_exist.identity_trapdoor <== identity_trapdoor;
-    user_exist.user_tree_root <== user_tree_root;
+    GST_root <== merkletree.root;
     /* End of check 1 */
 
     /* 2. Compute blinded public output */

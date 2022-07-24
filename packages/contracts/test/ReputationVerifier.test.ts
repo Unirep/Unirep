@@ -90,34 +90,6 @@ describe('Verify reputation verifier', function () {
             .true
     })
 
-    it('mismatched reputation nullifiers and nullifiers amount should fail', async () => {
-        const wrongReputationNullifierAmount = repNullifiersAmount + 1
-        const invalidCircuitInputs = genReputationCircuitInput(
-            user,
-            epoch,
-            nonce,
-            reputationRecords,
-            attesterId,
-            repNullifiersAmount
-        )
-        invalidCircuitInputs.rep_nullifiers_amount =
-            wrongReputationNullifierAmount
-
-        const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
-            invalidCircuitInputs
-        )
-        const isValid = await input.verify()
-        expect(isValid, 'Verify reputation proof off-chain should fail').to.be
-            .false
-        const isProofValid = await unirepContract.verifyReputation(
-            input.publicSignals,
-            input.proof
-        )
-        expect(isProofValid, 'Verify reputation proof on-chain should fail').to
-            .be.false
-    })
-
     it('wrong nullifiers should fail', async () => {
         const circuitInputs = genReputationCircuitInput(
             user,
@@ -314,30 +286,5 @@ describe('Verify reputation verifier', function () {
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
-    })
-
-    it('submit reputation nullifiers with wrong epoch key should fail', async () => {
-        const circuitInputs = genReputationCircuitInput(
-            user,
-            epoch,
-            nonce,
-            reputationRecords,
-            attesterId,
-            repNullifiersAmount,
-            minRep,
-            proveGraffiti
-        )
-        const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
-            circuitInputs
-        )
-        input.publicSignals[input.idx.epochKey] = genRandomSalt().toString()
-        await expect(
-            unirepContract
-                .connect(attester)
-                .spendReputation(input.publicSignals, input.proof, {
-                    value: attestingFee,
-                })
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 })

@@ -15,12 +15,10 @@ describe('crypto utils', function () {
     })
 
     it('hash5', () => {
-        const values: bigint[] = []
-        const elementNum = Math.ceil(Math.random() * 5)
-        for (let num = 0; num < elementNum; num++) {
-            values.push(genRandomSalt().valueOf())
-        }
-        const hash = hash5(values)
+        const elements = Array(5)
+            .fill(null)
+            .map(() => genRandomSalt().valueOf())
+        const hash = hash5(elements)
         expect(typeof hash).equal('bigint')
     })
 

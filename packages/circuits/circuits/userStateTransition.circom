@@ -3,7 +3,8 @@ include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./modulo.circom";
 include "./sparseMerkleTree.circom";
-include "./userExists.circom";
+include "./identityCommitment.circom";
+include "./incrementalMerkleTree.circom";
 
 /*
     Prove: if epoch key and sealed_hash_chain matches the epoch tree root
@@ -21,12 +22,9 @@ template EpochKeyExist(epoch_tree_depth) {
     signal input path_elements[epoch_tree_depth][1];
     signal output epoch_key;
 
-    component epochKeyHasher = Poseidon(5);
-    epochKeyHasher.inputs[0] <== identity_nullifier;
+    component epochKeyHasher = Poseidon(2);
+    epochKeyHasher.inputs[0] <== identity_nullifier + nonce;
     epochKeyHasher.inputs[1] <== epoch;
-    epochKeyHasher.inputs[2] <== nonce;
-    epochKeyHasher.inputs[3] <== 0;
-    epochKeyHasher.inputs[4] <== 0;
 
     signal epkModed;
     // 2.1.2 Mod epoch key
@@ -46,7 +44,7 @@ template EpochKeyExist(epoch_tree_depth) {
 }
 
 /*
-    Prove: 
+    Prove:
         1. if user transitioned from an existed global state tree
         2. all hash chain results and epoch keys match the same epoch tree root
         3. computes a new global state tree leaf by hashLeftRight(id_commitment, UST_root)
@@ -70,7 +68,7 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     // Global state tree
     signal private input GST_path_elements[GST_tree_depth][1];
     signal private input GST_path_index[GST_tree_depth];
-    signal input GST_root;
+    signal output GST_root;
 
     // Epoch key & epoch tree
     signal private input epk_path_elements[EPOCH_KEY_NONCE_PER_EPOCH][epoch_tree_depth][1];
@@ -82,15 +80,23 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     signal output epoch_key_nullifier[EPOCH_KEY_NONCE_PER_EPOCH];
 
     /* 1. Check if user exists in the Global State Tree */
-    component user_exist = UserExists(GST_tree_depth);
-    for (var i = 0; i< GST_tree_depth; i++) {
-        user_exist.GST_path_index[i] <== GST_path_index[i];
-        user_exist.GST_path_elements[i][0] <== GST_path_elements[i][0];
+    component identity_commitment = IdentityCommitment();
+    identity_commitment.identity_nullifier <== identity_nullifier;
+    identity_commitment.identity_trapdoor <== identity_trapdoor;
+
+    // Compute user state tree root
+    component leaf_hasher = Poseidon(2);
+    leaf_hasher.inputs[0] <== identity_commitment.out;
+    leaf_hasher.inputs[1] <== intermediate_user_state_tree_roots[0];
+
+    component merkletree = MerkleTreeInclusionProof(GST_tree_depth);
+    merkletree.leaf <== leaf_hasher.out;
+    for (var i = 0; i < GST_tree_depth; i++) {
+        merkletree.path_index[i] <== GST_path_index[i];
+        merkletree.path_elements[i] <== GST_path_elements[i][0];
     }
-    user_exist.GST_root <== GST_root;
-    user_exist.identity_nullifier <== identity_nullifier;
-    user_exist.identity_trapdoor <== identity_trapdoor;
-    user_exist.user_tree_root <== intermediate_user_state_tree_roots[0];
+    GST_root <== merkletree.root;
+
     /* End of check 1 */
 
     /* 2. Process the hashchain of the epoch key specified by nonce `n` */
@@ -150,18 +156,15 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     // 4.1 Compute nullifier
     component epoch_key_nullifier_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
-        epoch_key_nullifier_hasher[n] = Poseidon(5);
-        epoch_key_nullifier_hasher[n].inputs[0] <== 1;  // 1 is the domain separator for epoch key nullifier
-        epoch_key_nullifier_hasher[n].inputs[1] <== identity_nullifier;
-        epoch_key_nullifier_hasher[n].inputs[2] <== epoch;
-        epoch_key_nullifier_hasher[n].inputs[3] <== n;
-        epoch_key_nullifier_hasher[n].inputs[4] <== 0;
+        epoch_key_nullifier_hasher[n] = Poseidon(2);
+        epoch_key_nullifier_hasher[n].inputs[0] <== epoch;
+        epoch_key_nullifier_hasher[n].inputs[1] <== identity_nullifier + n;
         epoch_key_nullifier[n] <== epoch_key_nullifier_hasher[n].out;
     }
 
     // 4.2 Compute new GST leaf
     component new_leaf_hasher = Poseidon(2);
-    new_leaf_hasher.inputs[0] <== user_exist.out;
+    new_leaf_hasher.inputs[0] <== identity_commitment.out;
     // Last intermediate root is the new user state tree root
     new_leaf_hasher.inputs[1] <== intermediate_user_state_tree_roots[1];
     new_GST_leaf <== new_leaf_hasher.out;

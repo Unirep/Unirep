@@ -8,9 +8,9 @@ import { BaseProof } from './BaseProof'
  */
 export class EpochKeyProof extends BaseProof {
     readonly idx = {
-        globalStateTree: 0,
-        epoch: 1,
-        epochKey: 2,
+        epochKey: 0,
+        globalStateTree: 1,
+        epoch: 2,
     }
     public globalStateTree: BigNumberish
     public epoch: BigNumberish

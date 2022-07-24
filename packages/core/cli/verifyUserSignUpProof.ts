@@ -64,19 +64,7 @@ const verifyUserSignUpProof = async (args: any) => {
         args.public_signals.slice(signUpPublicSignalsPrefix.length)
     )
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const epoch = Number(publicSignals[0])
-    const epk = publicSignals[1]
-    const GSTRoot = publicSignals[2]
-    const attesterId = publicSignals[3]
-    const userHasSignedUp = publicSignals[4]
     const proof = JSON.parse(decodedProof)
-
-    // Check if Global state tree root exists
-    const isGSTRootExisted = await unirepState.GSTRootExists(GSTRoot, epoch)
-    if (!isGSTRootExisted) {
-        console.error('Error: invalid global state tree root')
-        return
-    }
 
     // Verify the proof on-chain
     const signUpProof = new SignUpProof(
@@ -84,6 +72,16 @@ const verifyUserSignUpProof = async (args: any) => {
         formatProofForSnarkjsVerification(proof),
         defaultProver
     )
+
+    // Check if Global state tree root exists
+    const isGSTRootExisted = await unirepState.GSTRootExists(
+        BigInt(signUpProof.globalStateTree.toString()),
+        +signUpProof.epoch.toString()
+    )
+    if (!isGSTRootExisted) {
+        console.error('Error: invalid global state tree root')
+        return
+    }
     const isProofValid = await unirepContract.verifyUserSignUp(
         signUpProof.publicSignals,
         signUpProof.proof
@@ -93,8 +91,10 @@ const verifyUserSignUpProof = async (args: any) => {
         return
     }
 
-    console.log(`Epoch key of the user: ${epk}`)
-    console.log(`Verify user sign up proof from attester ${attesterId} succeed`)
+    console.log(`Epoch key of the user: ${signUpProof.epochKey.toString()}`)
+    console.log(
+        `Verify user sign up proof from attester ${signUpProof.attesterId.toString()} succeed`
+    )
 }
 
 export { verifyUserSignUpProof, configureSubparser }
