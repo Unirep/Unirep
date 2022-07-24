@@ -229,7 +229,7 @@ export default class UserState extends Synchronizer {
         })
         if (!signup) throw new Error('User is not signed up')
         if (signup.attesterId > 0) {
-            attestations.push({
+            attestations.unshift({
                 attesterId: signup.attesterId,
                 posRep: signup.airdrop,
                 negRep: 0,

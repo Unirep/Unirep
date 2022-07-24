@@ -2,15 +2,6 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
-
-import {
-    Reputation,
-    genProofAndVerify,
-    genReputationCircuitInput,
-    genProveSignUpCircuitInput,
-    genInputForContract,
-} from './utils'
 import { deployUnirep, SignUpProof, Unirep } from '../src'
 
 describe('Airdrop', function () {
