@@ -20,7 +20,6 @@ dataSources:
               - IndexedProcessedAttestationsProof
               - IndexedReputationProof
               - IndexedStartedTransitionProof
-              - IndexedUserSignedUpProof
               - IndexedUserStateTransitionProof
               - UserSignedUp
               - UserStateTransitioned
@@ -40,8 +39,6 @@ dataSources:
                 handler: handleIndexedReputationProof
               - event: IndexedStartedTransitionProof(indexed uint256,indexed uint256,indexed uint256,uint256[],uint256[8])
                 handler: handleIndexedStartedTransitionProof
-              - event: IndexedUserSignedUpProof(indexed uint256,indexed uint256,indexed uint256,uint256[],uint256[8])
-                handler: handleIndexedUserSignedUpProof
               - event: IndexedUserStateTransitionProof(indexed uint256,uint256[],uint256[8],uint256[])
                 handler: handleIndexedUserStateTransitionProof
               - event: UserSignedUp(indexed uint256,indexed uint256,uint256,uint256)

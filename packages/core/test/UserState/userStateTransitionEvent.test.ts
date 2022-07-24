@@ -44,7 +44,7 @@ describe('User state transition events in Unirep User State', async function () 
         })
     })
 
-    describe('Attester sign up and set airdrop', async () => {
+    describe('Attester sign up', async () => {
         it('attester sign up', async () => {
             const accounts = await hardhatEthers.getSigners()
             attester = accounts[2]
@@ -52,19 +52,6 @@ describe('User state transition events in Unirep User State', async function () 
             const tx = await unirepContract.connect(attester).attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-        })
-
-        it('attester set airdrop amount', async () => {
-            const airdropPosRep = 10
-            const tx = await unirepContract
-                .connect(attester)
-                .setAirdropAmount(airdropPosRep)
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester.address
-            )
-            expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
     })
 
@@ -77,7 +64,7 @@ describe('User state transition events in Unirep User State', async function () 
                         const id = new ZkIdentity()
                         await unirepContract
                             .connect(attester)
-                            .userSignUp(id.genIdentityCommitment())
+                            ['userSignUp(uint256)'](id.genIdentityCommitment())
                             .then((t) => t.wait())
                         return genUserState(
                             hardhatEthers.provider,
@@ -127,7 +114,7 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -281,11 +268,11 @@ describe('User state transition events in Unirep User State', async function () 
 
             await falseUnirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -327,11 +314,11 @@ describe('User state transition events in Unirep User State', async function () 
             const id2 = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id1.genIdentityCommitment())
+                ['userSignUp(uint256)'](id1.genIdentityCommitment())
                 .then((t) => t.wait())
             await unirepContract
                 .connect(attester)
-                .userSignUp(id2.genIdentityCommitment())
+                ['userSignUp(uint256)'](id2.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -411,7 +398,7 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -501,7 +488,7 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,

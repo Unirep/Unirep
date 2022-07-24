@@ -50,7 +50,7 @@ describe('Signup', () => {
         const commitment = id.genIdentityCommitment()
 
         it('sign up should succeed', async () => {
-            const tx = await unirepContract.userSignUp(commitment)
+            const tx = await unirepContract['userSignUp(uint256)'](commitment)
             const receipt = await tx.wait()
 
             expect(receipt.status).equal(1)
@@ -62,7 +62,7 @@ describe('Signup', () => {
 
         it('double sign up should fail', async () => {
             await expect(
-                unirepContract.userSignUp(commitment)
+                unirepContract['userSignUp(uint256)'](commitment)
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 `UserAlreadySignedUp`
@@ -71,7 +71,7 @@ describe('Signup', () => {
 
         it('sign up should fail if max capacity reached', async () => {
             for (let i = 1; i < testMaxUser; i++) {
-                let tx = await unirepContract.userSignUp(
+                let tx = await unirepContract['userSignUp(uint256)'](
                     new ZkIdentity().genIdentityCommitment()
                 )
                 let receipt = await tx.wait()
@@ -82,7 +82,7 @@ describe('Signup', () => {
                 expect(signedUpUsers).equal(numUserSignUps_)
             }
             await expect(
-                unirepContract.userSignUp(
+                unirepContract['userSignUp(uint256)'](
                     new ZkIdentity().genIdentityCommitment()
                 )
             ).to.be.revertedWithCustomError(

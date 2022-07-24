@@ -83,10 +83,6 @@ describe('User State', async function () {
                     tmpWallet.address
                 )
                 const airdropAmount = Math.ceil(Math.random() * 1000)
-                await unirepContract
-                    .connect(tmpWallet)
-                    .setAirdropAmount(airdropAmount)
-                    .then((t) => t.wait())
                 const tmpId = new ZkIdentity()
                 // const tmpUserState = await genUserState(
                 //     unirepContract.provider,
@@ -95,7 +91,10 @@ describe('User State', async function () {
                 // ) // TODO: verify this state too?
                 await unirepContract
                     .connect(tmpWallet)
-                    .userSignUp(tmpId.genIdentityCommitment())
+                    ['userSignUp(uint256,uint256)'](
+                        tmpId.genIdentityCommitment(),
+                        airdropAmount
+                    )
                     .then((t) => t.wait())
                 await userState.waitForSync()
 
@@ -172,11 +171,10 @@ describe('User State', async function () {
             const airdropAmount = Math.ceil(Math.random() * 1000)
             await unirepContract
                 .connect(tmpWallet)
-                .setAirdropAmount(airdropAmount)
-                .then((t) => t.wait())
-            await unirepContract
-                .connect(tmpWallet)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             await userState.waitForSync()
 
@@ -234,10 +232,6 @@ describe('User State', async function () {
                     tmpWallet.address
                 )
                 const airdropAmount = Math.ceil(Math.random() * 1000)
-                await unirepContract
-                    .connect(tmpWallet)
-                    .setAirdropAmount(airdropAmount)
-                    .then((t) => t.wait())
                 const tmpId = new ZkIdentity()
                 // const tmpUserState = await genUserState(
                 //     unirepContract.provider,
@@ -246,7 +240,10 @@ describe('User State', async function () {
                 // ) // TODO: verify this state too?
                 await unirepContract
                     .connect(tmpWallet)
-                    .userSignUp(tmpId.genIdentityCommitment())
+                    ['userSignUp(uint256,uint256)'](
+                        tmpId.genIdentityCommitment(),
+                        airdropAmount
+                    )
                     .then((t) => t.wait())
                 await userState.waitForSync()
 
@@ -372,14 +369,13 @@ describe('User State', async function () {
                 .then((t) => t.wait())
             attesterId = await unirepContract.attesters(accounts[1].address)
             airdropAmount = Math.ceil(Math.random() * 1000)
-            await unirepContract
-                .connect(accounts[1])
-                .setAirdropAmount(airdropAmount)
-                .then((t) => t.wait())
             // then sign up our mock user
             await unirepContract
                 .connect(accounts[1])
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             await userState.waitForSync()
         })
@@ -466,19 +462,16 @@ describe('User State', async function () {
             const epkNonce = Math.floor(
                 Math.random() * setting.numEpochKeyNoncePerEpoch
             )
-            const proveNullifiers = Math.floor(Math.random() * airdropAmount)
-            const nonceList: BigInt[] = []
-            for (let i = 0; i < setting.maxReputationBudget; i++) {
-                if (i < proveNullifiers) nonceList.push(BigInt(i))
-                else nonceList.push(BigInt(-1))
-            }
+            const proveAmount = Math.floor(
+                Math.random() * setting.maxReputationBudget
+            )
             const results = await userState.genProveReputationProof(
                 BigInt(attesterId),
                 epkNonce,
-                proveNullifiers,
+                proveAmount,
                 undefined,
                 undefined,
-                nonceList
+                proveAmount
             )
             const expectedEpk = genEpochKey(
                 id.identityNullifier,
@@ -493,9 +486,9 @@ describe('User State', async function () {
             const outputGSTRoot = results.globalStateTree
             const exist = await userState.GSTRootExists(outputGSTRoot, epoch)
             expect(exist).to.be.true
-            expect(Number(results.minRep)).equal(proveNullifiers)
+            expect(Number(results.minRep)).equal(proveAmount)
             expect(Number(results.proveReputationAmount)).equal(
-                Math.min(setting.maxReputationBudget, proveNullifiers)
+                Math.min(setting.maxReputationBudget, proveAmount)
             )
         })
 
@@ -645,18 +638,20 @@ describe('User State', async function () {
                 .then((t) => t.wait())
             attesterId = await unirepContract.attesters(accounts[1].address)
             airdropAmount = Math.ceil(Math.random() * 1000)
-            await unirepContract
-                .connect(accounts[1])
-                .setAirdropAmount(airdropAmount)
-                .then((t) => t.wait())
             // then sign up our mock user
             await unirepContract
                 .connect(accounts[1])
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             await unirepContract
                 .connect(accounts[1])
-                .userSignUp(otherId.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    otherId.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             await userState.waitForSync()
             await otherUser.waitForSync()

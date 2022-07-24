@@ -59,7 +59,9 @@ const userSignUp = async (args: any) => {
     // Submit the user sign up transaction
     let tx: ethers.ContractTransaction
     try {
-        tx = await unirepContract.connect(wallet).userSignUp(BigInt(commitment))
+        tx = await unirepContract
+            .connect(wallet)
+            ['userSignUp(uint256)'](BigInt(commitment), 0)
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

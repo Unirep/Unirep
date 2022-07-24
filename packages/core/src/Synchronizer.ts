@@ -510,9 +510,6 @@ export class Synchronizer extends EventEmitter {
         const [IndexedReputationProof] =
             this.unirepContract.filters.IndexedReputationProof()
                 .topics as string[]
-        const [IndexedUserSignedUpProof] =
-            this.unirepContract.filters.IndexedUserSignedUpProof()
-                .topics as string[]
         const [IndexedStartedTransitionProof] =
             this.unirepContract.filters.IndexedStartedTransitionProof()
                 .topics as string[]
@@ -531,7 +528,6 @@ export class Synchronizer extends EventEmitter {
             [EpochEnded]: this.epochEndedEvent.bind(this),
             [IndexedEpochKeyProof]: this.epochKeyProofEvent.bind(this),
             [IndexedReputationProof]: this.reputationProofEvent.bind(this),
-            [IndexedUserSignedUpProof]: this.userSignedUpProofEvent.bind(this),
             [IndexedStartedTransitionProof]: this.startUSTProofEvent.bind(this),
             [IndexedProcessedAttestationsProof]:
                 this.processAttestationProofEvent.bind(this),
@@ -564,9 +560,6 @@ export class Synchronizer extends EventEmitter {
         const [IndexedReputationProof] =
             this.unirepContract.filters.IndexedReputationProof()
                 .topics as string[]
-        const [IndexedUserSignedUpProof] =
-            this.unirepContract.filters.IndexedUserSignedUpProof()
-                .topics as string[]
         const [IndexedStartedTransitionProof] =
             this.unirepContract.filters.IndexedStartedTransitionProof()
                 .topics as string[]
@@ -588,7 +581,6 @@ export class Synchronizer extends EventEmitter {
                     EpochEnded,
                     IndexedEpochKeyProof,
                     IndexedReputationProof,
-                    IndexedUserSignedUpProof,
                     IndexedStartedTransitionProof,
                     IndexedProcessedAttestationsProof,
                     IndexedUserStateTransitionProof,
@@ -646,40 +638,40 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _epoch = Number(event.topics[2])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedUserSignedUpProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const { publicSignals, proof } = decodedData
-        const signUpProof = new SignUpProof(
-            publicSignals,
-            formatProofForSnarkjsVerification(proof),
-            this.prover
-        )
-        const isValid = await signUpProof.verify()
-        const exist = await this.GSTRootExists(
-            signUpProof.globalStateTree.toString(),
-            _epoch
-        )
-
-        db.create('Proof', {
-            index: _proofIndex,
-            epoch: _epoch,
-            proof: encodeBigIntArray(proof),
-            publicSignals: encodeBigIntArray(publicSignals),
-            transactionHash: event.transactionHash,
-            globalStateTree: signUpProof.globalStateTree.toString(),
-            event: 'IndexedUserSignedUpProof',
-            valid: isValid && exist,
-        })
-        return true
-    }
+    // async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
+    //     const _proofIndex = Number(event.topics[1])
+    //     const _epoch = Number(event.topics[2])
+    //     const decodedData = this.unirepContract.interface.decodeEventLog(
+    //         'IndexedUserSignedUpProof',
+    //         event.data
+    //     )
+    //     if (!decodedData) {
+    //         throw new Error('Failed to decode data')
+    //     }
+    //     const { publicSignals, proof } = decodedData
+    //     const signUpProof = new SignUpProof(
+    //         publicSignals,
+    //         formatProofForSnarkjsVerification(proof),
+    //         this.prover
+    //     )
+    //     const isValid = await signUpProof.verify()
+    //     const exist = await this.GSTRootExists(
+    //         signUpProof.globalStateTree.toString(),
+    //         _epoch
+    //     )
+    //
+    //     db.create('Proof', {
+    //         index: _proofIndex,
+    //         epoch: _epoch,
+    //         proof: encodeBigIntArray(proof),
+    //         publicSignals: encodeBigIntArray(publicSignals),
+    //         transactionHash: event.transactionHash,
+    //         globalStateTree: signUpProof.globalStateTree.toString(),
+    //         event: 'IndexedUserSignedUpProof',
+    //         valid: isValid && exist,
+    //     })
+    //     return true
+    // }
 
     async reputationProofEvent(event: ethers.Event, db: TransactionDB) {
         const _proofIndex = Number(event.topics[1])
