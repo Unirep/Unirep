@@ -18,7 +18,8 @@
         "copyABI": "node ./scripts/copyABI.js",
         "build": "yarn copyABI && ./scripts/build-graph.sh",
         "deploy": "yarn build && graph deploy --node https://api.thegraph.com/deploy/ unirep/unirep",
-        "test": "echo 'No subgraph test'"
+        "test": "echo 'No subgraph test'",
+        "lint": "prettier --write ."
     },
     "dependencies": {
         "@graphprotocol/graph-cli": "0.26.0",
