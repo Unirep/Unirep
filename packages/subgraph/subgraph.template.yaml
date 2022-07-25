@@ -1,4 +1,6 @@
 specVersion: 0.0.2
+description: UnirepSocial subgraph
+repository: https://github.com/Unirep/Unirep/tree/develop/packages/subgraph
 schema:
     file: ./schema.graphql
 dataSources:

@@ -19,6 +19,9 @@ workflows:
             - crypto-test:
                   requires:
                       - build
+            - subgraph-test:
+                  requires:
+                      - build
 
 # Just for reusing below
 step_defs:
@@ -59,6 +62,9 @@ jobs:
                       - packages/core/build
                       - packages/core/cache
                       - packages/crypto/build
+                      - packages/subgraph/abis
+                      - packages/subgraph/build
+                      - packages/subgraph/generated
     lint:
         machine:
             image: ubuntu-2204:2022.04.1
@@ -142,3 +148,16 @@ jobs:
             - run:
                   name: Test
                   command: yarn crypto test
+    subgraph-test:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run: *node_version
+            - run: *check_version
+            - run:
+                  name: Test
+                  command: yarn subgraph test
