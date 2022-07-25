@@ -17,7 +17,7 @@
         "codegen": "yarn copyABI && ./scripts/codegen.sh",
         "copyABI": "node ./scripts/copyABI.js",
         "build": "yarn copyABI && ./scripts/build-graph.sh",
-        "deploy": "yarn copyABI && graph deploy --node https://api.thegraph.com/deploy/ unirep/unirep",
+        "deploy": "yarn build && graph deploy --node https://api.thegraph.com/deploy/ unirep/unirep",
         "test": "echo 'No subgraph test'"
     },
     "dependencies": {

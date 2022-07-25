@@ -1,5 +1,5 @@
 const fs = require('fs')
-const Unirep = require('../../contracts/abi/Unirep.json')
+const Unirep = require('@unirep/contracts/abi/Unirep.json')
 
 const abiPath = './abis/Unirep.json'
 
