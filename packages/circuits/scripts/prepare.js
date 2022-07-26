@@ -30,3 +30,26 @@ try {
         )
     )
 } catch (_) {}
+
+copy(
+    path.join(__dirname, '../circuits'),
+    path.join(__dirname, '../dist/circuits')
+)
+
+// copy files from contracts recursively
+function copy(currentDir, outPath) {
+    if (!path.isAbsolute(currentDir)) throw new Error('Path is not absolute')
+    try {
+        fs.mkdirSync(outPath)
+    } catch (_) {}
+    const contents = fs.readdirSync(currentDir)
+    for (const c of contents) {
+        const contentPath = path.join(currentDir, c)
+        const stat = fs.statSync(contentPath)
+        if (stat.isDirectory()) {
+            copy(path.join(currentDir, c), path.join(outPath, c))
+        } else {
+            fs.copyFileSync(contentPath, path.join(outPath, c))
+        }
+    }
+}
