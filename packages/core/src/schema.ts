@@ -13,6 +13,7 @@ const _schema = [
     },
     {
         name: 'Proof',
+        indexes: [{ keys: ['epoch', 'index'] }],
         rows: [
             {
                 name: 'createdAt',
@@ -24,8 +25,8 @@ const _schema = [
             ['toEpochKey', 'Int', { optional: true }],
             ['proof', 'String', { optional: true }],
             ['publicSignals', 'String', { optional: true }],
-            ['valid', 'Bool', { optional: true }],
-            ['spent', 'Bool', { optional: true }],
+            ['valid', 'Int', { optional: true }],
+            ['spent', 'Int', { optional: true }],
             ['event', 'String'],
             ['transactionHash', 'String'],
             ['blindedUserState', 'String', { optional: true }],
@@ -39,7 +40,13 @@ const _schema = [
     },
     {
         name: 'Attestation',
-        indexes: [{ keys: ['index'] }],
+        indexes: [
+            { keys: ['index'] },
+            { keys: ['epoch', 'epochKey', 'index'] },
+            { keys: ['epoch', 'epochKey', 'proofIndex'] },
+            { keys: ['epochKey', 'attesterId', 'valid'] },
+            { keys: ['epoch', 'valid'] },
+        ],
         rows: [
             ['epoch', 'Int', { optional: true }],
             ['epochKey', 'String', { optional: true }],
@@ -55,7 +62,7 @@ const _schema = [
             ['graffiti', 'String', { optional: true }],
             ['signUp', 'Int', { optional: true }],
             ['hash', 'String'],
-            ['valid', 'Bool', { optional: true }],
+            ['valid', 'Int', { optional: true }],
         ],
     },
     {
@@ -70,6 +77,7 @@ const _schema = [
     },
     {
         name: 'GSTRoot',
+        indexes: [{ keys: ['epoch', 'root'] }],
         rows: [
             ['epoch', 'Int'],
             ['root', 'String'],
@@ -86,7 +94,7 @@ const _schema = [
     },
     {
         name: 'EpochKey',
-        primaryKey: ['key', 'epoch'],
+        indexes: [{ keys: ['key', 'epoch'] }],
         rows: [
             ['key', 'String'],
             ['epoch', 'Int'],
@@ -106,17 +114,13 @@ const _schema = [
             ['epoch', 'Int'],
             ['nullifier', 'String', { unique: true }],
             ['transactionHash', 'String', { optional: true }],
-            {
-                name: 'confirmed',
-                type: 'Bool',
-                default: () => true,
-            },
         ],
     },
     {
         name: 'UserSignUp',
+        indexes: [{ keys: ['commitment', 'attesterId'] }],
         rows: [
-            ['commitment', 'String'],
+            ['commitment', 'String', { index: true }],
             ['epoch', 'Int'],
             ['attesterId', 'Int'],
             ['airdrop', 'Int'],
