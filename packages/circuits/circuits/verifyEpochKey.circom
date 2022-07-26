@@ -1,6 +1,6 @@
 /*
     Verify if epoch key is computed correctly
-    epoch_key = hash2id_nullifier + nonce, epoch);
+    epoch_key = hash2(id_nullifier + nonce, epoch);
 */
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";

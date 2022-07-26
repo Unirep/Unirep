@@ -4,10 +4,7 @@ import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider, genUnirepState } from './utils'
-import {
-    formatProofForSnarkjsVerification,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const configureSubparser = (subparsers: any) => {
@@ -95,7 +92,7 @@ const verifyReputationProof = async (args: any) => {
 
     console.log(`Epoch key of the user: ${reputationProof.epochKey}`)
     console.log(
-        `Verify reputation proof from attester ${reputationProof.attesterId} with min rep ${reputationProof.minRep}, reputation nullifiers amount ${reputationProof.proveReputationAmount} and graffiti pre-image ${args.graffiti_preimage}, succeed`
+        `Verify reputation proof from attester ${reputationProof.attesterId} with min rep ${reputationProof.minRep}, reputation nullifiers amount ${reputationProof.proveReputationAmount} and graffiti pre-image ${reputationProof.graffitiPreImage}, succeed`
     )
 }
 
