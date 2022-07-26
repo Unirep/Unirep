@@ -369,43 +369,48 @@ export class Synchronizer extends EventEmitter {
      */
     async genEpochTree(epoch: number) {
         await this._checkValidEpoch(epoch)
-        const epochKeys = await this._db.findMany('EpochKey', {
+        const epochTreeLeaves = [] as any[]
+        const attestations = await this._db.findMany('Attestation', {
             where: {
                 epoch,
+                valid: 1,
+            },
+            orderBy: {
+                index: 'asc',
             },
         })
-        const epochTreeLeaves = [] as any[]
-        for (const epochKey of epochKeys) {
-            await this._checkEpochKeyRange(epochKey.key)
+        const attestationsByEpochKey = attestations.reduce(
+            (acc, attestation) => {
+                return {
+                    ...acc,
+                    [attestation.epochKey]: [
+                        ...(acc[attestation.epochKey] || []),
+                        attestation,
+                    ],
+                }
+            },
+            {}
+        )
+        for (const epochKey of Object.keys(attestationsByEpochKey)) {
+            await this._checkEpochKeyRange(epochKey)
 
             let hashChain: BigInt = BigInt(0)
-            const attestations = await this._db.findMany('Attestation', {
-                where: {
-                    epoch,
-                    epochKey: epochKey.key,
-                    valid: true,
-                },
-                orderBy: {
-                    index: 'asc',
-                },
-            })
             for (const attestation of attestations) {
                 hashChain = hashLeftRight(BigInt(attestation.hash), hashChain)
             }
             const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
             const epochTreeLeaf = {
-                epochKey: BigInt(epochKey.key),
+                epochKey: BigInt(epochKey),
                 hashchainResult: sealedHashChainResult,
             }
             epochTreeLeaves.push(epochTreeLeaf)
         }
-
         const epochTree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
             SMT_ONE_LEAF
         )
         // Add to epoch key hash chain map
-        for (let leaf of epochTreeLeaves) {
+        for (const leaf of epochTreeLeaves) {
             epochTree.update(leaf.epochKey, leaf.hashchainResult)
         }
         return epochTree
@@ -484,7 +489,7 @@ export class Synchronizer extends EventEmitter {
         return this._db.findMany('Attestation', {
             where: {
                 epochKey,
-                valid: true,
+                valid: 1,
             },
         })
     }
@@ -668,7 +673,7 @@ export class Synchronizer extends EventEmitter {
             transactionHash: event.transactionHash,
             globalStateTree: signUpProof.globalStateTree.toString(),
             event: 'IndexedUserSignedUpProof',
-            valid: isValid && exist,
+            valid: isValid && exist ? 1 : 0,
         })
         return true
     }
@@ -701,17 +706,10 @@ export class Synchronizer extends EventEmitter {
         const existingNullifier = await this._db.findOne('Nullifier', {
             where: {
                 nullifier: repNullifiers,
-                confirmed: true,
             },
         })
         if (!existingNullifier) {
             // everything checks out, lets start mutating the db
-            db.delete('Nullifier', {
-                where: {
-                    nullifier: repNullifiers,
-                    confirmed: false,
-                },
-            })
             db.create(
                 'Nullifier',
                 repNullifiers.map((nullifier) => ({
@@ -728,7 +726,7 @@ export class Synchronizer extends EventEmitter {
             transactionHash: event.transactionHash,
             globalStateTree: formattedProof.globalStateTree.toString(),
             event: 'IndexedReputationProof',
-            valid: isValid && exist && !existingNullifier,
+            valid: isValid && exist && !existingNullifier ? 1 : 0,
         })
         return true
     }
@@ -763,7 +761,7 @@ export class Synchronizer extends EventEmitter {
             transactionHash: event.transactionHash,
             globalStateTree: epkProof.globalStateTree.toString(),
             event: 'IndexedEpochKeyProof',
-            valid: isValid && exist,
+            valid: isValid && exist ? 1 : 0,
         })
         return true
     }
@@ -779,7 +777,7 @@ export class Synchronizer extends EventEmitter {
         const toProofIndex = Number(decodedData.toProofIndex)
         const fromProofIndex = Number(decodedData.fromProofIndex)
 
-        const index = +`${event.blockNumber
+        const index = `${event.blockNumber
             .toString()
             .padStart(15, '0')}${event.transactionIndex
             .toString()
@@ -828,7 +826,7 @@ export class Synchronizer extends EventEmitter {
                     proofIndex: toProofIndex,
                 },
                 update: {
-                    valid: false,
+                    valid: 0,
                 },
             })
             return
@@ -851,7 +849,7 @@ export class Synchronizer extends EventEmitter {
                         index: index,
                     },
                     update: {
-                        valid: false,
+                        valid: 0,
                     },
                 })
 
@@ -862,7 +860,7 @@ export class Synchronizer extends EventEmitter {
                         proofIndex: toProofIndex,
                     },
                     update: {
-                        valid: false,
+                        valid: 0,
                     },
                 })
                 return
@@ -873,7 +871,7 @@ export class Synchronizer extends EventEmitter {
                     index: fromProofIndex,
                 },
                 update: {
-                    spent: true,
+                    spent: 1,
                 },
             })
         }
@@ -884,7 +882,7 @@ export class Synchronizer extends EventEmitter {
                 index: index,
             },
             update: {
-                valid: true,
+                valid: 1,
             },
         })
         db.upsert('EpochKey', {
@@ -935,7 +933,7 @@ export class Synchronizer extends EventEmitter {
             publicSignals: encodeBigIntArray(publicSignals),
             transactionHash: event.transactionHash,
             event: 'IndexedStartedTransitionProof',
-            valid: !!(existingGSTRoot && isValid),
+            valid: !!(existingGSTRoot && isValid) ? 1 : 0,
         })
         return true
     }
@@ -971,7 +969,7 @@ export class Synchronizer extends EventEmitter {
             publicSignals: encodeBigIntArray(publicSignals),
             transactionHash: event.transactionHash,
             event: 'IndexedProcessedAttestationsProof',
-            valid: isValid,
+            valid: isValid ? 1 : 0,
         })
         return true
     }
@@ -1009,7 +1007,7 @@ export class Synchronizer extends EventEmitter {
             proofIndexRecords: proofIndexRecords,
             transactionHash: event.transactionHash,
             event: 'IndexedUserStateTransitionProof',
-            valid: isValid && exist,
+            valid: isValid && exist ? 1 : 0,
         })
         return true
     }
@@ -1181,7 +1179,6 @@ export class Synchronizer extends EventEmitter {
         const existingNullifier = await this._db.findOne('Nullifier', {
             where: {
                 nullifier: epkNullifiers,
-                confirmed: true,
             },
         })
         if (existingNullifier) {
@@ -1189,12 +1186,6 @@ export class Synchronizer extends EventEmitter {
             return
         }
         // everything checks out, lets start mutating the db
-        db.delete('Nullifier', {
-            where: {
-                nullifier: epkNullifiers,
-                confirmed: false,
-            },
-        })
         db.create(
             'Nullifier',
             epkNullifiers.map((nullifier) => ({
@@ -1225,6 +1216,7 @@ export class Synchronizer extends EventEmitter {
     async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event?.topics[1])
         const tree = await this.genEpochTree(epoch)
+        console.log(`Epoch ${epoch} ended`)
         db.upsert('Epoch', {
             where: {
                 number: epoch,

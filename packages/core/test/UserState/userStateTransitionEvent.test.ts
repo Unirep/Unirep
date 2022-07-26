@@ -649,7 +649,6 @@ describe('User state transition events in Unirep User State', async function () 
                         d.nullifier === nullifier.toString()
                 )
                 expect(doc).to.not.be.undefined
-                expect(doc.confirmed).to.equal(1)
             }
             await userState.stop()
         })

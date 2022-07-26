@@ -217,6 +217,7 @@ export default class UserState extends Synchronizer {
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 OR: orConditions,
+                valid: 1,
             },
             orderBy: {
                 index: 'asc',
@@ -277,7 +278,7 @@ export default class UserState extends Synchronizer {
         return this._db.findMany('Attestation', {
             where: {
                 epochKey,
-                valid: true,
+                valid: 1,
             },
             orderBy: {
                 index: 'asc',
@@ -304,7 +305,7 @@ export default class UserState extends Synchronizer {
             where: {
                 event: 'IndexedUserStateTransitionProof',
                 index,
-                valid: true,
+                valid: 1,
             },
         })
     }
@@ -377,11 +378,12 @@ export default class UserState extends Synchronizer {
                 )
             allEpks.push(...epks)
         }
+        if (allEpks.length === 0) return r
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 epochKey: allEpks,
                 attesterId: Number(attesterId),
-                valid: true,
+                valid: 1,
             },
             orderBy: {
                 index: 'asc',
