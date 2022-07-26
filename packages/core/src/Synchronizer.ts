@@ -820,7 +820,7 @@ export class Synchronizer extends EventEmitter {
             graffiti: decodedData.attestation.graffiti.toString(),
             signUp: Number(decodedData.attestation?.signUp),
             hash: attestation.hash().toString(),
-            valid: !!rootExists ? 1 : 0,
+            valid: rootExists ? 1 : 0,
         })
         db.upsert('EpochKey', {
             where: {

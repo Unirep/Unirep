@@ -94,7 +94,7 @@ const _schema = [
     },
     {
         name: 'EpochKey',
-        indexes: [{ keys: ['key', 'epoch'] }],
+        primaryKey: ['key', 'epoch'],
         rows: [
             ['key', 'String'],
             ['epoch', 'Int'],
