@@ -52,7 +52,7 @@ const _schema = [
             ['epochKey', 'String', { optional: true }],
             ['epochKeyToHashchainMap', 'String', { optional: true }],
             // ['index', 'Int'],
-            ['index', 'Int'], // event index, tx index, block index
+            ['index', 'String'], // event index, tx index, block index
             ['transactionHash', 'String', { optional: true }],
             ['attester', 'String', { optional: true }],
             ['proofIndex', 'Int', { optional: true }],
