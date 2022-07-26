@@ -76,6 +76,7 @@ describe('User State Transition circuits', function () {
                     userStateTree.root,
                     BigInt(epoch),
                     BigInt(nonce),
+                    BigInt(0),
                 ])
                 expect(outputUserState).to.equal(expectedUserState)
 
@@ -89,6 +90,7 @@ describe('User State Transition circuits', function () {
                     zeroHashChain,
                     BigInt(epoch),
                     BigInt(nonce),
+                    BigInt(0),
                 ])
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
 
@@ -121,6 +123,7 @@ describe('User State Transition circuits', function () {
                     userStateTree.root,
                     BigInt(epoch),
                     BigInt(newNonce),
+                    BigInt(0),
                 ])
                 expect(outputUserState).to.equal(expectedUserState)
 
@@ -134,6 +137,7 @@ describe('User State Transition circuits', function () {
                     zeroHashChain,
                     BigInt(epoch),
                     BigInt(newNonce),
+                    BigInt(0),
                 ])
                 expect(outputHashChainResult).to.equal(expectedHashChainResult)
             })

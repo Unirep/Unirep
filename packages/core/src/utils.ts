@@ -1,17 +1,14 @@
 import {
     hash5,
+    hash4,
+    hash2,
     hashLeftRight,
     SparseMerkleTree,
-    SnarkBigInt,
     stringifyBigInts,
     unstringifyBigInts,
 } from '@unirep/crypto'
 
 import Reputation from './Reputation'
-import {
-    EPOCH_KEY_NULLIFIER_DOMAIN,
-    REPUTATION_NULLIFIER_DOMAIN,
-} from '../config/nullifierDomainSeparator'
 import {
     formatProofForSnarkjsVerification,
     EPOCH_TREE_DEPTH,
@@ -96,19 +93,15 @@ const computeInitUserStateRoot = (
  * @returns The moded epoch key
  */
 const genEpochKey = (
-    identityNullifier: SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     epochTreeDepth: number = EPOCH_TREE_DEPTH
-): SnarkBigInt => {
-    const values: any[] = [
-        identityNullifier,
+): BigInt => {
+    const epochKey = hash2([
+        (identityNullifier as any) + BigInt(nonce),
         epoch,
-        nonce,
-        BigInt(0),
-        BigInt(0),
-    ]
-    let epochKey = hash5(values).valueOf()
+    ]).valueOf()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
@@ -123,17 +116,11 @@ const genEpochKey = (
  * @returns The epoch key nullifier
  */
 const genEpochKeyNullifier = (
-    identityNullifier: SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number
-): SnarkBigInt => {
-    return hash5([
-        EPOCH_KEY_NULLIFIER_DOMAIN,
-        identityNullifier,
-        BigInt(epoch),
-        BigInt(nonce),
-        BigInt(0),
-    ])
+): BigInt => {
+    return hash2([BigInt(epoch), (identityNullifier as any) + BigInt(nonce)])
 }
 
 /**
@@ -146,18 +133,12 @@ const genEpochKeyNullifier = (
  * @returns The reputation nullifier
  */
 const genReputationNullifier = (
-    identityNullifier: SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     attesterId: BigInt
-): SnarkBigInt => {
-    return hash5([
-        REPUTATION_NULLIFIER_DOMAIN,
-        identityNullifier,
-        BigInt(epoch),
-        BigInt(nonce),
-        attesterId,
-    ])
+): BigInt => {
+    return hash4([identityNullifier, BigInt(epoch), BigInt(nonce), attesterId])
 }
 
 export {

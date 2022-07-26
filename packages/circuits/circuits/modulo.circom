@@ -1,6 +1,4 @@
-include "../../../node_modules/circomlib/circuits/bitify.circom";
 include "../../../node_modules/circomlib/circuits/comparators.circom";
-include "../../../node_modules/circomlib/circuits/sign.circom";
 
 template ModuloTreeDepth(TREE_DEPTH) {
     signal input dividend;
@@ -31,5 +29,4 @@ template ModuloTreeDepth(TREE_DEPTH) {
 
     // Check equality
     dividend === divisor * quotient + remainder;
-
 }

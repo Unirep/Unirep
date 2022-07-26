@@ -87,55 +87,7 @@ describe('Verify Epoch Key verifier', function () {
         }
     })
 
-    it('Invalid epoch key should not pass check', async () => {
-        // Validate against invalid epoch key
-        const invalidEpochKey1 = maxEPK
-        const invalidCircuitInputs = genEpochKeyCircuitInput(
-            id,
-            tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            nonce
-        )
-        invalidCircuitInputs.epoch_key = invalidEpochKey1
-
-        input = await genInputForContract(
-            Circuit.verifyEpochKey,
-            invalidCircuitInputs
-        )
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(
-            input.publicSignals,
-            input.proof
-        )
-        expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
-            .false
-    })
-
-    it('Wrong Id should not pass check', async () => {
-        const fakeId = new ZkIdentity()
-        const invalidCircuitInputs = genEpochKeyCircuitInput(
-            fakeId,
-            tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            nonce
-        )
-
-        input = await genInputForContract(
-            Circuit.verifyEpochKey,
-            invalidCircuitInputs
-        )
-        const isProofValid = await unirepContract.verifyEpochKeyValidity(
-            input.publicSignals,
-            input.proof
-        )
-        expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
-            .false
-    })
-
-    it('Mismatched GST tree root should not pass check', async () => {
+    it('Mismatched GST tree root should be output', async () => {
         const otherTreeRoot = genRandomSalt()
         const invalidCircuitInputs = genEpochKeyCircuitInput(
             id,
@@ -154,8 +106,8 @@ describe('Verify Epoch Key verifier', function () {
             input.publicSignals,
             input.proof
         )
-        expect(isProofValid, 'Verify epk proof on-chain should fail').to.be
-            .false
+        expect(isProofValid).to.be.true
+        expect(input.publicSignals[1]).to.not.equal(otherTreeRoot)
     })
 
     it('Invalid epoch should not pass check', async () => {

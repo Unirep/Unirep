@@ -16,12 +16,11 @@
     "scripts": {
         "codegen": "./scripts/codegen.sh",
         "copyABI": "node ./scripts/copyABI.js",
-        "build": "yarn copyABI && ./scripts/build-graph.sh",
+        "_build": "yarn copyABI && ./scripts/build-graph.sh",
         "deploy": "yarn codegen && graph deploy --node https://api.thegraph.com/deploy/ iamonuwa/unirep",
         "test": "echo 'No subgraph test'"
     },
     "dependencies": {
-        "@graphprotocol/graph-cli": "0.26.0",
         "@graphprotocol/graph-ts": "0.24.1"
     },
     "devDependencies": {

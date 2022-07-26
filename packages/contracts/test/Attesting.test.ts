@@ -25,7 +25,7 @@ describe('Attesting', () => {
     const epoch = 1
     const nonce = 0
     const epochKey = genEpochKey(genRandomSalt(), epoch, nonce)
-    const publicSignals = [genRandomSalt(), epoch, epochKey]
+    const publicSignals = [epochKey, genRandomSalt(), epoch]
     const epochKeyProof = new EpochKeyProof(
         publicSignals as BigNumberish[],
         formatProofForSnarkjsVerification(proof),
@@ -97,18 +97,6 @@ describe('Attesting', () => {
         await expect(
             unirepContract.submitEpochKeyProof(publicSignals, proof_)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
-    })
-
-    it('submit an invalid epoch key should fail', async () => {
-        const wrongEpochKey = genRandomSalt()
-        const { publicSignals, proof: proof_ } = new EpochKeyProof(
-            [genRandomSalt(), epoch, wrongEpochKey] as BigNumberish[],
-            formatProofForSnarkjsVerification(proof),
-            defaultProver
-        )
-        await expect(
-            unirepContract.submitEpochKeyProof(publicSignals, proof_)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 
     it('submit attestation should succeed', async () => {

@@ -4,10 +4,7 @@ import { ReputationProof, Unirep, UnirepFactory } from '@unirep/contracts'
 import { DEFAULT_ETH_PROVIDER } from './defaults'
 import { reputationProofPrefix, reputationPublicSignalsPrefix } from './prefix'
 import { getProvider, genUnirepState } from './utils'
-import {
-    formatProofForSnarkjsVerification,
-    MAX_REPUTATION_BUDGET,
-} from '@unirep/circuits'
+import { formatProofForSnarkjsVerification } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const configureSubparser = (subparsers: any) => {
@@ -67,23 +64,7 @@ const verifyReputationProof = async (args: any) => {
         args.public_signals.slice(reputationPublicSignalsPrefix.length)
     )
     const publicSignals = JSON.parse(decodedPublicSignals)
-    const outputNullifiers = publicSignals.slice(0, MAX_REPUTATION_BUDGET)
-    const epoch = Number(publicSignals[MAX_REPUTATION_BUDGET])
-    const epk = publicSignals[MAX_REPUTATION_BUDGET + 1]
-    const GSTRoot = publicSignals[MAX_REPUTATION_BUDGET + 2]
-    const attesterId = publicSignals[MAX_REPUTATION_BUDGET + 3]
-    const repNullifiersAmount = publicSignals[MAX_REPUTATION_BUDGET + 4]
-    const minRep = publicSignals[MAX_REPUTATION_BUDGET + 5]
-    const proveGraffiti = publicSignals[MAX_REPUTATION_BUDGET + 6]
-    const graffitiPreImage = publicSignals[MAX_REPUTATION_BUDGET + 7]
     const proof = JSON.parse(decodedProof)
-
-    // Check if Global state tree root exists
-    const isGSTRootExisted = await unirepState.GSTRootExists(GSTRoot, epoch)
-    if (!isGSTRootExisted) {
-        console.error('Error: invalid global state tree root')
-        return
-    }
 
     // Verify the proof on-chain
     const reputationProof = new ReputationProof(
@@ -91,6 +72,15 @@ const verifyReputationProof = async (args: any) => {
         formatProofForSnarkjsVerification(proof),
         defaultProver
     )
+    // Check if Global state tree root exists
+    const isGSTRootExisted = await unirepState.GSTRootExists(
+        BigInt(reputationProof.globalStateTree.toString()),
+        +reputationProof.epoch.toString()
+    )
+    if (!isGSTRootExisted) {
+        console.error('Error: invalid global state tree root')
+        return
+    }
     const isProofValid = await unirepContract.verifyReputation(
         reputationProof.publicSignals,
         reputationProof.proof
@@ -100,9 +90,9 @@ const verifyReputationProof = async (args: any) => {
         return
     }
 
-    console.log(`Epoch key of the user: ${epk}`)
+    console.log(`Epoch key of the user: ${reputationProof.epochKey}`)
     console.log(
-        `Verify reputation proof from attester ${attesterId} with min rep ${minRep}, reputation nullifiers amount ${repNullifiersAmount} and graffiti pre-image ${args.graffiti_preimage}, succeed`
+        `Verify reputation proof from attester ${reputationProof.attesterId} with min rep ${reputationProof.minRep}, reputation nullifiers amount ${reputationProof.proveReputationAmount} and graffiti pre-image ${reputationProof.graffitiPreImage}, succeed`
     )
 }
 

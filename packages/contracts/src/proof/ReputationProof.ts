@@ -35,10 +35,10 @@ export class ReputationProof extends BaseProof {
         super(_publicSignals, _proof, prover)
         this.maxReputationBudget = maxRepBudget
         this.idx = {
-            repNullifiers: [0, this.maxReputationBudget],
-            epoch: this.maxReputationBudget,
-            epochKey: this.maxReputationBudget + 1,
-            globalStateTree: this.maxReputationBudget + 2,
+            epochKey: 0,
+            globalStateTree: 1,
+            repNullifiers: [2, 2 + this.maxReputationBudget],
+            epoch: this.maxReputationBudget + 2,
             attesterId: this.maxReputationBudget + 3,
             proveReputationAmount: this.maxReputationBudget + 4,
             minRep: this.maxReputationBudget + 5,

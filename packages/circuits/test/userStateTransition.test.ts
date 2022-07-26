@@ -5,7 +5,6 @@ import {
     hashLeftRight,
     ZkIdentity,
     SparseMerkleTree,
-    SnarkBigInt,
 } from '@unirep/crypto'
 import { executeCircuit, getSignalByName, Circuit } from '../src'
 import {
@@ -38,7 +37,7 @@ describe('User State Transition circuits', function () {
 
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
         const testEpochTreeDepth = 32
-        const epochKey: SnarkBigInt = genEpochKey(
+        const epochKey: BigInt = genEpochKey(
             user.identityNullifier,
             epoch,
             nonce,
@@ -47,7 +46,7 @@ describe('User State Transition circuits', function () {
 
         let epochTree: SparseMerkleTree, epochTreeRoot, epochTreePathElements
 
-        let hashChainResult: SnarkBigInt
+        let hashChainResult: BigInt
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)

@@ -8,9 +8,9 @@ import { BaseProof } from './BaseProof'
  */
 export class SignUpProof extends BaseProof {
     readonly idx = {
-        epoch: 0,
-        epochKey: 1,
-        globalStateTree: 2,
+        epochKey: 0,
+        globalStateTree: 1,
+        epoch: 2,
         attesterId: 3,
         userHasSignedUp: 4,
     }

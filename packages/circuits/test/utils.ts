@@ -196,19 +196,14 @@ const genNewUserStateTree = (
 }
 
 const genEpochKey = (
-    identityNullifier: crypto.SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
-): crypto.SnarkBigInt => {
-    const values: any[] = [
-        identityNullifier,
-        epoch,
-        nonce,
-        BigInt(0),
-        BigInt(0),
-    ]
-    let epochKey = crypto.hash5(values).valueOf()
+): BigInt => {
+    const epochKey = crypto
+        .hash2([(identityNullifier as any) + BigInt(nonce), epoch])
+        .valueOf()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed
@@ -229,13 +224,13 @@ const genEpochKeyCircuitInput = (
     const circuitInputs = {
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        GST_root: root,
+        // GST_root: root,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: ustRoot,
         nonce: nonce,
         epoch: epoch,
-        epoch_key: epk,
+        // epoch_key: epk,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -259,7 +254,7 @@ const genStartTransitionCircuitInput = (
         identity_trapdoor: id.trapdoor,
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        GST_root: root,
+        // GST_root: root,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -427,6 +422,7 @@ const genProcessAttestationsCircuitInput = (
         intermediateUserStateTreeRoots[0],
         epoch,
         fromNonce,
+        BigInt(0),
     ])
 
     const circuitInputs = {
@@ -485,6 +481,7 @@ const genUserStateTransitionCircuitInput = (
             userStateTree.root,
             BigInt(epoch),
             BigInt(startEpochKeyNonce),
+            BigInt(0),
         ])
     )
 
@@ -517,6 +514,7 @@ const genUserStateTransitionCircuitInput = (
                 hashChainResult,
                 BigInt(epoch),
                 BigInt(nonce),
+                BigInt(0),
             ])
         )
 
@@ -538,6 +536,7 @@ const genUserStateTransitionCircuitInput = (
             intermediateUserStateTreeRoot,
             BigInt(epoch),
             BigInt(endEpochKeyNonce),
+            BigInt(0),
         ])
     )
 
@@ -563,7 +562,7 @@ const genUserStateTransitionCircuitInput = (
         identity_trapdoor: id.trapdoor,
         GST_path_elements: GSTreeProof.siblings,
         GST_path_index: GSTreeProof.pathIndices,
-        GST_root: GSTreeRoot,
+        // GST_root: GSTreeRoot,
         epk_path_elements: epochTreePathElements,
         hash_chain_results: hashChainResults,
         blinded_hash_chain_results: blindedHashChain,
@@ -631,13 +630,13 @@ const genReputationCircuitInput = (
     const circuitInputs = {
         epoch: epoch,
         epoch_key_nonce: nonce,
-        epoch_key: epk,
+        // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
+        // GST_root: GSTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
@@ -645,8 +644,7 @@ const genReputationCircuitInput = (
         sign_up: reputationRecords[attesterId]['signUp'],
         UST_path_elements: USTPathElements,
         rep_nullifiers_amount: repNullifiersAmount,
-        selectors: selectors,
-        rep_nonce: nonceList,
+        start_rep_nonce: nonceStarter,
         min_rep: minRep,
         prove_graffiti: proveGraffiti,
         graffiti_pre_image: graffitiPreImage,
@@ -688,13 +686,13 @@ const genProveSignUpCircuitInput = (
 
     const circuitInputs = {
         epoch: epoch,
-        epoch_key: epk,
+        // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
+        // GST_root: GSTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
@@ -724,16 +722,13 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
 }
 
 const genEpochKeyNullifier = (
-    identityNullifier: crypto.SnarkBigInt,
+    identityNullifier: BigInt,
     epoch: number,
     nonce: number
-): crypto.SnarkBigInt => {
-    return crypto.hash5([
-        EPOCH_KEY_NULLIFIER_DOMAIN,
-        identityNullifier,
+): BigInt => {
+    return crypto.hash2([
         BigInt(epoch),
-        BigInt(nonce),
-        BigInt(0),
+        (identityNullifier as any) + BigInt(nonce),
     ])
 }
 

@@ -120,36 +120,6 @@ describe('Prove user has signed up circuit', function () {
         expect(isValid).to.be.false
     })
 
-    it('prove with differnt epoch key should fail', async () => {
-        const attesterId = signedUpAttesterId
-        const wrongNonce = 1
-        const wrongEpochKey = genEpochKey(
-            user.identityNullifier,
-            epoch,
-            wrongNonce,
-            EPOCH_TREE_DEPTH
-        )
-        const circuitInputs = genProveSignUpCircuitInput(
-            user,
-            epoch,
-            reputationRecords,
-            attesterId
-        )
-        circuitInputs.epoch_key = wrongEpochKey
-
-        await throwError(
-            circuit,
-            circuitInputs,
-            'Invalid nonce should throw error'
-        )
-
-        const isValid = await genProofAndVerify(
-            Circuit.proveUserSignUp,
-            circuitInputs
-        )
-        expect(isValid).to.be.false
-    })
-
     it('forge signed up flag should fail', async () => {
         const attesterId = nonSignedUpAttesterId
         const wrongSignUpInfo = 1

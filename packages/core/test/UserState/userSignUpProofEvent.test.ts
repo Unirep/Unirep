@@ -247,7 +247,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const airdropProofInput = await userState.genUserSignUpProof(
                 BigInt(attesterId)
             )
-            airdropProofInput.publicSignals[2] = genRandomSalt().toString()
+            airdropProofInput.publicSignals[1] = genRandomSalt().toString()
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.false
 

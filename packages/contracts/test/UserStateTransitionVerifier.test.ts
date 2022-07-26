@@ -95,21 +95,6 @@ describe('User State Transition', function () {
         expect(isProofValid).to.be.false
     })
 
-    it('Proof with wrong epoch tree root should fail', async () => {
-        const wrongEpochTreeRoot = genRandomSalt().toString()
-        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
-        const input: UserTransitionProof = await genInputForContract(
-            Circuit.userStateTransition,
-            circuitInputs
-        )
-        input.publicSignals[input.idx.fromEpochTree] = wrongEpochTreeRoot
-        const isProofValid = await unirepContract.verifyUserStateTransition(
-            input.publicSignals,
-            input.proof
-        )
-        expect(isProofValid).to.be.false
-    })
-
     it('Proof with wrong blinded user states should fail', async () => {
         const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
         const input: UserTransitionProof = await genInputForContract(

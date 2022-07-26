@@ -1,13 +1,13 @@
 import assert from 'assert'
-import { hashLeftRight, hashOne, SnarkBigInt } from 'maci-crypto'
+import { hashLeftRight, hashOne } from './crypto'
 
 /**
  * Compute the poseidon hash of 2 elements
  * @param elements the inputs that have to be hashed
  * @returns Hash result of two elements
  */
-const newWrappedPoseidonT3Hash = (...elements: SnarkBigInt[]): SnarkBigInt => {
-    let result: SnarkBigInt
+const newWrappedPoseidonT3Hash = (...elements: BigInt[]): BigInt => {
+    let result: BigInt
     if (elements.length == 1) {
         result = hashOne(elements[0])
     } else if (elements.length == 2) {
