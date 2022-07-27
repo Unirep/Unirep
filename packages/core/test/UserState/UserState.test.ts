@@ -461,44 +461,6 @@ describe('User State', async function () {
             expect(Number(results.minRep)).equal(proveMinRep)
         })
 
-        it('generate reputation proof with nullifiers nonces should succeed', async () => {
-            const epoch = await userState.getUnirepStateCurrentEpoch()
-            const epkNonce = Math.floor(
-                Math.random() * setting.numEpochKeyNoncePerEpoch
-            )
-            const proveNullifiers = Math.floor(Math.random() * airdropAmount)
-            const nonceList: BigInt[] = []
-            for (let i = 0; i < setting.maxReputationBudget; i++) {
-                if (i < proveNullifiers) nonceList.push(BigInt(i))
-                else nonceList.push(BigInt(-1))
-            }
-            const results = await userState.genProveReputationProof(
-                BigInt(attesterId),
-                epkNonce,
-                proveNullifiers,
-                undefined,
-                undefined,
-                nonceList
-            )
-            const expectedEpk = genEpochKey(
-                id.identityNullifier,
-                epoch,
-                epkNonce
-            ).toString()
-            const isValid = await results.verify()
-
-            expect(isValid).to.be.true
-            expect(results.epochKey).equal(expectedEpk)
-            expect(results.epoch).equal(epoch.toString())
-            const outputGSTRoot = results.globalStateTree
-            const exist = await userState.GSTRootExists(outputGSTRoot, epoch)
-            expect(exist).to.be.true
-            expect(Number(results.minRep)).equal(proveNullifiers)
-            expect(Number(results.proveReputationAmount)).equal(
-                Math.min(setting.maxReputationBudget, proveNullifiers)
-            )
-        })
-
         it('generate reputation proof with invalid min rep should fail', async () => {
             const epkNonce = Math.floor(
                 Math.random() * setting.numEpochKeyNoncePerEpoch
