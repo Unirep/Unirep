@@ -215,12 +215,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         verifyAttesterFee();
 
         if (
-            !(toProofIndex != 0 &&
-                toProofIndex < proofIndex &&
-                fromProofIndex < proofIndex)
+            toProofIndex == 0 ||
+            toProofIndex >= proofIndex ||
+            fromProofIndex >= proofIndex
         ) revert InvalidProofIndex();
 
-        if (!(attestation.signUp == 0 || attestation.signUp == 1))
+        if (attestation.signUp != 0 && attestation.signUp != 1)
             revert InvalidSignUpFlag();
 
         if (epochKey > maxEpochKey) revert InvalidEpochKey();
@@ -236,6 +236,38 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             toProofIndex,
             fromProofIndex,
             AttestationEvent.SendAttestation
+        );
+    }
+
+    function submitGSTAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey,
+        uint256 gstRoot
+    ) external payable {
+        verifyAttesterSignUp(msg.sender);
+        verifyAttesterIndex(msg.sender, attestation.attesterId);
+        verifyAttesterFee();
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        // Validate attestation data
+        if (!isSNARKField(attestation.posRep))
+            revert InvalidSNARKField(AttestationFieldError.POS_REP);
+
+        if (!isSNARKField(attestation.negRep))
+            revert InvalidSNARKField(AttestationFieldError.NEG_REP);
+
+        if (!isSNARKField(attestation.graffiti))
+            revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
+
+        emit GSTAttestationSubmitted(
+            currentEpoch,
+            epochKey,
+            msg.sender,
+            attestation,
+            gstRoot
         );
     }
 
