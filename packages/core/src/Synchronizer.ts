@@ -820,7 +820,7 @@ export class Synchronizer extends EventEmitter {
             posRep: Number(decodedData.attestation.posRep),
             negRep: Number(decodedData.attestation.negRep),
             graffiti: decodedData.attestation.graffiti.toString(),
-            signUp: Boolean(Number(decodedData.attestation?.signUp)),
+            signUp: Number(decodedData.attestation?.signUp),
             hash: attestation.hash().toString(),
             valid: !!rootExists,
         })
@@ -877,7 +877,7 @@ export class Synchronizer extends EventEmitter {
             posRep: Number(decodedData.attestation.posRep),
             negRep: Number(decodedData.attestation.negRep),
             graffiti: decodedData.attestation.graffiti.toString(),
-            signUp: Boolean(Number(decodedData.attestation?.signUp)),
+            signUp: Number(decodedData.attestation?.signUp),
             hash: attestation.hash().toString(),
         })
 
