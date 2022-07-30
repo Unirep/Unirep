@@ -89,6 +89,7 @@ interface IUnirep is UnirepTypes {
     error NullifierAlreadyUsed(bytes32 nullilier);
     error AttestingFeeInvalid();
     error AttesterIdNotMatch(uint256 attesterId);
+    error AirdropWithoutAttester();
 
     error InvalidSignature();
     error InvalidProofIndex();

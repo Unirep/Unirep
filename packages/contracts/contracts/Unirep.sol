@@ -138,10 +138,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             revert ReachedMaximumNumberUserSignedUp();
 
         uint256 attesterId = attesters[msg.sender];
-        require(
-            attesterId != 0 || initBalance == 0,
-            'Unirep: must sign up through attester to create initBalance'
-        );
+        if (attesterId == 0 && initBalance != 0)
+            revert AirdropWithoutAttester();
 
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;

@@ -58,8 +58,9 @@ describe('Airdrop', function () {
                         id.genIdentityCommitment(),
                         100
                     )
-            ).to.be.revertedWith(
-                'Unirep: must sign up through attester to create initBalance'
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'AirdropWithoutAttester'
             )
         })
     })
