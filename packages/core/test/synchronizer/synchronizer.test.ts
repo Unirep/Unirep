@@ -43,6 +43,7 @@ describe('Synchronizer process events', function () {
     })
 
     afterEach(async () => {
+        await synchronizer.waitForSync()
         const state = await genUserState(
             synchronizer.unirepContract.provider,
             synchronizer.unirepContract.address,
@@ -71,13 +72,11 @@ describe('Synchronizer process events', function () {
         const attesterId = await synchronizer.unirepContract.attesters(
             accounts[1].address
         )
-        const airdropAmount = await synchronizer.unirepContract.airdropAmount(
-            accounts[1].address
-        )
+        const airdropAmount = 20
         const tree = await synchronizer.genGSTree(epoch.toNumber())
         const tx = await synchronizer.unirepContract
             .connect(accounts[1])
-            .userSignUp(commitment)
+            ['userSignUp(uint256,uint256)'](commitment, airdropAmount)
         const receipt = await tx.wait()
         await synchronizer.waitForSync()
         expect(receipt.status, 'User sign up failed').to.equal(1)
@@ -90,7 +89,7 @@ describe('Synchronizer process events', function () {
         expect(docs.length).to.equal(1)
         expect(docs[0].epoch).to.equal(epoch.toNumber())
         expect(docs[0].attesterId).to.equal(attesterId.toNumber())
-        expect(docs[0].airdrop).to.equal(airdropAmount.toNumber())
+        expect(docs[0].airdrop).to.equal(airdropAmount)
         const finalUserCount = await (synchronizer as any)._db.count(
             'UserSignUp',
             {}
@@ -102,7 +101,7 @@ describe('Synchronizer process events', function () {
             computeInitUserStateRoot(
                 synchronizer.settings.userStateTreeDepth,
                 attesterId.toNumber(),
-                airdropAmount.toNumber()
+                airdropAmount
             )
         )
         const storedLeaves = await (synchronizer as any)._db.findMany(
@@ -136,6 +135,97 @@ describe('Synchronizer process events', function () {
         expect(storedRoots[0].epoch).to.equal(epoch.toNumber())
     })
 
+    it('should process gst attestation', async () => {
+        const accounts = await ethers.getSigners()
+        const id = new ZkIdentity()
+        const commitment = id.genIdentityCommitment()
+        await synchronizer.unirepContract
+            .connect(accounts[1])
+            ['userSignUp(uint256)'](commitment)
+            .then((t) => t.wait())
+
+        const userState = await genUserState(
+            ethers.provider,
+            synchronizer.unirepContract.address,
+            id
+        )
+        const epoch = Number(await synchronizer.unirepContract.currentEpoch())
+        const [epochKey] = await userState.getEpochKeys(epoch)
+        const attestation = genRandomAttestation()
+        attestation.attesterId = await synchronizer.unirepContract.attesters(
+            accounts[1].address
+        )
+        const { root } = await userState.genGSTree(epoch)
+        const [GSTAttestationSubmitted] =
+            synchronizer.unirepContract.filters.GSTAttestationSubmitted()
+                .topics as string[]
+        const attestationEvent = new Promise((rs, rj) =>
+            synchronizer.once(GSTAttestationSubmitted, (event) => rs(event))
+        )
+        await synchronizer.unirepContract
+            .connect(accounts[1])
+            .submitGSTAttestation(attestation, epochKey, root, {
+                value: attestingFee,
+            })
+            .then((t) => t.wait())
+        await attestationEvent
+        const _attestation = await (synchronizer as any)._db.findOne(
+            'Attestation',
+            {
+                where: {
+                    graffiti: attestation.graffiti.toString(),
+                },
+            }
+        )
+        expect(_attestation).to.not.be.null
+        expect(_attestation.valid).to.equal(1)
+    })
+
+    it('should process invalid gst attestation', async () => {
+        const accounts = await ethers.getSigners()
+        const id = new ZkIdentity()
+        const commitment = id.genIdentityCommitment()
+        await synchronizer.unirepContract
+            .connect(accounts[1])
+            ['userSignUp(uint256)'](commitment)
+            .then((t) => t.wait())
+
+        const userState = await genUserState(
+            ethers.provider,
+            synchronizer.unirepContract.address,
+            id
+        )
+        const epoch = Number(await synchronizer.unirepContract.currentEpoch())
+        const [epochKey] = await userState.getEpochKeys(epoch)
+        const attestation = genRandomAttestation()
+        attestation.attesterId = await synchronizer.unirepContract.attesters(
+            accounts[1].address
+        )
+        const [GSTAttestationSubmitted] =
+            synchronizer.unirepContract.filters.GSTAttestationSubmitted()
+                .topics as string[]
+        const attestationEvent = new Promise((rs, rj) =>
+            synchronizer.once(GSTAttestationSubmitted, (event) => rs(event))
+        )
+        await synchronizer.unirepContract
+            .connect(accounts[1])
+            .submitGSTAttestation(attestation, epochKey, 0, {
+                value: attestingFee,
+            })
+            .then((t) => t.wait())
+        await attestationEvent
+        const _attestation = await (synchronizer as any)._db.findOne(
+            'Attestation',
+            {
+                where: {
+                    graffiti: attestation.graffiti.toString(),
+                },
+            }
+        )
+        expect(_attestation).to.not.be.null
+        expect(_attestation.valid).to.equal(0)
+    })
+
     it('should process epk proof event and attestation', async () => {
         const [IndexedEpochKeyProof] =
             synchronizer.unirepContract.filters.IndexedEpochKeyProof()
@@ -151,7 +241,7 @@ describe('Synchronizer process events', function () {
         {
             const tx = await synchronizer.unirepContract
                 .connect(accounts[1])
-                .userSignUp(commitment)
+                ['userSignUp(uint256)'](commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
         }
@@ -288,7 +378,7 @@ describe('Synchronizer process events', function () {
         {
             const receipt = await synchronizer.unirepContract
                 .connect(accounts[1])
-                .userSignUp(commitment)
+                ['userSignUp(uint256,uint256)'](commitment, 100)
                 .then((t) => t.wait())
             expect(receipt.status, 'User sign up failed').to.equal(1)
         }
@@ -303,13 +393,9 @@ describe('Synchronizer process events', function () {
         const minRep = 0
         const proveGraffiti = BigInt(0)
         const graffitiPreimage = BigInt(0)
-        const nonceList = [] as BigInt[]
         const maxReputationBudget = (
             await synchronizer.unirepContract.config()
         ).maxReputationBudget.toNumber()
-        for (let i = nonceList.length; i < maxReputationBudget; i++) {
-            nonceList.push(BigInt(-1))
-        }
         const formattedProof = await userState.genProveReputationProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
@@ -318,7 +404,7 @@ describe('Synchronizer process events', function () {
             minRep,
             proveGraffiti,
             graffitiPreimage,
-            nonceList
+            maxReputationBudget
         )
         const isValid = await formattedProof.verify()
         expect(isValid, 'Verify rep proof off-chain failed').to.be.true
@@ -383,99 +469,99 @@ describe('Synchronizer process events', function () {
         await userState.stop()
     })
 
-    it('should process sign up proof', async () => {
-        const [IndexedUserSignedUpProof] =
-            synchronizer.unirepContract.filters.IndexedUserSignedUpProof()
-                .topics as string[]
-        const proofEvent = new Promise((rs, rj) =>
-            synchronizer.once(IndexedUserSignedUpProof, (event) => rs(event))
-        )
-        const accounts = await ethers.getSigners()
-        const id = new ZkIdentity()
-        const commitment = id.genIdentityCommitment()
-        {
-            const receipt = await synchronizer.unirepContract
-                .connect(accounts[1])
-                .userSignUp(commitment)
-                .then((t) => t.wait())
-            expect(receipt.status, 'User sign up failed').to.equal(1)
-        }
-        const epoch = await synchronizer.unirepContract.currentEpoch()
-        const userState = await genUserState(
-            ethers.provider,
-            synchronizer.unirepContract.address,
-            id
-        )
-        const formattedProof = await userState.genUserSignUpProof(
-            (
-                await synchronizer.unirepContract.attesters(accounts[1].address)
-            ).toBigInt()
-        )
-        const isValid = await formattedProof.verify()
-        expect(isValid, 'Verify sign up proof off-chain failed').to.be.true
-
-        const proofCount = await (synchronizer as any)._db.count('Proof', {})
-        const receipt = await synchronizer.unirepContract
-            .connect(accounts[1])
-            .airdropEpochKey(
-                formattedProof.publicSignals,
-                formattedProof.proof,
-                {
-                    value: attestingFee,
-                    gasLimit: 1000000,
-                }
-            )
-            .then((t) => t.wait())
-        const proofIndex = await synchronizer.unirepContract.getProofIndex(
-            formattedProof.hash()
-        )
-        await proofEvent
-        await synchronizer.waitForSync()
-        const storedProofs = await (synchronizer as any)._db.findMany('Proof', {
-            where: {
-                transactionHash: receipt.transactionHash,
-            },
-        })
-        expect(storedProofs.length).to.equal(1)
-        expect(storedProofs[0].index).to.equal(proofIndex.toNumber())
-        expect(storedProofs[0].event).to.equal('IndexedUserSignedUpProof')
-        expect(storedProofs[0].valid).to.equal(1)
-        expect(storedProofs[0].epoch).to.equal(epoch.toNumber())
-        expect(storedProofs[0].globalStateTree).to.equal(
-            formattedProof.globalStateTree.toString()
-        )
-        // compare the proof
-        const storedProof = decodeBigIntArray(storedProofs[0].proof)
-        expect(formattedProof.proof.length).to.equal(storedProof.length)
-        for (let x = 0; x < formattedProof.proof.length; x++) {
-            expect(formattedProof.proof[x]).to.equal(storedProof[x].toString())
-        }
-        const storedPublicSignals = decodeBigIntArray(
-            storedProofs[0].publicSignals
-        )
-        expect(formattedProof.publicSignals.length).to.equal(
-            storedPublicSignals.length
-        )
-        for (let x = 0; x < formattedProof.publicSignals.length; x++) {
-            expect(formattedProof.publicSignals[x]).to.equal(
-                storedPublicSignals[x].toString()
-            )
-        }
-
-        expect(storedProofs[0].toEpochKey).to.equal(null)
-        expect(storedProofs[0].blindedUserState).to.equal(null)
-        expect(storedProofs[0].blindedHashChain).to.equal(null)
-        expect(storedProofs[0].outputBlindedHashChain).to.equal(null)
-        expect(storedProofs[0].outputBlindedUserState).to.equal(null)
-        expect(storedProofs[0].inputBlindedUserState).to.equal(null)
-        expect(storedProofs[0].proofIndexRecords).to.equal(null)
-        const finalProofCount = await (synchronizer as any)._db.count(
-            'Proof',
-            {}
-        )
-        expect(finalProofCount).to.equal(proofCount + 1)
-        await userState.stop()
-    })
+    // it('should process sign up proof', async () => {
+    //     const [IndexedUserSignedUpProof] =
+    //         synchronizer.unirepContract.filters.IndexedUserSignedUpProof()
+    //             .topics as string[]
+    //     const proofEvent = new Promise((rs, rj) =>
+    //         synchronizer.once(IndexedUserSignedUpProof, (event) => rs(event))
+    //     )
+    //     const accounts = await ethers.getSigners()
+    //     const id = new ZkIdentity()
+    //     const commitment = id.genIdentityCommitment()
+    //     {
+    //         const receipt = await synchronizer.unirepContract
+    //             .connect(accounts[1])
+    //             ['userSignUp(uint256)'](commitment)
+    //             .then((t) => t.wait())
+    //         expect(receipt.status, 'User sign up failed').to.equal(1)
+    //     }
+    //     const epoch = await synchronizer.unirepContract.currentEpoch()
+    //     const userState = await genUserState(
+    //         ethers.provider,
+    //         synchronizer.unirepContract.address,
+    //         id
+    //     )
+    //     const formattedProof = await userState.genUserSignUpProof(
+    //         (
+    //             await synchronizer.unirepContract.attesters(accounts[1].address)
+    //         ).toBigInt()
+    //     )
+    //     const isValid = await formattedProof.verify()
+    //     expect(isValid, 'Verify sign up proof off-chain failed').to.be.true
+    //
+    //     const proofCount = await (synchronizer as any)._db.count('Proof', {})
+    //     const receipt = await synchronizer.unirepContract
+    //         .connect(accounts[1])
+    //         .airdropEpochKey(
+    //             formattedProof.publicSignals,
+    //             formattedProof.proof,
+    //             {
+    //                 value: attestingFee,
+    //                 gasLimit: 1000000,
+    //             }
+    //         )
+    //         .then((t) => t.wait())
+    //     const proofIndex = await synchronizer.unirepContract.getProofIndex(
+    //         formattedProof.hash()
+    //     )
+    //     await proofEvent
+    //     await synchronizer.waitForSync()
+    //     const storedProofs = await (synchronizer as any)._db.findMany('Proof', {
+    //         where: {
+    //             transactionHash: receipt.transactionHash,
+    //         },
+    //     })
+    //     expect(storedProofs.length).to.equal(1)
+    //     expect(storedProofs[0].index).to.equal(proofIndex.toNumber())
+    //     expect(storedProofs[0].event).to.equal('IndexedUserSignedUpProof')
+    //     expect(storedProofs[0].valid).to.equal(1)
+    //     expect(storedProofs[0].epoch).to.equal(epoch.toNumber())
+    //     expect(storedProofs[0].globalStateTree).to.equal(
+    //         formattedProof.globalStateTree.toString()
+    //     )
+    //     // compare the proof
+    //     const storedProof = decodeBigIntArray(storedProofs[0].proof)
+    //     expect(formattedProof.proof.length).to.equal(storedProof.length)
+    //     for (let x = 0; x < formattedProof.proof.length; x++) {
+    //         expect(formattedProof.proof[x]).to.equal(storedProof[x].toString())
+    //     }
+    //     const storedPublicSignals = decodeBigIntArray(
+    //         storedProofs[0].publicSignals
+    //     )
+    //     expect(formattedProof.publicSignals.length).to.equal(
+    //         storedPublicSignals.length
+    //     )
+    //     for (let x = 0; x < formattedProof.publicSignals.length; x++) {
+    //         expect(formattedProof.publicSignals[x]).to.equal(
+    //             storedPublicSignals[x].toString()
+    //         )
+    //     }
+    //
+    //     expect(storedProofs[0].toEpochKey).to.equal(null)
+    //     expect(storedProofs[0].blindedUserState).to.equal(null)
+    //     expect(storedProofs[0].blindedHashChain).to.equal(null)
+    //     expect(storedProofs[0].outputBlindedHashChain).to.equal(null)
+    //     expect(storedProofs[0].outputBlindedUserState).to.equal(null)
+    //     expect(storedProofs[0].inputBlindedUserState).to.equal(null)
+    //     expect(storedProofs[0].proofIndexRecords).to.equal(null)
+    //     const finalProofCount = await (synchronizer as any)._db.count(
+    //         'Proof',
+    //         {}
+    //     )
+    //     expect(finalProofCount).to.equal(proofCount + 1)
+    //     await userState.stop()
+    // })
 
     it('should process epoch transition', async () => {
         await synchronizer.waitForSync()
@@ -517,7 +603,7 @@ describe('Synchronizer process events', function () {
 
         const receipt = await synchronizer.unirepContract
             .connect(accounts[1])
-            .userSignUp(commitment)
+            ['userSignUp(uint256)'](commitment)
             .then((t) => t.wait())
         expect(receipt.status, 'User sign up failed').to.equal(1)
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])

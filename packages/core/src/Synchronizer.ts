@@ -499,6 +499,9 @@ export class Synchronizer extends EventEmitter {
         const [AttestationSubmitted] =
             this.unirepContract.filters.AttestationSubmitted()
                 .topics as string[]
+        const [GSTAttestationSubmitted] =
+            this.unirepContract.filters.GSTAttestationSubmitted()
+                .topics as string[]
         const [EpochEnded] = this.unirepContract.filters.EpochEnded()
             .topics as string[]
         const [IndexedEpochKeyProof] =
@@ -506,9 +509,6 @@ export class Synchronizer extends EventEmitter {
                 .topics as string[]
         const [IndexedReputationProof] =
             this.unirepContract.filters.IndexedReputationProof()
-                .topics as string[]
-        const [IndexedUserSignedUpProof] =
-            this.unirepContract.filters.IndexedUserSignedUpProof()
                 .topics as string[]
         const [IndexedStartedTransitionProof] =
             this.unirepContract.filters.IndexedStartedTransitionProof()
@@ -523,11 +523,11 @@ export class Synchronizer extends EventEmitter {
             [UserSignedUp]: this.userSignedUpEvent.bind(this),
             [UserStateTransitioned]: this.USTEvent.bind(this),
             [AttestationSubmitted]: this.attestationEvent.bind(this),
+            [GSTAttestationSubmitted]: this.gstAttestationEvent.bind(this),
             [LEGACY_ATTESTATION_TOPIC]: this.attestationEvent.bind(this),
             [EpochEnded]: this.epochEndedEvent.bind(this),
             [IndexedEpochKeyProof]: this.epochKeyProofEvent.bind(this),
             [IndexedReputationProof]: this.reputationProofEvent.bind(this),
-            [IndexedUserSignedUpProof]: this.userSignedUpProofEvent.bind(this),
             [IndexedStartedTransitionProof]: this.startUSTProofEvent.bind(this),
             [IndexedProcessedAttestationsProof]:
                 this.processAttestationProofEvent.bind(this),
@@ -549,6 +549,9 @@ export class Synchronizer extends EventEmitter {
         const [AttestationSubmitted] =
             this.unirepContract.filters.AttestationSubmitted()
                 .topics as string[]
+        const [GSTAttestationSubmitted] =
+            this.unirepContract.filters.GSTAttestationSubmitted()
+                .topics as string[]
         const [EpochEnded] = this.unirepContract.filters.EpochEnded()
             .topics as string[]
         const [IndexedEpochKeyProof] =
@@ -556,9 +559,6 @@ export class Synchronizer extends EventEmitter {
                 .topics as string[]
         const [IndexedReputationProof] =
             this.unirepContract.filters.IndexedReputationProof()
-                .topics as string[]
-        const [IndexedUserSignedUpProof] =
-            this.unirepContract.filters.IndexedUserSignedUpProof()
                 .topics as string[]
         const [IndexedStartedTransitionProof] =
             this.unirepContract.filters.IndexedStartedTransitionProof()
@@ -577,10 +577,10 @@ export class Synchronizer extends EventEmitter {
                     UserSignedUp,
                     UserStateTransitioned,
                     AttestationSubmitted,
+                    GSTAttestationSubmitted,
                     EpochEnded,
                     IndexedEpochKeyProof,
                     IndexedReputationProof,
-                    IndexedUserSignedUpProof,
                     IndexedStartedTransitionProof,
                     IndexedProcessedAttestationsProof,
                     IndexedUserStateTransitionProof,
@@ -638,40 +638,40 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
-        const _proofIndex = Number(event.topics[1])
-        const _epoch = Number(event.topics[2])
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'IndexedUserSignedUpProof',
-            event.data
-        )
-        if (!decodedData) {
-            throw new Error('Failed to decode data')
-        }
-        const { publicSignals, proof } = decodedData
-        const signUpProof = new SignUpProof(
-            publicSignals,
-            formatProofForSnarkjsVerification(proof),
-            this.prover
-        )
-        const isValid = await signUpProof.verify()
-        const exist = await this.GSTRootExists(
-            signUpProof.globalStateTree.toString(),
-            _epoch
-        )
-
-        db.create('Proof', {
-            index: _proofIndex,
-            epoch: _epoch,
-            proof: encodeBigIntArray(proof),
-            publicSignals: encodeBigIntArray(publicSignals),
-            transactionHash: event.transactionHash,
-            globalStateTree: signUpProof.globalStateTree.toString(),
-            event: 'IndexedUserSignedUpProof',
-            valid: isValid && exist,
-        })
-        return true
-    }
+    // async userSignedUpProofEvent(event: ethers.Event, db: TransactionDB) {
+    //     const _proofIndex = Number(event.topics[1])
+    //     const _epoch = Number(event.topics[2])
+    //     const decodedData = this.unirepContract.interface.decodeEventLog(
+    //         'IndexedUserSignedUpProof',
+    //         event.data
+    //     )
+    //     if (!decodedData) {
+    //         throw new Error('Failed to decode data')
+    //     }
+    //     const { publicSignals, proof } = decodedData
+    //     const signUpProof = new SignUpProof(
+    //         publicSignals,
+    //         formatProofForSnarkjsVerification(proof),
+    //         this.prover
+    //     )
+    //     const isValid = await signUpProof.verify()
+    //     const exist = await this.GSTRootExists(
+    //         signUpProof.globalStateTree.toString(),
+    //         _epoch
+    //     )
+    //
+    //     db.create('Proof', {
+    //         index: _proofIndex,
+    //         epoch: _epoch,
+    //         proof: encodeBigIntArray(proof),
+    //         publicSignals: encodeBigIntArray(publicSignals),
+    //         transactionHash: event.transactionHash,
+    //         globalStateTree: signUpProof.globalStateTree.toString(),
+    //         event: 'IndexedUserSignedUpProof',
+    //         valid: isValid && exist,
+    //     })
+    //     return true
+    // }
 
     async reputationProofEvent(event: ethers.Event, db: TransactionDB) {
         const _proofIndex = Number(event.topics[1])
@@ -764,6 +764,68 @@ export class Synchronizer extends EventEmitter {
             globalStateTree: epkProof.globalStateTree.toString(),
             event: 'IndexedEpochKeyProof',
             valid: isValid && exist,
+        })
+        return true
+    }
+
+    async gstAttestationEvent(event: ethers.Event, db: TransactionDB) {
+        const _epoch = Number(event.topics[1])
+        const _epochKey = BigInt(event.topics[2])
+        const _attester = event.topics[3]
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'GSTAttestationSubmitted',
+            event.data
+        )
+        const { gstRoot } = decodedData
+
+        const index = +`${event.blockNumber
+            .toString()
+            .padStart(15, '0')}${event.transactionIndex
+            .toString()
+            .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
+
+        await this._checkCurrentEpoch(_epoch)
+        await this._checkEpochKeyRange(_epochKey.toString())
+        await this._isEpochKeySealed(_epoch, _epochKey.toString())
+
+        const attestation = new Attestation(
+            BigInt(decodedData.attestation.attesterId),
+            BigInt(decodedData.attestation.posRep),
+            BigInt(decodedData.attestation.negRep),
+            BigInt(decodedData.attestation.graffiti),
+            BigInt(decodedData.attestation.signUp)
+        )
+        const rootExists = await this._db.findOne('GSTRoot', {
+            where: {
+                epoch: _epoch,
+                root: gstRoot.toString(),
+            },
+        })
+        db.create('Attestation', {
+            epoch: _epoch,
+            epochKey: _epochKey.toString(),
+            index: index,
+            transactionHash: event.transactionHash,
+            attester: _attester,
+            proofIndex: 0,
+            attesterId: Number(decodedData.attestation.attesterId),
+            posRep: Number(decodedData.attestation.posRep),
+            negRep: Number(decodedData.attestation.negRep),
+            graffiti: decodedData.attestation.graffiti.toString(),
+            signUp: Boolean(Number(decodedData.attestation?.signUp)),
+            hash: attestation.hash().toString(),
+            valid: !!rootExists,
+        })
+        db.upsert('EpochKey', {
+            where: {
+                epoch: _epoch,
+                key: _epochKey.toString(),
+            },
+            update: {},
+            create: {
+                epoch: _epoch,
+                key: _epochKey.toString(),
+            },
         })
         return true
     }

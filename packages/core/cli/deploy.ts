@@ -77,7 +77,6 @@ const deploy = async (args: any) => {
         return
     }
     const deployer = genJsonRpcDeployer(deployerPrivkey, provider)
-    debugger
 
     const contract = await deployUnirep(deployer.signer, settings)
 
