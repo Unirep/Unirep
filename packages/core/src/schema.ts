@@ -42,8 +42,8 @@ const _schema = [
         name: 'Attestation',
         indexes: [
             { keys: ['index'] },
-            { keys: ['epoch', 'epochKey', 'index'] },
-            { keys: ['epoch', 'epochKey', 'proofIndex'] },
+            { keys: ['index', 'epochKey', 'epoch'] },
+            { keys: ['epochKey', 'epoch', 'proofIndex'] },
             { keys: ['epochKey', 'attesterId', 'valid'] },
             { keys: ['epoch', 'valid'] },
         ],
@@ -77,7 +77,7 @@ const _schema = [
     },
     {
         name: 'GSTRoot',
-        indexes: [{ keys: ['epoch', 'root'] }],
+        indexes: [{ keys: ['root', 'epoch'] }],
         rows: [
             ['epoch', 'Int'],
             ['root', 'String'],
