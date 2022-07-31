@@ -17,6 +17,11 @@
         "merkle-tree",
         "ethereum"
     ],
+    "typedoc": {
+        "entryPoint": "./src/index.ts",
+        "readmeFile": "./README.md",
+        "displayName": "Crypto Package"
+    },
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "tsc",
