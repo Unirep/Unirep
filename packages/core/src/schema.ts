@@ -60,7 +60,7 @@ const _schema = [
             ['posRep', 'Int', { optional: true }],
             ['negRep', 'Int', { optional: true }],
             ['graffiti', 'String', { optional: true }],
-            ['signUp', 'Bool', { optional: true }],
+            ['signUp', 'Int', { optional: true }],
             ['hash', 'String'],
             ['valid', 'Int', { optional: true }],
         ],
