@@ -395,7 +395,7 @@ export class Synchronizer extends EventEmitter {
             await this._checkEpochKeyRange(epochKey)
 
             let hashChain: BigInt = BigInt(0)
-            for (const attestation of attestations) {
+            for (const attestation of attestationsByEpochKey[epochKey]) {
                 hashChain = hashLeftRight(BigInt(attestation.hash), hashChain)
             }
             const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
