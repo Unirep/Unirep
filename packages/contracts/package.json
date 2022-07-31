@@ -25,6 +25,11 @@
         "lint": "prettier --write .",
         "coverage": "hardhat coverage"
     },
+    "typedoc": {
+        "entryPoint": "./src/index.ts",
+        "readmeFile": "./README.md",
+        "displayName": "Contract Package"
+    },
     "dependencies": {
         "@unirep/circuits": "1.0.0",
         "@unirep/crypto": "1.0.0",

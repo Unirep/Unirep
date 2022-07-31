@@ -1,7 +1,6 @@
 {
     "name": "unirep",
     "version": "1.0.0",
-    "main": "index.js",
     "license": "MIT",
     "description": "UniRep is a private and nonrepudiable repuation system based on ZKP",
     "workspaces": [
@@ -17,6 +16,7 @@
         "crypto": "yarn workspace @unirep/crypto run",
         "subgraph": "yarn workspace @unirep/subgraph run",
         "build": "yarn workspaces foreach -t run build",
+        "build:doc": "typedoc --entryPointStrategy packages .",
         "test": "yarn workspaces foreach -t run test",
         "lint": "prettier .",
         "lint:fix": "prettier . --write",
@@ -43,6 +43,7 @@
         "prettier": "^2.6.2",
         "prettier-plugin-solidity": "^1.0.0-beta.19",
         "ts-node": "^10.8.1",
+        "typedoc": "^0.23.9",
         "typescript": "^4.7.3"
     },
     "lint-staged": {

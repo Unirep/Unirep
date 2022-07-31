@@ -20,10 +20,16 @@
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "tsc",
+        "build:doc": "typedoc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "hardhat test --no-compile test/*/*.test.ts",
         "test-ci": "hardhat test --no-compile --parallel",
         "lint": "prettier --write ."
+    },
+    "typedoc": {
+        "entryPoint": "./src/index.ts",
+        "readmeFile": "./README.md",
+        "displayName": "Core Package"
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^1.0.0-beta.3",

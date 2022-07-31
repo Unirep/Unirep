@@ -17,6 +17,11 @@
         "privacy",
         "ethereum"
     ],
+    "typedoc": {
+        "entryPoint": "./src/index.ts",
+        "readmeFile": "./README.md",
+        "displayName": "Circuit Package"
+    },
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "yarn buildTs && yarn buildParallel && yarn copyCircom",
