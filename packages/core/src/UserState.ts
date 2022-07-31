@@ -723,9 +723,8 @@ export default class UserState extends Synchronizer {
                 signUps.push(attestation.signUp.toString())
 
                 // Update current hashchain result
-                const attestationHash = attestation.hash()
                 currentHashChain = hashLeftRight(
-                    attestationHash,
+                    attestation.hash(),
                     currentHashChain
                 )
             }
