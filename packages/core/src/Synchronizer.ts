@@ -396,7 +396,7 @@ export class Synchronizer extends EventEmitter {
 
             let hashChain: BigInt = BigInt(0)
             for (const attestation of attestations) {
-                hashChain = hashLeftRight(attestation.hash, hashChain)
+                hashChain = hashLeftRight(BigInt(attestation.hash), hashChain)
             }
             const sealedHashChainResult = hashLeftRight(BigInt(1), hashChain)
             const epochTreeLeaf = {

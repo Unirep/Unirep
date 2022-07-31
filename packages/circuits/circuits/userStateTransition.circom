@@ -19,7 +19,7 @@ template EpochKeyExist(epoch_tree_depth) {
     signal input nonce;
     signal input hash_chain_result;
     signal input epoch_tree_root;
-    signal input path_elements[epoch_tree_depth][1];
+    signal input path_elements[epoch_tree_depth];
     signal output epoch_key;
 
     component epochKeyHasher = Poseidon(2);
@@ -38,7 +38,7 @@ template EpochKeyExist(epoch_tree_depth) {
     epk_exists.leaf <== hash_chain_result;
     epk_exists.root <== epoch_tree_root;
     for (var i = 0; i < epoch_tree_depth; i++) {
-        epk_exists.path_elements[i][0] <== path_elements[i][0];
+        epk_exists.path_elements[i][0] <== path_elements[i];
     }
     epoch_key <== epkModed;
 }
@@ -71,7 +71,7 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
     signal output GST_root;
 
     // Epoch key & epoch tree
-    signal private input epk_path_elements[EPOCH_KEY_NONCE_PER_EPOCH][epoch_tree_depth][1];
+    signal private input epk_path_elements[EPOCH_KEY_NONCE_PER_EPOCH][epoch_tree_depth];
     signal private input hash_chain_results[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input blinded_hash_chain_results[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input epoch_tree_root;
@@ -127,7 +127,7 @@ template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tre
         epkExist[n].hash_chain_result <== seal_hash_chain_hasher[n].out;
         epkExist[n].epoch_tree_root <== epoch_tree_root;
         for (var i = 0; i < epoch_tree_depth; i++) {
-            epkExist[n].path_elements[i][0] <== epk_path_elements[n][i][0];
+            epkExist[n].path_elements[i] <== epk_path_elements[n][i];
         }
     }
     /* End of 2. process the hashchain of the epoch key specified by nonce `n` */
