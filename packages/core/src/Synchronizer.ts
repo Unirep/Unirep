@@ -785,7 +785,7 @@ export class Synchronizer extends EventEmitter {
         )
         const { gstRoot } = decodedData
 
-        const index = +`${event.blockNumber
+        const index = `${event.blockNumber
             .toString()
             .padStart(15, '0')}${event.transactionIndex
             .toString()
