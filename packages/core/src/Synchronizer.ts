@@ -261,6 +261,7 @@ export class Synchronizer extends EventEmitter {
                     })
                 })
                 if (success) this.emit(event.topics[0], event)
+                this.emit('processedEvent', event)
             } catch (err) {
                 console.log(`Error processing event:`, err)
                 console.log(event)
