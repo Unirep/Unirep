@@ -279,6 +279,9 @@ export default class UserState extends Synchronizer {
                 epochKey,
                 valid: true,
             },
+            orderBy: {
+                index: 'asc',
+            },
         })
     }
 
