@@ -41,6 +41,12 @@ export { Unirep, UnirepFactory }
 export const deployUnirep = async (
     deployer: ethers.Signer,
     _settings: {
+        globalStateTreeDepth?: BigNumberish
+        userStateTreeDepth?: BigNumberish
+        epochTreeDepth?: BigNumberish
+        numEpochKeyNoncePerEpoch?: BigNumberish
+        maxReputationBudget?: BigNumberish
+        numAttestationsPerProof?: BigNumberish
         epochLength?: BigNumberish
         attestingFee?: BigNumberish
         maxUsers?: BigNumberish
