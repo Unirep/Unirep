@@ -40,12 +40,18 @@ export { Unirep, UnirepFactory }
  */
 export const deployUnirep = async (
     deployer: ethers.Signer,
-    _settings?: {
+    _settings: {
+        globalStateTreeDepth?: BigNumberish
+        userStateTreeDepth?: BigNumberish
+        epochTreeDepth?: BigNumberish
+        numEpochKeyNoncePerEpoch?: BigNumberish
+        maxReputationBudget?: BigNumberish
+        numAttestationsPerProof?: BigNumberish
         epochLength?: BigNumberish
         attestingFee?: BigNumberish
         maxUsers?: BigNumberish
         maxAttesters?: BigNumberish
-    }
+    } = {}
 ): Promise<Unirep> => {
     let EpochKeyValidityVerifierContract: VerifyEpochKeyVerifier
     let StartTransitionVerifierContract: StartTransitionVerifier
@@ -87,10 +93,6 @@ export const deployUnirep = async (
     await UserSignUpVerifierContract.deployTransaction.wait()
 
     console.log('Deploying Unirep')
-    const _maxUsers = _settings?.maxUsers ?? MAX_USERS
-    const _maxAttesters = _settings?.maxAttesters ?? MAX_ATTESTERS
-    const _epochLength = _settings?.epochLength ?? EPOCH_LENGTH
-    const _attestingFee = _settings?.attestingFee ?? ATTESTING_FEE
 
     const c: Unirep = await new UnirepFactory(deployer).deploy(
         {
@@ -100,10 +102,11 @@ export const deployUnirep = async (
             numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
             maxReputationBudget: MAX_REPUTATION_BUDGET,
             numAttestationsPerProof: NUM_ATTESTATIONS_PER_PROOF,
-            epochLength: _epochLength,
-            attestingFee: _attestingFee,
-            maxUsers: _maxUsers,
-            maxAttesters: _maxAttesters,
+            epochLength: EPOCH_LENGTH,
+            attestingFee: ATTESTING_FEE,
+            maxUsers: MAX_USERS,
+            maxAttesters: MAX_ATTESTERS,
+            ..._settings,
         },
         EpochKeyValidityVerifierContract.address,
         StartTransitionVerifierContract.address,
