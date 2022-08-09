@@ -821,7 +821,7 @@ export class Synchronizer extends EventEmitter {
             graffiti: decodedData.attestation.graffiti.toString(),
             signUp: Number(decodedData.attestation?.signUp),
             hash: attestation.hash().toString(),
-            valid: !!rootExists,
+            valid: rootExists ? 1 : 0,
         })
         db.upsert('EpochKey', {
             where: {
@@ -879,28 +879,27 @@ export class Synchronizer extends EventEmitter {
             signUp: Number(decodedData.attestation?.signUp),
             hash: attestation.hash().toString(),
         })
-
-        const validProof = await this._db.findOne('Proof', {
-            where: {
-                epoch: _epoch,
-                index: toProofIndex,
-            },
-        })
-        if (!validProof) {
-            throw new Error('Unable to find proof for attestation')
-        }
-        if (!validProof.valid) {
-            db.update('Attestation', {
+        if (toProofIndex) {
+            const validProof = await this._db.findOne('Proof', {
                 where: {
                     epoch: _epoch,
-                    epochKey: _epochKey.toString(),
-                    proofIndex: toProofIndex,
-                },
-                update: {
-                    valid: 0,
+                    index: toProofIndex,
                 },
             })
-            return
+            if (!validProof) {
+                throw new Error('Unable to find proof for attestation')
+            }
+            if (!validProof.valid) {
+                db.update('Attestation', {
+                    where: {
+                        index,
+                    },
+                    update: {
+                        valid: 0,
+                    },
+                })
+                return
+            }
         }
         if (fromProofIndex) {
             const fromValidProof = await this._db.findOne('Proof', {

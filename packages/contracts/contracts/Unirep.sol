@@ -244,6 +244,27 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
     }
 
+    function submitRawAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey
+    ) external payable {
+        assertValidAttestation(msg.sender, attestation, epochKey);
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        emit AttestationSubmitted(
+            currentEpoch,
+            epochKey,
+            msg.sender,
+            AttestationEvent.SendAttestation,
+            attestation,
+            0,
+            0
+        );
+    }
+
     /**
      * @dev An attester submit the attestation with a proof index that the attestation will be sent to
      * and(or) a proof index that the attestation is from
