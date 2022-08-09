@@ -303,13 +303,6 @@ describe('Synchronizer process events', function () {
         const minRep = 0
         const proveGraffiti = BigInt(0)
         const graffitiPreimage = BigInt(0)
-        const nonceList = [] as BigInt[]
-        const maxReputationBudget = (
-            await synchronizer.unirepContract.config()
-        ).maxReputationBudget.toNumber()
-        for (let i = nonceList.length; i < maxReputationBudget; i++) {
-            nonceList.push(BigInt(-1))
-        }
         const formattedProof = await userState.genProveReputationProof(
             (
                 await synchronizer.unirepContract.attesters(accounts[1].address)
@@ -318,7 +311,7 @@ describe('Synchronizer process events', function () {
             minRep,
             proveGraffiti,
             graffitiPreimage,
-            nonceList
+            0
         )
         const isValid = await formattedProof.verify()
         expect(isValid, 'Verify rep proof off-chain failed').to.be.true

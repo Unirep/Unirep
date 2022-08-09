@@ -907,7 +907,7 @@ export default class UserState extends Synchronizer {
      * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
      * @param proveGraffiti The boolean flag that indicates if user wants to prove graffiti pre-image
      * @param graffitiPreImage The pre-image of the graffiti
-     * @param nonceList The reputation nonce list or the number of spending reputation. It is used to spend reputation.
+     * @param spendAmount The amount of reputation to spend.
      * In the circuit, it will compute the reputation nullifiers of the given nonce. If the reputation nullifier is used
      * to spend reputation, it cannot be spent again.
      * @returns The reputation proof of type `ReputationProof`.
@@ -918,26 +918,12 @@ export default class UserState extends Synchronizer {
         minRep?: number,
         proveGraffiti?: BigInt,
         graffitiPreImage?: BigInt,
-        nonceList?: BigInt[] | number
+        spendAmount = 0
     ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
-        if (nonceList == undefined)
-            nonceList = new Array(this.settings.maxReputationBudget).fill(
-                BigInt(-1)
-            )
-        if (typeof nonceList === 'number') {
-            const spendRep = nonceList
-            nonceList = [] as BigInt[]
-            for (let i = 0; i < spendRep; i++) {
-                nonceList.push(BigInt(i))
-            }
-            for (let i = spendRep; i < this.settings.maxReputationBudget; i++) {
-                nonceList.push(BigInt(-1))
-            }
-        }
         assert(
-            nonceList.length == this.settings.maxReputationBudget,
-            `Length of nonce list should be ${this.settings.maxReputationBudget}`
+            spendAmount <= this.settings.maxReputationBudget,
+            `Length of nonce list should be lte ${this.settings.maxReputationBudget}`
         )
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
@@ -950,28 +936,11 @@ export default class UserState extends Synchronizer {
         const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
-        const GSTreeRoot = GSTree.root
         const USTPathElements = userStateTree.createProof(attesterId)
-        const selectors: BigInt[] = []
-        const nonceExist = {}
-        let repNullifiersAmount = 0
-        for (let i = 0; i < this.settings.maxReputationBudget; i++) {
-            if (nonceList[i] !== BigInt(-1)) {
-                assert(
-                    nonceExist[nonceList[i].toString()] == undefined,
-                    'cannot submit duplicated nonce to compute reputation nullifiers'
-                )
-                repNullifiersAmount++
-                selectors[i] = BigInt(1)
-                nonceExist[nonceList[i].toString()] = 1
-            } else {
-                selectors[i] = BigInt(0)
-            }
-        }
 
         // check if the nullifiers are submitted before
         let nonceStarter = -1
-        if (repNullifiersAmount > 0) {
+        if (spendAmount > 0) {
             // find valid nonce starter
             for (let n = 0; n < posRep - negRep; n++) {
                 const reputationNullifier = genReputationNullifier(
@@ -987,7 +956,7 @@ export default class UserState extends Synchronizer {
             }
             assert(nonceStarter != -1, 'All nullifiers are spent')
             assert(
-                nonceStarter + repNullifiersAmount <= posRep - negRep,
+                nonceStarter + spendAmount <= posRep - negRep,
                 'Not enough reputation to spend'
             )
         }
@@ -1007,7 +976,7 @@ export default class UserState extends Synchronizer {
             graffiti: graffiti,
             sign_up: signUp,
             UST_path_elements: USTPathElements,
-            rep_nullifiers_amount: repNullifiersAmount,
+            rep_nullifiers_amount: spendAmount,
             start_rep_nonce: nonceStarter,
             min_rep: minRep === undefined ? 0 : minRep,
             prove_graffiti: proveGraffiti === undefined ? 0 : proveGraffiti,
