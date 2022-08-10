@@ -1,25 +1,5 @@
 import assert from 'assert'
-import { hashLeftRight, hashOne } from './crypto'
-
-/**
- * Compute the poseidon hash of 2 elements
- * @param elements the inputs that have to be hashed
- * @returns Hash result of two elements
- */
-const newWrappedPoseidonT3Hash = (...elements: BigInt[]): BigInt => {
-    let result: BigInt
-    if (elements.length == 1) {
-        result = hashOne(elements[0])
-    } else if (elements.length == 2) {
-        result = hashLeftRight(elements[0], elements[1])
-    } else {
-        throw new Error(
-            `elements length should not greater than 2, got ${elements.length}`
-        )
-    }
-
-    return result
-}
+import { hashLeftRight } from './crypto'
 
 /**
  * The SparseMerkleTree class is a TypeScript implementation of sparse merkle tree with specified tree depth and it provides all the functions to create efficient trees and to generate and verify proofs of membership.
@@ -27,7 +7,7 @@ const newWrappedPoseidonT3Hash = (...elements: BigInt[]): BigInt => {
 export class SparseMerkleTree {
     protected _root: BigInt
     private zeroHashes!: BigInt[]
-    private node: { [key: string]: string } = {}
+    private node: { [key: string]: BigInt }[]
 
     public readonly numLeaves: BigInt
 
@@ -36,11 +16,14 @@ export class SparseMerkleTree {
      * @param _height The fixed depth of the sparse merkle tree
      * @param zeroHash The default value of empty leaves
      */
-    constructor(private _height: number, zeroHash: BigInt) {
+    constructor(private _height: number, zeroHash: BigInt = BigInt(0)) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
         this._root = BigInt(0)
         this._height = _height
+        this.node = Array(this._height)
+            .fill(null)
+            .map(() => ({}))
         this.init(zeroHash)
 
         this.numLeaves = BigInt(2 ** _height)
@@ -51,18 +34,13 @@ export class SparseMerkleTree {
      * @param zeroHash The default value of empty leaves
      */
     private init(zeroHash: BigInt): void {
-        const hashes: BigInt[] = [zeroHash]
-
+        const hashes = Array(this.height).fill(null) as BigInt[]
+        hashes[0] = zeroHash
         for (let i = 1; i < this.height; i++) {
-            hashes[i] = newWrappedPoseidonT3Hash(hashes[i - 1], hashes[i - 1])
+            hashes[i] = hashLeftRight(hashes[i - 1], hashes[i - 1])
         }
-
         this.zeroHashes = hashes
-
-        this._root = newWrappedPoseidonT3Hash(
-            hashes[this.height - 1],
-            hashes[this.height - 1]
-        )
+        this._root = hashes[this.height - 1]
     }
 
     /**
@@ -102,40 +80,25 @@ export class SparseMerkleTree {
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
         )
 
-        let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
-        let nodeHash
-        const nodeHashString = this.node[nodeIndex.toString()]
-        if (nodeHashString === leafValue.toString()) return
-        else nodeHash = leafValue
+        let nodeIndex = leafKey.valueOf()
 
-        this.node[nodeIndex.toString()] = nodeHash.toString()
-
-        let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
-        let sibNodeIndex = isLeftNode
-            ? nodeIndex + BigInt(1)
-            : nodeIndex - BigInt(1)
-        let sibNodeHash
-        let parentNodeIndex, parentHash
+        let hash = leafValue.valueOf()
         for (let i = 0; i < this.height; i++) {
-            const sibNodeHashString = this.node[sibNodeIndex.toString()]
-            if (!sibNodeHashString) sibNodeHash = this.zeroHashes[i]
-            else sibNodeHash = BigInt(sibNodeHashString)
-
-            parentNodeIndex = nodeIndex / BigInt(2)
-            parentHash = isLeftNode
-                ? newWrappedPoseidonT3Hash(nodeHash, sibNodeHash)
-                : newWrappedPoseidonT3Hash(sibNodeHash, nodeHash)
-            this.node[parentNodeIndex.toString()] = parentHash.toString()
-
-            nodeIndex = parentNodeIndex
-            nodeHash = parentHash
-            isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
-            sibNodeIndex = isLeftNode
-                ? nodeIndex + BigInt(1)
-                : nodeIndex - BigInt(1)
+            this.node[i][nodeIndex.toString()] = hash
+            if (nodeIndex % BigInt(2) === BigInt(0)) {
+                const sibling =
+                    this.node[i][(nodeIndex + BigInt(1)).toString()] ??
+                    this.zeroHashes[i]
+                hash = hashLeftRight(hash, sibling)
+            } else {
+                const sibling =
+                    this.node[i][(nodeIndex - BigInt(1)).toString()] ??
+                    this.zeroHashes[i]
+                hash = hashLeftRight(sibling, hash)
+            }
+            nodeIndex /= BigInt(2)
         }
-        assert(nodeIndex === BigInt(1), 'Root node index must be 1')
-        this._root = parentHash
+        this._root = hash
     }
 
     /**
@@ -150,23 +113,20 @@ export class SparseMerkleTree {
         )
 
         const siblingNodeHashes: BigInt[] = []
-        let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
-        let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
-        let sibNodeIndex = isLeftNode
-            ? nodeIndex + BigInt(1)
-            : nodeIndex - BigInt(1)
-        let sibNodeHash
+        let nodeIndex = leafKey.valueOf()
         for (let i = 0; i < this.height; i++) {
-            const sibNodeHashString = this.node[sibNodeIndex.toString()]
-            if (!sibNodeHashString) sibNodeHash = this.zeroHashes[i]
-            else sibNodeHash = BigInt(sibNodeHashString)
-            siblingNodeHashes.push(sibNodeHash)
-
-            nodeIndex = nodeIndex / BigInt(2)
-            isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
-            sibNodeIndex = isLeftNode
-                ? nodeIndex + BigInt(1)
-                : nodeIndex - BigInt(1)
+            if (nodeIndex % BigInt(2) === BigInt(0)) {
+                const sibling =
+                    this.node[i][(nodeIndex + BigInt(1)).toString()] ??
+                    this.zeroHashes[i]
+                siblingNodeHashes.push(sibling)
+            } else {
+                const sibling =
+                    this.node[i][(nodeIndex - BigInt(1)).toString()] ??
+                    this.zeroHashes[i]
+                siblingNodeHashes.push(sibling)
+            }
+            nodeIndex /= BigInt(2)
         }
         assert(
             siblingNodeHashes.length == this.height,
@@ -188,21 +148,15 @@ export class SparseMerkleTree {
         )
         assert(proof.length == this.height, 'Incorrect number of proof entries')
 
-        let nodeIndex = leafKey.valueOf() + this.numLeaves.valueOf()
-        let nodeHash
-        const nodeHashString = this.node[nodeIndex.toString()]
-        if (!nodeHashString) nodeHash = this.zeroHashes[0]
-        else nodeHash = BigInt(nodeHashString)
-        let isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
+        let nodeIndex = leafKey.valueOf()
+        let nodeHash = this.node[0][nodeIndex.toString()] ?? this.zeroHashes[0]
         for (let sibNodeHash of proof) {
+            const isLeftNode = nodeIndex % BigInt(2) === BigInt(0)
             nodeHash = isLeftNode
-                ? newWrappedPoseidonT3Hash(nodeHash, sibNodeHash)
-                : newWrappedPoseidonT3Hash(sibNodeHash, nodeHash)
-
+                ? hashLeftRight(nodeHash, sibNodeHash)
+                : hashLeftRight(sibNodeHash, nodeHash)
             nodeIndex = nodeIndex / BigInt(2)
-            isLeftNode = nodeIndex % BigInt(2) === BigInt(0) ? true : false
         }
-        if (nodeHash === this.root) return true
-        else return false
+        return nodeHash === this.root
     }
 }
