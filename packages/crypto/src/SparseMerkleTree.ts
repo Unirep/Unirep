@@ -40,7 +40,10 @@ export class SparseMerkleTree {
             hashes[i] = hashLeftRight(hashes[i - 1], hashes[i - 1])
         }
         this.zeroHashes = hashes
-        this._root = hashes[this.height - 1]
+        this._root = hashLeftRight(
+            hashes[this.height - 1],
+            hashes[this.height - 1]
+        )
     }
 
     /**
