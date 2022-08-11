@@ -40,7 +40,7 @@ library SparseMerkleTree {
         self.root = Poseidon2.poseidon([zero, zero]);
     }
 
-    function insert(
+    function update(
         SparseTreeData storage self,
         uint256 index,
         uint256 leaf

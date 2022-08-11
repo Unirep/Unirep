@@ -45,7 +45,7 @@ describe('SMT', function () {
         const SMT = new SparseMerkleTree(32, BigInt(0))
         SMT.update(BigInt(0), BigInt(1))
         const smtTest = await getSMT()
-        await smtTest.insert(0, 1)
+        await smtTest.update(0, 1)
         const root = await smtTest.root()
         expect(root.toBigInt()).to.equal(SMT.root)
     })
@@ -55,7 +55,7 @@ describe('SMT', function () {
         const n = 2844719
         SMT.update(BigInt(n), BigInt(1))
         const smtTest = await getSMT()
-        await smtTest.insert(n, 1)
+        await smtTest.update(n, 1)
         const root = await smtTest.root()
         expect(root.toBigInt()).to.equal(SMT.root)
     })
@@ -63,7 +63,7 @@ describe('SMT', function () {
     it('should fail to insert outside bounds', async () => {
         const depth = 7
         const smtTest = await getSMT(depth)
-        await expect(smtTest.insert(2 ** depth, 1)).to.be.reverted
+        await expect(smtTest.update(2 ** depth, 1)).to.be.reverted
     })
 
     it('should insert many elements', async () => {
@@ -71,7 +71,7 @@ describe('SMT', function () {
         const smtTest = await getSMT()
         const seenRoots = {}
         for (let x = 0; x < 500; x += 7) {
-            await smtTest.insert(x, x * x)
+            await smtTest.update(x, x * x)
             SMT.update(BigInt(x), BigInt(x * x))
             const root = await smtTest.root()
             expect(seenRoots[root.toString()]).to.be.undefined
@@ -86,7 +86,7 @@ describe('SMT', function () {
         const smtTest = await getSMT(depth)
         const seenRoots = {}
         for (let x = 0; x < 2 ** depth; x++) {
-            await smtTest.insert(x, x * x)
+            await smtTest.update(x, x * x)
             SMT.update(BigInt(x), BigInt(x * x))
             const root = await smtTest.root()
             expect(seenRoots[root.toString()]).to.be.undefined

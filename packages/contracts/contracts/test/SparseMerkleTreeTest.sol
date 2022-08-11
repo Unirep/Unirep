@@ -15,7 +15,7 @@ contract SparseMerkleTreeTest {
         return smt.root;
     }
 
-    function insert(uint256 index, uint256 leaf) public {
-        SparseMerkleTree.insert(smt, index, leaf);
+    function update(uint256 index, uint256 leaf) public {
+        SparseMerkleTree.update(smt, index, leaf);
     }
 }
