@@ -286,6 +286,13 @@ describe('Verify reputation verifier', function () {
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
+
+        for (const nullifier of input.repNullifiers) {
+            if (nullifier.toString() !== '0') {
+                const n = await unirepContract.nullifierExists(nullifier)
+                expect(n.toString()).not.equal('0')
+            }
+        }
     })
 
     it('submit reputation proof with the same nullifiers should fail', async () => {
