@@ -66,6 +66,20 @@ describe('SMT', function () {
         await expect(smtTest.update(2 ** depth, 1)).to.be.reverted
     })
 
+    it('should insert many elements in deep tree', async () => {
+        const SMT = new SparseMerkleTree(150, BigInt(0))
+        const smtTest = await getSMT(150)
+        const seenRoots = {}
+        for (let x = 0; x < 50; x += 7) {
+            await smtTest.update(x, x * x)
+            SMT.update(BigInt(x), BigInt(x * x))
+            const root = await smtTest.root()
+            expect(seenRoots[root.toString()]).to.be.undefined
+            seenRoots[root.toString()] = true
+            expect(root.toBigInt()).to.equal(SMT.root)
+        }
+    })
+
     it('should insert many elements', async () => {
         const SMT = new SparseMerkleTree(32, BigInt(0))
         const smtTest = await getSMT()
