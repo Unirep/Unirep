@@ -55,7 +55,7 @@ library SparseMerkleTree {
 
         for (uint8 i = 0; i < depth; ) {
             self.leaves[i][index] = hash;
-            if (index % 2 == 0) {
+            if (index & 1 == 0) {
                 uint256 siblingLeaf = self.leaves[i][index + 1];
                 if (siblingLeaf == 0) siblingLeaf = self.zeroes[i];
                 lastLeftElement = hash;
