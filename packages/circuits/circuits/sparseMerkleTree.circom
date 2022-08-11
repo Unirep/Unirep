@@ -22,11 +22,7 @@ template SMTInclusionProof(n_levels) {
        path_index[i] <== n2b.out[i];
     }
 
-
     for (var i = 0; i < n_levels; i++) {
-        // Should be 0 or 1
-        path_index[i] * (1 - path_index[i]) === 0;
-
         hashers[i] = Poseidon(2);
         mux[i] = MultiMux1(2);
 
