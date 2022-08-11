@@ -203,48 +203,74 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * @dev Check the validity of the attestation and the attester, emit the attestation event.
+     * @dev Check the validity of the attestation and the attester
      * @param attester The address of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof,
-     * reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the
-     * attest is not from reputationProof, then fromProofIdx = 0
      */
-    function _submitAttestation(
+    function assertValidAttestation(
         address attester,
-        Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
-    ) private {
+        Attestation memory attestation,
+        uint256 epochKey
+    ) internal view {
         verifyAttesterSignUp(attester);
         verifyAttesterIndex(attester, attestation.attesterId);
         verifyAttesterFee();
 
-        if (
-            !(toProofIndex != 0 &&
-                toProofIndex < proofIndex &&
-                fromProofIndex < proofIndex)
-        ) revert InvalidProofIndex();
-
-        if (!(attestation.signUp == 0 || attestation.signUp == 1))
+        if (attestation.signUp != 0 && attestation.signUp != 1)
             revert InvalidSignUpFlag();
 
         if (epochKey > maxEpochKey) revert InvalidEpochKey();
 
-        // Add to the cumulated attesting fee
+        // Validate attestation data
+        if (!isSNARKField(attestation.posRep))
+            revert InvalidSNARKField(AttestationFieldError.POS_REP);
+
+        if (!isSNARKField(attestation.negRep))
+            revert InvalidSNARKField(AttestationFieldError.NEG_REP);
+
+        if (!isSNARKField(attestation.graffiti))
+            revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
+    }
+
+    function submitGSTAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey,
+        uint256 gstRoot
+    ) external payable {
+        assertValidAttestation(msg.sender, attestation, epochKey);
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
-        // Process attestation
-        emitAttestationEvent(
-            attester,
-            attestation,
+        emit GSTAttestationSubmitted(
+            currentEpoch,
             epochKey,
-            toProofIndex,
-            fromProofIndex,
-            AttestationEvent.SendAttestation
+            msg.sender,
+            attestation,
+            gstRoot
+        );
+    }
+
+    function submitRawAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey
+    ) external payable {
+        assertValidAttestation(msg.sender, attestation, epochKey);
+
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        emit AttestationSubmitted(
+            currentEpoch,
+            epochKey,
+            msg.sender,
+            AttestationEvent.SendAttestation,
+            attestation,
+            0,
+            0
         );
     }
 
@@ -265,10 +291,21 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 toProofIndex,
         uint256 fromProofIndex
     ) external payable {
-        _submitAttestation(
-            msg.sender,
-            attestation,
+        assertValidAttestation(msg.sender, attestation, epochKey);
+        if (
+            toProofIndex == 0 ||
+            toProofIndex >= proofIndex ||
+            fromProofIndex >= proofIndex
+        ) revert InvalidProofIndex();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        emit AttestationSubmitted(
+            currentEpoch,
             epochKey,
+            msg.sender,
+            AttestationEvent.SendAttestation,
+            attestation,
             toProofIndex,
             fromProofIndex
         );
@@ -295,10 +332,21 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     ) external payable {
         if (!isValidSignature(attester, signature)) revert InvalidSignature();
 
-        _submitAttestation(
-            attester,
-            attestation,
+        assertValidAttestation(msg.sender, attestation, epochKey);
+        if (
+            toProofIndex == 0 ||
+            toProofIndex >= proofIndex ||
+            fromProofIndex >= proofIndex
+        ) revert InvalidProofIndex();
+
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
+
+        emit AttestationSubmitted(
+            currentEpoch,
             epochKey,
+            attester,
+            AttestationEvent.SendAttestation,
+            attestation,
             toProofIndex,
             fromProofIndex
         );
@@ -353,23 +401,20 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        address sender = msg.sender;
         verifyProofNullifier(proofNullifier);
-        verifyAttesterSignUp(sender);
-        verifyAttesterIndex(sender, publicSignals[3]);
-        verifyAttesterFee();
 
         if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
-        if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
-
-        // Add to the cumulated attesting fee
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
         // attestation of airdrop
         Attestation memory attestation;
-        attestation.attesterId = attesters[msg.sender];
+        attestation.attesterId = publicSignals[3];
         attestation.posRep = airdropAmount[msg.sender];
         attestation.signUp = 1;
+
+        assertValidAttestation(msg.sender, attestation, publicSignals[0]);
+
+        // Add to the cumulated attesting fee
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
         uint256 _proofIndex = proofIndex;
         // emit proof event
@@ -380,14 +425,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             publicSignals,
             proof
         );
-        // Process attestation
-        emitAttestationEvent(
-            msg.sender,
-            attestation,
+        emit AttestationSubmitted(
+            currentEpoch,
             publicSignals[0],
+            msg.sender,
+            AttestationEvent.Airdrop,
+            attestation,
             _proofIndex,
-            0,
-            AttestationEvent.Airdrop
+            0
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
@@ -417,27 +462,21 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
         uint256 maxReputationBudget = config.maxReputationBudget;
         verifyProofNullifier(proofNullifier);
-        verifyAttesterSignUp(msg.sender);
-        verifyAttesterIndex(msg.sender, publicSignals[maxReputationBudget + 3]);
-        verifyAttesterFee();
 
         if (publicSignals[maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
-        if (attesters[msg.sender] != publicSignals[maxReputationBudget + 3])
-            revert AttesterIdNotMatch(publicSignals[maxReputationBudget + 3]);
-
-        if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
-
+        
         for (uint256 index = 2; index < 2 + maxReputationBudget; index++)
             verifyNullifier(publicSignals[index]);
 
-        // Add to the cumulated attesting fee
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
         // attestation of spending reputation
         Attestation memory attestation;
-        attestation.attesterId = attesters[msg.sender];
+        attestation.attesterId = publicSignals[maxReputationBudget + 3];
         attestation.negRep = publicSignals[maxReputationBudget + 4];
+
+        assertValidAttestation(msg.sender, attestation, publicSignals[0]);
+        // Add to the cumulated attesting fee
+        collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
         uint256 _proofIndex = proofIndex;
         // emit proof event
@@ -448,59 +487,18 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             publicSignals,
             proof
         );
-        // Process attestation
-        emitAttestationEvent(
-            msg.sender,
-            attestation,
+
+        emit AttestationSubmitted(
+            currentEpoch,
             publicSignals[0],
+            msg.sender,
+            AttestationEvent.SpendReputation,
+            attestation,
             _proofIndex,
-            0,
-            AttestationEvent.SpendReputation
+            0
         );
         getProofIndex[proofNullifier] = _proofIndex;
         proofIndex++;
-    }
-
-    /**
-     * @dev Emit the attestation event
-     * @param attester The address of the attester
-     * @param attestation The attestation including positive reputation, negative reputation or graffiti
-     * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof, signedUpProof,
-     * reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof, if the
-     * attest is not from reputationProof, then fromProofIdx = 0
-     * @param _event The type of the attestation event. It could be one of [SendAttestation, Airdrop, SpendReputation]
-     */
-    function emitAttestationEvent(
-        address attester,
-        Attestation memory attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex,
-        AttestationEvent _event
-    ) internal {
-        // Validate attestation data
-        if (!isSNARKField(attestation.posRep))
-            revert InvalidSNARKField(AttestationFieldError.POS_REP);
-
-        if (!isSNARKField(attestation.negRep))
-            revert InvalidSNARKField(AttestationFieldError.NEG_REP);
-
-        if (!isSNARKField(attestation.graffiti))
-            revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
-
-        // Emit epoch key proof with attestation submitted event
-        // And user can verify if the epoch key is valid or not
-        emit AttestationSubmitted(
-            currentEpoch,
-            epochKey,
-            attester,
-            _event,
-            attestation,
-            toProofIndex,
-            fromProofIndex
-        );
     }
 
     /**
