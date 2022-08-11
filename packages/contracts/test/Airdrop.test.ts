@@ -238,10 +238,7 @@ describe('Airdrop', function () {
                 unirepContract
                     .connect(attester)
                     .airdropEpochKey(input.publicSignals, input.proof)
-            ).to.be.revertedWithCustomError(
-                unirepContract,
-                `NullifierAlreadyUsed`
-            )
+            ).to.be.revertedWithCustomError(unirepContract, `ProofAlreadyUsed`)
         })
 
         it('get airdrop through a non-signup attester should fail', async () => {

@@ -63,6 +63,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     uint256 public nextAttesterId = 1;
     // Mapping of the airdrop amount of an attester
     mapping(address => uint256) public airdropAmount;
+    // Mapping of existing nullifiers
+    mapping(uint256 => bool) public nullifierExists;
 
     constructor(
         Config memory _config,
@@ -110,7 +112,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     function verifyProofNullifier(bytes32 proofNullifier) private view {
         if (getProofIndex[proofNullifier] != 0)
-            revert NullifierAlreadyUsed(proofNullifier);
+            revert ProofAlreadyUsed(proofNullifier);
     }
 
     function verifyAttesterFee() private view {
@@ -123,6 +125,13 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     {
         if (attesters[attester] != attesterId)
             revert AttesterIdNotMatch(attesterId);
+    }
+
+    function verifyNullifier(uint256 nullifier) private {
+        if (nullifier > 0 && nullifierExists[nullifier])
+            revert NullifierAlreadyUsed(nullifier);
+        // Mark the nullifier as used
+        nullifierExists[nullifier] = true;
     }
 
     /**
@@ -388,7 +397,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @dev A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
      * publicSignals[0] = [ epochKey ]
      * publicSignals[1] = [ globalStateTree ]
-     * publicSignals[2: maxReputationBudget ] = [ reputationNullifiers ]
+     * publicSignals[2: maxReputationBudget + 2] = [ reputationNullifiers ]
      * publicSignals[maxReputationBudget + 2] = [ epoch ]
      * publicSignals[maxReputationBudget + 3] = [ attesterId ]
      * publicSignals[maxReputationBudget + 4] = [ proveReputationAmount ]
@@ -418,6 +427,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             revert AttesterIdNotMatch(publicSignals[maxReputationBudget + 3]);
 
         if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
+
+        for (uint256 index = 2; index < 2 + maxReputationBudget; index++)
+            verifyNullifier(publicSignals[index]);
 
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
@@ -574,7 +586,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @dev User submit the latest user state transition proof
      * publicSignals[0] = [ fromGlobalStateTree ]
      * publicSignals[1] = [ newGlobalStateTreeLeaf ]
-     * publicSignals[2] = [ epkNullifiers ]
+     * publicSignals[2: 2 + numEpochKeyNoncePerEpoch] = [ epkNullifiers ]
      * publicSignals[2 + numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ]
      * publicSignals[3 +  numEpochKeyNoncePerEpoch:
                      4+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ]
@@ -596,8 +608,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
 
         verifyProofNullifier(proofNullifier);
+        uint256 numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch;
         // NOTE: this impl assumes all attestations are processed in a single snark.
-        if (publicSignals[2 + config.numEpochKeyNoncePerEpoch] >= currentEpoch)
+        if (publicSignals[2 + numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
 
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {
@@ -606,6 +619,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                     (proofIndexRecords[i] < proofIndex))
             ) revert InvalidProofIndex();
         }
+
+        for (uint256 index = 2; index < 2 + numEpochKeyNoncePerEpoch; index++)
+            verifyNullifier(publicSignals[index]);
 
         uint256 _proofIndex = proofIndex;
         emit IndexedUserStateTransitionProof(

@@ -189,10 +189,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                             value: attestingFee,
                         }
                     )
-            ).to.be.revertedWithCustomError(
-                unirepContract,
-                'NullifierAlreadyUsed'
-            )
+            ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
             await userState.stop()
         })
 

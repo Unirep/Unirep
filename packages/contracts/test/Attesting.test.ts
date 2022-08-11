@@ -84,7 +84,7 @@ describe('Attesting', () => {
                 epochKeyProof.publicSignals,
                 epochKeyProof.proof
             )
-        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
+        ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {

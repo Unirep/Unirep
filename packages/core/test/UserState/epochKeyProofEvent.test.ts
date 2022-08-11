@@ -198,10 +198,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                     formattedProof.publicSignals,
                     formattedProof.proof
                 )
-            ).to.be.revertedWithCustomError(
-                unirepContract,
-                'NullifierAlreadyUsed'
-            )
+            ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
