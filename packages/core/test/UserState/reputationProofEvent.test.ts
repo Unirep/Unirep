@@ -310,7 +310,7 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attesterId = await unirepContract.attesters(attester.address)
             const epkNonce = 1
-            const spendReputation = airdropAmount - 1
+            const spendReputation = 5
             const formattedProof = await userState.genProveReputationProof(
                 attesterId.toBigInt(),
                 epkNonce,
@@ -473,7 +473,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 undefined,
                 undefined,
                 undefined,
-                airdropAmount - 1
+                5
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
@@ -545,7 +545,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 undefined,
                 undefined,
                 undefined,
-                airdropAmount - 1
+                5
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
