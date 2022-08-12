@@ -558,6 +558,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                 epochTrees[currentEpoch].zeroes[config.epochTreeDepth - 1]
             ]
         );
+        epochTrees[currentEpoch].depth = config.epochTreeDepth;
         for (uint8 i; i < config.globalStateTreeDepth; i++) {
             globalStateTree[currentEpoch].zeroes[i] = globalStateTree[
                 currentEpoch - 1
@@ -573,6 +574,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                 ]
             ]
         );
+        globalStateTree[currentEpoch].depth = config.globalStateTreeDepth;
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
 
         uint256 gasUsed = initGas.sub(gasleft());
         epochTransitionCompensation[msg.sender] = epochTransitionCompensation[
