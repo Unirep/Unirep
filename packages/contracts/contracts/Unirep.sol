@@ -125,6 +125,11 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             revert AttesterIdNotMatch(attesterId);
     }
 
+    function verifyProof(bool isValid) private pure {
+        if (isValid == false) 
+            revert InvalidProof();
+    }
+
     /**
      * @dev User signs up by providing an identity commitment. It also inserts a fresh state leaf into the state tree.
      * if user signs up through an atteser who sets airdrop, Unirep will give the user the airdrop reputation.
@@ -355,12 +360,17 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external {
+        // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
         verifyProofNullifier(proofNullifier);
         if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
         if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
+
+        // verify proof
+        bool isValid = verifyEpochKeyValidity(publicSignals, proof);
+        verifyProof(isValid);
 
         // emit proof event
         uint256 _proofIndex = proofIndex;
@@ -389,12 +399,18 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external payable {
+        // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
         verifyProofNullifier(proofNullifier);
 
         if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
+        if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
+
+        // verify proof
+        bool isValid = verifyUserSignUp(publicSignals, proof);
+        verifyProof(isValid);
 
         // attestation of airdrop
         Attestation memory attestation;
@@ -448,14 +464,19 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external payable {
+        // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        uint256 maxReputationBudget = config.maxReputationBudget;
         verifyProofNullifier(proofNullifier);
 
+        uint256 maxReputationBudget = config.maxReputationBudget;
         if (publicSignals[maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
+        
+        // verify proof
+        bool isValid = verifyReputation(publicSignals, proof);
+        verifyProof(isValid);
 
         // attestation of spending reputation
         Attestation memory attestation;
@@ -522,11 +543,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external {
+        // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-
         verifyProofNullifier(proofNullifier);
+
+        // verify proof
+        bool isValid  = verifyStartTransitionProof(publicSignals, proof);
+        verifyProof(isValid);
 
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
@@ -552,11 +577,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external {
+        // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-
         verifyProofNullifier(proofNullifier);
+
+        // verify proof
+        bool isValid = verifyProcessAttestationProof(publicSignals, proof);
+        verifyProof(isValid);
+
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
@@ -589,11 +619,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[8] memory proof,
         uint256[] memory proofIndexRecords
     ) external {
+        // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-
         verifyProofNullifier(proofNullifier);
+
         // NOTE: this impl assumes all attestations are processed in a single snark.
         if (publicSignals[2 + config.numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
@@ -604,6 +635,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                     (proofIndexRecords[i] < proofIndex))
             ) revert InvalidProofIndex();
         }
+
+        // verify proof
+        bool isValid = verifyUserStateTransition(publicSignals, proof);
+        verifyProof(isValid);
 
         uint256 _proofIndex = proofIndex;
         emit IndexedUserStateTransitionProof(
@@ -627,9 +662,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param proof The The proof of the epoch key proof
      */
     function verifyEpochKeyValidity(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external view returns (bool) {
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
         // Before attesting to a given epoch key, an attester must verify validity of the epoch key:
         // 1. user has signed up
         // 2. nonce is no greater than numEpochKeyNoncePerEpoch
@@ -654,9 +689,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param proof The The proof of the start user state transition proof
      */
     function verifyStartTransitionProof(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external view returns (bool) {
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
         // The start transition proof checks that
         // 1. user has signed up
         // 2. blinded user state is computed by: hash(identity, UST_root, epoch, epoch_key_nonce)
@@ -681,9 +716,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param proof The process attestations proof
      */
     function verifyProcessAttestationProof(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external view returns (bool) {
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
         // The process attestations proof checks that
         // 1. user processes attestations correctly and update the hash chain and user state tree
         // 2. input blinded state is computed by: hash(identity, user_state_tree_root, epoch, from_epk_nonce)
@@ -713,9 +748,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param proof The The proof of the sign up proof
      */
     function verifyUserStateTransition(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external view returns (bool) {
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
         // Verify validity of new user state:
         // 1. User's identity and state exist in the provided global state tree
         // 2. All epoch key nonces are processed and blinded hash chains are computed
@@ -743,9 +778,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param proof The The proof of the reputation proof
      */
     function verifyReputation(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external view returns (bool) {
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
         // User prove his reputation by an attester:
         // 1. User exists in GST
         // 2. It is the latest state user transition to
@@ -772,9 +807,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param proof The The proof of the sign up proof
      */
     function verifyUserSignUp(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) external view returns (bool) {
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
         // User prove his reputation by an attester:
         // 1. User exists in GST
         // 2. It is the latest state user transition to

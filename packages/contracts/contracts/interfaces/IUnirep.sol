@@ -125,6 +125,7 @@ interface IUnirep is UnirepTypes {
     error InvalidSNARKField(AttestationFieldError); // better name???
     error EpochNotEndYet();
     error InvalidSignals();
+    error InvalidProof();
 
     /**
      * Sign up an attester using the address who sends the transaction

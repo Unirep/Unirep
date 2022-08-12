@@ -2,12 +2,12 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
 } from './utils'
-import { deployUnirep, Unirep } from '../src'
+import { deployUnirep, ProcessAttestationsProof, Unirep } from '../src'
 import { Circuit, NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits'
 
 describe('Process attestation circuit', function () {
@@ -86,5 +86,32 @@ describe('Process attestation circuit', function () {
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
+    })
+
+    it('submitting invalid process attestations proof should fail', async () => {
+        const { circuitInputs } = genProcessAttestationsCircuitInput(
+            user,
+            epoch,
+            nonce,
+            nonce
+        )
+
+        const input: ProcessAttestationsProof = await genInputForContract(
+            Circuit.processAttestations,
+            circuitInputs
+        )
+        input.publicSignals[input.idx.inputBlindedUserState] = genRandomSalt().toString()
+        const isProofValid = await unirepContract.verifyProcessAttestationProof(
+            input.publicSignals,
+            input.proof
+        )
+        expect(isProofValid).to.be.false
+
+        await expect(
+            unirepContract.processAttestations(
+                input.publicSignals,
+                input.proof
+            )
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 })

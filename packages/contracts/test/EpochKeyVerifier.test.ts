@@ -11,7 +11,6 @@ import {
 
 import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     Circuit,
 } from '@unirep/circuits'
@@ -21,8 +20,6 @@ import { EpochKeyProof, deployUnirep, Unirep } from '../src'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
-
-    const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]

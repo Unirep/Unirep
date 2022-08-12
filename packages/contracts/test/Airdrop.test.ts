@@ -359,5 +359,30 @@ describe('Airdrop', function () {
                     })
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
         })
+
+        it('submit an invalid proof should fail', async () => {
+            const signUpCircuitInputs = genProveSignUpCircuitInput(
+                userId,
+                currentEpoch,
+                reputationRecords,
+                attesterId_
+            )
+            const input: SignUpProof = await genInputForContract(
+                Circuit.proveUserSignUp,
+                signUpCircuitInputs
+            )
+            input.publicSignals[input.idx.globalStateTree] = genRandomSalt().toString()
+            expect(await input.verify()).to.be.false
+
+            await expect(
+                unirepContract
+                    .connect(attester)
+                    .airdropEpochKey(
+                        input.publicSignals,
+                        input.proof, {
+                        value: attestingFee,
+                    })
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+        })
     })
 })
