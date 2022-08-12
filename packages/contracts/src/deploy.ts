@@ -1,4 +1,4 @@
-import { BigNumberish, ethers } from 'ethers'
+import { BigNumberish, ethers, utils } from 'ethers'
 import {
     MAX_USERS,
     MAX_ATTESTERS,
@@ -29,8 +29,37 @@ import {
     UserStateTransitionVerifier,
     UserStateTransitionVerifier__factory,
 } from '../typechain'
+import poseidon from '../src/poseidon'
 
 export { Unirep, UnirepFactory }
+
+function linkLibrary(
+    bytecode: string,
+    libraries: {
+        [name: string]: string
+    } = {}
+): string {
+    let linkedBytecode = bytecode
+    for (const [name, address] of Object.entries(libraries)) {
+        const placeholder = `__\$${utils
+            .solidityKeccak256(['string'], [name])
+            .slice(2, 36)}\$__`
+        const formattedAddress = utils
+            .getAddress(address)
+            .toLowerCase()
+            .replace('0x', '')
+        if (linkedBytecode.indexOf(placeholder) === -1) {
+            throw new Error(`Unable to find placeholder for library ${name}`)
+        }
+        while (linkedBytecode.indexOf(placeholder) !== -1) {
+            linkedBytecode = linkedBytecode.replace(
+                placeholder,
+                formattedAddress
+            )
+        }
+    }
+    return linkedBytecode
+}
 
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
@@ -94,7 +123,38 @@ export const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    const c: Unirep = await new UnirepFactory(deployer).deploy(
+    const libraries = {}
+    for (const [inputCount, { abi, bytecode }] of Object.entries(
+        poseidon
+    ) as any) {
+        const f = new ethers.ContractFactory(abi, bytecode, deployer)
+        const c = await f.deploy()
+        await c.deployed()
+        libraries[`Poseidon${inputCount}`] = c.address
+    }
+    const {
+        abi,
+        bytecode,
+    } = require('../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json')
+    const merkleTreeLibFactory = new ethers.ContractFactory(
+        abi,
+        linkLibrary(bytecode, {
+            [`contracts/Hash.sol:Poseidon2`]: libraries['Poseidon2'],
+        }),
+        deployer
+    )
+    const merkleTreeLib = await merkleTreeLibFactory.deploy()
+    await merkleTreeLib.deployed()
+
+    const c: Unirep = await new UnirepFactory(
+        {
+            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
+            ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
+            ['contracts/SparseMerkleTree.sol:SparseMerkleTree']:
+                merkleTreeLib.address,
+        },
+        deployer
+    ).deploy(
         {
             globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
             userStateTreeDepth: USER_STATE_TREE_DEPTH,
