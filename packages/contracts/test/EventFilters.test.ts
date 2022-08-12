@@ -38,7 +38,7 @@ import {
     IndexedReputationProofEvent,
     IndexedStartedTransitionProofEvent,
     IndexedUserStateTransitionProofEvent,
-} from '../typechain/Unirep'
+} from '../typechain/contracts/Unirep'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep
