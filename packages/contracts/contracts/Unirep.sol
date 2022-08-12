@@ -58,6 +58,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     mapping(uint256 => SparseTreeData) public epochTrees;
     mapping(uint256 => IncrementalTreeData) public globalStateTree;
+    // epoch => root => bool
+    mapping(uint256 => mapping(uint256 => bool)) public globalStateTreeRoots;
     SparseTreeData internal initUST;
 
     // Attesting fee collected so far
@@ -124,6 +126,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             config.globalStateTreeDepth,
             0
         );
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
     }
 
     // Verify input data - Should found better way to handle it.
@@ -188,6 +193,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             index /= 2;
         }
         IncrementalBinaryTree.insert(globalStateTree[currentEpoch], newGSTLeaf);
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
 
         emit UserSignedUp(
             currentEpoch,
