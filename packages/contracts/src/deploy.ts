@@ -132,10 +132,19 @@ export const deployUnirep = async (
         await c.deployed()
         libraries[`Poseidon${inputCount}`] = c.address
     }
-    const { abi, bytecode } = require(path.join(
-        __dirname,
-        '../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
-    ))
+    let artifacts: any
+    try {
+        artifacts = require(path.join(
+            __dirname,
+            '../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
+        ))
+    } catch (_) {
+        artifacts = require(path.join(
+            __dirname,
+            '../artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
+        ))
+    }
+    const { abi, bytecode } = artifacts
     const merkleTreeLibFactory = new ethers.ContractFactory(
         abi,
         linkLibrary(bytecode, {
