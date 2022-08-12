@@ -18,7 +18,6 @@ import {
     genNewUserStateTree,
     genProveSignUpCircuitInput,
     genRandomAttestation,
-    genUnirepState,
     genUserState,
 } from '../utils'
 
@@ -251,20 +250,21 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             const isValid = await airdropProofInput.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract
-                .connect(attester)
-                .airdropEpochKey(
-                    airdropProofInput.publicSignals,
-                    airdropProofInput.proof,
-                    { value: attestingFee }
-                )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            await expect(
+                unirepContract
+                    .connect(attester)
+                    .airdropEpochKey(
+                        airdropProofInput.publicSignals,
+                        airdropProofInput.proof,
+                        { value: attestingFee }
+                    )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
 
             epochKey = airdropProofInput.epochKey
             proofIndex = Number(
                 await unirepContract.getProofIndex(airdropProofInput.hash())
             )
+            expect(proofIndex).equal(0)
             await userState.stop()
         })
 
@@ -282,17 +282,17 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
         it('submit attestations to the epoch key should update User state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContract
-                .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            await expect(
+                unirepContract
+                    .connect(attester)
+                    .submitAttestation(
+                        attestation,
+                        epochKey,
+                        proofIndex,
+                        fromProofIndex,
+                        { value: attestingFee }
+                    )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
 
             const userState = await genUserState(
                 hardhatEthers.provider,

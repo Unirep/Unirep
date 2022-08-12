@@ -16,18 +16,15 @@ import {
     getSnapDBDiffs,
     snapshotDB,
     genRandomAttestation,
-    genRandomList,
     submitUSTProofs,
     genUnirepState,
     genUserState,
 } from '../utils'
 import {
-    ProcessAttestationsProof,
-    StartTransitionProof,
     UserTransitionProof,
 } from '@unirep/contracts/src'
 
-describe('User state transition events in Unirep User State', async function () {
+describe('User state transition events in Unirep User State', function () {
     this.timeout(0)
 
     let unirepContract: Unirep
@@ -170,15 +167,14 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const randomProof: BigNumberish[] = genRandomList(8)
-            const randomPublicSignals: BigNumberish[] = genRandomList(3)
-            await unirepContract
+            const randomProof: BigNumberish[] = Array(8).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(3).fill('0')
+            await expect(unirepContract
                 .startUserStateTransition(randomPublicSignals, randomProof)
-                .then((t) => t.wait())
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
             await unirepState.waitForSync()
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            expect(diffs.length).to.equal(1)
-            expect(diffs[0].valid).to.equal(0)
+            expect(diffs.length).to.equal(0)
             await unirepState.stop()
         })
 
@@ -188,16 +184,15 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const randomProof: BigNumberish[] = genRandomList(8)
-            const randomPublicSignals: BigNumberish[] = genRandomList(3)
-            await unirepContract
+            const randomProof: BigNumberish[] = Array(8).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(3).fill('0')
+            await expect(unirepContract
                 .processAttestations(randomPublicSignals, randomProof)
-                .then((t) => t.wait())
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            expect(diffs.length).to.equal(1)
-            expect(diffs[0].valid).to.equal(0)
+            expect(diffs.length).to.equal(0)
             await unirepState.stop()
         })
 
@@ -207,45 +202,9 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const proofIndexes = [] as any[]
-            {
-                const randomProof: BigNumberish[] = genRandomList(8)
-                const randomPublicSignals: BigNumberish[] = genRandomList(3)
-                await unirepContract
-                    .startUserStateTransition(randomPublicSignals, randomProof)
-                    .then((t) => t.wait())
-                const proof = new StartTransitionProof(
-                    randomPublicSignals,
-                    formatProofForSnarkjsVerification(
-                        randomProof.map((n) => n.toString())
-                    ),
-                    defaultProver
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(proof.hash()))
-                )
-            }
-            {
-                const randomProof: BigNumberish[] = genRandomList(8)
-                const randomPublicSignals: BigNumberish[] = genRandomList(3)
-                await unirepContract
-                    .processAttestations(randomPublicSignals, randomProof)
-                    .then((t) => t.wait())
-                const proof = new ProcessAttestationsProof(
-                    randomPublicSignals,
-                    formatProofForSnarkjsVerification(
-                        randomProof.map((n) => n.toString())
-                    ),
-                    defaultProver
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(proof.hash()))
-                )
-            }
-            const randomProof: BigNumberish[] = genRandomList(8)
-            let randomPublicSignals: BigNumberish[] = genRandomList(
-                2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6
-            )
+            const proofIndexes = [1,2,3] as any[]
+            const randomProof: BigNumberish[] = Array(8).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6).fill('0')
             const ustProof = new UserTransitionProof(
                 randomPublicSignals,
                 formatProofForSnarkjsVerification(
@@ -254,20 +213,18 @@ describe('User state transition events in Unirep User State', async function () 
                 defaultProver
             )
             ustProof.publicSignals[ustProof.idx.transitionFromEpoch] = 1
-            await unirepContract
+            await expect(
+                unirepContract
                 .updateUserStateRoot(
                     ustProof.publicSignals,
                     ustProof.proof,
                     proofIndexes
                 )
-                .then((t) => t.wait())
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            expect(diffs.length).to.equal(3)
-            expect(diffs[0].valid).to.equal(0)
-            expect(diffs[1].valid).to.equal(0)
-            expect(diffs[2].valid).to.equal(0)
+            expect(diffs.length).to.equal(0)
             await unirepState.stop()
         })
 

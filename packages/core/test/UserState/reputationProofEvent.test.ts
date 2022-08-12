@@ -332,15 +332,16 @@ describe('Reputation proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract
+            await expect(
+                unirepContract
                 .connect(attester)
                 .spendReputation(
                     formattedProof.publicSignals,
                     formattedProof.proof,
                     { value: attestingFee }
                 )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+
             const attestations = await userState.getAttestations(
                 formattedProof.epochKey.toString()
             )
