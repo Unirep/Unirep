@@ -140,18 +140,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             revert ProofAlreadyUsed(proofNullifier);
     }
 
-    function verifyAttesterFee() private view {
-        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
-    }
-
-    function verifyAttesterIndex(address attester, uint256 attesterId)
-        private
-        view
-    {
-        if (attesters[attester] != attesterId)
-            revert AttesterIdNotMatch(attesterId);
-    }
-
     function verifyNullifier(uint256 nullifier) private {
         require(nullifier != 0);
         if (usedNullifiers[nullifier] > 0)
@@ -265,8 +253,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 epochKey
     ) internal view {
         verifyAttesterSignUp(attester);
-        verifyAttesterIndex(attester, attestation.attesterId);
-        verifyAttesterFee();
+        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
+        if (attesters[attester] != attestation.attesterId)
+            revert AttesterIdNotMatch(attestation.attesterId);
 
         if (attestation.signUp != 0 && attestation.signUp != 1)
             revert InvalidSignUpFlag();
