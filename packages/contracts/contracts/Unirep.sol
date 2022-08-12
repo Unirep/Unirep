@@ -12,6 +12,8 @@ import {IVerifier} from './interfaces/IVerifier.sol';
 import {Poseidon5, Poseidon2} from './Hash.sol';
 import {SparseMerkleTree, SparseTreeData} from './SparseMerkleTree.sol';
 
+import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
+
 /**
  * @title Unirep
  * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.
@@ -55,6 +57,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         public attestationHashchains;
 
     mapping(uint256 => SparseTreeData) public epochTrees;
+    mapping(uint256 => IncrementalTreeData) public globalStateTree;
+    SparseTreeData internal initUST;
 
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
@@ -113,6 +117,17 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
+        SparseMerkleTree.init(initUST, config.userStateTreeDepth, 0);
+        SparseMerkleTree.init(
+            epochTrees[currentEpoch],
+            config.epochTreeDepth,
+            0
+        );
+        IncrementalBinaryTree.init(
+            globalStateTree[currentEpoch],
+            config.globalStateTreeDepth,
+            0
+        );
     }
 
     // Verify input data - Should found better way to handle it.
@@ -165,6 +180,30 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
+
+        uint256 initUSTLeaf = Poseidon5.poseidon(
+            [
+                initBalance, // posRep
+                0, // negRep
+                0, // graffiti
+                1, // signup
+                0
+            ]
+        );
+        // calculate the initial smt root by inserting at attesterId index
+        SparseMerkleTree.update(initUST, attesterId, initUSTLeaf);
+
+        uint256 newGSTLeaf = Poseidon2.poseidon(
+            [identityCommitment, initUST.root]
+        );
+        // now manually reset the tree so it can be used for future signups
+        // we'll ignore the root, it will be updated on next update call
+        uint256 index = attesterId;
+        for (uint8 i = 0; i < initUST.depth; i++) {
+            initUST.leaves[i][index] = initUST.zeroes[i];
+            index /= 2;
+        }
+        IncrementalBinaryTree.insert(globalStateTree[currentEpoch], newGSTLeaf);
 
         emit UserSignedUp(
             currentEpoch,
@@ -514,6 +553,33 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         latestEpochTransitionTime = block.timestamp;
         currentEpoch++;
+
+        // avoid calling init by manually copying zero values and root
+        for (uint8 i; i < config.epochTreeDepth; i++) {
+            epochTrees[currentEpoch].zeroes[i] = epochTrees[currentEpoch - 1]
+                .zeroes[i];
+        }
+        epochTrees[currentEpoch].root = Poseidon2.poseidon(
+            [
+                epochTrees[currentEpoch].zeroes[config.epochTreeDepth - 1],
+                epochTrees[currentEpoch].zeroes[config.epochTreeDepth - 1]
+            ]
+        );
+        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+            globalStateTree[currentEpoch].zeroes[i] = globalStateTree[
+                currentEpoch - 1
+            ].zeroes[i];
+        }
+        globalStateTree[currentEpoch].root = Poseidon2.poseidon(
+            [
+                globalStateTree[currentEpoch].zeroes[
+                    config.globalStateTreeDepth - 1
+                ],
+                globalStateTree[currentEpoch].zeroes[
+                    config.globalStateTreeDepth - 1
+                ]
+            ]
+        );
 
         uint256 gasUsed = initGas.sub(gasleft());
         epochTransitionCompensation[msg.sender] = epochTransitionCompensation[
