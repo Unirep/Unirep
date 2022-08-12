@@ -64,7 +64,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // Mapping of the airdrop amount of an attester
     mapping(address => uint256) public airdropAmount;
     // Mapping of existing nullifiers to the epoch of emitted
-    mapping(uint256 => uint256) public nullifierExists;
+    mapping(uint256 => uint256) public usedNullifiers;
 
     constructor(
         Config memory _config,
@@ -128,11 +128,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     function verifyNullifier(uint256 nullifier) private {
-        if (nullifier == 0) return;
-        if (nullifierExists[nullifier] > 0)
+        if (usedNullifiers[nullifier] > 0)
             revert NullifierAlreadyUsed(nullifier);
         // Mark the nullifier as used
-        nullifierExists[nullifier] = currentEpoch;
+        usedNullifiers[nullifier] = currentEpoch;
     }
 
     /**
@@ -467,8 +466,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         if (publicSignals[maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
 
-        for (uint256 index = 2; index < 2 + maxReputationBudget; index++)
-            verifyNullifier(publicSignals[index]);
+        for (uint256 index = 2; index < 2 + maxReputationBudget; index++) {
+            if (publicSignals[index] > 0) verifyNullifier(publicSignals[index]);
+        }
 
         // attestation of spending reputation
         Attestation memory attestation;

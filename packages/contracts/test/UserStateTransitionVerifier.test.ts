@@ -64,7 +64,7 @@ describe('User State Transition', function () {
 
         for (const nullifier of input.epkNullifiers) {
             if (!ethers.BigNumber.from(nullifier).eq(0)) {
-                const n = await unirepContract.nullifierExists(nullifier)
+                const n = await unirepContract.usedNullifiers(nullifier)
                 expect(
                     ethers.BigNumber.from(n).eq(0),
                     'Nullifier is not saved in unirep contract'
