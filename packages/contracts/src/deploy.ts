@@ -1,4 +1,5 @@
 import { BigNumberish, ethers, utils } from 'ethers'
+import path from 'path'
 import {
     MAX_USERS,
     MAX_ATTESTERS,
@@ -10,9 +11,6 @@ import {
     EPOCH_TREE_DEPTH,
     NUM_ATTESTATIONS_PER_PROOF,
 } from '@unirep/circuits'
-
-const ATTESTING_FEE = 0
-
 import {
     VerifyEpochKeyVerifier,
     VerifyEpochKeyVerifier__factory,
@@ -30,6 +28,8 @@ import {
     UserStateTransitionVerifier__factory,
 } from '../typechain'
 import poseidon from '../src/poseidon'
+
+const ATTESTING_FEE = 0
 
 export { Unirep, UnirepFactory }
 
@@ -132,10 +132,10 @@ export const deployUnirep = async (
         await c.deployed()
         libraries[`Poseidon${inputCount}`] = c.address
     }
-    const {
-        abi,
-        bytecode,
-    } = require('../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json')
+    const { abi, bytecode } = require(path.join(
+        __dirname,
+        '../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
+    ))
     const merkleTreeLibFactory = new ethers.ContractFactory(
         abi,
         linkLibrary(bytecode, {
