@@ -405,20 +405,20 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        uint256 maxReputationBudget = config.maxReputationBudget;
+        uint256 _maxReputationBudget = config.maxReputationBudget;
         verifyProofNullifier(proofNullifier);
 
-        if (publicSignals[maxReputationBudget + 2] != currentEpoch)
+        if (publicSignals[_maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
 
-        for (uint256 index = 2; index < 2 + maxReputationBudget; index++) {
+        for (uint256 index = 2; index < 2 + _maxReputationBudget; index++) {
             if (publicSignals[index] > 0) verifyNullifier(publicSignals[index]);
         }
 
         // attestation of spending reputation
         Attestation memory attestation;
-        attestation.attesterId = publicSignals[maxReputationBudget + 3];
-        attestation.negRep = publicSignals[maxReputationBudget + 4];
+        attestation.attesterId = publicSignals[_maxReputationBudget + 3];
+        attestation.negRep = publicSignals[_maxReputationBudget + 4];
 
         assertValidAttestation(msg.sender, attestation, publicSignals[0]);
         // Add to the cumulated attesting fee
@@ -551,9 +551,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
 
         verifyProofNullifier(proofNullifier);
-        uint256 numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch;
+        uint256 _numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch;
         // NOTE: this impl assumes all attestations are processed in a single snark.
-        if (publicSignals[2 + numEpochKeyNoncePerEpoch] >= currentEpoch)
+        if (publicSignals[2 + _numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
 
         for (uint256 i = 0; i < proofIndexRecords.length; i++) {
@@ -563,7 +563,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             ) revert InvalidProofIndex();
         }
 
-        for (uint256 index = 2; index < 2 + numEpochKeyNoncePerEpoch; index++)
+        for (uint256 index = 2; index < 2 + _numEpochKeyNoncePerEpoch; index++)
             verifyNullifier(publicSignals[index]);
 
         uint256 _proofIndex = proofIndex;
@@ -767,5 +767,45 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 amount = epochTransitionCompensation[msg.sender];
         epochTransitionCompensation[msg.sender] = 0;
         Address.sendValue(payable(msg.sender), amount);
+    }
+
+    function globalStateTreeDepth() public view returns (uint8) {
+        return config.globalStateTreeDepth;
+    }
+
+    function userStateTreeDepth() public view returns (uint8) {
+        return config.userStateTreeDepth;
+    }
+
+    function epochTreeDepth() public view returns (uint8) {
+        return config.epochTreeDepth;
+    }
+
+    function numEpochKeyNoncePerEpoch() public view returns (uint256) {
+        return config.numEpochKeyNoncePerEpoch;
+    }
+
+    function maxReputationBudget() public view returns (uint256) {
+        return config.maxReputationBudget;
+    }
+
+    function numAttestationsPerProof() public view returns (uint256) {
+        return config.numAttestationsPerProof;
+    }
+
+    function epochLength() public view returns (uint256) {
+        return config.epochLength;
+    }
+
+    function attestingFee() public view returns (uint256) {
+        return config.attestingFee;
+    }
+
+    function maxUsers() public view returns (uint256) {
+        return config.maxUsers;
+    }
+
+    function maxAttesters() public view returns (uint256) {
+        return config.maxAttesters;
     }
 }
