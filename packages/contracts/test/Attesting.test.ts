@@ -2,11 +2,22 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, hashLeftRight, IncrementalMerkleTree, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
+import {
+    genRandomSalt,
+    hashLeftRight,
+    IncrementalMerkleTree,
+    SNARK_FIELD_SIZE,
+    ZkIdentity,
+} from '@unirep/crypto'
 import { Circuit, GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits'
 import { deployUnirep, Unirep } from '../src'
 
-import { genEpochKey, Attestation, genEpochKeyCircuitInput, genInputForContract } from './utils'
+import {
+    genEpochKey,
+    Attestation,
+    genEpochKeyCircuitInput,
+    genInputForContract,
+} from './utils'
 
 describe('Attesting', () => {
     let unirepContract: Unirep
@@ -117,9 +128,7 @@ describe('Attesting', () => {
             circuitInputs
         )
         await expect(
-            unirepContract.submitEpochKeyProof(
-                publicSignals, _proof
-            )
+            unirepContract.submitEpochKeyProof(publicSignals, _proof)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -127,10 +136,10 @@ describe('Attesting', () => {
         await expect(
             unirepContract.submitEpochKeyProof(
                 epochKeyProof.publicSignals,
-                proof)
+                proof
+            )
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
-
 
     it('submit attestation should succeed', async () => {
         let nonce = 0

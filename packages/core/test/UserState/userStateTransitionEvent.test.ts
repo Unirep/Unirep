@@ -20,9 +20,7 @@ import {
     genUnirepState,
     genUserState,
 } from '../utils'
-import {
-    UserTransitionProof,
-} from '@unirep/contracts/src'
+import { UserTransitionProof } from '@unirep/contracts/src'
 
 describe('User state transition events in Unirep User State', function () {
     this.timeout(0)
@@ -169,8 +167,11 @@ describe('User state transition events in Unirep User State', function () {
             const snap = await snapshotDB((unirepState as any)._db)
             const randomProof: BigNumberish[] = Array(8).fill('0')
             const randomPublicSignals: BigNumberish[] = Array(3).fill('0')
-            await expect(unirepContract
-                .startUserStateTransition(randomPublicSignals, randomProof)
+            await expect(
+                unirepContract.startUserStateTransition(
+                    randomPublicSignals,
+                    randomProof
+                )
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
             await unirepState.waitForSync()
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
@@ -186,8 +187,11 @@ describe('User state transition events in Unirep User State', function () {
             const snap = await snapshotDB((unirepState as any)._db)
             const randomProof: BigNumberish[] = Array(8).fill('0')
             const randomPublicSignals: BigNumberish[] = Array(3).fill('0')
-            await expect(unirepContract
-                .processAttestations(randomPublicSignals, randomProof)
+            await expect(
+                unirepContract.processAttestations(
+                    randomPublicSignals,
+                    randomProof
+                )
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
             await unirepState.waitForSync()
 
@@ -202,9 +206,11 @@ describe('User state transition events in Unirep User State', function () {
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const proofIndexes = [1,2,3] as any[]
+            const proofIndexes = [1, 2, 3] as any[]
             const randomProof: BigNumberish[] = Array(8).fill('0')
-            const randomPublicSignals: BigNumberish[] = Array(2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(
+                2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6
+            ).fill('0')
             const ustProof = new UserTransitionProof(
                 randomPublicSignals,
                 formatProofForSnarkjsVerification(
@@ -214,8 +220,7 @@ describe('User state transition events in Unirep User State', function () {
             )
             ustProof.publicSignals[ustProof.idx.transitionFromEpoch] = 1
             await expect(
-                unirepContract
-                .updateUserStateRoot(
+                unirepContract.updateUserStateRoot(
                     ustProof.publicSignals,
                     ustProof.proof,
                     proofIndexes

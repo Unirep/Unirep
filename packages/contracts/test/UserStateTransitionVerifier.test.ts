@@ -69,10 +69,13 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        input.publicSignals[input.idx.fromGlobalStateTree] = genRandomSalt().toString()
+        input.publicSignals[input.idx.fromGlobalStateTree] =
+            genRandomSalt().toString()
         const isValid = await input.verify()
-        expect(isValid, 'Verify user state transition proof off-chain should fail')
-            .to.be.false
+        expect(
+            isValid,
+            'Verify user state transition proof off-chain should fail'
+        ).to.be.false
         const isProofValid = await unirepContract.verifyUserStateTransition(
             input.publicSignals,
             input.proof

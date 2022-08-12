@@ -100,7 +100,8 @@ describe('Process attestation circuit', function () {
             Circuit.processAttestations,
             circuitInputs
         )
-        input.publicSignals[input.idx.inputBlindedUserState] = genRandomSalt().toString()
+        input.publicSignals[input.idx.inputBlindedUserState] =
+            genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
             input.publicSignals,
             input.proof
@@ -108,10 +109,7 @@ describe('Process attestation circuit', function () {
         expect(isProofValid).to.be.false
 
         await expect(
-            unirepContract.processAttestations(
-                input.publicSignals,
-                input.proof
-            )
+            unirepContract.processAttestations(input.publicSignals, input.proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 })

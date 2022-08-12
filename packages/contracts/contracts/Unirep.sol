@@ -126,8 +126,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     function verifyProof(bool isValid) private pure {
-        if (isValid == false) 
-            revert InvalidProof();
+        if (isValid == false) revert InvalidProof();
     }
 
     /**
@@ -473,7 +472,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 maxReputationBudget = config.maxReputationBudget;
         if (publicSignals[maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
-        
+
         // verify proof
         bool isValid = verifyReputation(publicSignals, proof);
         verifyProof(isValid);
@@ -550,7 +549,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         verifyProofNullifier(proofNullifier);
 
         // verify proof
-        bool isValid  = verifyStartTransitionProof(publicSignals, proof);
+        bool isValid = verifyStartTransitionProof(publicSignals, proof);
         verifyProof(isValid);
 
         uint256 _proofIndex = proofIndex;

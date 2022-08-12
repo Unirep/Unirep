@@ -287,7 +287,7 @@ describe('Verify reputation verifier', function () {
             circuitInputs
         )
         expect(await input.verify()).to.be.true
-        
+
         const tx = await unirepContract
             .connect(attester)
             .spendReputation(input.publicSignals, input.proof, {
@@ -324,6 +324,5 @@ describe('Verify reputation verifier', function () {
                     value: attestingFee,
                 })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
-
     })
 })

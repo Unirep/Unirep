@@ -130,7 +130,8 @@ describe('User State Transition circuits', function () {
                 Circuit.startTransition,
                 circuitInputs
             )
-            input.publicSignals[input.idx.globalStateTree] = genRandomSalt().toString()
+            input.publicSignals[input.idx.globalStateTree] =
+                genRandomSalt().toString()
             const isProofValid =
                 await unirepContract.verifyStartTransitionProof(
                     input.publicSignals,
@@ -144,7 +145,6 @@ describe('User State Transition circuits', function () {
                     input.proof
                 )
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
-
         })
     })
 })

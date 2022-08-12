@@ -266,14 +266,14 @@ describe('Epoch key proof events in Unirep User State', function () {
             attestation.attesterId = attesterId
             await expect(
                 unirepContract
-                .connect(attester['acct'])
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
+                    .connect(attester['acct'])
+                    .submitAttestation(
+                        attestation,
+                        epochKey,
+                        proofIndex,
+                        fromProofIndex,
+                        { value: attestingFee }
+                    )
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
 
             const userState = await genUserState(
