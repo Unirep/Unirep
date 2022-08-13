@@ -15,8 +15,6 @@ import {
 // test constants
 const maxUsers = 2 ** 7
 const attestingFee = ethers.utils.parseEther('0.1')
-const airdropPosRep = 10
-const spendReputation = 4
 
 const genIdAndRepProof = async (unirepContract, attester) => {
     const attesterId = await unirepContract.attesters(attester.address)
@@ -25,9 +23,11 @@ const genIdAndRepProof = async (unirepContract, attester) => {
     const id = new ZkIdentity()
     const commitment = id.genIdentityCommitment()
 
+    const airdropAmount = 100
+
     await unirepContract
         .connect(attester)
-        .userSignUp(commitment)
+        ['userSignUp(uint256,uint256)'](commitment, airdropAmount)
         .then((t) => t.wait())
 
     const userState = await genUserState(
@@ -44,10 +44,10 @@ const genIdAndRepProof = async (unirepContract, attester) => {
     const formattedProof = await userState.genProveReputationProof(
         attesterId.toBigInt(),
         epkNonce,
+        0,
         undefined,
         undefined,
-        undefined,
-        spendReputation
+        5 // prove amount
     )
     const isValid = await formattedProof.verify()
     expect(isValid).to.be.true
@@ -99,23 +99,11 @@ describe('Reputation proof events in Unirep User State', function () {
         })
     })
 
-    describe('Attester sign up and set airdrop', async () => {
+    describe('Attester sign up', async () => {
         it('attester sign up', async () => {
             let tx = await unirepContract.connect(attester).attesterSignUp()
             let receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-        })
-
-        it('attester set airdrop amount', async () => {
-            const tx = await unirepContract
-                .connect(attester)
-                .setAirdropAmount(airdropPosRep)
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester.address
-            )
-            expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
     })
 
@@ -126,12 +114,15 @@ describe('Reputation proof events in Unirep User State', function () {
 
             const tx = await unirepContract
                 .connect(attester)
-                .userSignUp(commitment)
+                ['userSignUp(uint256)'](commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
 
+            const airdropAmount = 30
             await expect(
-                unirepContract.connect(attester).userSignUp(commitment)
+                unirepContract
+                    .connect(attester)
+                    ['userSignUp(uint256,uint256)'](commitment, airdropAmount)
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 `UserAlreadySignedUp`
@@ -165,7 +156,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
 
-            const tx = await unirepContract.userSignUp(commitment)
+            const tx = await unirepContract['userSignUp(uint256)'](commitment)
             const receipt = await tx.wait()
             expect(receipt.status, 'User sign up failed').to.equal(1)
 
@@ -277,7 +268,7 @@ describe('Reputation proof events in Unirep User State', function () {
 
             const attestation = new Attestation(
                 attesterId.toBigInt(),
-                BigInt(spendReputation),
+                BigInt(5),
                 BigInt(0),
                 BigInt(0),
                 BigInt(0)
@@ -304,9 +295,13 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit invalid reputation proof event', async () => {
             const id = new ZkIdentity()
+            const airdropAmount = 20
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             const userState = await genUserState(
                 hardhatEthers.provider,
@@ -315,9 +310,7 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             const attesterId = await unirepContract.attesters(attester.address)
             const epkNonce = 1
-            const spendReputation = Math.ceil(
-                Math.random() * userState.settings.maxReputationBudget
-            )
+            const spendReputation = 5
             const formattedProof = await userState.genProveReputationProof(
                 attesterId.toBigInt(),
                 epkNonce,
@@ -372,9 +365,13 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('invalid reputation proof with from proof index should not update User state', async () => {
             const id = new ZkIdentity()
+            const airdropAmount = 10
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             const userState = await genUserState(
                 hardhatEthers.provider,
@@ -385,7 +382,9 @@ describe('Reputation proof events in Unirep User State', function () {
             const formattedProof = await userState.genVerifyEpochKeyProof(
                 epkNonce
             )
-
+            const startAttestations = await userState.getAttestations(
+                formattedProof.epochKey.toString()
+            )
             let tx = await unirepContract.submitEpochKeyProof(
                 formattedProof.publicSignals,
                 formattedProof.proof
@@ -398,33 +397,55 @@ describe('Reputation proof events in Unirep User State', function () {
             )
 
             const attesterId = await unirepContract.attesters(attester.address)
+
+            const repProof = await userState.genProveReputationProof(
+                attesterId.toBigInt(),
+                0
+            )
+            repProof.publicSignals[repProof.idx.repNullifiers[0]] = 1
+
+            await unirepContract
+                .connect(attester)
+                .spendReputation(repProof.publicSignals, repProof.proof, {
+                    value: attestingFee,
+                })
+                .then((t) => t.wait())
+
+            const fromProofIndex = Number(
+                await unirepContract.getProofIndex(repProof.hash())
+            )
+
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            tx = await unirepContract
+            await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     attestation,
                     formattedProof.epochKey,
                     toProofIndex,
-                    9,
+                    fromProofIndex,
                     {
                         value: attestingFee,
                     }
                 )
-            receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+                .then((t) => t.wait())
 
+            await userState.waitForSync()
             const attestations = await userState.getAttestations(
                 formattedProof.epochKey.toString()
             )
-            expect(attestations.length).equal(0)
+            expect(attestations.length).equal(startAttestations.length)
         })
 
         it('submit valid reputation proof with wrong GST root event', async () => {
             const id = new ZkIdentity()
+            const airdropAmount = 100
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             const userState = await genUserState(
                 hardhatEthers.provider,
@@ -453,7 +474,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 undefined,
                 undefined,
                 undefined,
-                spendReputation
+                5
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
@@ -503,9 +524,13 @@ describe('Reputation proof events in Unirep User State', function () {
 
         it('submit valid reputation proof event in wrong epoch should fail', async () => {
             const id = new ZkIdentity()
+            const airdropAmount = 100
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256,uint256)'](
+                    id.genIdentityCommitment(),
+                    airdropAmount
+                )
                 .then((t) => t.wait())
             const userState = await genUserState(
                 hardhatEthers.provider,
@@ -521,7 +546,7 @@ describe('Reputation proof events in Unirep User State', function () {
                 undefined,
                 undefined,
                 undefined,
-                spendReputation
+                5
             )
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true

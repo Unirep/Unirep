@@ -4,21 +4,6 @@ pragma solidity ^0.8.0;
 import {UnirepTypes} from '../types/UnirepTypes.sol';
 
 interface IUnirep is UnirepTypes {
-    enum Event {
-        UserSignedUp,
-        UserStateTransitioned,
-        AttestationSubmitted,
-        EpochEnded
-    }
-
-    enum AttestationEvent {
-        SendAttestation,
-        Airdrop,
-        SpendReputation
-    }
-
-    // Events
-
     event UserSignedUp(
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
@@ -36,7 +21,6 @@ interface IUnirep is UnirepTypes {
         uint256 indexed epoch,
         uint256 indexed epochKey,
         address indexed attester,
-        AttestationEvent attestationEvent,
         Attestation attestation,
         uint256 toProofIndex,
         uint256 fromProofIndex
@@ -62,15 +46,6 @@ interface IUnirep is UnirepTypes {
     );
 
     event IndexedReputationProof(
-        uint256 indexed proofIndex,
-        uint256 indexed epoch,
-        uint256 indexed epochKey,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    // This event is emitted if a user wants to prove that he has a signup flag in an attester ID
-    event IndexedUserSignedUpProof(
         uint256 indexed proofIndex,
         uint256 indexed epoch,
         uint256 indexed epochKey,
@@ -114,6 +89,7 @@ interface IUnirep is UnirepTypes {
     error NullifierAlreadyUsed(bytes32 nullilier);
     error AttestingFeeInvalid();
     error AttesterIdNotMatch(uint256 attesterId);
+    error AirdropWithoutAttester();
 
     error InvalidSignature();
     error InvalidProofIndex();

@@ -5,7 +5,6 @@ import {
     IndexedProcessedAttestationsProof,
     IndexedReputationProof,
     IndexedStartedTransitionProof,
-    IndexedUserSignedUpProof,
     IndexedUserStateTransitionProof,
     UserSignedUp,
     UserStateTransitioned,
@@ -43,10 +42,6 @@ export function handleIndexedReputationProof(
 
 export function handleIndexedStartedTransitionProof(
     event: IndexedStartedTransitionProof
-): void {}
-
-export function handleIndexedUserSignedUpProof(
-    event: IndexedUserSignedUpProof
 ): void {}
 
 export function handleIndexedUserStateTransitionProof(
