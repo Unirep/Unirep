@@ -128,6 +128,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     function verifyNullifier(uint256 nullifier) private {
+        require(nullifier != 0);
         if (usedNullifiers[nullifier] > 0)
             revert NullifierAlreadyUsed(nullifier);
         // Mark the nullifier as used
