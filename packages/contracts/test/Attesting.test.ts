@@ -45,7 +45,7 @@ describe('Attesting', () => {
         console.log('User sign up')
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
-        let tx = await unirepContract.userSignUp(userCommitment)
+        let tx = await unirepContract['userSignUp(uint256)'](userCommitment)
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 

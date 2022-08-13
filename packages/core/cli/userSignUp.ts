@@ -33,6 +33,11 @@ const configureSubparser = (subparsers: any) => {
         type: 'str',
         help: "The user's Ethereum private key",
     })
+
+    parser.add_argument('-a', '--airdrop', {
+        type: 'int',
+        help: 'The requested airdrop amount',
+    })
 }
 
 const userSignUp = async (args: any) => {
@@ -53,13 +58,16 @@ const userSignUp = async (args: any) => {
     const encodedCommitment = args.identity_commitment.slice(
         identityCommitmentPrefix.length
     )
+    const airdropAmount = args.airdrop ?? 0
     const decodedCommitment = base64url.decode(encodedCommitment)
     const commitment = decodedCommitment
 
     // Submit the user sign up transaction
     let tx: ethers.ContractTransaction
     try {
-        tx = await unirepContract.connect(wallet).userSignUp(BigInt(commitment))
+        tx = await unirepContract
+            .connect(wallet)
+            ['userSignUp(uint256,uint256)'](BigInt(commitment), airdropAmount)
         await tx.wait()
     } catch (error) {
         console.log('Transaction Error', error)

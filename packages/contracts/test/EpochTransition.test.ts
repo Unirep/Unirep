@@ -62,7 +62,7 @@ describe('Epoch Transition', function () {
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))
         const leafIndex = 0
-        let tx = await unirepContract.userSignUp(userCommitment)
+        let tx = await unirepContract['userSignUp(uint256)'](userCommitment)
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 

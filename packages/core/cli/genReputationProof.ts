@@ -78,13 +78,11 @@ const genReputationProof = async (args: any) => {
     const attesterId = BigInt(args.attester_id)
     const epkNonce = args.epoch_key_nonce
     const proveGraffiti = args.graffiti_preimage != null ? BigInt(1) : BigInt(0)
-    const minRep = args.min_rep != null ? args.min_rep : 0
-    const repNullifiersAmount =
-        args.reputation_nullifier != null ? args.reputation_nullifier : 0
-    const graffitiPreImage =
-        args.graffiti_preimage != null
-            ? BigInt(args.graffiti_preimage)
-            : BigInt(0)
+    const minRep = args.min_rep ?? 0
+    const repNullifiersAmount = args.reputation_nullifier ?? 0
+    const graffitiPreImage = args.graffiti_preimage
+        ? BigInt(args.graffiti_preimage)
+        : BigInt(0)
     const formattedProof = await userState.genProveReputationProof(
         attesterId,
         epkNonce,
@@ -94,7 +92,7 @@ const genReputationProof = async (args: any) => {
         repNullifiersAmount
     )
 
-    console.log('repnullifier amount', repNullifiersAmount)
+    console.log('rep nullifier amount', repNullifiersAmount)
 
     // TODO: Not sure if this validation is necessary
     const isValid = await formattedProof.verify()

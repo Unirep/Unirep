@@ -37,7 +37,6 @@ import {
     IndexedProcessedAttestationsProofEvent,
     IndexedReputationProofEvent,
     IndexedStartedTransitionProofEvent,
-    IndexedUserSignedUpProofEvent,
     IndexedUserStateTransitionProofEvent,
 } from '../typechain/Unirep'
 
@@ -71,7 +70,7 @@ describe('EventFilters', () => {
         console.log('User sign up')
         userId = new ZkIdentity()
         userCommitment = userId.genIdentityCommitment()
-        let tx = await unirepContract.userSignUp(userCommitment)
+        let tx = await unirepContract['userSignUp(uint256)'](userCommitment)
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -150,31 +149,6 @@ describe('EventFilters', () => {
         const tx = await unirepContract
             .connect(attester)
             .spendReputation(input.publicSignals, input.proof, {
-                value: attestingFee,
-            })
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
-    })
-
-    it('submit get airdrop should succeed', async () => {
-        const { reputationRecords } = await bootstrapRandomUSTree()
-        const circuitInputs = genProveSignUpCircuitInput(
-            userId,
-            epoch,
-            reputationRecords,
-            BigInt(attesterId)
-        )
-        const input: SignUpProof = await genInputForContract(
-            Circuit.proveUserSignUp,
-            circuitInputs
-        )
-
-        let tx = await unirepContract
-            .connect(attester)
-            .airdropEpochKey(input.publicSignals, input.proof, {
                 value: attestingFee,
             })
         const receipt = await tx.wait()
@@ -273,10 +247,6 @@ describe('EventFilters', () => {
                 unirepContract.filters.IndexedReputationProof(proofIndex)
             const repProofEvent: IndexedReputationProofEvent[] =
                 await unirepContract.queryFilter(repProofFilter)
-            const signUpProofFilter =
-                unirepContract.filters.IndexedUserSignedUpProof(proofIndex)
-            const signUpProofEvent: IndexedUserSignedUpProofEvent[] =
-                await unirepContract.queryFilter(signUpProofFilter)
 
             if (epochKeyProofEvent.length == 1) {
                 console.log('epoch key proof event')
@@ -290,14 +260,6 @@ describe('EventFilters', () => {
                 console.log('reputation proof event')
                 const { proof, publicSignals } = repProofEvent[0].args
                 const isValid = await unirepContract.verifyReputation(
-                    publicSignals,
-                    proof
-                )
-                expect(isValid).equal(true)
-            } else if (signUpProofEvent.length == 1) {
-                console.log('sign up proof event')
-                const { proof, publicSignals } = signUpProofEvent[0].args
-                const isValid = await unirepContract.verifyUserSignUp(
                     publicSignals,
                     proof
                 )
