@@ -279,7 +279,7 @@ const submitUSTProofs = async (
                 startTransitionProof.publicSignals,
                 startTransitionProof.proof
             )
-        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+        ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
 
         const hashedProof = startTransitionProof.hash()
         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
@@ -315,7 +315,7 @@ const submitUSTProofs = async (
                 processAttestationProofs[i].publicSignals,
                 processAttestationProofs[i].proof
             )
-        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+        ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
 
         const hashedProof = processAttestationProofs[i].hash()
         proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
@@ -339,7 +339,7 @@ const submitUSTProofs = async (
                 finalTransitionProof.proof,
                 proofIndexes
             )
-        ).to.be.revertedWithCustomError(contract, 'NullifierAlreadyUsed')
+        ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
     }
 }
 
