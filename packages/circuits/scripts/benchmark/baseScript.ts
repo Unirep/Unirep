@@ -9,10 +9,11 @@ import path from 'path'
 import * as circom from 'circom'
 import * as snarkjs from 'snarkjs'
 
-async function executeTimeOf(
+export async function executeTimeOf(
     name: string,
     circomComponent: string,
-    genInputFn: any
+    genInputFn: any,
+    genInputArg: any[]
 ): Promise<bigint> {
     // create tmp folder to store circom compile files.
     const tmpPath = mkdtempSync('/tmp/unirep')
@@ -25,7 +26,6 @@ async function executeTimeOf(
     const zkey = path.join(tmpPath, `${name}.zkey`)
     const wasmOut = path.join(tmpPath, `${name}.wasm`)
 
-    console.log(r1cs)
     writeFileSync(circomPath, circomComponent)
 
     const options = {
@@ -47,7 +47,7 @@ async function executeTimeOf(
     const NUMBER_CASE = 10
     let totalTime = 0
     for (let no = -1; no <= NUMBER_CASE; ++no) {
-        const inputs = genInputFn()
+        const inputs = genInputFn(...genInputArg)
         const start = performance.now()
         const { proof, publicSignals } = await snarkjs.groth16.fullProve(
             inputs,
