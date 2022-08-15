@@ -336,8 +336,9 @@ describe('Verify reputation verifier', function () {
     })
 
     it('submit invalid reputation proof should fail', async () => {
+        const user2 = new ZkIdentity()
         const circuitInputs = genReputationCircuitInput(
-            user,
+            user2,
             epoch,
             nonce,
             reputationRecords,

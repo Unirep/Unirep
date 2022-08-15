@@ -98,7 +98,8 @@ describe('User State Transition', function () {
     })
 
     it('Invalid user state proof should fail', async () => {
-        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
+        const user2 = new ZkIdentity()
+        const circuitInputs = genUserStateTransitionCircuitInput(user2, epoch)
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs

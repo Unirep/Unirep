@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
     EPOCH_LENGTH,
@@ -205,6 +205,13 @@ describe('User state transition events in Unirep User State', function () {
                 ),
                 defaultProver
             )
+            for (
+                let i = ustProof.idx.epkNullifiers[0];
+                i < ustProof.idx.epkNullifiers[1];
+                i++
+            ) {
+                ustProof.publicSignals[i] = genRandomSalt().toString()
+            }
             ustProof.publicSignals[ustProof.idx.transitionFromEpoch] = 1
             await expect(
                 unirepContract.updateUserStateRoot(
