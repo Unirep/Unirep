@@ -22,7 +22,6 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     let attesterId
     const maxUsers = 100
     const attestingFee = ethers.utils.parseEther('0.1')
-    const fromProofIndex = 0
     const rootHistories = [] as any
     let GSTree
 

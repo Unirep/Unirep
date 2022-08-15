@@ -24,6 +24,16 @@ describe('User State Transition', function () {
         accounts = await hardhatEthers.getSigners()
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+
+        // UST should be performed after epoch transition
+        // Fast-forward epochLength of seconds
+        const epochLength = (
+            await unirepContract.config()
+        ).epochLength.toNumber()
+        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
+        const tx = await unirepContract.beginEpochTransition()
+        const receipt = await tx.wait()
+        expect(receipt.status).equal(1)
     })
 
     it('Valid user state update inputs should work', async () => {
@@ -41,26 +51,50 @@ describe('User State Transition', function () {
         )
         expect(isProofValid).to.be.true
 
-        // UST should be performed after epoch transition
-        // Fast-forward epochLength of seconds
-        const epochLength = (
-            await unirepContract.config()
-        ).epochLength.toNumber()
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
-        let tx = await unirepContract.beginEpochTransition()
-        let receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        tx = await unirepContract.updateUserStateRoot(
+        const tx = await unirepContract.updateUserStateRoot(
             input.publicSignals,
             input.proof,
             proofIndexes
         )
-        receipt = await tx.wait()
+        const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
+
+        for (const nullifier of input.epkNullifiers) {
+            if (!ethers.BigNumber.from(nullifier).eq(0)) {
+                const n = await unirepContract.usedNullifiers(nullifier)
+                expect(
+                    ethers.BigNumber.from(n).eq(0),
+                    'Nullifier is not saved in unirep contract'
+                ).to.be.false
+            }
+        }
+    })
+
+    it('Submit user state transition proof with the same epoch key nullifiers should fail', async () => {
+        const circuitInputs = genUserStateTransitionCircuitInput(user, epoch)
+        const input: UserTransitionProof = await genInputForContract(
+            Circuit.userStateTransition,
+            circuitInputs
+        )
+        const isValid = await input.verify()
+        expect(isValid, 'Verify user state transition proof off-chain failed')
+            .to.be.true
+        const isProofValid = await unirepContract.verifyUserStateTransition(
+            input.publicSignals,
+            input.proof
+        )
+        expect(isProofValid).to.be.true
+
+        await expect(
+            unirepContract.updateUserStateRoot(
+                input.publicSignals,
+                input.proof,
+                proofIndexes
+            )
+        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
     it('Invalid user state proof should fail', async () => {

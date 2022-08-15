@@ -298,6 +298,41 @@ describe('Verify reputation verifier', function () {
 
         const pfIdx = await unirepContract.getProofIndex(input.hash())
         expect(Number(pfIdx)).not.eq(0)
+
+        for (const nullifier of input.repNullifiers) {
+            if (!ethers.BigNumber.from(nullifier).eq(0)) {
+                const n = await unirepContract.usedNullifiers(nullifier)
+                expect(
+                    ethers.BigNumber.from(n).eq(0),
+                    'Nullifier is not saved in unirep contract'
+                ).to.be.false
+            }
+        }
+    })
+
+    it('submit reputation proof with the same nullifiers should fail', async () => {
+        const circuitInputs = genReputationCircuitInput(
+            user,
+            epoch,
+            nonce,
+            reputationRecords,
+            attesterId,
+            repNullifiersAmount,
+            minRep,
+            proveGraffiti
+        )
+        const input: ReputationProof = await genInputForContract(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+
+        await expect(
+            unirepContract
+                .connect(attester)
+                .spendReputation(input.publicSignals, input.proof, {
+                    value: attestingFee,
+                })
+        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
     it('submit invalid reputation proof should fail', async () => {
