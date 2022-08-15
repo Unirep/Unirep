@@ -10,14 +10,9 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/crypto'
-import { Circuit, MAX_REPUTATION_BUDGET } from '@unirep/circuits'
+import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import {
-    Attestation,
-    ProcessAttestationsProof,
-    StartTransitionProof,
-    UserTransitionProof,
-} from '@unirep/contracts'
+import { Attestation } from '@unirep/contracts'
 
 import {
     computeEmptyUserStateRoot,
@@ -27,6 +22,7 @@ import {
 } from '../src'
 import {
     genEpochKeyCircuitInput,
+    genReputationCircuitInput,
     genNewEpochTree,
     genNewUserStateTree,
     toCompleteHexString,
@@ -127,85 +123,85 @@ const getReputationRecords = async (id: ZkIdentity, userState: UserState) => {
     return reputaitonRecord
 }
 
-const genReputationCircuitInput = (
-    id: ZkIdentity,
-    epoch: number,
-    nonce: number,
-    GSTree: IncrementalMerkleTree,
-    leafIdx: number,
-    reputationRecords,
-    attesterId,
-    _repNullifiersAmount?,
-    _minRep?,
-    _proveGraffiti?,
-    _graffitiPreImage?
-) => {
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-    const repNullifiersAmount = _repNullifiersAmount ?? 0
-    const minRep = _minRep ?? 0
-    const proveGraffiti = _proveGraffiti ?? 0
-    let graffitiPreImage
-    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
-        graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
-    }
-    graffitiPreImage = _graffitiPreImage ?? 0
-    if (reputationRecords[attesterId] === undefined) {
-        reputationRecords[attesterId] = Reputation.default()
-    }
+// const genReputationCircuitInput = (
+//     id: ZkIdentity,
+//     epoch: number,
+//     nonce: number,
+//     GSTree: IncrementalMerkleTree,
+//     leafIdx: number,
+//     reputationRecords,
+//     attesterId,
+//     _repNullifiersAmount?,
+//     _minRep?,
+//     _proveGraffiti?,
+//     _graffitiPreImage?
+// ) => {
+//     const epk = genEpochKey(id.identityNullifier, epoch, nonce)
+//     const repNullifiersAmount = _repNullifiersAmount ?? 0
+//     const minRep = _minRep ?? 0
+//     const proveGraffiti = _proveGraffiti ?? 0
+//     let graffitiPreImage
+//     if (proveGraffiti === 1 && reputationRecords[attesterId]) {
+//         graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
+//     }
+//     graffitiPreImage = _graffitiPreImage ?? 0
+//     if (reputationRecords[attesterId] === undefined) {
+//         reputationRecords[attesterId] = Reputation.default()
+//     }
 
-    // User state tree
-    const userStateTree = genNewUserStateTree()
-    for (const attester of Object.keys(reputationRecords)) {
-        userStateTree.update(
-            BigInt(attester),
-            reputationRecords[attester].hash()
-        )
-    }
-    const userStateRoot = userStateTree.root
-    const USTPathElements = userStateTree.createProof(BigInt(attesterId))
+//     // User state tree
+//     const userStateTree = genNewUserStateTree()
+//     for (const attester of Object.keys(reputationRecords)) {
+//         userStateTree.update(
+//             BigInt(attester),
+//             reputationRecords[attester].hash()
+//         )
+//     }
+//     const userStateRoot = userStateTree.root
+//     const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
-    // Global state tree
-    const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
-    const GSTreeRoot = GSTree.root
+//     // Global state tree
+//     const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
+//     const GSTreeRoot = GSTree.root
 
-    // selectors and karma nonce
-    const nonceStarter = 0
-    const selectors: BigInt[] = []
-    const nonceList: BigInt[] = []
-    for (let i = 0; i < repNullifiersAmount; i++) {
-        nonceList.push(BigInt(nonceStarter + i))
-        selectors.push(BigInt(1))
-    }
-    for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
-        nonceList.push(BigInt(0))
-        selectors.push(BigInt(0))
-    }
+//     // selectors and karma nonce
+//     const nonceStarter = 0
+//     const selectors: BigInt[] = []
+//     const nonceList: BigInt[] = []
+//     for (let i = 0; i < repNullifiersAmount; i++) {
+//         nonceList.push(BigInt(nonceStarter + i))
+//         selectors.push(BigInt(1))
+//     }
+//     for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
+//         nonceList.push(BigInt(0))
+//         selectors.push(BigInt(0))
+//     }
 
-    const circuitInputs = {
-        epoch: epoch,
-        epoch_key_nonce: nonce,
-        epoch_key: epk,
-        identity_nullifier: id.identityNullifier,
-        identity_trapdoor: id.trapdoor,
-        user_tree_root: userStateRoot,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
-        attester_id: attesterId,
-        pos_rep: reputationRecords[attesterId]['posRep'],
-        neg_rep: reputationRecords[attesterId]['negRep'],
-        graffiti: reputationRecords[attesterId]['graffiti'],
-        sign_up: reputationRecords[attesterId]['signUp'],
-        UST_path_elements: USTPathElements,
-        rep_nullifiers_amount: repNullifiersAmount,
-        selectors: selectors,
-        rep_nonce: nonceList,
-        min_rep: minRep,
-        prove_graffiti: proveGraffiti,
-        graffiti_pre_image: graffitiPreImage,
-    }
-    return stringifyBigInts(circuitInputs)
-}
+//     const circuitInputs = {
+//         epoch: epoch,
+//         epoch_key_nonce: nonce,
+//         epoch_key: epk,
+//         identity_nullifier: id.identityNullifier,
+//         identity_trapdoor: id.trapdoor,
+//         user_tree_root: userStateRoot,
+//         GST_path_index: GSTreeProof.pathIndices,
+//         GST_path_elements: GSTreeProof.siblings,
+//         GST_root: GSTreeRoot,
+//         attester_id: attesterId,
+//         pos_rep: reputationRecords[attesterId]['posRep'],
+//         neg_rep: reputationRecords[attesterId]['negRep'],
+//         graffiti: reputationRecords[attesterId]['graffiti'],
+//         sign_up: reputationRecords[attesterId]['signUp'],
+//         UST_path_elements: USTPathElements,
+//         rep_nullifiers_amount: repNullifiersAmount,
+//         selectors: selectors,
+//         rep_nonce: nonceList,
+//         min_rep: minRep,
+//         prove_graffiti: proveGraffiti,
+//         graffiti_pre_image: graffitiPreImage,
+//     }
+//     return stringifyBigInts(circuitInputs)
+// }
 
 const genProveSignUpCircuitInput = (
     id: ZkIdentity,

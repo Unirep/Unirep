@@ -3,14 +3,17 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { Attestation, deployUnirep } from '@unirep/contracts'
+import { Attestation, deployUnirep, ReputationProof } from '@unirep/contracts'
 
-import { genReputationNullifier } from '../../src'
+import { genReputationNullifier, Reputation } from '../../src'
 import {
     compareAttestations,
     genRandomAttestation,
+    genReputationCircuitInput,
     genUserState,
 } from '../utils'
+import { Circuit } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 // test constants
 const maxUsers = 2 ** 7
@@ -397,12 +400,31 @@ describe('Reputation proof events in Unirep User State', function () {
             )
 
             const attesterId = await unirepContract.attesters(attester.address)
-
-            const repProof = await userState.genProveReputationProof(
-                attesterId.toBigInt(),
-                0
+            const reputationRecords = {}
+            reputationRecords[attesterId.toString()] = new Reputation(
+                BigInt(Math.floor(Math.random() * 100) + 10),
+                BigInt(Math.floor(Math.random() * 0)),
+                BigInt(0),
+                BigInt(1)
             )
-            repProof.publicSignals[repProof.idx.repNullifiers[0]] = 1
+            const circuitInputs = genReputationCircuitInput(
+                id,
+                1,
+                0,
+                reputationRecords,
+                attesterId
+            )
+            const { proof, publicSignals } =
+                await defaultProver.genProofAndPublicSignals(
+                    Circuit.proveReputation,
+                    circuitInputs
+                )
+            const repProof = new ReputationProof(
+                publicSignals,
+                proof,
+                defaultProver
+            )
+            expect(await repProof.verify()).to.be.true
 
             await unirepContract
                 .connect(attester)
