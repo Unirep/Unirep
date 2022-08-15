@@ -403,7 +403,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const reputationRecords = {}
             reputationRecords[attesterId.toString()] = new Reputation(
                 BigInt(Math.floor(Math.random() * 100) + 10),
-                BigInt(Math.floor(Math.random() * 0)),
+                BigInt(0),
                 BigInt(0),
                 BigInt(1)
             )
