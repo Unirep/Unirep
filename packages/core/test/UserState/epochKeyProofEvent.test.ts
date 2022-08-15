@@ -234,34 +234,35 @@ describe('Epoch key proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract.submitEpochKeyProof(
-                formattedProof.publicSignals,
-                formattedProof.proof
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            await expect(
+                unirepContract.submitEpochKeyProof(
+                    formattedProof.publicSignals,
+                    formattedProof.proof
+                )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
 
             epochKey = formattedProof.epochKey
             proofIndex = Number(
                 await unirepContract.getProofIndex(formattedProof.hash())
             )
+            expect(proofIndex).equal(0)
             await userState.stop()
         })
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContract
-                .connect(attester['acct'])
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            await expect(
+                unirepContract
+                    .connect(attester['acct'])
+                    .submitAttestation(
+                        attestation,
+                        epochKey,
+                        proofIndex,
+                        fromProofIndex,
+                        { value: attestingFee }
+                    )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
 
             const userState = await genUserState(
                 hardhatEthers.provider,
