@@ -123,10 +123,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             revert AttesterIdNotMatch(attesterId);
     }
 
-    function verifyProof(bool isValid) private pure {
-        if (isValid == false) revert InvalidProof();
-    }
-
     /**
      * @dev User signs up by providing an identity commitment. It also inserts a fresh state leaf into the state tree.
      * An attester may specify an `initBalance` of reputation the user can use in the current epoch
@@ -365,7 +361,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         // verify proof
         bool isValid = verifyEpochKeyValidity(publicSignals, proof);
-        verifyProof(isValid);
+        if (isValid == false) revert InvalidProof();
 
         // emit proof event
         uint256 _proofIndex = proofIndex;
@@ -381,8 +377,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-=======
->>>>>>> main
      * @dev A user spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation
      * publicSignals[0] = [ epochKey ]
      * publicSignals[1] = [ globalStateTree ]
@@ -413,7 +407,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         // verify proof
         bool isValid = verifyReputation(publicSignals, proof);
-        verifyProof(isValid);
+        if (isValid == false) revert InvalidProof();
 
         // attestation of spending reputation
         Attestation memory attestation;
@@ -487,7 +481,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         // verify proof
         bool isValid = verifyStartTransitionProof(publicSignals, proof);
-        verifyProof(isValid);
+        if (isValid == false) revert InvalidProof();
 
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
@@ -521,7 +515,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         // verify proof
         bool isValid = verifyProcessAttestationProof(publicSignals, proof);
-        verifyProof(isValid);
+        if (isValid == false) revert InvalidProof();
 
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
@@ -574,7 +568,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         // verify proof
         bool isValid = verifyUserStateTransition(publicSignals, proof);
-        verifyProof(isValid);
+        if (isValid == false) revert InvalidProof();
 
         uint256 _proofIndex = proofIndex;
         emit IndexedUserStateTransitionProof(
