@@ -9,6 +9,8 @@ import {VerifySignature} from './libraries/VerifySignature.sol';
 
 import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
+import {Poseidon5, Poseidon2} from './Hash.sol';
+import {SparseMerkleTree, SparseTreeData} from './SparseMerkleTree.sol';
 
 /**
  * @title Unirep
@@ -49,6 +51,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // Mapping of proof nullifiers and the proof index
     mapping(bytes32 => uint256) public getProofIndex;
     mapping(uint256 => bool) public hasUserSignedUp;
+    mapping(uint256 => mapping(uint256 => uint256))
+        public attestationHashchains;
+
+    mapping(uint256 => SparseTreeData) public epochTrees;
 
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
@@ -235,6 +241,38 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             revert InvalidSNARKField(AttestationFieldError.GRAFFITI);
     }
 
+    // increment the hashchain and leave the chain unsealed.
+    // Also store a sealed copy of the hashchain in the epoch tree
+    function storeAttestation(
+        Attestation calldata attestation,
+        uint256 epochKey
+    ) internal {
+        uint256 attestationHash = Poseidon5.poseidon(
+            [
+                attestation.attesterId,
+                attestation.posRep,
+                attestation.negRep,
+                attestation.graffiti,
+                attestation.signUp
+            ]
+        );
+        uint256 currentHashchain = attestationHashchains[currentEpoch][
+            epochKey
+        ];
+        uint256 newHashchain = Poseidon2.poseidon(
+            [attestationHash, currentHashchain]
+        );
+        // store the latest unsealed hashchain so we can add to it later
+        attestationHashchains[currentEpoch][epochKey] = newHashchain;
+        // then store the sealed hashchain
+        uint256 sealedHashchain = Poseidon2.poseidon([1, newHashchain]);
+        SparseMerkleTree.update(
+            epochTrees[currentEpoch],
+            epochKey,
+            sealedHashchain
+        );
+    }
+
     function submitGSTAttestation(
         Attestation calldata attestation,
         uint256 epochKey,
@@ -273,6 +311,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             0,
             0
         );
+
+        storeAttestation(attestation, epochKey);
     }
 
     /**
