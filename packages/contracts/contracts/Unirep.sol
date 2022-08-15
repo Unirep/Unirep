@@ -246,7 +246,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function storeAttestation(
         Attestation calldata attestation,
         uint256 epochKey
-    ) public {
+    ) internal {
         uint256 attestationHash = Poseidon5.poseidon(
             [
                 attestation.attesterId,
