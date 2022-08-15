@@ -65,6 +65,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     mapping(address => uint256) public airdropAmount;
     // Mapping of existing nullifiers to the epoch of emitted
     mapping(uint256 => uint256) public usedNullifiers;
+    // Mapping of existing blinded user states
+    mapping(uint256 => bool) public submittedBlindedUserStates;
+    // Mapping of existing blinded hash chains
+    mapping(uint256 => bool) public submittedBlindedHashChains;
 
     constructor(
         Config memory _config,
@@ -485,6 +489,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         verifyProofNullifier(proofNullifier);
 
+        submittedBlindedUserStates[publicSignals[1]] = true;
+        submittedBlindedHashChains[publicSignals[2]] = true;
+
         uint256 _proofIndex = proofIndex;
         emit IndexedStartedTransitionProof(
             _proofIndex,
@@ -514,10 +521,18 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
 
         verifyProofNullifier(proofNullifier);
+
+        uint256 _inputBlindedUserState = publicSignals[2];
+        if (submittedBlindedUserStates[_inputBlindedUserState] == false)
+            revert InvalidBlindedUserState(_inputBlindedUserState);
+
+        submittedBlindedUserStates[publicSignals[0]] = true;
+        submittedBlindedHashChains[publicSignals[1]] = true;
+
         uint256 _proofIndex = proofIndex;
         emit IndexedProcessedAttestationsProof(
             _proofIndex,
-            publicSignals[2], // input blinded user state
+            _inputBlindedUserState, // input blinded user state
             publicSignals,
             proof
         );
@@ -531,11 +546,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * publicSignals[1] = [ newGlobalStateTreeLeaf ]
      * publicSignals[2: 2 + numEpochKeyNoncePerEpoch] = [ epkNullifiers ]
      * publicSignals[2 + numEpochKeyNoncePerEpoch] = [ transitionFromEpoch ]
-     * publicSignals[3 +  numEpochKeyNoncePerEpoch:
-                     4+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ]
-     * publicSignals[4+  numEpochKeyNoncePerEpoch] = [ fromGlobalStateTree ]
+     * publicSignals[3 + numEpochKeyNoncePerEpoch:
+                     5+  numEpochKeyNoncePerEpoch] = [ blindedUserStates ]
      * publicSignals[5+  numEpochKeyNoncePerEpoch:
-                     4+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ]
+                     5+2*numEpochKeyNoncePerEpoch] = [ blindedHashChains ]
      * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ]
      * @param publicSignals The the public signals of the user state transition proof
      * @param proof The proof of the user state transition proof
@@ -565,6 +579,26 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         for (uint256 index = 2; index < 2 + _numEpochKeyNoncePerEpoch; index++)
             verifyNullifier(publicSignals[index]);
+
+        // verify blindned user states
+        for (
+            uint256 index = 3 + _numEpochKeyNoncePerEpoch;
+            index < 5 + _numEpochKeyNoncePerEpoch;
+            index++
+        ) {
+            if (submittedBlindedUserStates[publicSignals[index]] == false)
+                revert InvalidBlindedUserState(publicSignals[index]);
+        }
+
+        // verify blinded hash chains
+        for (
+            uint256 index = 5 + _numEpochKeyNoncePerEpoch;
+            index < 5 + 2 * _numEpochKeyNoncePerEpoch;
+            index++
+        ) {
+            if (submittedBlindedHashChains[publicSignals[index]] == false)
+                revert InvalidBlindedHashChain(publicSignals[index]);
+        }
 
         uint256 _proofIndex = proofIndex;
         emit IndexedUserStateTransitionProof(
