@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+import { CircuitInput } from './types'
+
 /**
  * Compute the witness of the given circuit and user inputs
  * @param circuit The circuit is loaded with `circom.tester(path)`
@@ -8,7 +10,7 @@
  */
 export const executeCircuit = async (
     circuit: any,
-    inputs: any
+    inputs: CircuitInput
 ): Promise<any> => {
     const witness = await circuit.calculateWitness(inputs, true)
     await circuit.checkConstraints(witness)

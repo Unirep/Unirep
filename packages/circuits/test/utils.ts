@@ -15,6 +15,8 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    VerifyEpochKeyInput,
+    ProveReputationInput,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
@@ -218,19 +220,15 @@ const genEpochKeyCircuitInput = (
     nonce: number
 ) => {
     const proof = tree.createProof(leafIndex)
-    const root = tree.root
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
 
-    const circuitInputs = {
+    const circuitInputs: VerifyEpochKeyInput = {
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        // GST_root: root,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: ustRoot,
         nonce: nonce,
         epoch: epoch,
-        // epoch_key: epk,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -627,7 +625,7 @@ const genReputationCircuitInput = (
         selectors.push(BigInt(0))
     }
 
-    const circuitInputs = {
+    const circuitInputs: ProveReputationInput = {
         epoch: epoch,
         epoch_key_nonce: nonce,
         // epoch_key: epk,
