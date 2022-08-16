@@ -630,6 +630,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             if (submittedBlindedHashChains[publicSignals[index]] == false)
                 revert InvalidBlindedHashChain(publicSignals[index]);
         }
+        // check the from gst root
+        uint256 fromEpoch = publicSignals[2 + _numEpochKeyNoncePerEpoch];
+        uint256 fromGSTRoot = publicSignals[0];
+        require(globalStateTreeRoots[fromEpoch][fromGSTRoot]);
+        // check the from epoch tree root
+        uint256 fromEpochTreeRoot = publicSignals[
+            5 + 2 * _numEpochKeyNoncePerEpoch
+        ];
+        require(epochTrees[fromEpoch].root == fromEpochTreeRoot);
 
         // verify proof
         bool isValid = verifyUserStateTransition(publicSignals, proof);

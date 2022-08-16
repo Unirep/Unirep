@@ -92,12 +92,10 @@ describe('Attesting', () => {
             circuitInputs
         )
         expect(await epochKeyProof.verify()).to.be.true
-        const tx = await unirepContract.assertValidEpochKeyProof(
+        await unirepContract.assertValidEpochKeyProof(
             epochKeyProof.publicSignals,
             epochKeyProof.proof
         )
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {

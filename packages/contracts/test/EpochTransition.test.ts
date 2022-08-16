@@ -97,12 +97,10 @@ describe('Epoch Transition', function () {
         let epochKey = input.epochKey
 
         // Submit epoch key proof
-        tx = await unirepContract.assertValidEpochKeyProof(
+        await unirepContract.assertValidEpochKeyProof(
             input.publicSignals,
             input.proof
         )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
         let proofNullifier = input.hash()
         const senderPfIdx = 0
 
