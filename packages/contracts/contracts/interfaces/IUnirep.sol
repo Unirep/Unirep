@@ -13,45 +13,19 @@ interface IUnirep is UnirepTypes {
 
     event UserStateTransitioned(
         uint256 indexed epoch,
-        uint256 indexed hashedLeaf,
-        uint256 proofIndex
+        uint256 indexed hashedLeaf
     );
 
     event AttestationSubmitted(
         uint256 indexed epoch,
         uint256 indexed epochKey,
         address indexed attester,
-        Attestation attestation,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
-    );
-
-    event GSTAttestationSubmitted(
-        uint256 indexed epoch,
-        uint256 indexed epochKey,
-        address indexed attester,
-        Attestation attestation,
-        uint256 gstRoot
+        Attestation attestation
     );
 
     event EpochEnded(uint256 indexed epoch);
 
     // Proof index events
-    event IndexedEpochKeyProof(
-        uint256 indexed proofIndex,
-        uint256 indexed epoch,
-        uint256 indexed epochKey,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedReputationProof(
-        uint256 indexed proofIndex,
-        uint256 indexed epoch,
-        uint256 indexed epochKey,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
 
     event IndexedStartedTransitionProof(
         uint256 indexed proofIndex,

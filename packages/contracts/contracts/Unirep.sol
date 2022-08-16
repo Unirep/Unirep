@@ -73,8 +73,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // No attesters with and ID of 0 should exist.
     mapping(address => uint256) public attesters;
     uint256 public nextAttesterId = 1;
-    // Mapping of the airdrop amount of an attester
-    mapping(address => uint256) public airdropAmount;
     // Mapping of existing nullifiers to the epoch of emitted
     mapping(uint256 => uint256) public usedNullifiers;
     // Mapping of existing blinded user states
@@ -138,11 +136,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // Verify input data - Should found better way to handle it.
     function verifyAttesterSignUp(address attester) private view {
         if (attesters[attester] == 0) revert AttesterNotSignUp(attester);
-    }
-
-    function verifyProofNullifier(bytes32 proofNullifier) private view {
-        if (getProofIndex[proofNullifier] != 0)
-            revert ProofAlreadyUsed(proofNullifier);
     }
 
     function verifyNullifier(uint256 nullifier) private {
@@ -283,10 +276,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     // increment the hashchain and leave the chain unsealed.
     // Also store a sealed copy of the hashchain in the epoch tree
-    function storeAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey
-    ) internal {
+    function storeAttestation(Attestation memory attestation, uint256 epochKey)
+        internal
+    {
         uint256 attestationHash = Poseidon5.poseidon(
             [
                 attestation.attesterId,
@@ -313,27 +305,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
     }
 
-    function submitGSTAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 gstRoot
-    ) external payable {
-        assertValidAttestation(msg.sender, attestation, epochKey);
-
-        if (epochKey > maxEpochKey) revert InvalidEpochKey();
-
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-        emit GSTAttestationSubmitted(
-            currentEpoch,
-            epochKey,
-            msg.sender,
-            attestation,
-            gstRoot
-        );
-    }
-
-    function submitRawAttestation(
+    /**
+     * @dev An attester submit the attestation with a proof index that the attestation will be sent to
+     * and(or) a proof index that the attestation is from
+     * If the fromProofIndex is non-zero, it should be valid then the toProofIndex can receive the attestation
+     * @param attestation The attestation that the attester wants to send to the epoch key
+     * @param epochKey The epoch key which receives attestation
+     */
+    function submitAttestation(
         Attestation calldata attestation,
         uint256 epochKey
     ) external payable {
@@ -347,48 +326,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             msg.sender,
-            attestation,
-            0,
-            0
+            attestation
         );
 
         storeAttestation(attestation, epochKey);
-    }
-
-    /**
-     * @dev An attester submit the attestation with a proof index that the attestation will be sent to
-     * and(or) a proof index that the attestation is from
-     * If the fromProofIndex is non-zero, it should be valid then the toProofIndex can receive the attestation
-     * @param attestation The attestation that the attester wants to send to the epoch key
-     * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof,
-     * signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof,
-     * if the attest is not from reputationProof, then fromProofIdx = 0
-     */
-    function submitAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
-    ) external payable {
-        assertValidAttestation(msg.sender, attestation, epochKey);
-        if (
-            toProofIndex == 0 ||
-            toProofIndex >= proofIndex ||
-            fromProofIndex >= proofIndex
-        ) revert InvalidProofIndex();
-
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-        emit AttestationSubmitted(
-            currentEpoch,
-            epochKey,
-            msg.sender,
-            attestation,
-            toProofIndex,
-            fromProofIndex
-        );
     }
 
     /**
@@ -397,27 +338,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param signature The signature of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof,
-     * signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof,
-     * if the attest is not from reputationProof, then fromProofIdx = 0
      */
     function submitAttestationViaRelayer(
         address attester,
         bytes calldata signature,
         Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
+        uint256 epochKey
     ) external payable {
         if (!isValidSignature(attester, signature)) revert InvalidSignature();
-
-        assertValidAttestation(msg.sender, attestation, epochKey);
-        if (
-            toProofIndex == 0 ||
-            toProofIndex >= proofIndex ||
-            fromProofIndex >= proofIndex
-        ) revert InvalidProofIndex();
+        assertValidAttestation(attester, attestation, epochKey);
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
 
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
@@ -425,10 +355,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             attester,
-            attestation,
-            toProofIndex,
-            fromProofIndex
+            attestation
         );
+
+        storeAttestation(attestation, epochKey);
     }
 
     /**
@@ -439,33 +369,17 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param publicSignals The public signals of the epoch key proof
      * @param proof The The proof of the epoch key proof
      */
-    function submitEpochKeyProof(
+    function assertValidEpochKeyProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) external {
+    ) external view {
         // check if proof is submitted before
-        bytes32 proofNullifier = keccak256(
-            abi.encodePacked(publicSignals, proof)
-        );
-        verifyProofNullifier(proofNullifier);
         if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
         if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
 
         // verify proof
         bool isValid = verifyEpochKeyValidity(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
-
-        // emit proof event
-        uint256 _proofIndex = proofIndex;
-        emit IndexedEpochKeyProof(
-            _proofIndex,
-            currentEpoch,
-            publicSignals[0],
-            publicSignals,
-            proof
-        );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
     }
 
     /**
@@ -492,7 +406,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             abi.encodePacked(publicSignals, proof)
         );
         uint256 _maxReputationBudget = config.maxReputationBudget;
-        verifyProofNullifier(proofNullifier);
+
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
 
         if (publicSignals[_maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
@@ -514,26 +430,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
-        uint256 _proofIndex = proofIndex;
-        // emit proof event
-        emit IndexedReputationProof(
-            _proofIndex,
-            currentEpoch,
-            publicSignals[0],
-            publicSignals,
-            proof
-        );
-
         emit AttestationSubmitted(
             currentEpoch,
             publicSignals[0],
             msg.sender,
-            attestation,
-            _proofIndex,
-            0
+            attestation
         );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
+        storeAttestation(attestation, publicSignals[0]);
     }
 
     /**
@@ -605,7 +509,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        verifyProofNullifier(proofNullifier);
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
 
         // verify proof
         bool isValid = verifyStartTransitionProof(publicSignals, proof);
@@ -622,8 +527,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             publicSignals,
             proof
         );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
     }
 
     /**
@@ -642,7 +546,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        verifyProofNullifier(proofNullifier);
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
 
         uint256 _inputBlindedUserState = publicSignals[2];
         if (submittedBlindedUserStates[_inputBlindedUserState] == false)
@@ -662,8 +567,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             publicSignals,
             proof
         );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
     }
 
     /**
@@ -690,7 +594,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        verifyProofNullifier(proofNullifier);
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
         uint256 _numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch;
         // NOTE: this impl assumes all attestations are processed in a single snark.
         if (publicSignals[2 + _numEpochKeyNoncePerEpoch] >= currentEpoch)
@@ -730,17 +635,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bool isValid = verifyUserStateTransition(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
 
-        uint256 _proofIndex = proofIndex;
-        emit IndexedUserStateTransitionProof(
-            _proofIndex,
-            publicSignals,
-            proof,
-            proofIndexRecords
-        );
-        emit UserStateTransitioned(currentEpoch, publicSignals[1], _proofIndex);
+        emit UserStateTransitioned(currentEpoch, publicSignals[1]);
 
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
     }
 
     /**
