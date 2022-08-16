@@ -2,12 +2,22 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, SNARK_FIELD_SIZE, ZkIdentity } from '@unirep/crypto'
-import { formatProofForSnarkjsVerification } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { deployUnirep, EpochKeyProof, Unirep } from '../src'
+import {
+    genRandomSalt,
+    hashLeftRight,
+    IncrementalMerkleTree,
+    SNARK_FIELD_SIZE,
+    ZkIdentity,
+} from '@unirep/crypto'
+import { Circuit, GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits'
+import { deployUnirep, Unirep } from '../src'
 
-import { genEpochKey, Attestation } from './utils'
+import {
+    genEpochKey,
+    Attestation,
+    genEpochKeyCircuitInput,
+    genInputForContract,
+} from './utils'
 
 describe('Attesting', () => {
     let unirepContract: Unirep
@@ -24,13 +34,9 @@ describe('Attesting', () => {
     }
     const epoch = 1
     const nonce = 0
-    const epochKey = genEpochKey(genRandomSalt(), epoch, nonce)
-    const publicSignals = [epochKey, genRandomSalt(), epoch]
-    const epochKeyProof = new EpochKeyProof(
-        publicSignals as BigNumberish[],
-        formatProofForSnarkjsVerification(proof),
-        defaultProver
-    )
+    const leafIndex = 0
+    let tree, stateRoot
+    let epochKeyProof
     let epochKeyProofIndex
     const senderPfIdx = 0
     const attestingFee = ethers.utils.parseEther('1')
@@ -63,9 +69,30 @@ describe('Attesting', () => {
         tx = await unirepContract.connect(attester2).attesterSignUp()
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
+
+        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        stateRoot = genRandomSalt()
+        const hashedStateLeaf = hashLeftRight(
+            userCommitment.toString(),
+            stateRoot.toString()
+        )
+        tree.insert(BigInt(hashedStateLeaf.toString()))
     })
 
     it('submit an epoch key proof should succeed', async () => {
+        const circuitInputs = genEpochKeyCircuitInput(
+            userId,
+            tree,
+            leafIndex,
+            stateRoot,
+            epoch,
+            nonce
+        )
+        epochKeyProof = await genInputForContract(
+            Circuit.verifyEpochKey,
+            circuitInputs
+        )
+        expect(await epochKeyProof.verify()).to.be.true
         const tx = await unirepContract.submitEpochKeyProof(
             epochKeyProof.publicSignals,
             epochKeyProof.proof
@@ -88,15 +115,30 @@ describe('Attesting', () => {
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
-        const wrongSignals = [genRandomSalt(), epoch + 1, epochKey]
-        const { publicSignals, proof: proof_ } = new EpochKeyProof(
-            wrongSignals as BigNumberish[],
-            formatProofForSnarkjsVerification(proof),
-            defaultProver
+        const circuitInputs = genEpochKeyCircuitInput(
+            userId,
+            tree,
+            leafIndex,
+            stateRoot,
+            epoch + 1,
+            nonce
+        )
+        const { publicSignals, proof: _proof } = await genInputForContract(
+            Circuit.verifyEpochKey,
+            circuitInputs
         )
         await expect(
-            unirepContract.submitEpochKeyProof(publicSignals, proof_)
+            unirepContract.submitEpochKeyProof(publicSignals, _proof)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+    })
+
+    it('submit a wrong epoch key proof should fail', async () => {
+        await expect(
+            unirepContract.submitEpochKeyProof(
+                epochKeyProof.publicSignals,
+                proof
+            )
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 
     it('submit attestation should succeed', async () => {

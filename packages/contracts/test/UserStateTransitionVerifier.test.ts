@@ -130,6 +130,35 @@ describe('User State Transition', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
+    it('Invalid user state proof should fail', async () => {
+        const user2 = new ZkIdentity()
+        const circuitInputs = genUserStateTransitionCircuitInput(user2, epoch)
+        const input: UserTransitionProof = await genInputForContract(
+            Circuit.userStateTransition,
+            circuitInputs
+        )
+        input.publicSignals[input.idx.fromGlobalStateTree] =
+            genRandomSalt().toString()
+        const isValid = await input.verify()
+        expect(
+            isValid,
+            'Verify user state transition proof off-chain should fail'
+        ).to.be.false
+        const isProofValid = await unirepContract.verifyUserStateTransition(
+            input.publicSignals,
+            input.proof
+        )
+        expect(isProofValid).to.be.false
+
+        await expect(
+            unirepContract.updateUserStateRoot(
+                input.publicSignals,
+                input.proof,
+                proofIndexes
+            )
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+    })
+
     it('Proof with wrong epoch should fail', async () => {
         const wrongEpoch = epoch + 1
         const { finalTransitionCircuitInputs: circuitInputs } =
