@@ -14,6 +14,7 @@ import {
     genStartTransitionCircuitInput,
     bootstrapRandomUSTree,
     genInputForContract,
+    genUserStateTransitionCircuitInput,
 } from './utils'
 import { deployUnirep, StartTransitionProof, Unirep } from '../src'
 
@@ -52,14 +53,8 @@ describe('User State Transition circuits', function () {
 
         describe('Start process user state tree', () => {
             it('Valid user state update inputs should work', async () => {
-                const circuitInputs = genStartTransitionCircuitInput(
-                    user,
-                    GSTree,
-                    leafIndex,
-                    userStateTree.root,
-                    epoch,
-                    nonce
-                )
+                const { startTransitionCircuitInputs: circuitInputs } =
+                    genUserStateTransitionCircuitInput(user, epoch)
 
                 const input = await genInputForContract(
                     Circuit.startTransition,
@@ -85,13 +80,12 @@ describe('User State Transition circuits', function () {
 
             it('User can start with different epoch key nonce', async () => {
                 const newNonce = 1
-                const circuitInputs = genStartTransitionCircuitInput(
+                const { circuitInputs } = genStartTransitionCircuitInput(
                     user,
-                    GSTree,
-                    leafIndex,
-                    userStateTree.root,
                     epoch,
-                    newNonce
+                    newNonce,
+                    userStateTree.root,
+                    GSTree.createProof(0)
                 )
 
                 const input: StartTransitionProof = await genInputForContract(
