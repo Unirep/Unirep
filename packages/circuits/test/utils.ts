@@ -17,6 +17,10 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     VerifyEpochKeyInput,
     ProveReputationInput,
+    ProveUserSignUpInput,
+    StartTransitionInput,
+    ProcessAttestationsInput,
+    UserStateTransitionInput,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
@@ -242,9 +246,8 @@ const genStartTransitionCircuitInput = (
     nonce: number
 ) => {
     const proof = tree.createProof(leafIndex)
-    const root = tree.root
 
-    const circuitInputs = {
+    const circuitInputs: StartTransitionInput = {
         epoch: epoch,
         nonce: nonce,
         user_tree_root: ustRoot,
@@ -252,7 +255,6 @@ const genStartTransitionCircuitInput = (
         identity_trapdoor: id.trapdoor,
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
-        // GST_root: root,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
@@ -423,7 +425,7 @@ const genProcessAttestationsCircuitInput = (
         BigInt(0),
     ])
 
-    const circuitInputs = {
+    const circuitInputs: ProcessAttestationsInput = {
         epoch: epoch,
         from_nonce: fromNonce,
         to_nonce: toNonce,
@@ -550,7 +552,7 @@ const genUserStateTransitionCircuitInput = (
     }
     const epochTreeRoot = epochTree.root
 
-    const circuitInputs = {
+    const circuitInputs: UserStateTransitionInput = {
         epoch: epoch,
         blinded_user_state: blindedUserState,
         intermediate_user_state_tree_roots: intermediateUserStateTreeRoots,
@@ -657,8 +659,6 @@ const genProveSignUpCircuitInput = (
     attesterId,
     _signUp?: number
 ) => {
-    const nonce = 0
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
@@ -682,7 +682,7 @@ const genProveSignUpCircuitInput = (
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
     const GSTreeRoot = GSTree.root
 
-    const circuitInputs = {
+    const circuitInputs: ProveUserSignUpInput = {
         epoch: epoch,
         // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
