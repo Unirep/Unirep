@@ -147,19 +147,28 @@ describe('Process attestation circuit', function () {
     })
 
     it('submitting invalid process attestations proof should fail', async () => {
-        const { circuitInputs } = genProcessAttestationsCircuitInput(
-            user,
-            epoch,
-            nonce,
-            nonce
-        )
+        const {
+            startTransitionCircuitInputs,
+            processAttestationCircuitInputs,
+        } = genUserStateTransitionCircuitInput(user, epoch, 0)
+
+        // submit start user state tranisiton proof
+        {
+            const { publicSignals, proof } = await genInputForContract(
+                Circuit.startTransition,
+                startTransitionCircuitInputs
+            )
+
+            unirepContract
+                .startUserStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
 
         const input: ProcessAttestationsProof = await genInputForContract(
             Circuit.processAttestations,
-            circuitInputs
+            processAttestationCircuitInputs[0]
         )
-        input.publicSignals[input.idx.inputBlindedUserState] =
-            genRandomSalt().toString()
+        input.publicSignals[input.idx.outputBlindedHashChain] = genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
             input.publicSignals,
             input.proof
