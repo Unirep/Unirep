@@ -38,7 +38,6 @@ describe('Attesting', () => {
     let tree, stateRoot
     let epochKeyProof
     let epochKeyProofIndex
-    const senderPfIdx = 0
     const attestingFee = ethers.utils.parseEther('1')
 
     before(async () => {
@@ -79,7 +78,7 @@ describe('Attesting', () => {
         tree.insert(BigInt(hashedStateLeaf.toString()))
     })
 
-    it('submit an epoch key proof should succeed', async () => {
+    it('validate an epoch key proof should succeed', async () => {
         const circuitInputs = genEpochKeyCircuitInput(
             userId,
             tree,
@@ -93,25 +92,12 @@ describe('Attesting', () => {
             circuitInputs
         )
         expect(await epochKeyProof.verify()).to.be.true
-        const tx = await unirepContract.submitEpochKeyProof(
+        const tx = await unirepContract.assertValidEpochKeyProof(
             epochKeyProof.publicSignals,
             epochKeyProof.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        const proofNullifier = epochKeyProof.hash()
-        epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
-        expect(epochKeyProof).not.equal(null)
-    })
-
-    it('submit an epoch key proof again should fail', async () => {
-        await expect(
-            unirepContract.submitEpochKeyProof(
-                epochKeyProof.publicSignals,
-                epochKeyProof.proof
-            )
-        ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
     })
 
     it('submit an epoch key proof with wrong epoch should fail', async () => {
@@ -128,13 +114,13 @@ describe('Attesting', () => {
             circuitInputs
         )
         await expect(
-            unirepContract.submitEpochKeyProof(publicSignals, _proof)
+            unirepContract.assertValidEpochKeyProof(publicSignals, _proof)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
     it('submit a wrong epoch key proof should fail', async () => {
         await expect(
-            unirepContract.submitEpochKeyProof(
+            unirepContract.assertValidEpochKeyProof(
                 epochKeyProof.publicSignals,
                 proof
             )
@@ -156,13 +142,9 @@ describe('Attesting', () => {
         expect(await unirepContract.collectedAttestingFee()).to.be.equal(0)
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(
-                attestation,
-                epochKey as BigNumberish,
-                epochKeyProofIndex,
-                senderPfIdx,
-                { value: attestingFee }
-            )
+            .submitAttestation(attestation, epochKey as BigNumberish, {
+                value: attestingFee,
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -185,13 +167,9 @@ describe('Attesting', () => {
         )
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(
-                attestation,
-                epochKey as BigNumberish,
-                epochKeyProofIndex,
-                senderPfIdx,
-                { value: attestingFee }
-            )
+            .submitAttestation(attestation, epochKey as BigNumberish, {
+                value: attestingFee,
+            })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
     })
@@ -210,13 +188,9 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish, {
+                    value: attestingFee,
+                })
         ).to.be.revertedWithCustomError(unirepContract, `AttesterIdNotMatch`)
     })
 
@@ -234,13 +208,9 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish, {
+                    value: attestingFee,
+                })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
@@ -253,13 +223,9 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish, {
+                    value: attestingFee,
+                })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
@@ -272,13 +238,9 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish, {
+                    value: attestingFee,
+                })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
 
         attestation = new Attestation(
@@ -291,64 +253,10 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish, {
+                    value: attestingFee,
+                })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignUpFlag')
-    })
-
-    it('attestation with zero proof index should fail', async () => {
-        // Increment nonce to get different epoch key
-        let nonce = 1
-        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        const zeroEpochKeyProofIndex = 0
-        let attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    zeroEpochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
-    })
-
-    it('attestation with non-existed proof index should fail', async () => {
-        // Increment nonce to get different epoch key
-        let nonce = 1
-        let epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        const nonExistedProofIndex = 5
-        let attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    nonExistedProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
     })
 
     it('submit attestation with incorrect fee amount should fail', async () => {
@@ -365,23 +273,14 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish)
         ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee.sub(1) }
-                )
+                .submitAttestation(attestation, epochKey as BigNumberish, {
+                    value: attestingFee.sub(1),
+                })
         ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
     })
 
@@ -408,8 +307,6 @@ describe('Attesting', () => {
             unirepContractCalledByNonAttester.submitAttestation(
                 attestation,
                 ethers.BigNumber.from(epochKey),
-                epochKeyProofIndex,
-                senderPfIdx,
                 { value: attestingFee }
             )
         ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
@@ -424,101 +321,5 @@ describe('Attesting', () => {
         expect(
             await hardhatEthers.provider.getBalance(unirepContract.address)
         ).to.equal(0)
-    })
-
-    it('gst attestation from unregistered attester should fail', async () => {
-        const nonAttester = accounts[5]
-        const nonAttesterAddress = await nonAttester.getAddress()
-        const nonAttesterId = (
-            await unirepContract.attesters(nonAttesterAddress)
-        ).toBigInt()
-        expect((0).toString()).equal(nonAttesterId.toString())
-
-        const unirepContractCalledByNonAttester =
-            unirepContract.connect(nonAttester)
-        const nonce = 0
-        const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        const attestation: Attestation = new Attestation(
-            BigInt(nonAttesterId),
-            BigInt(0),
-            BigInt(1),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        await expect(
-            unirepContractCalledByNonAttester.submitGSTAttestation(
-                attestation,
-                ethers.BigNumber.from(epochKey),
-                0,
-                { value: attestingFee }
-            )
-        ).to.be.revertedWithCustomError(unirepContract, `AttesterNotSignUp`)
-    })
-
-    it('gst attestation with incorrect attesterId should fail', async () => {
-        // Increment nonce to get different epoch key
-        const nonce = 1
-        const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        const attestation: Attestation = new Attestation(
-            BigInt(999),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        await expect(
-            unirepContract
-                .connect(attester)
-                .submitGSTAttestation(
-                    attestation,
-                    epochKey as BigNumberish,
-                    0,
-                    { value: attestingFee }
-                )
-        ).to.be.revertedWithCustomError(unirepContract, `AttesterIdNotMatch`)
-    })
-
-    it('gst attestation with invalid epoch key should fail', async () => {
-        // Increment nonce to get different epoch key
-        const attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        await expect(
-            unirepContract
-                .connect(attester)
-                .submitGSTAttestation(
-                    attestation,
-                    '0xffffffffffffffffffffffffffffff',
-                    0,
-                    { value: attestingFee }
-                )
-        ).to.be.revertedWithCustomError(unirepContract, `InvalidEpochKey`)
-    })
-
-    it('submit gst attestation should succeed', async () => {
-        const nonce = 0
-        const epochKey = genEpochKey(userId.identityNullifier, epoch, nonce)
-        const attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
-        const startAttestingFees = await unirepContract.collectedAttestingFee()
-        await unirepContract
-            .connect(attester)
-            .submitGSTAttestation(attestation, epochKey as BigNumberish, 0, {
-                value: attestingFee,
-            })
-            .then((t) => t.wait())
-        // Verify attesting fee is collected
-        expect(await unirepContract.collectedAttestingFee()).to.be.equal(
-            startAttestingFees.add(attestingFee)
-        )
     })
 })

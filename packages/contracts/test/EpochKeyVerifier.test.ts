@@ -67,7 +67,7 @@ describe('Verify Epoch Key verifier', function () {
             const isValid = await input.verify()
             expect(isValid, 'Verify epoch key proof off-chain failed').to.be
                 .true
-            let tx = await unirepContract.submitEpochKeyProof(
+            let tx = await unirepContract.assertValidEpochKeyProof(
                 input.publicSignals,
                 input.proof
             )
@@ -78,9 +78,6 @@ describe('Verify Epoch Key verifier', function () {
                 input.proof
             )
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
-
-            const pfIdx = await unirepContract.getProofIndex(input.hash())
-            expect(Number(pfIdx)).not.eq(0)
         }
     })
 
