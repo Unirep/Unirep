@@ -50,10 +50,10 @@ describe('User State Transition circuits', function () {
         GSTree.insert(hashedLeaf)
     })
 
-        describe('Start process user state tree', () => {
-            it('Valid user state update inputs should work', async () => {
-                const { startTransitionCircuitInputs: circuitInputs } =
-                    genUserStateTransitionCircuitInput(user, epoch)
+    describe('Start process user state tree', () => {
+        it('Valid user state update inputs should work', async () => {
+            const { startTransitionCircuitInputs: circuitInputs } =
+                genUserStateTransitionCircuitInput(user, epoch)
 
             const input = await genInputForContract(
                 Circuit.startTransition,
@@ -77,15 +77,15 @@ describe('User State Transition circuits', function () {
             expect(Number(pfIdx)).not.eq(0)
         })
 
-            it('User can start with different epoch key nonce', async () => {
-                const newNonce = 1
-                const { circuitInputs } = genStartTransitionCircuitInput(
-                    user,
-                    epoch,
-                    newNonce,
-                    userStateTree.root,
-                    GSTree.createProof(0)
-                )
+        it('User can start with different epoch key nonce', async () => {
+            const newNonce = 1
+            const { circuitInputs } = genStartTransitionCircuitInput(
+                user,
+                epoch,
+                newNonce,
+                userStateTree.root,
+                GSTree.createProof(0)
+            )
 
             const input: StartTransitionProof = await genInputForContract(
                 Circuit.startTransition,

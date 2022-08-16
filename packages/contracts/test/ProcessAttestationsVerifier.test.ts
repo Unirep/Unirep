@@ -168,7 +168,8 @@ describe('Process attestation circuit', function () {
             Circuit.processAttestations,
             processAttestationCircuitInputs[0]
         )
-        input.publicSignals[input.idx.outputBlindedHashChain] = genRandomSalt().toString()
+        input.publicSignals[input.idx.outputBlindedHashChain] =
+            genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
             input.publicSignals,
             input.proof

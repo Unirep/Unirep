@@ -583,7 +583,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         submittedBlindedUserStates[publicSignals[0]] = true;
         submittedBlindedHashChains[publicSignals[1]] = true;
 
-
         // verify proof
         bool isValid = verifyProcessAttestationProof(publicSignals, proof);
         if (isValid == false) revert InvalidProof();

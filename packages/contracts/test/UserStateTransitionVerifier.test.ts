@@ -135,7 +135,7 @@ describe('User State Transition', function () {
         const {
             startTransitionCircuitInputs,
             processAttestationCircuitInputs,
-            finalTransitionCircuitInputs: circuitInputs
+            finalTransitionCircuitInputs: circuitInputs,
         } = genUserStateTransitionCircuitInput(user2, epoch)
 
         // submit start user state tranisiton proof
