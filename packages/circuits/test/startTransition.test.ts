@@ -31,7 +31,6 @@ describe('User State Transition circuits', function () {
         let userStateTree: SparseMerkleTree
 
         let hashedLeaf
-        const zeroHashChain = BigInt(0)
         const nonce = 0
         const leafIndex = 0
 
@@ -56,14 +55,14 @@ describe('User State Transition circuits', function () {
 
         describe('Start process user state tree', () => {
             it('Valid user state update inputs should work', async () => {
-                const circuitInputs = genStartTransitionCircuitInput(
-                    user,
-                    GSTree,
-                    leafIndex,
-                    userStateTree.root,
-                    epoch,
-                    nonce
-                )
+                const { circuitInputs, blindedHashChain } =
+                    genStartTransitionCircuitInput(
+                        user,
+                        epoch,
+                        nonce,
+                        userStateTree.root,
+                        GSTree.createProof(leafIndex)
+                    )
 
                 const witness = await executeCircuit(circuit, circuitInputs)
                 const outputUserState = getSignalByName(
@@ -85,14 +84,7 @@ describe('User State Transition circuits', function () {
                     witness,
                     'main.blinded_hash_chain_result'
                 )
-                const expectedHashChainResult = hash5([
-                    user.identityNullifier,
-                    zeroHashChain,
-                    BigInt(epoch),
-                    BigInt(nonce),
-                    BigInt(0),
-                ])
-                expect(outputHashChainResult).to.equal(expectedHashChainResult)
+                expect(outputHashChainResult).to.equal(blindedHashChain)
 
                 const isValid = await genProofAndVerify(
                     Circuit.startTransition,
@@ -103,14 +95,14 @@ describe('User State Transition circuits', function () {
 
             it('User can start with different epoch key nonce', async () => {
                 const newNonce = 1
-                const circuitInputs = genStartTransitionCircuitInput(
-                    user,
-                    GSTree,
-                    leafIndex,
-                    userStateTree.root,
-                    epoch,
-                    newNonce
-                )
+                const { circuitInputs, blindedUserState, blindedHashChain } =
+                    genStartTransitionCircuitInput(
+                        user,
+                        epoch,
+                        newNonce,
+                        userStateTree.root,
+                        GSTree.createProof(leafIndex)
+                    )
 
                 const witness = await executeCircuit(circuit, circuitInputs)
                 const outputUserState = getSignalByName(
@@ -118,28 +110,14 @@ describe('User State Transition circuits', function () {
                     witness,
                     'main.blinded_user_state'
                 )
-                const expectedUserState = hash5([
-                    user.identityNullifier,
-                    userStateTree.root,
-                    BigInt(epoch),
-                    BigInt(newNonce),
-                    BigInt(0),
-                ])
-                expect(outputUserState).to.equal(expectedUserState)
+                expect(outputUserState).to.equal(blindedUserState)
 
                 const outputHashChainResult = getSignalByName(
                     circuit,
                     witness,
                     'main.blinded_hash_chain_result'
                 )
-                const expectedHashChainResult = hash5([
-                    user.identityNullifier,
-                    zeroHashChain,
-                    BigInt(epoch),
-                    BigInt(newNonce),
-                    BigInt(0),
-                ])
-                expect(outputHashChainResult).to.equal(expectedHashChainResult)
+                expect(outputHashChainResult).to.equal(blindedHashChain)
             })
         })
     })

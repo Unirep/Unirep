@@ -20,9 +20,9 @@ describe('Process attestation circuit', function () {
 
     let circuit
 
-    const epoch = BigInt(1)
-    const nonce = BigInt(0)
-    const toNonce = BigInt(1)
+    const epoch = 1
+    const nonce = 0
+    const toNonce = 1
     const user = new ZkIdentity()
     const signUp = 1
 

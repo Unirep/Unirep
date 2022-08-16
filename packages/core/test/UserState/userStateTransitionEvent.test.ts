@@ -179,7 +179,10 @@ describe('User state transition events in Unirep User State', function () {
                     randomPublicSignals,
                     randomProof
                 )
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidBlindedUserState'
+            )
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
@@ -219,7 +222,10 @@ describe('User state transition events in Unirep User State', function () {
                     ustProof.proof,
                     proofIndexes
                 )
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidBlindedUserState'
+            )
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
@@ -336,15 +342,29 @@ describe('User state transition events in Unirep User State', function () {
                 expect(await p.verify()).to.be.true
             }
             expect(await finalTransitionProof.verify()).to.be.true
-            await submitUSTProofs(unirepContract, {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            })
+            // submit start transition proofs
+            {
+                unirepContract
+                    .startUserStateTransition(
+                        startTransitionProof.publicSignals,
+                        startTransitionProof.proof
+                    )
+                    .then((t) => t.wait())
+            }
+
+            await expect(
+                unirepContract.processAttestations(
+                    processAttestationProofs[0].publicSignals,
+                    processAttestationProofs[0].proof
+                )
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidBlindedUserState'
+            )
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            const expectedProofs = 2 + processAttestationProofs.length
+            const expectedProofs = 1
             expect(diffs.length).to.equal(expectedProofs)
             const gstLeafCount = diffs.filter(
                 (d) => d.table === 'GSTLeaf'
@@ -363,7 +383,7 @@ describe('User state transition events in Unirep User State', function () {
                     d.table === 'Proof' &&
                     d.event === 'IndexedUserStateTransitionProof'
             ).length
-            expect(ustProofCount).to.equal(1)
+            expect(ustProofCount).to.equal(0)
             const startUstProofCount = diffs.filter(
                 (d) =>
                     d.table === 'Proof' &&
@@ -375,9 +395,7 @@ describe('User state transition events in Unirep User State', function () {
                     d.table === 'Proof' &&
                     d.event === 'IndexedProcessedAttestationsProof'
             ).length
-            expect(processedAttestationsCount).to.equal(
-                processAttestationProofs.length
-            )
+            expect(processedAttestationsCount).to.equal(0)
             await unirepState.stop()
             await userState1.stop()
             await userState2.stop()

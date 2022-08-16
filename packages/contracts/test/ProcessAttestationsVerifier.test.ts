@@ -6,6 +6,8 @@ import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
+    genStartTransitionCircuitInput,
+    genUserStateTransitionCircuitInput,
 } from './utils'
 import { deployUnirep, ProcessAttestationsProof, Unirep } from '../src'
 import { Circuit, NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits'
@@ -16,8 +18,8 @@ describe('Process attestation circuit', function () {
     let accounts: ethers.Signer[]
     let unirepContract: Unirep
 
-    const epoch = BigInt(1)
-    const nonce = BigInt(0)
+    const epoch = 1
+    const nonce = 0
     const user = new ZkIdentity()
 
     before(async () => {
@@ -27,46 +29,105 @@ describe('Process attestation circuit', function () {
     })
 
     it('successfully process attestations', async () => {
-        const { circuitInputs } = genProcessAttestationsCircuitInput(
-            user,
-            epoch,
-            nonce,
-            nonce
-        )
+        const {
+            startTransitionCircuitInputs,
+            processAttestationCircuitInputs,
+        } = genUserStateTransitionCircuitInput(user, epoch)
 
-        const input = await genInputForContract(
-            Circuit.processAttestations,
-            circuitInputs
-        )
-        const isProofValid = await unirepContract.verifyProcessAttestationProof(
-            input.publicSignals,
-            input.proof
-        )
-        expect(isProofValid).to.be.true
+        // submit start user state tranisiton proof
+        {
+            const { publicSignals, proof } = await genInputForContract(
+                Circuit.startTransition,
+                startTransitionCircuitInputs
+            )
 
-        const tx = await unirepContract.processAttestations(
-            input.publicSignals,
-            input.proof
-        )
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+            unirepContract
+                .startUserStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
 
-        const pfIdx = await unirepContract.getProofIndex(input.hash())
-        expect(Number(pfIdx)).not.eq(0)
+        // submit process attestations proofs
+        {
+            for (const circuitInputs of processAttestationCircuitInputs) {
+                const input = await genInputForContract(
+                    Circuit.processAttestations,
+                    circuitInputs
+                )
+
+                const isProofValid =
+                    await unirepContract.verifyProcessAttestationProof(
+                        input.publicSignals,
+                        input.proof
+                    )
+                expect(isProofValid).to.be.true
+
+                const tx = await unirepContract.processAttestations(
+                    input.publicSignals,
+                    input.proof
+                )
+                const receipt = await tx.wait()
+                expect(receipt.status).equal(1)
+
+                const pfIdx = await unirepContract.getProofIndex(input.hash())
+                expect(Number(pfIdx)).not.eq(0)
+            }
+        }
     })
 
     it('successfully process zero attestations', async () => {
-        let zeroSelectors: number[] = []
-        for (let i = 0; i < NUM_ATTESTATIONS_PER_PROOF; i++) {
-            zeroSelectors.push(0)
+        const {
+            startTransitionCircuitInputs,
+            processAttestationCircuitInputs,
+        } = genUserStateTransitionCircuitInput(user, epoch, 0)
+
+        // submit start user state tranisiton proof
+        {
+            const { publicSignals, proof } = await genInputForContract(
+                Circuit.startTransition,
+                startTransitionCircuitInputs
+            )
+
+            unirepContract
+                .startUserStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
         }
+
+        // submit process attestations proofs
+        {
+            for (const circuitInputs of processAttestationCircuitInputs) {
+                const input = await genInputForContract(
+                    Circuit.processAttestations,
+                    circuitInputs
+                )
+
+                const isProofValid =
+                    await unirepContract.verifyProcessAttestationProof(
+                        input.publicSignals,
+                        input.proof
+                    )
+                expect(isProofValid).to.be.true
+
+                const tx = await unirepContract.processAttestations(
+                    input.publicSignals,
+                    input.proof
+                )
+                const receipt = await tx.wait()
+                expect(receipt.status).equal(1)
+
+                const pfIdx = await unirepContract.getProofIndex(input.hash())
+                expect(Number(pfIdx)).not.eq(0)
+            }
+        }
+    })
+
+    it('submit proof with un-submitted blinded user state should fail', async () => {
         const { circuitInputs } = genProcessAttestationsCircuitInput(
             user,
             epoch,
             nonce,
-            nonce,
-            zeroSelectors
+            nonce
         )
+
         const input = await genInputForContract(
             Circuit.processAttestations,
             circuitInputs
@@ -77,30 +138,37 @@ describe('Process attestation circuit', function () {
         )
         expect(isProofValid).to.be.true
 
-        const tx = await unirepContract.processAttestations(
-            input.publicSignals,
-            input.proof
+        await expect(
+            unirepContract.processAttestations(input.publicSignals, input.proof)
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidBlindedUserState'
         )
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        const pfIdx = await unirepContract.getProofIndex(input.hash())
-        expect(Number(pfIdx)).not.eq(0)
     })
 
     it('submitting invalid process attestations proof should fail', async () => {
-        const { circuitInputs } = genProcessAttestationsCircuitInput(
-            user,
-            epoch,
-            nonce,
-            nonce
-        )
+        const {
+            startTransitionCircuitInputs,
+            processAttestationCircuitInputs,
+        } = genUserStateTransitionCircuitInput(user, epoch, 0)
+
+        // submit start user state tranisiton proof
+        {
+            const { publicSignals, proof } = await genInputForContract(
+                Circuit.startTransition,
+                startTransitionCircuitInputs
+            )
+
+            unirepContract
+                .startUserStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
 
         const input: ProcessAttestationsProof = await genInputForContract(
             Circuit.processAttestations,
-            circuitInputs
+            processAttestationCircuitInputs[0]
         )
-        input.publicSignals[input.idx.inputBlindedUserState] =
+        input.publicSignals[input.idx.outputBlindedHashChain] =
             genRandomSalt().toString()
         const isProofValid = await unirepContract.verifyProcessAttestationProof(
             input.publicSignals,
