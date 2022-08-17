@@ -6,7 +6,7 @@ export interface VerifyEpochKeyInput {
     // Global state tree leaf: Identity & user state root
     identity_nullifier: UBigInt
     identity_trapdoor: UBigInt
-    user_tree_root: BigInt | UBigInt
+    user_tree_root: UBigInt
     nonce: UBigInt
     epoch: UBigInt
 }
