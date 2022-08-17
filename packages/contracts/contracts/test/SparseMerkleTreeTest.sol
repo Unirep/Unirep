@@ -7,8 +7,8 @@ import {Poseidon2} from '../Hash.sol';
 contract SparseMerkleTreeTest {
     SparseTreeData public smt;
 
-    constructor(uint256 depth) {
-        SparseMerkleTree.init(smt, depth, 0);
+    constructor(uint256 depth, uint256 zero) {
+        SparseMerkleTree.init(smt, depth, zero);
     }
 
     function root() public view returns (uint256) {

@@ -37,7 +37,7 @@ library SparseMerkleTree {
                 i++;
             }
         }
-        self.root = Poseidon2.poseidon([zero, zero]);
+        self.root = zero;
     }
 
     function update(
