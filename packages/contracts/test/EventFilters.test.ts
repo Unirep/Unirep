@@ -32,13 +32,12 @@ import {
     Unirep,
     UserTransitionProof,
 } from '../src'
-import {
-    IndexedEpochKeyProofEvent,
-    IndexedProcessedAttestationsProofEvent,
-    IndexedReputationProofEvent,
-    IndexedStartedTransitionProofEvent,
-    IndexedUserStateTransitionProofEvent,
-} from '../typechain/contracts/Unirep'
+import // IndexedEpochKeyProofEvent,
+// IndexedProcessedAttestationsProofEvent,
+// IndexedReputationProofEvent,
+// IndexedStartedTransitionProofEvent,
+// IndexedUserStateTransitionProofEvent,
+'../typechain/contracts/Unirep'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep
@@ -53,8 +52,6 @@ describe('EventFilters', () => {
     const indexes: BigNumber[] = []
     const epoch = 1
     const nonce = 0
-    let epochKey
-    let proofIndex
     let tree
     let stateRoot = genRandomSalt()
     let hashedStateLeaf
@@ -93,33 +90,9 @@ describe('EventFilters', () => {
         tree.insert(BigInt(hashedStateLeaf.toString()))
     })
 
-    it('submit an epoch key proof should succeed', async () => {
-        const circuitInputs = genEpochKeyCircuitInput(
-            userId,
-            tree,
-            leafIndex,
-            stateRoot,
-            epoch,
-            nonce
-        )
-        const input = await genInputForContract(
-            Circuit.verifyEpochKey,
-            circuitInputs
-        )
-        epochKey = input.epochKey
-        const tx = await unirepContract.submitEpochKeyProof(
-            input.publicSignals,
-            input.proof
-        )
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
-    })
-
     it('submit attestation should succeed', async () => {
-        let attestation: Attestation = new Attestation(
+        const epochKey = '0x102910'
+        const attestation: Attestation = new Attestation(
             BigInt(attesterId),
             BigInt(1),
             BigInt(0),
@@ -127,10 +100,9 @@ describe('EventFilters', () => {
             BigInt(signedUpInLeaf)
         )
 
-        const senderPfIdx = 0
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(attestation, epochKey, proofIndex, senderPfIdx, {
+            .submitAttestation(attestation, epochKey, {
                 value: attestingFee,
             })
         const receipt = await tx.wait()
@@ -157,9 +129,6 @@ describe('EventFilters', () => {
             })
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit start user state transition should success', async () => {
@@ -173,9 +142,6 @@ describe('EventFilters', () => {
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit process attestation proofs should success', async () => {
@@ -190,9 +156,6 @@ describe('EventFilters', () => {
             )
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
-
-            proofIndex = await unirepContract.getProofIndex(input.hash())
-            expect(Number(proofIndex)).greaterThan(0)
         }
     })
 
@@ -215,93 +178,88 @@ describe('EventFilters', () => {
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
     })
 
-    it('submit attestation events should match and correctly emitted', async () => {
-        const attestationSubmittedFilter =
-            unirepContract.filters.AttestationSubmitted()
-        const attestationSubmittedEvents = await unirepContract.queryFilter(
-            attestationSubmittedFilter
-        )
+    // it('submit attestation events should match and correctly emitted', async () => {
+    //     const attestationSubmittedFilter =
+    //         unirepContract.filters.AttestationSubmitted()
+    //     const attestationSubmittedEvents = await unirepContract.queryFilter(
+    //         attestationSubmittedFilter
+    //     )
 
-        // compute hash chain of valid epoch key
-        for (let i = 0; i < attestationSubmittedEvents.length; i++) {
-            const proofIndex = attestationSubmittedEvents[i].args?.toProofIndex
-            const epochKeyProofFilter =
-                unirepContract.filters.IndexedEpochKeyProof(proofIndex)
-            const epochKeyProofEvent: IndexedEpochKeyProofEvent[] =
-                await unirepContract.queryFilter(epochKeyProofFilter)
-            const repProofFilter =
-                unirepContract.filters.IndexedReputationProof(proofIndex)
-            const repProofEvent: IndexedReputationProofEvent[] =
-                await unirepContract.queryFilter(repProofFilter)
+    //     // compute hash chain of valid epoch key
+    //     for (let i = 0; i < attestationSubmittedEvents.length; i++) {
+    //         const proofIndex = attestationSubmittedEvents[i].args?.toProofIndex
+    //         const epochKeyProofFilter =
+    //             unirepContract.filters.IndexedEpochKeyProof(proofIndex)
+    //         const epochKeyProofEvent: IndexedEpochKeyProofEvent[] =
+    //             await unirepContract.queryFilter(epochKeyProofFilter)
+    //         const repProofFilter =
+    //             unirepContract.filters.IndexedReputationProof(proofIndex)
+    //         const repProofEvent: IndexedReputationProofEvent[] =
+    //             await unirepContract.queryFilter(repProofFilter)
 
-            if (epochKeyProofEvent.length == 1) {
-                console.log('epoch key proof event')
-                const { proof, publicSignals } = epochKeyProofEvent[0].args
-                const isValid = await unirepContract.verifyEpochKeyValidity(
-                    publicSignals,
-                    proof
-                )
-                expect(isValid).equal(true)
-            } else if (repProofEvent.length == 1) {
-                console.log('reputation proof event')
-                const { proof, publicSignals } = repProofEvent[0].args
-                const isValid = await unirepContract.verifyReputation(
-                    publicSignals,
-                    proof
-                )
-                expect(isValid).equal(true)
-            }
-        }
-    })
+    //         if (epochKeyProofEvent.length == 1) {
+    //             console.log('epoch key proof event')
+    //             const { proof, publicSignals } = epochKeyProofEvent[0].args
+    //             const isValid = await unirepContract.verifyEpochKeyValidity(
+    //                 publicSignals,
+    //                 proof
+    //             )
+    //             expect(isValid).equal(true)
+    //         } else if (repProofEvent.length == 1) {
+    //             console.log('reputation proof event')
+    //             const { proof, publicSignals } = repProofEvent[0].args
+    //             const isValid = await unirepContract.verifyReputation(
+    //                 publicSignals,
+    //                 proof
+    //             )
+    //             expect(isValid).equal(true)
+    //         }
+    //     }
+    // })
 
-    it('user state transition proof should match and correctly emitted', async () => {
-        {
-            const startTransitionFilter =
-                unirepContract.filters.IndexedStartedTransitionProof()
-            const startTransitionEvents: IndexedStartedTransitionProofEvent[] =
-                await unirepContract.queryFilter(startTransitionFilter)
-            expect(startTransitionEvents.length).to.equal(1)
-            const { publicSignals, proof } = startTransitionEvents[0].args
-            let isValid = await unirepContract.verifyStartTransitionProof(
-                publicSignals,
-                proof
-            )
-            expect(isValid).equal(true)
-        }
-
-        {
-            const processAttestationFilter =
-                unirepContract.filters.IndexedProcessedAttestationsProof()
-            const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
-                await unirepContract.queryFilter(processAttestationFilter)
-            expect(processAttestationEvents.length).to.equal(
-                processAttestationCircuitInputs.length
-            )
-            const { publicSignals, proof } = processAttestationEvents[0].args
-            const isValid = await unirepContract.verifyProcessAttestationProof(
-                publicSignals,
-                proof
-            )
-            expect(isValid).equal(true)
-        }
-
-        {
-            const userStateTransitionFilter =
-                unirepContract.filters.IndexedUserStateTransitionProof()
-            const userStateTransitionEvents: IndexedUserStateTransitionProofEvent[] =
-                await unirepContract.queryFilter(userStateTransitionFilter)
-            expect(userStateTransitionEvents.length).to.equal(1)
-            const { publicSignals, proof } = userStateTransitionEvents[0].args
-            const isValid = await unirepContract.verifyUserStateTransition(
-                publicSignals,
-                proof
-            )
-            expect(isValid).equal(true)
-        }
-    })
+    // it('user state transition proof should match and correctly emitted', async () => {
+    //     {
+    //         const startTransitionFilter =
+    //             unirepContract.filters.IndexedStartedTransitionProof()
+    //         const startTransitionEvents: IndexedStartedTransitionProofEvent[] =
+    //             await unirepContract.queryFilter(startTransitionFilter)
+    //         expect(startTransitionEvents.length).to.equal(1)
+    //         const { publicSignals, proof } = startTransitionEvents[0].args
+    //         let isValid = await unirepContract.verifyStartTransitionProof(
+    //             publicSignals,
+    //             proof
+    //         )
+    //         expect(isValid).equal(true)
+    //     }
+        // {
+        //     const processAttestationFilter =
+        //         unirepContract.filters.IndexedProcessedAttestationsProof()
+        //     const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
+        //         await unirepContract.queryFilter(processAttestationFilter)
+        //     expect(processAttestationEvents.length).to.equal(
+        //         processAttestationCircuitInputs.length
+        //     )
+        //     const { publicSignals, proof } = processAttestationEvents[0].args
+        //     const isValid = await unirepContract.verifyProcessAttestationProof(
+        //         publicSignals,
+        //         proof
+        //     )
+        //     expect(isValid).equal(true)
+        // }
+    //     {
+    //         const userStateTransitionFilter =
+    //             unirepContract.filters.IndexedUserStateTransitionProof()
+    //         const userStateTransitionEvents: IndexedUserStateTransitionProofEvent[] =
+    //             await unirepContract.queryFilter(userStateTransitionFilter)
+    //         expect(userStateTransitionEvents.length).to.equal(1)
+    //         const { publicSignals, proof } = userStateTransitionEvents[0].args
+    //         const isValid = await unirepContract.verifyUserStateTransition(
+    //             publicSignals,
+    //             proof
+    //         )
+    //         expect(isValid).equal(true)
+    //     }
+    // })
 })

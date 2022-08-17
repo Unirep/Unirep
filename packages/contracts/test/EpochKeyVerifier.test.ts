@@ -67,20 +67,15 @@ describe('Verify Epoch Key verifier', function () {
             const isValid = await input.verify()
             expect(isValid, 'Verify epoch key proof off-chain failed').to.be
                 .true
-            let tx = await unirepContract.submitEpochKeyProof(
+            await unirepContract.assertValidEpochKeyProof(
                 input.publicSignals,
                 input.proof
             )
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
             const isProofValid = await unirepContract.verifyEpochKeyValidity(
                 input.publicSignals,
                 input.proof
             )
             expect(isProofValid, 'Verify epk proof on-chain failed').to.be.true
-
-            const pfIdx = await unirepContract.getProofIndex(input.hash())
-            expect(Number(pfIdx)).not.eq(0)
         }
     })
 

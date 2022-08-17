@@ -8,14 +8,11 @@ import {
     IncrementalMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
-
 import {
     GLOBAL_STATE_TREE_DEPTH,
-    EPOCH_LENGTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
 } from '@unirep/circuits'
-
 import {
     Attestation,
     genEpochKeyCircuitInput,
@@ -26,6 +23,8 @@ import {
     genUserStateTransitionCircuitInput,
 } from './utils'
 import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+
+const EPOCH_LENGTH = 1000000
 
 describe('Epoch Transition', function () {
     this.timeout(1000000)
@@ -39,7 +38,6 @@ describe('Epoch Transition', function () {
     let attester, attesterAddress, attesterId
 
     const signedUpInLeaf = 1
-    let epochKeyProofIndex
     const proofIndexes: BigNumber[] = []
     const attestingFee = ethers.utils.parseEther('0.1')
 
@@ -58,6 +56,7 @@ describe('Epoch Transition', function () {
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
+            epochLength: EPOCH_LENGTH,
         })
 
         console.log('User sign up')
@@ -98,14 +97,11 @@ describe('Epoch Transition', function () {
         let epochKey = input.epochKey
 
         // Submit epoch key proof
-        tx = await unirepContract.submitEpochKeyProof(
+        await unirepContract.assertValidEpochKeyProof(
             input.publicSignals,
             input.proof
         )
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
         let proofNullifier = input.hash()
-        epochKeyProofIndex = await unirepContract.getProofIndex(proofNullifier)
         const senderPfIdx = 0
 
         // Submit attestations
@@ -120,13 +116,9 @@ describe('Epoch Transition', function () {
             )
             tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    epochKeyProofIndex,
-                    senderPfIdx,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey, {
+                    value: attestingFee,
+                })
             receipt = await tx.wait()
             expect(receipt.status).equal(1)
         }
@@ -211,10 +203,6 @@ describe('Epoch Transition', function () {
             'Gas cost of submit a start transition proof:',
             receipt.gasUsed.toString()
         )
-
-        let proofNullifier = input.hash()
-        let proofIndex = await unirepContract.getProofIndex(proofNullifier)
-        proofIndexes.push(proofIndex)
     })
 
     it('submit process attestations proofs should succeed', async () => {

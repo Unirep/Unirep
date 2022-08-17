@@ -1,6 +1,6 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers, Signer } from 'ethers'
+import { ethers } from 'hardhat'
+import { Signer } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
 import {
@@ -24,9 +24,9 @@ describe('Signup', () => {
     let signedUpAttesters = 0
 
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
+        accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+        unirepContract = await deployUnirep(accounts[0], {
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
         })
@@ -201,6 +201,53 @@ describe('Signup', () => {
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 'ReachedMaximumNumberUserSignedUp'
+            )
+        })
+    })
+
+    describe('Attesters set initial balance', () => {
+        it('attester should airdrop with initial amount', async () => {
+            const accounts = await ethers.getSigners()
+            await unirepContract
+                .connect(accounts[1])
+                .attesterSignUp()
+                .then((t) => t.wait())
+            const attesterId = await unirepContract.attesters(
+                accounts[1].address
+            )
+            const id = new ZkIdentity()
+            const epoch = await unirepContract.currentEpoch()
+            const airdropAmount = 100
+            await expect(
+                unirepContract
+                    .connect(accounts[1])
+                    ['userSignUp(uint256,uint256)'](
+                        id.genIdentityCommitment(),
+                        airdropAmount
+                    )
+            )
+                .to.emit(unirepContract, 'UserSignedUp')
+                .withArgs(
+                    epoch,
+                    id.genIdentityCommitment(),
+                    attesterId,
+                    airdropAmount
+                )
+        })
+
+        it('non-attester should fail to airdrop with initial amount', async () => {
+            const accounts = await ethers.getSigners()
+            const id = new ZkIdentity()
+            await expect(
+                unirepContract
+                    .connect(accounts[0])
+                    ['userSignUp(uint256,uint256)'](
+                        id.genIdentityCommitment(),
+                        100
+                    )
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'AirdropWithoutAttester'
             )
         })
     })
