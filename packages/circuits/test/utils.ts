@@ -15,6 +15,13 @@ import {
     MAX_REPUTATION_BUDGET,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    VerifyEpochKeyInput,
+    ProveReputationInput,
+    ProveUserSignUpInput,
+    StartTransitionInput,
+    ProcessAttestationsInput,
+    UserStateTransitionInput,
+    CircuitInput,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
@@ -219,7 +226,7 @@ const genEpochKeyCircuitInput = (
 ) => {
     const proof = tree.createProof(leafIndex)
 
-    const circuitInputs = {
+    const circuitInputs: VerifyEpochKeyInput = {
         GST_path_elements: proof.siblings,
         GST_path_index: proof.pathIndices,
         identity_nullifier: id.identityNullifier,
@@ -412,7 +419,7 @@ const genProcessAttestationsCircuitInput = (
         BigInt(0),
     ])
 
-    const circuitInputs = {
+    const circuitInputs: ProcessAttestationsInput = {
         epoch: epoch,
         from_nonce: fromNonce,
         to_nonce: toNonce,
@@ -447,7 +454,7 @@ const genStartTransitionCircuitInput = (
     GSTreeProof: any
 ) => {
     // Circuit inputs
-    const circuitInputs = crypto.stringifyBigInts({
+    const circuitInputs: StartTransitionInput = {
         epoch,
         nonce,
         user_tree_root: userStateTreeRoot,
@@ -455,7 +462,9 @@ const genStartTransitionCircuitInput = (
         identity_trapdoor: id.trapdoor,
         GST_path_elements: GSTreeProof.siblings,
         GST_path_index: GSTreeProof.pathIndices,
-    })
+    }
+
+    const circuitInputsFormated = crypto.stringifyBigInts(circuitInputs)
 
     // Circuit outputs
     // blinded user state and blinded hash chain are the inputs of processAttestationProofs
@@ -475,7 +484,7 @@ const genStartTransitionCircuitInput = (
     ])
 
     return {
-        circuitInputs: circuitInputs,
+        circuitInputs: circuitInputsFormated,
         blindedUserState: blindedUserState,
         blindedHashChain: blindedHashChain,
     }
@@ -869,7 +878,7 @@ const genReputationCircuitInput = (
         selectors.push(BigInt(0))
     }
 
-    const circuitInputs = {
+    const circuitInputs: ProveReputationInput = {
         epoch: epoch,
         epoch_key_nonce: nonce,
         // epoch_key: epk,
@@ -901,8 +910,6 @@ const genProveSignUpCircuitInput = (
     attesterId,
     _signUp?: number
 ) => {
-    const nonce = 0
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
@@ -926,7 +933,7 @@ const genProveSignUpCircuitInput = (
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
     const GSTreeRoot = GSTree.root
 
-    const circuitInputs = {
+    const circuitInputs: ProveUserSignUpInput = {
         epoch: epoch,
         // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
@@ -945,7 +952,10 @@ const genProveSignUpCircuitInput = (
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const genProofAndVerify = async (circuit: Circuit, circuitInputs) => {
+const genProofAndVerify = async (
+    circuit: Circuit,
+    circuitInputs: CircuitInput
+) => {
     const startTime = new Date().getTime()
     const { proof, publicSignals } =
         await defaultProver.genProofAndPublicSignals(circuit, circuitInputs)
