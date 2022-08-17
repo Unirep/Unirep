@@ -35,12 +35,8 @@ import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
 import { schema } from '../src/schema'
 
-const genNewGST = (
-    GSTDepth: number,
-    USTDepth: number
-): IncrementalMerkleTree => {
-    const emptyUserStateRoot = computeEmptyUserStateRoot(USTDepth)
-    const defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
+const genNewGST = (GSTDepth: number): IncrementalMerkleTree => {
+    const defaultGSTLeaf = BigInt(0)
     const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf)
     return GST
 }

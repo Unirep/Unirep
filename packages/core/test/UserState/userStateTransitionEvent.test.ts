@@ -613,6 +613,15 @@ describe('User state transition events in Unirep User State', function () {
             expect(gstRootCount).to.equal(1)
             const gstRoot = diffs.find((d) => d.table === 'GSTRoot')
             expect(gstRoot.root).to.equal(expectedGST.root.toString())
+            const onchainGST = await unirepContract.globalStateTree(epoch)
+            const onchainGSTRoot = onchainGST.root.toString()
+            expect(onchainGSTRoot).equal(gstRoot.root.toString())
+
+            const exist = await unirepContract.globalStateTreeRoots(
+                epoch,
+                gstRoot.root
+            )
+            expect(exist).to.be.true
             expect(nullifierCount).to.equal(
                 proofs.finalTransitionProof.epkNullifiers.length
             )

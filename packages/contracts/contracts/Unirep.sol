@@ -117,11 +117,21 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
-        SparseMerkleTree.init(initUST, config.userStateTreeDepth, 0);
+        uint256 zero = 0;
+        uint256 one = 1;
+        uint256 defaultUSTLeaf = Poseidon5.poseidon(
+            [zero, zero, zero, zero, zero]
+        );
+        uint256 defaultEpochTreeLeaf = Poseidon2.poseidon([one, zero]);
+        SparseMerkleTree.init(
+            initUST,
+            config.userStateTreeDepth,
+            defaultUSTLeaf
+        );
         SparseMerkleTree.init(
             epochTrees[currentEpoch],
             config.epochTreeDepth,
-            0
+            defaultEpochTreeLeaf
         );
         IncrementalBinaryTree.init(
             globalStateTree[currentEpoch],
