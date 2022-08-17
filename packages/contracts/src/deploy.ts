@@ -1,4 +1,5 @@
-import { BigNumberish, ethers } from 'ethers'
+import { BigNumberish, ethers, utils } from 'ethers'
+import path from 'path'
 import {
     MAX_USERS,
     MAX_ATTESTERS,
@@ -10,9 +11,6 @@ import {
     EPOCH_TREE_DEPTH,
     NUM_ATTESTATIONS_PER_PROOF,
 } from '@unirep/circuits'
-
-const ATTESTING_FEE = 0
-
 import {
     VerifyEpochKeyVerifier,
     VerifyEpochKeyVerifier__factory,
@@ -29,8 +27,39 @@ import {
     UserStateTransitionVerifier,
     UserStateTransitionVerifier__factory,
 } from '../typechain'
+import poseidon from '../src/poseidon'
+
+const ATTESTING_FEE = 0
 
 export { Unirep, UnirepFactory }
+
+function linkLibrary(
+    bytecode: string,
+    libraries: {
+        [name: string]: string
+    } = {}
+): string {
+    let linkedBytecode = bytecode
+    for (const [name, address] of Object.entries(libraries)) {
+        const placeholder = `__\$${utils
+            .solidityKeccak256(['string'], [name])
+            .slice(2, 36)}\$__`
+        const formattedAddress = utils
+            .getAddress(address)
+            .toLowerCase()
+            .replace('0x', '')
+        if (linkedBytecode.indexOf(placeholder) === -1) {
+            throw new Error(`Unable to find placeholder for library ${name}`)
+        }
+        while (linkedBytecode.indexOf(placeholder) !== -1) {
+            linkedBytecode = linkedBytecode.replace(
+                placeholder,
+                formattedAddress
+            )
+        }
+    }
+    return linkedBytecode
+}
 
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
@@ -94,7 +123,47 @@ export const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    const c: Unirep = await new UnirepFactory(deployer).deploy(
+    const libraries = {}
+    for (const [inputCount, { abi, bytecode }] of Object.entries(
+        poseidon
+    ) as any) {
+        const f = new ethers.ContractFactory(abi, bytecode, deployer)
+        const c = await f.deploy()
+        await c.deployed()
+        libraries[`Poseidon${inputCount}`] = c.address
+    }
+    let artifacts: any
+    try {
+        artifacts = require(path.join(
+            __dirname,
+            '../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
+        ))
+    } catch (_) {
+        artifacts = require(path.join(
+            __dirname,
+            '../artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
+        ))
+    }
+    const { abi, bytecode } = artifacts
+    const merkleTreeLibFactory = new ethers.ContractFactory(
+        abi,
+        linkLibrary(bytecode, {
+            [`contracts/Hash.sol:Poseidon2`]: libraries['Poseidon2'],
+        }),
+        deployer
+    )
+    const merkleTreeLib = await merkleTreeLibFactory.deploy()
+    await merkleTreeLib.deployed()
+
+    const c: Unirep = await new UnirepFactory(
+        {
+            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
+            ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
+            ['contracts/SparseMerkleTree.sol:SparseMerkleTree']:
+                merkleTreeLib.address,
+        },
+        deployer
+    ).deploy(
         {
             globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
             userStateTreeDepth: USER_STATE_TREE_DEPTH,

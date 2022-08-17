@@ -1,8 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
-import { deployUnirep, SignUpProof, Unirep } from '../src'
+import { ZkIdentity } from '@unirep/crypto'
+import { deployUnirep, Unirep } from '../src'
 
 describe('Airdrop', function () {
     this.timeout(100000)
