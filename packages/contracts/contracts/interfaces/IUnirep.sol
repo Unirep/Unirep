@@ -25,30 +25,6 @@ interface IUnirep is UnirepTypes {
 
     event EpochEnded(uint256 indexed epoch);
 
-    // Proof index events
-
-    event IndexedStartedTransitionProof(
-        uint256 indexed proofIndex,
-        uint256 indexed blindedUserState,
-        uint256 indexed globalStateTree,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedProcessedAttestationsProof(
-        uint256 indexed proofIndex,
-        uint256 indexed inputBlindedUserState,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedUserStateTransitionProof(
-        uint256 indexed proofIndex,
-        uint256[] publicSignals,
-        uint256[8] proof,
-        uint256[] proofIndexRecords
-    );
-
     enum AttestationFieldError {
         POS_REP,
         NEG_REP,
