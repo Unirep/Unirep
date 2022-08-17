@@ -102,10 +102,7 @@ export class Synchronizer extends EventEmitter {
         if (epochs.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
-        const emptyUserStateRoot = computeEmptyUserStateRoot(
-            this.settings.userStateTreeDepth
-        )
-        this.defaultGSTLeaf = hashLeftRight(BigInt(0), emptyUserStateRoot)
+        this.defaultGSTLeaf = BigInt(0)
         this._globalStateTree = new IncrementalMerkleTree(
             this.settings.globalStateTreeDepth,
             this.defaultGSTLeaf
