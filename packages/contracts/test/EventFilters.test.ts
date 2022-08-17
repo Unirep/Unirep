@@ -233,21 +233,21 @@ describe('EventFilters', () => {
     //         )
     //         expect(isValid).equal(true)
     //     }
-        // {
-        //     const processAttestationFilter =
-        //         unirepContract.filters.IndexedProcessedAttestationsProof()
-        //     const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
-        //         await unirepContract.queryFilter(processAttestationFilter)
-        //     expect(processAttestationEvents.length).to.equal(
-        //         processAttestationCircuitInputs.length
-        //     )
-        //     const { publicSignals, proof } = processAttestationEvents[0].args
-        //     const isValid = await unirepContract.verifyProcessAttestationProof(
-        //         publicSignals,
-        //         proof
-        //     )
-        //     expect(isValid).equal(true)
-        // }
+    // {
+    //     const processAttestationFilter =
+    //         unirepContract.filters.IndexedProcessedAttestationsProof()
+    //     const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
+    //         await unirepContract.queryFilter(processAttestationFilter)
+    //     expect(processAttestationEvents.length).to.equal(
+    //         processAttestationCircuitInputs.length
+    //     )
+    //     const { publicSignals, proof } = processAttestationEvents[0].args
+    //     const isValid = await unirepContract.verifyProcessAttestationProof(
+    //         publicSignals,
+    //         proof
+    //     )
+    //     expect(isValid).equal(true)
+    // }
     //     {
     //         const userStateTransitionFilter =
     //             unirepContract.filters.IndexedUserStateTransitionProof()

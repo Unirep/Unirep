@@ -644,6 +644,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bool isValid = verifyUserStateTransition(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
 
+        // update global state tree
+        IncrementalBinaryTree.insert(
+            globalStateTree[currentEpoch],
+            publicSignals[1]
+        );
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
+
         emit UserStateTransitioned(currentEpoch, publicSignals[1]);
 
         getProofIndex[proofNullifier] = 1;
