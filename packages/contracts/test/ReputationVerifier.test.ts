@@ -259,9 +259,58 @@ describe('Verify reputation verifier', function () {
         attesterId = (
             await unirepContract.attesters(attesterAddress)
         ).toBigInt()
+
+        const graffitiPreImage = genRandomSalt()
+        reputationRecords[attesterId.toString()] = new Reputation(
+            BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
+            BigInt(Math.floor(Math.random() * MAX_NEG_REP)),
+            hashOne(graffitiPreImage),
+            BigInt(signUp)
+        )
+        reputationRecords[attesterId].addGraffitiPreImage(graffitiPreImage)
     })
 
     it('submit reputation nullifiers should succeed', async () => {
+        const circuitInputs = genReputationCircuitInput(
+            user,
+            epoch,
+            nonce,
+            reputationRecords,
+            attesterId,
+            repNullifiersAmount,
+            minRep,
+            proveGraffiti,
+            reputationRecords[attesterId]['graffitiPreImage']
+        )
+        const input: ReputationProof = await genInputForContract(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+        expect(await input.verify()).to.be.true
+
+        const tx = await unirepContract
+            .connect(attester)
+            .spendReputation(input.publicSignals, input.proof, {
+                value: attestingFee,
+            })
+        const receipt = await tx.wait()
+        expect(receipt.status).equal(1)
+
+        const pfIdx = await unirepContract.getProofIndex(input.hash())
+        expect(Number(pfIdx)).not.eq(0)
+
+        for (const nullifier of input.repNullifiers) {
+            if (!ethers.BigNumber.from(nullifier).eq(0)) {
+                const n = await unirepContract.usedNullifiers(nullifier)
+                expect(
+                    ethers.BigNumber.from(n).eq(0),
+                    'Nullifier is not saved in unirep contract'
+                ).to.be.false
+            }
+        }
+    })
+
+    it('submit reputation proof with the same nullifiers should fail', async () => {
         const circuitInputs = genReputationCircuitInput(
             user,
             epoch,
@@ -276,15 +325,40 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
-        const tx = await unirepContract
-            .connect(attester)
-            .spendReputation(input.publicSignals, input.proof, {
-                value: attestingFee,
-            })
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
 
-        const pfIdx = await unirepContract.getProofIndex(input.hash())
-        expect(Number(pfIdx)).not.eq(0)
+        await expect(
+            unirepContract
+                .connect(attester)
+                .spendReputation(input.publicSignals, input.proof, {
+                    value: attestingFee,
+                })
+        ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
+    })
+
+    it('submit invalid reputation proof should fail', async () => {
+        const user2 = new ZkIdentity()
+        const circuitInputs = genReputationCircuitInput(
+            user2,
+            epoch,
+            nonce,
+            reputationRecords,
+            attesterId,
+            repNullifiersAmount,
+            minRep,
+            proveGraffiti
+        )
+        const input: ReputationProof = await genInputForContract(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+        expect(await input.verify()).to.be.false
+
+        await expect(
+            unirepContract
+                .connect(attester)
+                .spendReputation(input.publicSignals, input.proof, {
+                    value: attestingFee,
+                })
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 })

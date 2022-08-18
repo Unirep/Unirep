@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/crypto'
+import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import { deployUnirep, Unirep } from '@unirep/contracts'
 import {
     EPOCH_LENGTH,
@@ -16,18 +16,13 @@ import {
     getSnapDBDiffs,
     snapshotDB,
     genRandomAttestation,
-    genRandomList,
     submitUSTProofs,
     genUnirepState,
     genUserState,
 } from '../utils'
-import {
-    ProcessAttestationsProof,
-    StartTransitionProof,
-    UserTransitionProof,
-} from '@unirep/contracts/src'
+import { UserTransitionProof } from '@unirep/contracts/src'
 
-describe('User state transition events in Unirep User State', async function () {
+describe('User state transition events in Unirep User State', function () {
     this.timeout(0)
 
     let unirepContract: Unirep
@@ -45,7 +40,7 @@ describe('User state transition events in Unirep User State', async function () 
         })
     })
 
-    describe('Attester sign up and set airdrop', async () => {
+    describe('Attester sign up', async () => {
         it('attester sign up', async () => {
             const accounts = await hardhatEthers.getSigners()
             attester = accounts[2]
@@ -53,19 +48,6 @@ describe('User state transition events in Unirep User State', async function () 
             const tx = await unirepContract.connect(attester).attesterSignUp()
             const receipt = await tx.wait()
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
-        })
-
-        it('attester set airdrop amount', async () => {
-            const airdropPosRep = 10
-            const tx = await unirepContract
-                .connect(attester)
-                .setAirdropAmount(airdropPosRep)
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester.address
-            )
-            expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
         })
     })
 
@@ -78,7 +60,7 @@ describe('User state transition events in Unirep User State', async function () 
                         const id = new ZkIdentity()
                         await unirepContract
                             .connect(attester)
-                            .userSignUp(id.genIdentityCommitment())
+                            ['userSignUp(uint256)'](id.genIdentityCommitment())
                             .then((t) => t.wait())
                         return genUserState(
                             hardhatEthers.provider,
@@ -133,7 +115,7 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -170,15 +152,17 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const randomProof: BigNumberish[] = genRandomList(8)
-            const randomPublicSignals: BigNumberish[] = genRandomList(3)
-            await unirepContract
-                .startUserStateTransition(randomPublicSignals, randomProof)
-                .then((t) => t.wait())
+            const randomProof: BigNumberish[] = Array(8).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(3).fill('0')
+            await expect(
+                unirepContract.startUserStateTransition(
+                    randomPublicSignals,
+                    randomProof
+                )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
             await unirepState.waitForSync()
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            expect(diffs.length).to.equal(1)
-            expect(diffs[0].valid).to.equal(0)
+            expect(diffs.length).to.equal(0)
             await unirepState.stop()
         })
 
@@ -188,16 +172,21 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const randomProof: BigNumberish[] = genRandomList(8)
-            const randomPublicSignals: BigNumberish[] = genRandomList(3)
-            await unirepContract
-                .processAttestations(randomPublicSignals, randomProof)
-                .then((t) => t.wait())
+            const randomProof: BigNumberish[] = Array(8).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(3).fill('0')
+            await expect(
+                unirepContract.processAttestations(
+                    randomPublicSignals,
+                    randomProof
+                )
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidBlindedUserState'
+            )
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            expect(diffs.length).to.equal(1)
-            expect(diffs[0].valid).to.equal(0)
+            expect(diffs.length).to.equal(0)
             await unirepState.stop()
         })
 
@@ -207,45 +196,11 @@ describe('User state transition events in Unirep User State', async function () 
                 unirepContract.address
             )
             const snap = await snapshotDB((unirepState as any)._db)
-            const proofIndexes = [] as any[]
-            {
-                const randomProof: BigNumberish[] = genRandomList(8)
-                const randomPublicSignals: BigNumberish[] = genRandomList(3)
-                await unirepContract
-                    .startUserStateTransition(randomPublicSignals, randomProof)
-                    .then((t) => t.wait())
-                const proof = new StartTransitionProof(
-                    randomPublicSignals,
-                    formatProofForSnarkjsVerification(
-                        randomProof.map((n) => n.toString())
-                    ),
-                    defaultProver
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(proof.hash()))
-                )
-            }
-            {
-                const randomProof: BigNumberish[] = genRandomList(8)
-                const randomPublicSignals: BigNumberish[] = genRandomList(3)
-                await unirepContract
-                    .processAttestations(randomPublicSignals, randomProof)
-                    .then((t) => t.wait())
-                const proof = new ProcessAttestationsProof(
-                    randomPublicSignals,
-                    formatProofForSnarkjsVerification(
-                        randomProof.map((n) => n.toString())
-                    ),
-                    defaultProver
-                )
-                proofIndexes.push(
-                    Number(await unirepContract.getProofIndex(proof.hash()))
-                )
-            }
-            const randomProof: BigNumberish[] = genRandomList(8)
-            let randomPublicSignals: BigNumberish[] = genRandomList(
+            const proofIndexes = [1, 2, 3] as any[]
+            const randomProof: BigNumberish[] = Array(8).fill('0')
+            const randomPublicSignals: BigNumberish[] = Array(
                 2 * unirepState.settings.numEpochKeyNoncePerEpoch + 6
-            )
+            ).fill('0')
             const ustProof = new UserTransitionProof(
                 randomPublicSignals,
                 formatProofForSnarkjsVerification(
@@ -253,21 +208,28 @@ describe('User state transition events in Unirep User State', async function () 
                 ),
                 defaultProver
             )
+            for (
+                let i = ustProof.idx.epkNullifiers[0];
+                i < ustProof.idx.epkNullifiers[1];
+                i++
+            ) {
+                ustProof.publicSignals[i] = genRandomSalt().toString()
+            }
             ustProof.publicSignals[ustProof.idx.transitionFromEpoch] = 1
-            await unirepContract
-                .updateUserStateRoot(
+            await expect(
+                unirepContract.updateUserStateRoot(
                     ustProof.publicSignals,
                     ustProof.proof,
                     proofIndexes
                 )
-                .then((t) => t.wait())
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidBlindedUserState'
+            )
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            expect(diffs.length).to.equal(3)
-            expect(diffs[0].valid).to.equal(0)
-            expect(diffs[1].valid).to.equal(0)
-            expect(diffs[2].valid).to.equal(0)
+            expect(diffs.length).to.equal(0)
             await unirepState.stop()
         })
 
@@ -291,11 +253,11 @@ describe('User state transition events in Unirep User State', async function () 
 
             await falseUnirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -342,11 +304,11 @@ describe('User state transition events in Unirep User State', async function () 
             const id2 = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id1.genIdentityCommitment())
+                ['userSignUp(uint256)'](id1.genIdentityCommitment())
                 .then((t) => t.wait())
             await unirepContract
                 .connect(attester)
-                .userSignUp(id2.genIdentityCommitment())
+                ['userSignUp(uint256)'](id2.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -380,15 +342,29 @@ describe('User state transition events in Unirep User State', async function () 
                 expect(await p.verify()).to.be.true
             }
             expect(await finalTransitionProof.verify()).to.be.true
-            await submitUSTProofs(unirepContract, {
-                startTransitionProof,
-                processAttestationProofs,
-                finalTransitionProof,
-            })
+            // submit start transition proofs
+            {
+                unirepContract
+                    .startUserStateTransition(
+                        startTransitionProof.publicSignals,
+                        startTransitionProof.proof
+                    )
+                    .then((t) => t.wait())
+            }
+
+            await expect(
+                unirepContract.processAttestations(
+                    processAttestationProofs[0].publicSignals,
+                    processAttestationProofs[0].proof
+                )
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidBlindedUserState'
+            )
             await unirepState.waitForSync()
 
             const diffs = await getSnapDBDiffs(snap, (unirepState as any)._db)
-            const expectedProofs = 2 + processAttestationProofs.length
+            const expectedProofs = 1
             expect(diffs.length).to.equal(expectedProofs)
             const gstLeafCount = diffs.filter(
                 (d) => d.table === 'GSTLeaf'
@@ -407,7 +383,7 @@ describe('User state transition events in Unirep User State', async function () 
                     d.table === 'Proof' &&
                     d.event === 'IndexedUserStateTransitionProof'
             ).length
-            expect(ustProofCount).to.equal(1)
+            expect(ustProofCount).to.equal(0)
             const startUstProofCount = diffs.filter(
                 (d) =>
                     d.table === 'Proof' &&
@@ -419,9 +395,7 @@ describe('User state transition events in Unirep User State', async function () 
                     d.table === 'Proof' &&
                     d.event === 'IndexedProcessedAttestationsProof'
             ).length
-            expect(processedAttestationsCount).to.equal(
-                processAttestationProofs.length
-            )
+            expect(processedAttestationsCount).to.equal(0)
             await unirepState.stop()
             await userState1.stop()
             await userState2.stop()
@@ -431,7 +405,7 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,
@@ -521,7 +495,7 @@ describe('User state transition events in Unirep User State', async function () 
             const id = new ZkIdentity()
             await unirepContract
                 .connect(attester)
-                .userSignUp(id.genIdentityCommitment())
+                ['userSignUp(uint256)'](id.genIdentityCommitment())
                 .then((t) => t.wait())
             await hardhatEthers.provider.send('evm_increaseTime', [
                 EPOCH_LENGTH,

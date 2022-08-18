@@ -58,19 +58,6 @@ describe('Epoch key proof events in Unirep User State', function () {
             expect(receipt.status, 'Attester signs up failed').to.equal(1)
             attesterId = await unirepContract.attesters(attester['addr'])
         })
-
-        it('attester set airdrop amount', async () => {
-            const airdropPosRep = 10
-            const tx = await unirepContract
-                .connect(attester['acct'])
-                .setAirdropAmount(airdropPosRep)
-            const receipt = await tx.wait()
-            expect(receipt.status).equal(1)
-            const airdroppedAmount = await unirepContract.airdropAmount(
-                attester['addr']
-            )
-            expect(airdroppedAmount.toNumber()).equal(airdropPosRep)
-        })
     })
 
     describe('User Sign Up event', async () => {
@@ -81,16 +68,21 @@ describe('Epoch key proof events in Unirep User State', function () {
                 userIds.push(id)
                 userCommitments.push(commitment)
 
+                const airdropAmount = 100
+
                 const tx = await unirepContract
                     .connect(attester['acct'])
-                    .userSignUp(commitment)
+                    ['userSignUp(uint256,uint256)'](commitment, airdropAmount)
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
                 await expect(
                     unirepContract
                         .connect(attester['acct'])
-                        .userSignUp(commitment)
+                        ['userSignUp(uint256,uint256)'](
+                            commitment,
+                            airdropAmount
+                        )
                 ).to.be.revertedWithCustomError(
                     unirepContract,
                     `UserAlreadySignedUp`
@@ -109,18 +101,15 @@ describe('Epoch key proof events in Unirep User State', function () {
                 const attesterId = await unirepContract.attesters(
                     attester['addr']
                 )
-                const airdroppedAmount = await unirepContract.airdropAmount(
-                    attester['addr']
-                )
                 const newUSTRoot = computeInitUserStateRoot(
                     userState.settings.userStateTreeDepth,
                     Number(attesterId),
-                    Number(airdroppedAmount)
+                    Number(airdropAmount)
                 )
                 userStateTreeRoots.push(newUSTRoot)
                 signUpAirdrops.push(
                     new Reputation(
-                        airdroppedAmount.toBigInt(),
+                        BigInt(airdropAmount),
                         BigInt(0),
                         BigInt(0),
                         BigInt(1)
@@ -137,7 +126,9 @@ describe('Epoch key proof events in Unirep User State', function () {
                 userIds.push(id)
                 userCommitments.push(commitment)
 
-                const tx = await unirepContract.userSignUp(commitment)
+                const tx = await unirepContract['userSignUp(uint256)'](
+                    commitment
+                )
                 const receipt = await tx.wait()
                 expect(receipt.status, 'User sign up failed').to.equal(1)
 
@@ -198,10 +189,7 @@ describe('Epoch key proof events in Unirep User State', function () {
                     formattedProof.publicSignals,
                     formattedProof.proof
                 )
-            ).to.be.revertedWithCustomError(
-                unirepContract,
-                'NullifierAlreadyUsed'
-            )
+            ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
@@ -246,34 +234,35 @@ describe('Epoch key proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.false
 
-            const tx = await unirepContract.submitEpochKeyProof(
-                formattedProof.publicSignals,
-                formattedProof.proof
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            await expect(
+                unirepContract.submitEpochKeyProof(
+                    formattedProof.publicSignals,
+                    formattedProof.proof
+                )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
 
             epochKey = formattedProof.epochKey
             proofIndex = Number(
                 await unirepContract.getProofIndex(formattedProof.hash())
             )
+            expect(proofIndex).equal(0)
             await userState.stop()
         })
 
         it('submit attestations to the epoch key should not update Unirep state', async () => {
             const attestation = genRandomAttestation()
             attestation.attesterId = attesterId
-            const tx = await unirepContract
-                .connect(attester['acct'])
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
+            await expect(
+                unirepContract
+                    .connect(attester['acct'])
+                    .submitAttestation(
+                        attestation,
+                        epochKey,
+                        proofIndex,
+                        fromProofIndex,
+                        { value: attestingFee }
+                    )
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
 
             const userState = await genUserState(
                 hardhatEthers.provider,
