@@ -30,7 +30,7 @@
         "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "time": "ts-node scripts/time.ts",
-        "benchmark": "ts-node scripts/benchmark/benchmarkEpochKeyProof.ts",
+        "benchmark": "ts-node scripts/benchmark/benchmarkProveRep.ts",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "lint": "prettier --write ."
     },
