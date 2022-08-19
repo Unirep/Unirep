@@ -2,7 +2,11 @@
 import { ethers } from 'hardhat'
 import { Signer } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/crypto'
+import {
+    hashLeftRight,
+    IncrementalMerkleTree,
+    ZkIdentity,
+} from '@unirep/crypto'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -14,6 +18,7 @@ import {
 const ATTESTING_FEE = '0'
 
 import { deployUnirep, Unirep } from '../src'
+import { genNewUserStateTree } from './utils'
 
 describe('Signup', () => {
     const testMaxUser = 5
@@ -58,6 +63,23 @@ describe('Signup', () => {
 
             const numUserSignUps_ = await unirepContract.numUserSignUps()
             expect(signedUpUsers).equal(numUserSignUps_)
+        })
+
+        it('compute global state tree should success', async () => {
+            const epoch = 1
+            const onchainGST = await unirepContract.globalStateTree(epoch)
+
+            const offChainGST = new IncrementalMerkleTree(
+                GLOBAL_STATE_TREE_DEPTH
+            )
+            const GSTLeaf = hashLeftRight(
+                commitment,
+                genNewUserStateTree(USER_STATE_TREE_DEPTH).root
+            )
+            offChainGST.insert(GSTLeaf)
+            expect(offChainGST.root.toString()).equal(
+                onchainGST.root.toString()
+            )
         })
 
         it('double sign up should fail', async () => {
@@ -207,7 +229,10 @@ describe('Signup', () => {
 
     describe('Attesters set initial balance', () => {
         it('attester should airdrop with initial amount', async () => {
-            const accounts = await ethers.getSigners()
+            unirepContract = await deployUnirep(accounts[0], {
+                maxUsers: testMaxUser,
+                maxAttesters: testMaxUser,
+            })
             await unirepContract
                 .connect(accounts[1])
                 .attesterSignUp()
@@ -236,7 +261,6 @@ describe('Signup', () => {
         })
 
         it('non-attester should fail to airdrop with initial amount', async () => {
-            const accounts = await ethers.getSigners()
             const id = new ZkIdentity()
             await expect(
                 unirepContract

@@ -182,27 +182,31 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
 
-        uint256 initUSTLeaf = Poseidon5.poseidon(
-            [
-                initBalance, // posRep
-                0, // negRep
-                0, // graffiti
-                1, // signup
-                0
-            ]
-        );
-        // calculate the initial smt root by inserting at attesterId index
-        SparseMerkleTree.update(initUST, attesterId, initUSTLeaf);
+        if (attesterId > 0) {
+            uint256 initUSTLeaf = Poseidon5.poseidon(
+                [
+                    initBalance, // posRep
+                    0, // negRep
+                    0, // graffiti
+                    1, // signup
+                    0
+                ]
+            );
+            // calculate the initial smt root by inserting at attesterId index
+            SparseMerkleTree.update(initUST, attesterId, initUSTLeaf);
+        }
 
         uint256 newGSTLeaf = Poseidon2.poseidon(
             [identityCommitment, initUST.root]
         );
         // now manually reset the tree so it can be used for future signups
         // we'll ignore the root, it will be updated on next update call
-        uint256 index = attesterId;
-        for (uint8 i = 0; i < initUST.depth; i++) {
-            initUST.leaves[i][index] = initUST.zeroes[i];
-            index /= 2;
+        if (attesterId > 0) {
+            uint256 index = attesterId;
+            for (uint8 i = 0; i < initUST.depth; i++) {
+                initUST.leaves[i][index] = initUST.zeroes[i];
+                index /= 2;
+            }
         }
         IncrementalBinaryTree.insert(globalStateTree[currentEpoch], newGSTLeaf);
         globalStateTreeRoots[currentEpoch][
@@ -388,9 +392,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) external view {
+        uint256 _epoch = publicSignals[2];
+        uint256 _globalStateTreeRoot = publicSignals[1];
+
         // check if proof is submitted before
-        if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
+        if (_epoch != currentEpoch) revert EpochNotMatch();
         if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
+
+        // verify global state tree root
+        if (globalStateTreeRoots[_epoch][_globalStateTreeRoot] == false)
+            revert InvalidGlobalStateTreeRoot(_globalStateTreeRoot);
 
         // verify proof
         bool isValid = verifyEpochKeyValidity(publicSignals, proof);
@@ -421,6 +432,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             abi.encodePacked(publicSignals, proof)
         );
         uint256 _maxReputationBudget = config.maxReputationBudget;
+        uint256 _epoch = publicSignals[_maxReputationBudget + 2];
+        uint256 _globalStateTreeRoot = publicSignals[1];
+        uint256 _epochKey = publicSignals[0];
 
         if (getProofIndex[proofNullifier] != 0)
             revert ProofAlreadyUsed(proofNullifier);
@@ -432,6 +446,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             if (publicSignals[index] > 0) verifyNullifier(publicSignals[index]);
         }
 
+        // verify global state tree root
+        if (globalStateTreeRoots[_epoch][_globalStateTreeRoot] == false)
+            revert InvalidGlobalStateTreeRoot(_globalStateTreeRoot);
+
         // verify proof
         bool isValid = verifyReputation(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
@@ -441,18 +459,18 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         attestation.attesterId = publicSignals[_maxReputationBudget + 3];
         attestation.negRep = publicSignals[_maxReputationBudget + 4];
 
-        assertValidAttestation(msg.sender, attestation, publicSignals[0]);
+        assertValidAttestation(msg.sender, attestation, _epochKey);
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
         emit AttestationSubmitted(
             currentEpoch,
-            publicSignals[0],
+            _epochKey,
             msg.sender,
             attestation
         );
         getProofIndex[proofNullifier] = 1;
-        storeAttestation(attestation, publicSignals[0]);
+        storeAttestation(attestation, _epochKey);
     }
 
     /**
@@ -598,12 +616,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ]
      * @param publicSignals The the public signals of the user state transition proof
      * @param proof The proof of the user state transition proof
-     * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
      */
     function updateUserStateRoot(
         uint256[] memory publicSignals,
-        uint256[8] memory proof,
-        uint256[] memory proofIndexRecords
+        uint256[8] memory proof
     ) external {
         // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
@@ -615,13 +631,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         // NOTE: this impl assumes all attestations are processed in a single snark.
         if (publicSignals[2 + _numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
-
-        for (uint256 i = 0; i < proofIndexRecords.length; i++) {
-            if (
-                !(proofIndexRecords[i] != 0 &&
-                    (proofIndexRecords[i] < proofIndex))
-            ) revert InvalidProofIndex();
-        }
 
         for (uint256 index = 2; index < 2 + _numEpochKeyNoncePerEpoch; index++)
             verifyNullifier(publicSignals[index]);
@@ -648,12 +657,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         // check the from gst root
         uint256 fromEpoch = publicSignals[2 + _numEpochKeyNoncePerEpoch];
         uint256 fromGSTRoot = publicSignals[0];
-        require(globalStateTreeRoots[fromEpoch][fromGSTRoot]);
+        if (globalStateTreeRoots[fromEpoch][fromGSTRoot] == false)
+            revert InvalidGlobalStateTreeRoot(fromGSTRoot);
         // check the from epoch tree root
         uint256 fromEpochTreeRoot = publicSignals[
             5 + 2 * _numEpochKeyNoncePerEpoch
         ];
-        require(epochTrees[fromEpoch].root == fromEpochTreeRoot);
+        if (epochTrees[fromEpoch].root != fromEpochTreeRoot)
+            revert InvalidEpochTreeRoot(fromEpochTreeRoot);
 
         // verify proof
         bool isValid = verifyUserStateTransition(publicSignals, proof);
@@ -669,12 +680,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         ] = true;
 
         uint256 _proofIndex = proofIndex;
-        emit IndexedUserStateTransitionProof(
-            _proofIndex,
-            publicSignals,
-            proof,
-            proofIndexRecords
-        );
+        emit IndexedUserStateTransitionProof(_proofIndex, publicSignals, proof);
         emit UserStateTransitioned(currentEpoch, publicSignals[1]);
 
         getProofIndex[proofNullifier] = 1;

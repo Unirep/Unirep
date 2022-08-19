@@ -45,8 +45,7 @@ interface IUnirep is UnirepTypes {
     event IndexedUserStateTransitionProof(
         uint256 indexed proofIndex,
         uint256[] publicSignals,
-        uint256[8] proof,
-        uint256[] proofIndexRecords
+        uint256[8] proof
     );
 
     enum AttestationFieldError {
@@ -79,6 +78,8 @@ interface IUnirep is UnirepTypes {
     error EpochNotEndYet();
     error InvalidSignals();
     error InvalidProof();
+    error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
+    error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
     /**
      * Sign up an attester using the address who sends the transaction

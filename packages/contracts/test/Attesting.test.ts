@@ -17,6 +17,7 @@ import {
     Attestation,
     genEpochKeyCircuitInput,
     genInputForContract,
+    genNewUserStateTree,
 } from './utils'
 
 describe('Attesting', () => {
@@ -70,7 +71,7 @@ describe('Attesting', () => {
         expect(receipt.status).equal(1)
 
         tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        stateRoot = genRandomSalt()
+        stateRoot = genNewUserStateTree().root
         const hashedStateLeaf = hashLeftRight(
             userCommitment.toString(),
             stateRoot.toString()

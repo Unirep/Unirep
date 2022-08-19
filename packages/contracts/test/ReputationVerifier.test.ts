@@ -260,14 +260,18 @@ describe('Verify reputation verifier', function () {
             await unirepContract.attesters(attesterAddress)
         ).toBigInt()
 
-        const graffitiPreImage = genRandomSalt()
+        unirepContract
+            .connect(attester)
+            ['userSignUp(uint256,uint256)'](user.genIdentityCommitment(), 100)
+            .then((t) => t.wait())
+
+        reputationRecords = {}
         reputationRecords[attesterId.toString()] = new Reputation(
-            BigInt(Math.floor(Math.random() * 100) + MIN_POS_REP),
-            BigInt(Math.floor(Math.random() * MAX_NEG_REP)),
-            hashOne(graffitiPreImage),
+            BigInt(100),
+            BigInt(0),
+            BigInt(0),
             BigInt(signUp)
         )
-        reputationRecords[attesterId].addGraffitiPreImage(graffitiPreImage)
     })
 
     it('submit reputation nullifiers should succeed', async () => {
@@ -278,9 +282,7 @@ describe('Verify reputation verifier', function () {
             reputationRecords,
             attesterId,
             repNullifiersAmount,
-            minRep,
-            proveGraffiti,
-            reputationRecords[attesterId]['graffitiPreImage']
+            minRep
         )
         const input: ReputationProof = await genInputForContract(
             Circuit.proveReputation,
@@ -335,8 +337,38 @@ describe('Verify reputation verifier', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
+    it('submit invalid GST root should fail', async () => {
+        const user2 = new ZkIdentity()
+        const circuitInputs = genReputationCircuitInput(
+            user2,
+            epoch,
+            nonce,
+            reputationRecords,
+            attesterId,
+            repNullifiersAmount,
+            minRep
+        )
+        const input: ReputationProof = await genInputForContract(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+        expect(await input.verify()).to.be.true
+
+        await expect(
+            unirepContract
+                .connect(attester)
+                .spendReputation(input.publicSignals, input.proof, {
+                    value: attestingFee,
+                })
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidGlobalStateTreeRoot'
+        )
+    })
+
     it('submit invalid reputation proof should fail', async () => {
         const user2 = new ZkIdentity()
+        const validGSTRoot = await unirepContract.globalStateTree(epoch)
         const circuitInputs = genReputationCircuitInput(
             user2,
             epoch,
@@ -351,6 +383,8 @@ describe('Verify reputation verifier', function () {
             Circuit.proveReputation,
             circuitInputs
         )
+        input.publicSignals[input.idx.globalStateTree] =
+            validGSTRoot.root.toString()
         expect(await input.verify()).to.be.false
 
         await expect(

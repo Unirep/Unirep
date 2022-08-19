@@ -484,7 +484,11 @@ const genStartTransitionCircuitInput = (
 const genUserStateTransitionCircuitInput = (
     id: crypto.ZkIdentity,
     epoch: number,
-    numAttestations: number = 0
+    numAttestations: number = 0,
+    {
+        userStateTree,
+        reputationRecords: initReputation,
+    } = bootstrapRandomUSTree()
 ): {
     startTransitionCircuitInputs
     processAttestationCircuitInputs
@@ -498,8 +502,6 @@ const genUserStateTransitionCircuitInput = (
     const fromNonce = 0
 
     // User state tree
-    const { userStateTree, reputationRecords: initReputation } =
-        bootstrapRandomUSTree()
     const fromEpochUserStateTree: crypto.SparseMerkleTree = userStateTree
     const intermediateUserStateTreeRoots: BigInt[] = [
         fromEpochUserStateTree.root,
@@ -544,6 +546,7 @@ const genUserStateTransitionCircuitInput = (
     }
 
     for (const key in hashChains) {
+        if (hashChains[key] === undefined) hashChains[key] = BigInt(0)
         const sealedHashChain = crypto.hashLeftRight(1, hashChains[key])
         fromEpochTree.update(BigInt(key), sealedHashChain)
     }
@@ -824,7 +827,6 @@ const genReputationCircuitInput = (
     _proveGraffiti?,
     _graffitiPreImage?
 ) => {
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     const repNullifiersAmount = _repNullifiersAmount ?? 0
     const minRep = _minRep ?? 0
     const proveGraffiti = _proveGraffiti ?? 0

@@ -15,7 +15,11 @@ import {
     Circuit,
 } from '@unirep/circuits'
 
-import { genEpochKeyCircuitInput, genInputForContract } from './utils'
+import {
+    genEpochKeyCircuitInput,
+    genInputForContract,
+    genNewUserStateTree,
+} from './utils'
 import { EpochKeyProof, deployUnirep, Unirep } from '../src'
 
 describe('Verify Epoch Key verifier', function () {
@@ -23,38 +27,38 @@ describe('Verify Epoch Key verifier', function () {
 
     let unirepContract: Unirep
     let accounts: ethers.Signer[]
-    let id, commitment, stateRoot
-    let tree
-    let nonce, currentEpoch
-    let leafIndex = 0
+    let tree: IncrementalMerkleTree = new IncrementalMerkleTree(
+        GLOBAL_STATE_TREE_DEPTH
+    )
+    let currentEpoch = 1
     let input: EpochKeyProof
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
-        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        id = new ZkIdentity()
-        commitment = id.genIdentityCommitment()
-        stateRoot = genRandomSalt()
-
-        const hashedStateLeaf = hashLeftRight(
-            commitment.toString(),
-            stateRoot.toString()
-        )
-        tree.insert(BigInt(hashedStateLeaf.toString()))
-        nonce = 0
-        currentEpoch = 1
     })
 
     it('Valid epoch key should pass check', async () => {
         // Check if every valid nonce works
         for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
             const n = i
+            const id = new ZkIdentity()
+            const commitment = id.genIdentityCommitment()
+
+            {
+                const tx = await unirepContract['userSignUp(uint256)'](
+                    commitment
+                )
+                await tx.wait()
+            }
+            const stateRoot = genNewUserStateTree().root
+            const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
+            tree.insert(hashedStateLeaf)
             const circuitInputs = genEpochKeyCircuitInput(
                 id,
                 tree,
-                leafIndex,
+                i,
                 stateRoot,
                 currentEpoch,
                 n
@@ -81,6 +85,9 @@ describe('Verify Epoch Key verifier', function () {
 
     it('Mismatched GST tree root should be output', async () => {
         const otherTreeRoot = genRandomSalt()
+        const id = new ZkIdentity()
+        const leafIndex = 0
+        const nonce = 0
         const invalidCircuitInputs = genEpochKeyCircuitInput(
             id,
             tree,
@@ -94,6 +101,15 @@ describe('Verify Epoch Key verifier', function () {
             Circuit.verifyEpochKey,
             invalidCircuitInputs
         )
+        await expect(
+            unirepContract.assertValidEpochKeyProof(
+                input.publicSignals,
+                input.proof
+            )
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            `InvalidGlobalStateTreeRoot`
+        )
         const isProofValid = await unirepContract.verifyEpochKeyValidity(
             input.publicSignals,
             input.proof
@@ -103,7 +119,51 @@ describe('Verify Epoch Key verifier', function () {
     })
 
     it('Invalid epoch should not pass check', async () => {
+        const invalidEpoch = currentEpoch + 1
+        const id = new ZkIdentity()
+        const leafIndex = 0
+        const nonce = 0
+        const stateRoot = genRandomSalt()
+        const invalidCircuitInputs = genEpochKeyCircuitInput(
+            id,
+            tree,
+            leafIndex,
+            stateRoot,
+            invalidEpoch,
+            nonce
+        )
+
+        input = await genInputForContract(
+            Circuit.verifyEpochKey,
+            invalidCircuitInputs
+        )
+        await expect(
+            unirepContract.assertValidEpochKeyProof(
+                input.publicSignals,
+                input.proof
+            )
+        ).to.be.revertedWithCustomError(unirepContract, `EpochNotMatch`)
+        const isProofValid = await unirepContract.verifyEpochKeyValidity(
+            input.publicSignals,
+            input.proof
+        )
+        expect(isProofValid, 'Verify epk proof on-chain should succeed').to.be
+            .true
+    })
+
+    it('Invalid nonce should not pass check', async () => {
         const invalidNonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        const id = new ZkIdentity()
+        const commitment = id.genIdentityCommitment()
+
+        {
+            const tx = await unirepContract['userSignUp(uint256)'](commitment)
+            await tx.wait()
+        }
+        const stateRoot = genNewUserStateTree().root
+        const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
+        tree.insert(hashedStateLeaf)
+        const leafIndex = tree.indexOf(hashedStateLeaf)
         const invalidCircuitInputs = genEpochKeyCircuitInput(
             id,
             tree,
@@ -117,6 +177,12 @@ describe('Verify Epoch Key verifier', function () {
             Circuit.verifyEpochKey,
             invalidCircuitInputs
         )
+        await expect(
+            unirepContract.assertValidEpochKeyProof(
+                input.publicSignals,
+                input.proof
+            )
+        ).to.be.revertedWithCustomError(unirepContract, `InvalidProof`)
         const isProofValid = await unirepContract.verifyEpochKeyValidity(
             input.publicSignals,
             input.proof

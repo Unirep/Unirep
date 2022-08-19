@@ -8,6 +8,7 @@ import { Circuit } from '@unirep/circuits'
 import {
     genUserStateTransitionCircuitInput,
     genInputForContract,
+    genNewUserStateTree,
 } from './utils'
 import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
@@ -18,12 +19,15 @@ describe('User State Transition', function () {
 
     const epoch = 1
     const user = new ZkIdentity()
-    const proofIndexes = []
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
+
+        unirepContract['userSignUp(uint256)'](
+            user.genIdentityCommitment()
+        ).then((t) => t.wait())
 
         // UST should be performed after epoch transition
         // Fast-forward epochLength of seconds
@@ -31,17 +35,20 @@ describe('User State Transition', function () {
             await unirepContract.config()
         ).epochLength.toNumber()
         await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
-        const tx = await unirepContract.beginEpochTransition()
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        unirepContract.beginEpochTransition().then((t) => t.wait())
     })
 
     it('Valid user state update inputs should work', async () => {
+        const userStateTree = genNewUserStateTree()
+        const reputationRecords = {}
         const {
             startTransitionCircuitInputs,
             processAttestationCircuitInputs,
             finalTransitionCircuitInputs,
-        } = await genUserStateTransitionCircuitInput(user, epoch)
+        } = await genUserStateTransitionCircuitInput(user, epoch, 0, {
+            userStateTree,
+            reputationRecords,
+        })
 
         // submit start user state tranisiton proof
         {
@@ -85,8 +92,7 @@ describe('User State Transition', function () {
 
         const tx = await unirepContract.updateUserStateRoot(
             input.publicSignals,
-            input.proof,
-            proofIndexes
+            input.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
@@ -122,12 +128,54 @@ describe('User State Transition', function () {
         expect(isProofValid).to.be.true
 
         await expect(
-            unirepContract.updateUserStateRoot(
-                input.publicSignals,
-                input.proof,
-                proofIndexes
-            )
+            unirepContract.updateUserStateRoot(input.publicSignals, input.proof)
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
+    })
+
+    it('Invalid GST root should fail', async () => {
+        const user2 = new ZkIdentity()
+        const {
+            startTransitionCircuitInputs,
+            processAttestationCircuitInputs,
+            finalTransitionCircuitInputs: circuitInputs,
+        } = genUserStateTransitionCircuitInput(user2, epoch)
+
+        // submit start user state tranisiton proof
+        {
+            const { publicSignals, proof } = await genInputForContract(
+                Circuit.startTransition,
+                startTransitionCircuitInputs
+            )
+
+            unirepContract
+                .startUserStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+
+        // submit process attestations proofs
+        {
+            for (const circuitInputs of processAttestationCircuitInputs) {
+                const { publicSignals, proof } = await genInputForContract(
+                    Circuit.processAttestations,
+                    circuitInputs
+                )
+
+                unirepContract
+                    .processAttestations(publicSignals, proof)
+                    .then((t) => t.wait())
+            }
+        }
+        const input: UserTransitionProof = await genInputForContract(
+            Circuit.userStateTransition,
+            circuitInputs
+        )
+
+        await expect(
+            unirepContract.updateUserStateRoot(input.publicSignals, input.proof)
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidGlobalStateTreeRoot'
+        )
     })
 
     it('Invalid user state proof should fail', async () => {
@@ -167,8 +215,9 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
+        const validGSTRoot = await unirepContract.globalStateTree(1)
         input.publicSignals[input.idx.fromGlobalStateTree] =
-            genRandomSalt().toString()
+            validGSTRoot.root.toString()
         const isValid = await input.verify()
         expect(
             isValid,
@@ -181,11 +230,7 @@ describe('User State Transition', function () {
         expect(isProofValid).to.be.false
 
         await expect(
-            unirepContract.updateUserStateRoot(
-                input.publicSignals,
-                input.proof,
-                proofIndexes
-            )
+            unirepContract.updateUserStateRoot(input.publicSignals, input.proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 
