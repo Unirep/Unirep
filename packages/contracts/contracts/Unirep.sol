@@ -208,17 +208,22 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                 index /= 2;
             }
         }
-        IncrementalBinaryTree.insert(globalStateTree[currentEpoch], newGSTLeaf);
-        globalStateTreeRoots[currentEpoch][
-            globalStateTree[currentEpoch].root
-        ] = true;
-
         emit UserSignedUp(
             currentEpoch,
             identityCommitment,
             attesterId,
-            initBalance
+            initBalance,
+            globalStateTree[currentEpoch].numberOfLeaves
         );
+        emit NewGSTLeaf(
+            currentEpoch,
+            newGSTLeaf,
+            globalStateTree[currentEpoch].numberOfLeaves
+        );
+        IncrementalBinaryTree.insert(globalStateTree[currentEpoch], newGSTLeaf);
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
     }
 
     /**
@@ -656,6 +661,11 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         if (isValid == false) revert InvalidProof();
 
         // update global state tree
+        emit NewGSTLeaf(
+            currentEpoch,
+            publicSignals[1],
+            globalStateTree[currentEpoch].numberOfLeaves
+        );
         IncrementalBinaryTree.insert(
             globalStateTree[currentEpoch],
             publicSignals[1]
@@ -664,9 +674,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             globalStateTree[currentEpoch].root
         ] = true;
 
-        emit UserStateTransitioned(currentEpoch, publicSignals[1]);
-
         getProofIndex[proofNullifier] = 1;
+
+        emit UserStateTransitioned(
+            currentEpoch,
+            publicSignals[1],
+            globalStateTree[currentEpoch].numberOfLeaves,
+            publicSignals[2] // first epoch key nullifier
+        );
     }
 
     /**
@@ -897,5 +912,17 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     function maxAttesters() public view returns (uint256) {
         return config.maxAttesters;
+    }
+
+    function epochTreeProof(uint256 epoch, uint256 leafIndex)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        return SparseMerkleTree.generateProof(epochTrees[epoch], leafIndex);
+    }
+
+    function epochRoots(uint256 epoch) public view returns (uint256) {
+        return epochTrees[epoch].root;
     }
 }

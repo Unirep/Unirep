@@ -35,8 +35,10 @@ import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
 import { schema } from '../src/schema'
 
-const genNewGST = (GSTDepth: number): IncrementalMerkleTree => {
-    const defaultGSTLeaf = BigInt(0)
+const genNewGST = (
+    GSTDepth: number,
+    defaultGSTLeaf = BigInt(0)
+): IncrementalMerkleTree => {
     const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf)
     return GST
 }
@@ -238,8 +240,7 @@ const submitUSTProofs = async (
         expect(isValid).to.be.true
         const tx = await contract.updateUserStateRoot(
             finalTransitionProof.publicSignals,
-            finalTransitionProof.proof,
-            proofIndexes
+            finalTransitionProof.proof
         )
         const receipt = await tx.wait()
         expect(receipt.status).to.equal(1)
@@ -248,8 +249,7 @@ const submitUSTProofs = async (
         await expect(
             contract.updateUserStateRoot(
                 finalTransitionProof.publicSignals,
-                finalTransitionProof.proof,
-                proofIndexes
+                finalTransitionProof.proof
             )
         ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
     }
@@ -379,9 +379,11 @@ const compareStates = async (
     }
 
     for (let epoch = 1; epoch < currentEpoch; epoch++) {
-        expect(await usWithNoStorage.genEpochTree(epoch)).deep.equal(
-            await usWithStorage.genEpochTree(epoch)
-        )
+        const [root1, root2] = await Promise.all([
+            usWithNoStorage.epochTreeRoot(epoch),
+            usWithStorage.epochTreeRoot(epoch),
+        ])
+        expect(root1).to.equal(root2)
     }
 }
 

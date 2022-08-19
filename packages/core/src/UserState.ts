@@ -310,14 +310,6 @@ export default class UserState extends Synchronizer {
         })
     }
 
-    public getUnirepStateEpochTree = async (epoch: number) => {
-        return this.genEpochTree(epoch)
-    }
-
-    public getUnirepState = () => {
-        return this
-    }
-
     /**
      * Get the epoch key nullifier of given epoch
      */
@@ -427,23 +419,6 @@ export default class UserState extends Synchronizer {
             attesterId < BigInt(2 ** this.settings.userStateTreeDepth),
             `UserState: attesterId exceeds total number of attesters`
         )
-    }
-
-    /**
-     * Check if the root is one of the epoch tree roots in the given epoch
-     */
-    public epochTreeRootExists = async (
-        epochTreeRoot: BigInt | string,
-        epoch: number
-    ): Promise<boolean> => {
-        await this._checkValidEpoch(epoch)
-        const found = await this._db.findOne('Epoch', {
-            where: {
-                number: epoch,
-                epochRoot: epochTreeRoot.toString(),
-            },
-        })
-        return !!found
     }
 
     /**
@@ -587,8 +562,7 @@ export default class UserState extends Synchronizer {
         const GSTreeProof = fromEpochGSTree.createProof(leafIndex)
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
-        const fromEpochTree = await this.genEpochTree(fromEpoch)
-        const epochTreeRoot = fromEpochTree.root
+        const epochTreeRoot = await this.epochTreeRoot(fromEpoch)
         const epochKeyPathElements: any[] = []
 
         // start transition proof
@@ -758,7 +732,9 @@ export default class UserState extends Synchronizer {
                 overwriteGraffities.push('0')
                 signUps.push('0')
             }
-            epochKeyPathElements.push(fromEpochTree.createProof(epochKey))
+            epochKeyPathElements.push(
+                await this.epochTreeProof(fromEpoch, epochKey)
+            )
             finalHashChain.push(currentHashChain)
             blindedUserState.push(
                 hash5([

@@ -36,10 +36,7 @@ describe('User State', async function () {
 
     describe('Users sign up', async function () {
         let unirepContract
-        const GSTree = genNewGST(
-            setting.globalStateTreeDepth,
-            setting.userStateTreeDepth
-        )
+        const GSTree = genNewGST(setting.globalStateTreeDepth)
         const rootHistories: BigInt[] = []
         const id = new ZkIdentity()
         let userState
@@ -569,10 +566,7 @@ describe('User State', async function () {
     })
 
     describe('Epoch transition', async () => {
-        const GSTree = genNewGST(
-            setting.globalStateTreeDepth,
-            setting.userStateTreeDepth
-        )
+        const GSTree = genNewGST(setting.globalStateTreeDepth)
         const rootHistories: BigInt[] = []
         let unirepContract
         const id = new ZkIdentity()
@@ -642,16 +636,6 @@ describe('User State', async function () {
             ).equal(currentEpoch)
         })
 
-        it('generate epoch tree should succeed', async () => {
-            const currentEpoch = await userState.getUnirepStateCurrentEpoch()
-            const prevEpoch = currentEpoch - 1
-            const epochTree = await userState.getUnirepStateEpochTree(prevEpoch)
-            const root = epochTree.root
-
-            const exist = await userState.epochTreeRootExists(root, prevEpoch)
-            expect(exist).to.be.true
-        })
-
         it('epoch transition with wrong epoch input should fail', async () => {
             const currentEpoch = await userState.getUnirepStateCurrentEpoch()
             try {
@@ -680,10 +664,8 @@ describe('User State', async function () {
             )
             expect(epochTreeExist).to.be.true
 
-            const unirepEpochTree = await otherUser.getUnirepStateEpochTree(
-                fromEpoch
-            )
-            expect(unirepEpochTree.root.toString()).equal(fromEpochTree)
+            const unirepEpochTreeRoot = await otherUser.epochTreeRoot(fromEpoch)
+            expect(unirepEpochTreeRoot.toString()).equal(fromEpochTree)
 
             // epoch key nullifiers
             const epkNullifiers = await otherUser.getEpochKeyNullifiers(

@@ -2,18 +2,15 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { Attestation, deployUnirep, ReputationProof } from '@unirep/contracts'
+import { ZkIdentity } from '@unirep/crypto'
+import { Attestation, deployUnirep } from '@unirep/contracts'
 
-import { genReputationNullifier, Reputation } from '../../src'
+import { genReputationNullifier } from '../../src'
 import {
     compareAttestations,
     genRandomAttestation,
-    genReputationCircuitInput,
     genUserState,
 } from '../utils'
-import { Circuit } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 // test constants
 const maxUsers = 2 ** 7
@@ -180,42 +177,30 @@ describe('Reputation proof events in Unirep User State', function () {
 
     describe('Reputation proof event', async () => {
         it('submit attestations to the epoch key should update User state', async () => {
-            const { proofIndex: fromProofIndex } = await genIdAndRepProof(
+            const { userState } = await genIdAndRepProof(
                 unirepContract,
                 attester
             )
-            const { formattedProof, userState, proofIndex } =
-                await genIdAndRepProof(unirepContract, attester)
+            const epoch = await userState.getUnirepStateCurrentEpoch()
+            const [epk] = await userState.getEpochKeys(epoch)
             const attestation = genRandomAttestation()
             const attesterId = await unirepContract.attesters(attester.address)
             attestation.attesterId = attesterId
             const tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    formattedProof.epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epk, { value: attestingFee })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
             await userState.waitForSync()
 
-            const attestations = await userState.getAttestations(
-                formattedProof.epochKey.toString()
-            )
+            const attestations = await userState.getAttestations(epk.toString())
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
             await userState.stop()
         })
 
         it('submit attestations to the epoch key should not update User state', async () => {
-            const { proofIndex: fromProofIndex } = await genIdAndRepProof(
-                unirepContract,
-                attester
-            )
-            const { proofIndex, userState } = await genIdAndRepProof(
+            const { userState } = await genIdAndRepProof(
                 unirepContract,
                 attester
             )
@@ -225,13 +210,9 @@ describe('Reputation proof events in Unirep User State', function () {
             const epochKey = '0x01010101'
             const tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey, {
+                    value: attestingFee,
+                })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
             await userState.waitForSync()
@@ -242,32 +223,13 @@ describe('Reputation proof events in Unirep User State', function () {
         })
 
         it('spend reputation event can attest to other epoch key and update User state', async () => {
-            const { proofIndex: fromProofIndex } = await genIdAndRepProof(
-                unirepContract,
-                attester
-            )
             const { userState } = await genIdAndRepProof(
                 unirepContract,
                 attester
             )
+            const epoch = await userState.getUnirepStateCurrentEpoch()
+            const [epk] = await userState.getEpochKeys(epoch)
             const attesterId = await unirepContract.attesters(attester.address)
-            const epkNonce = 0
-            const formattedProof = await userState.genVerifyEpochKeyProof(
-                epkNonce
-            )
-            const isValid = await formattedProof.verify()
-            expect(isValid).to.be.true
-
-            await unirepContract
-                .submitEpochKeyProof(
-                    formattedProof.publicSignals,
-                    formattedProof.proof
-                )
-                .then((t) => t.wait())
-
-            const toProofIndex = Number(
-                await unirepContract.getProofIndex(formattedProof.hash())
-            )
 
             const attestation = new Attestation(
                 attesterId.toBigInt(),
@@ -278,75 +240,18 @@ describe('Reputation proof events in Unirep User State', function () {
             )
             await unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    formattedProof.epochKey,
-                    toProofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epk, { value: attestingFee })
                 .then((t) => t.wait())
             await userState.waitForSync()
 
-            const attestations = await userState.getAttestations(
-                formattedProof.epochKey.toString()
-            )
+            const attestations = await userState.getAttestations(epk.toString())
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
             await userState.stop()
         })
 
-        it('submit invalid reputation proof event', async () => {
-            const id = new ZkIdentity()
-            const airdropAmount = 20
-            await unirepContract
-                .connect(attester)
-                ['userSignUp(uint256,uint256)'](
-                    id.genIdentityCommitment(),
-                    airdropAmount
-                )
-                .then((t) => t.wait())
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                id
-            )
-            const attesterId = await unirepContract.attesters(attester.address)
-            const epkNonce = 1
-            const spendReputation = 5
-            const formattedProof = await userState.genProveReputationProof(
-                attesterId.toBigInt(),
-                epkNonce,
-                undefined,
-                undefined,
-                undefined,
-                spendReputation
-            )
-            ;(formattedProof as any).publicSignals[
-                formattedProof.idx.globalStateTree
-            ] = genRandomSalt()
-            const isValid = await formattedProof.verify()
-            expect(isValid).to.be.false
-
-            await expect(
-                unirepContract
-                    .connect(attester)
-                    .spendReputation(
-                        formattedProof.publicSignals,
-                        formattedProof.proof,
-                        { value: attestingFee }
-                    )
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
-
-            const attestations = await userState.getAttestations(
-                formattedProof.epochKey.toString()
-            )
-            expect(attestations.length).equal(0)
-            await userState.stop()
-        })
-
         it('submit attestations to the epoch key should not update User state', async () => {
-            const { proofIndex, userState } = await genIdAndRepProof(
+            const { userState } = await genIdAndRepProof(
                 unirepContract,
                 attester
             )
@@ -356,7 +261,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const epochKey = '0x01010101'
             const tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey, proofIndex, 0, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
             const receipt = await tx.wait()
@@ -364,184 +269,6 @@ describe('Reputation proof events in Unirep User State', function () {
 
             const attestations = await userState.getAttestations(epochKey)
             expect(attestations.length).equal(0)
-        })
-
-        it('invalid reputation proof with from proof index should not update User state', async () => {
-            const id = new ZkIdentity()
-            const airdropAmount = 10
-            await unirepContract
-                .connect(attester)
-                ['userSignUp(uint256,uint256)'](
-                    id.genIdentityCommitment(),
-                    airdropAmount
-                )
-                .then((t) => t.wait())
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                id
-            )
-            const epkNonce = 0
-            const formattedProof = await userState.genVerifyEpochKeyProof(
-                epkNonce
-            )
-            const startAttestations = await userState.getAttestations(
-                formattedProof.epochKey.toString()
-            )
-            let tx = await unirepContract.submitEpochKeyProof(
-                formattedProof.publicSignals,
-                formattedProof.proof
-            )
-            let receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            const toProofIndex = Number(
-                await unirepContract.getProofIndex(formattedProof.hash())
-            )
-
-            const attesterId = await unirepContract.attesters(attester.address)
-            const reputationRecords = {}
-            reputationRecords[attesterId.toString()] = new Reputation(
-                BigInt(Math.floor(Math.random() * 100) + 10),
-                BigInt(0),
-                BigInt(0),
-                BigInt(1)
-            )
-            const circuitInputs = genReputationCircuitInput(
-                id,
-                1,
-                0,
-                reputationRecords,
-                attesterId
-            )
-            const { proof, publicSignals } =
-                await defaultProver.genProofAndPublicSignals(
-                    Circuit.proveReputation,
-                    circuitInputs
-                )
-            const repProof = new ReputationProof(
-                publicSignals,
-                proof,
-                defaultProver
-            )
-            expect(await repProof.verify()).to.be.true
-
-            await unirepContract
-                .connect(attester)
-                .spendReputation(repProof.publicSignals, repProof.proof, {
-                    value: attestingFee,
-                })
-                .then((t) => t.wait())
-
-            const fromProofIndex = Number(
-                await unirepContract.getProofIndex(repProof.hash())
-            )
-
-            const attestation = genRandomAttestation()
-            attestation.attesterId = attesterId
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    formattedProof.epochKey,
-                    toProofIndex,
-                    fromProofIndex,
-                    {
-                        value: attestingFee,
-                    }
-                )
-                .then((t) => t.wait())
-
-            await userState.waitForSync()
-            const attestations = await userState.getAttestations(
-                formattedProof.epochKey.toString()
-            )
-            expect(attestations.length).equal(startAttestations.length)
-        })
-
-        it('submit valid reputation proof with wrong GST root event', async () => {
-            const id = new ZkIdentity()
-            const airdropAmount = 100
-            await unirepContract
-                .connect(attester)
-                ['userSignUp(uint256,uint256)'](
-                    id.genIdentityCommitment(),
-                    airdropAmount
-                )
-                .then((t) => t.wait())
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                id
-            )
-            const epoch = await userState.getUnirepStateCurrentEpoch()
-            await (userState as any)._db.transaction(async (db) => {
-                const leaf = genRandomSalt()
-                ;(userState as any).globalStateTree.insert(leaf)
-                db.create('GSTLeaf', {
-                    epoch,
-                    transactionHash: '0x0000',
-                    hash: leaf.toString(),
-                    index: await (userState as any)._db.count('GSTLeaf', {
-                        epoch,
-                    }),
-                })
-            })
-            // now generate a valid proof from a bad gst
-            const attesterId = await unirepContract.attesters(attester.address)
-            const epkNonce = 1
-            const formattedProof = await userState.genProveReputationProof(
-                attesterId.toBigInt(),
-                epkNonce,
-                undefined,
-                undefined,
-                undefined,
-                5
-            )
-            const isValid = await formattedProof.verify()
-            expect(isValid).to.be.true
-
-            const userState2 = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                new ZkIdentity()
-            )
-            {
-                const tx = await unirepContract
-                    .connect(attester)
-                    .spendReputation(
-                        formattedProof.publicSignals,
-                        formattedProof.proof,
-                        { value: attestingFee }
-                    )
-                await userState2.waitForSync()
-                const receipt = await tx.wait()
-                expect(receipt.status).to.equal(1)
-            }
-            const proofIndex = Number(
-                await unirepContract.getProofIndex(formattedProof.hash())
-            )
-            const attestation = genRandomAttestation()
-            attestation.attesterId = attesterId
-            const tx = await unirepContract
-                .connect(attester)
-                .submitAttestation(
-                    attestation,
-                    formattedProof.epochKey,
-                    proofIndex,
-                    0,
-                    { value: attestingFee }
-                )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            await userState2.waitForSync()
-            const attestations = await userState2.getAttestations(
-                formattedProof.epochKey.toString()
-            )
-            expect(attestations.length).equal(0)
-            await userState.stop()
-            await userState2.stop()
         })
 
         it('submit valid reputation proof event in wrong epoch should fail', async () => {
