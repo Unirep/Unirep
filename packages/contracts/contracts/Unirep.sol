@@ -552,7 +552,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         submittedBlindedUserStates[publicSignals[1]] = true;
         submittedBlindedHashChains[publicSignals[2]] = true;
 
-        uint256 _proofIndex = proofIndex;
         getProofIndex[proofNullifier] = 1;
     }
 
@@ -586,7 +585,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bool isValid = verifyProcessAttestationProof(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
 
-        uint256 _proofIndex = proofIndex;
         getProofIndex[proofNullifier] = 1;
     }
 

@@ -1,28 +1,17 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
     hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
 } from '@unirep/crypto'
+import { GLOBAL_STATE_TREE_DEPTH, Circuit } from '@unirep/circuits'
 import {
-    GLOBAL_STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    Circuit,
-} from '@unirep/circuits'
-import {
-    Attestation,
-    genEpochKeyCircuitInput,
     genInputForContract,
-    genStartTransitionCircuitInput,
-    bootstrapRandomUSTree,
-    genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
     genNewUserStateTree,
-    Reputation,
 } from './utils'
 import { deployUnirep, Unirep, UserTransitionProof } from '../src'
 
@@ -32,33 +21,32 @@ describe('Epoch Transition', function () {
     this.timeout(1000000)
 
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
+    let accounts: any
 
     const userId = new ZkIdentity()
     const userCommitment = userId.genIdentityCommitment()
 
-    let attester, attesterAddress, attesterId
+    let transitionAccount
 
-    const signedUpInLeaf = 1
     const attestingFee = ethers.utils.parseEther('0.1')
 
     let fromEpoch = 1
     let GSTree
-    let leafIndex
     const userStateTree = genNewUserStateTree()
     const reputationRecords = {}
-    const epochTreeLeaves = []
     const {
         startTransitionCircuitInputs,
         processAttestationCircuitInputs,
         finalTransitionCircuitInputs,
-    } = genUserStateTransitionCircuitInput(userId, fromEpoch, 0, {
+        attestationsMap,
+    } = genUserStateTransitionCircuitInput(userId, fromEpoch, 1, {
         userStateTree,
         reputationRecords,
     })
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
+        transitionAccount = accounts[0]
 
         unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
             attestingFee,
@@ -70,65 +58,34 @@ describe('Epoch Transition', function () {
         const stateRoot = genNewUserStateTree().root
         const hashedStateLeaf = hashLeftRight(userCommitment, stateRoot)
         tree.insert(BigInt(hashedStateLeaf.toString()))
-        const leafIndex = 0
         let tx = await unirepContract['userSignUp(uint256)'](userCommitment)
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
         console.log('Attester sign up')
-        attester = accounts[1]
-        attesterAddress = attester.address
+        for (let i = 1; i <= 10; i++) {
+            const tx = await unirepContract
+                .connect(accounts[i])
+                .attesterSignUp()
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+            expect(await unirepContract.attesters(accounts[i].address)).equal(i)
+        }
 
-        tx = await unirepContract.connect(attester).attesterSignUp()
-        receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+        // Submit attestations
+        for (const key in attestationsMap) {
+            for (const attestation of attestationsMap[key]) {
+                const attesterId = Number(attestation.attesterId.toString())
 
-        attesterId = await unirepContract.attesters(attesterAddress)
-
-        let epoch = (await unirepContract.currentEpoch()).toNumber()
-
-        let nonce = 1
-        let circuitInputs = genEpochKeyCircuitInput(
-            userId,
-            tree,
-            leafIndex,
-            stateRoot,
-            epoch,
-            nonce
-        )
-        let input = await genInputForContract(
-            Circuit.verifyEpochKey,
-            circuitInputs
-        )
-        let epochKey = input.epochKey
-
-        // Submit epoch key proof
-        await unirepContract.assertValidEpochKeyProof(
-            input.publicSignals,
-            input.proof
-        )
-        let proofNullifier = input.hash()
-        const senderPfIdx = 0
-
-        // TODO: restore attestations
-        // // Submit attestations
-        // const attestationNum = 6
-        // for (let i = 0; i < attestationNum; i++) {
-        //     let attestation = new Attestation(
-        //         BigInt(attesterId.toString()),
-        //         BigInt(i),
-        //         BigInt(0),
-        //         genRandomSalt(),
-        //         BigInt(signedUpInLeaf)
-        //     )
-        //     tx = await unirepContract
-        //         .connect(attester)
-        //         .submitAttestation(attestation, epochKey, {
-        //             value: attestingFee,
-        //         })
-        //     receipt = await tx.wait()
-        //     expect(receipt.status).equal(1)
-        // }
+                const tx = await unirepContract
+                    .connect(accounts[attesterId])
+                    .submitAttestation(attestation, key, {
+                        value: attestingFee,
+                    })
+                receipt = await tx.wait()
+                expect(receipt.status).equal(1)
+            }
+        }
     })
 
     it('premature epoch transition should fail', async () => {
@@ -140,15 +97,16 @@ describe('Epoch Transition', function () {
     it('epoch transition should succeed', async () => {
         // Record data before epoch transition so as to compare them with data after epoch transition
         let epoch = await unirepContract.currentEpoch()
+        const account = accounts[0]
 
         // Fast-forward epochLength of seconds
         await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         // Assert no epoch transition compensation is dispensed to volunteer
         expect(
-            await unirepContract.epochTransitionCompensation(attesterAddress)
+            await unirepContract.epochTransitionCompensation(account.address)
         ).to.be.equal(0)
         // Begin epoch transition
-        let tx = await unirepContract.connect(attester).beginEpochTransition()
+        let tx = await unirepContract.connect(account).beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
         console.log(
@@ -157,7 +115,7 @@ describe('Epoch Transition', function () {
         )
         // Verify compensation to the volunteer increased
         expect(
-            await unirepContract.epochTransitionCompensation(attesterAddress)
+            await unirepContract.epochTransitionCompensation(account.address)
         ).to.gt(0)
 
         // Complete epoch transition
@@ -180,7 +138,6 @@ describe('Epoch Transition', function () {
         const commitment = userId.genIdentityCommitment()
         const hashedLeaf = hashLeftRight(commitment, userStateTree.root)
         GSTree.insert(hashedLeaf)
-        leafIndex = 0
     })
 
     it('start user state transition should succeed', async () => {
@@ -257,7 +214,9 @@ describe('Epoch Transition', function () {
         // Fast-forward epochLength of seconds
         await hardhatEthers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         // Begin epoch transition
-        let tx = await unirepContract.connect(attester).beginEpochTransition()
+        let tx = await unirepContract
+            .connect(transitionAccount)
+            .beginEpochTransition()
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
@@ -273,20 +232,21 @@ describe('Epoch Transition', function () {
         expect(epoch_).equal(epoch.add(1))
     })
 
-    // TODO: fix collectEpochTransitionCompensation
-    // it('collecting epoch transition compensation should succeed', async () => {
-    //     const compensation = await unirepContract.epochTransitionCompensation(
-    //         attesterAddress
-    //     )
-    //     expect(compensation).to.gt(0)
-    //     // Set gas price to 0 so attester will not be charged transaction fee
-    //     await expect(() =>
-    //         unirepContract
-    //             .connect(attester)
-    //             .collectEpochTransitionCompensation()
-    //     ).to.changeEtherBalance(attester, compensation)
-    //     expect(
-    //         await unirepContract.epochTransitionCompensation(attesterAddress)
-    //     ).to.equal(0)
-    // })
+    it('collecting epoch transition compensation should succeed', async () => {
+        const compensation = await unirepContract.epochTransitionCompensation(
+            transitionAccount.address
+        )
+        expect(compensation).to.gt(0)
+        // Set gas price to 0 so attester will not be charged transaction fee
+        await expect(() =>
+            unirepContract
+                .connect(transitionAccount)
+                .collectEpochTransitionCompensation()
+        ).to.changeEtherBalance(transitionAccount, compensation)
+        expect(
+            await unirepContract.epochTransitionCompensation(
+                transitionAccount.address
+            )
+        ).to.equal(0)
+    })
 })

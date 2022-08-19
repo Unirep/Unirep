@@ -258,9 +258,7 @@ const bootstrapRandomUSTree = (): UserStates => {
 }
 
 const bootstrapAttestation = (): Attestation => {
-    const attesterId = BigInt(
-        Math.ceil(Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1))
-    )
+    const attesterId = BigInt(Math.ceil(Math.random() * 10))
     const signUp = Math.floor(Math.random() * 2)
     const attestation = new Attestation(
         attesterId,
@@ -493,6 +491,7 @@ const genUserStateTransitionCircuitInput = (
     startTransitionCircuitInputs
     processAttestationCircuitInputs
     finalTransitionCircuitInputs
+    attestationsMap
 } => {
     // don't need to check sign up because we won't be able to create a
     // gstree proof unless we are signed up
@@ -539,7 +538,7 @@ const genUserStateTransitionCircuitInput = (
             if (hashChains[epochKey] === undefined)
                 hashChains[epochKey] = BigInt(0)
             hashChains[epochKey] = crypto.hashLeftRight(
-                a.hash(),
+                a.hash,
                 hashChains[epochKey]
             )
         }
@@ -684,7 +683,7 @@ const genUserStateTransitionCircuitInput = (
 
             // Update current hashchain result
             currentHashChain = crypto.hashLeftRight(
-                attestation.hash(),
+                attestation.hash,
                 currentHashChain
             )
         }
@@ -813,6 +812,7 @@ const genUserStateTransitionCircuitInput = (
         startTransitionCircuitInputs,
         processAttestationCircuitInputs,
         finalTransitionCircuitInputs,
+        attestationsMap,
     }
 }
 
