@@ -553,13 +553,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         submittedBlindedHashChains[publicSignals[2]] = true;
 
         uint256 _proofIndex = proofIndex;
-        emit IndexedStartedTransitionProof(
-            _proofIndex,
-            publicSignals[1], // indexed blinded user state
-            publicSignals[0], // indexed global state tree
-            publicSignals,
-            proof
-        );
         getProofIndex[proofNullifier] = 1;
     }
 
@@ -594,12 +587,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         if (isValid == false) revert InvalidProof();
 
         uint256 _proofIndex = proofIndex;
-        emit IndexedProcessedAttestationsProof(
-            _proofIndex,
-            _inputBlindedUserState, // input blinded user state
-            publicSignals,
-            proof
-        );
         getProofIndex[proofNullifier] = 1;
     }
 
@@ -679,8 +666,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             globalStateTree[currentEpoch].root
         ] = true;
 
-        uint256 _proofIndex = proofIndex;
-        emit IndexedUserStateTransitionProof(_proofIndex, publicSignals, proof);
         emit UserStateTransitioned(currentEpoch, publicSignals[1]);
 
         getProofIndex[proofNullifier] = 1;
