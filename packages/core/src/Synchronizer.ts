@@ -294,23 +294,6 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    protected async _isEpochKeySealed(epoch: number, epochKey: string) {
-        const _epochKey = await this._db.findOne('EpochKey', {
-            where: {
-                epoch,
-                key: epochKey,
-            },
-            include: {
-                epochDoc: true,
-            },
-        })
-        if (_epochKey && _epochKey?.epochDoc?.sealed) {
-            throw new Error(
-                `Synchronizer: Epoch key (${epochKey}) has been sealed`
-            )
-        }
-    }
-
     async epochTreeRoot(epoch: number) {
         return this.unirepContract.epochRoots(epoch)
     }
@@ -395,7 +378,6 @@ export class Synchronizer extends EventEmitter {
         return this._db.findMany('Attestation', {
             where: {
                 epochKey,
-                valid: 1,
             },
         })
     }
@@ -465,7 +447,6 @@ export class Synchronizer extends EventEmitter {
 
         db.create('GSTLeaf', {
             epoch,
-            transactionHash: event.transactionHash,
             hash: leaf.toString(),
             index,
         })
@@ -507,7 +488,6 @@ export class Synchronizer extends EventEmitter {
 
         await this._checkCurrentEpoch(_epoch)
         await this._checkEpochKeyRange(_epochKey.toString())
-        await this._isEpochKeySealed(_epoch, _epochKey.toString())
 
         const attestation = new Attestation(
             BigInt(decodedData.attestation.attesterId),
@@ -520,7 +500,6 @@ export class Synchronizer extends EventEmitter {
             epoch: _epoch,
             epochKey: _epochKey.toString(),
             index: index,
-            transactionHash: event.transactionHash,
             attester: _attester,
             attesterId: Number(decodedData.attestation.attesterId),
             posRep: Number(decodedData.attestation.posRep),
@@ -528,7 +507,6 @@ export class Synchronizer extends EventEmitter {
             graffiti: decodedData.attestation.graffiti.toString(),
             signUp: Number(decodedData.attestation?.signUp),
             hash: attestation.hash().toString(),
-            valid: 1,
         })
         return true
     }
