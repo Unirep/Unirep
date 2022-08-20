@@ -117,9 +117,6 @@ describe('Synchronizer process events', function () {
         })
         expect(storedLeaves.length).to.equal(1)
         expect(storedLeaves[0].epoch).to.equal(epoch.toNumber())
-        expect(storedLeaves[0].transactionHash).to.equal(
-            receipt.transactionHash
-        )
         expect(storedLeaves[0].index).to.equal(leafIndex - 1)
         // now look for a new GSTRoot
         tree.insert(leaf)
@@ -161,7 +158,6 @@ describe('Synchronizer process events', function () {
         expect(epochs.length).to.equal(endEpoch)
         expect(epochs[1].number).to.equal(2)
         expect(epochs[1].sealed).to.equal(0)
-        expect(epochs[1].epochRoot).to.equal(null)
     })
 
     it('should process ust events', async () => {

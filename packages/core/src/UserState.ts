@@ -57,23 +57,6 @@ export default class UserState extends Synchronizer {
         this.id = _id
     }
 
-    async start() {
-        await super.start()
-
-        const [UserStateTransitioned] =
-            this.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
-        this.on(UserStateTransitioned, async (event) => {
-            const epoch = Number(event.topics[1])
-            const GSTLeaf = BigInt(event.topics[2])
-            try {
-                await this.userStateTransition(GSTLeaf, epoch)
-            } catch (err) {
-                console.log(err)
-            }
-        })
-    }
-
     /**
      * Query if the user is signed up in the unirep state.
      * @returns True if user has signed up in unirep contract, false otherwise.
@@ -389,17 +372,6 @@ export default class UserState extends Synchronizer {
             attesterId < BigInt(2 ** this.settings.userStateTreeDepth),
             `UserState: attesterId exceeds total number of attesters`
         )
-    }
-
-    /**
-     * Update user state and unirep state according to user state transition event
-     */
-    public userStateTransition = async (GSTLeaf: BigInt, toEpoch: number) => {
-        const newState = await this.genUserStateTree(toEpoch)
-        if (GSTLeaf !== newState.root) {
-            console.error('UserState: new GST leaf mismatch')
-            return
-        }
     }
 
     /**

@@ -255,16 +255,7 @@ const submitUSTProofs = async (
     }
 }
 
-const tables = [
-    'Proof',
-    'Nullifier',
-    'GSTLeaf',
-    'GSTRoot',
-    'Attestation',
-    'Epoch',
-    'EpochKey',
-    'UserSignUp',
-]
+const tables = ['Nullifier', 'GSTLeaf', 'Attestation', 'Epoch', 'UserSignUp']
 
 const hash = (obj: any) => {
     const stringContent = JSON.stringify({
