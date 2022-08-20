@@ -84,8 +84,9 @@ describe('test all CLI subcommands', function () {
                 ` -f ${attestingFee.toString()} `
 
             console.log(command)
-            const output = exec(command).stdout.trim()
-            console.log(output)
+            const { stdout, stderr } = exec(command)
+            const output = stdout.trim()
+            console.log(output, stderr)
 
             const regMatch = output.match(/Unirep: (0x[a-fA-F0-9]{40})$/)
             const unirepAddress = regMatch[1]
@@ -245,29 +246,6 @@ describe('test all CLI subcommands', function () {
         })
     })
 
-    describe('submitEpochKeyProof CLI subcommand', () => {
-        it('should submit epoch key proof', async () => {
-            const command =
-                `npx ts-node cli/index.ts submitEpochKeyProof` +
-                ` -x ${unirepContract.address} ` +
-                ` -d ${deployerPrivKey} ` +
-                ` -pf ${epkProof} ` +
-                ` -p ${epkPublicSignals}`
-
-            console.log(command)
-            const output = exec(command).stdout.trim()
-            console.log(output)
-
-            const txRegMatch = output.match(
-                /Transaction hash: 0x[a-fA-F0-9]{64}/
-            )
-            expect(txRegMatch).not.equal(null)
-
-            const proofIndexRegMatch = output.match(/Proof index:  ([0-9]+)/)
-            proofIdx = proofIndexRegMatch[1]
-        })
-    })
-
     describe('attest CLI subcommand', () => {
         it('should attest to user', async () => {
             const command =
@@ -275,7 +253,6 @@ describe('test all CLI subcommands', function () {
                 ` -x ${unirepContract.address} ` +
                 ` -d ${attesterPrivKey} ` +
                 ` -epk ${epk} ` +
-                ` -toi ${proofIdx} ` +
                 ` -pr ${posRep} ` +
                 ` -nr ${negRep} ` +
                 ` -gf ${graffiti.toString()} ` +
