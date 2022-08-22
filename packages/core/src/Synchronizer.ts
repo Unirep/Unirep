@@ -540,12 +540,10 @@ export class Synchronizer extends EventEmitter {
             },
             update: {
                 sealed: true,
-                // epochRoot: tree.root.toString(),
             },
             create: {
                 number: epoch,
                 sealed: true,
-                // epochRoot: tree.root.toString(),
             },
         })
         // create the next stub entry
