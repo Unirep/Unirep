@@ -138,17 +138,6 @@ describe('Reputation proof events in Unirep User State', function () {
             const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
-            // const airdroppedAmount = await unirepContract.airdropAmount(
-            //     attester.address
-            // )
-            // signUpAirdrops.push(
-            //     new Reputation(
-            //         airdroppedAmount.toBigInt(),
-            //         BigInt(0),
-            //         BigInt(0),
-            //         BigInt(1)
-            //     )
-            // )
             await userState.stop()
         })
 
