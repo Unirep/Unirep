@@ -182,6 +182,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
 
+        uint256 root = initUST.root;
         if (attesterId > 0) {
             uint256 initUSTLeaf = Poseidon5.poseidon(
                 [
@@ -193,21 +194,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                 ]
             );
             // calculate the initial smt root by inserting at attesterId index
-            SparseMerkleTree.update(initUST, attesterId, initUSTLeaf);
+            root = SparseMerkleTree.computeRoot(
+                initUST,
+                attesterId,
+                initUSTLeaf
+            );
         }
 
-        uint256 newGSTLeaf = Poseidon2.poseidon(
-            [identityCommitment, initUST.root]
-        );
-        // now manually reset the tree so it can be used for future signups
-        // we'll ignore the root, it will be updated on next update call
-        if (attesterId > 0) {
-            uint256 index = attesterId;
-            for (uint8 i = 0; i < initUST.depth; i++) {
-                initUST.leaves[i][index] = initUST.zeroes[i];
-                index /= 2;
-            }
-        }
+        uint256 newGSTLeaf = Poseidon2.poseidon([identityCommitment, root]);
         emit UserSignedUp(
             currentEpoch,
             identityCommitment,

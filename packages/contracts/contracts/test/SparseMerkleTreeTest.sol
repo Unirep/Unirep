@@ -18,4 +18,12 @@ contract SparseMerkleTreeTest {
     function update(uint256 index, uint256 leaf) public {
         SparseMerkleTree.update(smt, index, leaf);
     }
+
+    function compute(uint256 index, uint256 leaf)
+        public
+        view
+        returns (uint256)
+    {
+        return SparseMerkleTree.computeRoot(smt, index, leaf);
+    }
 }

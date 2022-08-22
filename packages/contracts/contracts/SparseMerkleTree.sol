@@ -102,4 +102,39 @@ library SparseMerkleTree {
         }
         return proof;
     }
+
+    function computeRoot(
+        SparseTreeData storage self,
+        uint256 index,
+        uint256 leaf
+    ) public view returns (uint256) {
+        uint256 depth = self.depth;
+        require(leaf < SNARK_SCALAR_FIELD);
+        require(index < 2**depth);
+
+        uint256 hash = leaf;
+        uint256 lastLeftElement;
+        uint256 lastRightElement;
+
+        for (uint8 i = 0; i < depth; ) {
+            if (index & 1 == 0) {
+                uint256 siblingLeaf = self.zeroes[i];
+                lastLeftElement = hash;
+                lastRightElement = siblingLeaf;
+            } else {
+                uint256 siblingLeaf = self.zeroes[i];
+                lastLeftElement = siblingLeaf;
+                lastRightElement = hash;
+            }
+
+            hash = Poseidon2.poseidon([lastLeftElement, lastRightElement]);
+            index >>= 1;
+
+            unchecked {
+                i++;
+            }
+        }
+
+        return hash;
+    }
 }
