@@ -12,7 +12,7 @@ import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
 
-import { computeInitUserStateRoot, Reputation } from '../../src'
+import { computeInitUserStateRoot, genEpochKey, Reputation } from '../../src'
 import {
     compareAttestations,
     genEpochKeyCircuitInput,
@@ -35,7 +35,6 @@ describe('Epoch key proof events in Unirep User State', function () {
     let attesterId
     const maxUsers = 100
     const attestingFee = ethers.utils.parseEther('0.1')
-    const fromProofIndex = 0
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -152,12 +151,11 @@ describe('Epoch key proof events in Unirep User State', function () {
         })
     })
 
-    describe('Epoch key proof event', async () => {
+    describe('Epoch key proof', async () => {
         let epochKey
-        let proofIndex
         let epoch
         const userIdx = 1
-        it('submit valid epoch key proof event', async () => {
+        it('valid epoch key proof should not throw error', async () => {
             const userState = await genUserState(
                 hardhatEthers.provider,
                 unirepContract.address,
@@ -171,25 +169,11 @@ describe('Epoch key proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(
+            await unirepContract.assertValidEpochKeyProof(
                 formattedProof.publicSignals,
                 formattedProof.proof
             )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
             epochKey = formattedProof.epochKey
-            proofIndex = Number(
-                await unirepContract.getProofIndex(formattedProof.hash())
-            )
-
-            // submit the same proof twice should fail
-            await expect(
-                unirepContract.submitEpochKeyProof(
-                    formattedProof.publicSignals,
-                    formattedProof.proof
-                )
-            ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
         })
 
         it('submit attestations to the epoch key should update Unirep state', async () => {
@@ -197,13 +181,9 @@ describe('Epoch key proof events in Unirep User State', function () {
             attestation.attesterId = attesterId
             const tx = await unirepContract
                 .connect(attester['acct'])
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
-                )
+                .submitAttestation(attestation, epochKey, {
+                    value: attestingFee,
+                })
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
@@ -229,48 +209,19 @@ describe('Epoch key proof events in Unirep User State', function () {
             const formattedProof = await userState.genVerifyEpochKeyProof(
                 epkNonce
             )
-            formattedProof.publicSignals[formattedProof.idx.globalStateTree] =
-                genRandomSalt().toString()
+            formattedProof.publicSignals[formattedProof.idx.epochKey] =
+                genEpochKey(genRandomSalt(), epoch, epkNonce).toString()
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.false
 
             await expect(
-                unirepContract.submitEpochKeyProof(
+                unirepContract.assertValidEpochKeyProof(
                     formattedProof.publicSignals,
                     formattedProof.proof
                 )
             ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
 
             epochKey = formattedProof.epochKey
-            proofIndex = Number(
-                await unirepContract.getProofIndex(formattedProof.hash())
-            )
-            expect(proofIndex).equal(0)
-            await userState.stop()
-        })
-
-        it('submit attestations to the epoch key should not update Unirep state', async () => {
-            const attestation = genRandomAttestation()
-            attestation.attesterId = attesterId
-            await expect(
-                unirepContract
-                    .connect(attester['acct'])
-                    .submitAttestation(
-                        attestation,
-                        epochKey,
-                        proofIndex,
-                        fromProofIndex,
-                        { value: attestingFee }
-                    )
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProofIndex')
-
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                new ZkIdentity()
-            )
-            const attestations = await userState.getAttestations(epochKey)
-            expect(attestations.length).equal(0)
             await userState.stop()
         })
 
@@ -310,42 +261,15 @@ describe('Epoch key proof events in Unirep User State', function () {
             const isValid = await formattedProof.verify()
             expect(isValid).to.be.true
 
-            const tx = await unirepContract.submitEpochKeyProof(
-                formattedProof.publicSignals,
-                formattedProof.proof
-            )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            epochKey = formattedProof.epochKey
-            proofIndex = Number(
-                await unirepContract.getProofIndex(formattedProof.hash())
-            )
-        })
-
-        it('submit attestations to the epoch key should not update Unirep state', async () => {
-            const attestation = genRandomAttestation()
-            attestation.attesterId = attesterId
-            const tx = await unirepContract
-                .connect(attester['acct'])
-                .submitAttestation(
-                    attestation,
-                    epochKey,
-                    proofIndex,
-                    fromProofIndex,
-                    { value: attestingFee }
+            await expect(
+                unirepContract.assertValidEpochKeyProof(
+                    formattedProof.publicSignals,
+                    formattedProof.proof
                 )
-            const receipt = await tx.wait()
-            expect(receipt.status).to.equal(1)
-
-            const userState = await genUserState(
-                hardhatEthers.provider,
-                unirepContract.address,
-                new ZkIdentity()
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'InvalidGlobalStateTreeRoot'
             )
-            const attestations = await userState.getAttestations(epochKey)
-            expect(attestations.length).equal(0)
-            await userState.stop()
         })
 
         it('submit valid epoch key proof event in wrong epoch', async () => {
@@ -380,7 +304,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             expect(isValid).to.be.true
 
             await expect(
-                unirepContract.submitEpochKeyProof(
+                unirepContract.assertValidEpochKeyProof(
                     formattedProof.publicSignals,
                     formattedProof.proof
                 )

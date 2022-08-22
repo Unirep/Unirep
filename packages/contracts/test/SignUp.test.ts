@@ -243,6 +243,9 @@ describe('Signup', () => {
             const id = new ZkIdentity()
             const epoch = await unirepContract.currentEpoch()
             const airdropAmount = 100
+            const { numberOfLeaves } = await unirepContract.globalStateTree(
+                epoch
+            )
             await expect(
                 unirepContract
                     .connect(accounts[1])
@@ -256,7 +259,8 @@ describe('Signup', () => {
                     epoch,
                     id.genIdentityCommitment(),
                     attesterId,
-                    airdropAmount
+                    airdropAmount,
+                    numberOfLeaves
                 )
         })
 

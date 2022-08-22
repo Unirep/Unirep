@@ -8,12 +8,15 @@ interface IUnirep is UnirepTypes {
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
         uint256 attesterId,
-        uint256 airdropAmount
+        uint256 airdropAmount,
+        uint256 leafIndex
     );
 
     event UserStateTransitioned(
         uint256 indexed epoch,
-        uint256 indexed hashedLeaf
+        uint256 indexed hashedLeaf,
+        uint256 indexed leafIndex,
+        uint256 firstEpkNullifier
     );
 
     event AttestationSubmitted(
@@ -21,6 +24,12 @@ interface IUnirep is UnirepTypes {
         uint256 indexed epochKey,
         address indexed attester,
         Attestation attestation
+    );
+
+    event NewGSTLeaf(
+        uint256 indexed epoch,
+        uint256 indexed leaf,
+        uint256 indexed index
     );
 
     event EpochEnded(uint256 indexed epoch);

@@ -188,8 +188,7 @@ const userStateTransition = async (args: any) => {
             .connect(wallet)
             .updateUserStateRoot(
                 finalTransitionProof.publicSignals,
-                finalTransitionProof.proof,
-                proofIndexes
+                finalTransitionProof.proof
             )
         await tx.wait()
     } catch (error) {

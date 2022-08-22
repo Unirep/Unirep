@@ -77,4 +77,64 @@ library SparseMerkleTree {
 
         self.root = hash;
     }
+
+    function generateProof(SparseTreeData storage self, uint256 index)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        require(index < 2**self.depth);
+        uint256[] memory proof = new uint256[](self.depth);
+        for (uint8 i = 0; i < self.depth; ) {
+            if (index & 1 == 0) {
+                uint256 siblingLeaf = self.leaves[i][index + 1];
+                if (siblingLeaf == 0) siblingLeaf = self.zeroes[i];
+                proof[i] = siblingLeaf;
+            } else {
+                uint256 siblingLeaf = self.leaves[i][index - 1];
+                if (siblingLeaf == 0) siblingLeaf = self.zeroes[i];
+                proof[i] = siblingLeaf;
+            }
+            index >>= 1;
+            unchecked {
+                i++;
+            }
+        }
+        return proof;
+    }
+
+    function computeRoot(
+        SparseTreeData storage self,
+        uint256 index,
+        uint256 leaf
+    ) public view returns (uint256) {
+        uint256 depth = self.depth;
+        require(leaf < SNARK_SCALAR_FIELD);
+        require(index < 2**depth);
+
+        uint256 hash = leaf;
+        uint256 lastLeftElement;
+        uint256 lastRightElement;
+
+        for (uint8 i = 0; i < depth; ) {
+            if (index & 1 == 0) {
+                uint256 siblingLeaf = self.zeroes[i];
+                lastLeftElement = hash;
+                lastRightElement = siblingLeaf;
+            } else {
+                uint256 siblingLeaf = self.zeroes[i];
+                lastLeftElement = siblingLeaf;
+                lastRightElement = hash;
+            }
+
+            hash = Poseidon2.poseidon([lastLeftElement, lastRightElement]);
+            index >>= 1;
+
+            unchecked {
+                i++;
+            }
+        }
+
+        return hash;
+    }
 }
