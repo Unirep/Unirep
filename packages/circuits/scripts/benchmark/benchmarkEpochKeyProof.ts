@@ -28,7 +28,7 @@ async function main() {
     const EPOCH_KEY_NONCE_PER_EPOCH = 10
     const epoch_tree_depth = 64
 
-    for (let gst = 1; gst <= 32; ++gst) {
+    for (let gst = 10; gst <= 32; ++gst) {
         const tree = new IncrementalMerkleTree(gst)
         const id = new ZkIdentity()
         const commitment = id.genIdentityCommitment()
