@@ -12,6 +12,8 @@ import {IVerifier} from './interfaces/IVerifier.sol';
 import {Poseidon5, Poseidon2} from './Hash.sol';
 import {SparseMerkleTree, SparseTreeData} from './SparseMerkleTree.sol';
 
+import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
+
 /**
  * @title Unirep
  * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.
@@ -55,6 +57,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         public attestationHashchains;
 
     mapping(uint256 => SparseTreeData) public epochTrees;
+    mapping(uint256 => IncrementalTreeData) public globalStateTree;
+    // epoch => root => bool
+    mapping(uint256 => mapping(uint256 => bool)) public globalStateTreeRoots;
+    SparseTreeData internal initUST;
 
     // Attesting fee collected so far
     uint256 public collectedAttestingFee;
@@ -67,8 +73,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     // No attesters with and ID of 0 should exist.
     mapping(address => uint256) public attesters;
     uint256 public nextAttesterId = 1;
-    // Mapping of the airdrop amount of an attester
-    mapping(address => uint256) public airdropAmount;
     // Mapping of existing nullifiers to the epoch of emitted
     mapping(uint256 => uint256) public usedNullifiers;
     // Mapping of existing blinded user states
@@ -113,6 +117,30 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
+        uint256 zero = 0;
+        uint256 one = 1;
+        uint256 defaultUSTLeaf = Poseidon5.poseidon(
+            [zero, zero, zero, zero, zero]
+        );
+        uint256 defaultEpochTreeLeaf = Poseidon2.poseidon([one, zero]);
+        SparseMerkleTree.init(
+            initUST,
+            config.userStateTreeDepth,
+            defaultUSTLeaf
+        );
+        SparseMerkleTree.init(
+            epochTrees[currentEpoch],
+            config.epochTreeDepth,
+            defaultEpochTreeLeaf
+        );
+        IncrementalBinaryTree.init(
+            globalStateTree[currentEpoch],
+            config.globalStateTreeDepth,
+            0
+        );
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
     }
 
     // Verify input data - Should found better way to handle it.
@@ -123,18 +151,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function verifyProofNullifier(bytes32 proofNullifier) private view {
         if (getProofIndex[proofNullifier] != 0)
             revert ProofAlreadyUsed(proofNullifier);
-    }
-
-    function verifyAttesterFee() private view {
-        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
-    }
-
-    function verifyAttesterIndex(address attester, uint256 attesterId)
-        private
-        view
-    {
-        if (attesters[attester] != attesterId)
-            revert AttesterIdNotMatch(attesterId);
     }
 
     function verifyNullifier(uint256 nullifier) private {
@@ -166,12 +182,42 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         hasUserSignedUp[identityCommitment] = true;
         numUserSignUps++;
 
+        uint256 root = initUST.root;
+        if (attesterId > 0) {
+            uint256 initUSTLeaf = Poseidon5.poseidon(
+                [
+                    initBalance, // posRep
+                    0, // negRep
+                    0, // graffiti
+                    1, // signup
+                    0
+                ]
+            );
+            // calculate the initial smt root by inserting at attesterId index
+            root = SparseMerkleTree.computeRoot(
+                initUST,
+                attesterId,
+                initUSTLeaf
+            );
+        }
+
+        uint256 newGSTLeaf = Poseidon2.poseidon([identityCommitment, root]);
         emit UserSignedUp(
             currentEpoch,
             identityCommitment,
             attesterId,
-            initBalance
+            initBalance,
+            globalStateTree[currentEpoch].numberOfLeaves
         );
+        emit NewGSTLeaf(
+            currentEpoch,
+            newGSTLeaf,
+            globalStateTree[currentEpoch].numberOfLeaves
+        );
+        IncrementalBinaryTree.insert(globalStateTree[currentEpoch], newGSTLeaf);
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
     }
 
     /**
@@ -226,8 +272,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 epochKey
     ) internal view {
         verifyAttesterSignUp(attester);
-        verifyAttesterIndex(attester, attestation.attesterId);
-        verifyAttesterFee();
+        if (msg.value < config.attestingFee) revert AttestingFeeInvalid();
+        if (attesters[attester] != attestation.attesterId)
+            revert AttesterIdNotMatch(attestation.attesterId);
 
         if (attestation.signUp != 0 && attestation.signUp != 1)
             revert InvalidSignUpFlag();
@@ -247,10 +294,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     // increment the hashchain and leave the chain unsealed.
     // Also store a sealed copy of the hashchain in the epoch tree
-    function storeAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey
-    ) internal {
+    function storeAttestation(Attestation memory attestation, uint256 epochKey)
+        internal
+    {
         uint256 attestationHash = Poseidon5.poseidon(
             [
                 attestation.attesterId,
@@ -277,27 +323,14 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         );
     }
 
-    function submitGSTAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 gstRoot
-    ) external payable {
-        assertValidAttestation(msg.sender, attestation, epochKey);
-
-        if (epochKey > maxEpochKey) revert InvalidEpochKey();
-
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-        emit GSTAttestationSubmitted(
-            currentEpoch,
-            epochKey,
-            msg.sender,
-            attestation,
-            gstRoot
-        );
-    }
-
-    function submitRawAttestation(
+    /**
+     * @dev An attester submit the attestation with a proof index that the attestation will be sent to
+     * and(or) a proof index that the attestation is from
+     * If the fromProofIndex is non-zero, it should be valid then the toProofIndex can receive the attestation
+     * @param attestation The attestation that the attester wants to send to the epoch key
+     * @param epochKey The epoch key which receives attestation
+     */
+    function submitAttestation(
         Attestation calldata attestation,
         uint256 epochKey
     ) external payable {
@@ -311,48 +344,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             msg.sender,
-            attestation,
-            0,
-            0
+            attestation
         );
 
         storeAttestation(attestation, epochKey);
-    }
-
-    /**
-     * @dev An attester submit the attestation with a proof index that the attestation will be sent to
-     * and(or) a proof index that the attestation is from
-     * If the fromProofIndex is non-zero, it should be valid then the toProofIndex can receive the attestation
-     * @param attestation The attestation that the attester wants to send to the epoch key
-     * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof,
-     * signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof,
-     * if the attest is not from reputationProof, then fromProofIdx = 0
-     */
-    function submitAttestation(
-        Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
-    ) external payable {
-        assertValidAttestation(msg.sender, attestation, epochKey);
-        if (
-            toProofIndex == 0 ||
-            toProofIndex >= proofIndex ||
-            fromProofIndex >= proofIndex
-        ) revert InvalidProofIndex();
-
-        collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-        emit AttestationSubmitted(
-            currentEpoch,
-            epochKey,
-            msg.sender,
-            attestation,
-            toProofIndex,
-            fromProofIndex
-        );
     }
 
     /**
@@ -361,27 +356,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param signature The signature of the attester
      * @param attestation The attestation including positive reputation, negative reputation or graffiti
      * @param epochKey The epoch key which receives attestation
-     * @param toProofIndex The proof index of the receiver's epoch key, which might be epochKeyProof,
-     * signedUpProof, reputationProof
-     * @param fromProofIndex The proof index of the sender's epoch key, which can only be reputationProof,
-     * if the attest is not from reputationProof, then fromProofIdx = 0
      */
     function submitAttestationViaRelayer(
         address attester,
         bytes calldata signature,
         Attestation calldata attestation,
-        uint256 epochKey,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
+        uint256 epochKey
     ) external payable {
         if (!isValidSignature(attester, signature)) revert InvalidSignature();
-
-        assertValidAttestation(msg.sender, attestation, epochKey);
-        if (
-            toProofIndex == 0 ||
-            toProofIndex >= proofIndex ||
-            fromProofIndex >= proofIndex
-        ) revert InvalidProofIndex();
+        assertValidAttestation(attester, attestation, epochKey);
+        if (epochKey > maxEpochKey) revert InvalidEpochKey();
 
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
@@ -389,10 +373,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             currentEpoch,
             epochKey,
             attester,
-            attestation,
-            toProofIndex,
-            fromProofIndex
+            attestation
         );
+
+        storeAttestation(attestation, epochKey);
     }
 
     /**
@@ -403,33 +387,24 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @param publicSignals The public signals of the epoch key proof
      * @param proof The The proof of the epoch key proof
      */
-    function submitEpochKeyProof(
+    function assertValidEpochKeyProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) external {
+    ) external view {
+        uint256 _epoch = publicSignals[2];
+        uint256 _globalStateTreeRoot = publicSignals[1];
+
         // check if proof is submitted before
-        bytes32 proofNullifier = keccak256(
-            abi.encodePacked(publicSignals, proof)
-        );
-        verifyProofNullifier(proofNullifier);
-        if (publicSignals[2] != currentEpoch) revert EpochNotMatch();
+        if (_epoch != currentEpoch) revert EpochNotMatch();
         if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
+
+        // verify global state tree root
+        if (globalStateTreeRoots[_epoch][_globalStateTreeRoot] == false)
+            revert InvalidGlobalStateTreeRoot(_globalStateTreeRoot);
 
         // verify proof
         bool isValid = verifyEpochKeyValidity(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
-
-        // emit proof event
-        uint256 _proofIndex = proofIndex;
-        emit IndexedEpochKeyProof(
-            _proofIndex,
-            currentEpoch,
-            publicSignals[0],
-            publicSignals,
-            proof
-        );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
     }
 
     /**
@@ -456,7 +431,12 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             abi.encodePacked(publicSignals, proof)
         );
         uint256 _maxReputationBudget = config.maxReputationBudget;
-        verifyProofNullifier(proofNullifier);
+        uint256 _epoch = publicSignals[_maxReputationBudget + 2];
+        uint256 _globalStateTreeRoot = publicSignals[1];
+        uint256 _epochKey = publicSignals[0];
+
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
 
         if (publicSignals[_maxReputationBudget + 2] != currentEpoch)
             revert EpochNotMatch();
@@ -464,6 +444,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         for (uint256 index = 2; index < 2 + _maxReputationBudget; index++) {
             if (publicSignals[index] > 0) verifyNullifier(publicSignals[index]);
         }
+
+        // verify global state tree root
+        if (globalStateTreeRoots[_epoch][_globalStateTreeRoot] == false)
+            revert InvalidGlobalStateTreeRoot(_globalStateTreeRoot);
 
         // verify proof
         bool isValid = verifyReputation(publicSignals, proof);
@@ -474,30 +458,18 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         attestation.attesterId = publicSignals[_maxReputationBudget + 3];
         attestation.negRep = publicSignals[_maxReputationBudget + 4];
 
-        assertValidAttestation(msg.sender, attestation, publicSignals[0]);
+        assertValidAttestation(msg.sender, attestation, _epochKey);
         // Add to the cumulated attesting fee
         collectedAttestingFee = collectedAttestingFee.add(msg.value);
 
-        uint256 _proofIndex = proofIndex;
-        // emit proof event
-        emit IndexedReputationProof(
-            _proofIndex,
-            currentEpoch,
-            publicSignals[0],
-            publicSignals,
-            proof
-        );
-
         emit AttestationSubmitted(
             currentEpoch,
-            publicSignals[0],
+            _epochKey,
             msg.sender,
-            attestation,
-            _proofIndex,
-            0
+            attestation
         );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
+        storeAttestation(attestation, _epochKey);
     }
 
     /**
@@ -514,6 +486,38 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         latestEpochTransitionTime = block.timestamp;
         currentEpoch++;
+
+        // avoid calling init by manually copying zero values and root
+        for (uint8 i; i < config.epochTreeDepth; i++) {
+            epochTrees[currentEpoch].zeroes[i] = epochTrees[currentEpoch - 1]
+                .zeroes[i];
+        }
+        epochTrees[currentEpoch].root = Poseidon2.poseidon(
+            [
+                epochTrees[currentEpoch].zeroes[config.epochTreeDepth - 1],
+                epochTrees[currentEpoch].zeroes[config.epochTreeDepth - 1]
+            ]
+        );
+        epochTrees[currentEpoch].depth = config.epochTreeDepth;
+        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+            globalStateTree[currentEpoch].zeroes[i] = globalStateTree[
+                currentEpoch - 1
+            ].zeroes[i];
+        }
+        globalStateTree[currentEpoch].root = Poseidon2.poseidon(
+            [
+                globalStateTree[currentEpoch].zeroes[
+                    config.globalStateTreeDepth - 1
+                ],
+                globalStateTree[currentEpoch].zeroes[
+                    config.globalStateTreeDepth - 1
+                ]
+            ]
+        );
+        globalStateTree[currentEpoch].depth = config.globalStateTreeDepth;
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
 
         uint256 gasUsed = initGas.sub(gasleft());
         epochTransitionCompensation[msg.sender] = epochTransitionCompensation[
@@ -537,7 +541,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        verifyProofNullifier(proofNullifier);
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
 
         // verify proof
         bool isValid = verifyStartTransitionProof(publicSignals, proof);
@@ -546,16 +551,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         submittedBlindedUserStates[publicSignals[1]] = true;
         submittedBlindedHashChains[publicSignals[2]] = true;
 
-        uint256 _proofIndex = proofIndex;
-        emit IndexedStartedTransitionProof(
-            _proofIndex,
-            publicSignals[1], // indexed blinded user state
-            publicSignals[0], // indexed global state tree
-            publicSignals,
-            proof
-        );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
     }
 
     /**
@@ -574,7 +570,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        verifyProofNullifier(proofNullifier);
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
 
         uint256 _inputBlindedUserState = publicSignals[2];
         if (submittedBlindedUserStates[_inputBlindedUserState] == false)
@@ -587,15 +584,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         bool isValid = verifyProcessAttestationProof(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
 
-        uint256 _proofIndex = proofIndex;
-        emit IndexedProcessedAttestationsProof(
-            _proofIndex,
-            _inputBlindedUserState, // input blinded user state
-            publicSignals,
-            proof
-        );
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
     }
 
     /**
@@ -611,29 +600,21 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * publicSignals[5+2*numEpochKeyNoncePerEpoch] = [ fromEpochTree ]
      * @param publicSignals The the public signals of the user state transition proof
      * @param proof The proof of the user state transition proof
-     * @param proofIndexRecords The proof indexes of the previous start transition proof and process attestations proofs
      */
     function updateUserStateRoot(
         uint256[] memory publicSignals,
-        uint256[8] memory proof,
-        uint256[] memory proofIndexRecords
+        uint256[8] memory proof
     ) external {
         // check if proof is submitted before
         bytes32 proofNullifier = keccak256(
             abi.encodePacked(publicSignals, proof)
         );
-        verifyProofNullifier(proofNullifier);
+        if (getProofIndex[proofNullifier] != 0)
+            revert ProofAlreadyUsed(proofNullifier);
         uint256 _numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch;
         // NOTE: this impl assumes all attestations are processed in a single snark.
         if (publicSignals[2 + _numEpochKeyNoncePerEpoch] >= currentEpoch)
             revert InvalidTransitionEpoch();
-
-        for (uint256 i = 0; i < proofIndexRecords.length; i++) {
-            if (
-                !(proofIndexRecords[i] != 0 &&
-                    (proofIndexRecords[i] < proofIndex))
-            ) revert InvalidProofIndex();
-        }
 
         for (uint256 index = 2; index < 2 + _numEpochKeyNoncePerEpoch; index++)
             verifyNullifier(publicSignals[index]);
@@ -657,22 +638,44 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             if (submittedBlindedHashChains[publicSignals[index]] == false)
                 revert InvalidBlindedHashChain(publicSignals[index]);
         }
+        // check the from gst root
+        uint256 fromEpoch = publicSignals[2 + _numEpochKeyNoncePerEpoch];
+        uint256 fromGSTRoot = publicSignals[0];
+        if (globalStateTreeRoots[fromEpoch][fromGSTRoot] == false)
+            revert InvalidGlobalStateTreeRoot(fromGSTRoot);
+        // check the from epoch tree root
+        uint256 fromEpochTreeRoot = publicSignals[
+            5 + 2 * _numEpochKeyNoncePerEpoch
+        ];
+        if (epochTrees[fromEpoch].root != fromEpochTreeRoot)
+            revert InvalidEpochTreeRoot(fromEpochTreeRoot);
 
         // verify proof
         bool isValid = verifyUserStateTransition(publicSignals, proof);
         if (isValid == false) revert InvalidProof();
 
-        uint256 _proofIndex = proofIndex;
-        emit IndexedUserStateTransitionProof(
-            _proofIndex,
-            publicSignals,
-            proof,
-            proofIndexRecords
+        // update global state tree
+        emit NewGSTLeaf(
+            currentEpoch,
+            publicSignals[1],
+            globalStateTree[currentEpoch].numberOfLeaves
         );
-        emit UserStateTransitioned(currentEpoch, publicSignals[1], _proofIndex);
+        IncrementalBinaryTree.insert(
+            globalStateTree[currentEpoch],
+            publicSignals[1]
+        );
+        globalStateTreeRoots[currentEpoch][
+            globalStateTree[currentEpoch].root
+        ] = true;
 
-        getProofIndex[proofNullifier] = _proofIndex;
-        proofIndex++;
+        getProofIndex[proofNullifier] = 1;
+
+        emit UserStateTransitioned(
+            currentEpoch,
+            publicSignals[1],
+            globalStateTree[currentEpoch].numberOfLeaves,
+            publicSignals[2] // first epoch key nullifier
+        );
     }
 
     /**
@@ -903,5 +906,17 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
     function maxAttesters() public view returns (uint256) {
         return config.maxAttesters;
+    }
+
+    function epochTreeProof(uint256 epoch, uint256 leafIndex)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        return SparseMerkleTree.generateProof(epochTrees[epoch], leafIndex);
+    }
+
+    function epochRoots(uint256 epoch) public view returns (uint256) {
+        return epochTrees[epoch].root;
     }
 }

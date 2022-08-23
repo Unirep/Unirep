@@ -6,11 +6,11 @@ import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
 import {
     genInputForContract,
     genProcessAttestationsCircuitInput,
-    genStartTransitionCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import { deployUnirep, ProcessAttestationsProof, Unirep } from '../src'
-import { Circuit, NUM_ATTESTATIONS_PER_PROOF } from '@unirep/circuits'
+import { ProcessAttestationsProof, Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
+import { Circuit } from '@unirep/circuits'
 
 describe('Process attestation circuit', function () {
     this.timeout(300000)

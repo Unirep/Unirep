@@ -13,17 +13,6 @@ const configureSubparser = (subparsers: any) => {
         help: `A connection string to an Ethereum provider. Default: ${DEFAULT_ETH_PROVIDER}`,
     })
 
-    parser.add_argument('-toi', '--to-proof-index', {
-        required: true,
-        type: 'int',
-        help: "The proof index of the receiver's epoch key ",
-    })
-
-    parser.add_argument('-fromi', '--from-proof-index', {
-        type: 'int',
-        help: "The proof index of the sender's epoch key ",
-    })
-
     parser.add_argument('-epk', '--epoch-key', {
         required: true,
         type: 'str',
@@ -82,8 +71,6 @@ const attest = async (args: any) => {
     const wallet = new ethers.Wallet(args.eth_privkey, provider)
 
     // Parse input
-    const index = args.to_proof_index
-    const fromIndex = args.from_proof_index ?? 0
     const epochKey = args.epoch_key
     const posRep = args.pos_rep ?? 0
     const negRep = args.neg_rep ?? 0
@@ -109,7 +96,7 @@ const attest = async (args: any) => {
     try {
         tx = await unirepContract
             .connect(wallet)
-            .submitAttestation(attestation, epochKey, index, fromIndex, {
+            .submitAttestation(attestation, epochKey, {
                 value: attestingFee,
             })
         await tx.wait()

@@ -11,7 +11,8 @@ import {
     genProveSignUpCircuitInput,
     Reputation,
 } from './utils'
-import { deployUnirep, SignUpProof, Unirep } from '../src'
+import { SignUpProof, Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
 
 describe('Verify user sign up verifier', function () {
     this.timeout(30000)

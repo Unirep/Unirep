@@ -1,5 +1,5 @@
 import { ethers } from 'ethers'
-import { deployUnirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 
 import {
     DEFAULT_ATTESTING_FEE,

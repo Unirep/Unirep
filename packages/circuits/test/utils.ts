@@ -265,9 +265,7 @@ const bootstrapRandomUSTree = (): UserStates => {
 }
 
 const bootstrapAttestation = (): Attestation => {
-    const attesterId = BigInt(
-        Math.ceil(Math.random() * (2 ** USER_STATE_TREE_DEPTH - 1))
-    )
+    const attesterId = BigInt(Math.ceil(Math.random() * 10))
     const signUp = Math.floor(Math.random() * 2)
     const attestation = new Attestation(
         attesterId,
@@ -493,11 +491,16 @@ const genStartTransitionCircuitInput = (
 const genUserStateTransitionCircuitInput = (
     id: crypto.ZkIdentity,
     epoch: number,
-    numAttestations: number = 0
+    numAttestations: number = 0,
+    {
+        userStateTree,
+        reputationRecords: initReputation,
+    } = bootstrapRandomUSTree()
 ): {
     startTransitionCircuitInputs
     processAttestationCircuitInputs
     finalTransitionCircuitInputs
+    attestationsMap
 } => {
     // don't need to check sign up because we won't be able to create a
     // gstree proof unless we are signed up
@@ -507,8 +510,6 @@ const genUserStateTransitionCircuitInput = (
     const fromNonce = 0
 
     // User state tree
-    const { userStateTree, reputationRecords: initReputation } =
-        bootstrapRandomUSTree()
     const fromEpochUserStateTree: crypto.SparseMerkleTree = userStateTree
     const intermediateUserStateTreeRoots: BigInt[] = [
         fromEpochUserStateTree.root,
@@ -546,13 +547,14 @@ const genUserStateTransitionCircuitInput = (
             if (hashChains[epochKey] === undefined)
                 hashChains[epochKey] = BigInt(0)
             hashChains[epochKey] = crypto.hashLeftRight(
-                a.hash(),
+                a.hash,
                 hashChains[epochKey]
             )
         }
     }
 
     for (const key in hashChains) {
+        if (hashChains[key] === undefined) hashChains[key] = BigInt(0)
         const sealedHashChain = crypto.hashLeftRight(1, hashChains[key])
         fromEpochTree.update(BigInt(key), sealedHashChain)
     }
@@ -690,7 +692,7 @@ const genUserStateTransitionCircuitInput = (
 
             // Update current hashchain result
             currentHashChain = crypto.hashLeftRight(
-                attestation.hash(),
+                attestation.hash,
                 currentHashChain
             )
         }
@@ -819,6 +821,7 @@ const genUserStateTransitionCircuitInput = (
         startTransitionCircuitInputs,
         processAttestationCircuitInputs,
         finalTransitionCircuitInputs,
+        attestationsMap,
     }
 }
 
@@ -833,7 +836,6 @@ const genReputationCircuitInput = (
     _proveGraffiti?,
     _graffitiPreImage?
 ) => {
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
     const repNullifiersAmount = _repNullifiersAmount ?? 0
     const minRep = _minRep ?? 0
     const proveGraffiti = _proveGraffiti ?? 0
