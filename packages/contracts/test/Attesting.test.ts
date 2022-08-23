@@ -10,7 +10,8 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits'
-import { deployUnirep, Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
+import { Unirep } from '../src'
 
 import {
     genEpochKey,

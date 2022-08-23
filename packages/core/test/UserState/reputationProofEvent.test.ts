@@ -3,7 +3,8 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { Attestation, deployUnirep } from '@unirep/contracts'
+import { Attestation } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genReputationNullifier } from '../../src'
 import {

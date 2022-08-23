@@ -19,7 +19,8 @@ import {
     genUserStateTransitionCircuitInput,
     genNewUserStateTree,
 } from './utils'
-import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import { Unirep, UserTransitionProof } from '../src'
+import { deployUnirep } from '../src/deploy'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep

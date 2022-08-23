@@ -8,7 +8,8 @@ import {
     genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import { deployUnirep, ProcessAttestationsProof, Unirep } from '../src'
+import { ProcessAttestationsProof, Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
 import { Circuit } from '@unirep/circuits'
 
 describe('Process attestation circuit', function () {

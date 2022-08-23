@@ -17,7 +17,8 @@ import {
     genInputForContract,
     genUserStateTransitionCircuitInput,
 } from './utils'
-import { deployUnirep, StartTransitionProof, Unirep } from '../src'
+import { StartTransitionProof, Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
 
 describe('User State Transition circuits', function () {
     this.timeout(60000)

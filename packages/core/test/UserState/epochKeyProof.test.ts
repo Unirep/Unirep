@@ -10,7 +10,8 @@ import {
 } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { deployUnirep, EpochKeyProof, Unirep } from '@unirep/contracts'
+import { EpochKeyProof, Unirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { computeInitUserStateRoot, genEpochKey, Reputation } from '../../src'
 import {

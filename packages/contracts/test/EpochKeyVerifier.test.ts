@@ -20,7 +20,8 @@ import {
     genInputForContract,
     genNewUserStateTree,
 } from './utils'
-import { EpochKeyProof, deployUnirep, Unirep } from '../src'
+import { EpochKeyProof, Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)

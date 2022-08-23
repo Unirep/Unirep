@@ -229,16 +229,3 @@ export const deployUnirep = async (
 
     return c
 }
-
-/**
- * Get Unirep smart contract from a given address
- * @param address The address if the Unirep contract
- * @param signerOrProvider The signer or provider that connect to the Unirep smart contract
- * @returns The Unirep smart contract
- */
-export const getUnirepContract = (
-    address: string,
-    signerOrProvider: ethers.Signer | ethers.providers.Provider
-): Unirep => {
-    return UnirepFactory.connect(address, signerOrProvider)
-}

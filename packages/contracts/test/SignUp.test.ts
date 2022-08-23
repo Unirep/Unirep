@@ -17,7 +17,8 @@ import {
 
 const ATTESTING_FEE = '0'
 
-import { deployUnirep, Unirep } from '../src'
+import { Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
 import { genNewUserStateTree } from './utils'
 
 describe('Signup', () => {

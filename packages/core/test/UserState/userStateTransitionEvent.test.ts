@@ -3,7 +3,8 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { BigNumberish, ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 import {
     EPOCH_LENGTH,
     formatProofForSnarkjsVerification,

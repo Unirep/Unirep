@@ -88,7 +88,7 @@ Deploy Unirep smart contract with default [config](../circuits/config/index.ts):
 
 ```typescript
 import ethers from 'ethers'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import { deployUnirep, Unirep } from '@unirep/contracts/deploy'
 
 const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'

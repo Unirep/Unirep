@@ -13,7 +13,8 @@ import {
     genUserStateTransitionCircuitInput,
     genNewUserStateTree,
 } from './utils'
-import { deployUnirep, Unirep, UserTransitionProof } from '../src'
+import { Unirep, UserTransitionProof } from '../src'
+import { deployUnirep } from '../src/deploy'
 
 const EPOCH_LENGTH = 1000000
 
