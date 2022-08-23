@@ -16,9 +16,6 @@ const _schema = [
         indexes: [
             { keys: ['index'] },
             { keys: ['index', 'epochKey', 'epoch'] },
-            { keys: ['epochKey', 'epoch', 'proofIndex'] },
-            { keys: ['epochKey', 'attesterId', 'valid'] },
-            { keys: ['epoch', 'valid'] },
         ],
         rows: [
             ['epoch', 'Int', { optional: true }],
