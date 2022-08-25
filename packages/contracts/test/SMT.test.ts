@@ -1,9 +1,9 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import poseidon from '../src/poseidon'
-import { SparseMerkleTree, hashLeftRight } from '@unirep/crypto'
+import { SparseMerkleTree, genRandomSalt } from '@unirep/crypto'
 
-const getSMT = async (depth = 32) => {
+const getSMT = async (depth = 32, defaultLeaf = BigInt(0)) => {
     const accounts = await ethers.getSigners()
     const libraries = {}
     for (const [inputCount, { abi, bytecode }] of Object.entries(
@@ -29,14 +29,15 @@ const getSMT = async (depth = 32) => {
             SparseMerkleTree: merkleTreeLib.address,
         },
     })
-    return await smtFactory.deploy(depth)
+    return await smtFactory.deploy(depth, defaultLeaf)
 }
 
 describe('SMT', function () {
     this.timeout(0)
     it('should exist', async () => {
-        const SMT = new SparseMerkleTree(32, hashLeftRight(0, 0))
-        const smtTest = await getSMT()
+        const defaultLeaf = genRandomSalt()
+        const SMT = new SparseMerkleTree(32, defaultLeaf)
+        const smtTest = await getSMT(32, defaultLeaf as any)
         const root = await smtTest.root()
         expect(root.toBigInt()).to.equal(SMT.root)
     })
@@ -64,6 +65,19 @@ describe('SMT', function () {
         const depth = 7
         const smtTest = await getSMT(depth)
         await expect(smtTest.update(2 ** depth, 1)).to.be.reverted
+    })
+
+    it('should compute root without updating tree', async () => {
+        const SMT = new SparseMerkleTree(32, BigInt(0))
+        const index = (genRandomSalt() as bigint) % BigInt(2 ** 32)
+        const value = genRandomSalt()
+        SMT.update(BigInt(index), value)
+        const smtTest = await getSMT()
+        const computedRoot = await smtTest.compute(index, value as bigint)
+        await smtTest.update(index, value as bigint)
+        const root = await smtTest.root()
+        expect(computedRoot.toBigInt()).to.equal(SMT.root)
+        expect(root.toBigInt()).to.equal(SMT.root)
     })
 
     it('should insert many elements in deep tree', async () => {

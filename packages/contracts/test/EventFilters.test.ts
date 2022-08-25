@@ -1,6 +1,6 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumber, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
 import {
     genRandomSalt,
@@ -15,56 +15,39 @@ import {
     Circuit,
 } from '@unirep/circuits'
 import {
-    Attestation,
-    genEpochKeyCircuitInput,
     genInputForContract,
-    genReputationCircuitInput,
-    bootstrapRandomUSTree,
-    genProveSignUpCircuitInput,
-    genStartTransitionCircuitInput,
-    genProcessAttestationsCircuitInput,
     genUserStateTransitionCircuitInput,
+    genNewUserStateTree,
 } from './utils'
-import {
-    deployUnirep,
-    ReputationProof,
-    SignUpProof,
-    Unirep,
-    UserTransitionProof,
-} from '../src'
-import {
-    IndexedEpochKeyProofEvent,
-    IndexedProcessedAttestationsProofEvent,
-    IndexedReputationProofEvent,
-    IndexedStartedTransitionProofEvent,
-    IndexedUserStateTransitionProofEvent,
-} from '../typechain/Unirep'
+import { Unirep, UserTransitionProof } from '../src'
+import { deployUnirep } from '../src/deploy'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep
-    let accounts: ethers.Signer[]
+    let accounts: any[]
 
     const userId = new ZkIdentity()
     const userCommitment = userId.genIdentityCommitment()
 
-    let attester, attesterAddress, attesterId
+    let attester
 
-    const signedUpInLeaf = 1
-    const indexes: BigNumber[] = []
     const epoch = 1
-    const nonce = 0
-    let epochKey
-    let proofIndex
     let tree
     let stateRoot = genRandomSalt()
     let hashedStateLeaf
-    const leafIndex = 0
     const attestingFee = ethers.utils.parseEther('0.1')
+    const userStateTree = genNewUserStateTree()
+    const reputationRecords = {}
+    let attestationsCount = 0
     const {
         startTransitionCircuitInputs,
         processAttestationCircuitInputs,
         finalTransitionCircuitInputs,
-    } = genUserStateTransitionCircuitInput(userId, epoch)
+        attestationsMap,
+    } = genUserStateTransitionCircuitInput(userId, epoch, 1, {
+        userStateTree,
+        reputationRecords,
+    })
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -73,19 +56,22 @@ describe('EventFilters', () => {
             attestingFee,
         })
 
-        console.log('User sign up')
-        let tx = await unirepContract['userSignUp(uint256)'](userCommitment)
-        let receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
         console.log('Attesters sign up')
+        for (let i = 1; i <= 10; i++) {
+            const tx = await unirepContract
+                .connect(accounts[i])
+                .attesterSignUp()
+            const receipt = await tx.wait()
+            expect(receipt.status).equal(1)
+            expect(await unirepContract.attesters(accounts[i].address)).equal(i)
+        }
         attester = accounts[1]
-        attesterAddress = attester.address
+    })
 
-        tx = await unirepContract.connect(attester).attesterSignUp()
-        receipt = await tx.wait()
+    it('user sign up should succeed', async () => {
+        const tx = await unirepContract['userSignUp(uint256)'](userCommitment)
+        const receipt = await tx.wait()
         expect(receipt.status).equal(1)
-        attesterId = await unirepContract.attesters(attesterAddress)
 
         tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
         stateRoot = genRandomSalt()
@@ -93,73 +79,41 @@ describe('EventFilters', () => {
         tree.insert(BigInt(hashedStateLeaf.toString()))
     })
 
-    it('submit an epoch key proof should succeed', async () => {
-        const circuitInputs = genEpochKeyCircuitInput(
-            userId,
-            tree,
-            leafIndex,
-            stateRoot,
-            epoch,
-            nonce
+    it('user sign up events should match event filter', async () => {
+        const userSignUpFilter = unirepContract.filters.UserSignedUp(
+            undefined,
+            userCommitment
         )
-        const input = await genInputForContract(
-            Circuit.verifyEpochKey,
-            circuitInputs
+        const userSignUpEvents = await unirepContract.queryFilter(
+            userSignUpFilter
         )
-        epochKey = input.epochKey
-        const tx = await unirepContract.submitEpochKeyProof(
-            input.publicSignals,
-            input.proof
-        )
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(userSignUpEvents.length).equal(1)
     })
 
     it('submit attestation should succeed', async () => {
-        let attestation: Attestation = new Attestation(
-            BigInt(attesterId),
-            BigInt(1),
-            BigInt(0),
-            genRandomSalt(),
-            BigInt(signedUpInLeaf)
-        )
+        for (const key in attestationsMap) {
+            for (const attestation of attestationsMap[key]) {
+                const attesterId = Number(attestation.attesterId.toString())
 
-        const senderPfIdx = 0
-        const tx = await unirepContract
-            .connect(attester)
-            .submitAttestation(attestation, epochKey, proofIndex, senderPfIdx, {
-                value: attestingFee,
-            })
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
+                const tx = await unirepContract
+                    .connect(accounts[attesterId])
+                    .submitAttestation(attestation, key, {
+                        value: attestingFee,
+                    })
+                const receipt = await tx.wait()
+                expect(receipt.status).equal(1)
+                attestationsCount++
+            }
+        }
     })
 
-    it('spend reputation should succeed', async () => {
-        const { reputationRecords } = await bootstrapRandomUSTree()
-        const circuitInputs = genReputationCircuitInput(
-            userId,
-            epoch,
-            nonce,
-            reputationRecords,
-            BigInt(attesterId)
+    it('submit attestations events should match event filter', async () => {
+        const attestationSubmittedFilter =
+            unirepContract.filters.AttestationSubmitted()
+        const attestationSubmittedEvents = await unirepContract.queryFilter(
+            attestationSubmittedFilter
         )
-        const input: ReputationProof = await genInputForContract(
-            Circuit.proveReputation,
-            circuitInputs
-        )
-        const tx = await unirepContract
-            .connect(attester)
-            .spendReputation(input.publicSignals, input.proof, {
-                value: attestingFee,
-            })
-        const receipt = await tx.wait()
-        expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
+        expect(attestationSubmittedEvents.length).equal(attestationsCount)
     })
 
     it('submit start user state transition should success', async () => {
@@ -173,9 +127,6 @@ describe('EventFilters', () => {
         )
         const receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
     })
 
     it('submit process attestation proofs should success', async () => {
@@ -190,9 +141,6 @@ describe('EventFilters', () => {
             )
             const receipt = await tx.wait()
             expect(receipt.status).equal(1)
-
-            proofIndex = await unirepContract.getProofIndex(input.hash())
-            expect(Number(proofIndex)).greaterThan(0)
         }
     })
 
@@ -204,104 +152,28 @@ describe('EventFilters', () => {
         let receipt = await tx.wait()
         expect(receipt.status).equal(1)
 
+        // TODO: fix UST with attestations
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             finalTransitionCircuitInputs
         )
         tx = await unirepContract.updateUserStateRoot(
             input.publicSignals,
-            input.proof,
-            indexes
+            input.proof
         )
         receipt = await tx.wait()
         expect(receipt.status).equal(1)
-
-        proofIndex = await unirepContract.getProofIndex(input.hash())
-        expect(Number(proofIndex)).greaterThan(0)
     })
 
-    it('submit attestation events should match and correctly emitted', async () => {
-        const attestationSubmittedFilter =
-            unirepContract.filters.AttestationSubmitted()
-        const attestationSubmittedEvents = await unirepContract.queryFilter(
-            attestationSubmittedFilter
+    it('user state transition events should match event filter', async () => {
+        const epochEndedFilter = unirepContract.filters.EpochEnded()
+        const epochEndedEvents = await unirepContract.queryFilter(
+            epochEndedFilter
         )
+        expect(epochEndedEvents.length).equal(1)
 
-        // compute hash chain of valid epoch key
-        for (let i = 0; i < attestationSubmittedEvents.length; i++) {
-            const proofIndex = attestationSubmittedEvents[i].args?.toProofIndex
-            const epochKeyProofFilter =
-                unirepContract.filters.IndexedEpochKeyProof(proofIndex)
-            const epochKeyProofEvent: IndexedEpochKeyProofEvent[] =
-                await unirepContract.queryFilter(epochKeyProofFilter)
-            const repProofFilter =
-                unirepContract.filters.IndexedReputationProof(proofIndex)
-            const repProofEvent: IndexedReputationProofEvent[] =
-                await unirepContract.queryFilter(repProofFilter)
-
-            if (epochKeyProofEvent.length == 1) {
-                console.log('epoch key proof event')
-                const { proof, publicSignals } = epochKeyProofEvent[0].args
-                const isValid = await unirepContract.verifyEpochKeyValidity(
-                    publicSignals,
-                    proof
-                )
-                expect(isValid).equal(true)
-            } else if (repProofEvent.length == 1) {
-                console.log('reputation proof event')
-                const { proof, publicSignals } = repProofEvent[0].args
-                const isValid = await unirepContract.verifyReputation(
-                    publicSignals,
-                    proof
-                )
-                expect(isValid).equal(true)
-            }
-        }
-    })
-
-    it('user state transition proof should match and correctly emitted', async () => {
-        {
-            const startTransitionFilter =
-                unirepContract.filters.IndexedStartedTransitionProof()
-            const startTransitionEvents: IndexedStartedTransitionProofEvent[] =
-                await unirepContract.queryFilter(startTransitionFilter)
-            expect(startTransitionEvents.length).to.equal(1)
-            const { publicSignals, proof } = startTransitionEvents[0].args
-            let isValid = await unirepContract.verifyStartTransitionProof(
-                publicSignals,
-                proof
-            )
-            expect(isValid).equal(true)
-        }
-
-        {
-            const processAttestationFilter =
-                unirepContract.filters.IndexedProcessedAttestationsProof()
-            const processAttestationEvents: IndexedProcessedAttestationsProofEvent[] =
-                await unirepContract.queryFilter(processAttestationFilter)
-            expect(processAttestationEvents.length).to.equal(
-                processAttestationCircuitInputs.length
-            )
-            const { publicSignals, proof } = processAttestationEvents[0].args
-            const isValid = await unirepContract.verifyProcessAttestationProof(
-                publicSignals,
-                proof
-            )
-            expect(isValid).equal(true)
-        }
-
-        {
-            const userStateTransitionFilter =
-                unirepContract.filters.IndexedUserStateTransitionProof()
-            const userStateTransitionEvents: IndexedUserStateTransitionProofEvent[] =
-                await unirepContract.queryFilter(userStateTransitionFilter)
-            expect(userStateTransitionEvents.length).to.equal(1)
-            const { publicSignals, proof } = userStateTransitionEvents[0].args
-            const isValid = await unirepContract.verifyUserStateTransition(
-                publicSignals,
-                proof
-            )
-            expect(isValid).equal(true)
-        }
+        const USTFilter = unirepContract.filters.UserStateTransitioned()
+        const USTEvents = await unirepContract.queryFilter(USTFilter)
+        expect(USTEvents.length).equal(1)
     })
 })

@@ -3,7 +3,8 @@ import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import { deployUnirep, Unirep } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { Reputation, computeInitUserStateRoot } from '../../src'
 import { genUserState, genUnirepState, genNewGST } from '../utils'
@@ -34,10 +35,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
             attestingFee,
         })
         const config = await unirepContract.config()
-        GSTree = genNewGST(
-            config.globalStateTreeDepth,
-            config.userStateTreeDepth
-        )
+        GSTree = genNewGST(config.globalStateTreeDepth)
     })
 
     describe('Attester sign up and set airdrop', async () => {
@@ -96,6 +94,18 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
 
+                const onchainGST = await unirepContract.globalStateTree(
+                    contractEpoch
+                )
+                const onchainGSTRoot = onchainGST.root.toString()
+                expect(onchainGSTRoot).equal(GSTree.root.toString())
+
+                const exist = await unirepContract.globalStateTreeRoots(
+                    contractEpoch,
+                    GSTree.root
+                )
+                expect(exist).to.be.true
+
                 signUpAirdrops.push(
                     new Reputation(
                         BigInt(airdropAmount),
@@ -139,6 +149,18 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
                 const newGSTLeaf = hashLeftRight(commitment, newUSTRoot)
                 GSTree.insert(newGSTLeaf)
                 rootHistories.push(GSTree.root)
+
+                const onchainGST = await unirepContract.globalStateTree(
+                    contractEpoch
+                )
+                const onchainGSTRoot = onchainGST.root.toString()
+                expect(onchainGSTRoot).equal(GSTree.root.toString())
+
+                const exist = await unirepContract.globalStateTreeRoots(
+                    contractEpoch,
+                    GSTree.root
+                )
+                expect(exist).to.be.true
 
                 signUpAirdrops.push(Reputation.default())
                 await userState.stop()

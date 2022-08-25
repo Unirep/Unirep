@@ -132,35 +132,58 @@ export const deployUnirep = async (
         await c.deployed()
         libraries[`Poseidon${inputCount}`] = c.address
     }
-    let artifacts: any
+    let incArtifacts: any
     try {
-        artifacts = require(path.join(
+        incArtifacts = require(path.join(
+            __dirname,
+            '../build/artifacts/@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
+        ))
+    } catch (_) {
+        incArtifacts = require(path.join(
+            __dirname,
+            '../artifacts/@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
+        ))
+    }
+    let smtArtifacts: any
+    try {
+        smtArtifacts = require(path.join(
             __dirname,
             '../build/artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
         ))
     } catch (_) {
-        artifacts = require(path.join(
+        smtArtifacts = require(path.join(
             __dirname,
             '../artifacts/contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
         ))
     }
-    const { abi, bytecode } = artifacts
-    const merkleTreeLibFactory = new ethers.ContractFactory(
-        abi,
-        linkLibrary(bytecode, {
+    const incrementalMerkleTreeFactory = new ethers.ContractFactory(
+        incArtifacts.abi,
+        linkLibrary(incArtifacts.bytecode, {
+            ['@zk-kit/incremental-merkle-tree.sol/Hashes.sol:PoseidonT3']:
+                libraries['Poseidon2'],
+        }),
+        deployer
+    )
+    const incrementalMerkleTreeLib = await incrementalMerkleTreeFactory.deploy()
+    await incrementalMerkleTreeLib.deployed()
+    const sparseMerkleTreeLibFactory = new ethers.ContractFactory(
+        smtArtifacts.abi,
+        linkLibrary(smtArtifacts.bytecode, {
             [`contracts/Hash.sol:Poseidon2`]: libraries['Poseidon2'],
         }),
         deployer
     )
-    const merkleTreeLib = await merkleTreeLibFactory.deploy()
-    await merkleTreeLib.deployed()
+    const sparseMerkleTreeLib = await sparseMerkleTreeLibFactory.deploy()
+    await sparseMerkleTreeLib.deployed()
 
     const c: Unirep = await new UnirepFactory(
         {
             ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
             ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
             ['contracts/SparseMerkleTree.sol:SparseMerkleTree']:
-                merkleTreeLib.address,
+                sparseMerkleTreeLib.address,
+            ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
+                incrementalMerkleTreeLib.address,
         },
         deployer
     ).deploy(
@@ -205,17 +228,4 @@ export const deployUnirep = async (
     )
 
     return c
-}
-
-/**
- * Get Unirep smart contract from a given address
- * @param address The address if the Unirep contract
- * @param signerOrProvider The signer or provider that connect to the Unirep smart contract
- * @returns The Unirep smart contract
- */
-export const getUnirepContract = (
-    address: string,
-    signerOrProvider: ethers.Signer | ethers.providers.Provider
-): Unirep => {
-    return UnirepFactory.connect(address, signerOrProvider)
 }

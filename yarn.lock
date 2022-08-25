@@ -1439,6 +1439,7 @@ __metadata:
     "@typechain/hardhat": ^6.1.0
     "@unirep/circuits": 1.0.0
     "@unirep/crypto": 1.0.0
+    "@zk-kit/incremental-merkle-tree.sol": ^1.2.0
     ethers: ^5.6.8
     hardhat: ^2.9.9
     hardhat-gas-reporter: ^1.0.8
@@ -1490,6 +1491,13 @@ __metadata:
     typescript: ^4.7.3
   languageName: unknown
   linkType: soft
+
+"@zk-kit/incremental-merkle-tree.sol@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@zk-kit/incremental-merkle-tree.sol@npm:1.2.0"
+  checksum: 7fc03fe399bc18e6a6e3775e1fd37f85cfea01846004e3a7d3829eeef11bccd432685aaab03045e7c24f42df67c9ec89c5fa01b36c1c47576874e1ef3b57cc08
+  languageName: node
+  linkType: hard
 
 "@zk-kit/incremental-merkle-tree@npm:^0.4.3":
   version: 0.4.3

@@ -1,8 +1,12 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers, Signer } from 'ethers'
+import { ethers } from 'hardhat'
+import { Signer } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/crypto'
+import {
+    hashLeftRight,
+    IncrementalMerkleTree,
+    ZkIdentity,
+} from '@unirep/crypto'
 import {
     EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
@@ -13,7 +17,9 @@ import {
 
 const ATTESTING_FEE = '0'
 
-import { deployUnirep, Unirep } from '../src'
+import { Unirep } from '../src'
+import { deployUnirep } from '../src/deploy'
+import { genNewUserStateTree } from './utils'
 
 describe('Signup', () => {
     const testMaxUser = 5
@@ -24,9 +30,9 @@ describe('Signup', () => {
     let signedUpAttesters = 0
 
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
+        accounts = await ethers.getSigners()
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0], {
+        unirepContract = await deployUnirep(accounts[0], {
             maxUsers: testMaxUser,
             maxAttesters: testMaxUser,
         })
@@ -58,6 +64,23 @@ describe('Signup', () => {
 
             const numUserSignUps_ = await unirepContract.numUserSignUps()
             expect(signedUpUsers).equal(numUserSignUps_)
+        })
+
+        it('compute global state tree should success', async () => {
+            const epoch = 1
+            const onchainGST = await unirepContract.globalStateTree(epoch)
+
+            const offChainGST = new IncrementalMerkleTree(
+                GLOBAL_STATE_TREE_DEPTH
+            )
+            const GSTLeaf = hashLeftRight(
+                commitment,
+                genNewUserStateTree(USER_STATE_TREE_DEPTH).root
+            )
+            offChainGST.insert(GSTLeaf)
+            expect(offChainGST.root.toString()).equal(
+                onchainGST.root.toString()
+            )
         })
 
         it('double sign up should fail', async () => {
@@ -201,6 +224,59 @@ describe('Signup', () => {
             ).to.be.revertedWithCustomError(
                 unirepContract,
                 'ReachedMaximumNumberUserSignedUp'
+            )
+        })
+    })
+
+    describe('Attesters set initial balance', () => {
+        it('attester should airdrop with initial amount', async () => {
+            unirepContract = await deployUnirep(accounts[0], {
+                maxUsers: testMaxUser,
+                maxAttesters: testMaxUser,
+            })
+            await unirepContract
+                .connect(accounts[1])
+                .attesterSignUp()
+                .then((t) => t.wait())
+            const attesterId = await unirepContract.attesters(
+                accounts[1].address
+            )
+            const id = new ZkIdentity()
+            const epoch = await unirepContract.currentEpoch()
+            const airdropAmount = 100
+            const { numberOfLeaves } = await unirepContract.globalStateTree(
+                epoch
+            )
+            await expect(
+                unirepContract
+                    .connect(accounts[1])
+                    ['userSignUp(uint256,uint256)'](
+                        id.genIdentityCommitment(),
+                        airdropAmount
+                    )
+            )
+                .to.emit(unirepContract, 'UserSignedUp')
+                .withArgs(
+                    epoch,
+                    id.genIdentityCommitment(),
+                    attesterId,
+                    airdropAmount,
+                    numberOfLeaves
+                )
+        })
+
+        it('non-attester should fail to airdrop with initial amount', async () => {
+            const id = new ZkIdentity()
+            await expect(
+                unirepContract
+                    .connect(accounts[0])
+                    ['userSignUp(uint256,uint256)'](
+                        id.genIdentityCommitment(),
+                        100
+                    )
+            ).to.be.revertedWithCustomError(
+                unirepContract,
+                'AirdropWithoutAttester'
             )
         })
     })

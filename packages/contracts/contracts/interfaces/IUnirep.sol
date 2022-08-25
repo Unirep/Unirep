@@ -8,72 +8,31 @@ interface IUnirep is UnirepTypes {
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
         uint256 attesterId,
-        uint256 airdropAmount
+        uint256 airdropAmount,
+        uint256 leafIndex
     );
 
     event UserStateTransitioned(
         uint256 indexed epoch,
         uint256 indexed hashedLeaf,
-        uint256 proofIndex
+        uint256 indexed leafIndex,
+        uint256 firstEpkNullifier
     );
 
     event AttestationSubmitted(
         uint256 indexed epoch,
         uint256 indexed epochKey,
         address indexed attester,
-        Attestation attestation,
-        uint256 toProofIndex,
-        uint256 fromProofIndex
+        Attestation attestation
     );
 
-    event GSTAttestationSubmitted(
+    event NewGSTLeaf(
         uint256 indexed epoch,
-        uint256 indexed epochKey,
-        address indexed attester,
-        Attestation attestation,
-        uint256 gstRoot
+        uint256 indexed leaf,
+        uint256 indexed index
     );
 
     event EpochEnded(uint256 indexed epoch);
-
-    // Proof index events
-    event IndexedEpochKeyProof(
-        uint256 indexed proofIndex,
-        uint256 indexed epoch,
-        uint256 indexed epochKey,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedReputationProof(
-        uint256 indexed proofIndex,
-        uint256 indexed epoch,
-        uint256 indexed epochKey,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedStartedTransitionProof(
-        uint256 indexed proofIndex,
-        uint256 indexed blindedUserState,
-        uint256 indexed globalStateTree,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedProcessedAttestationsProof(
-        uint256 indexed proofIndex,
-        uint256 indexed inputBlindedUserState,
-        uint256[] publicSignals,
-        uint256[8] proof
-    );
-
-    event IndexedUserStateTransitionProof(
-        uint256 indexed proofIndex,
-        uint256[] publicSignals,
-        uint256[8] proof,
-        uint256[] proofIndexRecords
-    );
 
     enum AttestationFieldError {
         POS_REP,
@@ -105,6 +64,8 @@ interface IUnirep is UnirepTypes {
     error EpochNotEndYet();
     error InvalidSignals();
     error InvalidProof();
+    error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
+    error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
     /**
      * Sign up an attester using the address who sends the transaction

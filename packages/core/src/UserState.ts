@@ -57,40 +57,6 @@ export default class UserState extends Synchronizer {
         this.id = _id
     }
 
-    async start() {
-        await super.start()
-
-        const [UserStateTransitioned] =
-            this.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
-        this.on(UserStateTransitioned, async (event) => {
-            const decodedData = this.unirepContract.interface.decodeEventLog(
-                'UserStateTransitioned',
-                event.data
-            )
-            const epoch = Number(event.topics[1])
-            const GSTLeaf = BigInt(event.topics[2])
-            const proofIndex = Number(decodedData.proofIndex)
-            // get proof index data from db
-            const proof = await this.loadUSTProof(proofIndex)
-            if (!proof || !proof.valid) {
-                console.log(`Proof index ${proofIndex} is invalid`)
-            }
-            const publicSignals = decodeBigIntArray(proof.publicSignals)
-            const fromEpochIndex = 1 + this.settings.numEpochKeyNoncePerEpoch
-            const fromGSTIndex = 4 + this.settings.numEpochKeyNoncePerEpoch
-            const fromEpoch = Number(publicSignals[fromEpochIndex])
-            const fromGST = publicSignals[fromGSTIndex]
-            const tree = await this.genUserStateTree(epoch)
-            if (GSTLeaf !== hashLeftRight(this.commitment, tree.root)) return
-            try {
-                await this.userStateTransition(fromEpoch, GSTLeaf, fromGST)
-            } catch (err) {
-                console.log(err)
-            }
-        })
-    }
-
     /**
      * Query if the user is signed up in the unirep state.
      * @returns True if user has signed up in unirep contract, false otherwise.
@@ -217,7 +183,6 @@ export default class UserState extends Synchronizer {
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 OR: orConditions,
-                valid: 1,
             },
             orderBy: {
                 index: 'asc',
@@ -278,7 +243,6 @@ export default class UserState extends Synchronizer {
         return this._db.findMany('Attestation', {
             where: {
                 epochKey,
-                valid: 1,
             },
             orderBy: {
                 index: 'asc',
@@ -298,24 +262,6 @@ export default class UserState extends Synchronizer {
                     this.settings.epochTreeDepth
                 )
             )
-    }
-
-    async loadUSTProof(index: number): Promise<any> {
-        return this._db.findOne('Proof', {
-            where: {
-                event: 'IndexedUserStateTransitionProof',
-                index,
-                valid: 1,
-            },
-        })
-    }
-
-    public getUnirepStateEpochTree = async (epoch: number) => {
-        return this.genEpochTree(epoch)
-    }
-
-    public getUnirepState = () => {
-        return this
     }
 
     /**
@@ -383,7 +329,6 @@ export default class UserState extends Synchronizer {
             where: {
                 epochKey: allEpks,
                 attesterId: Number(attesterId),
-                valid: 1,
             },
             orderBy: {
                 index: 'asc',
@@ -426,48 +371,6 @@ export default class UserState extends Synchronizer {
         assert(
             attesterId < BigInt(2 ** this.settings.userStateTreeDepth),
             `UserState: attesterId exceeds total number of attesters`
-        )
-    }
-
-    /**
-     * Check if the root is one of the epoch tree roots in the given epoch
-     */
-    public epochTreeRootExists = async (
-        epochTreeRoot: BigInt | string,
-        epoch: number
-    ): Promise<boolean> => {
-        await this._checkValidEpoch(epoch)
-        const found = await this._db.findOne('Epoch', {
-            where: {
-                number: epoch,
-                epochRoot: epochTreeRoot.toString(),
-            },
-        })
-        return !!found
-    }
-
-    /**
-     * Update user state and unirep state according to user state transition event
-     */
-    public userStateTransition = async (
-        fromEpoch: number,
-        GSTLeaf: BigInt,
-        fromGST: BigInt
-    ) => {
-        const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        if (!this.hasSignedUp || latestTransitionedEpoch !== fromEpoch) return
-        // better to check that the previous gst exists
-        // await this._checkUserSignUp()
-
-        const transitionToEpoch = (await this.loadCurrentEpoch()).number
-        const newState = await this.genUserStateTree(transitionToEpoch)
-        if (GSTLeaf !== newState.root) {
-            console.error('UserState: new GST leaf mismatch')
-            return
-        }
-        assert(
-            fromEpoch < transitionToEpoch,
-            'Can not transition to same epoch'
         )
     }
 
@@ -587,8 +490,7 @@ export default class UserState extends Synchronizer {
         const GSTreeProof = fromEpochGSTree.createProof(leafIndex)
         const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
-        const fromEpochTree = await this.genEpochTree(fromEpoch)
-        const epochTreeRoot = fromEpochTree.root
+        const epochTreeRoot = await this.epochTreeRoot(fromEpoch)
         const epochKeyPathElements: any[] = []
 
         // start transition proof
@@ -758,7 +660,9 @@ export default class UserState extends Synchronizer {
                 overwriteGraffities.push('0')
                 signUps.push('0')
             }
-            epochKeyPathElements.push(fromEpochTree.createProof(epochKey))
+            epochKeyPathElements.push(
+                await this.epochTreeProof(fromEpoch, epochKey)
+            )
             finalHashChain.push(currentHashChain)
             blindedUserState.push(
                 hash5([

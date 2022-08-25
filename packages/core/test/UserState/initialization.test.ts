@@ -2,7 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/crypto'
-import { deployUnirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genNewGST } from '../utils'
 
@@ -31,8 +31,7 @@ describe('User sign up events in Unirep User State', function () {
 
             const unirepGSTree = await initUnirepState.genGSTree(unirepEpoch)
             const defaultGSTree = genNewGST(
-                initUnirepState.settings.globalStateTreeDepth,
-                initUnirepState.settings.userStateTreeDepth
+                initUnirepState.settings.globalStateTreeDepth
             )
             expect(unirepGSTree.root).equal(defaultGSTree.root)
             await initUnirepState.stop()
