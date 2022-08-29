@@ -322,7 +322,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             sealedHashchain
         );
 
-        emit EpochTreeLeaf(currentEpoch, epochKey, sealedHashchain);
+        emit EpochTreeLeaf(currentEpoch, sealedHashchain, epochKey);
     }
 
     /**
