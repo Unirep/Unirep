@@ -32,6 +32,12 @@ interface IUnirep is UnirepTypes {
         uint256 indexed index
     );
 
+    event EpochTreeLeaf(
+        uint256 indexed epoch,
+        uint256 indexed leaf,
+        uint256 indexed index
+    );
+
     event EpochEnded(uint256 indexed epoch);
 
     enum AttestationFieldError {
