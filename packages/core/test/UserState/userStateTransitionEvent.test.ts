@@ -112,6 +112,26 @@ describe('User state transition events in Unirep User State', function () {
             }
         })
 
+        it('Generate epoch tree and GST should be consistent with unirep contract', async () => {
+            const epoch = 1
+            const unirepState = await genUnirepState(
+                hardhatEthers.provider,
+                unirepContract.address
+            )
+            const offchainGST = await unirepState.genGSTree(epoch)
+            const offchainEpochTree = await unirepState.genEpochTree(epoch)
+
+            const GSTRootExists = await unirepContract.globalStateTreeRoots(
+                epoch,
+                offchainGST.root
+            )
+            expect(GSTRootExists).to.be.true
+            const onchainEpochTree = await unirepContract.epochTrees(epoch)
+            expect(offchainEpochTree.root.toString()).equal(
+                onchainEpochTree.root.toString()
+            )
+        })
+
         it.skip('User generate two UST proofs should not affect Unirep state', async () => {
             const id = new ZkIdentity()
             await unirepContract
@@ -310,6 +330,15 @@ describe('User state transition events in Unirep User State', function () {
             const gstLeaf = diffs.find((d) => d.table === 'GSTLeaf')
             expect(gstLeaf.hash).to.equal(
                 proofs.finalTransitionProof.newGlobalStateTreeLeaf.toString()
+            )
+            const currentGST = await userState.genGSTree(epoch)
+            expect(expectedGST.root.toString()).to.equal(
+                currentGST.root.toString()
+            )
+            const currentEpochTree = await userState.genEpochTree(epoch)
+            const onchainEpochTree = await unirepContract.epochTrees(epoch)
+            expect(currentEpochTree.root.toString()).to.equal(
+                onchainEpochTree.root.toString()
             )
 
             expect(nullifierCount).to.equal(1)
