@@ -60,6 +60,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     mapping(uint256 => IncrementalTreeData) public globalStateTree;
     // epoch => root => bool
     mapping(uint256 => mapping(uint256 => bool)) public globalStateTreeRoots;
+    mapping(uint256 => uint256) public epochTreeRoots;
     SparseTreeData internal initUST;
 
     // Attesting fee collected so far
@@ -487,6 +488,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         emit EpochEnded(currentEpoch);
 
         latestEpochTransitionTime = block.timestamp;
+        epochTreeRoots[currentEpoch] = epochTrees[currentEpoch].root;
         currentEpoch++;
 
         // avoid calling init by manually copying zero values and root
@@ -649,7 +651,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 fromEpochTreeRoot = publicSignals[
             5 + 2 * _numEpochKeyNoncePerEpoch
         ];
-        if (epochTrees[fromEpoch].root != fromEpochTreeRoot)
+        if (epochTreeRoots[fromEpoch] != fromEpochTreeRoot)
             revert InvalidEpochTreeRoot(fromEpochTreeRoot);
 
         // verify proof

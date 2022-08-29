@@ -340,7 +340,7 @@ export class Synchronizer extends EventEmitter {
                 epoch,
             },
         })
-        for (const {index, leaf} of leaves) {
+        for (const { index, leaf } of leaves) {
             tree.update(BigInt(index), BigInt(leaf))
         }
         return tree
