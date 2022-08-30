@@ -41,6 +41,7 @@ const _schema = [
     },
     {
         name: 'EpochTreeLeaf',
+        primaryKey: ['epoch', 'index'],
         rows: [
             ['epoch', 'Int'],
             ['leaf', 'String'],

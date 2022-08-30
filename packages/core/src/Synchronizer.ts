@@ -482,27 +482,20 @@ export class Synchronizer extends EventEmitter {
         const leaf = BigInt(event.topics[2]).toString()
         const index = BigInt(event.topics[3]).toString()
 
-        const exist = await this._db.findOne('EpochTreeLeaf', {
-            where: { epoch, index },
-        })
-        if (exist) {
-            db.update('EpochTreeLeaf', {
-                where: {
-                    epoch,
-                    index,
-                },
-                update: {
-                    leaf,
-                },
-            })
-        } else {
-            db.create('EpochTreeLeaf', {
+        db.upsert('EpochTreeLeaf', {
+            where: {
+                epoch,
+                index,
+            },
+            update: {
+                leaf,
+            },
+            create: {
                 epoch,
                 index,
                 leaf,
-            })
-        }
-
+            },
+        })
         return true
     }
 
