@@ -1,14 +1,19 @@
 import { ethers } from 'hardhat'
 import { BigNumberish } from 'ethers'
 import { expect } from 'chai'
-import { ZkIdentity, genRandomSalt } from '@unirep/crypto'
-import { EPOCH_LENGTH } from '@unirep/circuits'
+import {
+    ZkIdentity,
+    genRandomSalt,
+    SparseMerkleTree,
+    hashLeftRight,
+} from '@unirep/crypto'
+import { EPOCH_LENGTH, EPOCH_TREE_DEPTH } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 const attestingFee = ethers.utils.parseEther('0.1')
 
-import { Synchronizer, schema, genEpochKey } from '../../src'
+import { Synchronizer, schema, genEpochKey, SMT_ONE_LEAF } from '../../src'
 import { genUserState, genRandomAttestation, compareDB } from '../utils'
 import { SQLiteConnector } from 'anondb/node'
 import { Unirep } from '@unirep/contracts'
@@ -20,6 +25,8 @@ describe('Offchain Epoch Tree', function () {
     let attester
     let attesterId
     let unirepContract: Unirep
+    let epochTree: SparseMerkleTree
+    const epochKeyMap = {}
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -36,6 +43,8 @@ describe('Offchain Epoch Tree', function () {
             .then((t) => t.wait())
         attesterId = await unirepContract.attesters(attester.address)
         await synchronizer.start()
+
+        epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, SMT_ONE_LEAF)
     })
 
     afterEach(async () => {
@@ -65,11 +74,24 @@ describe('Offchain Epoch Tree', function () {
                 })
             await tx.wait()
             await synchronizer.waitForSync()
+
+            const currentHashChain =
+                epochKeyMap[epochKey.toString()] ?? BigInt(0)
+            epochKeyMap[epochKey.toString()] = hashLeftRight(
+                attestation.hash(),
+                currentHashChain
+            )
+            const sealedHashChain = hashLeftRight(
+                1,
+                epochKeyMap[epochKey.toString()]
+            )
+            epochTree.update(epochKey, sealedHashChain)
             const onchainEpochTree = await unirepContract.epochTrees(epoch)
             const offchainEpochTree = await synchronizer.genEpochTree(epoch)
             expect(onchainEpochTree.root.toString()).to.equal(
                 offchainEpochTree.root.toString()
             )
+            expect(offchainEpochTree.root.toString()).to.equal(epochTree.root)
         }
     })
 
@@ -89,11 +111,24 @@ describe('Offchain Epoch Tree', function () {
                 })
             await tx.wait()
             await synchronizer.waitForSync()
+
+            const currentHashChain =
+                epochKeyMap[epochKey.toString()] ?? BigInt(0)
+            epochKeyMap[epochKey.toString()] = hashLeftRight(
+                attestation.hash(),
+                currentHashChain
+            )
+            const sealedHashChain = hashLeftRight(
+                1,
+                epochKeyMap[epochKey.toString()]
+            )
+            epochTree.update(epochKey, sealedHashChain)
             const onchainEpochTree = await unirepContract.epochTrees(epoch)
             const offchainEpochTree = await synchronizer.genEpochTree(epoch)
             expect(onchainEpochTree.root.toString()).to.equal(
                 offchainEpochTree.root.toString()
             )
+            expect(offchainEpochTree.root.toString()).to.equal(epochTree.root)
         }
     })
 
@@ -113,5 +148,6 @@ describe('Offchain Epoch Tree', function () {
         expect(onchainEpochTreeRoot.toString()).to.equal(
             offchainEpochTree.root.toString()
         )
+        expect(offchainEpochTree.root.toString()).to.equal(epochTree.root)
     })
 })
