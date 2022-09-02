@@ -1,9 +1,8 @@
 // @ts-ignore
-import { ethers as hardhatEthers } from 'hardhat'
-import { ethers } from 'ethers'
+import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { Circuit, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits'
+import { Circuit } from '@unirep/circuits'
 
 import {
     genUserStateTransitionCircuitInput,
@@ -15,38 +14,35 @@ import { deployUnirep } from '../src/deploy'
 
 describe('User State Transition', function () {
     this.timeout(600000)
-    let accounts: ethers.Signer[]
     let unirepContract: Unirep
 
-    let epoch = 1
-    const user = new ZkIdentity()
-
     before(async () => {
-        accounts = await hardhatEthers.getSigners()
+        const accounts = await ethers.getSigners()
+        unirepContract = await deployUnirep(accounts[0])
+    })
 
-        unirepContract = await deployUnirep(<ethers.Wallet>accounts[0])
-
-        unirepContract['userSignUp(uint256)'](
+    it('Valid user state update inputs should work', async () => {
+        const user = new ZkIdentity()
+        await unirepContract['userSignUp(uint256)'](
             user.genIdentityCommitment()
         ).then((t) => t.wait())
+        const epoch = (await unirepContract.currentEpoch()).toNumber()
 
         // UST should be performed after epoch transition
         // Fast-forward epochLength of seconds
         const epochLength = (
             await unirepContract.config()
         ).epochLength.toNumber()
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
-        unirepContract.beginEpochTransition().then((t) => t.wait())
-    })
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
 
-    it('Valid user state update inputs should work', async () => {
         const userStateTree = genNewUserStateTree()
         const reputationRecords = {}
         const {
             startTransitionCircuitInputs,
             processAttestationCircuitInputs,
             finalTransitionCircuitInputs,
-        } = await genUserStateTransitionCircuitInput(user, epoch, 0, {
+        } = genUserStateTransitionCircuitInput(user, epoch, 0, {
             userStateTree,
             reputationRecords,
         })
@@ -58,7 +54,7 @@ describe('User State Transition', function () {
                 startTransitionCircuitInputs
             )
 
-            unirepContract
+            await unirepContract
                 .startUserStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
         }
@@ -71,7 +67,7 @@ describe('User State Transition', function () {
                     circuitInputs
                 )
 
-                unirepContract
+                await unirepContract
                     .processAttestations(publicSignals, proof)
                     .then((t) => t.wait())
             }
@@ -117,8 +113,9 @@ describe('User State Transition', function () {
     })
 
     it('Submit invalid blinded user state should fail', async () => {
+        const epoch = 1
         const user2 = new ZkIdentity()
-        unirepContract['userSignUp(uint256)'](
+        await unirepContract['userSignUp(uint256)'](
             user2.genIdentityCommitment()
         ).then((t) => t.wait())
         const userStateTree = genNewUserStateTree()
@@ -143,8 +140,9 @@ describe('User State Transition', function () {
     })
 
     it('Submit invalid blinded hash chain should fail', async () => {
+        const epoch = 1
         const user3 = new ZkIdentity()
-        unirepContract['userSignUp(uint256)'](
+        await unirepContract['userSignUp(uint256)'](
             user3.genIdentityCommitment()
         ).then((t) => t.wait())
         const userStateTree = genNewUserStateTree()
@@ -203,7 +201,8 @@ describe('User State Transition', function () {
     })
 
     it('Transition from invalid epoch should fail', async () => {
-        const invalidEpoch = epoch + 3
+        const user = new ZkIdentity()
+        const invalidEpoch = 4
         const userStateTree = genNewUserStateTree()
         const reputationRecords = {}
         const {
@@ -222,7 +221,7 @@ describe('User State Transition', function () {
                 startTransitionCircuitInputs
             )
 
-            unirepContract
+            await unirepContract
                 .startUserStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
         }
@@ -235,7 +234,7 @@ describe('User State Transition', function () {
                     circuitInputs
                 )
 
-                unirepContract
+                await unirepContract
                     .processAttestations(publicSignals, proof)
                     .then((t) => t.wait())
             }
@@ -255,8 +254,77 @@ describe('User State Transition', function () {
     })
 
     it('Submit user state transition proof with the same epoch key nullifiers should fail', async () => {
+        // UST should be performed after epoch transition
+        // Fast-forward epochLength of seconds
+        const epochLength = (
+            await unirepContract.config()
+        ).epochLength.toNumber()
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
+
+        const user = new ZkIdentity()
+        await unirepContract['userSignUp(uint256)'](
+            user.genIdentityCommitment()
+        ).then((t) => t.wait())
+        const epoch = (await unirepContract.currentEpoch()).toNumber()
+
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
+
+        const userStateTree = genNewUserStateTree()
+        const reputationRecords = {}
+        const {
+            startTransitionCircuitInputs,
+            processAttestationCircuitInputs,
+            finalTransitionCircuitInputs,
+        } = await genUserStateTransitionCircuitInput(user, epoch, 0, {
+            userStateTree,
+            reputationRecords,
+        })
+
         const { finalTransitionCircuitInputs: circuitInputs } =
-            await genUserStateTransitionCircuitInput(user, epoch)
+            await genUserStateTransitionCircuitInput(user, epoch, 0, {
+                userStateTree,
+                reputationRecords,
+            })
+
+        // submit start user state tranisiton proof
+        {
+            const { publicSignals, proof } = await genInputForContract(
+                Circuit.startTransition,
+                startTransitionCircuitInputs
+            )
+
+            await unirepContract
+                .startUserStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+
+        // submit process attestations proofs
+        {
+            for (const circuitInputs of processAttestationCircuitInputs) {
+                const { publicSignals, proof } = await genInputForContract(
+                    Circuit.processAttestations,
+                    circuitInputs
+                )
+
+                await unirepContract
+                    .processAttestations(publicSignals, proof)
+                    .then((t) => t.wait())
+            }
+        }
+
+        // final users state transition proofs
+        {
+            const input: UserTransitionProof = await genInputForContract(
+                Circuit.userStateTransition,
+                finalTransitionCircuitInputs
+            )
+            await unirepContract
+                .updateUserStateRoot(input.publicSignals, input.proof)
+                .then((t) => t.wait())
+        }
+
         const input: UserTransitionProof = await genInputForContract(
             Circuit.userStateTransition,
             circuitInputs
@@ -276,6 +344,7 @@ describe('User State Transition', function () {
     })
 
     it('Invalid GST root should fail', async () => {
+        const epoch = 1
         const user2 = new ZkIdentity()
         const {
             startTransitionCircuitInputs,
@@ -290,7 +359,7 @@ describe('User State Transition', function () {
                 startTransitionCircuitInputs
             )
 
-            unirepContract
+            await unirepContract
                 .startUserStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
         }
@@ -303,7 +372,7 @@ describe('User State Transition', function () {
                     circuitInputs
                 )
 
-                unirepContract
+                await unirepContract
                     .processAttestations(publicSignals, proof)
                     .then((t) => t.wait())
             }
@@ -325,10 +394,18 @@ describe('User State Transition', function () {
         const epochLength = (
             await unirepContract.config()
         ).epochLength.toNumber()
-        await hardhatEthers.provider.send('evm_increaseTime', [epochLength])
-        unirepContract.beginEpochTransition().then((t) => t.wait())
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
 
-        epoch++
+        const user = new ZkIdentity()
+        await unirepContract['userSignUp(uint256)'](
+            user.genIdentityCommitment()
+        ).then((t) => t.wait())
+        const epoch = (await unirepContract.currentEpoch()).toNumber()
+
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
+
         const userStateTree = genNewUserStateTree()
         const reputationRecords = {}
         const {
@@ -347,7 +424,7 @@ describe('User State Transition', function () {
                 startTransitionCircuitInputs
             )
 
-            unirepContract
+            await unirepContract
                 .startUserStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
         }
@@ -360,7 +437,7 @@ describe('User State Transition', function () {
                     circuitInputs
                 )
 
-                unirepContract
+                await unirepContract
                     .processAttestations(publicSignals, proof)
                     .then((t) => t.wait())
             }
@@ -376,6 +453,21 @@ describe('User State Transition', function () {
     })
 
     it('Invalid proof should fail', async () => {
+        const epochLength = (
+            await unirepContract.config()
+        ).epochLength.toNumber()
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
+
+        const user = new ZkIdentity()
+        await unirepContract['userSignUp(uint256)'](
+            user.genIdentityCommitment()
+        ).then((t) => t.wait())
+        const epoch = (await unirepContract.currentEpoch()).toNumber()
+
+        await ethers.provider.send('evm_increaseTime', [epochLength])
+        await unirepContract.beginEpochTransition().then((t) => t.wait())
+
         const userStateTree = genNewUserStateTree()
         const reputationRecords = {}
         const {
@@ -394,7 +486,7 @@ describe('User State Transition', function () {
                 startTransitionCircuitInputs
             )
 
-            unirepContract
+            await unirepContract
                 .startUserStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
         }
@@ -407,7 +499,7 @@ describe('User State Transition', function () {
                     circuitInputs
                 )
 
-                unirepContract
+                await unirepContract
                     .processAttestations(publicSignals, proof)
                     .then((t) => t.wait())
             }
