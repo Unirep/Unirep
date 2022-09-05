@@ -329,7 +329,10 @@ export class Synchronizer extends EventEmitter {
         return tree
     }
 
-    async genEpochTree(epoch: number): Promise<SparseMerkleTree> {
+    async genEpochTree(
+        _epoch: number | ethers.BigNumberish
+    ): Promise<SparseMerkleTree> {
+        const epoch = Number(_epoch)
         await this._checkValidEpoch(epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
