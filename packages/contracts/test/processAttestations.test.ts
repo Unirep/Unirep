@@ -49,10 +49,11 @@ describe('Process attestation circuit', function () {
         // submit process attestations proofs
         {
             for (const circuitInputs of processAttestationCircuitInputs) {
-                const input = await genInputForContract(
-                    Circuit.processAttestations,
-                    circuitInputs
-                )
+                const input: ProcessAttestationsProof =
+                    await genInputForContract(
+                        Circuit.processAttestations,
+                        circuitInputs
+                    )
 
                 const isProofValid =
                     await unirepContract.verifyProcessAttestationProof(
@@ -70,6 +71,28 @@ describe('Process attestation circuit', function () {
 
                 const pfIdx = await unirepContract.getProofIndex(input.hash())
                 expect(Number(pfIdx)).not.eq(0)
+
+                // submit proof again should fail
+                await expect(
+                    unirepContract.processAttestations(
+                        input.publicSignals,
+                        input.proof
+                    )
+                ).to.be.revertedWithCustomError(
+                    unirepContract,
+                    'ProofAlreadyUsed'
+                )
+
+                const blindedUserStateExists =
+                    await unirepContract.submittedBlindedUserStates(
+                        input.outputBlindedUserState
+                    )
+                expect(blindedUserStateExists).to.be.true
+                const blindedHashChainExists =
+                    await unirepContract.submittedBlindedHashChains(
+                        input.outputBlindedHashChain
+                    )
+                expect(blindedHashChainExists).to.be.true
             }
         }
     })

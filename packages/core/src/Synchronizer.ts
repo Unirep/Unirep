@@ -309,7 +309,10 @@ export class Synchronizer extends EventEmitter {
         return epochEmitted.gt(0)
     }
 
-    async genGSTree(epoch: number): Promise<IncrementalMerkleTree> {
+    async genGSTree(
+        _epoch: number | ethers.BigNumberish
+    ): Promise<IncrementalMerkleTree> {
+        const epoch = Number(_epoch)
         await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
             this.settings.globalStateTreeDepth,
