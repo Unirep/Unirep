@@ -144,7 +144,7 @@ describe('Offchain Epoch Tree', function () {
         expect(onchainEpochTree.root.toString()).to.equal(
             offchainEpochTree.root.toString()
         )
-        const onchainEpochTreeRoot = await unirepContract.epochTreeRoots(epoch)
+        const onchainEpochTreeRoot = await unirepContract.epochRoots(epoch)
         expect(onchainEpochTreeRoot.toString()).to.equal(
             offchainEpochTree.root.toString()
         )
