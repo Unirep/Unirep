@@ -321,6 +321,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             epochKey,
             sealedHashchain
         );
+
+        emit EpochTreeLeaf(currentEpoch, sealedHashchain, epochKey);
     }
 
     /**
@@ -647,7 +649,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256 fromEpochTreeRoot = publicSignals[
             5 + 2 * _numEpochKeyNoncePerEpoch
         ];
-        if (epochTrees[fromEpoch].root != fromEpochTreeRoot)
+        if (epochRoots(fromEpoch) != fromEpochTreeRoot)
             revert InvalidEpochTreeRoot(fromEpochTreeRoot);
 
         // verify proof

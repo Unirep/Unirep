@@ -3,8 +3,9 @@ import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { Attestation, IAttestation } from '@unirep/contracts'
 import { Prover } from '@unirep/circuits'
-import { IncrementalMerkleTree } from '@unirep/crypto'
+import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
 import { ISettings } from './interfaces'
+import { SMT_ONE_LEAF } from './utils'
 
 /**
  * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
@@ -328,6 +329,26 @@ export class Synchronizer extends EventEmitter {
         return tree
     }
 
+    async genEpochTree(
+        _epoch: number | ethers.BigNumberish
+    ): Promise<SparseMerkleTree> {
+        const epoch = Number(_epoch)
+        await this._checkValidEpoch(epoch)
+        const tree = new SparseMerkleTree(
+            this.settings.epochTreeDepth,
+            SMT_ONE_LEAF
+        )
+        const leaves = await this._db.findMany('EpochTreeLeaf', {
+            where: {
+                epoch,
+            },
+        })
+        for (const { index, leaf } of leaves) {
+            tree.update(BigInt(index), BigInt(leaf))
+        }
+        return tree
+    }
+
     /**
      * Check if the global state tree root is stored in the database
      * @param GSTRoot The queried global state tree root
@@ -396,12 +417,15 @@ export class Synchronizer extends EventEmitter {
             .topics as string[]
         const [NewGSTLeaf] = this.unirepContract.filters.NewGSTLeaf()
             .topics as string[]
+        const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
+            .topics as string[]
         return {
             [UserSignedUp]: this.userSignedUpEvent.bind(this),
             [UserStateTransitioned]: this.USTEvent.bind(this),
             [AttestationSubmitted]: this.attestationEvent.bind(this),
             [EpochEnded]: this.epochEndedEvent.bind(this),
             [NewGSTLeaf]: this.newGSTLeaf.bind(this),
+            [EpochTreeLeaf]: this.epochTreeLeaf.bind(this),
         } as {
             [key: string]: (
                 event: ethers.Event,
@@ -423,6 +447,8 @@ export class Synchronizer extends EventEmitter {
             .topics as string[]
         const [NewGSTLeaf] = this.unirepContract.filters.NewGSTLeaf()
             .topics as string[]
+        const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
+            .topics as string[]
 
         return {
             address: this.unirepContract.address,
@@ -433,6 +459,7 @@ export class Synchronizer extends EventEmitter {
                     AttestationSubmitted,
                     EpochEnded,
                     NewGSTLeaf,
+                    EpochTreeLeaf,
                 ],
             ],
         }
@@ -442,13 +469,35 @@ export class Synchronizer extends EventEmitter {
 
     async newGSTLeaf(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event.topics[1])
-        const leaf = BigInt(event.topics[2])
+        const hash = BigInt(event.topics[2]).toString()
         const index = Number(event.topics[3])
 
         db.create('GSTLeaf', {
             epoch,
-            hash: leaf.toString(),
+            hash,
             index,
+        })
+        return true
+    }
+
+    async epochTreeLeaf(event: ethers.Event, db: TransactionDB) {
+        const epoch = Number(event.topics[1])
+        const leaf = BigInt(event.topics[2]).toString()
+        const index = BigInt(event.topics[3]).toString()
+
+        db.upsert('EpochTreeLeaf', {
+            where: {
+                epoch,
+                index,
+            },
+            update: {
+                leaf,
+            },
+            create: {
+                epoch,
+                index,
+                leaf,
+            },
         })
         return true
     }
