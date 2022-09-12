@@ -11,7 +11,7 @@ import {
 import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EpochKeyProof, Unirep } from '@unirep/contracts'
-import { deployUnirep } from '@unirep/contracts/deploy'
+import { deployUnirep } from '@unirep/contracts/'
 
 import { computeInitUserStateRoot, genEpochKey, Reputation } from '../../src'
 import {

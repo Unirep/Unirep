@@ -4,7 +4,7 @@ import { Circuit } from '@unirep/circuits'
 
 import { config } from 'hardhat'
 import hardhatConfig from '../hardhat.config'
-import { genVerifier } from '../src/deploy'
+import { genVerifier } from '../src/utils'
 
 const verifiersPath = hardhatConfig?.paths?.sources
     ? path.join(hardhatConfig.paths.sources, 'verifiers')
