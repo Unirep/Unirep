@@ -113,7 +113,12 @@ describe('EventFilters', () => {
         const attestationSubmittedEvents = await unirepContract.queryFilter(
             attestationSubmittedFilter
         )
+        const epochTreeLeafFilter = unirepContract.filters.EpochTreeLeaf()
+        const epochTreeLeafEvents = await unirepContract.queryFilter(
+            epochTreeLeafFilter
+        )
         expect(attestationSubmittedEvents.length).equal(attestationsCount)
+        expect(epochTreeLeafEvents.length).equal(attestationsCount)
     })
 
     it('submit start user state transition should success', async () => {

@@ -32,8 +32,6 @@ describe('User State Transition circuits', function () {
     let userStateTree: SparseMerkleTree
 
     let hashedLeaf
-    const nonce = 0
-    const leafIndex = 0
 
     before(async () => {
         accounts = await hardhatEthers.getSigners()
@@ -76,6 +74,25 @@ describe('User State Transition circuits', function () {
 
             const pfIdx = await unirepContract.getProofIndex(input.hash())
             expect(Number(pfIdx)).not.eq(0)
+
+            const blindedUserStateExists =
+                await unirepContract.submittedBlindedUserStates(
+                    input.blindedUserState
+                )
+            expect(blindedUserStateExists).to.be.true
+            const blindedHashChainExists =
+                await unirepContract.submittedBlindedHashChains(
+                    input.blindedHashChain
+                )
+            expect(blindedHashChainExists).to.be.true
+
+            // submit proof again should fail
+            await expect(
+                unirepContract.startUserStateTransition(
+                    input.publicSignals,
+                    input.proof
+                )
+            ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
         })
 
         it('User can start with different epoch key nonce', async () => {

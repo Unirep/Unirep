@@ -5,7 +5,6 @@ import { expect } from 'chai'
 import { BigNumber, BigNumberish, ethers } from 'ethers'
 import {
     IncrementalMerkleTree,
-    hashLeftRight,
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
@@ -14,19 +13,16 @@ import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Attestation } from '@unirep/contracts'
 
-import {
-    computeEmptyUserStateRoot,
-    genEpochKey,
-    Reputation,
-    UserState,
-} from '../src'
+import { genEpochKey, Reputation, UserState } from '../src'
 import {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genNewEpochTree,
     genNewUserStateTree,
     toCompleteHexString,
+    genUserStateTransitionCircuitInput,
 } from '../../circuits/test/utils'
+import { genInputForContract } from '../../contracts/test/utils'
 import { IAttestation } from '@unirep/contracts'
 import { getUnirepContract } from '@unirep/contracts'
 import { Unirep } from '@unirep/contracts'
@@ -453,6 +449,8 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genProveSignUpCircuitInput,
+    genUserStateTransitionCircuitInput,
+    genInputForContract,
     submitUSTProofs,
     compareStates,
     compareAttestations,
