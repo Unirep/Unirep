@@ -4,7 +4,7 @@ import { Circuit } from '@unirep/circuits'
 
 import { config } from 'hardhat'
 import hardhatConfig from '../hardhat.config'
-import { genSnarkVerifierSol } from './genVerifier'
+import { genVerifier } from '../src/deploy'
 
 const verifiersPath = hardhatConfig?.paths?.sources
     ? path.join(hardhatConfig.paths.sources, 'verifiers')
@@ -30,7 +30,7 @@ const main = async (): Promise<number> => {
         const vKey = require(path.join(zkFilesPath, `${circuit}.vkey.json`))
 
         console.log(`Exporting ${circuit} verification contract...`)
-        const verifier = genSnarkVerifierSol(verifierName, vKey)
+        const verifier = genVerifier(verifierName, vKey)
 
         fs.writeFileSync(solOut, verifier)
         fs.copyFileSync(solOut, path.join(verifiersPath, `${verifierName}.sol`))

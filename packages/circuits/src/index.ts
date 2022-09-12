@@ -42,6 +42,20 @@ export interface Prover {
         proof: any
         publicSignals: any
     }>
+
+    /**
+     * Get vkey from default built folder `zksnarkBuild/`
+     * @param name Name of the circuit, which can be chosen from `Circuit`
+     * @returns vkey of the circuit
+     */
+    getVKey: (name: string | Circuit) => any
+
+    GLOBAL_STATE_TREE_DEPTH: number
+    USER_STATE_TREE_DEPTH: number
+    EPOCH_TREE_DEPTH: number
+    NUM_ATTESTATIONS_PER_PROOF: number
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH: number
+    MAX_REPUTATION_BUDGET: number
 }
 
 /**

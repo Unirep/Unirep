@@ -1443,6 +1443,7 @@ __metadata:
     ethers: ^5.6.8
     hardhat: ^2.9.9
     hardhat-gas-reporter: ^1.0.8
+    solc: ^0.8.16
     solidity-coverage: ^0.7.21
     typechain: ^8.1.0
     typescript: ^4.7.3
@@ -3003,6 +3004,13 @@ __metadata:
   version: 3.0.2
   resolution: "commander@npm:3.0.2"
   checksum: 6d14ad030d1904428139487ed31febcb04c1604db2b8d9fae711f60ee6718828dc0e11602249e91c8a97b0e721e9c6d53edbc166bad3cde1596851d59a8f824d
+  languageName: node
+  linkType: hard
+
+"commander@npm:^8.1.0":
+  version: 8.3.0
+  resolution: "commander@npm:8.3.0"
+  checksum: 0f82321821fc27b83bd409510bb9deeebcfa799ff0bf5d102128b500b7af22872c0c92cb6a0ebc5a4cf19c6b550fba9cedfa7329d18c6442a625f851377bacf0
   languageName: node
   linkType: hard
 
@@ -9248,6 +9256,23 @@ __metadata:
   bin:
     solcjs: solcjs
   checksum: 2d8eb16c6d8f648213c94dc8d977cffe5099cba7d41c82d92d769ef71ae8320a985065ce3d6c306440a85f8e8d2b27fb30bdd3ac38f69e5c1fa0ab8a3fb2f217
+  languageName: node
+  linkType: hard
+
+"solc@npm:^0.8.16":
+  version: 0.8.16
+  resolution: "solc@npm:0.8.16"
+  dependencies:
+    command-exists: ^1.2.8
+    commander: ^8.1.0
+    follow-redirects: ^1.12.1
+    js-sha3: 0.8.0
+    memorystream: ^0.3.1
+    semver: ^5.5.0
+    tmp: 0.0.33
+  bin:
+    solcjs: solc.js
+  checksum: 9c160f13fc1c83837c9fd70402db9373b678e9c2b05866f63528ce5adf2cbd961b4db4de70b8cdcd808671d551c5cf29ebd91c79bb98904db63e7d71ac8cb6f4
   languageName: node
   linkType: hard
 

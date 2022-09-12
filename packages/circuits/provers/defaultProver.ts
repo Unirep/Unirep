@@ -1,5 +1,13 @@
 import path from 'path'
-import { Circuit } from '../src'
+import {
+    Circuit,
+    GLOBAL_STATE_TREE_DEPTH,
+    USER_STATE_TREE_DEPTH,
+    EPOCH_TREE_DEPTH,
+    NUM_ATTESTATIONS_PER_PROOF,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    MAX_REPUTATION_BUDGET,
+} from '../src'
 import * as snarkjs from 'snarkjs'
 import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
 
@@ -9,6 +17,15 @@ const buildPath = '../zksnarkBuild'
  * The default prover that uses the circuits in default built folder `zksnarkBuild/`
  */
 export const defaultProver = {
+    /**
+     * Circuit configs
+     */
+    GLOBAL_STATE_TREE_DEPTH,
+    USER_STATE_TREE_DEPTH,
+    EPOCH_TREE_DEPTH,
+    NUM_ATTESTATIONS_PER_PROOF,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    MAX_REPUTATION_BUDGET,
     /**
      * Generate proof and public signals with `snarkjs.groth16.fullProve`
      * @param circuitName Name of the circuit, which can be chosen from `Circuit`
@@ -49,13 +66,13 @@ export const defaultProver = {
         const vkey = require(path.join(buildPath, `${circuitName}.vkey.json`))
         return snarkjs.groth16.verify(vkey, publicSignals, proof)
     },
-}
 
-/**
- * Get vkey from default built folder `zksnarkBuild/`
- * @param name Name of the circuit, which can be chosen from `Circuit`
- * @returns vkey of the circuit
- */
-export const getDefaultVKey = (name: Circuit) => {
-    return require(path.join(buildPath, `${name}.vkey.json`))
+    /**
+     * Get vkey from default built folder `zksnarkBuild/`
+     * @param name Name of the circuit, which can be chosen from `Circuit`
+     * @returns vkey of the circuit
+     */
+    getVKey: (name: string | Circuit) => {
+        return require(path.join(buildPath, `${name}.vkey.json`))
+    },
 }

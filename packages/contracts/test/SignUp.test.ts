@@ -1,6 +1,5 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
-import { Signer } from 'ethers'
 import { expect } from 'chai'
 import {
     hashLeftRight,
@@ -8,7 +7,6 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import {
-    EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
@@ -17,7 +15,7 @@ import {
 
 const ATTESTING_FEE = '0'
 
-import { Unirep } from '../src'
+import { EPOCH_LENGTH, Unirep } from '../src'
 import { deployUnirep } from '../src/deploy'
 import { genNewUserStateTree } from './utils'
 
