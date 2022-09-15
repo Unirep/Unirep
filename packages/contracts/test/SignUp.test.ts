@@ -16,7 +16,7 @@ import {
 const ATTESTING_FEE = '0'
 
 import { EPOCH_LENGTH, Unirep } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 import { genNewUserStateTree } from './utils'
 
 describe('Signup', () => {

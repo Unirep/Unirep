@@ -16,7 +16,7 @@ import {
     genNewUserStateTree,
 } from './utils'
 import { Unirep, UserTransitionProof } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 import { EPOCH_LENGTH } from '../src/config'
 
 describe('EventFilters', () => {

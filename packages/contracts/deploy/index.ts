@@ -1,1 +1,2 @@
-export * from '../src/deploy'
+export * from './deploy'
+export * from './utils'

@@ -4,17 +4,13 @@ import { Circuit } from '@unirep/circuits'
 
 import { config } from 'hardhat'
 import hardhatConfig from '../hardhat.config'
-import { genVerifier } from '../src/utils'
+import { genVerifier, createVerifierName } from '../deploy/utils'
 
 const verifiersPath = hardhatConfig?.paths?.sources
     ? path.join(hardhatConfig.paths.sources, 'verifiers')
     : path.join(config.paths.sources, 'verifiers')
 
 const zkFilesPath = path.join('../../circuits/zksnarkBuild')
-
-const createVerifierName = (circuit: string) => {
-    return `${circuit.charAt(0).toUpperCase() + circuit.slice(1)}Verifier`
-}
 
 const main = async (): Promise<number> => {
     // create verifier folder

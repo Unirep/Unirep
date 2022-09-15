@@ -1,5 +1,4 @@
 import { BigNumberish, ethers } from 'ethers'
-import path from 'path'
 import {
     Circuit,
     EPOCH_TREE_DEPTH,
@@ -11,19 +10,14 @@ import {
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
-import poseidon from '../src/poseidon'
-import { ATTESTING_FEE, EPOCH_LENGTH } from './config'
-import { compileVerifier, createVerifierName, linkLibrary } from './utils'
-
-function tryPath(file: string) {
-    let artifacts: any
-    try {
-        artifacts = require(path.join(__dirname, '../build/artifacts', file))
-    } catch (_) {
-        artifacts = require(path.join(__dirname, '../artifacts', file))
-    }
-    return artifacts
-}
+import poseidon from './poseidon'
+import { ATTESTING_FEE, EPOCH_LENGTH } from '../src/config'
+import {
+    compileVerifier,
+    createVerifierName,
+    linkLibrary,
+    tryPath,
+} from './utils'
 
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings

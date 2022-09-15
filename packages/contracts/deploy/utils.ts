@@ -117,3 +117,13 @@ export const compileVerifier = async (contractName: string, vkey: any) => {
         bytecode: output.contracts[fileName][contractName].evm.bytecode.object,
     }
 }
+
+export function tryPath(file: string) {
+    let artifacts: any
+    try {
+        artifacts = require(path.join(__dirname, '../build/artifacts', file))
+    } catch (_) {
+        artifacts = require(path.join(__dirname, '../artifacts', file))
+    }
+    return artifacts
+}

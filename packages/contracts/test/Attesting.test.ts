@@ -10,7 +10,7 @@ import {
     ZkIdentity,
 } from '@unirep/crypto'
 import { Circuit, GLOBAL_STATE_TREE_DEPTH } from '@unirep/circuits'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 import { Unirep } from '../src'
 
 import {

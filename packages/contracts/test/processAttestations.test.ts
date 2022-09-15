@@ -9,7 +9,7 @@ import {
     genUserStateTransitionCircuitInput,
 } from './utils'
 import { ProcessAttestationsProof, Unirep } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 import { Circuit } from '@unirep/circuits'
 
 describe('Process attestation circuit', function () {
