@@ -1,8 +1,8 @@
 import * as path from 'path'
+import * as circom from 'circom'
 import { expect } from 'chai'
 import { genRandomSalt, IncrementalMerkleTree, hashOne } from '@unirep/crypto'
 import { executeCircuit, getSignalByName } from '../src'
-import { compileAndLoadCircuit } from './utils'
 
 const LEVELS = 4
 const InclusionProofCircuitPath = path.join(
@@ -17,7 +17,8 @@ describe('Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await compileAndLoadCircuit(InclusionProofCircuitPath)
+            circuit = await circom.tester(InclusionProofCircuitPath)
+            await circuit.loadSymbols()
         })
 
         it('Valid update proofs should work', async () => {
@@ -46,13 +47,13 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                 }
 
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(
-                    circuit,
-                    witness,
-                    'main.root'
-                ).toString()
-                expect(circuitRoot).to.equal(root.toString())
+                const witness = await circuit.calculateWitness(
+                    circuitInputs,
+                    true
+                )
+                await circuit.checkConstraints(witness)
+                const circuitRoot = witness[circuit.symbols['main.root'].varIdx]
+                expect(circuitRoot.toString()).to.equal(root.toString())
             }
         })
 
@@ -86,13 +87,15 @@ describe('Merkle Tree circuits', function () {
                     path_index: proof.pathIndices,
                 }
 
-                const witness = await executeCircuit(circuit, circuitInputs)
-                const circuitRoot = getSignalByName(
-                    circuit,
-                    witness,
-                    'main.root'
-                ).toString()
-                expect(circuitRoot).not.to.equal(tree.root.toString())
+                const witness = await circuit.calculateWitness(
+                    circuitInputs,
+                    true
+                )
+                await circuit.checkConstraints(witness)
+                const circuitRoot = witness[circuit.symbols['main.root'].varIdx]
+                expect(circuitRoot.toString()).not.to.equal(
+                    tree.root.toString()
+                )
             }
         })
     })

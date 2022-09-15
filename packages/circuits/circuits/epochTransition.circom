@@ -1,22 +1,11 @@
-/*
-    Prove:
-        1. if user has a leaf in current state tree
-        2. leaf has claimed reputation
-        3. current epoch has claimed new reputation
-        4. output a chosen epoch key
-*/
-
-include "../../../node_modules/circomlib/circuits/comparators.circom";
-include "../../../node_modules/circomlib/circuits/gates.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
-    signal input epoch;
-    signal private input epoch_key_nonce;
-    signal output epoch_key;
+template EpochTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+    signal input from_epoch;
+    signal input to_epoch;
 
     // Global state tree leaf: Identity & user state root
     signal private input identity_nullifier;
@@ -24,14 +13,13 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     signal private input GST_path_index[GST_TREE_DEPTH];
     signal private input GST_path_elements[GST_TREE_DEPTH][1];
     signal output gst_root;
+    signal output gst_leaf;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
     signal private input pos_rep;
     signal private input neg_rep;
     // signal private input graffiti;
-    // Prove the minimum reputation
-    signal input min_rep;
     // Graffiti - todo?
     // signal input prove_graffiti;
     // signal input graffiti_pre_image;
@@ -41,16 +29,14 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     signal private input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal private input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal private input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal output epoch_transition_nullifier;
 
-    signal output pos_rep_balance;
-    signal output neg_rep_balance;
-
-    /* 1a. Check if user exists in the Global State Tree */
+    /* 1. Check if user exists in the Global State Tree */
 
     component leaf_hasher = Poseidon(5);
     leaf_hasher.inputs[0] <== identity_nullifier;
     leaf_hasher.inputs[1] <== attester_id;
-    leaf_hasher.inputs[2] <== epoch;
+    leaf_hasher.inputs[2] <== from_epoch;
     leaf_hasher.inputs[3] <== pos_rep;
     leaf_hasher.inputs[4] <== neg_rep;
 
@@ -62,9 +48,9 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     }
     gst_root <== state_merkletree.root;
 
-    /* End of check 1a */
+    /* End of check 1 */
 
-    /* 1b. Output epoch key and check nonce range */
+    /* 2. Verify new reputation for the from epoch */
 
     component epoch_key_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     component epoch_key_mods[EPOCH_KEY_NONCE_PER_EPOCH];
@@ -72,26 +58,13 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
         epoch_key_hashers[i] = Poseidon(4);
         epoch_key_hashers[i].inputs[0] <== identity_nullifier;
         epoch_key_hashers[i].inputs[1] <== attester_id;
-        epoch_key_hashers[i].inputs[2] <== epoch;
+        epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i;
 
         epoch_key_mods[i] = ModuloTreeDepth(EPOCH_TREE_DEPTH);
         epoch_key_mods[i].dividend <== epoch_key_hashers[i].out;
-        if (i == epoch_key_nonce) {
-            // TODO: determine if we need a constraint here?
-            epoch_key <-- epoch_key_mods[epoch_key_nonce].remainder;
-        }
     }
 
-    var bits_per_nonce = 8;
-    component nonce_check = LessThan(bits_per_nonce);
-    nonce_check.in[0] <== epoch_key_nonce;
-    nonce_check.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
-    nonce_check.out === 1;
-
-    /* End of check 1b */
-
-    /* 2. Verify new reputation from the current epoch */
     component epoch_tree_membership[EPOCH_KEY_NONCE_PER_EPOCH];
     component new_leaf_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
 
@@ -112,7 +85,7 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
 
     /* End of check 2 */
 
-    /* 3. Output the summed balances */
+    /* 3. Calculate the new gst leaf */
 
     var final_pos_rep = pos_rep;
     var final_neg_rep = neg_rep;
@@ -120,45 +93,24 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
         final_pos_rep += new_pos_rep[i];
         final_neg_rep += new_neg_rep[i];
     }
-    pos_rep_balance <== final_pos_rep;
-    neg_rep_balance <== final_neg_rep;
+
+    component out_leaf_hasher = Poseidon(5);
+    out_leaf_hasher.inputs[0] <== identity_nullifier;
+    out_leaf_hasher.inputs[1] <== attester_id;
+    out_leaf_hasher.inputs[2] <== to_epoch;
+    out_leaf_hasher.inputs[3] <== final_pos_rep;
+    out_leaf_hasher.inputs[4] <== final_neg_rep;
+    gst_leaf <== out_leaf_hasher.out;
 
     /* End of check 3 */
 
-    /* 4. Check if user has positive reputation greater than min_rep */
-    // if proving min_rep > 0, check if pos_rep + min_rep >= neg_rep
+    /* 4. Output epoch transition nullifier */
 
-    component min_rep_check = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
-    min_rep_check.in[0] <== pos_rep_balance + min_rep;
-    min_rep_check.in[1] <== neg_rep_balance;
-
-    component if_not_prove_min_rep = IsZero();
-    if_not_prove_min_rep.in <== min_rep;
-
-    component output_rep_check = OR();
-    output_rep_check.a <== if_not_prove_min_rep.out;
-    output_rep_check.b <== min_rep_check.out;
-
-    output_rep_check.out === 1;
+    component nullifier_hasher = Poseidon(3);
+    nullifier_hasher.inputs[0] <== attester_id;
+    nullifier_hasher.inputs[1] <== from_epoch;
+    nullifier_hasher.inputs[2] <== identity_nullifier;
+    epoch_transition_nullifier <== nullifier_hasher.out;
 
     /* End of check 4 */
-    /* 5. Check pre-image of graffiti */
-    /*
-    component if_not_check_graffiti = IsZero();
-    if_not_check_graffiti.in <== prove_graffiti;
-
-    component graffiti_hasher = Poseidon(1);
-    graffiti_hasher.inputs[0] <== graffiti_pre_image;
-
-    component graffiti_eq = IsEqual();
-    graffiti_eq.in[0] <== graffiti_hasher.out;
-    graffiti_eq.in[1] <== graffiti;
-
-    component check_graffiti = OR();
-    check_graffiti.a <== if_not_check_graffiti.out;
-    check_graffiti.b <== graffiti_eq.out;
-
-    check_graffiti.out === 1;
-    */
-    /* End of check 5 */
 }

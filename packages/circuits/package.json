@@ -30,8 +30,7 @@
         "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "time": "ts-node scripts/time.ts",
-        "test": "mocha -r ts-node/register test/*.test.ts --exit",
-        "lint": "prettier --write ."
+        "test": "mocha -r ts-node/register test/*.test.ts --exit"
     },
     "dependencies": {
         "@unirep/crypto": "1.0.0",

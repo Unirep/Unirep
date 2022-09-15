@@ -1,210 +1,188 @@
-import * as path from 'path'
 import { expect } from 'chai'
-import {
-    genRandomSalt,
-    hashLeftRight,
-    IncrementalMerkleTree,
-    ZkIdentity,
-} from '@unirep/crypto'
-import {
-    Circuit,
-    executeCircuit,
-    formatProofForSnarkjsVerification,
-    formatProofForVerifierContract,
-} from '../src'
-import { defaultProver } from '../provers/defaultProver'
+import { IncrementalMerkleTree, ZkIdentity, hash5 } from '@unirep/crypto'
+import { Circuit } from '../src'
 
 import {
-    EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../config'
 
-import { verifyEpochKeyCircuitPath } from '../config'
 import {
-    compileAndLoadCircuit,
     genEpochKeyCircuitInput,
     genProofAndVerify,
-    throwError,
+    genEpochKey,
 } from './utils'
-
-const circuitPath = path.join(__dirname, verifyEpochKeyCircuitPath)
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
 
-    let circuit
-
-    const maxEPK = BigInt(2 ** EPOCH_TREE_DEPTH)
-
-    let id: ZkIdentity, commitment, stateRoot
-    let tree, leafIndex
-    let nonce, currentEpoch
-    let circuitInputs
-
-    before(async () => {
-        const startCompileTime = Math.floor(new Date().getTime() / 1000)
-        circuit = await compileAndLoadCircuit(circuitPath)
-        const endCompileTime = Math.floor(new Date().getTime() / 1000)
-        console.log(
-            `Compile time: ${endCompileTime - startCompileTime} seconds`
-        )
-
-        tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        id = new ZkIdentity()
-        commitment = id.genIdentityCommitment()
-        stateRoot = genRandomSalt()
-
-        const hashedStateLeaf = hashLeftRight(
-            commitment.toString(),
-            stateRoot.toString()
-        )
-        tree.insert(BigInt(hashedStateLeaf.toString()))
-
-        leafIndex = 0
-        nonce = 0
-        currentEpoch = 1
-    })
-
-    it('Valid epoch key should pass check', async () => {
-        // Check if every valid nonce works
-        for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-            const n = i
-            circuitInputs = genEpochKeyCircuitInput(
+    it('should prove epoch key membership', async () => {
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const attesterId = 10210
+            const epoch = 120958
+            const posRep = 2988
+            const negRep = 987
+            const id = new ZkIdentity()
+            const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+            const leaf = hash5([
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                posRep,
+                negRep,
+            ])
+            tree.insert(leaf)
+            const circuitInputs = genEpochKeyCircuitInput({
                 id,
                 tree,
-                leafIndex,
-                stateRoot,
-                currentEpoch,
-                n
-            )
-
-            await executeCircuit(circuit, circuitInputs)
-            const isValid = await genProofAndVerify(
+                leafIndex: 0,
+                epoch,
+                nonce,
+                attesterId,
+                posRep,
+                negRep,
+            })
+            const { isValid, publicSignals } = await genProofAndVerify(
                 Circuit.verifyEpochKey,
                 circuitInputs
             )
             expect(isValid).to.be.true
+            expect(publicSignals[0]).to.equal(
+                genEpochKey(
+                    id.identityNullifier,
+                    attesterId,
+                    epoch,
+                    nonce
+                ).toString()
+            )
+            expect(publicSignals[1]).to.equal(tree.root.toString())
         }
     })
-
-    it('Format proof should successully be verified', async () => {
-        const n = 0
-        const circuitInputs = genEpochKeyCircuitInput(
+    it('should prove wrong gst root for wrong rep', async () => {
+        const attesterId = 10210
+        const epoch = 120958
+        const posRep = 2988
+        const negRep = 987
+        const nonce = 0
+        const id = new ZkIdentity()
+        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const leaf = hash5([
+            id.identityNullifier,
+            attesterId,
+            epoch,
+            posRep,
+            negRep,
+        ])
+        tree.insert(leaf)
+        const circuitInputs = genEpochKeyCircuitInput({
             id,
             tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            n
-        )
-        const { proof, publicSignals } =
-            await defaultProver.genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
-                circuitInputs
-            )
-        let isValid = await defaultProver.verifyProof(
+            leafIndex: 0,
+            epoch,
+            nonce,
+            attesterId,
+            posRep,
+            negRep,
+        })
+        circuitInputs.pos_rep = 21908
+        const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.verifyEpochKey,
-            publicSignals,
-            proof
-        )
-        const formatProof = formatProofForVerifierContract(proof)
-        const snarkjsProof = formatProofForSnarkjsVerification(formatProof)
-        isValid = await defaultProver.verifyProof(
-            Circuit.verifyEpochKey,
-            publicSignals,
-            snarkjsProof
+            circuitInputs
         )
         expect(isValid).to.be.true
+        expect(publicSignals[0]).to.equal(
+            genEpochKey(
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                nonce
+            ).toString()
+        )
+        expect(publicSignals[1]).to.not.equal(tree.root.toString())
     })
 
-    it('Invalid epoch key should not pass check', async () => {
-        // Validate against invalid epoch key
-        const invalidEpochKey1 = maxEPK
-        const invalidCircuitInputs = genEpochKeyCircuitInput(
+    it('should prove wrong gst root/epoch key for wrong attester id', async () => {
+        const attesterId = 10210
+        const epoch = 120958
+        const posRep = 2988
+        const negRep = 987
+        const nonce = 0
+        const id = new ZkIdentity()
+        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const leaf = hash5([
+            id.identityNullifier,
+            attesterId,
+            epoch,
+            posRep,
+            negRep,
+        ])
+        tree.insert(leaf)
+        const circuitInputs = genEpochKeyCircuitInput({
             id,
             tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            nonce
-        )
-        invalidCircuitInputs.epoch_key = invalidEpochKey1
-
-        await throwError(
-            circuit,
-            invalidCircuitInputs,
-            'Epoch key too large should throw error'
-        )
-    })
-
-    it('Wrong Id should not pass check', async () => {
-        const fakeId = new ZkIdentity()
-        const invalidCircuitInputs = (circuitInputs = genEpochKeyCircuitInput(
-            fakeId,
-            tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            nonce
-        ))
-        const { publicSignals } = await defaultProver.genProofAndPublicSignals(
+            leafIndex: 0,
+            epoch,
+            nonce,
+            attesterId,
+            posRep,
+            negRep,
+        })
+        circuitInputs.attester_id = 21789
+        const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.verifyEpochKey,
             circuitInputs
         )
-        expect(publicSignals[1]).to.not.equal(stateRoot)
+        expect(isValid).to.be.true
+        expect(publicSignals[0]).to.not.equal(
+            genEpochKey(
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                nonce
+            ).toString()
+        )
+        expect(publicSignals[1]).to.not.equal(tree.root.toString())
     })
 
-    it('Mismatched GST tree root should not pass check', async () => {
-        const otherTreeRoot = genRandomSalt()
-        const invalidCircuitInputs = (circuitInputs = genEpochKeyCircuitInput(
+    it('should fail to prove invalid nonce', async () => {
+        const attesterId = 10210
+        const epoch = 120958
+        const posRep = 2988
+        const negRep = 987
+        const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        const id = new ZkIdentity()
+        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const leaf = hash5([
+            id.identityNullifier,
+            attesterId,
+            epoch,
+            posRep,
+            negRep,
+        ])
+        tree.insert(leaf)
+        const circuitInputs = genEpochKeyCircuitInput({
             id,
             tree,
-            leafIndex,
-            otherTreeRoot,
-            currentEpoch,
-            nonce
-        ))
-        const { publicSignals } = await defaultProver.genProofAndPublicSignals(
+            leafIndex: 0,
+            epoch,
+            nonce,
+            attesterId,
+            posRep,
+            negRep,
+        })
+        const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.verifyEpochKey,
             circuitInputs
         )
-        expect(publicSignals[1]).to.not.equal(stateRoot)
-    })
-
-    it('Invalid nonce should not pass check', async () => {
-        const invalidNonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
-        const invalidCircuitInputs = (circuitInputs = genEpochKeyCircuitInput(
-            id,
-            tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            invalidNonce
-        ))
-
-        await throwError(
-            circuit,
-            invalidCircuitInputs,
-            'Invalid nonce should throw error'
+        expect(isValid).to.be.false
+        expect(publicSignals[0]).to.equal(
+            genEpochKey(
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                nonce
+            ).toString()
         )
-    })
-
-    it('Invalid epoch should not pass check', async () => {
-        const invalidEpoch = currentEpoch + 1
-        const invalidCircuitInputs = genEpochKeyCircuitInput(
-            id,
-            tree,
-            leafIndex,
-            stateRoot,
-            currentEpoch,
-            nonce
-        )
-        invalidCircuitInputs.epoch = invalidEpoch
-        const { publicSignals } = await defaultProver.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
-            circuitInputs
-        )
-        expect(publicSignals[1]).to.not.equal(stateRoot)
+        expect(publicSignals[1]).to.equal(tree.root.toString())
     })
 })

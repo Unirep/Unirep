@@ -1,8 +1,8 @@
 import * as path from 'path'
+import * as circom from 'circom'
 import { expect } from 'chai'
 import { genRandomSalt, hashOne, SparseMerkleTree } from '@unirep/crypto'
-import { executeCircuit, getSignalByName } from '../src'
-import { genNewSMT, compileAndLoadCircuit } from './utils'
+import { genNewSMT } from './utils'
 // circuitEpochTreeDepth too large will greatly slow down the test...
 const circuitEpochTreeDepth = 8
 const circuitPath = path.join(
@@ -24,10 +24,10 @@ describe('Sparse Merkle Tree circuits', function () {
         let leafIndicesToInsert: number[], emptyLeafIndices: number[]
 
         before(async () => {
-            circuit = await compileAndLoadCircuit(circuitPath)
+            circuit = await circom.tester(circuitPath)
+            await circuit.loadSymbols()
 
-            const defaultLeafHash = hashOne(BigInt(0))
-            tree = genNewSMT(circuitEpochTreeDepth, defaultLeafHash)
+            tree = genNewSMT(circuitEpochTreeDepth)
             leaves = {}
             ZERO_VALUE = tree.getZeroHash(0)
         })
@@ -62,7 +62,11 @@ describe('Sparse Merkle Tree circuits', function () {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = await executeCircuit(circuit, circuitInputs)
+                const witness = await circuit.calculateWitness(
+                    circuitInputs,
+                    true
+                )
+                await circuit.checkConstraints(witness)
             }
 
             // Prove second half of empty leaves
@@ -79,7 +83,11 @@ describe('Sparse Merkle Tree circuits', function () {
                     path_elements: pathElements,
                     root,
                 }
-                const witness = await executeCircuit(circuit, circuitInputs)
+                const witness = await circuit.calculateWitness(
+                    circuitInputs,
+                    true
+                )
+                await circuit.checkConstraints(witness)
             }
         })
 
@@ -100,7 +108,11 @@ describe('Sparse Merkle Tree circuits', function () {
 
                 let error
                 try {
-                    await executeCircuit(circuit, circuitInputs)
+                    const witness = await circuit.calculateWitness(
+                        circuitInputs,
+                        true
+                    )
+                    await circuit.checkConstraints(witness)
                 } catch (e) {
                     error = e
                     expect(true).to.be.true
@@ -121,7 +133,11 @@ describe('Sparse Merkle Tree circuits', function () {
 
                 error = undefined
                 try {
-                    await executeCircuit(circuit, circuitInputs)
+                    const witness = await circuit.calculateWitness(
+                        circuitInputs,
+                        true
+                    )
+                    await circuit.checkConstraints(witness)
                 } catch (e) {
                     error = e
                     expect(true).to.be.true
@@ -144,7 +160,11 @@ describe('Sparse Merkle Tree circuits', function () {
 
                 error = undefined
                 try {
-                    await executeCircuit(circuit, circuitInputs)
+                    const witness = await circuit.calculateWitness(
+                        circuitInputs,
+                        true
+                    )
+                    await circuit.checkConstraints(witness)
                 } catch (e) {
                     error = e
                     expect(true).to.be.true
@@ -162,12 +182,12 @@ describe('Sparse Merkle Tree circuits', function () {
         let circuit
 
         before(async () => {
-            circuit = await compileAndLoadCircuit(InclusionProofCircuitPath)
+            circuit = await circom.tester(InclusionProofCircuitPath)
+            await circuit.loadSymbols()
         })
 
         it('Valid update proofs should work', async () => {
-            const defaultLeafHash = hashOne(BigInt(0))
-            const tree = genNewSMT(circuitEpochTreeDepth, defaultLeafHash)
+            const tree = genNewSMT(circuitEpochTreeDepth)
             const leaves = {}
 
             // Populate the tree
@@ -193,14 +213,14 @@ describe('Sparse Merkle Tree circuits', function () {
                     path_elements: pathElements,
                 }
 
-                const witness = await executeCircuit(circuit, circuitInputs)
+                const witness = await circuit.calculateWitness(
+                    circuitInputs,
+                    true
+                )
+                await circuit.checkConstraints(witness)
 
-                const circuitRoot = getSignalByName(
-                    circuit,
-                    witness,
-                    'main.root'
-                ).toString()
-                expect(circuitRoot).equal(root.toString())
+                const circuitRoot = witness[circuit.symbols['main.root'].varIdx]
+                expect(circuitRoot.toString()).equal(root.toString())
             }
         })
     })
