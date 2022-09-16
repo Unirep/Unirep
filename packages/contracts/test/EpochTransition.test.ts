@@ -14,7 +14,7 @@ import {
     genNewUserStateTree,
 } from './utils'
 import { Unirep, UserTransitionProof } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 
 const EPOCH_LENGTH = 1000000
 

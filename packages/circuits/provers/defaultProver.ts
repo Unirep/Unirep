@@ -49,13 +49,13 @@ export const defaultProver = {
         const vkey = require(path.join(buildPath, `${circuitName}.vkey.json`))
         return snarkjs.groth16.verify(vkey, publicSignals, proof)
     },
-}
 
-/**
- * Get vkey from default built folder `zksnarkBuild/`
- * @param name Name of the circuit, which can be chosen from `Circuit`
- * @returns vkey of the circuit
- */
-export const getDefaultVKey = (name: Circuit) => {
-    return require(path.join(buildPath, `${name}.vkey.json`))
+    /**
+     * Get vkey from default built folder `zksnarkBuild/`
+     * @param name Name of the circuit, which can be chosen from `Circuit`
+     * @returns vkey of the circuit
+     */
+    getVKey: (name: string | Circuit) => {
+        return require(path.join(buildPath, `${name}.vkey.json`))
+    },
 }

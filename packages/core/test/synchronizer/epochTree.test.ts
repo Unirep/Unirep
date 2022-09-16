@@ -7,7 +7,8 @@ import {
     SparseMerkleTree,
     hashLeftRight,
 } from '@unirep/crypto'
-import { EPOCH_LENGTH, EPOCH_TREE_DEPTH } from '@unirep/circuits'
+import { EPOCH_TREE_DEPTH } from '@unirep/circuits'
+import { Unirep, EPOCH_LENGTH } from '@unirep/contracts'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
@@ -16,7 +17,6 @@ const attestingFee = ethers.utils.parseEther('0.1')
 import { Synchronizer, schema, genEpochKey, SMT_ONE_LEAF } from '../../src'
 import { genUserState, genRandomAttestation, compareDB } from '../utils'
 import { SQLiteConnector } from 'anondb/node'
-import { Unirep } from '@unirep/contracts'
 
 let synchronizer: Synchronizer
 

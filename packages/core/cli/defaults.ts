@@ -1,8 +1,8 @@
 //  TODO: better setup for cli Ethereum client.
 // import { ALCHEMY_API_KEY } from '../config/privateKey'
 
-import { EPOCH_LENGTH } from '@unirep/circuits'
 import { ethers } from 'ethers'
+import { EPOCH_LENGTH } from '@unirep/contracts'
 
 // apply the api key from https://www.alchemy.com/
 // const DEFAULT_ETH_PROVIDER = `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`

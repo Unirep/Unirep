@@ -1,3 +1,4 @@
+export * from './config'
 export * from './proof'
 export * from './Event'
 export * from './Attestation'

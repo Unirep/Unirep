@@ -21,7 +21,7 @@ import {
     genNewUserStateTree,
 } from './utils'
 import { EpochKeyProof, Unirep } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 
 describe('Verify Epoch Key verifier', function () {
     this.timeout(30000)
