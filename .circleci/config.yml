@@ -55,7 +55,7 @@ jobs:
                       - packages/contracts/build
                       - packages/contracts/cache
                       - packages/contracts/typechain
-                      - packages/contracts/vbuild
+                      - packages/contracts/contracts/verifiers
                       - packages/core/build
                       - packages/core/cache
                       - packages/crypto/build
