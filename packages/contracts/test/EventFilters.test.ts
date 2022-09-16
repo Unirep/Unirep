@@ -9,18 +9,15 @@ import {
     IncrementalMerkleTree,
 } from '@unirep/crypto'
 
-import {
-    GLOBAL_STATE_TREE_DEPTH,
-    EPOCH_LENGTH,
-    Circuit,
-} from '@unirep/circuits'
+import { GLOBAL_STATE_TREE_DEPTH, Circuit } from '@unirep/circuits'
 import {
     genInputForContract,
     genUserStateTransitionCircuitInput,
     genNewUserStateTree,
 } from './utils'
 import { Unirep, UserTransitionProof } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
+import { EPOCH_LENGTH } from '../src/config'
 
 describe('EventFilters', () => {
     let unirepContract: Unirep

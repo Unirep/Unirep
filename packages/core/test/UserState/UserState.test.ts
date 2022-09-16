@@ -3,7 +3,6 @@ import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import {
-    EPOCH_LENGTH,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     MAX_REPUTATION_BUDGET,
@@ -11,6 +10,7 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits'
+import { EPOCH_LENGTH } from '@unirep/contracts'
 
 const ATTESTING_FEE = '0' as any
 const attestingFee = ethers.utils.parseEther('0.1')

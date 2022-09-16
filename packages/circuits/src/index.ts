@@ -42,6 +42,13 @@ export interface Prover {
         proof: any
         publicSignals: any
     }>
+
+    /**
+     * Get vkey from default built folder `zksnarkBuild/`
+     * @param name Name of the circuit, which can be chosen from `Circuit`
+     * @returns vkey of the circuit
+     */
+    getVKey: (name: string | Circuit) => any
 }
 
 /**

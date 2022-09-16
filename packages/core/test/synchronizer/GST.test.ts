@@ -8,13 +8,12 @@ import {
 } from '@unirep/crypto'
 import {
     Circuit,
-    EPOCH_LENGTH,
     GLOBAL_STATE_TREE_DEPTH,
     USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import { Unirep } from '@unirep/contracts'
+import { Unirep, EPOCH_LENGTH } from '@unirep/contracts'
 
 const attestingFee = ethers.utils.parseEther('0.1')
 

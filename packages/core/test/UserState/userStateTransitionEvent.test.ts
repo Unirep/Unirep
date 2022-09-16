@@ -1,16 +1,11 @@
 // @ts-ignore
 import { ethers as hardhatEthers } from 'hardhat'
-import { BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { expect } from 'chai'
 import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
-import { Unirep } from '@unirep/contracts'
+import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import {
-    EPOCH_LENGTH,
-    formatProofForSnarkjsVerification,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits'
 
 import { genEpochKey } from '../../src'
 import {
@@ -21,7 +16,6 @@ import {
     genUnirepState,
     genUserState,
 } from '../utils'
-import { UserTransitionProof } from '@unirep/contracts/src'
 
 describe('User state transition events in Unirep User State', function () {
     this.timeout(0)

@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import poseidon from '../src/poseidon'
+import poseidon from '../deploy/poseidon'
 import { SparseMerkleTree, genRandomSalt } from '@unirep/crypto'
 
 const getSMT = async (depth = 32, defaultLeaf = BigInt(0)) => {
