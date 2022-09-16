@@ -49,13 +49,6 @@ export interface Prover {
      * @returns vkey of the circuit
      */
     getVKey: (name: string | Circuit) => any
-
-    GLOBAL_STATE_TREE_DEPTH: number
-    USER_STATE_TREE_DEPTH: number
-    EPOCH_TREE_DEPTH: number
-    NUM_ATTESTATIONS_PER_PROOF: number
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH: number
-    MAX_REPUTATION_BUDGET: number
 }
 
 /**

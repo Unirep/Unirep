@@ -1,13 +1,5 @@
 import path from 'path'
-import {
-    Circuit,
-    GLOBAL_STATE_TREE_DEPTH,
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
-    NUM_ATTESTATIONS_PER_PROOF,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    MAX_REPUTATION_BUDGET,
-} from '../src'
+import { Circuit } from '../src'
 import * as snarkjs from 'snarkjs'
 import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
 
@@ -17,15 +9,6 @@ const buildPath = '../zksnarkBuild'
  * The default prover that uses the circuits in default built folder `zksnarkBuild/`
  */
 export const defaultProver = {
-    /**
-     * Circuit configs
-     */
-    GLOBAL_STATE_TREE_DEPTH,
-    USER_STATE_TREE_DEPTH,
-    EPOCH_TREE_DEPTH,
-    NUM_ATTESTATIONS_PER_PROOF,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    MAX_REPUTATION_BUDGET,
     /**
      * Generate proof and public signals with `snarkjs.groth16.fullProve`
      * @param circuitName Name of the circuit, which can be chosen from `Circuit`

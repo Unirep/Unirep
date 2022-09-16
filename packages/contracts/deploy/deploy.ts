@@ -28,6 +28,12 @@ import {
 export const deployUnirep = async (
     deployer: ethers.Signer,
     _settings: {
+        globalStateTreeDepth?: BigNumberish
+        userStateTreeDepth?: BigNumberish
+        epochTreeDepth?: BigNumberish
+        numEpochKeyNoncePerEpoch?: BigNumberish
+        maxReputationBudget?: BigNumberish
+        numAttestationsPerProof?: BigNumberish
         epochLength?: BigNumberish
         attestingFee?: BigNumberish
         maxUsers?: BigNumberish
@@ -36,25 +42,16 @@ export const deployUnirep = async (
     prover?: Prover
 ): Promise<Unirep> => {
     const settings = {
-        globalStateTreeDepth:
-            prover?.GLOBAL_STATE_TREE_DEPTH ?? GLOBAL_STATE_TREE_DEPTH,
-        userStateTreeDepth:
-            prover?.USER_STATE_TREE_DEPTH ?? USER_STATE_TREE_DEPTH,
-        epochTreeDepth: prover?.EPOCH_TREE_DEPTH ?? EPOCH_TREE_DEPTH,
-        numEpochKeyNoncePerEpoch:
-            prover?.NUM_EPOCH_KEY_NONCE_PER_EPOCH ??
-            NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        maxReputationBudget:
-            prover?.MAX_REPUTATION_BUDGET ?? MAX_REPUTATION_BUDGET,
-        numAttestationsPerProof:
-            prover?.NUM_ATTESTATIONS_PER_PROOF ?? NUM_ATTESTATIONS_PER_PROOF,
+        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
+        userStateTreeDepth: USER_STATE_TREE_DEPTH,
+        epochTreeDepth: EPOCH_TREE_DEPTH,
+        numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+        maxReputationBudget: MAX_REPUTATION_BUDGET,
+        numAttestationsPerProof: NUM_ATTESTATIONS_PER_PROOF,
         epochLength: EPOCH_LENGTH,
         attestingFee: ATTESTING_FEE,
-        maxUsers:
-            2 ** (prover?.GLOBAL_STATE_TREE_DEPTH ?? GLOBAL_STATE_TREE_DEPTH) -
-            1,
-        maxAttesters:
-            2 ** (prover?.USER_STATE_TREE_DEPTH ?? USER_STATE_TREE_DEPTH) - 1,
+        maxUsers: 2 ** GLOBAL_STATE_TREE_DEPTH - 1,
+        maxAttesters: 2 ** USER_STATE_TREE_DEPTH - 1,
         ..._settings,
     }
 
