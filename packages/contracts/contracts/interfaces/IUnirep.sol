@@ -1,41 +1,44 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {UnirepTypes} from '../types/UnirepTypes.sol';
+import {SparseTreeData} from '../SparseMerkleTree.sol';
+import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 
-interface IUnirep is UnirepTypes {
+interface IUnirep {
     event UserSignedUp(
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
-        uint256 attesterId,
-        uint256 airdropAmount,
+        uint160 indexed attesterId,
         uint256 leafIndex
     );
 
-    event UserStateTransitioned(
-        uint256 indexed epoch,
-        uint256 indexed hashedLeaf,
-        uint256 indexed leafIndex,
-        uint256 firstEpkNullifier
-    );
+    // event UserStateTransitioned(
+    //     uint256 indexed epoch,
+    //     uint256 indexed hashedLeaf,
+    //     uint256 indexed leafIndex,
+    //     uint256 firstEpkNullifier
+    // );
 
     event AttestationSubmitted(
         uint256 indexed epoch,
         uint256 indexed epochKey,
-        address indexed attester,
-        Attestation attestation
+        uint160 indexed attesterId,
+        uint256 posRep,
+        uint256 negRep
     );
 
     event NewGSTLeaf(
         uint256 indexed epoch,
-        uint256 indexed leaf,
-        uint256 indexed index
+        uint160 indexed attesterId,
+        uint256 indexed index,
+        uint256 leaf
     );
 
     event EpochTreeLeaf(
         uint256 indexed epoch,
-        uint256 indexed leaf,
-        uint256 indexed index
+        uint160 indexed attesterId,
+        uint256 indexed index,
+        uint256 leaf
     );
 
     event EpochEnded(uint256 indexed epoch);
@@ -49,12 +52,12 @@ interface IUnirep is UnirepTypes {
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error ReachedMaximumNumberUserSignedUp();
-    error AttesterAlreadySignUp(address attester);
-    error AttesterNotSignUp(address attester);
+    error AttesterAlreadySignUp(uint160 attester);
+    error AttesterNotSignUp(uint160 attester);
     error ProofAlreadyUsed(bytes32 nullilier);
     error NullifierAlreadyUsed(uint256 nullilier);
     error AttestingFeeInvalid();
-    error AttesterIdNotMatch(uint256 attesterId);
+    error AttesterIdNotMatch(uint160 attesterId);
     error AirdropWithoutAttester();
 
     error InvalidSignature();
@@ -73,18 +76,39 @@ interface IUnirep is UnirepTypes {
     error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
-    /**
-     * Sign up an attester using the address who sends the transaction
-     */
-    function attesterSignUp() external;
+    struct AttesterData {
+        // epoch keyed to tree data
+        mapping(uint256 => IncrementalTreeData) stateTrees;
+        // epoch keyed to root keyed to whether it's valid
+        mapping(uint256 => mapping(uint256 => bool)) stateTreeRoots;
+        // epoch keyed to root
+        mapping(uint256 => uint256) epochTreeRoots;
+        uint256 startTimestamp;
+        uint256 currentEpoch;
+        uint256 epochLength;
+        mapping(uint256 => bool) identityCommitments;
+        IncrementalTreeData semaphoreGroup;
+    }
 
-    /**
-     * Sign up an attester using the claimed address and the signature
-     * @param attester The address of the attester who wants to sign up
-     * @param signature The signature of the attester
-     */
-    function attesterSignUpViaRelayer(
-        address attester,
-        bytes calldata signature
-    ) external;
+    struct Attestation {
+        // The attester’s ID
+        uint160 attesterId;
+        // Positive reputation
+        uint256 posRep;
+        // Negative reputation
+        uint256 negRep;
+        // A hash of an arbitary string
+        uint256 graffiti;
+        // A flag to indicate if user has signed up in the attester's app
+        uint256 signUp;
+    }
+
+    struct Config {
+        // circuit config
+        uint8 globalStateTreeDepth;
+        uint8 epochTreeDepth;
+        uint256 numEpochKeyNoncePerEpoch;
+        // contract config
+        uint256 emptyEpochTreeRoot;
+    }
 }

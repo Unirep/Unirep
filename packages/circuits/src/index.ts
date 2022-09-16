@@ -7,6 +7,8 @@ export enum Circuit {
     verifyEpochKey = 'verifyEpochKey',
     proveReputation = 'proveReputation',
     epochTransition = 'epochTransition',
+    signup = 'signup',
+    updateSparseTree = 'updateSparseTree',
 }
 
 /**

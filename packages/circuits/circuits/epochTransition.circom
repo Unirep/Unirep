@@ -24,7 +24,7 @@ template EpochTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     // signal input prove_graffiti;
     // signal input graffiti_pre_image;
 
-    // prove what we've received this epoch
+    // prove what we've received in from epoch
     signal input epoch_tree_root;
     signal private input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal private input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
