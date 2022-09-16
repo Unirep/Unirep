@@ -9,12 +9,14 @@ import { BaseProof } from './BaseProof'
 export class EpochKeyProof extends BaseProof {
     readonly idx = {
         epochKey: 0,
-        globalStateTree: 1,
+        globalStateTreeRoot: 1,
         epoch: 2,
+        attesterId: 3,
     }
-    public globalStateTree: BigNumberish
+    public globalStateTreeRoot: BigNumberish
     public epoch: BigNumberish
     public epochKey: BigNumberish
+    public attesterId: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -27,10 +29,11 @@ export class EpochKeyProof extends BaseProof {
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.globalStateTree =
-            _publicSignals[this.idx.globalStateTree].toString()
-        this.epoch = _publicSignals[this.idx.epoch].toString()
         this.epochKey = _publicSignals[this.idx.epochKey].toString()
+        this.globalStateTreeRoot =
+            _publicSignals[this.idx.globalStateTreeRoot].toString()
+        this.epoch = _publicSignals[this.idx.epoch].toString()
+        this.attesterId = _publicSignals[this.idx.attesterId].toString()
         this.circuit = Circuit.verifyEpochKey
     }
 }

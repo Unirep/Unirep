@@ -6,20 +6,18 @@ import { BaseProof } from './BaseProof'
 /**
  * The sign up proof structure that helps to query the public signals
  */
-export class SignUpProof extends BaseProof {
+export class SignupProof extends BaseProof {
     readonly idx = {
-        epochKey: 0,
-        globalStateTree: 1,
-        epoch: 2,
-        attesterId: 3,
-        userHasSignedUp: 4,
+        identityCommitment: 0,
+        globalStateTreeLeaf: 1,
+        attesterId: 2,
+        epoch: 3,
     }
 
-    public epoch: BigNumberish
-    public epochKey: BigNumberish
-    public globalStateTree: BigNumberish
+    public identityCommitment: BigNumberish
+    public globalStateTreeLeaf: BigNumberish
     public attesterId: BigNumberish
-    public userHasSignedUp: BigNumberish
+    public epoch: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover
@@ -32,11 +30,10 @@ export class SignUpProof extends BaseProof {
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.epoch = _publicSignals[this.idx.epoch]
-        this.epochKey = _publicSignals[this.idx.epochKey]
-        this.globalStateTree = _publicSignals[this.idx.globalStateTree]
+        this.identityCommitment = _publicSignals[this.idx.identityCommitment]
+        this.globalStateTreeLeaf = _publicSignals[this.idx.globalStateTreeLeaf]
         this.attesterId = _publicSignals[this.idx.attesterId]
-        this.userHasSignedUp = _publicSignals[this.idx.userHasSignedUp]
-        this.circuit = Circuit.proveUserSignUp
+        this.epoch = _publicSignals[this.idx.epoch]
+        this.circuit = Circuit.signup
     }
 }

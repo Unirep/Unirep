@@ -3,11 +3,9 @@ import {
     Circuit,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-    NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    EMPTY_EPOCH_TREE_ROOT,
     Prover,
-    USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import poseidon from './poseidon'
@@ -29,29 +27,17 @@ export const deployUnirep = async (
     deployer: ethers.Signer,
     _settings: {
         globalStateTreeDepth?: BigNumberish
-        userStateTreeDepth?: BigNumberish
         epochTreeDepth?: BigNumberish
         numEpochKeyNoncePerEpoch?: BigNumberish
-        maxReputationBudget?: BigNumberish
-        numAttestationsPerProof?: BigNumberish
-        epochLength?: BigNumberish
-        attestingFee?: BigNumberish
-        maxUsers?: BigNumberish
-        maxAttesters?: BigNumberish
+        emptyEpochTreeRoot?: BigNumberish
     } = {},
     prover?: Prover
 ): Promise<Unirep> => {
     const settings = {
         globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-        userStateTreeDepth: USER_STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        maxReputationBudget: MAX_REPUTATION_BUDGET,
-        numAttestationsPerProof: NUM_ATTESTATIONS_PER_PROOF,
-        epochLength: EPOCH_LENGTH,
-        attestingFee: ATTESTING_FEE,
-        maxUsers: 2 ** GLOBAL_STATE_TREE_DEPTH - 1,
-        maxAttesters: 2 ** USER_STATE_TREE_DEPTH - 1,
+        emptyEpochTreeRoot: EMPTY_EPOCH_TREE_ROOT,
         ..._settings,
     }
 
@@ -118,22 +104,20 @@ export const deployUnirep = async (
 
     const c: Unirep = await new UnirepFactory(
         {
-            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
-            ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
-            ['contracts/SparseMerkleTree.sol:SparseMerkleTree']:
-                sparseMerkleTreeLib.address,
+            // ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
+            // ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
+            // ['contracts/SparseMerkleTree.sol:SparseMerkleTree']:
+            //     sparseMerkleTreeLib.address,
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
         },
         deployer
     ).deploy(
         settings,
-        verifiers[Circuit.verifyEpochKey],
-        verifiers[Circuit.startTransition],
-        verifiers[Circuit.processAttestations],
-        verifiers[Circuit.userStateTransition],
-        verifiers[Circuit.proveReputation],
-        verifiers[Circuit.proveUserSignUp]
+        verifiers[Circuit.signup],
+        verifiers[Circuit.updateSparseTree],
+        verifiers[Circuit.epochTransition],
+        verifiers[Circuit.proveReputation]
     )
 
     await c.deployTransaction.wait()
