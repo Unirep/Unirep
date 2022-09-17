@@ -53,17 +53,19 @@ describe('Attester signs up and gives attestation', function () {
             const [epk] = epochKeys
             const newPosRep = 10
             const newNegRep = 5
-            const { publicSignals, proof } =
-                await userState.genAttestationProof(
-                    epk,
-                    BigInt(newPosRep),
-                    BigInt(newNegRep)
-                )
-            // now submit the attestation from the attester
-            await unirepContract
-                .connect(accounts[1])
-                .submitAttestation(epoch, publicSignals, proof, {})
-                .then((t) => t.wait())
+            {
+                const { publicSignals, proof } =
+                    await userState.genAttestationProof(
+                        epk,
+                        BigInt(newPosRep),
+                        BigInt(newNegRep)
+                    )
+                // now submit the attestation from the attester
+                await unirepContract
+                    .connect(accounts[1])
+                    .submitAttestation(epoch, publicSignals, proof, {})
+                    .then((t) => t.wait())
+            }
             await userState.waitForSync()
             // now check the reputation
             const checkPromises = epochKeys.map(async (key) => {
@@ -81,6 +83,23 @@ describe('Attester signs up and gives attestation', function () {
             })
             await Promise.all(checkPromises)
             // then run an epoch transition and check the rep
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            await ethers.provider.send('evm_mine', [])
+            {
+                const { publicSignals, proof } =
+                    await userState.genEpochTransitionProof()
+                // submit it
+                await unirepContract
+                    .connect(accounts[4])
+                    .epochTransition(publicSignals, proof)
+                    .then((t) => t.wait())
+            }
+            await userState.waitForSync()
+            {
+                const { posRep, negRep } = await userState.getRepByAttester()
+                expect(posRep).to.equal(newPosRep)
+                expect(negRep).to.equal(newNegRep)
+            }
         })
     })
 })

@@ -72,11 +72,9 @@ export default class UserState extends Synchronizer {
      * @returns The latest epoch where user performs user state transition.
      */
     async latestTransitionedEpoch(): Promise<number> {
-        const currentEpoch = await this.unirepContract.attesterCurrentEpoch(
-            this.attesterId
-        )
+        const currentEpoch = await this.loadCurrentEpoch()
         let latestTransitionedEpoch = 0
-        for (let x = currentEpoch; x > 0; x--) {
+        for (let x = currentEpoch; x >= 0; x--) {
             const epkNullifier = genEpochNullifier(
                 this.id.identityNullifier,
                 this.attesterId.toString(),
@@ -168,7 +166,7 @@ export default class UserState extends Synchronizer {
      * Proxy methods to get underlying UnirepState data
      */
     public getUnirepStateCurrentEpoch = async (): Promise<number> => {
-        return (await this.loadCurrentEpoch()).number
+        return (await this.readCurrentEpoch()).number
     }
 
     async getNumGSTLeaves(epoch: number) {
@@ -405,7 +403,10 @@ export default class UserState extends Synchronizer {
         async (): Promise<EpochTransitionProof> => {
             const { posRep, negRep } = await this.getRepByAttester()
             const fromEpoch = await this.latestTransitionedEpoch()
-            const toEpoch = await this.getUnirepStateCurrentEpoch()
+            const toEpoch = await this.loadCurrentEpoch()
+            if (fromEpoch.toString() === toEpoch.toString()) {
+                throw new Error('Cannot transition to same epoch')
+            }
             const epochTree = await this.genEpochTree(fromEpoch)
             const epochKeyPromises = Array(
                 this.settings.numEpochKeyNoncePerEpoch

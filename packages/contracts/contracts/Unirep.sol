@@ -101,8 +101,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         emit NewGSTLeaf(
             attester.currentEpoch,
             uint160(attesterId),
-            publicSignals[1],
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves
+            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            publicSignals[1]
         );
         IncrementalBinaryTree.insert(
             attester.stateTrees[attester.currentEpoch],
@@ -275,29 +275,38 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     ) public {
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
         // Verify the proof
-        require(epochTransitionVerifier.verifyProof(proof, publicSignals));
+        require(
+            epochTransitionVerifier.verifyProof(proof, publicSignals),
+            'proof'
+        );
 
         require(publicSignals[5] < type(uint160).max);
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
         // verify that we're transition to the current epoch
-        require(attester.currentEpoch == publicSignals[4]);
+        require(attester.currentEpoch == publicSignals[4], 'epoch');
         // verify that the transition nullifier hasn't been used
-        require(!usedNullifiers[publicSignals[2]]);
+        require(!usedNullifiers[publicSignals[2]], 'nullifier');
         usedNullifiers[publicSignals[2]] = true;
 
         uint256 fromEpoch = publicSignals[3];
         // make sure from epoch tree root is valid
-        require(attester.epochTreeRoots[fromEpoch] == publicSignals[6]);
+        require(
+            attester.epochTreeRoots[fromEpoch] == publicSignals[6],
+            'epochroot'
+        );
         // make sure from state tree root is valid
-        require(attester.stateTreeRoots[fromEpoch][publicSignals[0]]);
+        require(
+            attester.stateTreeRoots[fromEpoch][publicSignals[0]],
+            'stateroot'
+        );
         // update the current state tree
         emit NewGSTLeaf(
             attester.currentEpoch,
             attesterId,
-            publicSignals[1],
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves
+            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            publicSignals[1]
         );
         emit UserStateTransitioned(
             attester.currentEpoch,

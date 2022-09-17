@@ -22,7 +22,7 @@
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
         "test": "hardhat test test/*.test.ts",
-        "test-ci": "hardhat test test/*.test.ts --parallel",
+        "test-ci": "hardhat test --parallel test/*.test.ts",
         "lint": "prettier --write ."
     },
     "devDependencies": {

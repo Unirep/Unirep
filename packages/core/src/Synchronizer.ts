@@ -270,7 +270,7 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async loadCurrentEpoch() {
+    async readCurrentEpoch() {
         const currentEpoch = await this._db.findOne('Epoch', {
             where: {
                 attesterId: this.attesterId.toString(),
@@ -287,20 +287,27 @@ export class Synchronizer extends EventEmitter {
         )
     }
 
+    async loadCurrentEpoch() {
+        const epoch = await this.unirepContract.attesterCurrentEpoch(
+            this.attesterId
+        )
+        return BigInt(epoch.toString())
+    }
+
     protected async _checkCurrentEpoch(epoch: number) {
         const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch !== currentEpoch.number) {
+        if (epoch !== Number(currentEpoch)) {
             throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
+                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch}`
             )
         }
     }
 
     protected async _checkValidEpoch(epoch: number) {
         const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch > currentEpoch.number) {
+        if (epoch > Number(currentEpoch)) {
             throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch.number}`
+                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch}`
             )
         }
     }
