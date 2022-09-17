@@ -480,47 +480,25 @@ export default class UserState extends Synchronizer {
      * @param attesterId The attester ID that the user wants to prove the sign up status
      * @returns The sign up proof of type `SignUpProof`.
      */
-    // public genUserSignUpProof = async (
-    //     attesterId: BigInt
-    // ): Promise<SignUpProof> => {
-    //     await this._checkUserSignUp()
-    //     const epoch = await this.latestTransitionedEpoch()
-    //     const leafIndex = await this.latestGSTLeafIndex()
-    //     const rep = await this.getRepByAttester(attesterId)
-    //     const posRep = rep.posRep
-    //     const negRep = rep.negRep
-    //     const graffiti = rep.graffiti
-    //     const signUp = rep.signUp
-    //     const userStateTree = await this.genUserStateTree(epoch)
-    //     const GSTree = await this.genGSTree(epoch)
-    //     const GSTreeProof = GSTree.createProof(leafIndex)
-    //     const USTPathElements = userStateTree.createProof(attesterId)
+    public genUserSignUpProof = async (): Promise<SignupProof> => {
+        const epoch = await this.getUnirepStateCurrentEpoch()
+        const circuitInputs = {
+            epoch,
+            identity_nullifier: this.id.identityNullifier,
+            identity_trapdoor: this.id.trapdoor,
+            attester_id: this.attesterId.toString(),
+        }
+        const results = await this.prover.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts(circuitInputs)
+        )
 
-    //     const circuitInputs = stringifyBigInts({
-    //         epoch: epoch,
-    //         identity_nullifier: this.id.identityNullifier,
-    //         identity_trapdoor: this.id.trapdoor,
-    //         user_tree_root: userStateTree.root,
-    //         GST_path_index: GSTreeProof.pathIndices,
-    //         GST_path_elements: GSTreeProof.siblings,
-    //         attester_id: attesterId,
-    //         pos_rep: posRep,
-    //         neg_rep: negRep,
-    //         graffiti: graffiti,
-    //         sign_up: signUp,
-    //         UST_path_elements: USTPathElements,
-    //     })
-    //     const results = await this.prover.genProofAndPublicSignals(
-    //         Circuit.proveUserSignUp,
-    //         circuitInputs
-    //     )
-
-    //     return new SignUpProof(
-    //         results.publicSignals,
-    //         results.proof,
-    //         this.prover
-    //     )
-    // }
+        return new SignupProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
+    }
 }
 
 export { Reputation, UserState }

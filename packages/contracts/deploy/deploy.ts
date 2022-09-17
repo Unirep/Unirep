@@ -9,7 +9,6 @@ import {
 } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import poseidon from './poseidon'
-import { ATTESTING_FEE, EPOCH_LENGTH } from '../src/config'
 import {
     compileVerifier,
     createVerifierName,
@@ -81,12 +80,12 @@ export const deployUnirep = async (
 
         console.log(`Deploying ${contractName}`)
         let artifacts
-        if (prover === undefined) {
-            const verifierPath = `contracts/verifiers/${contractName}.sol/${contractName}.json`
-            artifacts = tryPath(verifierPath)
-        } else {
+        if (prover) {
             const vkey = prover.getVKey(circuit)
             artifacts = await compileVerifier(contractName, vkey)
+        } else {
+            const verifierPath = `contracts/verifiers/${contractName}.sol/${contractName}.json`
+            artifacts = tryPath(verifierPath)
         }
 
         const { bytecode, abi } = artifacts

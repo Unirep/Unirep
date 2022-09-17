@@ -76,13 +76,13 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     {
         if (!isValidSignals(publicSignals)) revert InvalidSignals();
         // Verify the proof
-        require(signupVerifier.verifyProof(proof, publicSignals));
+        require(signupVerifier.verifyProof(proof, publicSignals), 'proof');
 
         uint256 identityCommitment = publicSignals[0];
         uint256 attesterId = publicSignals[2];
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[uint160(attesterId)];
-        require(attester.startTimestamp != 0);
+        require(attester.startTimestamp != 0, 'timestamp');
 
         if (attester.identityCommitments[identityCommitment])
             revert UserAlreadySignedUp(identityCommitment);
@@ -90,7 +90,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         // if (numUserSignUps >= config.maxUsers)
         //     revert ReachedMaximumNumberUserSignedUp();
 
-        require(attester.currentEpoch == publicSignals[3]);
+        require(attester.currentEpoch == publicSignals[3], 'epoch');
 
         emit UserSignedUp(
             attester.currentEpoch,
@@ -111,6 +111,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         attester.stateTreeRoots[attester.currentEpoch][
             attester.stateTrees[attester.currentEpoch].root
         ] = true;
+        IncrementalBinaryTree.insert(attester.semaphoreGroup, publicSignals[1]);
     }
 
     /**
@@ -320,7 +321,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function updateEpochIfNeeded(uint256 attesterId) public {
         require(attesterId < type(uint160).max);
         AttesterData storage attester = attesters[uint160(attesterId)];
-        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        require(attester.startTimestamp != 0, 'timestamp'); // indicates the attester is signed up
         uint256 newEpoch = currentEpoch(uint160(attesterId));
         if (newEpoch == attester.currentEpoch) return;
 

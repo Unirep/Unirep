@@ -18,9 +18,7 @@ import {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genNewEpochTree,
-    genNewUserStateTree,
     toCompleteHexString,
-    genUserStateTransitionCircuitInput,
 } from '../../circuits/test/utils'
 import { genInputForContract } from '../../contracts/test/utils'
 import { IAttestation } from '@unirep/contracts'
@@ -31,7 +29,7 @@ import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
 import { schema } from '../src/schema'
 
-const genNewGST = (
+export const genNewGST = (
     GSTDepth: number,
     defaultGSTLeaf = BigInt(0)
 ): IncrementalMerkleTree => {
@@ -59,196 +57,12 @@ const genRandomList = (length): BigNumberish[] => {
     return array
 }
 
-const computeEpochKeyProofHash = (epochKeyProof: any) => {
+export const computeEpochKeyProofHash = (epochKeyProof: any) => {
     const abiEncoder = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'uint256', 'uint256[8]'],
         epochKeyProof
     )
     return ethers.utils.keccak256(abiEncoder)
-}
-
-const verifyStartTransitionProof = async (
-    startTransitionProof
-): Promise<boolean> => {
-    return await defaultProver.verifyProof(
-        Circuit.startTransition,
-        startTransitionProof.publicSignals,
-        startTransitionProof.proof
-    )
-}
-
-const verifyProcessAttestationsProof = async (
-    processAttestationProof
-): Promise<boolean> => {
-    return await defaultProver.verifyProof(
-        Circuit.processAttestations,
-        processAttestationProof.publicSignals,
-        processAttestationProof.proof
-    )
-}
-
-const getReputationRecords = async (id: ZkIdentity, userState: UserState) => {
-    const currentEpoch = (await userState.loadCurrentEpoch()).number
-    const reputaitonRecord = {}
-    for (let i = 0; i < currentEpoch; i++) {
-        for (let j = 0; j < userState.settings.numEpochKeyNoncePerEpoch; j++) {
-            const epk = genEpochKey(id.identityNullifier, i, j)
-            const attestations = await userState.getAttestations(epk.toString())
-            for (let attestation of attestations) {
-                const attesterId = attestation.attesterId.toString()
-                if (reputaitonRecord[attesterId] === undefined) {
-                    reputaitonRecord[attesterId] = new Reputation(
-                        attestation.posRep,
-                        attestation.negRep,
-                        attestation.graffiti,
-                        attestation.signUp
-                    )
-                } else {
-                    reputaitonRecord[attesterId].update(
-                        attestation.posRep,
-                        attestation.negRep,
-                        attestation.graffiti,
-                        attestation.signUp
-                    )
-                }
-            }
-        }
-    }
-    return reputaitonRecord
-}
-
-const genProveSignUpCircuitInput = (
-    id: ZkIdentity,
-    epoch: number,
-    GSTree: IncrementalMerkleTree,
-    leafIdx: number,
-    reputationRecords,
-    attesterId,
-    _signUp?: number
-) => {
-    const nonce = 0
-    const epk = genEpochKey(id.identityNullifier, epoch, nonce)
-    if (reputationRecords[attesterId] === undefined) {
-        reputationRecords[attesterId] = Reputation.default()
-    }
-
-    // User state tree
-    const userStateTree = genNewUserStateTree()
-    for (const attester of Object.keys(reputationRecords)) {
-        userStateTree.update(
-            BigInt(attester),
-            reputationRecords[attester].hash()
-        )
-    }
-    const userStateRoot = userStateTree.root
-    const USTPathElements = userStateTree.createProof(BigInt(attesterId))
-
-    // Global state tree
-    const GSTreeProof = GSTree.createProof(leafIdx) // if there is only one GST leaf, the index is 0
-    const GSTreeRoot = GSTree.root
-
-    const circuitInputs = {
-        epoch: epoch,
-        epoch_key: epk,
-        identity_nullifier: id.identityNullifier,
-        identity_trapdoor: id.trapdoor,
-        user_tree_root: userStateRoot,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
-        attester_id: attesterId,
-        pos_rep: reputationRecords[attesterId]['posRep'],
-        neg_rep: reputationRecords[attesterId]['negRep'],
-        graffiti: reputationRecords[attesterId]['graffiti'],
-        sign_up: reputationRecords[attesterId]['signUp'],
-        UST_path_elements: USTPathElements,
-    }
-    return stringifyBigInts(circuitInputs)
-}
-
-const submitUSTProofs = async (
-    contract: ethers.Contract,
-    { startTransitionProof, processAttestationProofs, finalTransitionProof }
-) => {
-    const proofIndexes: number[] = []
-
-    {
-        // submit proofs
-        const isValid = await startTransitionProof.verify()
-        expect(isValid).to.be.true
-        const tx = await contract.startUserStateTransition(
-            startTransitionProof.publicSignals,
-            startTransitionProof.proof
-        )
-        const receipt = await tx.wait()
-        expect(receipt.status).to.equal(1)
-
-        // submit twice should fail
-        await expect(
-            contract.startUserStateTransition(
-                startTransitionProof.publicSignals,
-                startTransitionProof.proof
-            )
-        ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
-
-        const hashedProof = startTransitionProof.hash()
-        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
-    }
-
-    for (let i = 0; i < processAttestationProofs.length; i++) {
-        const isValid = await processAttestationProofs[i].verify()
-        expect(isValid).to.be.true
-
-        const tx = await contract.processAttestations(
-            processAttestationProofs[i].publicSignals,
-            processAttestationProofs[i].proof
-        )
-        const receipt = await tx.wait()
-        expect(receipt.status).to.equal(1)
-
-        // submit random process attestations should success and not affect the results
-        // const falseInput = BigNumber.from(genRandomSalt())
-        // await contract
-        //     .processAttestations(
-        //         processAttestationProofs[i].outputBlindedUserState,
-        //         processAttestationProofs[i].outputBlindedHashChain,
-        //         falseInput,
-        //         formatProofForVerifierContract(
-        //             processAttestationProofs[i].proof
-        //         )
-        //     )
-        //     .then((t) => t.wait())
-
-        // submit twice should fail
-        await expect(
-            contract.processAttestations(
-                processAttestationProofs[i].publicSignals,
-                processAttestationProofs[i].proof
-            )
-        ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
-
-        const hashedProof = processAttestationProofs[i].hash()
-        proofIndexes.push(Number(await contract.getProofIndex(hashedProof)))
-    }
-
-    {
-        const isValid = await finalTransitionProof.verify()
-        expect(isValid).to.be.true
-        const tx = await contract.updateUserStateRoot(
-            finalTransitionProof.publicSignals,
-            finalTransitionProof.proof
-        )
-        const receipt = await tx.wait()
-        expect(receipt.status).to.equal(1)
-
-        // submit twice should fail
-        await expect(
-            contract.updateUserStateRoot(
-                finalTransitionProof.publicSignals,
-                finalTransitionProof.proof
-            )
-        ).to.be.revertedWithCustomError(contract, 'ProofAlreadyUsed')
-    }
 }
 
 const tables = ['Nullifier', 'GSTLeaf', 'Attestation', 'Epoch', 'UserSignUp']
@@ -320,61 +134,61 @@ export const snapshotDB = async (db: DB) => {
     }, {})
 }
 
-const compareStates = async (
-    provider: ethers.providers.Provider,
-    address: string,
-    userId: ZkIdentity,
-    db: Promise<SQLiteConnector>
-) => {
-    const unirepContract: Unirep = await getUnirepContract(address, provider)
-    const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
+// export const compareStates = async (
+//     provider: ethers.providers.Provider,
+//     address: string,
+//     userId: ZkIdentity,
+//     db: Promise<SQLiteConnector>
+// ) => {
+//     const unirepContract: Unirep = await getUnirepContract(address, provider)
+//     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
 
-    const usWithNoStorage = await genUserState(provider, address, userId)
-    const usWithStorage = await genUserState(
-        provider,
-        address,
-        userId,
-        await db
-    )
-    expect(await usWithNoStorage.latestGSTLeafIndex()).equal(
-        await usWithStorage.latestGSTLeafIndex()
-    )
+//     const usWithNoStorage = await genUserState(provider, address, userId)
+//     const usWithStorage = await genUserState(
+//         provider,
+//         address,
+//         userId,
+//         await db
+//     )
+//     expect(await usWithNoStorage.latestGSTLeafIndex()).equal(
+//         await usWithStorage.latestGSTLeafIndex()
+//     )
 
-    expect(await usWithNoStorage.latestTransitionedEpoch()).equal(
-        await usWithStorage.latestTransitionedEpoch()
-    )
+//     expect(await usWithNoStorage.latestTransitionedEpoch()).equal(
+//         await usWithStorage.latestTransitionedEpoch()
+//     )
 
-    for (let epoch = 1; epoch <= currentEpoch; epoch++) {
-        for (
-            let nonce = 0;
-            nonce < usWithNoStorage.settings.numEpochKeyNoncePerEpoch;
-            nonce++
-        ) {
-            const epk = genEpochKey(
-                userId.identityNullifier,
-                epoch,
-                nonce,
-                usWithNoStorage.settings.epochTreeDepth
-            ).toString()
-            expect((await usWithNoStorage.getAttestations(epk)).length).equal(
-                (await usWithStorage.getAttestations(epk)).length
-            )
-        }
-        expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
-            await usWithStorage.genGSTree(epoch)
-        )
-    }
+//     for (let epoch = 1; epoch <= currentEpoch; epoch++) {
+//         for (
+//             let nonce = 0;
+//             nonce < usWithNoStorage.settings.numEpochKeyNoncePerEpoch;
+//             nonce++
+//         ) {
+//             const epk = genEpochKey(
+//                 userId.identityNullifier,
+//                 epoch,
+//                 nonce,
+//                 usWithNoStorage.settings.epochTreeDepth
+//             ).toString()
+//             expect((await usWithNoStorage.getAttestations(epk)).length).equal(
+//                 (await usWithStorage.getAttestations(epk)).length
+//             )
+//         }
+//         expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
+//             await usWithStorage.genGSTree(epoch)
+//         )
+//     }
 
-    for (let epoch = 1; epoch < currentEpoch; epoch++) {
-        const [root1, root2] = await Promise.all([
-            usWithNoStorage.epochTreeRoot(epoch),
-            usWithStorage.epochTreeRoot(epoch),
-        ])
-        expect(root1).to.equal(root2)
-    }
-}
+//     for (let epoch = 1; epoch < currentEpoch; epoch++) {
+//         const [root1, root2] = await Promise.all([
+//             usWithNoStorage.epochTreeRoot(epoch),
+//             usWithStorage.epochTreeRoot(epoch),
+//         ])
+//         expect(root1).to.equal(root2)
+//     }
+// }
 
-const compareAttestations = (
+export const compareAttestations = (
     attestDB: IAttestation,
     attestObj: Attestation
 ) => {
@@ -394,15 +208,21 @@ const compareAttestations = (
  * @param address The address of the Unirep contract
  * @param _db An optional DB object
  */
-const genUnirepState = async (
+export const genUnirepState = async (
     provider: ethers.providers.Provider,
     address: string,
+    attesterId: BigNumberish,
     _db?: DB
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
+    synchronizer = new Synchronizer({
+        db,
+        prover: defaultProver,
+        unirepContract,
+        attesterId,
+    })
     await synchronizer.start()
     await synchronizer.waitForSync()
     return synchronizer
@@ -416,44 +236,23 @@ const genUnirepState = async (
  * @param userIdentity The semaphore identity of the user
  * @param _db An optional DB object
  */
-const genUserState = async (
+export const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: ZkIdentity,
+    attesterId: BigNumberish,
     _db?: DB
 ) => {
     const unirepContract: Unirep = getUnirepContract(address, provider)
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    const userState = new UserState(
+    const userState = new UserState({
         db,
-        defaultProver,
+        prover: defaultProver,
         unirepContract,
-        userIdentity
-    )
+        _id: userIdentity,
+        attesterId,
+    })
     await userState.start()
     await userState.waitForSync()
     return userState
-}
-
-export {
-    genNewEpochTree,
-    genNewUserStateTree,
-    genNewGST,
-    genRandomAttestation,
-    genRandomList,
-    toCompleteHexString,
-    computeEpochKeyProofHash,
-    verifyStartTransitionProof,
-    verifyProcessAttestationsProof,
-    getReputationRecords,
-    genEpochKeyCircuitInput,
-    genReputationCircuitInput,
-    genProveSignUpCircuitInput,
-    genUserStateTransitionCircuitInput,
-    genInputForContract,
-    submitUSTProofs,
-    compareStates,
-    compareAttestations,
-    genUserState,
-    genUnirepState,
 }

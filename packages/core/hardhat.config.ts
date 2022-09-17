@@ -5,9 +5,6 @@ import '@nomicfoundation/hardhat-chai-matchers'
 
 const config: HardhatUserConfig = {
     defaultNetwork: 'hardhat',
-    paths: {
-        artifacts: '../contracts/build/artifacts',
-    },
     networks: {
         hardhat: {
             blockGasLimit: 12000000,

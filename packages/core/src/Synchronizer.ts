@@ -281,7 +281,7 @@ export class Synchronizer extends EventEmitter {
         })
         return (
             currentEpoch || {
-                number: 1,
+                number: 0,
                 sealed: false,
             }
         )
@@ -518,7 +518,6 @@ export class Synchronizer extends EventEmitter {
             event.data
         )
         const hash = BigInt(decodedData.leaf.toString())
-        console.log('newGSTLeaf', attesterId, this.attesterId.toString())
         if (attesterId !== this.attesterId.toString()) return
         db.create('GSTLeaf', {
             epoch,
@@ -566,9 +565,9 @@ export class Synchronizer extends EventEmitter {
         )
         const epoch = Number(event.topics[1])
         const idCommitment = BigInt(event.topics[2]).toString()
-        const attesterId = BigInt(decodedData.attesterId)
+        const attesterId = BigInt(event.topics[3]).toString()
         const leafIndex = Number(decodedData.leafIndex)
-        if (attesterId.toString() !== this.attesterId.toString()) return
+        if (attesterId !== this.attesterId.toString()) return
         db.create('UserSignUp', {
             commitment: idCommitment.toString(),
             epoch,
