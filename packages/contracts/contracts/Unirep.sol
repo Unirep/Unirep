@@ -68,29 +68,25 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
      * @dev User signs up by providing an identity commitment. It also inserts a fresh state leaf into the state tree.
      * An attester may specify an `initBalance` of reputation the user can use in the current epoch
      */
-    /**
-     * TODO: accept a zk proof outputting the identity commitent + state tree leaf
-     **/
     function userSignUp(uint256[] memory publicSignals, uint256[8] memory proof)
         public
     {
-        if (!isValidSignals(publicSignals)) revert InvalidSignals();
         // Verify the proof
-        require(signupVerifier.verifyProof(proof, publicSignals), 'proof');
+        if (!signupVerifier.verifyProof(proof, publicSignals))
+            revert InvalidProof();
 
         uint256 identityCommitment = publicSignals[0];
         uint256 attesterId = publicSignals[2];
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[uint160(attesterId)];
-        require(attester.startTimestamp != 0, 'timestamp');
+        if (attester.startTimestamp == 0)
+            revert AttesterNotSignUp(uint160(attesterId));
 
         if (attester.identityCommitments[identityCommitment])
             revert UserAlreadySignedUp(identityCommitment);
+        attester.identityCommitments[identityCommitment] = true;
 
-        // if (numUserSignUps >= config.maxUsers)
-        //     revert ReachedMaximumNumberUserSignedUp();
-
-        require(attester.currentEpoch == publicSignals[3], 'epoch');
+        if (attester.currentEpoch != publicSignals[3]) revert EpochNotMatch();
 
         emit UserSignedUp(
             attester.currentEpoch,
@@ -111,7 +107,10 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         attester.stateTreeRoots[attester.currentEpoch][
             attester.stateTrees[attester.currentEpoch].root
         ] = true;
-        IncrementalBinaryTree.insert(attester.semaphoreGroup, publicSignals[1]);
+        IncrementalBinaryTree.insert(
+            attester.semaphoreGroup,
+            identityCommitment
+        );
     }
 
     /**
@@ -330,7 +329,8 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     function updateEpochIfNeeded(uint256 attesterId) public {
         require(attesterId < type(uint160).max);
         AttesterData storage attester = attesters[uint160(attesterId)];
-        require(attester.startTimestamp != 0, 'timestamp'); // indicates the attester is signed up
+        if (attester.startTimestamp == 0)
+            revert AttesterNotSignUp(uint160(attesterId));
         uint256 newEpoch = attesterCurrentEpoch(uint160(attesterId));
         if (newEpoch == attester.currentEpoch) return;
 
@@ -385,13 +385,31 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         return attester.epochLength;
     }
 
-    function attesterStateTreeRoots(
+    function attesterStateTreeRootExists(
         uint160 attesterId,
         uint256 epoch,
         uint256 root
     ) public view returns (bool) {
         AttesterData storage attester = attesters[attesterId];
         return attester.stateTreeRoots[epoch][root];
+    }
+
+    function attesterStateTreeRoot(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (uint256)
+    {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.stateTrees[epoch].root;
+    }
+
+    function attesterSemaphoreGroupRoot(uint160 attesterId)
+        public
+        view
+        returns (uint256)
+    {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.semaphoreGroup.root;
     }
 
     function attesterEpochRoots(uint160 attesterId, uint256 epoch)

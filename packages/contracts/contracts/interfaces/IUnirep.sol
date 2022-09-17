@@ -62,16 +62,10 @@ interface IUnirep {
     error AirdropWithoutAttester();
 
     error InvalidSignature();
-    error InvalidProofIndex();
-    error InvalidSignUpFlag();
     error InvalidEpochKey();
     error EpochNotMatch();
-    error InvalidTransitionEpoch();
-    error InvalidBlindedUserState(uint256 blindedUserState);
-    error InvalidBlindedHashChain(uint256 blindedHashChain);
 
     error InvalidSNARKField(AttestationFieldError); // better name???
-    error EpochNotEndYet();
     error InvalidSignals();
     error InvalidProof();
     error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
