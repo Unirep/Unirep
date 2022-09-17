@@ -15,13 +15,10 @@ export interface IEpochTreeLeaf {
  */
 export interface ISettings {
     globalStateTreeDepth: number
-    userStateTreeDepth: number
     epochTreeDepth: number
-    attestingFee: ethers.BigNumber
     epochLength: number
     numEpochKeyNoncePerEpoch: number
-    maxReputationBudget: number
-    numAttestationsPerProof: number
+    emptyEpochTreeRoot: bigint
 }
 
 /**

@@ -298,6 +298,13 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             publicSignals[1],
             attester.stateTrees[attester.currentEpoch].numberOfLeaves
         );
+        emit UserStateTransitioned(
+            attester.currentEpoch,
+            attesterId,
+            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            publicSignals[1],
+            publicSignals[2]
+        );
         IncrementalBinaryTree.insert(
             attester.stateTrees[attester.currentEpoch],
             publicSignals[1]
@@ -328,7 +335,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
 
         attester.epochTreeRoots[newEpoch] = config.emptyEpochTreeRoot;
 
-        emit EpochEnded(attester.currentEpoch);
+        emit EpochEnded(attester.currentEpoch, uint160(attesterId));
 
         attester.currentEpoch = newEpoch;
     }
@@ -353,6 +360,29 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             (attester.startTimestamp +
                 (_currentEpoch + 1) *
                 attester.epochLength) - block.timestamp;
+    }
+
+    function epochLength(uint160 attesterId) public view returns (uint256) {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.epochLength;
+    }
+
+    function stateTreeRoots(
+        uint160 attesterId,
+        uint256 epoch,
+        uint256 root
+    ) public view returns (bool) {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.stateTreeRoots[epoch][root];
+    }
+
+    function epochRoots(
+        uint160 attesterId,
+        uint256 epoch,
+        uint256 root
+    ) public view returns (uint256) {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.epochTreeRoots[epoch];
     }
 
     function globalStateTreeDepth() public view returns (uint8) {

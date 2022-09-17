@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers'
+import { BigNumber, BigNumberish, ethers } from 'ethers'
 import assert from 'assert'
 import { DB } from 'anondb'
 import {
@@ -15,18 +15,10 @@ import {
     Attestation,
     ReputationProof,
     EpochKeyProof,
-    SignUpProof,
-    UserTransitionProof,
-    ProcessAttestationsProof,
-    StartTransitionProof,
+    SignupProof,
+    EpochTransitionProof,
 } from '@unirep/contracts'
-import {
-    defaultUserStateLeaf,
-    genEpochKey,
-    genEpochKeyNullifier,
-    genReputationNullifier,
-    computeInitUserStateRoot,
-} from './utils'
+import { genEpochKey, genGSTLeaf, genEpochNullifier } from './utils'
 import { IReputation } from './interfaces'
 import Reputation from './Reputation'
 import { Circuit, Prover } from '@unirep/circuits'
@@ -47,14 +39,15 @@ export default class UserState extends Synchronizer {
         return this.id.genIdentityCommitment()
     }
 
-    constructor(
-        db: DB,
-        prover: Prover,
-        unirepContract: ethers.Contract,
+    constructor(config: {
+        db: DB
+        prover: Prover
+        unirepContract: ethers.Contract
         _id: ZkIdentity
-    ) {
-        super(db, prover, unirepContract)
-        this.id = _id
+        attesterId: BigNumberish
+    }) {
+        super(config)
+        this.id = config._id
     }
 
     /**
@@ -65,6 +58,7 @@ export default class UserState extends Synchronizer {
         const signup = await this._db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
+                attesterId: this.attesterId.toString(),
             },
         })
         return !!signup
@@ -76,13 +70,15 @@ export default class UserState extends Synchronizer {
      * @returns The latest epoch where user performs user state transition.
      */
     async latestTransitionedEpoch(): Promise<number> {
-        const currentEpoch = await this.unirepContract.currentEpoch()
+        const currentEpoch = await this.unirepContract.currentEpoch(
+            this.attesterId
+        )
         let latestTransitionedEpoch = 1
         for (let x = currentEpoch; x > 0; x--) {
-            const epkNullifier = genEpochKeyNullifier(
+            const epkNullifier = genEpochNullifier(
                 this.id.identityNullifier,
-                x,
-                0
+                this.attesterId.toString(),
+                x
             )
             const n = await this._db.findOne('Nullifier', {
                 where: {
@@ -98,6 +94,7 @@ export default class UserState extends Synchronizer {
             const signup = await this._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
+                    attesterId: this.attesterId.toString(),
                 },
             })
             if (!signup) return 0
@@ -120,6 +117,7 @@ export default class UserState extends Synchronizer {
             const signup = await this._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
+                    attesterId: this.attesterId.toString(),
                 },
             })
             if (!signup) {
@@ -128,13 +126,12 @@ export default class UserState extends Synchronizer {
             if (signup.epoch !== currentEpoch) {
                 return 0
             }
-            const leaf = hashLeftRight(
-                this.commitment,
-                computeInitUserStateRoot(
-                    this.settings.userStateTreeDepth,
-                    signup.attesterId,
-                    signup.airdrop
-                )
+            const leaf = genGSTLeaf(
+                this.id.identityNullifier,
+                this.attesterId.toString(),
+                signup.epoch,
+                0,
+                0
             )
             const foundLeaf = await this._db.findOne('GSTLeaf', {
                 where: {
@@ -144,8 +141,17 @@ export default class UserState extends Synchronizer {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const USTree = await this.genUserStateTree(latestTransitionedEpoch)
-        const leaf = hashLeftRight(this.commitment, USTree.root)
+        const { posRep, negRep } = await this.getRepByAttester(
+            this.attesterId.toString(),
+            latestTransitionedEpoch
+        )
+        const leaf = genGSTLeaf(
+            this.id.identityNullifier,
+            this.attesterId.toString(),
+            latestTransitionedEpoch,
+            posRep,
+            negRep
+        )
         const foundLeaf = await this._db.findOne('GSTLeaf', {
             where: {
                 epoch: currentEpoch,
@@ -154,74 +160,6 @@ export default class UserState extends Synchronizer {
         })
         if (!foundLeaf) return -1
         return foundLeaf.index
-    }
-
-    /**
-     * Computes the user state tree of given epoch
-     */
-    public genUserStateTree = async (
-        beforeEpoch?: number
-    ): Promise<SparseMerkleTree> => {
-        const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        const orConditions = [] as any
-        for (let x = 1; x < (beforeEpoch ?? latestTransitionedEpoch); x++) {
-            const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
-                .fill(null)
-                .map((_, i) =>
-                    genEpochKey(
-                        this.id.identityNullifier,
-                        x,
-                        i,
-                        this.settings.epochTreeDepth
-                    ).toString()
-                )
-            orConditions.push({
-                epochKey: epks,
-                epoch: x,
-            })
-        }
-        const attestations = await this._db.findMany('Attestation', {
-            where: {
-                OR: orConditions,
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-        const signup = await this._db.findOne('UserSignUp', {
-            where: {
-                commitment: this.commitment.toString(),
-            },
-        })
-        if (!signup) throw new Error('User is not signed up')
-        if (signup.attesterId > 0) {
-            attestations.unshift({
-                attesterId: signup.attesterId,
-                posRep: signup.airdrop,
-                negRep: 0,
-                graffiti: 0,
-                signUp: 1,
-            })
-        }
-        const attestationsByAttesterId = attestations.reduce((acc, obj) => {
-            return {
-                ...acc,
-                [obj.attesterId]: [...(acc[obj.attesterId] ?? []), obj],
-            }
-        }, {})
-        const USTree = new SparseMerkleTree(
-            this.settings.userStateTreeDepth,
-            defaultUserStateLeaf
-        )
-        for (const attesterId of Object.keys(attestationsByAttesterId)) {
-            const _attestations = attestationsByAttesterId[attesterId]
-            const r = Reputation.default()
-            for (const a of _attestations) {
-                r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
-            }
-            USTree.update(BigInt(attesterId), r.hash())
-        }
-        return USTree
     }
 
     /**
@@ -235,6 +173,7 @@ export default class UserState extends Synchronizer {
         await this._checkValidEpoch(epoch)
         return this._db.count('GSTLeaf', {
             epoch: epoch,
+            attesterId: this.attesterId.toString(),
         })
     }
 
@@ -257,31 +196,12 @@ export default class UserState extends Synchronizer {
             .map((_, i) =>
                 genEpochKey(
                     this.id.identityNullifier,
+                    this.attesterId.toString(),
                     epoch,
                     i,
                     this.settings.epochTreeDepth
                 )
             )
-    }
-
-    /**
-     * Get the epoch key nullifier of given epoch
-     */
-    public getEpochKeyNullifiers = (epoch: number): BigInt[] => {
-        const nullifiers: BigInt[] = []
-        for (
-            let nonce = 0;
-            nonce < this.settings.numEpochKeyNoncePerEpoch;
-            nonce++
-        ) {
-            const nullifier = genEpochKeyNullifier(
-                this.id.identityNullifier,
-                epoch,
-                nonce
-            )
-            nullifiers.push(nullifier)
-        }
-        return nullifiers
     }
 
     /**
@@ -291,24 +211,18 @@ export default class UserState extends Synchronizer {
      * @returns The reputation object
      */
     public getRepByAttester = async (
-        attesterId: BigInt,
+        _attesterId?: BigInt | string,
         toEpoch?: number
-    ): Promise<IReputation> => {
-        const r = Reputation.default()
+    ): Promise<{ posRep; negRep }> => {
+        let posRep = BigInt(0)
+        let negRep = BigInt(0)
+        const attesterId = _attesterId ?? this.attesterId
         const signup = await this._db.findOne('UserSignUp', {
             where: {
-                attesterId: Number(attesterId),
+                attesterId: attesterId.toString(),
                 commitment: this.commitment.toString(),
             },
         })
-        if (signup && signup.attesterId > 0) {
-            r.update(
-                BigNumber.from(signup.airdrop),
-                BigNumber.from(0),
-                BigNumber.from(0),
-                BigNumber.from(1)
-            )
-        }
         const allEpks = [] as string[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         for (let x = 1; x < (toEpoch ?? latestTransitionedEpoch); x++) {
@@ -317,6 +231,7 @@ export default class UserState extends Synchronizer {
                 .map((_, i) =>
                     genEpochKey(
                         this.id.identityNullifier,
+                        attesterId.toString(),
                         x,
                         i,
                         this.settings.epochTreeDepth
@@ -324,20 +239,41 @@ export default class UserState extends Synchronizer {
                 )
             allEpks.push(...epks)
         }
-        if (allEpks.length === 0) return r
+        if (allEpks.length === 0) return { posRep, negRep }
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 epochKey: allEpks,
-                attesterId: Number(attesterId),
+                attesterId: attesterId.toString(),
             },
             orderBy: {
                 index: 'asc',
             },
         })
         for (const a of attestations) {
-            r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
+            posRep += BigInt(a.posRep)
+            negRep += BigInt(a.negRep)
         }
-        return r
+        return { posRep, negRep }
+    }
+
+    public getRepByEpochKey = async (
+        epochKey: BigInt | string,
+        epoch: number
+    ) => {
+        let posRep = BigInt(0)
+        let negRep = BigInt(0)
+        const attestations = await this._db.findMany('Attestation', {
+            where: {
+                epoch,
+                epochKey: epochKey.toString(),
+                attesterId: this.attesterId.toString(),
+            },
+        })
+        for (const a of attestations) {
+            posRep += BigInt(a.posRep)
+            negRep += BigInt(a.negRep)
+        }
+        return { posRep, negRep }
     }
 
     /**
@@ -361,448 +297,104 @@ export default class UserState extends Synchronizer {
     }
 
     /**
-     * Check if attester ID is valid
-     */
-    private _checkAttesterId = (attesterId: BigInt) => {
-        assert(
-            attesterId > BigInt(0),
-            `UserState: attesterId must be greater than zero`
-        )
-        assert(
-            attesterId < BigInt(2 ** this.settings.userStateTreeDepth),
-            `UserState: attesterId exceeds total number of attesters`
-        )
-    }
-
-    /**
      * Generate the epoch key proof of the current user state.
      * @param epochKeyNonce The nonce that is used in the epoch key proof.
      * @returns The epoch key proof of type `EpochKeyProof`.
      */
-    public genVerifyEpochKeyProof = async (
-        epochKeyNonce: number
-    ): Promise<EpochKeyProof> => {
-        this._checkEpkNonce(epochKeyNonce)
-        const epoch = await this.latestTransitionedEpoch()
-        const leafIndex = await this.latestGSTLeafIndex()
-        const epochKey = genEpochKey(
-            this.id.identityNullifier,
-            epoch,
-            epochKeyNonce,
-            this.settings.epochTreeDepth
-        )
-        const userStateTree = await this.genUserStateTree(epoch)
-        const GSTree = await this.genGSTree(epoch)
-        const GSTProof = GSTree.createProof(leafIndex)
+    // public genVerifyEpochKeyProof = async (
+    //     epochKeyNonce: number
+    // ): Promise<EpochKeyProof> => {
+    //     this._checkEpkNonce(epochKeyNonce)
+    //     const epoch = await this.latestTransitionedEpoch()
+    //     const leafIndex = await this.latestGSTLeafIndex()
+    //     const epochKey = genEpochKey(
+    //         this.id.identityNullifier,
+    //         epoch,
+    //         epochKeyNonce,
+    //         this.settings.epochTreeDepth
+    //     )
+    //     const userStateTree = await this.genUserStateTree(epoch)
+    //     const GSTree = await this.genGSTree(epoch)
+    //     const GSTProof = GSTree.createProof(leafIndex)
 
-        const circuitInputs = stringifyBigInts({
-            GST_path_elements: GSTProof.siblings,
-            GST_path_index: GSTProof.pathIndices,
-            identity_nullifier: this.id.identityNullifier,
-            identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.root,
-            nonce: epochKeyNonce,
-            epoch: epoch,
-        })
+    //     const circuitInputs = stringifyBigInts({
+    //         GST_path_elements: GSTProof.siblings,
+    //         GST_path_index: GSTProof.pathIndices,
+    //         identity_nullifier: this.id.identityNullifier,
+    //         identity_trapdoor: this.id.trapdoor,
+    //         user_tree_root: userStateTree.root,
+    //         nonce: epochKeyNonce,
+    //         epoch: epoch,
+    //     })
 
-        const results = await this.prover.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
-            circuitInputs
-        )
+    //     const results = await this.prover.genProofAndPublicSignals(
+    //         Circuit.verifyEpochKey,
+    //         circuitInputs
+    //     )
 
-        return new EpochKeyProof(
-            results.publicSignals,
-            results.proof,
-            this.prover
-        )
-    }
+    //     return new EpochKeyProof(
+    //         results.publicSignals,
+    //         results.proof,
+    //         this.prover
+    //     )
+    // }
 
-    private _genStartTransitionCircuitInputs = async (
-        fromNonce: number,
-        userStateTreeRoot: BigInt,
-        GSTreeProof: any,
-        GSTreeRoot: BigInt
-    ) => {
-        const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        // Circuit inputs
-        const circuitInputs = stringifyBigInts({
-            epoch: latestTransitionedEpoch,
-            nonce: fromNonce,
-            user_tree_root: userStateTreeRoot,
-            identity_nullifier: this.id.identityNullifier,
-            identity_trapdoor: this.id.trapdoor,
-            GST_path_elements: GSTreeProof.siblings,
-            GST_path_index: GSTreeProof.pathIndices,
-        })
-
-        // Circuit outputs
-        // blinded user state and blinded hash chain are the inputs of processAttestationProofs
-        const blindedUserState = hash5([
-            this.id.identityNullifier,
-            userStateTreeRoot,
-            BigInt(latestTransitionedEpoch),
-            BigInt(fromNonce),
-            BigInt(0),
-        ])
-        const blindedHashChain = hash5([
-            this.id.identityNullifier,
-            BigInt(0), // hashchain starter
-            BigInt(latestTransitionedEpoch),
-            BigInt(fromNonce),
-            BigInt(0),
-        ])
-
-        return {
-            circuitInputs: circuitInputs,
-            blindedUserState: blindedUserState,
-            blindedHashChain: blindedHashChain,
-        }
-    }
-
-    /**
-     * Generate a set of user state transition proofs of the current user state
-     * @returns A set of `StartTransitionProof`, `ProcessAttestationsProof` and `UserTransitionProof` that
-     * is used to perform a user state transition.
-     */
-    public genUserStateTransitionProofs = async (): Promise<{
-        startTransitionProof: StartTransitionProof
-        processAttestationProofs: ProcessAttestationsProof[]
-        finalTransitionProof: UserTransitionProof
-    }> => {
-        // don't need to check sign up because we won't be able to create a
-        // gstree proof unless we are signed up
-        // this._checkUserSignUp()
-        const fromEpoch = await this.latestTransitionedEpoch()
-        const leafIndex = await this.latestGSTLeafIndex(fromEpoch)
-        const fromNonce = 0
-
-        // User state tree
-        const fromEpochUserStateTree: SparseMerkleTree =
-            await this.genUserStateTree(fromEpoch)
-        const intermediateUserStateTreeRoots: BigInt[] = [
-            fromEpochUserStateTree.root,
-        ]
-        const userStateLeafPathElements: any[] = []
-        // GSTree
-        const fromEpochGSTree: IncrementalMerkleTree = await this.genGSTree(
-            fromEpoch
-        )
-        const GSTreeProof = fromEpochGSTree.createProof(leafIndex)
-        const GSTreeRoot = fromEpochGSTree.root
-        // Epoch tree
-        const epochTreeRoot = await this.epochTreeRoot(fromEpoch)
-        const epochKeyPathElements: any[] = []
-
-        // start transition proof
-        const startTransitionCircuitInputs =
-            await this._genStartTransitionCircuitInputs(
-                fromNonce,
-                intermediateUserStateTreeRoots[0],
-                GSTreeProof,
-                GSTreeRoot
+    public genEpochTransitionProof =
+        async (): Promise<EpochTransitionProof> => {
+            const { posRep, negRep } = await this.getRepByAttester()
+            const fromEpoch = await this.latestTransitionedEpoch()
+            const toEpoch = await this.getUnirepStateCurrentEpoch()
+            const epochTree = await this.genEpochTree(fromEpoch)
+            const epochKeyPromises = Array(
+                this.settings.numEpochKeyNoncePerEpoch
             )
-
-        // process attestation proof
-        const processAttestationCircuitInputs: any[] = []
-        const fromNonces: number[] = [fromNonce]
-        const toNonces: number[] = []
-        const hashChainStarter: BigInt[] = []
-        const blindedUserState: BigInt[] = [
-            startTransitionCircuitInputs.blindedUserState,
-        ]
-        const blindedHashChain: BigInt[] = []
-        let reputationRecords = {}
-        const selectors: number[] = []
-        const attesterIds: string[] = []
-        const oldPosReps: string[] = [],
-            oldNegReps: string[] = [],
-            oldGraffities: string[] = [],
-            oldSignUps: string[] = []
-        const posReps: string[] = [],
-            negReps: string[] = [],
-            graffities: string[] = [],
-            overwriteGraffities: any[] = [],
-            signUps: string[] = []
-        const finalBlindedUserState: BigInt[] = []
-        const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
-        const finalHashChain: BigInt[] = []
-        for (
-            let nonce = 0;
-            nonce < this.settings.numEpochKeyNoncePerEpoch;
-            nonce++
-        ) {
-            const epochKey = genEpochKey(
-                this.id.identityNullifier,
-                fromEpoch,
-                nonce,
-                this.settings.epochTreeDepth
-            )
-            let currentHashChain: BigInt = BigInt(0)
-
-            // Blinded user state and hash chain of the epoch key
-            toNonces.push(nonce)
-            hashChainStarter.push(currentHashChain)
-
-            // Attestations
-            const attestations = await this.getAttestations(epochKey.toString())
-            // TODO: update attestation types
-            for (let i = 0; i < attestations.length; i++) {
-                // Include a blinded user state and blinded hash chain per proof
-                if (
-                    i &&
-                    i % this.settings.numAttestationsPerProof == 0 &&
-                    i != this.settings.numAttestationsPerProof - 1
-                ) {
-                    toNonces.push(nonce)
-                    fromNonces.push(nonce)
-                    hashChainStarter.push(currentHashChain)
-                    blindedUserState.push(
-                        hash5([
-                            this.id.identityNullifier,
-                            fromEpochUserStateTree.root,
-                            BigInt(fromEpoch),
-                            BigInt(nonce),
-                            BigInt(0),
-                        ])
+                .fill(null)
+                .map((_, i) =>
+                    genEpochKey(
+                        this.id.identityNullifier,
+                        this.attesterId.toString(),
+                        fromEpoch,
+                        i,
+                        this.settings.epochTreeDepth
+                    ).toString()
+                )
+                .map(async (epochKey) => {
+                    const { posRep, negRep } = await this.getRepByEpochKey(
+                        epochKey,
+                        fromEpoch
                     )
-                }
-
-                const attestation = new Attestation(
-                    attestations[i].attesterId,
-                    attestations[i].posRep,
-                    attestations[i].negRep,
-                    attestations[i].graffiti,
-                    attestations[i].signUp
-                )
-                const attesterId: BigInt = BigInt(
-                    attestation.attesterId.toString()
-                )
-                const rep = await this.getRepByAttester(attesterId)
-
-                if (reputationRecords[attesterId.toString()] === undefined) {
-                    reputationRecords[attesterId.toString()] = new Reputation(
-                        rep.posRep,
-                        rep.negRep,
-                        rep.graffiti,
-                        rep.signUp
-                    )
-                }
-
-                oldPosReps.push(reputationRecords[attesterId.toString()].posRep)
-                oldNegReps.push(reputationRecords[attesterId.toString()].negRep)
-                oldGraffities.push(
-                    reputationRecords[attesterId.toString()].graffiti
-                )
-                oldSignUps.push(reputationRecords[attesterId.toString()].signUp)
-
-                // Add UST merkle proof to the list
-                const USTLeafPathElements =
-                    fromEpochUserStateTree.createProof(attesterId)
-                userStateLeafPathElements.push(USTLeafPathElements)
-
-                // Update attestation record
-                reputationRecords[attesterId.toString()].update(
-                    attestation.posRep,
-                    attestation.negRep,
-                    attestation.graffiti,
-                    attestation.signUp
-                )
-
-                // Update UST
-                fromEpochUserStateTree.update(
-                    attesterId,
-                    reputationRecords[attesterId.toString()].hash()
-                )
-                // Add new UST root to intermediate UST roots
-                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
-
-                selectors.push(1)
-                attesterIds.push(attesterId.toString())
-                posReps.push(attestation.posRep.toString())
-                negReps.push(attestation.negRep.toString())
-                graffities.push(attestation.graffiti.toString())
-                overwriteGraffities.push(attestation.graffiti.toString() != '0')
-                signUps.push(attestation.signUp.toString())
-
-                // Update current hashchain result
-                currentHashChain = hashLeftRight(
-                    attestation.hash(),
-                    currentHashChain
-                )
-            }
-            // Fill in blank data for non-exist attestation
-            const filledAttestationNum = attestations.length
-                ? Math.ceil(
-                      attestations.length /
-                          this.settings.numAttestationsPerProof
-                  ) * this.settings.numAttestationsPerProof
-                : this.settings.numAttestationsPerProof
-            for (
-                let i = 0;
-                i < filledAttestationNum - attestations.length;
-                i++
-            ) {
-                oldPosReps.push('0')
-                oldNegReps.push('0')
-                oldGraffities.push('0')
-                oldSignUps.push('0')
-
-                const USTLeafZeroPathElements =
-                    fromEpochUserStateTree.createProof(BigInt(0))
-                userStateLeafPathElements.push(USTLeafZeroPathElements)
-                intermediateUserStateTreeRoots.push(fromEpochUserStateTree.root)
-
-                selectors.push(0)
-                attesterIds.push('0')
-                posReps.push('0')
-                negReps.push('0')
-                graffities.push('0')
-                overwriteGraffities.push('0')
-                signUps.push('0')
-            }
-            epochKeyPathElements.push(
-                await this.epochTreeProof(fromEpoch, epochKey)
-            )
-            finalHashChain.push(currentHashChain)
-            blindedUserState.push(
-                hash5([
-                    this.id.identityNullifier,
-                    fromEpochUserStateTree.root,
-                    BigInt(fromEpoch),
-                    BigInt(nonce),
-                    BigInt(0),
-                ])
-            )
-            blindedHashChain.push(
-                hash5([
-                    this.id.identityNullifier,
-                    currentHashChain,
-                    BigInt(fromEpoch),
-                    BigInt(nonce),
-                    BigInt(0),
-                ])
-            )
-            if (nonce != this.settings.numEpochKeyNoncePerEpoch - 1)
-                fromNonces.push(nonce)
-        }
-
-        for (let i = 0; i < fromNonces.length; i++) {
-            const startIdx = this.settings.numAttestationsPerProof * i
-            const endIdx = this.settings.numAttestationsPerProof * (i + 1)
-            processAttestationCircuitInputs.push(
-                stringifyBigInts({
-                    epoch: fromEpoch,
-                    from_nonce: fromNonces[i],
-                    to_nonce: toNonces[i],
-                    identity_nullifier: this.id.identityNullifier,
-                    intermediate_user_state_tree_roots:
-                        intermediateUserStateTreeRoots.slice(
-                            startIdx,
-                            endIdx + 1
-                        ),
-                    old_pos_reps: oldPosReps.slice(startIdx, endIdx),
-                    old_neg_reps: oldNegReps.slice(startIdx, endIdx),
-                    old_graffities: oldGraffities.slice(startIdx, endIdx),
-                    old_sign_ups: oldSignUps.slice(startIdx, endIdx),
-                    path_elements: userStateLeafPathElements.slice(
-                        startIdx,
-                        endIdx
-                    ),
-                    attester_ids: attesterIds.slice(startIdx, endIdx),
-                    pos_reps: posReps.slice(startIdx, endIdx),
-                    neg_reps: negReps.slice(startIdx, endIdx),
-                    graffities: graffities.slice(startIdx, endIdx),
-                    overwrite_graffities: overwriteGraffities.slice(
-                        startIdx,
-                        endIdx
-                    ),
-                    sign_ups: signUps.slice(startIdx, endIdx),
-                    selectors: selectors.slice(startIdx, endIdx),
-                    hash_chain_starter: hashChainStarter[i],
-                    input_blinded_user_state: blindedUserState[i],
+                    const proof = epochTree.createProof(BigInt(epochKey))
+                    return { posRep, negRep, proof }
                 })
-            )
-        }
-
-        // final user state transition proof
-        const startEpochKeyNonce = 0
-        const endEpochKeyNonce = this.settings.numEpochKeyNoncePerEpoch - 1
-        finalUserState.push(fromEpochUserStateTree.root)
-        finalBlindedUserState.push(
-            hash5([
-                this.id.identityNullifier,
-                finalUserState[0],
-                BigInt(fromEpoch),
-                BigInt(startEpochKeyNonce),
-                BigInt(0),
-            ])
-        )
-        finalBlindedUserState.push(
-            hash5([
-                this.id.identityNullifier,
-                finalUserState[1],
-                BigInt(fromEpoch),
-                BigInt(endEpochKeyNonce),
-                BigInt(0),
-            ])
-        )
-        const finalTransitionCircuitInputs = stringifyBigInts({
-            epoch: fromEpoch,
-            blinded_user_state: finalBlindedUserState,
-            intermediate_user_state_tree_roots: finalUserState,
-            start_epoch_key_nonce: startEpochKeyNonce,
-            end_epoch_key_nonce: endEpochKeyNonce,
-            identity_nullifier: this.id.identityNullifier,
-            identity_trapdoor: this.id.trapdoor,
-            GST_path_elements: GSTreeProof.siblings,
-            GST_path_index: GSTreeProof.pathIndices,
-            epk_path_elements: epochKeyPathElements,
-            hash_chain_results: finalHashChain,
-            blinded_hash_chain_results: blindedHashChain,
-            epoch_tree_root: epochTreeRoot,
-        })
-
-        // Generate proofs
-        const startTransitionresults =
-            await this.prover.genProofAndPublicSignals(
-                Circuit.startTransition,
-                startTransitionCircuitInputs.circuitInputs
-            )
-
-        const processAttestationProofs: ProcessAttestationsProof[] = []
-        for (let i = 0; i < processAttestationCircuitInputs.length; i++) {
+            const epochKeyData = await Promise.all(epochKeyPromises)
+            const latestLeafIndex = await this.latestGSTLeafIndex()
+            const GSTree = await this.genGSTree(fromEpoch)
+            const GSTProof = GSTree.createProof(latestLeafIndex)
+            const circuitInputs = {
+                from_epoch: fromEpoch,
+                to_epoch: toEpoch,
+                identity_nullifier: this.id.identityNullifier,
+                GST_path_index: GSTProof.pathIndices,
+                GST_path_elements: GSTProof.siblings,
+                attester_id: this.attesterId.toString(),
+                pos_rep: posRep,
+                neg_rep: negRep,
+                new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
+                new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
+                epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
+                epoch_tree_root: epochTree.root,
+            }
             const results = await this.prover.genProofAndPublicSignals(
-                Circuit.processAttestations,
-                processAttestationCircuitInputs[i]
+                Circuit.epochTransition,
+                stringifyBigInts(circuitInputs)
             )
-            processAttestationProofs.push(
-                new ProcessAttestationsProof(
-                    results.publicSignals,
-                    results.proof,
-                    this.prover
-                )
+
+            return new EpochTransitionProof(
+                results.publicSignals,
+                results.proof,
+                this.prover
             )
         }
-
-        const finalProofResults = await this.prover.genProofAndPublicSignals(
-            Circuit.userStateTransition,
-            finalTransitionCircuitInputs
-        )
-
-        return {
-            startTransitionProof: new StartTransitionProof(
-                startTransitionresults.publicSignals,
-                startTransitionresults.proof,
-                this.prover
-            ),
-            processAttestationProofs: processAttestationProofs,
-            finalTransitionProof: new UserTransitionProof(
-                finalProofResults.publicSignals,
-                finalProofResults.proof,
-                this.prover
-            ),
-        }
-    }
 
     /**
      * Generate a reputation proof of current user state and given conditions
@@ -817,88 +409,69 @@ export default class UserState extends Synchronizer {
      * @returns The reputation proof of type `ReputationProof`.
      */
     public genProveReputationProof = async (
-        attesterId: BigInt,
         epkNonce: number,
-        minRep?: number,
-        proveGraffiti?: BigInt,
-        graffitiPreImage?: BigInt,
-        spendAmount: BigInt | number = 0
+        minRep?: number
     ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
-        assert(
-            spendAmount <= this.settings.maxReputationBudget,
-            `Length of nonce list should be lte ${this.settings.maxReputationBudget}`
-        )
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
-        const epochKey = genEpochKey(this.id.identityNullifier, epoch, epkNonce)
-        const rep = await this.getRepByAttester(attesterId)
-        const posRep = rep.posRep.toNumber()
-        const negRep = rep.negRep.toNumber()
-        const graffiti = rep.graffiti
-        const signUp = rep.signUp.toNumber()
-        const userStateTree = await this.genUserStateTree(epoch)
+        const epochKey = genEpochKey(
+            this.id.identityNullifier,
+            this.attesterId.toString(),
+            epoch,
+            epkNonce,
+            this.settings.epochTreeDepth
+        )
+        const { posRep, negRep } = await this.getRepByAttester()
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
-        const USTPathElements = userStateTree.createProof(attesterId)
-
-        // check if the nullifiers are submitted before
-        let nonceStarter = -1
-        // find valid nonce starter
-        for (let n = 0; n < posRep - negRep; n++) {
-            const reputationNullifier = genReputationNullifier(
-                this.id.identityNullifier,
-                epoch,
-                n,
-                attesterId
+        const epochTree = await this.genEpochTree(epoch)
+        const epochKeyPromises = Array(this.settings.numEpochKeyNoncePerEpoch)
+            .fill(null)
+            .map((_, i) =>
+                genEpochKey(
+                    this.id.identityNullifier,
+                    this.attesterId.toString(),
+                    epoch,
+                    i,
+                    this.settings.epochTreeDepth
+                ).toString()
             )
-            if (!(await this.nullifierExist(reputationNullifier))) {
-                nonceStarter = n
-                break
-            }
-        }
-        assert(
-            spendAmount == 0 || nonceStarter != -1,
-            'All nullifiers are spent'
-        )
-        assert(
-            nonceStarter + Number(spendAmount) <= posRep - negRep,
-            'Not enough reputation to spend'
-        )
+            .map(async (epochKey) => {
+                const { posRep, negRep } = await this.getRepByEpochKey(
+                    epochKey,
+                    epoch
+                )
+                const proof = epochTree.createProof(BigInt(epochKey))
+                return { posRep, negRep, proof }
+            })
+        const epochKeyData = await Promise.all(epochKeyPromises)
 
-        const circuitInputs = stringifyBigInts({
-            epoch: epoch,
+        const circuitInputs = {
+            epoch,
             epoch_key_nonce: epkNonce,
-            epoch_key: epochKey,
             identity_nullifier: this.id.identityNullifier,
-            identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.root,
             GST_path_index: GSTreeProof.pathIndices,
             GST_path_elements: GSTreeProof.siblings,
-            attester_id: attesterId,
+            attester_id: this.attesterId,
             pos_rep: posRep,
             neg_rep: negRep,
-            graffiti: graffiti,
-            sign_up: signUp,
-            UST_path_elements: USTPathElements,
-            rep_nullifiers_amount: spendAmount,
-            start_rep_nonce: nonceStarter,
             min_rep: minRep === undefined ? 0 : minRep,
-            prove_graffiti: proveGraffiti === undefined ? 0 : proveGraffiti,
-            graffiti_pre_image:
-                graffitiPreImage === undefined ? 0 : graffitiPreImage,
-        })
+            new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
+            new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
+            epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
+            epoch_tree_root: epochTree.root,
+        }
 
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.proveReputation,
-            circuitInputs
+            stringifyBigInts(circuitInputs)
         )
 
         return new ReputationProof(
             results.publicSignals,
             results.proof,
-            this.prover,
-            this.settings.maxReputationBudget
+            this.prover
         )
     }
 
@@ -907,48 +480,47 @@ export default class UserState extends Synchronizer {
      * @param attesterId The attester ID that the user wants to prove the sign up status
      * @returns The sign up proof of type `SignUpProof`.
      */
-    public genUserSignUpProof = async (
-        attesterId: BigInt
-    ): Promise<SignUpProof> => {
-        await this._checkUserSignUp()
-        this._checkAttesterId(attesterId)
-        const epoch = await this.latestTransitionedEpoch()
-        const leafIndex = await this.latestGSTLeafIndex()
-        const rep = await this.getRepByAttester(attesterId)
-        const posRep = rep.posRep
-        const negRep = rep.negRep
-        const graffiti = rep.graffiti
-        const signUp = rep.signUp
-        const userStateTree = await this.genUserStateTree(epoch)
-        const GSTree = await this.genGSTree(epoch)
-        const GSTreeProof = GSTree.createProof(leafIndex)
-        const USTPathElements = userStateTree.createProof(attesterId)
+    // public genUserSignUpProof = async (
+    //     attesterId: BigInt
+    // ): Promise<SignUpProof> => {
+    //     await this._checkUserSignUp()
+    //     const epoch = await this.latestTransitionedEpoch()
+    //     const leafIndex = await this.latestGSTLeafIndex()
+    //     const rep = await this.getRepByAttester(attesterId)
+    //     const posRep = rep.posRep
+    //     const negRep = rep.negRep
+    //     const graffiti = rep.graffiti
+    //     const signUp = rep.signUp
+    //     const userStateTree = await this.genUserStateTree(epoch)
+    //     const GSTree = await this.genGSTree(epoch)
+    //     const GSTreeProof = GSTree.createProof(leafIndex)
+    //     const USTPathElements = userStateTree.createProof(attesterId)
 
-        const circuitInputs = stringifyBigInts({
-            epoch: epoch,
-            identity_nullifier: this.id.identityNullifier,
-            identity_trapdoor: this.id.trapdoor,
-            user_tree_root: userStateTree.root,
-            GST_path_index: GSTreeProof.pathIndices,
-            GST_path_elements: GSTreeProof.siblings,
-            attester_id: attesterId,
-            pos_rep: posRep,
-            neg_rep: negRep,
-            graffiti: graffiti,
-            sign_up: signUp,
-            UST_path_elements: USTPathElements,
-        })
-        const results = await this.prover.genProofAndPublicSignals(
-            Circuit.proveUserSignUp,
-            circuitInputs
-        )
+    //     const circuitInputs = stringifyBigInts({
+    //         epoch: epoch,
+    //         identity_nullifier: this.id.identityNullifier,
+    //         identity_trapdoor: this.id.trapdoor,
+    //         user_tree_root: userStateTree.root,
+    //         GST_path_index: GSTreeProof.pathIndices,
+    //         GST_path_elements: GSTreeProof.siblings,
+    //         attester_id: attesterId,
+    //         pos_rep: posRep,
+    //         neg_rep: negRep,
+    //         graffiti: graffiti,
+    //         sign_up: signUp,
+    //         UST_path_elements: USTPathElements,
+    //     })
+    //     const results = await this.prover.genProofAndPublicSignals(
+    //         Circuit.proveUserSignUp,
+    //         circuitInputs
+    //     )
 
-        return new SignUpProof(
-            results.publicSignals,
-            results.proof,
-            this.prover
-        )
-    }
+    //     return new SignUpProof(
+    //         results.publicSignals,
+    //         results.proof,
+    //         this.prover
+    //     )
+    // }
 }
 
 export { Reputation, UserState }

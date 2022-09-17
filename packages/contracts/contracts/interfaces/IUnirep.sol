@@ -12,12 +12,13 @@ interface IUnirep {
         uint256 leafIndex
     );
 
-    // event UserStateTransitioned(
-    //     uint256 indexed epoch,
-    //     uint256 indexed hashedLeaf,
-    //     uint256 indexed leafIndex,
-    //     uint256 firstEpkNullifier
-    // );
+    event UserStateTransitioned(
+        uint256 indexed epoch,
+        uint160 indexed attesterId,
+        uint256 indexed leafIndex,
+        uint256 hashedLeaf,
+        uint256 nullifier
+    );
 
     event AttestationSubmitted(
         uint256 indexed epoch,
@@ -41,7 +42,7 @@ interface IUnirep {
         uint256 leaf
     );
 
-    event EpochEnded(uint256 indexed epoch);
+    event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
     enum AttestationFieldError {
         POS_REP,

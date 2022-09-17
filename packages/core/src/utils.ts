@@ -1,7 +1,8 @@
 import {
-    hash5,
-    hash4,
     hash2,
+    hash3,
+    hash4,
+    hash5,
     hashLeftRight,
     SparseMerkleTree,
     stringifyBigInts,
@@ -33,58 +34,6 @@ export const decodeBigIntArray = (input: string): bigint[] => {
 }
 
 /**
- * Default user state tree leaf is defined by `hash(posRep=0, negRep=0, graffiti=0, signUp=0)`
- */
-const defaultUserStateLeaf = hash5([
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-    BigInt(0),
-])
-
-/**
- * Definition of default epoch tree leaf
- */
-const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
-
-/**
- * Compute the empty user state tree root where the default leaves are `defaultUserStateLeaf`
- * @param treeDepth The depth of the user state tree
- * @returns The root of the user state tree
- */
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
-    const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
-    return t.root
-}
-
-/**
- * Compute the user state tree root with given attester ID and airdrop positive reputation
- * @param treeDepth The depth of the user state tree
- * @param leafIdx The attester ID, which is the index of the user state tree.
- * @param airdropPosRep The airdrop positive reputation that is set by the attester
- * @returns The root of the user state tree
- */
-const computeInitUserStateRoot = (
-    treeDepth: number,
-    leafIdx?: number,
-    airdropPosRep: number = 0
-): BigInt => {
-    const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
-    if (typeof leafIdx === 'number' && leafIdx > 0) {
-        const airdropReputation = new Reputation(
-            BigInt(airdropPosRep),
-            BigInt(0),
-            BigInt(0),
-            BigInt(1)
-        )
-        const leafValue = airdropReputation.hash()
-        t.update(BigInt(leafIdx), leafValue)
-    }
-    return t.root
-}
-
-/**
  * Compute the epoch key of given identity, epoch and nonce
  * @param identityNullifier The identity nullifier of the semaphore identity
  * @param epoch The epoch of the epoch key
@@ -93,61 +42,45 @@ const computeInitUserStateRoot = (
  * @returns The moded epoch key
  */
 const genEpochKey = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
+    attesterId: bigint | string,
     epoch: number,
     nonce: number,
     epochTreeDepth: number = EPOCH_TREE_DEPTH
-): BigInt => {
-    const epochKey = hash2([
-        (identityNullifier as any) + BigInt(nonce),
+): bigint => {
+    const epochKey = hash4([
+        identityNullifier as any,
+        BigInt(attesterId),
         epoch,
+        BigInt(nonce),
     ]).valueOf()
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
 }
 
-/**
- * Compute the epoch key nullifier of given identity, epoch and nonce. The epoch key
- * nullifiers are used to prevent double user state transition.
- * @param identityNullifier The identity nullifier of the semaphore identity
- * @param epoch The epoch of the epoch key
- * @param nonce The nonce of the epoch key
- * @returns The epoch key nullifier
- */
-const genEpochKeyNullifier = (
-    identityNullifier: BigInt,
-    epoch: number,
-    nonce: number
-): BigInt => {
-    return hash2([BigInt(epoch), (identityNullifier as any) + BigInt(nonce)])
+const genEpochNullifier = (
+    identityNullifier: bigint | string,
+    attesterId: bigint | string,
+    epoch: number | bigint | string
+): bigint => {
+    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier as any])
 }
 
-/**
- * Compute the reputation nullifier of given identity, epoch, nonce and attester ID.
- * The reputation nullifiers are used to prevent double spending of reputation.
- * @param identityNullifier The identity nullifier of the semaphore identity
- * @param epoch The epoch of the epoch key
- * @param nonce The nonce of the epoch key
- * @param attesterId The attester ID of the reputation
- * @returns The reputation nullifier
- */
-const genReputationNullifier = (
-    identityNullifier: BigInt,
-    epoch: number,
-    nonce: number,
-    attesterId: BigInt
+const genGSTLeaf = (
+    idNullifier: bigint,
+    attesterId: bigint | string,
+    epoch: bigint | number,
+    posRep: bigint | number,
+    negRep: bigint | number
 ): BigInt => {
-    return hash4([identityNullifier, BigInt(epoch), BigInt(nonce), attesterId])
+    return hash5([
+        idNullifier,
+        BigInt(attesterId),
+        BigInt(epoch),
+        BigInt(posRep),
+        BigInt(negRep),
+    ])
 }
 
-export {
-    defaultUserStateLeaf,
-    SMT_ONE_LEAF,
-    computeEmptyUserStateRoot,
-    computeInitUserStateRoot,
-    formatProofForSnarkjsVerification,
-    genEpochKey,
-    genEpochKeyNullifier,
-    genReputationNullifier,
-}
+export { genEpochKey, genEpochNullifier, genGSTLeaf }
