@@ -21,8 +21,8 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test-cli": "./scripts/testCLI.sh",
-        "test": "hardhat test test/*/userSignup.test.ts",
-        "test-ci": "hardhat test --parallel",
+        "test": "hardhat test test/*.test.ts",
+        "test-ci": "hardhat test test/*.test.ts --parallel",
         "lint": "prettier --write ."
     },
     "devDependencies": {

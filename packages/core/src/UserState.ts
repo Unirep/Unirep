@@ -3,6 +3,7 @@ import assert from 'assert'
 import { DB } from 'anondb'
 import {
     IncrementalMerkleTree,
+    hash2,
     hash5,
     stringifyBigInts,
     hashLeftRight,
@@ -17,6 +18,7 @@ import {
     EpochKeyProof,
     SignupProof,
     EpochTransitionProof,
+    UpdateSparseTreeProof,
 } from '@unirep/contracts'
 import { genEpochKey, genGSTLeaf, genEpochNullifier } from './utils'
 import { IReputation } from './interfaces'
@@ -44,7 +46,7 @@ export default class UserState extends Synchronizer {
         prover: Prover
         unirepContract: ethers.Contract
         _id: ZkIdentity
-        attesterId: BigNumberish
+        attesterId: bigint
     }) {
         super(config)
         this.id = config._id
@@ -70,10 +72,10 @@ export default class UserState extends Synchronizer {
      * @returns The latest epoch where user performs user state transition.
      */
     async latestTransitionedEpoch(): Promise<number> {
-        const currentEpoch = await this.unirepContract.currentEpoch(
+        const currentEpoch = await this.unirepContract.attesterCurrentEpoch(
             this.attesterId
         )
-        let latestTransitionedEpoch = 1
+        let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x > 0; x--) {
             const epkNullifier = genEpochNullifier(
                 this.id.identityNullifier,
@@ -90,7 +92,7 @@ export default class UserState extends Synchronizer {
                 break
             }
         }
-        if (latestTransitionedEpoch === 1) {
+        if (latestTransitionedEpoch === 0) {
             const signup = await this._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
@@ -113,7 +115,7 @@ export default class UserState extends Synchronizer {
         const currentEpoch = _epoch ?? (await this.getUnirepStateCurrentEpoch())
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         if (latestTransitionedEpoch !== currentEpoch) return -1
-        if (latestTransitionedEpoch === 1) {
+        if (latestTransitionedEpoch === 0) {
             const signup = await this._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
@@ -225,7 +227,7 @@ export default class UserState extends Synchronizer {
         })
         const allEpks = [] as string[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        for (let x = 1; x < (toEpoch ?? latestTransitionedEpoch); x++) {
+        for (let x = 0; x < (toEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -257,14 +259,14 @@ export default class UserState extends Synchronizer {
     }
 
     public getRepByEpochKey = async (
-        epochKey: BigInt | string,
-        epoch: number
+        epochKey: bigint | string,
+        epoch: number | bigint | string
     ) => {
         let posRep = BigInt(0)
         let negRep = BigInt(0)
         const attestations = await this._db.findMany('Attestation', {
             where: {
-                epoch,
+                epoch: Number(epoch),
                 epochKey: epochKey.toString(),
                 attesterId: this.attesterId.toString(),
             },
@@ -338,6 +340,66 @@ export default class UserState extends Synchronizer {
     //         this.prover
     //     )
     // }
+
+    public genAttestationProof = async (
+        epochKey: bigint,
+        posRep: bigint,
+        negRep: bigint,
+        epochTreeRoot?: bigint,
+        epoch?: bigint
+    ) => {
+        // get the old balance of the key
+        const targetEpoch =
+            epoch ?? BigInt(await this.getUnirepStateCurrentEpoch())
+        const targetRoot =
+            epochTreeRoot ??
+            (await this.unirepContract.attesterEpochRoots(
+                this.attesterId,
+                targetEpoch
+            ))
+        const existingBalance = await this.getRepByEpochKey(
+            epochKey,
+            targetEpoch
+        )
+        // verify that the existing balance exists in the tree
+        const epochTree = await this.genEpochTree(targetEpoch)
+        const oldLeaf = hash2([
+            existingBalance.posRep,
+            existingBalance.negRep,
+        ]).toString()
+        const leaf = await this._db.findOne('EpochTreeLeaf', {
+            where: {
+                epoch: Number(targetEpoch),
+                leaf: oldLeaf,
+                index: epochKey.toString(),
+                attesterId: this.attesterId.toString(),
+            },
+        })
+        if (
+            !leaf &&
+            (existingBalance.posRep.toString() !== '0' ||
+                existingBalance.negRep.toString() !== '0')
+        ) {
+            throw new Error('Unable to find existing leaf')
+        }
+        const circuitInputs = {
+            from_root: targetRoot,
+            leaf_index: epochKey,
+            pos_rep: existingBalance.posRep + posRep,
+            neg_rep: existingBalance.negRep + negRep,
+            old_leaf: oldLeaf,
+            leaf_elements: epochTree.createProof(epochKey),
+        }
+        const results = await this.prover.genProofAndPublicSignals(
+            Circuit.updateSparseTree,
+            stringifyBigInts(circuitInputs)
+        )
+        return new UpdateSparseTreeProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
+    }
 
     public genEpochTransitionProof =
         async (): Promise<EpochTransitionProof> => {

@@ -206,7 +206,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
             posRep,
             negRep
         );
-        emit EpochTreeLeaf(targetEpoch, uint160(msg.sender), newLeaf, epochKey);
+        emit EpochTreeLeaf(targetEpoch, uint160(msg.sender), epochKey, newLeaf);
     }
 
     /**
@@ -322,7 +322,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         require(attesterId < type(uint160).max);
         AttesterData storage attester = attesters[uint160(attesterId)];
         require(attester.startTimestamp != 0, 'timestamp'); // indicates the attester is signed up
-        uint256 newEpoch = currentEpoch(uint160(attesterId));
+        uint256 newEpoch = attesterCurrentEpoch(uint160(attesterId));
         if (newEpoch == attester.currentEpoch) return;
 
         // otherwise initialize the new epoch structures
@@ -341,14 +341,18 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         attester.currentEpoch = newEpoch;
     }
 
-    function currentEpoch(uint160 attesterId) public view returns (uint256) {
+    function attesterCurrentEpoch(uint160 attesterId)
+        public
+        view
+        returns (uint256)
+    {
         AttesterData storage attester = attesters[attesterId];
         require(attester.startTimestamp != 0); // indicates the attester is signed up
         return
             (block.timestamp - attester.startTimestamp) / attester.epochLength;
     }
 
-    function epochRemainingTime(uint160 attesterId)
+    function attesterEpochRemainingTime(uint160 attesterId)
         public
         view
         returns (uint256)
@@ -363,12 +367,16 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
                 attester.epochLength) - block.timestamp;
     }
 
-    function epochLength(uint160 attesterId) public view returns (uint256) {
+    function attesterEpochLength(uint160 attesterId)
+        public
+        view
+        returns (uint256)
+    {
         AttesterData storage attester = attesters[attesterId];
         return attester.epochLength;
     }
 
-    function stateTreeRoots(
+    function attesterStateTreeRoots(
         uint160 attesterId,
         uint256 epoch,
         uint256 root
@@ -377,11 +385,11 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         return attester.stateTreeRoots[epoch][root];
     }
 
-    function epochRoots(
-        uint160 attesterId,
-        uint256 epoch,
-        uint256 root
-    ) public view returns (uint256) {
+    function attesterEpochRoots(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (uint256)
+    {
         AttesterData storage attester = attesters[attesterId];
         return attester.epochTreeRoots[epoch];
     }

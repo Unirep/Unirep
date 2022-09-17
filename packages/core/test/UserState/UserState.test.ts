@@ -5,31 +5,22 @@ import { deployUnirep } from '@unirep/contracts/deploy'
 import {
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
-    MAX_REPUTATION_BUDGET,
-    NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    USER_STATE_TREE_DEPTH,
 } from '@unirep/circuits'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 
-const ATTESTING_FEE = '0' as any
-const attestingFee = ethers.utils.parseEther('0.1')
+import { genEpochKey, ISettings, genGSTLeaf } from '../../src'
+import { genNewGST, genUserState } from '../utils'
 
-import { genEpochKey, computeInitUserStateRoot, ISettings } from '../../src'
-import { genNewGST, genUserState, submitUSTProofs } from '../utils'
+const EPOCH_LENGTH = 1000
 
 describe('User State', async function () {
     this.timeout(0)
 
     const setting: ISettings = {
         globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
-        userStateTreeDepth: USER_STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
-        attestingFee: ATTESTING_FEE,
-        epochLength: EPOCH_LENGTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        maxReputationBudget: MAX_REPUTATION_BUDGET,
-        numAttestationsPerProof: NUM_ATTESTATIONS_PER_PROOF,
     }
     const maxUsers = 100
     const userNum = 5
@@ -43,14 +34,12 @@ describe('User State', async function () {
 
         before(async () => {
             const accounts = await ethers.getSigners()
-            unirepContract = await deployUnirep(accounts[0], {
-                maxUsers,
-                attestingFee,
-            })
+            unirepContract = await deployUnirep(accounts[0])
             userState = await genUserState(
                 unirepContract.provider,
                 unirepContract.address,
-                id
+                id,
+                accounts[1].address
             )
         })
 
@@ -58,7 +47,6 @@ describe('User State', async function () {
 
         it('sign up other users', async () => {
             const accounts = await ethers.getSigners()
-            const epoch = await userState.getUnirepStateCurrentEpoch()
             for (let i = 0; i < userNum; i++) {
                 const _tmpWallet = ethers.Wallet.createRandom()
                 const tmpWallet = new ethers.Wallet(
@@ -74,25 +62,22 @@ describe('User State', async function () {
                 // now initialize an attester using accounts[0]
                 await unirepContract
                     .connect(tmpWallet)
-                    .attesterSignUp()
+                    .attesterSignUp(EPOCH_LENGTH)
                     .then((t) => t.wait())
-                const attesterId = await unirepContract.attesters(
-                    tmpWallet.address
-                )
-                const airdropAmount = Math.ceil(Math.random() * 1000)
+                const attesterId = tmpWallet.address
                 const tmpId = new ZkIdentity()
-                // const tmpUserState = await genUserState(
-                //     unirepContract.provider,
-                //     unirepContract.address,
-                //     tmpId
-                // ) // TODO: verify this state too?
-                await unirepContract
-                    .connect(tmpWallet)
-                    ['userSignUp(uint256,uint256)'](
-                        tmpId.genIdentityCommitment(),
-                        airdropAmount
-                    )
-                    .then((t) => t.wait())
+                const tmpUserState = await genUserState(
+                    unirepContract.provider,
+                    unirepContract.address,
+                    tmpId,
+                    attesterId
+                )
+                const epoch = await tmpUserState.getUnirepStateCurrentEpoch()
+                const signupProof = await tmpUserState.genUserSignUpProof()
+                await unirepContract.connect(tmpWallet)
+                userSignUp(signupProof.publicSignals, signupProof.proof).then(
+                    (t) => t.wait()
+                )
                 await userState.waitForSync()
 
                 // check the tmp state and the control above
@@ -116,14 +101,12 @@ describe('User State', async function () {
                 ).equal(i + 1)
 
                 // GST should match
-                const USTRoot = computeInitUserStateRoot(
-                    setting.userStateTreeDepth,
-                    attesterId.toNumber(),
-                    airdropAmount
-                )
-                const GSTLeaf = hashLeftRight(
-                    tmpId.genIdentityCommitment(),
-                    USTRoot
+                const GSTLeaf = genGSTLeaf(
+                    tmpId.identityNullifier,
+                    attesterId,
+                    epoch,
+                    0,
+                    0
                 )
                 GSTree.insert(GSTLeaf)
                 const unirepGSTree = await userState.genGSTree(epoch)
@@ -135,8 +118,7 @@ describe('User State', async function () {
         })
 
         it('query Unirep GSTree in the invalid epoch should fail', async () => {
-            const epoch = await userState.getUnirepStateCurrentEpoch()
-            const wrongEpoch = epoch + 1
+            const wrongEpoch = 9999999
             try {
                 await userState.genGSTree(wrongEpoch)
                 expect(false).to.be.true
@@ -147,7 +129,6 @@ describe('User State', async function () {
 
         it('sign up the user himself', async () => {
             const accounts = await ethers.getSigners()
-            const epoch = await userState.getUnirepStateCurrentEpoch()
             const _tmpWallet = ethers.Wallet.createRandom()
             const tmpWallet = new ethers.Wallet(
                 _tmpWallet.privateKey,
@@ -162,17 +143,21 @@ describe('User State', async function () {
             // now initialize an attester using accounts[0]
             await unirepContract
                 .connect(tmpWallet)
-                .attesterSignUp()
+                .attesterSignUp(EPOCH_LENGTH)
                 .then((t) => t.wait())
-            const attesterId = await unirepContract.attesters(tmpWallet.address)
-            const airdropAmount = Math.ceil(Math.random() * 1000)
-            await unirepContract
-                .connect(tmpWallet)
-                ['userSignUp(uint256,uint256)'](
-                    id.genIdentityCommitment(),
-                    airdropAmount
-                )
-                .then((t) => t.wait())
+            const attesterId = tmpWallet.address
+            const tmpUserState = await genUserState(
+                unirepContract.provider,
+                unirepContract.address,
+                tmpId,
+                attesterId
+            )
+            const epoch = await tmpUserState.getUnirepStateCurrentEpoch()
+            const signupProof = await tmpUserState.genUserSignUpProof()
+            await unirepContract.connect(tmpWallet)
+            userSignUp(signupProof.publicSignals, signupProof.proof).then((t) =>
+                t.wait()
+            )
             await userState.waitForSync()
 
             expect(
@@ -188,21 +173,10 @@ describe('User State', async function () {
                 'User state should be changed (latestGSTLeafIndex)'
             ).equal(userNum)
             const tree = await userState.genGSTree(epoch)
-            expect(tree.leaves.length, 'Unirep state should be changed').equal(
-                userNum + 1
-            )
-
-            // GST should match
-            const USTRoot = computeInitUserStateRoot(
-                setting.userStateTreeDepth,
-                attesterId.toNumber(),
-                airdropAmount
-            )
-            const GSTLeaf = hashLeftRight(id.genIdentityCommitment(), USTRoot)
-            GSTree.insert(GSTLeaf)
-            const unirepGSTree = await userState.genGSTree(epoch)
-            expect(GSTree.root, 'GST root mismatches').equal(unirepGSTree.root)
-            rootHistories.push(GSTree.root)
+            expect(
+                tree.leaves.length,
+                'Unirep state should not be changed'
+            ).equal(0)
         })
 
         it('continue sign up other users', async () => {
@@ -350,10 +324,7 @@ describe('User State', async function () {
 
         before(async () => {
             const accounts = await ethers.getSigners()
-            unirepContract = await deployUnirep(accounts[0], {
-                maxUsers,
-                attestingFee,
-            })
+            unirepContract = await deployUnirep(accounts[0])
             userState = await genUserState(
                 unirepContract.provider,
                 unirepContract.address,
@@ -576,10 +547,7 @@ describe('User State', async function () {
 
         before(async () => {
             const accounts = await ethers.getSigners()
-            unirepContract = await deployUnirep(accounts[0], {
-                maxUsers,
-                attestingFee,
-            })
+            unirepContract = await deployUnirep(accounts[0])
             userState = await genUserState(
                 unirepContract.provider,
                 unirepContract.address,
@@ -738,91 +706,6 @@ describe('User State', async function () {
             rootHistories.push(GSTree.root)
         })
 
-        // it('get attestations should work', async () => {
-        //     const prevEpoch = 1
-        //     const reputationRecord: { [key: string]: Reputation } = {}
-        //     reputationRecord[attesterId.toString()] = new Reputation(
-        //         BigInt(airdropAmount),
-        //         BigInt(0),
-        //         BigInt(0),
-        //         BigInt(1)
-        //     )
-        //     for (let i = 0; i < NUM_EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        //         const userEpk = genEpochKey(
-        //             id.identityNullifier,
-        //             prevEpoch,
-        //             i
-        //         ).toString()
-        //         const attestations = attestationsToEpochKey[userEpk.toString()]
-        //         for (const attestation of attestations) {
-        //             const attesterId_ = attestation.attesterId
-        //             if (
-        //                 reputationRecord[attesterId_.toString()] === undefined
-        //             ) {
-        //                 reputationRecord[attesterId_.toString()] =
-        //                     new Reputation(
-        //                         attestation.posRep,
-        //                         attestation.negRep,
-        //                         attestation.graffiti,
-        //                         attestation.signUp
-        //                     )
-        //             } else {
-        //                 reputationRecord[attesterId_.toString()].update(
-        //                     attestation.posRep,
-        //                     attestation.negRep,
-        //                     attestation.graffiti,
-        //                     attestation.signUp
-        //                 )
-        //             }
-        //         }
-        //     }
-        //
-        //     for (const attester in reputationRecord) {
-        //         const rep_ = userState.getRepByAttester(BigInt(attester))
-        //         expect(reputationRecord[attester].toJSON()).equal(rep_.toJSON())
-        //     }
-        // })
-
-        //     it('continue transition other users state should success', async () => {
-        //         for (let i = 0; i < maxUsers - userNum - 3; i++) {
-        //             const fromEpoch = 1
-        //             const newGSTLeaf = genRandomSalt()
-        //             const epkNullifiers: BigInt[] = []
-        //             for (let j = 0; j < NUM_EPOCH_KEY_NONCE_PER_EPOCH; j++) {
-        //                 epkNullifiers.push(genRandomSalt())
-        //             }
-        //             await userState.userStateTransition(
-        //                 fromEpoch,
-        //                 newGSTLeaf,
-        //                 epkNullifiers
-        //             )
-        //
-        //             const userObj = userState.toJSON()
-        //
-        //             expect(
-        //                 userObj.latestTransitionedEpoch,
-        //                 'User state should not be changed (latestTransitionedEpoch)'
-        //             ).equal(epoch)
-        //
-        //             expect(
-        //                 userObj.latestGSTLeafIndex,
-        //                 'User state should not be changed (latestGSTLeafIndex)'
-        //             ).equal(userNum)
-        //
-        //             expect(
-        //                 userObj.GSTLeaves[epoch].length,
-        //                 'Unirep state should be changed'
-        //             ).equal(userNum + 2 + i)
-        //
-        //             GSTree.insert(newGSTLeaf)
-        //             const unirepGSTree = userState.genGSTree(epoch)
-        //             expect(GSTree.root, 'GST root mismatches').equal(
-        //                 unirepGSTree.root
-        //             )
-        //             rootHistories.push(GSTree.root)
-        //         }
-        //     })
-
         describe('Generate proofs in the next epoch', async () => {
             it('generate epoch key proof should succeed', async () => {
                 const currentEpoch =
@@ -846,30 +729,6 @@ describe('User State', async function () {
                         currentEpoch
                     )
                     expect(exist).to.be.true
-                }
-            })
-
-            it('generate epoch key proof with invalid nonce should fail', async () => {
-                const invalidNonce = setting.numEpochKeyNoncePerEpoch
-                try {
-                    await userState.genVerifyEpochKeyProof(invalidNonce)
-                    expect(false).to.be.true
-                } catch (e) {
-                    expect(e).not.to.be.undefined
-                }
-            })
-
-            it('non signed up user should not generate epoch key proof', async () => {
-                const invalidUserState = await genUserState(
-                    unirepContract.provider,
-                    unirepContract.address,
-                    new ZkIdentity()
-                )
-                const epkNonce = 0
-                try {
-                    await invalidUserState.genVerifyEpochKeyProof(epkNonce)
-                } catch (e) {
-                    expect(e).not.to.be.undefined
                 }
             })
 
@@ -908,32 +767,6 @@ describe('User State', async function () {
                 )
                 expect(exist).to.be.true
                 expect(Number(results.minRep)).equal(proveMinRep)
-            })
-
-            it('generate sign up proof should succeed', async () => {
-                const currentEpoch =
-                    await userState.getUnirepStateCurrentEpoch()
-                const epkNonce = 0
-                const results = await userState.genUserSignUpProof(
-                    BigInt(attesterId)
-                )
-                const expectedEpk = genEpochKey(
-                    id.identityNullifier,
-                    currentEpoch,
-                    epkNonce
-                ).toString()
-                const isValid = await results.verify()
-
-                expect(isValid).to.be.true
-                expect(results.epochKey).equal(expectedEpk)
-                expect(results.epoch).equal(currentEpoch.toString())
-                const outputGSTRoot = results.globalStateTree
-                const exist = await userState.GSTRootExists(
-                    outputGSTRoot,
-                    currentEpoch
-                )
-                expect(exist).to.be.true
-                expect(Number(results.userHasSignedUp)).equal(1)
             })
         })
     })

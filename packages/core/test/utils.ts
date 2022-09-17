@@ -211,7 +211,7 @@ export const compareAttestations = (
 export const genUnirepState = async (
     provider: ethers.providers.Provider,
     address: string,
-    attesterId: BigNumberish,
+    attesterId: bigint,
     _db?: DB
 ) => {
     const unirepContract: Unirep = await getUnirepContract(address, provider)
@@ -240,7 +240,7 @@ export const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: ZkIdentity,
-    attesterId: BigNumberish,
+    attesterId: bigint,
     _db?: DB
 ) => {
     const unirepContract: Unirep = getUnirepContract(address, provider)

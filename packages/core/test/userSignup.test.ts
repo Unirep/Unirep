@@ -4,21 +4,16 @@ import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { Reputation, genGSTLeaf } from '../../src'
-import { genUserState, genUnirepState, genNewGST } from '../utils'
+import { Reputation, genGSTLeaf } from '../src'
+import { genUserState, genUnirepState, genNewGST } from './utils'
 
 const EPOCH_LENGTH = 1000
 
 describe('User sign up events in Unirep User State', function () {
     this.timeout(30 * 60 * 1000)
 
-    let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-
     let unirepContract
 
-    let accounts: any[]
-    const maxUsers = 100
     const rootHistories = [] as any
     let GSTree
 
@@ -30,7 +25,7 @@ describe('User sign up events in Unirep User State', function () {
         GSTree = genNewGST(config.globalStateTreeDepth)
     })
 
-    describe('Attester sign up and set airdrop', async () => {
+    describe('User Sign Up', async () => {
         it('attester sign up', async () => {
             const accounts = await ethers.getSigners()
             await unirepContract
@@ -38,21 +33,17 @@ describe('User sign up events in Unirep User State', function () {
                 .attesterSignUp(EPOCH_LENGTH)
                 .then((t) => t.wait())
         })
-    })
 
-    describe('User Sign Up event', async () => {
         it('sign up users with no airdrop', async () => {
             const accounts = await ethers.getSigners()
             for (let i = 0; i < 5; i++) {
                 const id = new ZkIdentity()
                 const commitment = id.genIdentityCommitment()
-                userIds.push(id)
-                userCommitments.push(commitment)
                 const userState = await genUserState(
                     ethers.provider,
                     unirepContract.address,
                     id,
-                    accounts[1].address
+                    BigInt(accounts[1].address)
                 )
                 const { publicSignals, proof } =
                     await userState.genUserSignUpProof()
@@ -62,7 +53,7 @@ describe('User sign up events in Unirep User State', function () {
                     .userSignUp(publicSignals, proof)
                     .then((t) => t.wait())
 
-                const contractEpoch = await unirepContract.currentEpoch(
+                const contractEpoch = await unirepContract.attesterCurrentEpoch(
                     accounts[1].address
                 )
                 const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
@@ -78,11 +69,12 @@ describe('User sign up events in Unirep User State', function () {
                 GSTree.insert(leaf)
                 rootHistories.push(GSTree.root)
 
-                const onchainGSTExists = await unirepContract.stateTreeRoots(
-                    accounts[1].address,
-                    contractEpoch,
-                    GSTree.root
-                )
+                const onchainGSTExists =
+                    await unirepContract.attesterStateTreeRoots(
+                        accounts[1].address,
+                        contractEpoch,
+                        GSTree.root
+                    )
                 expect(onchainGSTExists).to.be.true
 
                 await userState.stop()
@@ -94,7 +86,7 @@ describe('User sign up events in Unirep User State', function () {
             const unirepState = await genUnirepState(
                 ethers.provider,
                 unirepContract.address,
-                accounts[1].address
+                BigInt(accounts[1].address)
             )
             for (let root of rootHistories) {
                 const exist = await unirepState.GSTRootExists(
