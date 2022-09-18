@@ -1,2 +1,2 @@
-export const EPOCH_LENGTH = 30 // 30 seconds
+export const EPOCH_LENGTH = 15 * 60 // 15 minutes
 export const ATTESTING_FEE = 0
