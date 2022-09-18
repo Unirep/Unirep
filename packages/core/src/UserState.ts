@@ -294,49 +294,6 @@ export default class UserState extends Synchronizer {
         )
     }
 
-    /**
-     * Generate the epoch key proof of the current user state.
-     * @param epochKeyNonce The nonce that is used in the epoch key proof.
-     * @returns The epoch key proof of type `EpochKeyProof`.
-     */
-    // public genVerifyEpochKeyProof = async (
-    //     epochKeyNonce: number
-    // ): Promise<EpochKeyProof> => {
-    //     this._checkEpkNonce(epochKeyNonce)
-    //     const epoch = await this.latestTransitionedEpoch()
-    //     const leafIndex = await this.latestGSTLeafIndex()
-    //     const epochKey = genEpochKey(
-    //         this.id.identityNullifier,
-    //         epoch,
-    //         epochKeyNonce,
-    //         this.settings.epochTreeDepth
-    //     )
-    //     const userStateTree = await this.genUserStateTree(epoch)
-    //     const GSTree = await this.genGSTree(epoch)
-    //     const GSTProof = GSTree.createProof(leafIndex)
-
-    //     const circuitInputs = stringifyBigInts({
-    //         GST_path_elements: GSTProof.siblings,
-    //         GST_path_index: GSTProof.pathIndices,
-    //         identity_nullifier: this.id.identityNullifier,
-    //         identity_trapdoor: this.id.trapdoor,
-    //         user_tree_root: userStateTree.root,
-    //         nonce: epochKeyNonce,
-    //         epoch: epoch,
-    //     })
-
-    //     const results = await this.prover.genProofAndPublicSignals(
-    //         Circuit.verifyEpochKey,
-    //         circuitInputs
-    //     )
-
-    //     return new EpochKeyProof(
-    //         results.publicSignals,
-    //         results.proof,
-    //         this.prover
-    //     )
-    // }
-
     public genAttestationProof = async (
         epochKey: bigint,
         posRep: bigint,
@@ -455,14 +412,8 @@ export default class UserState extends Synchronizer {
 
     /**
      * Generate a reputation proof of current user state and given conditions
-     * @param attesterId The attester ID that the user wants to proof the reputation
      * @param epkNonce The nonce determines the output of the epoch key
      * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
-     * @param proveGraffiti The boolean flag that indicates if user wants to prove graffiti pre-image
-     * @param graffitiPreImage The pre-image of the graffiti
-     * @param spendAmount The amount of reputation to spend.
-     * In the circuit, it will compute the reputation nullifiers of the given nonce. If the reputation nullifier is used
-     * to spend reputation, it cannot be spent again.
      * @returns The reputation proof of type `ReputationProof`.
      */
     public genProveReputationProof = async (

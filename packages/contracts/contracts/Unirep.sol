@@ -211,63 +211,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     }
 
     /**
-     * @dev An attester submit the attestation with an epoch key proof via a relayer
-     * @param attester The address of the attester
-     * @param signature The signature of the attester
-     * @param attestation The attestation including positive reputation, negative reputation or graffiti
-     * @param epochKey The epoch key which receives attestation
-     */
-    // function submitAttestationViaRelayer(
-    //     address attester,
-    //     bytes calldata signature,
-    //     Attestation calldata attestation,
-    //     uint256 epochKey
-    // ) external payable {
-    //     if (!isValidSignature(attester, signature)) revert InvalidSignature();
-    //     assertValidAttestation(attester, attestation, epochKey);
-    //     if (epochKey > maxEpochKey) revert InvalidEpochKey();
-
-    //     collectedAttestingFee = collectedAttestingFee.add(msg.value);
-
-    //     emit AttestationSubmitted(
-    //         currentEpoch,
-    //         epochKey,
-    //         attester,
-    //         attestation
-    //     );
-
-    //     storeAttestation(attestation, epochKey);
-    // }
-
-    /**
-     * @dev A user should submit an epoch key proof and get a proof index
-     * publicSignals[0] = [ epochKey ]
-     * publicSignals[1] = [ globalStateTree ]
-     * publicSignals[2] = [ epoch ]
-     * @param publicSignals The public signals of the epoch key proof
-     * @param proof The The proof of the epoch key proof
-     */
-    // function assertValidEpochKeyProof(
-    //     uint256[] memory publicSignals,
-    //     uint256[8] memory proof
-    // ) external view {
-    //     uint256 _epoch = publicSignals[2];
-    //     uint256 _globalStateTreeRoot = publicSignals[1];
-
-    //     // check if proof is submitted before
-    //     if (_epoch != currentEpoch) revert EpochNotMatch();
-    //     if (publicSignals[0] > maxEpochKey) revert InvalidEpochKey();
-
-    //     // verify global state tree root
-    //     if (globalStateTreeRoots[_epoch][_globalStateTreeRoot] == false)
-    //         revert InvalidGlobalStateTreeRoot(_globalStateTreeRoot);
-
-    //     // verify proof
-    //     bool isValid = verifyEpochKeyValidity(publicSignals, proof);
-    //     if (isValid == false) revert InvalidProof();
-    // }
-
-    /**
      * Take an epochTransition zk proof for a user
      **/
     function epochTransition(
