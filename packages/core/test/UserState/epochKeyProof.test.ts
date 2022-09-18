@@ -25,8 +25,8 @@ describe('Epoch key proof events in Unirep User State', function () {
     this.timeout(0)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
-    let userStateTreeRoots: BigInt[] = []
+    let userCommitments: bigint[] = []
+    let userStateTreeRoots: bigint[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
@@ -237,7 +237,7 @@ describe('Epoch key proof events in Unirep User State', function () {
             const leafIndex = 0
 
             const hashedStateLeaf = hashLeftRight(commitment, stateRoot)
-            GSTree.insert(BigInt(hashedStateLeaf.toString()))
+            GSTree.insert(hashedStateLeaf)
             const epkNonce = 0
             const epoch = 1
 

@@ -10,7 +10,7 @@ export interface IAttestation {
     negRep: BigNumber
     graffiti: BigNumber
     signUp: BigNumber
-    hash(): BigInt
+    hash(): bigint
 }
 
 /**
@@ -31,11 +31,11 @@ export class Attestation implements IAttestation {
      * @param _signUp The sign up flag that the attester wants to give
      */
     constructor(
-        _attesterId: BigInt | BigNumberish,
-        _posRep: BigInt | BigNumberish,
-        _negRep: BigInt | BigNumberish,
-        _graffiti: BigInt | BigNumberish,
-        _signUp: BigInt | BigNumberish
+        _attesterId: BigNumberish,
+        _posRep: BigNumberish,
+        _negRep: BigNumberish,
+        _graffiti: BigNumberish,
+        _signUp: BigNumberish
     ) {
         this.attesterId = BigNumber.from(_attesterId)
         this.posRep = BigNumber.from(_posRep)
@@ -48,7 +48,7 @@ export class Attestation implements IAttestation {
      * Hash the attestation to compute the hash chain of an epoch key
      * @returns Hash value of all attestation data
      */
-    public hash = (): BigInt => {
+    public hash = (): bigint => {
         return hash5([
             this.attesterId.toBigInt(),
             this.posRep.toBigInt(),

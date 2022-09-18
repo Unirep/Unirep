@@ -15,11 +15,11 @@ import {
 } from '@unirep/circuits'
 
 /**
- * Encode a `BigInt` array to string
- * @param arr The array of `BigInt` elements
+ * Encode a `bigint` array to string
+ * @param arr The array of `bigint` elements
  * @returns A string of the array
  */
-export const encodeBigIntArray = (arr: BigInt[]): string => {
+export const encodeBigIntArray = (arr: bigint[]): string => {
     return JSON.stringify(stringifyBigInts(arr))
 }
 
@@ -53,7 +53,7 @@ const SMT_ONE_LEAF = hashLeftRight(BigInt(1), BigInt(0))
  * @param treeDepth The depth of the user state tree
  * @returns The root of the user state tree
  */
-const computeEmptyUserStateRoot = (treeDepth: number): BigInt => {
+const computeEmptyUserStateRoot = (treeDepth: number): bigint => {
     const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     return t.root
 }
@@ -69,7 +69,7 @@ const computeInitUserStateRoot = (
     treeDepth: number,
     leafIdx?: number,
     airdropPosRep: number = 0
-): BigInt => {
+): bigint => {
     const t = new SparseMerkleTree(treeDepth, defaultUserStateLeaf)
     if (typeof leafIdx === 'number' && leafIdx > 0) {
         const airdropReputation = new Reputation(
@@ -93,15 +93,12 @@ const computeInitUserStateRoot = (
  * @returns The moded epoch key
  */
 const genEpochKey = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
     epoch: number,
     nonce: number,
     epochTreeDepth: number = EPOCH_TREE_DEPTH
-): BigInt => {
-    const epochKey = hash2([
-        (identityNullifier as any) + BigInt(nonce),
-        epoch,
-    ]).valueOf()
+): bigint => {
+    const epochKey = hash2([identityNullifier + BigInt(nonce), epoch])
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** epochTreeDepth)
     return epochKeyModed
@@ -116,11 +113,11 @@ const genEpochKey = (
  * @returns The epoch key nullifier
  */
 const genEpochKeyNullifier = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
     epoch: number,
     nonce: number
-): BigInt => {
-    return hash2([BigInt(epoch), (identityNullifier as any) + BigInt(nonce)])
+): bigint => {
+    return hash2([BigInt(epoch), identityNullifier + BigInt(nonce)])
 }
 
 /**
@@ -133,11 +130,11 @@ const genEpochKeyNullifier = (
  * @returns The reputation nullifier
  */
 const genReputationNullifier = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
     epoch: number,
     nonce: number,
-    attesterId: BigInt
-): BigInt => {
+    attesterId: bigint
+): bigint => {
     return hash4([identityNullifier, BigInt(epoch), BigInt(nonce), attesterId])
 }
 

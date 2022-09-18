@@ -69,7 +69,7 @@ describe('Offchain Epoch Tree', function () {
 
             const tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
             await tx.wait()
@@ -106,7 +106,7 @@ describe('Offchain Epoch Tree', function () {
 
             const tx = await unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
             await tx.wait()

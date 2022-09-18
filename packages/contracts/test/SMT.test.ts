@@ -69,12 +69,12 @@ describe('SMT', function () {
 
     it('should compute root without updating tree', async () => {
         const SMT = new SparseMerkleTree(32, BigInt(0))
-        const index = (genRandomSalt() as bigint) % BigInt(2 ** 32)
+        const index = genRandomSalt() % BigInt(2 ** 32)
         const value = genRandomSalt()
         SMT.update(BigInt(index), value)
         const smtTest = await getSMT()
-        const computedRoot = await smtTest.compute(index, value as bigint)
-        await smtTest.update(index, value as bigint)
+        const computedRoot = await smtTest.compute(index, value)
+        await smtTest.update(index, value)
         const root = await smtTest.root()
         expect(computedRoot.toBigInt()).to.equal(SMT.root)
         expect(root.toBigInt()).to.equal(SMT.root)

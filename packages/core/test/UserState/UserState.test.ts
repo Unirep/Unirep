@@ -37,7 +37,7 @@ describe('User State', async function () {
     describe('Users sign up', async function () {
         let unirepContract
         const GSTree = genNewGST(setting.globalStateTreeDepth)
-        const rootHistories: BigInt[] = []
+        const rootHistories: bigint[] = []
         const id = new ZkIdentity()
         let userState
 
@@ -567,7 +567,7 @@ describe('User State', async function () {
 
     describe('Epoch transition', async () => {
         const GSTree = genNewGST(setting.globalStateTreeDepth)
-        const rootHistories: BigInt[] = []
+        const rootHistories: bigint[] = []
         let unirepContract
         const id = new ZkIdentity()
         const otherId = new ZkIdentity()
