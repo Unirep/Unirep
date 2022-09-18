@@ -19,7 +19,8 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH, UpdateSparseTreeProof } from '../src'
 import { deployUnirep } from '../deploy'
 
-describe('Attestations', () => {
+describe('Attestations', function () {
+    this.timeout(120000)
     let unirepContract
 
     before(async () => {

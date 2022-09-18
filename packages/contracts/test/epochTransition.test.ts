@@ -50,7 +50,9 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
     return { leaf: publicSignals[1], index: leafIndex.toNumber() }
 }
 
-describe('User Epoch Transition', () => {
+describe('User Epoch Transition', function () {
+    this.timeout(120000)
+
     let unirepContract
 
     before(async () => {

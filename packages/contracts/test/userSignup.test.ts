@@ -19,7 +19,9 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH, Unirep, SignupProof } from '../src'
 import { deployUnirep } from '../deploy'
 
-describe('User Signup', () => {
+describe('User Signup', function () {
+    this.timeout(120000)
+
     let unirepContract
 
     before(async () => {

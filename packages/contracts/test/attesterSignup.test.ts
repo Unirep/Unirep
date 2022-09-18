@@ -11,7 +11,9 @@ import {
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
-describe('Attester Signup', () => {
+describe('Attester Signup', function () {
+    this.timeout(120000)
+
     let unirepContract
 
     before(async () => {
