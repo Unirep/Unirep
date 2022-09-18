@@ -10,6 +10,9 @@ import {
     SparseMerkleTree,
     ZkIdentity,
     unstringifyBigInts,
+    genEpochKey,
+    genStateTreeLeaf,
+    genEpochNullifier,
 } from '@unirep/crypto'
 import {
     IAttestation,
@@ -20,15 +23,10 @@ import {
     EpochTransitionProof,
     UpdateSparseTreeProof,
 } from '@unirep/contracts'
-import { genEpochKey, genGSTLeaf, genEpochNullifier } from './utils'
 import { IReputation } from './interfaces'
 import Reputation from './Reputation'
 import { Circuit, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
-
-const decodeBigIntArray = (input: string): bigint[] => {
-    return unstringifyBigInts(JSON.parse(input))
-}
 
 /**
  * User state is used for a user to generate proofs and obtain the current user status.
@@ -126,7 +124,7 @@ export default class UserState extends Synchronizer {
             if (signup.epoch !== currentEpoch) {
                 return 0
             }
-            const leaf = genGSTLeaf(
+            const leaf = genStateTreeLeaf(
                 this.id.identityNullifier,
                 this.attesterId.toString(),
                 signup.epoch,
@@ -145,7 +143,7 @@ export default class UserState extends Synchronizer {
             this.attesterId.toString(),
             latestTransitionedEpoch
         )
-        const leaf = genGSTLeaf(
+        const leaf = genStateTreeLeaf(
             this.id.identityNullifier,
             this.attesterId.toString(),
             latestTransitionedEpoch,
@@ -199,7 +197,7 @@ export default class UserState extends Synchronizer {
                     this.attesterId.toString(),
                     epoch,
                     i,
-                    this.settings.epochTreeDepth
+                    2 ** this.settings.epochTreeDepth
                 )
             )
     }
@@ -234,7 +232,7 @@ export default class UserState extends Synchronizer {
                         attesterId.toString(),
                         x,
                         i,
-                        this.settings.epochTreeDepth
+                        2 ** this.settings.epochTreeDepth
                     ).toString()
                 )
             allEpks.push(...epks)
@@ -414,7 +412,7 @@ export default class UserState extends Synchronizer {
                         this.attesterId.toString(),
                         fromEpoch,
                         i,
-                        this.settings.epochTreeDepth
+                        2 ** this.settings.epochTreeDepth
                     ).toString()
                 )
                 .map(async (epochKey) => {
@@ -479,7 +477,7 @@ export default class UserState extends Synchronizer {
             this.attesterId.toString(),
             epoch,
             epkNonce,
-            this.settings.epochTreeDepth
+            2 ** this.settings.epochTreeDepth
         )
         const { posRep, negRep } = await this.getRepByAttester()
         const GSTree = await this.genGSTree(epoch)
@@ -493,7 +491,7 @@ export default class UserState extends Synchronizer {
                     this.attesterId.toString(),
                     epoch,
                     i,
-                    this.settings.epochTreeDepth
+                    2 ** this.settings.epochTreeDepth
                 ).toString()
             )
             .map(async (epochKey) => {

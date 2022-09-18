@@ -8,12 +8,13 @@ import {
     genRandomSalt,
     stringifyBigInts,
     ZkIdentity,
+    genEpochKey,
 } from '@unirep/crypto'
 import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Attestation } from '@unirep/contracts'
 
-import { genEpochKey, Reputation, UserState } from '../src'
+import { Reputation, UserState } from '../src'
 import {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,

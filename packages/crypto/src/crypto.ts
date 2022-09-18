@@ -26,7 +26,7 @@ export { SNARK_FIELD_SIZE, genRandomSalt, stringifyBigInts, unstringifyBigInts }
 
 export const genEpochKey = (
     identityNullifier: bigint,
-    attesterId: bigint,
+    attesterId: bigint | string,
     epoch: bigint | number,
     nonce: bigint | number,
     maxEpochKey: bigint | number
@@ -40,4 +40,28 @@ export const genEpochKey = (
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(maxEpochKey)
     return epochKeyModed
+}
+
+export const genEpochNullifier = (
+    identityNullifier: bigint,
+    attesterId: bigint | string,
+    epoch: number | bigint
+): bigint => {
+    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier as any])
+}
+
+export const genStateTreeLeaf = (
+    idNullifier: bigint,
+    attesterId: bigint | string,
+    epoch: bigint | number,
+    posRep: bigint | number,
+    negRep: bigint | number
+): BigInt => {
+    return hash5([
+        idNullifier,
+        BigInt(attesterId),
+        BigInt(epoch),
+        BigInt(posRep),
+        BigInt(negRep),
+    ])
 }
