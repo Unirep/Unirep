@@ -77,12 +77,19 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
 
         epoch_key_mods[i] = ModuloTreeDepth(EPOCH_TREE_DEPTH);
         epoch_key_mods[i].dividend <== epoch_key_hashers[i].out;
-        if (i == epoch_key_nonce) {
-            // TODO: determine if we need a constraint here?
-            epoch_key <-- epoch_key_mods[epoch_key_nonce].remainder;
-        }
     }
 
+    // TODO: figure out a way to use the above hasher/mod result
+    component output_epoch_key_hasher = Poseidon(4);
+    output_epoch_key_hasher.inputs[0] <== identity_nullifier;
+    output_epoch_key_hasher.inputs[1] <== attester_id;
+    output_epoch_key_hasher.inputs[2] <== epoch;
+    output_epoch_key_hasher.inputs[3] <== epoch_key_nonce;
+    component output_epoch_key_mod = ModuloTreeDepth(EPOCH_TREE_DEPTH);
+    output_epoch_key_mod.dividend <== output_epoch_key_hasher.out;
+    epoch_key <== output_epoch_key_mod.remainder;
+
+    // check epoch key nonce range
     var bits_per_nonce = 8;
     component nonce_check = LessThan(bits_per_nonce);
     nonce_check.in[0] <== epoch_key_nonce;

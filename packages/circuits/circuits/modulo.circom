@@ -4,7 +4,7 @@ template ModuloTreeDepth(TREE_DEPTH) {
     signal input dividend;
     signal output remainder;
 
-    signal divisor <-- 2 ** TREE_DEPTH;
+    signal divisor <== 2 ** TREE_DEPTH;
     signal quotient;
 
     // circom's best practices state that we should avoid using <-- unless
