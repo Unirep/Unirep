@@ -52,8 +52,6 @@ export const deployUnirep = async (
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
     const incArtifacts: any = tryPath(incPath)
-    const smtPath = 'contracts/SparseMerkleTree.sol/SparseMerkleTree.json'
-    const smtArtifacts: any = tryPath(smtPath)
     const incrementalMerkleTreeFactory = new ethers.ContractFactory(
         incArtifacts.abi,
         linkLibrary(incArtifacts.bytecode, {
@@ -64,15 +62,6 @@ export const deployUnirep = async (
     )
     const incrementalMerkleTreeLib = await incrementalMerkleTreeFactory.deploy()
     await incrementalMerkleTreeLib.deployed()
-    const sparseMerkleTreeLibFactory = new ethers.ContractFactory(
-        smtArtifacts.abi,
-        linkLibrary(smtArtifacts.bytecode, {
-            [`contracts/Hash.sol:Poseidon2`]: libraries['Poseidon2'],
-        }),
-        deployer
-    )
-    const sparseMerkleTreeLib = await sparseMerkleTreeLibFactory.deploy()
-    await sparseMerkleTreeLib.deployed()
 
     const verifiers = {}
     for (const circuit in Circuit) {
@@ -103,10 +92,6 @@ export const deployUnirep = async (
 
     const c: Unirep = await new UnirepFactory(
         {
-            // ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
-            // ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
-            // ['contracts/SparseMerkleTree.sol:SparseMerkleTree']:
-            //     sparseMerkleTreeLib.address,
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
         },

@@ -4,13 +4,10 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
 
-import {zkSNARKHelper} from './libraries/zkSNARKHelper.sol';
 import {VerifySignature} from './libraries/VerifySignature.sol';
 
 import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
-import {Poseidon5, Poseidon2} from './Hash.sol';
-import {SparseMerkleTree, SparseTreeData} from './SparseMerkleTree.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 
@@ -19,7 +16,7 @@ import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-me
  * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.
  * Attester can give attestations to users, and users can optionally prove that how much reputation they have.
  */
-contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
+contract Unirep is IUnirep, VerifySignature {
     using SafeMath for uint256;
 
     // All verifier contracts
