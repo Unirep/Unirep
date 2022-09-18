@@ -9,6 +9,9 @@ template UpdateSparseTree(TREE_DEPTH) {
     signal input pos_rep;
     signal input neg_rep;
 
+    // signal private input old_pos_rep;
+    // signal private input old_neg_rep;
+
     signal private input leaf_elements[TREE_DEPTH];
     signal private input old_leaf;
 

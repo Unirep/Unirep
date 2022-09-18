@@ -177,9 +177,9 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        if (!isValidSignals(publicSignals)) revert InvalidSignals();
         // Verify the proof
-        require(attestationVerifier.verifyProof(proof, publicSignals));
+        if (!attestationVerifier.verifyProof(proof, publicSignals))
+            revert InvalidProof();
 
         uint256 toRoot = publicSignals[0];
         uint256 newLeaf = publicSignals[1];
@@ -191,11 +191,13 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         updateEpochIfNeeded(uint160(msg.sender));
 
         AttesterData storage attester = attesters[uint160(msg.sender)];
-        require(attester.currentEpoch == targetEpoch);
-        require(attester.epochTreeRoots[targetEpoch] == fromRoot);
+        if (attester.currentEpoch != targetEpoch) revert EpochNotMatch();
+
+        if (attester.epochTreeRoots[targetEpoch] != fromRoot)
+            revert InvalidEpochTreeRoot(fromRoot);
         attester.epochTreeRoots[targetEpoch] = toRoot;
 
-        if (epochKey > maxEpochKey) revert InvalidEpochKey();
+        if (epochKey >= maxEpochKey) revert InvalidEpochKey();
 
         // TODO: prove the pre-iamge of the hash?
         emit AttestationSubmitted(
@@ -272,7 +274,6 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        if (!isValidSignals(publicSignals)) revert InvalidSignals();
         // Verify the proof
         require(
             epochTransitionVerifier.verifyProof(proof, publicSignals),
@@ -412,7 +413,7 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         return attester.semaphoreGroup.root;
     }
 
-    function attesterEpochRoots(uint160 attesterId, uint256 epoch)
+    function attesterEpochRoot(uint160 attesterId, uint256 epoch)
         public
         view
         returns (uint256)

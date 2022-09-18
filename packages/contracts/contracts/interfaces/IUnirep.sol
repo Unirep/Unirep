@@ -57,16 +57,13 @@ interface IUnirep {
     error AttesterNotSignUp(uint160 attester);
     error ProofAlreadyUsed(bytes32 nullilier);
     error NullifierAlreadyUsed(uint256 nullilier);
-    error AttestingFeeInvalid();
     error AttesterIdNotMatch(uint160 attesterId);
-    error AirdropWithoutAttester();
 
     error InvalidSignature();
     error InvalidEpochKey();
     error EpochNotMatch();
 
     error InvalidSNARKField(AttestationFieldError); // better name???
-    error InvalidSignals();
     error InvalidProof();
     error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
