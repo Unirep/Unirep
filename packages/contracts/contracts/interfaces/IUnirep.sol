@@ -65,7 +65,7 @@ interface IUnirep {
 
     error InvalidSNARKField(AttestationFieldError); // better name???
     error InvalidProof();
-    error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
+    error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
     struct AttesterData {

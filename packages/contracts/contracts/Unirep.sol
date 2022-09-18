@@ -275,32 +275,30 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
         uint256[8] memory proof
     ) public {
         // Verify the proof
-        require(
-            epochTransitionVerifier.verifyProof(proof, publicSignals),
-            'proof'
-        );
+        if (!epochTransitionVerifier.verifyProof(proof, publicSignals))
+            revert InvalidProof();
 
         require(publicSignals[5] < type(uint160).max);
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
-        // verify that we're transition to the current epoch
-        require(attester.currentEpoch == publicSignals[4], 'epoch');
         // verify that the transition nullifier hasn't been used
-        require(!usedNullifiers[publicSignals[2]], 'nullifier');
+        if (usedNullifiers[publicSignals[2]])
+            revert NullifierAlreadyUsed(publicSignals[2]);
         usedNullifiers[publicSignals[2]] = true;
+
+        // verify that we're transition to the current epoch
+        if (attester.currentEpoch != publicSignals[4]) revert EpochNotMatch();
 
         uint256 fromEpoch = publicSignals[3];
         // make sure from epoch tree root is valid
-        require(
-            attester.epochTreeRoots[fromEpoch] == publicSignals[6],
-            'epochroot'
-        );
+        if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
+            revert InvalidEpochTreeRoot(publicSignals[6]);
+
         // make sure from state tree root is valid
-        require(
-            attester.stateTreeRoots[fromEpoch][publicSignals[0]],
-            'stateroot'
-        );
+        if (!attester.stateTreeRoots[fromEpoch][publicSignals[0]])
+            revert InvalidStateTreeRoot(publicSignals[0]);
+
         // update the current state tree
         emit NewGSTLeaf(
             attester.currentEpoch,
@@ -402,6 +400,15 @@ contract Unirep is IUnirep, zkSNARKHelper, VerifySignature {
     {
         AttesterData storage attester = attesters[attesterId];
         return attester.stateTrees[epoch].root;
+    }
+
+    function attesterStateTreeLeafCount(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (uint256)
+    {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.stateTrees[epoch].numberOfLeaves;
     }
 
     function attesterSemaphoreGroupRoot(uint160 attesterId)

@@ -1,4 +1,5 @@
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
@@ -30,6 +31,11 @@ template EpochTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     signal private input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal private input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
     signal output epoch_transition_nullifier;
+
+    component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    epoch_check.in[0] <== to_epoch;
+    epoch_check.in[1] <== from_epoch;
+    epoch_check.out === 1;
 
     /* 1. Check if user exists in the Global State Tree */
 

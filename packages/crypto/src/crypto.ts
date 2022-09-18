@@ -23,3 +23,21 @@ export const hashLeftRight = (input1: any, input2: any) =>
 export const hashOne = (input: any) => hash1([input])
 
 export { SNARK_FIELD_SIZE, genRandomSalt, stringifyBigInts, unstringifyBigInts }
+
+export const genEpochKey = (
+    identityNullifier: bigint,
+    attesterId: bigint,
+    epoch: bigint | number,
+    nonce: bigint | number,
+    maxEpochKey: bigint | number
+): bigint => {
+    const epochKey = hash4([
+        identityNullifier as any,
+        BigInt(attesterId),
+        epoch,
+        BigInt(nonce),
+    ]).valueOf()
+    // Adjust epoch key size according to epoch tree depth
+    const epochKeyModed = epochKey % BigInt(maxEpochKey)
+    return epochKeyModed
+}
