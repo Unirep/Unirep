@@ -62,18 +62,21 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
-     * @dev User signs up by providing an identity commitment. It also inserts a fresh state leaf into the state tree.
-     * An attester may specify an `initBalance` of reputation the user can use in the current epoch
+     * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
+     * msg.sender must be attester
      */
     function userSignUp(uint256[] memory publicSignals, uint256[8] memory proof)
         public
     {
+        uint256 attesterId = publicSignals[2];
+        // only allow attester to sign up users
+        if (uint256(uint160(msg.sender)) != attesterId)
+            revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
         if (!signupVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
 
         uint256 identityCommitment = publicSignals[0];
-        uint256 attesterId = publicSignals[2];
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[uint160(attesterId)];
         if (attester.startTimestamp == 0)
@@ -111,7 +114,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
-     * @dev Signup and initialize an attester
+     * @dev Allow an attester to signup and specify their epoch length
      */
     function _attesterSignUp(address attesterId, uint256 epochLength) private {
         AttesterData storage attester = attesters[uint160(attesterId)];
@@ -164,10 +167,9 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
-     * @dev An attester submit the attestation with a proof index that the attestation will be sent to
-     * and(or) a proof index that the attestation is from
-     * If the fromProofIndex is non-zero, it should be valid then the toProofIndex can receive the attestation
-     * @param targetEpoch The epoch in which the attestation was intended
+     * @dev An attester may submit an attestation using a zk proof. The proof should prove an updated epoch tree root
+     * and output any new leaves. The attester will be msg.sender
+     * @param targetEpoch The epoch in which the attestation was intended. Revert if this is not the current epoch
      */
     function submitAttestation(
         uint256 targetEpoch,
@@ -196,7 +198,6 @@ contract Unirep is IUnirep, VerifySignature {
 
         if (epochKey >= maxEpochKey) revert InvalidEpochKey();
 
-        // TODO: prove the pre-iamge of the hash?
         emit AttestationSubmitted(
             attester.currentEpoch,
             epochKey,
@@ -208,7 +209,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
-     * Take an epochTransition zk proof for a user
+     * @dev Allow a user to epoch transition for an attester. Accepts a zk proof outputting the new gst leaf
      **/
     function epochTransition(
         uint256[] memory publicSignals,
@@ -263,7 +264,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
-     * @dev Perform an epoch transition for an attester, if needed.
+     * @dev Update the currentEpoch for an attester, if needed
      */
     function updateEpochIfNeeded(uint256 attesterId) public {
         require(attesterId < type(uint160).max);

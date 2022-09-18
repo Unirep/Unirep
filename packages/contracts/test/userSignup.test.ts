@@ -206,7 +206,7 @@ describe('User Signup', function () {
             defaultProver
         )
         await expect(
-            unirepContract.connect(accounts[1]).userSignUp(publicSignals, proof)
+            unirepContract.connect(accounts[5]).userSignUp(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
@@ -230,6 +230,28 @@ describe('User Signup', function () {
         await expect(
             unirepContract.connect(accounts[1]).userSignUp(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+    })
+
+    it('should fail to signup with wrong msg.sender', async () => {
+        const id = new ZkIdentity()
+        const accounts = await ethers.getSigners()
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: 0,
+                identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: BigInt(accounts[1].address),
+            })
+        )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await expect(
+            unirepContract.connect(accounts[2]).userSignUp(publicSignals, proof)
+        ).to.be.revertedWithCustomError(unirepContract, 'AttesterIdNotMatch')
     })
 
     it('should update current epoch if needed', async () => {
