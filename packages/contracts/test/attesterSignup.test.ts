@@ -1,22 +1,14 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    hash5,
-    hashLeftRight,
-    IncrementalMerkleTree,
-    ZkIdentity,
-    stringifyBigInts,
-} from '@unirep/crypto'
+import { IncrementalMerkleTree } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    Circuit,
 } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, Unirep, SignupProof } from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 describe('Attester Signup', () => {
