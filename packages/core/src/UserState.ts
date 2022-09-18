@@ -351,7 +351,7 @@ export default class UserState extends Synchronizer {
             epoch ?? BigInt(await this.getUnirepStateCurrentEpoch())
         const targetRoot =
             epochTreeRoot ??
-            (await this.unirepContract.attesterEpochRoots(
+            (await this.unirepContract.attesterEpochRoot(
                 this.attesterId,
                 targetEpoch
             ))
@@ -361,14 +361,9 @@ export default class UserState extends Synchronizer {
         )
         // verify that the existing balance exists in the tree
         const epochTree = await this.genEpochTree(targetEpoch)
-        const oldLeaf = hash2([
-            existingBalance.posRep,
-            existingBalance.negRep,
-        ]).toString()
         const leaf = await this._db.findOne('EpochTreeLeaf', {
             where: {
                 epoch: Number(targetEpoch),
-                leaf: oldLeaf,
                 index: epochKey.toString(),
                 attesterId: this.attesterId.toString(),
             },
@@ -385,7 +380,8 @@ export default class UserState extends Synchronizer {
             leaf_index: epochKey,
             pos_rep: existingBalance.posRep + posRep,
             neg_rep: existingBalance.negRep + negRep,
-            old_leaf: oldLeaf,
+            old_pos_rep: existingBalance.posRep,
+            old_neg_rep: existingBalance.negRep,
             leaf_elements: epochTree.createProof(epochKey),
         }
         const results = await this.prover.genProofAndPublicSignals(

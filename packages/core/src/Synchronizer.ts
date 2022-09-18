@@ -321,7 +321,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async epochTreeRoot(epoch: number) {
-        return this.unirepContract.attesterEpochRoots(this.attesterId, epoch)
+        return this.unirepContract.attesterEpochRoot(this.attesterId, epoch)
     }
 
     async epochTreeProof(epoch: number, leafIndex: any) {
@@ -400,7 +400,7 @@ export class Synchronizer extends EventEmitter {
      */
     async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
         await this._checkValidEpoch(epoch)
-        return this.unirepContract.attesterStateTreeRoots(
+        return this.unirepContract.attesterStateTreeRootExists(
             this.attesterId,
             epoch,
             GSTRoot

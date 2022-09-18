@@ -52,7 +52,6 @@ describe('Attestations', () => {
             0
         )
         const epochKey = BigInt(24910)
-        const oldLeaf = hash2([0, 0])
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.updateSparseTree,
@@ -61,7 +60,8 @@ describe('Attestations', () => {
                 leaf_index: epochKey,
                 pos_rep: 1,
                 neg_rep: 0,
-                old_leaf: oldLeaf,
+                old_pos_rep: 0,
+                old_neg_rep: 0,
                 leaf_elements: epochTree.createProof(epochKey),
             })
         )
@@ -94,7 +94,6 @@ describe('Attestations', () => {
             0
         )
         const epochKey = BigInt(24910)
-        const oldLeaf = hash2([0, 0])
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.updateSparseTree,
@@ -103,7 +102,8 @@ describe('Attestations', () => {
                 leaf_index: epochKey,
                 pos_rep: 1,
                 neg_rep: 0,
-                old_leaf: oldLeaf,
+                old_pos_rep: 0,
+                old_neg_rep: 0,
                 leaf_elements: epochTree.createProof(epochKey),
             })
         )
@@ -127,7 +127,6 @@ describe('Attestations', () => {
             0
         )
         const epochKey = BigInt(24910)
-        const oldLeaf = hash2([0, 0])
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.updateSparseTree,
@@ -136,7 +135,8 @@ describe('Attestations', () => {
                 leaf_index: epochKey,
                 pos_rep: 1,
                 neg_rep: 0,
-                old_leaf: oldLeaf,
+                old_pos_rep: 0,
+                old_neg_rep: 0,
                 leaf_elements: epochTree.createProof(epochKey),
             })
         )
@@ -161,7 +161,6 @@ describe('Attestations', () => {
             0
         )
         const epochKey = BigInt(24910)
-        const oldLeaf = hash2([0, 0])
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.updateSparseTree,
@@ -170,7 +169,8 @@ describe('Attestations', () => {
                 leaf_index: epochKey,
                 pos_rep: 1,
                 neg_rep: 0,
-                old_leaf: oldLeaf,
+                old_pos_rep: 0,
+                old_neg_rep: 0,
                 leaf_elements: epochTree.createProof(epochKey),
             })
         )
@@ -194,7 +194,6 @@ describe('Attestations', () => {
             0
         )
         const epochKey = BigInt(24910)
-        const oldLeaf = hash2([0, 0])
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         epochTree.update(BigInt(21412124), hash2([214, 12414]))
         const r = await defaultProver.genProofAndPublicSignals(
@@ -204,7 +203,8 @@ describe('Attestations', () => {
                 leaf_index: epochKey,
                 pos_rep: 1,
                 neg_rep: 0,
-                old_leaf: oldLeaf,
+                old_pos_rep: 0,
+                old_neg_rep: 0,
                 leaf_elements: epochTree.createProof(epochKey),
             })
         )
@@ -228,7 +228,6 @@ describe('Attestations', () => {
             0
         )
         const epochKey = BigInt(24910)
-        const oldLeaf = hash2([0, 0])
         const posRep = 1
         const negRep = 5
         const newLeaf = hash2([1, 5])
@@ -240,7 +239,8 @@ describe('Attestations', () => {
                 leaf_index: epochKey,
                 pos_rep: posRep,
                 neg_rep: negRep,
-                old_leaf: oldLeaf,
+                old_pos_rep: 0,
+                old_neg_rep: 0,
                 leaf_elements: epochTree.createProof(epochKey),
             })
         )

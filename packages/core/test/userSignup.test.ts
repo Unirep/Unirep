@@ -70,7 +70,7 @@ describe('User sign up events in Unirep User State', function () {
                 rootHistories.push(GSTree.root)
 
                 const onchainGSTExists =
-                    await unirepContract.attesterStateTreeRoots(
+                    await unirepContract.attesterStateTreeRootExists(
                         accounts[1].address,
                         contractEpoch,
                         GSTree.root

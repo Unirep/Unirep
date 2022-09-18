@@ -20,7 +20,6 @@ import {
     genNewEpochTree,
     toCompleteHexString,
 } from '../../circuits/test/utils'
-import { genInputForContract } from '../../contracts/test/utils'
 import { IAttestation } from '@unirep/contracts'
 import { getUnirepContract } from '@unirep/contracts'
 import { Unirep } from '@unirep/contracts'
