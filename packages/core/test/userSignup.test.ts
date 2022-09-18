@@ -47,7 +47,7 @@ describe('User Signup', function () {
                 await userState.genUserSignUpProof()
 
             const tx = await unirepContract
-                .connect(accounts[0])
+                .connect(accounts[1])
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
 
