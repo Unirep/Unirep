@@ -112,7 +112,7 @@ jobs:
             - run: *check_version
             - run:
                   name: Test
-                  command: yarn contracts test
+                  command: yarn contracts coverage
     crypto-test:
         resource_class: medium
         machine:
