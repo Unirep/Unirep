@@ -29,7 +29,8 @@
         "@unirep/circuits": "1.0.0",
         "@unirep/crypto": "1.0.0",
         "@zk-kit/incremental-merkle-tree.sol": "^1.2.0",
-        "ethers": "^5.6.8"
+        "ethers": "^5.6.8",
+        "solc": "^0.8.16"
     },
     "devDependencies": {
         "@ethersproject/abi": "^5.6.3",

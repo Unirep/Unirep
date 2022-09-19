@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
-import { EPOCH_LENGTH } from '@unirep/circuits'
+import { EPOCH_LENGTH } from '@unirep/contracts'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
 

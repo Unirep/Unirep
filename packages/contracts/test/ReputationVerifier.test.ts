@@ -15,7 +15,7 @@ import {
     Reputation,
 } from './utils'
 import { ReputationProof } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 import { Unirep } from '../typechain'
 
 describe('Verify reputation verifier', function () {

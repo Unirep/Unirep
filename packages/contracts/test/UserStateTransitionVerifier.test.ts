@@ -10,7 +10,7 @@ import {
     genInputForContract,
 } from './utils'
 import { Unirep, UserTransitionProof } from '../src'
-import { deployUnirep } from '../src/deploy'
+import { deployUnirep } from '../deploy'
 
 describe('User State Transition Verifier', function () {
     this.timeout(600000)
