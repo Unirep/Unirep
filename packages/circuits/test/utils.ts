@@ -901,16 +901,17 @@ const genReputationCircuitInput = (
 const genProveSignUpCircuitInput = (
     id: crypto.ZkIdentity,
     epoch: number,
-    reputationRecords,
-    attesterId,
-    _signUp?: number
+    reputationRecords: { [key: number | string]: Reputation },
+    attesterId: number,
+    global_state_tree_depth = GLOBAL_STATE_TREE_DEPTH,
+    user_state_tree_depth = USER_STATE_TREE_DEPTH
 ) => {
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
 
     // User state tree
-    const userStateTree = genNewUserStateTree()
+    const userStateTree = genNewUserStateTree(user_state_tree_depth)
     for (const attester of Object.keys(reputationRecords)) {
         userStateTree.update(
             BigInt(attester),
@@ -921,12 +922,11 @@ const genProveSignUpCircuitInput = (
     const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+    const GSTree = new crypto.IncrementalMerkleTree(global_state_tree_depth)
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
-    const GSTreeRoot = GSTree.root
 
     const circuitInputs: ProveUserSignUpInput = {
         epoch: epoch,
