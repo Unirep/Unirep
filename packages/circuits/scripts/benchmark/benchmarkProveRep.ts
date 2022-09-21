@@ -38,7 +38,7 @@ function createProveRepCircuit(
 const EPOCH_TREE_DEPTH = 252
 
 async function main() {
-    for (let gst = 10; gst <= 32; ++gst) {
+    for (let gst = 10; gst <= 32; gst += 2) {
         const ust = 27
         console.log(
             `Benchmark for reputation proof (with gst = ${gst}, ust = ${ust}): ${await executeTimeOf(

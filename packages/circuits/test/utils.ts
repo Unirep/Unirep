@@ -829,27 +829,22 @@ const genReputationCircuitInput = (
     id: crypto.ZkIdentity,
     epoch: number,
     nonce: number,
-    reputationRecords,
-    attesterId,
-    _repNullifiersAmount?,
-    _minRep?,
-    _proveGraffiti?,
-    _graffitiPreImage?
+    reputationRecords: { [key: number | string]: Reputation },
+    attesterId: number | string,
+    repNullifiersAmount = 0,
+    minRep = 0,
+    proveGraffiti = 0,
+    graffitiPreImage: number | BigInt = 0,
+    global_state_tree_depth = GLOBAL_STATE_TREE_DEPTH,
+    max_reputation_budget = MAX_REPUTATION_BUDGET,
+    user_state_tree_depth = USER_STATE_TREE_DEPTH
 ) => {
-    const repNullifiersAmount = _repNullifiersAmount ?? 0
-    const minRep = _minRep ?? 0
-    const proveGraffiti = _proveGraffiti ?? 0
-    let graffitiPreImage
-    if (proveGraffiti === 1 && reputationRecords[attesterId]) {
-        graffitiPreImage = reputationRecords[attesterId]['graffitiPreImage']
-    }
-    graffitiPreImage = _graffitiPreImage ?? 0
     if (reputationRecords[attesterId] === undefined) {
         reputationRecords[attesterId] = Reputation.default()
     }
 
     // User state tree
-    const userStateTree = genNewUserStateTree()
+    const userStateTree = genNewUserStateTree(user_state_tree_depth)
     for (const attester of Object.keys(reputationRecords)) {
         userStateTree.update(
             BigInt(attester),
@@ -860,12 +855,11 @@ const genReputationCircuitInput = (
     const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+    const GSTree = new crypto.IncrementalMerkleTree(global_state_tree_depth)
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
     GSTree.insert(hashedLeaf)
     const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
-    const GSTreeRoot = GSTree.root
 
     // selectors and karma nonce
     const nonceStarter = 0
@@ -875,7 +869,7 @@ const genReputationCircuitInput = (
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))
     }
-    for (let i = repNullifiersAmount; i < MAX_REPUTATION_BUDGET; i++) {
+    for (let i = repNullifiersAmount; i < max_reputation_budget; i++) {
         nonceList.push(BigInt(0))
         selectors.push(BigInt(0))
     }
@@ -883,13 +877,11 @@ const genReputationCircuitInput = (
     const circuitInputs: ProveReputationInput = {
         epoch: epoch,
         epoch_key_nonce: nonce,
-        // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
-        // GST_root: GSTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
@@ -902,6 +894,7 @@ const genReputationCircuitInput = (
         prove_graffiti: proveGraffiti,
         graffiti_pre_image: graffitiPreImage,
     }
+
     return crypto.stringifyBigInts(circuitInputs)
 }
 
@@ -937,13 +930,11 @@ const genProveSignUpCircuitInput = (
 
     const circuitInputs: ProveUserSignUpInput = {
         epoch: epoch,
-        // epoch_key: epk,
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
         GST_path_index: GSTreeProof.pathIndices,
         GST_path_elements: GSTreeProof.siblings,
-        // GST_root: GSTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
