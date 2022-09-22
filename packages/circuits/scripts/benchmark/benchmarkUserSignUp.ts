@@ -35,7 +35,7 @@ async function main() {
         const ust = 27
         console.log(
             `Benchmark for reputation proof (with gst = ${gst}, ust = ${ust}): ${await executeTimeOf(
-                'epochKeyProof',
+                'signupUser',
                 createProveUserSignUp(gst, ust, EPOCH_TREE_DEPTH, 3),
                 getInput,
                 [gst, ust]
