@@ -24,3 +24,5 @@ lerna-debug.log*
 .env
 subgraph.yaml
 generated
+
+.node-version
