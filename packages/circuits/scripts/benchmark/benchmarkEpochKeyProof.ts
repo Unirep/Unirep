@@ -44,7 +44,7 @@ async function main() {
         const currentEpoch = 1
 
         console.log(
-            `Benchmark for epoch key proof (with gst = ${gst}): ${await executeTimeOf(
+            `Benchmark for epoch key proof (with gst = ${gst}, epoch_tree_depth = ${epoch_tree_depth}): ${await executeTimeOf(
                 'epochKeyProof',
                 createEKPCircuit(
                     gst,
