@@ -15,16 +15,12 @@ import {
     genEpochNullifier,
 } from '@unirep/crypto'
 import {
-    IAttestation,
-    Attestation,
     ReputationProof,
     EpochKeyProof,
     SignupProof,
     EpochTransitionProof,
     UpdateSparseTreeProof,
 } from '@unirep/contracts'
-import { IReputation } from './interfaces'
-import Reputation from './Reputation'
 import { Circuit, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
@@ -175,7 +171,7 @@ export default class UserState extends Synchronizer {
         })
     }
 
-    async getAttestations(epochKey: string): Promise<IAttestation[]> {
+    async getAttestations(epochKey: string): Promise<any[]> {
         await this._checkEpochKeyRange(epochKey)
         return this._db.findMany('Attestation', {
             where: {
@@ -423,13 +419,6 @@ export default class UserState extends Synchronizer {
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
-        const epochKey = genEpochKey(
-            this.id.identityNullifier,
-            this.attesterId.toString(),
-            epoch,
-            epkNonce,
-            2 ** this.settings.epochTreeDepth
-        )
         const { posRep, negRep } = await this.getRepByAttester()
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
@@ -509,4 +498,4 @@ export default class UserState extends Synchronizer {
     }
 }
 
-export { Reputation, UserState }
+export { UserState }

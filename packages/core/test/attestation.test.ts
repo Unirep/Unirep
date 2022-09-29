@@ -4,7 +4,6 @@ import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { Reputation } from '../src'
 import { genUserState, genUnirepState, genNewGST } from './utils'
 
 const EPOCH_LENGTH = 1000

@@ -26,7 +26,6 @@ const _schema = [
             ['attesterId', 'String', { optional: true }],
             ['posRep', 'Int', { optional: true }],
             ['negRep', 'Int', { optional: true }],
-            ['graffiti', 'String', { optional: true }],
             ['hash', 'String'],
         ],
     },
@@ -45,7 +44,7 @@ const _schema = [
         primaryKey: ['epoch', 'index'],
         rows: [
             ['epoch', 'Int'],
-            ['leaf', 'String'],
+            ['hash', 'String'],
             ['index', 'String'],
             ['attesterId', 'String'],
         ],

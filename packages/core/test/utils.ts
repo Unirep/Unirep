@@ -10,18 +10,9 @@ import {
     ZkIdentity,
     genEpochKey,
 } from '@unirep/crypto'
-import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Attestation } from '@unirep/contracts'
 
-import { Reputation, UserState } from '../src'
-import {
-    genEpochKeyCircuitInput,
-    genReputationCircuitInput,
-    genNewEpochTree,
-    toCompleteHexString,
-} from '../../circuits/test/utils'
-import { IAttestation } from '@unirep/contracts'
+import { UserState } from '../src'
 import { getUnirepContract } from '@unirep/contracts'
 import { Unirep } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
@@ -35,26 +26,6 @@ export const genNewGST = (
 ): IncrementalMerkleTree => {
     const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf)
     return GST
-}
-
-const genRandomAttestation = (): Attestation => {
-    const attesterId = Math.ceil(Math.random() * 10)
-    const attestation = new Attestation(
-        BigInt(attesterId),
-        BigInt(Math.floor(Math.random() * 100)),
-        BigInt(Math.floor(Math.random() * 100)),
-        BigNumber.from(genRandomSalt()),
-        BigInt(Math.floor(Math.random() * 2))
-    )
-    return attestation
-}
-
-const genRandomList = (length): BigNumberish[] => {
-    const array: BigNumberish[] = []
-    for (let i = 0; i < length; i++) {
-        array.push(BigNumber.from(genRandomSalt()))
-    }
-    return array
 }
 
 export const computeEpochKeyProofHash = (epochKeyProof: any) => {
@@ -188,10 +159,7 @@ export const snapshotDB = async (db: DB) => {
 //     }
 // }
 
-export const compareAttestations = (
-    attestDB: IAttestation,
-    attestObj: Attestation
-) => {
+export const compareAttestations = (attestDB: any, attestObj: any) => {
     expect(attestDB.attesterId.toString()).equal(
         attestObj.attesterId.toString()
     )

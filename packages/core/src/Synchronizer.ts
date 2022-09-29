@@ -1,10 +1,8 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers, BigNumberish } from 'ethers'
-import { Attestation, IAttestation } from '@unirep/contracts'
 import { Prover } from '@unirep/circuits'
 import { IncrementalMerkleTree, SparseMerkleTree, hash2 } from '@unirep/crypto'
-import { ISettings } from './interfaces'
 
 const defaultEpochTreeLeaf = hash2([0, 0])
 
@@ -18,7 +16,7 @@ export class Synchronizer extends EventEmitter {
     provider: any
     unirepContract: ethers.Contract
     attesterId: bigint
-    public settings: ISettings
+    public settings: any
     // GST for current epoch
     private _globalStateTree?: IncrementalMerkleTree
     protected defaultGSTLeaf?: BigInt
@@ -336,7 +334,7 @@ export class Synchronizer extends EventEmitter {
             defaultEpochTreeLeaf
         )
         for (const leaf of leaves) {
-            tree.update(leaf.index, leaf.leaf)
+            tree.update(leaf.index, leaf.hash)
         }
         const proof = tree.createProof(leafIndex)
         return proof
@@ -386,8 +384,8 @@ export class Synchronizer extends EventEmitter {
                 attesterId: this.attesterId.toString(),
             },
         })
-        for (const { index, leaf } of leaves) {
-            tree.update(BigInt(index), BigInt(leaf))
+        for (const { index, hash } of leaves) {
+            tree.update(BigInt(index), BigInt(hash))
         }
         return tree
     }
@@ -441,7 +439,7 @@ export class Synchronizer extends EventEmitter {
      * @param epochKey The query epoch key
      * @returns A list of the attestations.
      */
-    async getAttestations(epochKey: string): Promise<IAttestation[]> {
+    async getAttestations(epochKey: string): Promise<any[]> {
         await this._checkEpochKeyRange(epochKey)
         // TODO: transform db entries to IAttestation (they're already pretty similar)
         return this._db.findMany('Attestation', {
@@ -553,12 +551,12 @@ export class Synchronizer extends EventEmitter {
                 attesterId,
             },
             update: {
-                leaf,
+                hash: leaf,
             },
             create: {
                 epoch,
                 index,
-                leaf,
+                hash: leaf,
                 attesterId,
             },
         })
