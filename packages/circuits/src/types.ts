@@ -167,3 +167,4 @@ export type CircuitInput =
     | SparseMerkleTreeInput
     | ExistedEpochKeyInput
     | VerifyHashChainInput
+    | any
