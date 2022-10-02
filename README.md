@@ -20,7 +20,9 @@
     </a>
 </p>
 
-![unirep](https://user-images.githubusercontent.com/17507085/179675473-390f4058-98d5-4dc2-8e27-92aa93e7fa0f.png)
+![unirep](https://user-images.githubusercontent.com/17507085/193437008-fcdf7d81-775a-45e3-b547-c04a4d6252de.png)
+
+
 ​
 ## 💡 About Unirep 
 **UniRep** is a *private* and *non-repudiable* **reputation system**. Users can receive positive and negative reputation from attesters, and voluntarily prove that they have at least certain amount of reputation without revealing the exact amount. Moreover, users cannot refuse to receive reputation from an attester.
