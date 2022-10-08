@@ -35,6 +35,8 @@ describe('Attestations', function () {
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
         expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        expect(tree.root.toString()).equal(config.emptyEpochTreeRoot.toString())
     })
 
     it('attester sign up', async () => {
