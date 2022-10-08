@@ -56,7 +56,7 @@ export const genStateTreeLeaf = (
     epoch: bigint | number,
     posRep: bigint | number,
     negRep: bigint | number
-): BigInt => {
+): bigint => {
     return hash5([
         idNullifier,
         BigInt(attesterId),
