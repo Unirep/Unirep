@@ -6,7 +6,7 @@ import { BaseProof } from './BaseProof'
 /**
  * The epoch key proof structure that helps to query the public signals
  */
-export class EpochTransitionProof extends BaseProof {
+export class UserStateTransitionProof extends BaseProof {
     readonly idx = {
         fromGlobalStateTreeRoot: 0,
         globalStateTreeLeaf: 1,
@@ -45,6 +45,6 @@ export class EpochTransitionProof extends BaseProof {
         this.toEpoch = _publicSignals[this.idx.toEpoch].toString()
         this.attesterId = _publicSignals[this.idx.attesterId].toString()
         this.epochTreeRoot = _publicSignals[this.idx.epochTreeRoot].toString()
-        this.circuit = Circuit.epochTransition
+        this.circuit = Circuit.userStateTransition
     }
 }

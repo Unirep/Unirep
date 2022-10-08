@@ -85,7 +85,7 @@ describe('Attester signs up and gives attestation', function () {
         await ethers.provider.send('evm_mine', [])
         {
             const { publicSignals, proof } =
-                await userState.genEpochTransitionProof()
+                await userState.genUserStateTransitionProof()
             // submit it
             await unirepContract
                 .connect(accounts[4])

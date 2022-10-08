@@ -214,7 +214,7 @@ const genEpochKeyCircuitInput = (config: {
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const genEpochTransitionCircuitInput = (config: {
+const genUserStateTransitionCircuitInput = (config: {
     id: crypto.ZkIdentity
     fromEpoch: number
     toEpoch: number
@@ -375,7 +375,7 @@ const genProofAndVerify = async (
     return { isValid, proof, publicSignals }
 }
 
-const genEpochTransitionNullifier = (
+const genUserStateTransitionNullifier = (
     identityNullifier: BigInt,
     epoch: number,
     attesterId: number
@@ -426,8 +426,8 @@ export {
     genEpochKey,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
-    genEpochTransitionCircuitInput,
-    genEpochTransitionNullifier,
+    genUserStateTransitionCircuitInput,
+    genUserStateTransitionNullifier,
     genProofAndVerify,
     compileAndLoadCircuit,
     throwError,

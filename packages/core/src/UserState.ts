@@ -18,7 +18,7 @@ import {
     ReputationProof,
     EpochKeyProof,
     SignupProof,
-    EpochTransitionProof,
+    UserStateTransitionProof,
     UpdateSparseTreeProof,
 } from '@unirep/contracts'
 import { Circuit, Prover } from '@unirep/circuits'
@@ -346,8 +346,8 @@ export default class UserState extends Synchronizer {
         )
     }
 
-    public genEpochTransitionProof =
-        async (): Promise<EpochTransitionProof> => {
+    public genUserStateTransitionProof =
+        async (): Promise<UserStateTransitionProof> => {
             const { posRep, negRep } = await this.getRepByAttester()
             const fromEpoch = await this.latestTransitionedEpoch()
             const toEpoch = await this.loadCurrentEpoch()
@@ -395,11 +395,11 @@ export default class UserState extends Synchronizer {
                 epoch_tree_root: epochTree.root,
             }
             const results = await this.prover.genProofAndPublicSignals(
-                Circuit.epochTransition,
+                Circuit.userStateTransition,
                 stringifyBigInts(circuitInputs)
             )
 
-            return new EpochTransitionProof(
+            return new UserStateTransitionProof(
                 results.publicSignals,
                 results.proof,
                 this.prover

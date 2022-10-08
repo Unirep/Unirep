@@ -5,18 +5,18 @@ import {
     genReputationCircuitInput,
     genProofAndVerify,
     genEpochKey,
-    genEpochTransitionCircuitInput,
-    genEpochTransitionNullifier,
+    genUserStateTransitionCircuitInput,
+    genUserStateTransitionNullifier,
 } from './utils'
 import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     GLOBAL_STATE_TREE_DEPTH,
 } from '../config'
 
-describe('Prove reputation from attester circuit', function () {
+describe('User state transition', function () {
     this.timeout(300000)
 
-    it('should do an epoch transition', async () => {
+    it('should do a user state transition', async () => {
         const id = new ZkIdentity()
         const fromEpoch = 1
         const toEpoch = 5
@@ -27,7 +27,7 @@ describe('Prove reputation from attester circuit', function () {
         tree.insert(
             hash5([id.identityNullifier, attesterId, fromEpoch, posRep, negRep])
         )
-        const circuitInputs = genEpochTransitionCircuitInput({
+        const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
@@ -37,7 +37,7 @@ describe('Prove reputation from attester circuit', function () {
             leafIndex: 0,
         })
         const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -50,7 +50,7 @@ describe('Prove reputation from attester circuit', function () {
             negRep,
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
-        const transitionNullifier = genEpochTransitionNullifier(
+        const transitionNullifier = genUserStateTransitionNullifier(
             id.identityNullifier,
             fromEpoch,
             attesterId
@@ -58,7 +58,7 @@ describe('Prove reputation from attester circuit', function () {
         expect(publicSignals[2]).to.equal(transitionNullifier.toString())
     })
 
-    it('should do an epoch transition with new rep', async () => {
+    it('should do a user state transition with new rep', async () => {
         const id = new ZkIdentity()
         const fromEpoch = 1
         const toEpoch = 5
@@ -75,7 +75,7 @@ describe('Prove reputation from attester circuit', function () {
             fromEpoch,
             0
         )
-        const circuitInputs = genEpochTransitionCircuitInput({
+        const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
@@ -91,7 +91,7 @@ describe('Prove reputation from attester circuit', function () {
             },
         })
         const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -104,7 +104,7 @@ describe('Prove reputation from attester circuit', function () {
             negRep + 20,
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
-        const transitionNullifier = genEpochTransitionNullifier(
+        const transitionNullifier = genUserStateTransitionNullifier(
             id.identityNullifier,
             fromEpoch,
             attesterId
@@ -112,7 +112,7 @@ describe('Prove reputation from attester circuit', function () {
         expect(publicSignals[2]).to.equal(transitionNullifier.toString())
     })
 
-    it('should do an epoch transition with many new rep', async () => {
+    it('should do a user state transition with many new rep', async () => {
         const id = new ZkIdentity()
         const fromEpoch = 1
         const toEpoch = 5
@@ -128,7 +128,7 @@ describe('Prove reputation from attester circuit', function () {
             .map((_, i) =>
                 genEpochKey(id.identityNullifier, attesterId, fromEpoch, i)
             )
-        const circuitInputs = genEpochTransitionCircuitInput({
+        const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
@@ -145,7 +145,7 @@ describe('Prove reputation from attester circuit', function () {
             ),
         })
         const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -158,7 +158,7 @@ describe('Prove reputation from attester circuit', function () {
             negRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 20,
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
-        const transitionNullifier = genEpochTransitionNullifier(
+        const transitionNullifier = genUserStateTransitionNullifier(
             id.identityNullifier,
             fromEpoch,
             attesterId

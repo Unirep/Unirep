@@ -20,7 +20,12 @@ import {
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, Unirep, EpochTransitionProof, SignupProof } from '../src'
+import {
+    EPOCH_LENGTH,
+    Unirep,
+    UserStateTransitionProof,
+    SignupProof,
+} from '../src'
 import { deployUnirep } from '../deploy'
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
@@ -50,7 +55,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
     return { leaf: publicSignals[1], index: leafIndex.toNumber() }
 }
 
-describe('User Epoch Transition', function () {
+describe('User State Transition', function () {
     this.timeout(120000)
 
     let unirepContract
@@ -103,7 +108,7 @@ describe('User Epoch Transition', function () {
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
@@ -121,7 +126,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -166,7 +171,7 @@ describe('User Epoch Transition', function () {
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 1,
                 to_epoch: 2,
@@ -184,7 +189,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -222,7 +227,7 @@ describe('User Epoch Transition', function () {
         epochTree.update(BigInt(1), hash2([2, 2]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
@@ -240,7 +245,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -282,7 +287,7 @@ describe('User Epoch Transition', function () {
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const stateTreeProof = _stateTree.createProof(1)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
@@ -300,7 +305,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -315,7 +320,7 @@ describe('User Epoch Transition', function () {
         await ethers.provider.send('evm_revert', [snapshot])
     })
 
-    it('should fail to double epoch transition', async () => {
+    it('should fail to double user state transition', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
         const { leaf, index } = await signupUser(
@@ -339,7 +344,7 @@ describe('User Epoch Transition', function () {
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
@@ -357,7 +362,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -376,7 +381,7 @@ describe('User Epoch Transition', function () {
         await ethers.provider.send('evm_revert', [snapshot])
     })
 
-    it('should do epoch transition', async () => {
+    it('should do user state transition', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
         const { leaf, index } = await signupUser(
@@ -400,7 +405,7 @@ describe('User Epoch Transition', function () {
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
@@ -418,7 +423,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -444,7 +449,7 @@ describe('User Epoch Transition', function () {
         await ethers.provider.send('evm_revert', [snapshot])
     })
 
-    it('should do multiple epoch transitions', async () => {
+    it('should do multiple user state transitions', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
         const { leaf, index } = await signupUser(
@@ -469,7 +474,7 @@ describe('User Epoch Transition', function () {
         const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochTransition,
+            Circuit.userStateTransition,
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
@@ -487,7 +492,7 @@ describe('User Epoch Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new EpochTransitionProof(
+        const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -538,7 +543,7 @@ describe('User Epoch Transition', function () {
             _stateTree.insert(leaf)
             const _stateTreeProof = _stateTree.createProof(0)
             const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.epochTransition,
+                Circuit.userStateTransition,
                 stringifyBigInts({
                     from_epoch: x,
                     to_epoch: x + 1,
@@ -556,7 +561,7 @@ describe('User Epoch Transition', function () {
                     epoch_tree_root: epochTree.root,
                 })
             )
-            const { publicSignals, proof } = new EpochTransitionProof(
+            const { publicSignals, proof } = new UserStateTransitionProof(
                 r.publicSignals,
                 r.proof,
                 defaultProver
