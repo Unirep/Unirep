@@ -20,7 +20,9 @@
     </a>
 </p>
 
-![unirep](https://user-images.githubusercontent.com/17507085/179675473-390f4058-98d5-4dc2-8e27-92aa93e7fa0f.png)
+![unirep](https://user-images.githubusercontent.com/17507085/193437008-fcdf7d81-775a-45e3-b547-c04a4d6252de.png)
+
+
 ​
 ## 💡 About Unirep 
 **UniRep** is a *private* and *non-repudiable* **reputation system**. Users can receive positive and negative reputation from attesters, and voluntarily prove that they have at least certain amount of reputation without revealing the exact amount. Moreover, users cannot refuse to receive reputation from an attester.
@@ -28,7 +30,7 @@
 ## 📘 Documentation
 
 Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
-For more information, refer to the [documentation](https://unirep.gitbook.io/unirep/)
+For more information, refer to the [documentation](https://docs.unirep.io/)
 
 ## 📦 Project Structure
 - 
@@ -61,7 +63,7 @@ Go to [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_OF_CO
 
 ## 🙌🏻 Join our community
 - Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
-- Twitter account: <a href="https://twitter.com/UniRep_Social"><img src="https://img.shields.io/twitter/follow/UniRep_Social?style=flat-square&logo=twitter"></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
 - Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
 
 ## <img height="24" src="https://ethereum.org/static/a183661dd70e0e5c70689a0ec95ef0ba/13c43/eth-diamond-purple.png"> Privacy & Scaling Explorations
