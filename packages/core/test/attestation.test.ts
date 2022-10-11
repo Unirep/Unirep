@@ -89,7 +89,7 @@ describe('Attester signs up and gives attestation', function () {
             // submit it
             await unirepContract
                 .connect(accounts[4])
-                .epochTransition(publicSignals, proof)
+                .userStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
         }
         await userState.waitForSync()

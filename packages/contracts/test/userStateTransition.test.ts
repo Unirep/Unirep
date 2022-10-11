@@ -136,14 +136,14 @@ describe('User State Transition', function () {
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .epochTransition(publicSignals, _proof)
+                .userStateTransition(publicSignals, _proof)
         ).to.be.reverted
         const _publicSignals = [...publicSignals]
         _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .epochTransition(_publicSignals, proof)
+                .userStateTransition(_publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 
@@ -197,7 +197,7 @@ describe('User State Transition', function () {
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .epochTransition(publicSignals, proof)
+                .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -255,7 +255,7 @@ describe('User State Transition', function () {
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .epochTransition(publicSignals, proof)
+                .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochTreeRoot')
         await ethers.provider.send('evm_revert', [snapshot])
     })
@@ -315,7 +315,7 @@ describe('User State Transition', function () {
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .epochTransition(publicSignals, proof)
+                .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidStateTreeRoot')
         await ethers.provider.send('evm_revert', [snapshot])
     })
@@ -371,12 +371,12 @@ describe('User State Transition', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await unirepContract
             .connect(accounts[1])
-            .epochTransition(publicSignals, proof)
+            .userStateTransition(publicSignals, proof)
             .then((t) => t.wait())
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .epochTransition(publicSignals, proof)
+                .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
         await ethers.provider.send('evm_revert', [snapshot])
     })
@@ -432,7 +432,7 @@ describe('User State Transition', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         const tx = await unirepContract
             .connect(accounts[1])
-            .epochTransition(publicSignals, proof)
+            .userStateTransition(publicSignals, proof)
         await tx.wait()
         await expect(tx)
             .to.emit(unirepContract, 'NewGSTLeaf')
@@ -500,7 +500,7 @@ describe('User State Transition', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         const tx = await unirepContract
             .connect(accounts[1])
-            .epochTransition(publicSignals, proof)
+            .userStateTransition(publicSignals, proof)
         await tx.wait()
         await expect(tx)
             .to.emit(unirepContract, 'NewGSTLeaf')
@@ -569,7 +569,7 @@ describe('User State Transition', function () {
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             const tx = await unirepContract
                 .connect(accounts[1])
-                .epochTransition(publicSignals, proof)
+                .userStateTransition(publicSignals, proof)
             await tx.wait()
             await expect(tx)
                 .to.emit(unirepContract, 'NewGSTLeaf')

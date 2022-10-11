@@ -22,7 +22,7 @@ contract Unirep is IUnirep, VerifySignature {
     // All verifier contracts
     IVerifier internal signupVerifier;
     IVerifier internal attestationVerifier;
-    IVerifier internal epochTransitionVerifier;
+    IVerifier internal userStateTransitionVerifier;
     IVerifier internal reputationVerifier;
 
     // Circuits configurations and contracts configurations
@@ -44,7 +44,7 @@ contract Unirep is IUnirep, VerifySignature {
         Config memory _config,
         IVerifier _signupVerifier,
         IVerifier _attestationVerifier,
-        IVerifier _epochTransitionVerifier,
+        IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier
     ) {
         config = _config;
@@ -52,7 +52,7 @@ contract Unirep is IUnirep, VerifySignature {
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
         attestationVerifier = _attestationVerifier;
-        epochTransitionVerifier = _epochTransitionVerifier;
+        userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
@@ -211,12 +211,12 @@ contract Unirep is IUnirep, VerifySignature {
     /**
      * @dev Allow a user to epoch transition for an attester. Accepts a zk proof outputting the new gst leaf
      **/
-    function epochTransition(
+    function userStateTransition(
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
         // Verify the proof
-        if (!epochTransitionVerifier.verifyProof(proof, publicSignals))
+        if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
 
         require(publicSignals[5] < type(uint160).max);
