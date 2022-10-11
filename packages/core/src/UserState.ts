@@ -377,20 +377,16 @@ export default class UserState extends Synchronizer {
     /**
      * Generate the epoch key proof of the current user state.
      * @param epochKeyNonce The nonce that is used in the epoch key proof.
+     * @param _epoch The epoch of the proof that the user wants to specify to prove.
      * @returns The epoch key proof of type `EpochKeyProof`.
      */
     public genVerifyEpochKeyProof = async (
-        epochKeyNonce: number
+        epochKeyNonce: number,
+        _epoch?: number
     ): Promise<EpochKeyProof> => {
         this._checkEpkNonce(epochKeyNonce)
-        const epoch = await this.latestTransitionedEpoch()
+        const epoch = _epoch ?? (await this.latestTransitionedEpoch())
         const leafIndex = await this.latestGSTLeafIndex()
-        const epochKey = genEpochKey(
-            this.id.identityNullifier,
-            epoch,
-            epochKeyNonce,
-            this.settings.epochTreeDepth
-        )
         const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(leafIndex)
