@@ -3,24 +3,19 @@ import { SnarkProof } from '@unirep/crypto'
 import { BigNumberish } from 'ethers'
 import { BaseProof } from './BaseProof'
 
-/**
- * The epoch key proof structure that helps to query the public signals
- */
-export class UpdateSparseTreeProof extends BaseProof {
+export class AggregateEpochKeysProof extends BaseProof {
     readonly idx = {
         toRoot: 0,
-        newLeaf: 1,
+        hashchain: 1,
         fromRoot: 2,
-        leafIndex: 3,
-        posRep: 4,
-        negRep: 5,
+        epoch: 3,
+        attesterId: 4,
     }
     public toRoot: BigNumberish
-    public newLeaf: BigNumberish
+    public hashchain: BigNumberish
     public fromRoot: BigNumberish
-    public leafIndex: BigNumberish
-    public posRep: BigNumberish
-    public negRep: BigNumberish
+    public epoch: BigNumberish
+    public attesterId: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -34,11 +29,10 @@ export class UpdateSparseTreeProof extends BaseProof {
     ) {
         super(_publicSignals, _proof, prover)
         this.toRoot = _publicSignals[this.idx.toRoot].toString()
-        this.newLeaf = _publicSignals[this.idx.newLeaf].toString()
+        this.hashchain = _publicSignals[this.idx.hashchain].toString()
         this.fromRoot = _publicSignals[this.idx.fromRoot].toString()
-        this.leafIndex = _publicSignals[this.idx.leafIndex].toString()
-        this.posRep = _publicSignals[this.idx.posRep].toString()
-        this.negRep = _publicSignals[this.idx.negRep].toString()
-        this.circuit = Circuit.verifyEpochKey
+        this.epoch = _publicSignals[this.idx.epoch].toString()
+        this.attesterId = _publicSignals[this.idx.attesterId].toString()
+        this.circuit = Circuit.aggregateEpochKeys
     }
 }

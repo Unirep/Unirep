@@ -10,6 +10,7 @@ import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
+import {Poseidon4, Poseidon2} from './Hash.sol';
 
 /**
  * @title Unirep
@@ -21,7 +22,7 @@ contract Unirep is IUnirep, VerifySignature {
 
     // All verifier contracts
     IVerifier internal signupVerifier;
-    IVerifier internal attestationVerifier;
+    IVerifier internal aggregateEpochKeysVerifier;
     IVerifier internal userStateTransitionVerifier;
     IVerifier internal reputationVerifier;
 
@@ -43,7 +44,7 @@ contract Unirep is IUnirep, VerifySignature {
     constructor(
         Config memory _config,
         IVerifier _signupVerifier,
-        IVerifier _attestationVerifier,
+        IVerifier _aggregateEpochKeysVerifier,
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier
     ) {
@@ -51,7 +52,7 @@ contract Unirep is IUnirep, VerifySignature {
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
-        attestationVerifier = _attestationVerifier;
+        aggregateEpochKeysVerifier = _aggregateEpochKeysVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
 
@@ -173,28 +174,16 @@ contract Unirep is IUnirep, VerifySignature {
      */
     function submitAttestation(
         uint256 targetEpoch,
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256 epochKey,
+        uint256 posRep,
+        uint256 negRep
     ) public {
-        // Verify the proof
-        if (!attestationVerifier.verifyProof(proof, publicSignals))
-            revert InvalidProof();
-
-        uint256 toRoot = publicSignals[0];
-        uint256 newLeaf = publicSignals[1];
-        uint256 fromRoot = publicSignals[2];
-        uint256 epochKey = publicSignals[3];
-        uint256 posRep = publicSignals[4];
-        uint256 negRep = publicSignals[5];
+        require(posRep > 0 || negRep > 0);
 
         updateEpochIfNeeded(uint160(msg.sender));
 
         AttesterData storage attester = attesters[uint160(msg.sender)];
         if (attester.currentEpoch != targetEpoch) revert EpochNotMatch();
-
-        if (attester.epochTreeRoots[targetEpoch] != fromRoot)
-            revert InvalidEpochTreeRoot(fromRoot);
-        attester.epochTreeRoots[targetEpoch] = toRoot;
 
         if (epochKey >= maxEpochKey) revert InvalidEpochKey();
 
@@ -205,7 +194,76 @@ contract Unirep is IUnirep, VerifySignature {
             posRep,
             negRep
         );
-        emit EpochTreeLeaf(targetEpoch, uint160(msg.sender), epochKey, newLeaf);
+        // emit EpochTreeLeaf(targetEpoch, uint160(msg.sender), epochKey, newLeaf);
+        uint256[2] storage balance = attester
+            .epochKeyState[targetEpoch]
+            .balances[epochKey];
+        if (!attester.epochKeyState[targetEpoch].isKeyOwed[epochKey]) {
+            attester.epochKeyState[targetEpoch].owedKeys.push(epochKey);
+        }
+        balance[0] += posRep;
+        balance[1] += negRep;
+    }
+
+    function buildHashchain(uint160 attesterId, uint256 epoch) public {
+        AttesterData storage attester = attesters[attesterId];
+        require(attester.epochKeyState[epoch].owedKeys.length > 0);
+        // target some specific length
+        uint256 index = attester.epochKeyState[epoch].totalHashchains;
+        EpochKeyHashchain storage hashchain = attester
+            .epochKeyState[epoch]
+            .hashchain[index];
+        hashchain.index = index;
+        attester.epochKeyState[epoch].totalHashchains++;
+        for (uint8 x = 0; x < config.aggregateKeyCount; x++) {
+            uint256 epochKey;
+            uint256[2] memory balance;
+            uint256[] storage owedKeys = attester.epochKeyState[epoch].owedKeys;
+            if (owedKeys.length > 0) {
+                epochKey = owedKeys[owedKeys.length - 1];
+                owedKeys.pop();
+                attester.epochKeyState[epoch].isKeyOwed[epochKey] = false;
+                balance = attester.epochKeyState[epoch].balances[epochKey];
+            }
+            hashchain.head = Poseidon4.poseidon(
+                [hashchain.head, epochKey, balance[0], balance[1]]
+            );
+            hashchain.epochKeys.push(epochKey);
+            hashchain.epochKeyBalances.push(balance);
+        }
+    }
+
+    function processHashchain(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public {
+        if (!aggregateEpochKeysVerifier.verifyProof(proof, publicSignals))
+            revert InvalidProof();
+        uint256 epoch = publicSignals[3];
+        uint256 attesterId = publicSignals[4];
+        AttesterData storage attester = attesters[uint160(attesterId)];
+        uint256 hashchainHead = publicSignals[1];
+        EpochKeyHashchain storage hashchain = attester
+            .epochKeyState[epoch]
+            .hashchain[publicSignals[5]];
+        require(hashchain.head != 0 && !hashchain.processed);
+        // require(hashchainHead == hashchain.head);
+        // Verify the zk proof
+        for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
+            // emit the new leaves from the hashchain
+            uint256[2] memory balance = hashchain.epochKeyBalances[x];
+            if (balance[0] == 0 && balance[1] == 0) break;
+            uint256 epochKey = hashchain.epochKeys[x];
+            emit EpochTreeLeaf(
+                epoch,
+                uint160(attesterId),
+                epochKey,
+                Poseidon2.poseidon(hashchain.epochKeyBalances[x])
+            );
+        }
+        hashchain.processed = true;
+        attester.epochKeyState[epoch].processedHashchains++;
+        attester.epochTreeRoots[epoch] = publicSignals[0];
     }
 
     /**
@@ -232,6 +290,11 @@ contract Unirep is IUnirep, VerifySignature {
         if (attester.currentEpoch != publicSignals[4]) revert EpochNotMatch();
 
         uint256 fromEpoch = publicSignals[3];
+        require(
+            attester.epochKeyState[fromEpoch].owedKeys.length == 0 &&
+                attester.epochKeyState[fromEpoch].totalHashchains ==
+                attester.epochKeyState[fromEpoch].processedHashchains
+        );
         // make sure from epoch tree root is valid
         if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
             revert InvalidEpochTreeRoot(publicSignals[6]);
@@ -314,6 +377,30 @@ contract Unirep is IUnirep, VerifySignature {
             (attester.startTimestamp +
                 (_currentEpoch + 1) *
                 attester.epochLength) - block.timestamp;
+    }
+
+    function attesterHashchainTotalCount(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (uint256)
+    {
+        return attesters[attesterId].epochKeyState[epoch].totalHashchains;
+    }
+
+    function attesterHashchainProcessedCount(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (uint256)
+    {
+        return attesters[attesterId].epochKeyState[epoch].processedHashchains;
+    }
+
+    function attesterHashchain(
+        uint160 attesterId,
+        uint256 epoch,
+        uint256 index
+    ) public view returns (EpochKeyHashchain memory) {
+        return attesters[attesterId].epochKeyState[epoch].hashchain[index];
     }
 
     function attesterEpochLength(uint160 attesterId)

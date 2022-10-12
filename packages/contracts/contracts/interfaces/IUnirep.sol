@@ -67,6 +67,24 @@ interface IUnirep {
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
+    struct EpochKeyHashchain {
+        uint256 index;
+        uint256 head;
+        uint256[] epochKeys;
+        uint256[2][] epochKeyBalances;
+        bool processed;
+    }
+
+    struct EpochKeyState {
+        // key the head to the struct?
+        mapping(uint256 => EpochKeyHashchain) hashchain;
+        uint256 totalHashchains;
+        uint256 processedHashchains;
+        mapping(uint256 => uint256[2]) balances;
+        mapping(uint256 => bool) isKeyOwed;
+        uint256[] owedKeys;
+    }
+
     struct AttesterData {
         // epoch keyed to tree data
         mapping(uint256 => IncrementalTreeData) stateTrees;
@@ -79,6 +97,8 @@ interface IUnirep {
         uint256 epochLength;
         mapping(uint256 => bool) identityCommitments;
         IncrementalTreeData semaphoreGroup;
+        // attestation management
+        mapping(uint256 => EpochKeyState) epochKeyState;
     }
 
     struct Attestation {
@@ -101,5 +121,6 @@ interface IUnirep {
         uint256 numEpochKeyNoncePerEpoch;
         // contract config
         uint256 emptyEpochTreeRoot;
+        uint256 aggregateKeyCount;
     }
 }

@@ -9,12 +9,15 @@ include "./updateSparseTree.circom";
 
 template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
 
+    signal input start_root;
+    signal input epoch;
+    signal input attester_id;
+    signal input hashchain_index;
+
     signal input path_elements[KEY_COUNT][EPOCH_TREE_DEPTH];
     signal input epoch_keys[KEY_COUNT];
     signal input epoch_key_balances[KEY_COUNT][2];
-    signal input old_epoch_key_balances[KEY_COUNT][2];
-
-    signal input start_root;
+    signal input old_epoch_key_hashes[KEY_COUNT];
 
     signal output to_root;
     signal output hashchain;
@@ -35,8 +38,7 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
         sparse_tree_updaters[i].leaf_index <== epoch_keys[i];
         sparse_tree_updaters[i].pos_rep <== epoch_key_balances[i][0];
         sparse_tree_updaters[i].neg_rep <== epoch_key_balances[i][1];
-        sparse_tree_updaters[i].old_pos_rep <== old_epoch_key_balances[i][0];
-        sparse_tree_updaters[i].old_neg_rep <== old_epoch_key_balances[i][1];
+        sparse_tree_updaters[i].old_leaf <== old_epoch_key_hashes[i];
         for (var x = 0; x < EPOCH_TREE_DEPTH; x++) {
             sparse_tree_updaters[i].leaf_elements[x] <== path_elements[i][x];
         }

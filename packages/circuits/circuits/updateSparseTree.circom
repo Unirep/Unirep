@@ -10,8 +10,7 @@ template UpdateSparseTree(TREE_DEPTH) {
     signal input pos_rep;
     signal input neg_rep;
 
-    signal input old_pos_rep;
-    signal input old_neg_rep;
+    signal input old_leaf;
 
     signal input leaf_elements[TREE_DEPTH];
 
@@ -20,13 +19,10 @@ template UpdateSparseTree(TREE_DEPTH) {
 
     /** 1. Verify old_leaf membership in from_root **/
 
-    component old_leaf_hasher = Poseidon(2);
-    old_leaf_hasher.inputs[0] <== old_pos_rep;
-    old_leaf_hasher.inputs[1] <== old_neg_rep;
 
     component tree_membership = SMTInclusionProof(TREE_DEPTH);
     tree_membership.leaf_index <== leaf_index;
-    tree_membership.leaf <== old_leaf_hasher.out;
+    tree_membership.leaf <== old_leaf;
     for (var i = 0; i < TREE_DEPTH; i++) {
         tree_membership.path_elements[i][0] <== leaf_elements[i];
     }
@@ -37,8 +33,8 @@ template UpdateSparseTree(TREE_DEPTH) {
     /** 2. Calculate the to_root by inserting the new_leaf **/
 
     component leaf_hasher = Poseidon(2);
-    leaf_hasher.inputs[0] <== pos_rep + old_pos_rep;
-    leaf_hasher.inputs[1] <== neg_rep + old_neg_rep;
+    leaf_hasher.inputs[0] <== pos_rep;
+    leaf_hasher.inputs[1] <== neg_rep;
     new_leaf <== leaf_hasher.out;
 
     component new_tree = SMTInclusionProof(TREE_DEPTH);

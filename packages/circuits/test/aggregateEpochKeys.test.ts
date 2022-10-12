@@ -23,12 +23,15 @@ describe('Multiple SMT updates', function () {
                 posRep,
                 negRep,
             ]),
-            old_epoch_key_balances: newLeaves.map(() => [0, 0]),
+            old_epoch_key_hashes: newLeaves.map(() => hash2([0, 0])),
             path_elements: newLeaves.map((d) => {
                 const p = tree.createProof(d.leafIndex)
                 tree.update(d.leafIndex, hash2([d.posRep, d.negRep]))
                 return p
             }),
+            epoch: 1,
+            attester_id: 0x01993109,
+            hashchain_index: 1,
         }
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.aggregateEpochKeys,
