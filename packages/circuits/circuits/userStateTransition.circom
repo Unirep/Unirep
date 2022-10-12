@@ -1,3 +1,5 @@
+pragma circom 2.0.0;
+
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "./sparseMerkleTree.circom";
@@ -9,27 +11,27 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     signal input to_epoch;
 
     // Global state tree leaf: Identity & user state root
-    signal private input identity_nullifier;
+    signal input identity_nullifier;
     // Global state tree
-    signal private input GST_path_index[GST_TREE_DEPTH];
-    signal private input GST_path_elements[GST_TREE_DEPTH][1];
+    signal input GST_path_index[GST_TREE_DEPTH];
+    signal input GST_path_elements[GST_TREE_DEPTH][1];
     signal output gst_root;
     signal output gst_leaf;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
-    signal private input pos_rep;
-    signal private input neg_rep;
-    // signal private input graffiti;
+    signal input pos_rep;
+    signal input neg_rep;
+    // signal input graffiti;
     // Graffiti - todo?
     // signal input prove_graffiti;
     // signal input graffiti_pre_image;
 
     // prove what we've received in from epoch
     signal input epoch_tree_root;
-    signal private input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal private input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal private input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
     signal output epoch_transition_nullifier;
 
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);

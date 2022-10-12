@@ -1,3 +1,5 @@
+pragma circom 2.0.0;
+
 // Output identity commitment and starting state tree leaf
 
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
@@ -11,8 +13,8 @@ template Signup() {
     signal input attester_id;
     signal input epoch;
 
-    signal private input identity_nullifier;
-    signal private input identity_trapdoor;
+    signal input identity_nullifier;
+    signal input identity_trapdoor;
 
     component commitment_calc = IdentityCommitment();
     commitment_calc.identity_nullifier <== identity_nullifier;

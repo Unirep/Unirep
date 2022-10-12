@@ -10,10 +10,10 @@ template UpdateSparseTree(TREE_DEPTH) {
     signal input pos_rep;
     signal input neg_rep;
 
-    signal private input old_pos_rep;
-    signal private input old_neg_rep;
+    signal input old_pos_rep;
+    signal input old_neg_rep;
 
-    signal private input leaf_elements[TREE_DEPTH];
+    signal input leaf_elements[TREE_DEPTH];
 
     // verify membership of old rep
     // calculate new root

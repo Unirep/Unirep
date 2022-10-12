@@ -143,11 +143,10 @@ describe('Prove reputation from attester circuit', function () {
                 [epk.toString()]: { posRep: 10, negRep: 20 },
             },
         })
-        const { isValid } = await genProofAndVerify(
-            Circuit.proveReputation,
-            circuitInputs
-        )
-        expect(isValid).to.be.false
+        try {
+            await genProofAndVerify(Circuit.proveReputation, circuitInputs)
+            expect(false).to.be.true
+        } catch (err) {}
     })
 
     it('should choose not to prove minRep', async () => {
@@ -192,11 +191,10 @@ describe('Prove reputation from attester circuit', function () {
             },
         })
         circuitInputs.new_pos_rep[0] = 200
-        const { isValid } = await genProofAndVerify(
-            Circuit.proveReputation,
-            circuitInputs
-        )
-        expect(isValid).to.be.false
+        try {
+            await genProofAndVerify(Circuit.proveReputation, circuitInputs)
+            expect(false).to.be.true
+        } catch (err) {}
     })
 
     // it('successfully choose not to prove graffiti with wrong value', async () => {

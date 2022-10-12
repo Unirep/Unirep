@@ -3,7 +3,6 @@
 // @ts-ignore
 import assert from 'assert'
 import { ethers } from 'ethers'
-import * as circom from 'circom'
 import * as crypto from '@unirep/crypto'
 
 import {
@@ -387,18 +386,6 @@ const genUserStateTransitionNullifier = (
     ])
 }
 
-/*
- * @param circuitPath The subpath to the circuit file (e.g.
- *     test/userStateTransition_test.circom)
- */
-const compileAndLoadCircuit = async (circuitPath: string) => {
-    const circuit = await circom.tester(circuitPath)
-
-    await circuit.loadSymbols()
-
-    return circuit
-}
-
 const throwError = async (
     circuit: any,
     circuitInputs: any,
@@ -429,6 +416,5 @@ export {
     genUserStateTransitionCircuitInput,
     genUserStateTransitionNullifier,
     genProofAndVerify,
-    compileAndLoadCircuit,
     throwError,
 }
