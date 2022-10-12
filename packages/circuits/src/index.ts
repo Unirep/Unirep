@@ -8,6 +8,7 @@ export enum Circuit {
     proveReputation = 'proveReputation',
     userStateTransition = 'userStateTransition',
     signup = 'signup',
+    aggregateEpochKeys = 'aggregateEpochKeys',
 }
 
 /**
