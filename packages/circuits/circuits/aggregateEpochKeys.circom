@@ -34,6 +34,11 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
     epoch_key_count_check.in <== epoch_key_count;
     epoch_key_count_check.out === 0;
 
+    component start_hasher = Poseidon(3);
+    start_hasher.inputs[0] <== attester_id;
+    start_hasher.inputs[1] <== epoch;
+    start_hasher.inputs[2] <== hashchain_index;
+
     component sparse_tree_updaters[KEY_COUNT];
     component hashers[KEY_COUNT];
     component should_not_process[KEY_COUNT];
@@ -70,7 +75,7 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
 
         if (i == 0) {
             // epoch_key_count will never be 0, so we always evaluate the first epoch key
-            hashers[i].inputs[0] <== 0;
+            hashers[i].inputs[0] <== start_hasher.out;
             hashers[i].inputs[1] <== epoch_keys[i];
             hashers[i].inputs[2] <== epoch_key_balances[i][0];
             hashers[i].inputs[3] <== epoch_key_balances[i][1];

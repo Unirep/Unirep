@@ -8,14 +8,10 @@ export class AggregateEpochKeysProof extends BaseProof {
         toRoot: 0,
         hashchain: 1,
         fromRoot: 2,
-        epoch: 3,
-        attesterId: 4,
     }
     public toRoot: BigNumberish
     public hashchain: BigNumberish
     public fromRoot: BigNumberish
-    public epoch: BigNumberish
-    public attesterId: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -31,8 +27,6 @@ export class AggregateEpochKeysProof extends BaseProof {
         this.toRoot = _publicSignals[this.idx.toRoot].toString()
         this.hashchain = _publicSignals[this.idx.hashchain].toString()
         this.fromRoot = _publicSignals[this.idx.fromRoot].toString()
-        this.epoch = _publicSignals[this.idx.epoch].toString()
-        this.attesterId = _publicSignals[this.idx.attesterId].toString()
         this.circuit = Circuit.aggregateEpochKeys
     }
 }
