@@ -24,7 +24,9 @@ interface IUnirep {
         uint256 indexed epochKey,
         uint160 indexed attesterId,
         uint256 posRep,
-        uint256 negRep
+        uint256 negRep,
+        uint256 graffiti,
+        uint256 timestamp
     );
 
     event NewGSTLeaf(
@@ -67,11 +69,18 @@ interface IUnirep {
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
+    struct Reputation {
+        uint256 posRep;
+        uint256 negRep;
+        uint256 graffiti;
+        uint256 timestamp;
+    }
+
     struct EpochKeyHashchain {
         uint256 index;
         uint256 head;
         uint256[] epochKeys;
-        uint256[2][] epochKeyBalances;
+        Reputation[] epochKeyBalances;
         bool processed;
     }
 
@@ -80,7 +89,7 @@ interface IUnirep {
         mapping(uint256 => EpochKeyHashchain) hashchain;
         uint256 totalHashchains;
         uint256 processedHashchains;
-        mapping(uint256 => uint256[2]) balances;
+        mapping(uint256 => Reputation) balances;
         mapping(uint256 => bool) isKeyOwed;
         uint256[] owedKeys;
     }
@@ -99,19 +108,6 @@ interface IUnirep {
         IncrementalTreeData semaphoreGroup;
         // attestation management
         mapping(uint256 => EpochKeyState) epochKeyState;
-    }
-
-    struct Attestation {
-        // The attester’s ID
-        uint160 attesterId;
-        // Positive reputation
-        uint256 posRep;
-        // Negative reputation
-        uint256 negRep;
-        // A hash of an arbitary string
-        uint256 graffiti;
-        // A flag to indicate if user has signed up in the attester's app
-        uint256 signUp;
     }
 
     struct Config {

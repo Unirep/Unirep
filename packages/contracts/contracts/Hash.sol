@@ -16,3 +16,7 @@ library Poseidon4 {
 library Poseidon5 {
     function poseidon(uint256[5] memory) public pure returns (uint256) {}
 }
+
+library Poseidon6 {
+    function poseidon(uint256[6] memory) public pure returns (uint256) {}
+}

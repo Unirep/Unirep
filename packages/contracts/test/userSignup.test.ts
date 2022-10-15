@@ -2,7 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    hash5,
+    hash7,
     hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
@@ -105,9 +105,11 @@ describe('User Signup', function () {
         // check semaphoreGroup root
         // check stateTreeRoots
         // check event emission
-        const gstLeaf = hash5([
+        const gstLeaf = hash7([
             id.identityNullifier,
             BigInt(accounts[1].address),
+            0,
+            0,
             0,
             0,
             0,

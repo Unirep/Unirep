@@ -62,6 +62,8 @@ describe('User Signup', function () {
                 accounts[1].address,
                 contractEpoch.toNumber(),
                 0,
+                0,
+                0,
                 0
             )
             GSTree.insert(leaf)

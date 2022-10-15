@@ -2,8 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    hash2,
-    hash5,
+    hash4,
     hashLeftRight,
     IncrementalMerkleTree,
     SparseMerkleTree,
@@ -105,7 +104,10 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -118,8 +120,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -168,7 +174,10 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -181,8 +190,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -223,8 +236,11 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
-        epochTree.update(BigInt(1), hash2([2, 2]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
+        epochTree.update(BigInt(1), hash4([2, 2, 0, 0]))
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -237,8 +253,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -284,7 +304,10 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         const stateTreeProof = _stateTree.createProof(1)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -297,8 +320,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -341,7 +368,10 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -354,8 +384,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -402,7 +436,10 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -415,8 +452,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -471,7 +512,10 @@ describe('User State Transition', function () {
                     2 ** EPOCH_TREE_DEPTH
                 )
             )
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -484,8 +528,12 @@ describe('User State Transition', function () {
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
+                graffiti: 0,
+                timestamp: 0,
                 new_pos_rep: epochKeys.map(() => 0),
                 new_neg_rep: epochKeys.map(() => 0),
+                new_graffiti: epochKeys.map(() => 0),
+                new_timestamp: epochKeys.map(() => 0),
                 epoch_tree_elements: epochKeys.map((key) =>
                     epochTree.createProof(key)
                 ),
@@ -531,12 +579,14 @@ describe('User State Transition', function () {
                 )
             const epochTree = new SparseMerkleTree(
                 EPOCH_TREE_DEPTH,
-                hash2([0, 0])
+                hash4([0, 0, 0, 0])
             )
             const leaf = genStateTreeLeaf(
                 id.identityNullifier,
                 accounts[1].address,
                 x,
+                0,
+                0,
                 0,
                 0
             )
@@ -553,8 +603,12 @@ describe('User State Transition', function () {
                     attester_id: BigInt(accounts[1].address),
                     pos_rep: 0,
                     neg_rep: 0,
+                    graffiti: 0,
+                    timestamp: 0,
                     new_pos_rep: epochKeys.map(() => 0),
                     new_neg_rep: epochKeys.map(() => 0),
+                    new_graffiti: epochKeys.map(() => 0),
+                    new_timestamp: epochKeys.map(() => 0),
                     epoch_tree_elements: epochKeys.map((key) =>
                         epochTree.createProof(key)
                     ),

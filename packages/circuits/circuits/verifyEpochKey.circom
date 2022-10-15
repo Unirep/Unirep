@@ -24,16 +24,20 @@ template VerifyEpochKey(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EP
 
     signal input pos_rep;
     signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
 
     /* 1. Check if user exists in the Global State Tree */
 
     // Compute user state tree root
-    component leaf_hasher = Poseidon(5);
+    component leaf_hasher = Poseidon(7);
     leaf_hasher.inputs[0] <== identity_nullifier;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== epoch;
     leaf_hasher.inputs[3] <== pos_rep;
     leaf_hasher.inputs[4] <== neg_rep;
+    leaf_hasher.inputs[5] <== graffiti;
+    leaf_hasher.inputs[6] <== timestamp;
 
     component merkletree = MerkleTreeInclusionProof(GST_TREE_DEPTH);
     merkletree.leaf <== leaf_hasher.out;

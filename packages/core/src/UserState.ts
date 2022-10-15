@@ -4,6 +4,7 @@ import { DB } from 'anondb'
 import {
     IncrementalMerkleTree,
     hash2,
+    hash4,
     hash5,
     stringifyBigInts,
     hashLeftRight,
@@ -125,6 +126,8 @@ export default class UserState extends Synchronizer {
                 this.attesterId.toString(),
                 signup.epoch,
                 0,
+                0,
+                0,
                 0
             )
             const foundLeaf = await this._db.findOne('GSTLeaf', {
@@ -135,16 +138,19 @@ export default class UserState extends Synchronizer {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const { posRep, negRep } = await this.getRepByAttester(
-            this.attesterId.toString(),
-            latestTransitionedEpoch
-        )
+        const { posRep, negRep, graffiti, timestamp } =
+            await this.getRepByAttester(
+                this.attesterId.toString(),
+                latestTransitionedEpoch
+            )
         const leaf = genStateTreeLeaf(
             this.id.identityNullifier,
             this.attesterId.toString(),
             latestTransitionedEpoch,
             posRep,
-            negRep
+            negRep,
+            graffiti,
+            timestamp
         )
         const foundLeaf = await this._db.findOne('GSTLeaf', {
             where: {
@@ -195,9 +201,11 @@ export default class UserState extends Synchronizer {
     public getRepByAttester = async (
         _attesterId?: BigInt | string,
         toEpoch?: number
-    ): Promise<{ posRep; negRep }> => {
+    ): Promise<{ posRep; negRep; graffiti; timestamp }> => {
         let posRep = BigInt(0)
         let negRep = BigInt(0)
+        let graffiti = BigInt(0)
+        let timestamp = BigInt(0)
         const attesterId = _attesterId ?? this.attesterId
         const signup = await this._db.findOne('UserSignUp', {
             where: {
@@ -221,7 +229,7 @@ export default class UserState extends Synchronizer {
                 )
             allEpks.push(...epks)
         }
-        if (allEpks.length === 0) return { posRep, negRep }
+        if (allEpks.length === 0) return { posRep, negRep, graffiti, timestamp }
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 epochKey: allEpks,
@@ -234,8 +242,12 @@ export default class UserState extends Synchronizer {
         for (const a of attestations) {
             posRep += BigInt(a.posRep)
             negRep += BigInt(a.negRep)
+            if (a.timestamp && BigInt(a.timestamp) > timestamp) {
+                graffiti = BigInt(a.graffiti)
+                timestamp = BigInt(a.timestamp)
+            }
         }
-        return { posRep, negRep }
+        return { posRep, negRep, graffiti, timestamp }
     }
 
     public getRepByEpochKey = async (
@@ -244,6 +256,8 @@ export default class UserState extends Synchronizer {
     ) => {
         let posRep = BigInt(0)
         let negRep = BigInt(0)
+        let graffiti = BigInt(0)
+        let timestamp = BigInt(0)
         const attestations = await this._db.findMany('Attestation', {
             where: {
                 epoch: Number(epoch),
@@ -254,8 +268,12 @@ export default class UserState extends Synchronizer {
         for (const a of attestations) {
             posRep += BigInt(a.posRep)
             negRep += BigInt(a.negRep)
+            if (a.timestamp && BigInt(a.timestamp) > timestamp) {
+                graffiti = BigInt(a.graffiti)
+                timestamp = BigInt(a.timestamp)
+            }
         }
-        return { posRep, negRep }
+        return { posRep, negRep, graffiti, timestamp }
     }
 
     /**
@@ -280,7 +298,12 @@ export default class UserState extends Synchronizer {
 
     public genAggregateEpochKeysProof = async (
         epochKeys: bigint[],
-        newBalances: bigint[][],
+        newBalances: {
+            posRep: bigint
+            negRep: bigint
+            graffiti: bigint
+            timestamp: bigint
+        }[],
         hashchainIndex: number | bigint,
         epoch?: bigint | number
     ) => {
@@ -315,7 +338,7 @@ export default class UserState extends Synchronizer {
             this.settings.aggregateKeyCount - newBalances.length
         )
             .fill(null)
-            .map(() => [0, 0])
+            .map(() => [0, 0, 0, 0])
         const allEpochKeys = [epochKeys, dummyEpochKeys].flat()
         const allBalances = [newBalances, dummyBalances].flat()
         const epochTree = await this.genEpochTree(targetEpoch)
@@ -327,12 +350,17 @@ export default class UserState extends Synchronizer {
             epoch_key_balances: allBalances,
             old_epoch_key_hashes: allEpochKeys.map((key) => {
                 const leaf = leavesByEpochKey[key.toString()]
-                return leaf?.hash ?? hash2([0, 0])
+                return leaf?.hash ?? hash4([0, 0, 0, 0])
             }),
             path_elements: allEpochKeys.map((key, i) => {
                 const p = epochTree.createProof(BigInt(key))
                 if (i < epochKeys.length) {
-                    epochTree.update(BigInt(key), hash2(newBalances[i]))
+                    const { posRep, negRep, graffiti, timestamp } =
+                        newBalances[i]
+                    epochTree.update(
+                        BigInt(key),
+                        hash4([posRep, negRep, graffiti, timestamp])
+                    )
                 }
                 return p
             }),
@@ -352,7 +380,8 @@ export default class UserState extends Synchronizer {
 
     public genUserStateTransitionProof =
         async (): Promise<UserStateTransitionProof> => {
-            const { posRep, negRep } = await this.getRepByAttester()
+            const { posRep, negRep, graffiti, timestamp } =
+                await this.getRepByAttester()
             const fromEpoch = await this.latestTransitionedEpoch()
             const toEpoch = await this.loadCurrentEpoch()
             if (fromEpoch.toString() === toEpoch.toString()) {
@@ -373,12 +402,10 @@ export default class UserState extends Synchronizer {
                     ).toString()
                 )
                 .map(async (epochKey) => {
-                    const { posRep, negRep } = await this.getRepByEpochKey(
-                        epochKey,
-                        fromEpoch
-                    )
+                    const { posRep, negRep, graffiti, timestamp } =
+                        await this.getRepByEpochKey(epochKey, fromEpoch)
                     const proof = epochTree.createProof(BigInt(epochKey))
-                    return { posRep, negRep, proof }
+                    return { posRep, negRep, graffiti, timestamp, proof }
                 })
             const epochKeyData = await Promise.all(epochKeyPromises)
             const latestLeafIndex = await this.latestGSTLeafIndex()
@@ -393,8 +420,12 @@ export default class UserState extends Synchronizer {
                 attester_id: this.attesterId.toString(),
                 pos_rep: posRep,
                 neg_rep: negRep,
+                graffiti,
+                timestamp,
                 new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
                 new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
+                new_graffiti: epochKeyData.map(({ graffiti }) => graffiti),
+                new_timestamp: epochKeyData.map(({ timestamp }) => timestamp),
                 epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
                 epoch_tree_root: epochTree.root,
             }
@@ -423,45 +454,23 @@ export default class UserState extends Synchronizer {
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
-        const { posRep, negRep } = await this.getRepByAttester()
+        const { posRep, negRep, graffiti, timestamp } =
+            await this.getRepByAttester()
         const GSTree = await this.genGSTree(epoch)
         const GSTreeProof = GSTree.createProof(leafIndex)
-        const epochTree = await this.genEpochTree(epoch)
-        const epochKeyPromises = Array(this.settings.numEpochKeyNoncePerEpoch)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(
-                    this.id.identityNullifier,
-                    this.attesterId.toString(),
-                    epoch,
-                    i,
-                    2 ** this.settings.epochTreeDepth
-                ).toString()
-            )
-            .map(async (epochKey) => {
-                const { posRep, negRep } = await this.getRepByEpochKey(
-                    epochKey,
-                    epoch
-                )
-                const proof = epochTree.createProof(BigInt(epochKey))
-                return { posRep, negRep, proof }
-            })
-        const epochKeyData = await Promise.all(epochKeyPromises)
 
         const circuitInputs = {
             epoch,
-            epoch_key_nonce: epkNonce,
+            nonce: epkNonce,
             identity_nullifier: this.id.identityNullifier,
             GST_path_index: GSTreeProof.pathIndices,
             GST_path_elements: GSTreeProof.siblings,
             attester_id: this.attesterId,
             pos_rep: posRep,
             neg_rep: negRep,
+            graffiti,
+            timestamp,
             min_rep: minRep === undefined ? 0 : minRep,
-            new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
-            new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
-            epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
-            epoch_tree_root: epochTree.root,
         }
 
         const results = await this.prover.genProofAndPublicSignals(
