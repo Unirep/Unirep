@@ -267,8 +267,8 @@ export default class UserState extends Synchronizer {
     /**
      * Get the epoch key nullifier of given epoch
      */
-    public getEpochKeyNullifiers = (epoch: number): BigInt[] => {
-        const nullifiers: BigInt[] = []
+    public getEpochKeyNullifiers = (epoch: number): bigint[] => {
+        const nullifiers: bigint[] = []
         for (
             let nonce = 0;
             nonce < this.settings.numEpochKeyNoncePerEpoch;
@@ -291,7 +291,7 @@ export default class UserState extends Synchronizer {
      * @returns The reputation object
      */
     public getRepByAttester = async (
-        attesterId: BigInt,
+        attesterId: bigint,
         toEpoch?: number
     ): Promise<IReputation> => {
         const r = Reputation.default()
@@ -363,7 +363,7 @@ export default class UserState extends Synchronizer {
     /**
      * Check if attester ID is valid
      */
-    private _checkAttesterId = (attesterId: BigInt) => {
+    private _checkAttesterId = (attesterId: bigint) => {
         assert(
             attesterId > BigInt(0),
             `UserState: attesterId must be greater than zero`
@@ -385,12 +385,6 @@ export default class UserState extends Synchronizer {
         this._checkEpkNonce(epochKeyNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestGSTLeafIndex()
-        const epochKey = genEpochKey(
-            this.id.identityNullifier,
-            epoch,
-            epochKeyNonce,
-            this.settings.epochTreeDepth
-        )
         const userStateTree = await this.genUserStateTree(epoch)
         const GSTree = await this.genGSTree(epoch)
         const GSTProof = GSTree.createProof(leafIndex)
@@ -419,9 +413,8 @@ export default class UserState extends Synchronizer {
 
     private _genStartTransitionCircuitInputs = async (
         fromNonce: number,
-        userStateTreeRoot: BigInt,
-        GSTreeProof: any,
-        GSTreeRoot: BigInt
+        userStateTreeRoot: bigint,
+        GSTreeProof: any
     ) => {
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         // Circuit inputs
@@ -479,7 +472,7 @@ export default class UserState extends Synchronizer {
         // User state tree
         const fromEpochUserStateTree: SparseMerkleTree =
             await this.genUserStateTree(fromEpoch)
-        const intermediateUserStateTreeRoots: BigInt[] = [
+        const intermediateUserStateTreeRoots: bigint[] = [
             fromEpochUserStateTree.root,
         ]
         const userStateLeafPathElements: any[] = []
@@ -488,7 +481,6 @@ export default class UserState extends Synchronizer {
             fromEpoch
         )
         const GSTreeProof = fromEpochGSTree.createProof(leafIndex)
-        const GSTreeRoot = fromEpochGSTree.root
         // Epoch tree
         const epochTreeRoot = await this.epochTreeRoot(fromEpoch)
         const epochKeyPathElements: any[] = []
@@ -498,19 +490,18 @@ export default class UserState extends Synchronizer {
             await this._genStartTransitionCircuitInputs(
                 fromNonce,
                 intermediateUserStateTreeRoots[0],
-                GSTreeProof,
-                GSTreeRoot
+                GSTreeProof
             )
 
         // process attestation proof
         const processAttestationCircuitInputs: any[] = []
         const fromNonces: number[] = [fromNonce]
         const toNonces: number[] = []
-        const hashChainStarter: BigInt[] = []
-        const blindedUserState: BigInt[] = [
+        const hashChainStarter: bigint[] = []
+        const blindedUserState: bigint[] = [
             startTransitionCircuitInputs.blindedUserState,
         ]
-        const blindedHashChain: BigInt[] = []
+        const blindedHashChain: bigint[] = []
         let reputationRecords = {}
         const selectors: number[] = []
         const attesterIds: string[] = []
@@ -523,9 +514,9 @@ export default class UserState extends Synchronizer {
             graffities: string[] = [],
             overwriteGraffities: any[] = [],
             signUps: string[] = []
-        const finalBlindedUserState: BigInt[] = []
-        const finalUserState: BigInt[] = [intermediateUserStateTreeRoots[0]]
-        const finalHashChain: BigInt[] = []
+        const finalBlindedUserState: bigint[] = []
+        const finalUserState: bigint[] = [intermediateUserStateTreeRoots[0]]
+        const finalHashChain: bigint[] = []
         for (
             let nonce = 0;
             nonce < this.settings.numEpochKeyNoncePerEpoch;
@@ -537,7 +528,7 @@ export default class UserState extends Synchronizer {
                 nonce,
                 this.settings.epochTreeDepth
             )
-            let currentHashChain: BigInt = BigInt(0)
+            let currentHashChain: bigint = BigInt(0)
 
             // Blinded user state and hash chain of the epoch key
             toNonces.push(nonce)
@@ -574,7 +565,7 @@ export default class UserState extends Synchronizer {
                     attestations[i].graffiti,
                     attestations[i].signUp
                 )
-                const attesterId: BigInt = BigInt(
+                const attesterId: bigint = BigInt(
                     attestation.attesterId.toString()
                 )
                 const rep = await this.getRepByAttester(attesterId)
@@ -817,12 +808,12 @@ export default class UserState extends Synchronizer {
      * @returns The reputation proof of type `ReputationProof`.
      */
     public genProveReputationProof = async (
-        attesterId: BigInt,
+        attesterId: bigint,
         epkNonce: number,
         minRep?: number,
-        proveGraffiti?: BigInt,
-        graffitiPreImage?: BigInt,
-        spendAmount: BigInt | number = 0
+        proveGraffiti?: bigint,
+        graffitiPreImage?: bigint,
+        spendAmount: bigint | number = 0
     ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
         assert(
@@ -908,7 +899,7 @@ export default class UserState extends Synchronizer {
      * @returns The sign up proof of type `SignUpProof`.
      */
     public genUserSignUpProof = async (
-        attesterId: BigInt
+        attesterId: bigint
     ): Promise<SignUpProof> => {
         await this._checkUserSignUp()
         this._checkAttesterId(attesterId)

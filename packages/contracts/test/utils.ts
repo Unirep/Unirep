@@ -39,7 +39,7 @@ import {
 
 export type Field = BigNumberish
 
-const defaultGSTLeaf = (treeDepth: number): BigInt => {
+const defaultGSTLeaf = (treeDepth: number): bigint => {
     const USTRoot = computeEmptyUserStateRoot(treeDepth)
     return crypto.hashLeftRight(BigInt(0), USTRoot)
 }

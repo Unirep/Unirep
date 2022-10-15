@@ -13,7 +13,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     this.timeout(30 * 60 * 1000)
 
     let userIds: ZkIdentity[] = []
-    let userCommitments: BigInt[] = []
+    let userCommitments: bigint[] = []
     let signUpAirdrops: Reputation[] = []
 
     let unirepContract: Unirep
@@ -23,7 +23,7 @@ describe('User sign up proof (Airdrop proof) events in Unirep User State', funct
     let attesterId
     const maxUsers = 100
     const attestingFee = ethers.utils.parseEther('0.1')
-    const rootHistories = [] as any
+    const rootHistories: bigint[] = []
     let GSTree
 
     before(async () => {

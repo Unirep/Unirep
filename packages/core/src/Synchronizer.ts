@@ -19,7 +19,7 @@ export class Synchronizer extends EventEmitter {
     public settings: ISettings
     // GST for current epoch
     private _globalStateTree?: IncrementalMerkleTree
-    protected defaultGSTLeaf?: BigInt
+    protected defaultGSTLeaf?: bigint
 
     private get globalStateTree() {
         if (!this._globalStateTree) {
@@ -358,7 +358,7 @@ export class Synchronizer extends EventEmitter {
      * @param epoch The queried epoch of the global state tree
      * @returns True if the global state tree root exists, false otherwise.
      */
-    async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
+    async GSTRootExists(GSTRoot: bigint | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         return this.unirepContract.globalStateTreeRoots(epoch, GSTRoot)
     }
@@ -370,7 +370,7 @@ export class Synchronizer extends EventEmitter {
      * @returns True if the epoch tree root is in the database, false otherwise.
      */
     async epochTreeRootExists(
-        _epochTreeRoot: BigInt | string,
+        _epochTreeRoot: bigint | string,
         epoch: number
     ): Promise<boolean> {
         await this._checkValidEpoch(epoch)

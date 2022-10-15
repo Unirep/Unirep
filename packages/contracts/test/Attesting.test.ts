@@ -142,7 +142,7 @@ describe('Attesting', () => {
         expect(await unirepContract.collectedAttestingFee()).to.be.equal(0)
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(attestation, epochKey as BigNumberish, {
+            .submitAttestation(attestation, epochKey, {
                 value: attestingFee,
             })
         const receipt = await tx.wait()
@@ -167,7 +167,7 @@ describe('Attesting', () => {
         )
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(attestation, epochKey as BigNumberish, {
+            .submitAttestation(attestation, epochKey, {
                 value: attestingFee,
             })
         const receipt = await tx.wait()
@@ -188,7 +188,7 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
         ).to.be.revertedWithCustomError(unirepContract, `AttesterIdNotMatch`)
@@ -208,7 +208,7 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
@@ -223,7 +223,7 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
@@ -238,7 +238,7 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSNARKField')
@@ -253,7 +253,7 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee,
                 })
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignUpFlag')
@@ -273,12 +273,12 @@ describe('Attesting', () => {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish)
+                .submitAttestation(attestation, epochKey)
         ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(attestation, epochKey as BigNumberish, {
+                .submitAttestation(attestation, epochKey, {
                     value: attestingFee.sub(1),
                 })
         ).to.be.revertedWithCustomError(unirepContract, 'AttestingFeeInvalid')

@@ -37,7 +37,7 @@ describe('User State Transition circuits', function () {
 
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
         const testEpochTreeDepth = 32
-        const epochKey: BigInt = genEpochKey(
+        const epochKey: bigint = genEpochKey(
             user.identityNullifier,
             epoch,
             nonce,
@@ -46,7 +46,7 @@ describe('User State Transition circuits', function () {
 
         let epochTree: SparseMerkleTree, epochTreeRoot, epochTreePathElements
 
-        let hashChainResult: BigInt
+        let hashChainResult: bigint
 
         before(async () => {
             const startCompileTime = Math.floor(new Date().getTime() / 1000)
