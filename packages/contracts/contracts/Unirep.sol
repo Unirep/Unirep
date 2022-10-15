@@ -10,7 +10,7 @@ import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
-import {Poseidon4, Poseidon2} from './Hash.sol';
+import {Poseidon6, Poseidon4} from './Hash.sol';
 
 /**
  * @title Unirep
@@ -176,7 +176,8 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 targetEpoch,
         uint256 epochKey,
         uint256 posRep,
-        uint256 negRep
+        uint256 negRep,
+        uint256 graffiti
     ) public {
         updateEpochIfNeeded(uint160(msg.sender));
 
@@ -185,28 +186,37 @@ contract Unirep is IUnirep, VerifySignature {
 
         if (epochKey >= maxEpochKey) revert InvalidEpochKey();
 
+        uint256 timestamp = block.timestamp;
+
         emit AttestationSubmitted(
             attester.currentEpoch,
             epochKey,
             uint160(msg.sender),
             posRep,
-            negRep
+            negRep,
+            graffiti,
+            graffiti != 0 ? timestamp : 0
         );
         // emit EpochTreeLeaf(targetEpoch, uint160(msg.sender), epochKey, newLeaf);
-        uint256[2] storage balance = attester
+        Reputation storage balance = attester
             .epochKeyState[targetEpoch]
             .balances[epochKey];
         if (!attester.epochKeyState[targetEpoch].isKeyOwed[epochKey]) {
             attester.epochKeyState[targetEpoch].owedKeys.push(epochKey);
         }
-        balance[0] += posRep;
-        balance[1] += negRep;
+        balance.posRep += posRep;
+        balance.negRep += negRep;
+        if (graffiti != 0) {
+            balance.graffiti = graffiti;
+            balance.timestamp = timestamp;
+        }
     }
 
+    // build a hashchain of epoch key balances that we'll put in the epoch tree
     function buildHashchain(uint160 attesterId, uint256 epoch) public {
         AttesterData storage attester = attesters[attesterId];
         require(attester.epochKeyState[epoch].owedKeys.length > 0);
-        // target some specific length
+        // target some specific length: config.aggregateKeyCount
         uint256 index = attester.epochKeyState[epoch].totalHashchains;
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
@@ -219,11 +229,18 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 epochKey = owedKeys[owedKeys.length - 1];
             owedKeys.pop();
             attester.epochKeyState[epoch].isKeyOwed[epochKey] = false;
-            uint256[2] memory balance = attester.epochKeyState[epoch].balances[
+            Reputation storage balance = attester.epochKeyState[epoch].balances[
                 epochKey
             ];
-            hashchain.head = Poseidon4.poseidon(
-                [hashchain.head, epochKey, balance[0], balance[1]]
+            hashchain.head = Poseidon6.poseidon(
+                [
+                    hashchain.head,
+                    epochKey,
+                    balance.posRep,
+                    balance.negRep,
+                    balance.graffiti,
+                    balance.timestamp
+                ]
             );
             hashchain.epochKeys.push(epochKey);
             hashchain.epochKeyBalances.push(balance);
@@ -249,11 +266,19 @@ contract Unirep is IUnirep, VerifySignature {
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
             uint256 epochKey = hashchain.epochKeys[x];
+            Reputation storage balance = hashchain.epochKeyBalances[x];
             emit EpochTreeLeaf(
                 epoch,
                 uint160(attesterId),
                 epochKey,
-                Poseidon2.poseidon(hashchain.epochKeyBalances[x])
+                Poseidon4.poseidon(
+                    [
+                        balance.posRep,
+                        balance.negRep,
+                        balance.graffiti,
+                        balance.timestamp
+                    ]
+                )
             );
         }
         hashchain.processed = true;
@@ -285,6 +310,7 @@ contract Unirep is IUnirep, VerifySignature {
         if (attester.currentEpoch != publicSignals[4]) revert EpochNotMatch();
 
         uint256 fromEpoch = publicSignals[3];
+        // check for attestation processing
         require(
             attester.epochKeyState[fromEpoch].owedKeys.length == 0 &&
                 attester.epochKeyState[fromEpoch].totalHashchains ==

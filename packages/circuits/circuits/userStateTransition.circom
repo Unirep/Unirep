@@ -2,6 +2,7 @@ pragma circom 2.0.0;
 
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "../../../node_modules/circomlib/circuits/comparators.circom";
+include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
@@ -22,6 +23,8 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     // Attestation by the attester
     signal input pos_rep;
     signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
     // signal input graffiti;
     // Graffiti - todo?
     // signal input prove_graffiti;
@@ -31,6 +34,8 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     signal input epoch_tree_root;
     signal input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
     signal output epoch_transition_nullifier;
 
@@ -41,12 +46,14 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
 
     /* 1. Check if user exists in the Global State Tree */
 
-    component leaf_hasher = Poseidon(5);
+    component leaf_hasher = Poseidon(7);
     leaf_hasher.inputs[0] <== identity_nullifier;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== from_epoch;
     leaf_hasher.inputs[3] <== pos_rep;
     leaf_hasher.inputs[4] <== neg_rep;
+    leaf_hasher.inputs[5] <== graffiti;
+    leaf_hasher.inputs[6] <== timestamp;
 
     component state_merkletree = MerkleTreeInclusionProof(GST_TREE_DEPTH);
     state_merkletree.leaf <== leaf_hasher.out;
@@ -83,9 +90,11 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
             epoch_tree_membership[i].path_elements[j][0] <== epoch_tree_elements[i][j];
         }
         // calculate leaf
-        new_leaf_hasher[i] = Poseidon(2);
+        new_leaf_hasher[i] = Poseidon(4);
         new_leaf_hasher[i].inputs[0] <== new_pos_rep[i];
         new_leaf_hasher[i].inputs[1] <== new_neg_rep[i];
+        new_leaf_hasher[i].inputs[2] <== new_graffiti[i];
+        new_leaf_hasher[i].inputs[3] <== new_timestamp[i];
         epoch_tree_membership[i].leaf <== new_leaf_hasher[i].out;
         // check root
         epoch_tree_root === epoch_tree_membership[i].root;
@@ -97,17 +106,38 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
 
     var final_pos_rep = pos_rep;
     var final_neg_rep = neg_rep;
+    var final_graffiti = graffiti;
+    var final_timestamp = timestamp;
+
+    component timestamp_check[EPOCH_KEY_NONCE_PER_EPOCH];
+    component graffiti_select[EPOCH_KEY_NONCE_PER_EPOCH];
+
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
         final_pos_rep += new_pos_rep[i];
         final_neg_rep += new_neg_rep[i];
+        // if timestamp is > final_timestamp we take the graffiti
+        // timestamp must be smaller than 2^64
+        timestamp_check[i] = GreaterThan(64);
+        timestamp_check[i].in[0] <== new_timestamp[i];
+        timestamp_check[i].in[1] <== final_timestamp;
+        graffiti_select[i] = MultiMux1(2);
+        graffiti_select[i].c[0][0] <== final_timestamp;
+        graffiti_select[i].c[0][1] <== new_timestamp[i];
+        graffiti_select[i].c[1][0] <== final_graffiti;
+        graffiti_select[i].c[1][1] <== new_graffiti[i];
+        graffiti_select[i].s <== timestamp_check[i].out;
+        final_timestamp = graffiti_select[i].out[0];
+        final_graffiti = graffiti_select[i].out[1];
     }
 
-    component out_leaf_hasher = Poseidon(5);
+    component out_leaf_hasher = Poseidon(7);
     out_leaf_hasher.inputs[0] <== identity_nullifier;
     out_leaf_hasher.inputs[1] <== attester_id;
     out_leaf_hasher.inputs[2] <== to_epoch;
     out_leaf_hasher.inputs[3] <== final_pos_rep;
     out_leaf_hasher.inputs[4] <== final_neg_rep;
+    out_leaf_hasher.inputs[5] <== final_graffiti;
+    out_leaf_hasher.inputs[6] <== final_timestamp;
     gst_leaf <== out_leaf_hasher.out;
 
     /* End of check 3 */

@@ -2,9 +2,14 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers, BigNumberish } from 'ethers'
 import { Prover } from '@unirep/circuits'
-import { IncrementalMerkleTree, SparseMerkleTree, hash2 } from '@unirep/crypto'
+import {
+    IncrementalMerkleTree,
+    SparseMerkleTree,
+    hash2,
+    hash4,
+} from '@unirep/crypto'
 
-const defaultEpochTreeLeaf = hash2([0, 0])
+const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
 /**
  * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
@@ -378,7 +383,7 @@ export class Synchronizer extends EventEmitter {
         await this._checkValidEpoch(epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            hash2([0, 0])
+            hash4([0, 0, 0, 0])
         )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
@@ -617,7 +622,8 @@ export class Synchronizer extends EventEmitter {
             attesterId: _attesterId.toString(),
             posRep: Number(decodedData.posRep),
             negRep: Number(decodedData.negRep),
-            // graffiti: decodedData.attestation.graffiti.toString(),
+            graffiti: decodedData.graffiti.toString(),
+            timestamp: decodedData.timestamp.toString(),
             hash: hash2([posRep, negRep]).toString(),
         })
         return true

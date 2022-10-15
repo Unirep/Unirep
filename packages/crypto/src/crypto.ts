@@ -6,7 +6,9 @@ import {
 } from 'maci-crypto'
 import circom from 'circomlibjs'
 
-export const [, hash1, hash2, hash3, hash4, hash5] = Array(6)
+export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
+    9
+)
     .fill(null)
     .map((_, i) => (inputs) => {
         if (!Array.isArray(inputs))
@@ -55,13 +57,17 @@ export const genStateTreeLeaf = (
     attesterId: bigint | string,
     epoch: bigint | number,
     posRep: bigint | number,
-    negRep: bigint | number
+    negRep: bigint | number,
+    graffiti: bigint | number,
+    timestamp: bigint | number
 ): bigint => {
-    return hash5([
+    return hash7([
         idNullifier,
         BigInt(attesterId),
         BigInt(epoch),
         BigInt(posRep),
         BigInt(negRep),
+        BigInt(graffiti),
+        BigInt(timestamp),
     ])
 }

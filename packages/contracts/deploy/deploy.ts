@@ -96,8 +96,8 @@ export const deployUnirep = async (
         {
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
-            ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
             ['contracts/Hash.sol:Poseidon4']: libraries['Poseidon4'],
+            ['contracts/Hash.sol:Poseidon6']: libraries['Poseidon6'],
         },
         deployer
     ).deploy(
