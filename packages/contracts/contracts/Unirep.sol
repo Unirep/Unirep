@@ -178,8 +178,6 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 posRep,
         uint256 negRep
     ) public {
-        require(posRep > 0 || negRep > 0);
-
         updateEpochIfNeeded(uint160(msg.sender));
 
         AttesterData storage attester = attesters[uint160(msg.sender)];
@@ -216,15 +214,14 @@ contract Unirep is IUnirep, VerifySignature {
         hashchain.index = index;
         attester.epochKeyState[epoch].totalHashchains++;
         for (uint8 x = 0; x < config.aggregateKeyCount; x++) {
-            uint256 epochKey;
-            uint256[2] memory balance;
             uint256[] storage owedKeys = attester.epochKeyState[epoch].owedKeys;
-            if (owedKeys.length > 0) {
-                epochKey = owedKeys[owedKeys.length - 1];
-                owedKeys.pop();
-                attester.epochKeyState[epoch].isKeyOwed[epochKey] = false;
-                balance = attester.epochKeyState[epoch].balances[epochKey];
-            }
+            if (owedKeys.length == 0) break;
+            uint256 epochKey = owedKeys[owedKeys.length - 1];
+            owedKeys.pop();
+            attester.epochKeyState[epoch].isKeyOwed[epochKey] = false;
+            uint256[2] memory balance = attester.epochKeyState[epoch].balances[
+                epochKey
+            ];
             hashchain.head = Poseidon4.poseidon(
                 [hashchain.head, epochKey, balance[0], balance[1]]
             );
@@ -251,8 +248,6 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the zk proof
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
-            uint256[2] memory balance = hashchain.epochKeyBalances[x];
-            if (balance[0] == 0 && balance[1] == 0) break;
             uint256 epochKey = hashchain.epochKeys[x];
             emit EpochTreeLeaf(
                 epoch,
