@@ -21,7 +21,7 @@ import {
     UserStateTransitionProof,
     AggregateEpochKeysProof,
 } from '@unirep/contracts'
-import { Circuit, Prover } from '@unirep/circuits'
+import { Circuit, Prover, AGGREGATE_KEY_COUNT } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 /**
@@ -296,6 +296,9 @@ export default class UserState extends Synchronizer {
         hashchainIndex: number | bigint,
         epoch?: bigint | number
     ) => {
+        if (epochKeys.length > this.settings.aggregateKeyCount) {
+            throw new Error(`Too many keys for circuit`)
+        }
         const targetEpoch =
             epoch ?? BigInt(await this.getUnirepStateCurrentEpoch())
         const targetRoot = await this.unirepContract.attesterEpochRoot(
@@ -315,23 +318,38 @@ export default class UserState extends Synchronizer {
                 [obj.index]: obj,
             }
         }, {})
+        const dummyEpochKeys = Array(
+            this.settings.aggregateKeyCount - epochKeys.length
+        )
+            .fill(null)
+            .map(() => '0x0000000')
+        const dummyBalances = Array(
+            this.settings.aggregateKeyCount - newBalances.length
+        )
+            .fill(null)
+            .map(() => [0, 0])
+        const allEpochKeys = [epochKeys, dummyEpochKeys].flat()
+        const allBalances = [newBalances, dummyBalances].flat()
         const epochTree = await this.genEpochTree(targetEpoch)
         const circuitInputs = {
             start_root: epochTree.root,
             epoch: targetEpoch,
             attester_id: this.attesterId.toString(),
-            epoch_keys: epochKeys.map((k) => k.toString()),
-            epoch_key_balances: newBalances,
-            old_epoch_key_hashes: epochKeys.map((key) => {
+            epoch_keys: allEpochKeys.map((k) => k.toString()),
+            epoch_key_balances: allBalances,
+            old_epoch_key_hashes: allEpochKeys.map((key) => {
                 const leaf = leavesByEpochKey[key.toString()]
                 return leaf?.hash ?? hash2([0, 0])
             }),
-            path_elements: epochKeys.map((key, i) => {
+            path_elements: allEpochKeys.map((key, i) => {
                 const p = epochTree.createProof(BigInt(key))
-                epochTree.update(BigInt(key), hash2(newBalances[i]))
+                if (i < epochKeys.length) {
+                    epochTree.update(BigInt(key), hash2(newBalances[i]))
+                }
                 return p
             }),
             hashchain_index: hashchainIndex,
+            epoch_key_count: epochKeys.length,
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.aggregateEpochKeys,

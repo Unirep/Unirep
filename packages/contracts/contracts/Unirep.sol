@@ -247,7 +247,7 @@ contract Unirep is IUnirep, VerifySignature {
             .epochKeyState[epoch]
             .hashchain[publicSignals[5]];
         require(hashchain.head != 0 && !hashchain.processed);
-        // require(hashchainHead == hashchain.head);
+        require(hashchainHead == hashchain.head);
         // Verify the zk proof
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
