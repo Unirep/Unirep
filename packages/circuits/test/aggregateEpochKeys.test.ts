@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { SparseMerkleTree, hash2, hash4, hash6 } from '@unirep/crypto'
+import { SparseMerkleTree, hash2, hash3, hash4, hash6 } from '@unirep/crypto'
 import { Circuit } from '../src'
 import { genProofAndVerify } from './utils'
 import { EPOCH_TREE_DEPTH, AGGREGATE_KEY_COUNT } from '../config'
@@ -18,6 +18,9 @@ describe('Multiple SMT updates', function () {
                 graffiti: BigInt(14910215185105109),
                 timestamp: BigInt(+new Date()),
             }))
+        const attesterId = 0x1924419
+        const epoch = 12490
+        const hashchainIndex = 129
         const circuitInputs = {
             start_root: startRoot,
             epoch_keys: newLeaves.map(({ leafIndex }) => leafIndex),
@@ -38,9 +41,9 @@ describe('Multiple SMT updates', function () {
                 )
                 return p
             }),
-            epoch: 1,
-            attester_id: 0x01993109,
-            hashchain_index: 1,
+            epoch,
+            attester_id: attesterId,
+            hashchain_index: hashchainIndex,
             epoch_key_count: AGGREGATE_KEY_COUNT, // process all of them
         }
         const { isValid, publicSignals } = await genProofAndVerify(
@@ -56,7 +59,7 @@ describe('Multiple SMT updates', function () {
                 obj.graffiti,
                 obj.timestamp,
             ])
-        }, BigInt(0))
+        }, hash3([attesterId, epoch, hashchainIndex]))
         expect(isValid).to.be.true
         expect(publicSignals[0].toString()).to.equal(tree.root.toString())
         expect(publicSignals[1].toString()).to.equal(hashchain.toString())
@@ -85,6 +88,9 @@ describe('Multiple SMT updates', function () {
                 timestamp: BigInt(0),
             }))
         const allLeaves = [newLeaves, dummyLeaves].flat()
+        const attesterId = 0x1924419
+        const epoch = 12490
+        const hashchainIndex = 129
         const circuitInputs = {
             start_root: startRoot,
             epoch_keys: allLeaves.map(({ leafIndex }) => leafIndex),
@@ -107,9 +113,9 @@ describe('Multiple SMT updates', function () {
                 }
                 return p
             }),
-            epoch: 1,
-            attester_id: 0x01993109,
-            hashchain_index: 1,
+            epoch,
+            attester_id: attesterId,
+            hashchain_index: hashchainIndex,
             epoch_key_count: count,
         }
         const { isValid, publicSignals } = await genProofAndVerify(
@@ -125,7 +131,7 @@ describe('Multiple SMT updates', function () {
                 obj.graffiti,
                 obj.timestamp,
             ])
-        }, BigInt(0))
+        }, hash3([attesterId, epoch, hashchainIndex]))
         expect(isValid).to.be.true
         expect(publicSignals[0].toString()).to.equal(tree.root.toString())
         expect(publicSignals[1].toString()).to.equal(hashchain.toString())
@@ -143,6 +149,9 @@ describe('Multiple SMT updates', function () {
                 graffiti: BigInt(14910215185105109),
                 timestamp: BigInt(+new Date()),
             }))
+        const attesterId = 0x1924419
+        const epoch = 12490
+        const hashchainIndex = 129
         const circuitInputs = {
             start_root: startRoot,
             epoch_keys: newLeaves.map(({ leafIndex }) => leafIndex),
@@ -165,9 +174,9 @@ describe('Multiple SMT updates', function () {
                 }
                 return p
             }),
-            epoch: 1,
-            attester_id: 0x01993109,
-            hashchain_index: 1,
+            epoch,
+            attester_id: attesterId,
+            hashchain_index: hashchainIndex,
             epoch_key_count: 0,
         }
         try {

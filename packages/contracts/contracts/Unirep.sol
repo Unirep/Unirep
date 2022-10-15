@@ -10,7 +10,7 @@ import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
-import {Poseidon6, Poseidon4} from './Hash.sol';
+import {Poseidon6, Poseidon4, Poseidon3} from './Hash.sol';
 
 /**
  * @title Unirep
@@ -40,6 +40,9 @@ contract Unirep is IUnirep, VerifySignature {
 
     // Mapping of used nullifiers
     mapping(uint256 => bool) public usedNullifiers;
+
+    // Bind the hashchain head to an attesterId, epoch number, and hashchain index
+    mapping(uint256 => uint256[3]) public hashchainMapping;
 
     constructor(
         Config memory _config,
@@ -221,6 +224,8 @@ contract Unirep is IUnirep, VerifySignature {
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
             .hashchain[index];
+        // attester id, epoch, hashchain index
+        hashchain.head = Poseidon3.poseidon([attesterId, epoch, index]);
         hashchain.index = index;
         attester.epochKeyState[epoch].totalHashchains++;
         for (uint8 x = 0; x < config.aggregateKeyCount; x++) {
@@ -245,6 +250,7 @@ contract Unirep is IUnirep, VerifySignature {
             hashchain.epochKeys.push(epochKey);
             hashchain.epochKeyBalances.push(balance);
         }
+        hashchainMapping[hashchain.head] = [attesterId, epoch, index];
     }
 
     function processHashchain(
@@ -253,15 +259,21 @@ contract Unirep is IUnirep, VerifySignature {
     ) public {
         if (!aggregateEpochKeysVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
-        uint256 epoch = publicSignals[3];
-        uint256 attesterId = publicSignals[4];
-        AttesterData storage attester = attesters[uint160(attesterId)];
         uint256 hashchainHead = publicSignals[1];
+        uint256 attesterId = hashchainMapping[hashchainHead][0];
+        uint256 epoch = hashchainMapping[hashchainHead][1];
+        uint256 hashchainIndex = hashchainMapping[hashchainHead][2];
+        require(attesterId != 0, 'value is 0');
+        AttesterData storage attester = attesters[uint160(attesterId)];
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
-            .hashchain[publicSignals[5]];
+            .hashchain[hashchainIndex];
         require(hashchain.head != 0 && !hashchain.processed);
-        require(hashchainHead == hashchain.head);
+        require(hashchainHead == hashchain.head, 'mismatch hashchain');
+        require(
+            attester.epochTreeRoots[epoch] == publicSignals[2],
+            'mismatch from epoch root'
+        );
         // Verify the zk proof
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
@@ -284,6 +296,7 @@ contract Unirep is IUnirep, VerifySignature {
         hashchain.processed = true;
         attester.epochKeyState[epoch].processedHashchains++;
         attester.epochTreeRoots[epoch] = publicSignals[0];
+        hashchainMapping[hashchainHead] = [0, 0, 0];
     }
 
     /**
@@ -296,8 +309,7 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
-
-        require(publicSignals[5] < type(uint160).max);
+        require(publicSignals[5] < type(uint160).max, 'attesterId');
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
@@ -314,7 +326,8 @@ contract Unirep is IUnirep, VerifySignature {
         require(
             attester.epochKeyState[fromEpoch].owedKeys.length == 0 &&
                 attester.epochKeyState[fromEpoch].totalHashchains ==
-                attester.epochKeyState[fromEpoch].processedHashchains
+                attester.epochKeyState[fromEpoch].processedHashchains,
+            'hashchain'
         );
         // make sure from epoch tree root is valid
         if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
