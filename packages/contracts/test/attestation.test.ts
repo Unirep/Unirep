@@ -10,7 +10,7 @@ import {
 } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
 } from '@unirep/circuits'
@@ -34,7 +34,7 @@ describe('Attestations', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
         const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash4([0, 0, 0, 0]))
         expect(tree.root.toString()).equal(config.emptyEpochTreeRoot.toString())
     })

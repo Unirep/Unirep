@@ -10,7 +10,7 @@ import {
 } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
 } from '@unirep/circuits'
@@ -35,7 +35,7 @@ describe('User Signup', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
     })
 
     it('attester sign up', async () => {
@@ -114,8 +114,8 @@ describe('User Signup', function () {
             0,
             0,
         ])
-        const GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        GSTree.insert(gstLeaf)
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        stateTree.insert(gstLeaf)
         const currentRoot = await unirepContract.attesterStateTreeRoot(
             accounts[1].address,
             0
@@ -123,13 +123,13 @@ describe('User Signup', function () {
         const rootExists = await unirepContract.attesterStateTreeRootExists(
             accounts[1].address,
             0,
-            GSTree.root
+            stateTree.root
         )
         expect(rootExists).to.be.true
         expect(currentRoot.toString(), 'state tree root').to.equal(
-            GSTree.root.toString()
+            stateTree.root.toString()
         )
-        const semaphoreTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         semaphoreTree.insert(id.genIdentityCommitment())
         const semaphoreRoot = await unirepContract.attesterSemaphoreGroupRoot(
             accounts[1].address
@@ -142,7 +142,7 @@ describe('User Signup', function () {
             .to.emit(unirepContract, 'UserSignedUp')
             .withArgs(0, id.genIdentityCommitment(), accounts[1].address, 0)
         expect(tx)
-            .to.emit(unirepContract, 'NewGSTLeaf')
+            .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(BigInt(0), accounts[1].address, BigInt(0), gstLeaf)
     })
 

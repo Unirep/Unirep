@@ -2,10 +2,7 @@ import { expect } from 'chai'
 import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/crypto'
 import { Circuit } from '../src'
 
-import {
-    GLOBAL_STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '../config'
+import { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 
 import {
     genEpochKeyCircuitInput,
@@ -25,7 +22,7 @@ describe('Verify Epoch Key circuits', function () {
             const graffiti = 1294129
             const timestamp = 214
             const id = new ZkIdentity()
-            const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+            const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = hash7([
                 id.identityNullifier,
                 attesterId,
@@ -73,7 +70,7 @@ describe('Verify Epoch Key circuits', function () {
         const timestamp = 214
         const nonce = 0
         const id = new ZkIdentity()
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = hash7([
             id.identityNullifier,
             attesterId,
@@ -122,7 +119,7 @@ describe('Verify Epoch Key circuits', function () {
         const timestamp = 214
         const nonce = 0
         const id = new ZkIdentity()
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = hash7([
             id.identityNullifier,
             attesterId,
@@ -171,7 +168,7 @@ describe('Verify Epoch Key circuits', function () {
         const timestamp = 214
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
         const id = new ZkIdentity()
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = hash7([
             id.identityNullifier,
             attesterId,

@@ -8,7 +8,7 @@ include "./identityCommitment.circom";
 template Signup() {
 
     signal output identity_commitment;
-    signal output gst_leaf;
+    signal output state_tree_leaf;
 
     signal input attester_id;
     signal input epoch;
@@ -30,5 +30,5 @@ template Signup() {
     leaf_hasher.inputs[5] <== 0; // graffiti
     leaf_hasher.inputs[6] <== 0; // timestamp
 
-    gst_leaf <== leaf_hasher.out;
+    state_tree_leaf <== leaf_hasher.out;
 }

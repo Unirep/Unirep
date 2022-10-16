@@ -7,17 +7,17 @@ include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input from_epoch;
     signal input to_epoch;
 
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
     // Global state tree
-    signal input GST_path_index[GST_TREE_DEPTH];
-    signal input GST_path_elements[GST_TREE_DEPTH][1];
-    signal output gst_root;
-    signal output gst_leaf;
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH][1];
+    signal output state_tree_root;
+    signal output state_tree_leaf;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
@@ -37,7 +37,7 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
-    signal output epoch_transition_nullifier;
+    signal output transition_nullifier;
 
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     epoch_check.in[0] <== to_epoch;
@@ -55,13 +55,13 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     leaf_hasher.inputs[5] <== graffiti;
     leaf_hasher.inputs[6] <== timestamp;
 
-    component state_merkletree = MerkleTreeInclusionProof(GST_TREE_DEPTH);
+    component state_merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
     state_merkletree.leaf <== leaf_hasher.out;
-    for (var i = 0; i < GST_TREE_DEPTH; i++) {
-        state_merkletree.path_index[i] <== GST_path_index[i];
-        state_merkletree.path_elements[i] <== GST_path_elements[i][0];
+    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
+        state_merkletree.path_index[i] <== state_tree_indexes[i];
+        state_merkletree.path_elements[i] <== state_tree_elements[i][0];
     }
-    gst_root <== state_merkletree.root;
+    state_tree_root <== state_merkletree.root;
 
     /* End of check 1 */
 
@@ -138,7 +138,7 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     out_leaf_hasher.inputs[4] <== final_neg_rep;
     out_leaf_hasher.inputs[5] <== final_graffiti;
     out_leaf_hasher.inputs[6] <== final_timestamp;
-    gst_leaf <== out_leaf_hasher.out;
+    state_tree_leaf <== out_leaf_hasher.out;
 
     /* End of check 3 */
 
@@ -148,7 +148,7 @@ template UserStateTransition(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_P
     nullifier_hasher.inputs[0] <== attester_id;
     nullifier_hasher.inputs[1] <== from_epoch;
     nullifier_hasher.inputs[2] <== identity_nullifier;
-    epoch_transition_nullifier <== nullifier_hasher.out;
+    transition_nullifier <== nullifier_hasher.out;
 
     /* End of check 4 */
 }

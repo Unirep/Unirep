@@ -29,7 +29,7 @@ interface IUnirep {
         uint256 timestamp
     );
 
-    event NewGSTLeaf(
+    event StateTreeLeaf(
         uint256 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
@@ -45,12 +45,6 @@ interface IUnirep {
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
-    enum AttestationFieldError {
-        POS_REP,
-        NEG_REP,
-        GRAFFITI
-    }
-
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error ReachedMaximumNumberUserSignedUp();
@@ -64,7 +58,6 @@ interface IUnirep {
     error InvalidEpochKey();
     error EpochNotMatch();
 
-    error InvalidSNARKField(AttestationFieldError); // better name???
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
@@ -112,7 +105,7 @@ interface IUnirep {
 
     struct Config {
         // circuit config
-        uint8 globalStateTreeDepth;
+        uint8 stateTreeDepth;
         uint8 epochTreeDepth;
         uint256 numEpochKeyNoncePerEpoch;
         // contract config

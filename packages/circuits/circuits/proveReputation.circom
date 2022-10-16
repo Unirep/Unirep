@@ -14,7 +14,7 @@ include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input epoch;
     signal input nonce;
     signal output epoch_key;
@@ -22,9 +22,9 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
     // Global state tree
-    signal input GST_path_index[GST_TREE_DEPTH];
-    signal input GST_path_elements[GST_TREE_DEPTH][1];
-    signal output gst_root;
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH][1];
+    signal output state_tree_root;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
@@ -49,13 +49,13 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
     leaf_hasher.inputs[5] <== graffiti;
     leaf_hasher.inputs[6] <== timestamp;
 
-    component state_merkletree = MerkleTreeInclusionProof(GST_TREE_DEPTH);
+    component state_merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
     state_merkletree.leaf <== leaf_hasher.out;
-    for (var i = 0; i < GST_TREE_DEPTH; i++) {
-        state_merkletree.path_index[i] <== GST_path_index[i];
-        state_merkletree.path_elements[i] <== GST_path_elements[i][0];
+    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
+        state_merkletree.path_index[i] <== state_tree_indexes[i];
+        state_merkletree.path_elements[i] <== state_tree_elements[i][0];
     }
-    gst_root <== state_merkletree.root;
+    state_tree_root <== state_merkletree.root;
 
     /* End of check 1a */
 

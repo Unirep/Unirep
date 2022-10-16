@@ -11,7 +11,7 @@ import {
     MAX_REPUTATION_BUDGET,
     USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../config'
 import { Circuit, executeCircuit } from '../src'
