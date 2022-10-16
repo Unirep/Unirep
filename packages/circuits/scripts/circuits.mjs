@@ -6,6 +6,8 @@ import {
     AGGREGATE_KEY_COUNT,
 } from '../dist/config/index.js'
 
+export const ptauName = 'powersOfTau28_hez_final_17.ptau'
+
 export const circuitContents = {
     userStateTransition: `pragma circom 2.0.0; include "../circuits/userStateTransition.circom"; \n\ncomponent main { public [ from_epoch, to_epoch, attester_id, epoch_tree_root ] } = UserStateTransition(${GLOBAL_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, 252);`,
     verifyEpochKey: `pragma circom 2.0.0; include "../circuits/verifyEpochKey.circom"; \n\ncomponent main { public [ epoch, attester_id ] } = VerifyEpochKey(${GLOBAL_STATE_TREE_DEPTH}, ${EPOCH_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH});`,
