@@ -32,7 +32,7 @@ const _schema = [
         ],
     },
     {
-        name: 'GSTLeaf',
+        name: 'StateTreeLeaf',
         indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int'],

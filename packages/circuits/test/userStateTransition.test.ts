@@ -8,10 +8,7 @@ import {
     genUserStateTransitionCircuitInput,
     genUserStateTransitionNullifier,
 } from './utils'
-import {
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    GLOBAL_STATE_TREE_DEPTH,
-} from '../config'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH, STATE_TREE_DEPTH } from '../config'
 
 describe('User state transition', function () {
     this.timeout(300000)
@@ -25,7 +22,7 @@ describe('User state transition', function () {
         const negRep = 108
         const graffiti = 190129
         const timestamp = 9241
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
                 id.identityNullifier,
@@ -79,7 +76,7 @@ describe('User state transition', function () {
         const negRep = 108
         const graffiti = 1241
         const timestamp = 124
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
                 id.identityNullifier,
@@ -145,7 +142,7 @@ describe('User state transition', function () {
         const negRep = 108
         const graffiti = 1241
         const timestamp = 124
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
                 id.identityNullifier,

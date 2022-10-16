@@ -9,7 +9,7 @@ import {
     executeCircuit,
     Circuit,
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     VerifyEpochKeyInput,
@@ -218,8 +218,8 @@ const genEpochKeyCircuitInput = (config: {
     } = config
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
-        gst_path_elements: proof.siblings,
-        gst_path_index: proof.pathIndices,
+        state_tree_elements: proof.siblings,
+        state_tree_indexes: proof.pathIndices,
         identity_nullifier: id.identityNullifier,
         nonce: nonce,
         epoch: epoch,
@@ -289,8 +289,8 @@ const genUserStateTransitionCircuitInput = (config: {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
         identity_nullifier: id.identityNullifier,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
+        state_tree_indexes: GSTreeProof.pathIndices,
+        state_tree_elements: GSTreeProof.siblings,
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
@@ -342,7 +342,7 @@ const genReputationCircuitInput = (config: {
     )
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+    const GSTree = new crypto.IncrementalMerkleTree(STATE_TREE_DEPTH)
     const hashedLeaf = crypto.hash7([
         id.identityNullifier,
         attesterId,
@@ -359,8 +359,8 @@ const genReputationCircuitInput = (config: {
         epoch: epoch,
         nonce,
         identity_nullifier: id.identityNullifier,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
+        state_tree_indexes: GSTreeProof.pathIndices,
+        state_tree_elements: GSTreeProof.siblings,
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,

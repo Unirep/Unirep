@@ -62,7 +62,7 @@ contract Unirep is IUnirep, VerifySignature {
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
 
         // for initializing other trees without using poseidon function
-        IncrementalBinaryTree.init(emptyTree, config.globalStateTreeDepth, 0);
+        IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
     }
 
     /**
@@ -98,7 +98,7 @@ contract Unirep is IUnirep, VerifySignature {
             uint160(attesterId),
             attester.stateTrees[attester.currentEpoch].numberOfLeaves
         );
-        emit NewGSTLeaf(
+        emit StateTreeLeaf(
             attester.currentEpoch,
             uint160(attesterId),
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
@@ -127,19 +127,19 @@ contract Unirep is IUnirep, VerifySignature {
         attester.startTimestamp = block.timestamp;
 
         // initialize the first state tree
-        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+        for (uint8 i; i < config.stateTreeDepth; i++) {
             attester.stateTrees[0].zeroes[i] = emptyTree.zeroes[i];
         }
         attester.stateTrees[0].root = emptyTree.root;
-        attester.stateTrees[0].depth = config.globalStateTreeDepth;
+        attester.stateTrees[0].depth = config.stateTreeDepth;
         attester.stateTreeRoots[0][emptyTree.root] = true;
 
         // initialize the semaphore group tree
-        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+        for (uint8 i; i < config.stateTreeDepth; i++) {
             attester.semaphoreGroup.zeroes[i] = emptyTree.zeroes[i];
         }
         attester.semaphoreGroup.root = emptyTree.root;
-        attester.semaphoreGroup.depth = config.globalStateTreeDepth;
+        attester.semaphoreGroup.depth = config.stateTreeDepth;
 
         // set the first epoch tree root
         attester.epochTreeRoots[0] = config.emptyEpochTreeRoot;
@@ -338,7 +338,7 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidStateTreeRoot(publicSignals[0]);
 
         // update the current state tree
-        emit NewGSTLeaf(
+        emit StateTreeLeaf(
             attester.currentEpoch,
             attesterId,
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
@@ -373,11 +373,11 @@ contract Unirep is IUnirep, VerifySignature {
 
         // otherwise initialize the new epoch structures
 
-        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+        for (uint8 i; i < config.stateTreeDepth; i++) {
             attester.stateTrees[newEpoch].zeroes[i] = emptyTree.zeroes[i];
         }
         attester.stateTrees[newEpoch].root = emptyTree.root;
-        attester.stateTrees[newEpoch].depth = config.globalStateTreeDepth;
+        attester.stateTrees[newEpoch].depth = config.stateTreeDepth;
         attester.stateTreeRoots[newEpoch][emptyTree.root] = true;
 
         attester.epochTreeRoots[newEpoch] = config.emptyEpochTreeRoot;
@@ -491,8 +491,8 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.epochTreeRoots[epoch];
     }
 
-    function globalStateTreeDepth() public view returns (uint8) {
-        return config.globalStateTreeDepth;
+    function stateTreeDepth() public view returns (uint8) {
+        return config.stateTreeDepth;
     }
 
     function epochTreeDepth() public view returns (uint8) {

@@ -9,7 +9,7 @@ import { BaseProof } from './BaseProof'
 export class ReputationProof extends BaseProof {
     readonly idx: any
     public epochKey: BigNumberish
-    public globalStateTreeRoot: BigNumberish
+    public stateTreeRoot: BigNumberish
     public epoch: BigNumberish
     public attesterId: BigNumberish
     public minRep: BigNumberish
@@ -29,7 +29,7 @@ export class ReputationProof extends BaseProof {
         super(_publicSignals, _proof, prover)
         this.idx = {
             epochKey: 0,
-            globalStateTreeRoot: 1,
+            stateTreeRoot: 1,
             epoch: 2,
             attesterId: 3,
             minRep: 4,
@@ -37,7 +37,7 @@ export class ReputationProof extends BaseProof {
             graffitiPreImage: 6,
         }
         this.epochKey = _publicSignals[this.idx.epochKey]
-        this.globalStateTreeRoot = _publicSignals[this.idx.globalStateTreeRoot]
+        this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot]
         this.epoch = _publicSignals[this.idx.epoch]
         this.attesterId = _publicSignals[this.idx.attesterId]
         this.minRep = _publicSignals[this.idx.minRep]

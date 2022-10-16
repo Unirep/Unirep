@@ -13,7 +13,7 @@ import {
 } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
 } from '@unirep/circuits'
@@ -70,7 +70,7 @@ describe('User State Transition', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
     })
 
     it('attester sign up', async () => {
@@ -81,7 +81,7 @@ describe('User State Transition', function () {
             .then((t) => t.wait())
     })
 
-    const stateTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 
     it('should fail to transition with invalid proof', async () => {
         const accounts = await ethers.getSigners()
@@ -115,8 +115,8 @@ describe('User State Transition', function () {
                 from_epoch: 0,
                 to_epoch: 1,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -185,8 +185,8 @@ describe('User State Transition', function () {
                 from_epoch: 1,
                 to_epoch: 2,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -217,7 +217,7 @@ describe('User State Transition', function () {
     it('should fail to transition from wrong epoch tree', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
-        const _stateTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -248,8 +248,8 @@ describe('User State Transition', function () {
                 from_epoch: 0,
                 to_epoch: 1,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -283,7 +283,7 @@ describe('User State Transition', function () {
     it('should fail to transition from wrong state tree', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
-        const _stateTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -315,8 +315,8 @@ describe('User State Transition', function () {
                 from_epoch: 0,
                 to_epoch: 1,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -379,8 +379,8 @@ describe('User State Transition', function () {
                 from_epoch: 0,
                 to_epoch: 1,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -447,8 +447,8 @@ describe('User State Transition', function () {
                 from_epoch: 0,
                 to_epoch: 1,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -476,7 +476,7 @@ describe('User State Transition', function () {
             .userStateTransition(publicSignals, proof)
         await tx.wait()
         await expect(tx)
-            .to.emit(unirepContract, 'NewGSTLeaf')
+            .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(1, accounts[1].address, 0, publicSignals[1])
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
@@ -523,8 +523,8 @@ describe('User State Transition', function () {
                 from_epoch: 0,
                 to_epoch: 1,
                 identity_nullifier: id.identityNullifier,
-                GST_path_index: stateTreeProof.pathIndices,
-                GST_path_elements: stateTreeProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: BigInt(accounts[1].address),
                 pos_rep: 0,
                 neg_rep: 0,
@@ -551,7 +551,7 @@ describe('User State Transition', function () {
             .userStateTransition(publicSignals, proof)
         await tx.wait()
         await expect(tx)
-            .to.emit(unirepContract, 'NewGSTLeaf')
+            .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(1, accounts[1].address, 0, publicSignals[1])
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
@@ -563,9 +563,7 @@ describe('User State Transition', function () {
                 publicSignals[2]
             )
         for (let x = 1; x < 5; x++) {
-            const _stateTree = new IncrementalMerkleTree(
-                GLOBAL_STATE_TREE_DEPTH
-            )
+            const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                 .fill(null)
                 .map((_, i) =>
@@ -598,8 +596,8 @@ describe('User State Transition', function () {
                     from_epoch: x,
                     to_epoch: x + 1,
                     identity_nullifier: id.identityNullifier,
-                    GST_path_index: _stateTreeProof.pathIndices,
-                    GST_path_elements: _stateTreeProof.siblings,
+                    state_tree_indexes: _stateTreeProof.pathIndices,
+                    state_tree_elements: _stateTreeProof.siblings,
                     attester_id: BigInt(accounts[1].address),
                     pos_rep: 0,
                     neg_rep: 0,
@@ -626,7 +624,7 @@ describe('User State Transition', function () {
                 .userStateTransition(publicSignals, proof)
             await tx.wait()
             await expect(tx)
-                .to.emit(unirepContract, 'NewGSTLeaf')
+                .to.emit(unirepContract, 'StateTreeLeaf')
                 .withArgs(x + 1, accounts[1].address, 0, publicSignals[1])
             await expect(tx)
                 .to.emit(unirepContract, 'UserStateTransitioned')

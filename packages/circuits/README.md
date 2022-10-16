@@ -99,7 +99,6 @@ import { Circuit } from '@unirep/circuits'
 const circuitInputs = {
     identity_nullifier: ...,
     identity_trapdoor: ...,
-    user_tree_root: ...,
     ...
 }
 const { proof, publicSignals } = await prover.genProofAndPublicSignals(

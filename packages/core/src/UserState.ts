@@ -103,7 +103,7 @@ export default class UserState extends Synchronizer {
      * @param _epoch Get the global state tree leaf index of the given epoch
      * @returns The the latest global state tree leaf index for an epoch.
      */
-    async latestGSTLeafIndex(_epoch?: number): Promise<number> {
+    async latestStateTreeLeafIndex(_epoch?: number): Promise<number> {
         if (!(await this.hasSignedUp())) return -1
         const currentEpoch = _epoch ?? (await this.getUnirepStateCurrentEpoch())
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
@@ -130,7 +130,7 @@ export default class UserState extends Synchronizer {
                 0,
                 0
             )
-            const foundLeaf = await this._db.findOne('GSTLeaf', {
+            const foundLeaf = await this._db.findOne('StateTreeLeaf', {
                 where: {
                     hash: leaf.toString(),
                 },
@@ -152,7 +152,7 @@ export default class UserState extends Synchronizer {
             graffiti,
             timestamp
         )
-        const foundLeaf = await this._db.findOne('GSTLeaf', {
+        const foundLeaf = await this._db.findOne('StateTreeLeaf', {
             where: {
                 epoch: currentEpoch,
                 hash: leaf.toString(),
@@ -167,14 +167,6 @@ export default class UserState extends Synchronizer {
      */
     public getUnirepStateCurrentEpoch = async (): Promise<number> => {
         return (await this.readCurrentEpoch()).number
-    }
-
-    async getNumGSTLeaves(epoch: number) {
-        await this._checkValidEpoch(epoch)
-        return this._db.count('GSTLeaf', {
-            epoch: epoch,
-            attesterId: this.attesterId.toString(),
-        })
     }
 
     async getAttestations(epochKey: string): Promise<any[]> {
@@ -420,15 +412,15 @@ export default class UserState extends Synchronizer {
                     return { posRep, negRep, graffiti, timestamp, proof }
                 })
             const epochKeyData = await Promise.all(epochKeyPromises)
-            const latestLeafIndex = await this.latestGSTLeafIndex()
-            const GSTree = await this.genGSTree(fromEpoch)
-            const GSTProof = GSTree.createProof(latestLeafIndex)
+            const latestLeafIndex = await this.latestStateTreeLeafIndex()
+            const stateTree = await this.genStateTree(fromEpoch)
+            const stateTreeProof = stateTree.createProof(latestLeafIndex)
             const circuitInputs = {
                 from_epoch: fromEpoch,
                 to_epoch: toEpoch,
                 identity_nullifier: this.id.identityNullifier,
-                GST_path_index: GSTProof.pathIndices,
-                GST_path_elements: GSTProof.siblings,
+                state_tree_indexes: stateTreeProof.pathIndices,
+                state_tree_elements: stateTreeProof.siblings,
                 attester_id: this.attesterId.toString(),
                 pos_rep: posRep,
                 neg_rep: negRep,
@@ -465,18 +457,18 @@ export default class UserState extends Synchronizer {
     ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
-        const leafIndex = await this.latestGSTLeafIndex()
+        const leafIndex = await this.latestStateTreeLeafIndex()
         const { posRep, negRep, graffiti, timestamp } =
             await this.getRepByAttester()
-        const GSTree = await this.genGSTree(epoch)
-        const GSTreeProof = GSTree.createProof(leafIndex)
+        const stateTree = await this.genStateTree(epoch)
+        const stateTreeProof = stateTree.createProof(leafIndex)
 
         const circuitInputs = {
             epoch,
             nonce: epkNonce,
             identity_nullifier: this.id.identityNullifier,
-            GST_path_index: GSTreeProof.pathIndices,
-            GST_path_elements: GSTreeProof.siblings,
+            state_tree_indexes: stateTreeProof.pathIndices,
+            state_tree_elements: stateTreeProof.siblings,
             attester_id: this.attesterId,
             pos_rep: posRep,
             neg_rep: negRep,
