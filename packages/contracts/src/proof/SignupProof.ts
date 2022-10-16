@@ -9,13 +9,13 @@ import { BaseProof } from './BaseProof'
 export class SignupProof extends BaseProof {
     readonly idx = {
         identityCommitment: 0,
-        globalStateTreeLeaf: 1,
+        stateTreeLeaf: 1,
         attesterId: 2,
         epoch: 3,
     }
 
     public identityCommitment: BigNumberish
-    public globalStateTreeLeaf: BigNumberish
+    public stateTreeLeaf: BigNumberish
     public attesterId: BigNumberish
     public epoch: BigNumberish
 
@@ -31,7 +31,7 @@ export class SignupProof extends BaseProof {
     ) {
         super(_publicSignals, _proof, prover)
         this.identityCommitment = _publicSignals[this.idx.identityCommitment]
-        this.globalStateTreeLeaf = _publicSignals[this.idx.globalStateTreeLeaf]
+        this.stateTreeLeaf = _publicSignals[this.idx.stateTreeLeaf]
         this.attesterId = _publicSignals[this.idx.attesterId]
         this.epoch = _publicSignals[this.idx.epoch]
         this.circuit = Circuit.signup
