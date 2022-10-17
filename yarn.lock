@@ -1412,11 +1412,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@unirep/circuits@1.0.0, @unirep/circuits@workspace:packages/circuits":
+"@unirep/circuits@1.0.1, @unirep/circuits@workspace:packages/circuits":
   version: 0.0.0-use.local
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
-    "@unirep/crypto": 1.0.0
+    "@unirep/crypto": 1.0.1
     circom: ^0.5.46
     circomlib: 0.5.3
     mocha: ^10.0.0
@@ -1425,7 +1425,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/contracts@1.0.0, @unirep/contracts@workspace:packages/contracts":
+"@unirep/contracts@1.0.1, @unirep/contracts@workspace:packages/contracts":
   version: 0.0.0-use.local
   resolution: "@unirep/contracts@workspace:packages/contracts"
   dependencies:
@@ -1437,8 +1437,8 @@ __metadata:
     "@openzeppelin/contracts": ^4.6.0
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
-    "@unirep/circuits": 1.0.0
-    "@unirep/crypto": 1.0.0
+    "@unirep/circuits": 1.0.1
+    "@unirep/crypto": 1.0.1
     "@zk-kit/incremental-merkle-tree.sol": ^1.2.0
     ethers: ^5.6.8
     hardhat: ^2.9.9
@@ -1457,9 +1457,9 @@ __metadata:
     "@nomicfoundation/hardhat-chai-matchers": ^1.0.0-beta.3
     "@nomiclabs/hardhat-ethers": ^2.0.6
     "@nomiclabs/hardhat-waffle": ^2.0.3
-    "@unirep/circuits": 1.0.0
-    "@unirep/contracts": 1.0.0
-    "@unirep/crypto": 1.0.0
+    "@unirep/circuits": 1.0.1
+    "@unirep/contracts": 1.0.1
+    "@unirep/crypto": 1.0.1
     anondb: ^0.0.10
     base64url: ^3.0.1
     ethers: ^5.6.8
@@ -1470,7 +1470,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/crypto@1.0.0, @unirep/crypto@workspace:packages/crypto":
+"@unirep/crypto@1.0.1, @unirep/crypto@workspace:packages/crypto":
   version: 0.0.0-use.local
   resolution: "@unirep/crypto@workspace:packages/crypto"
   dependencies:
