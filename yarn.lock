@@ -1623,6 +1623,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@cloudflare/kv-asset-handler@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@cloudflare/kv-asset-handler@npm:0.2.0"
+  dependencies:
+    mime: ^3.0.0
+  checksum: bc6a02a9c80be6de90e46454ef4de09301e68726eaa4835de0e30216e50fffcc5612274a17dfb455916cf3418f0cb25fefd2b561a9d2282f4cc10d40527f0acb
+  languageName: node
+  linkType: hard
+
 "@colors/colors@npm:1.5.0":
   version: 1.5.0
   resolution: "@colors/colors@npm:1.5.0"
@@ -4547,6 +4556,22 @@ __metadata:
     maci-crypto: ^0.9.1
     mocha: ^10.0.0
     typescript: ^4.7.3
+  languageName: unknown
+  linkType: soft
+
+"@unirep/docs@workspace:packages/docs":
+  version: 0.0.0-use.local
+  resolution: "@unirep/docs@workspace:packages/docs"
+  dependencies:
+    "@cloudflare/kv-asset-handler": ^0.2.0
+    "@docusaurus/core": 2.1.0
+    "@docusaurus/module-type-aliases": 2.1.0
+    "@docusaurus/preset-classic": 2.1.0
+    "@mdx-js/react": ^1.6.22
+    clsx: ^1.2.1
+    prism-react-renderer: ^1.3.5
+    react: ^17.0.2
+    react-dom: ^17.0.2
   languageName: unknown
   linkType: soft
 
@@ -7737,21 +7762,6 @@ __metadata:
   checksum: a169963848e8539dfd8a19058562f9e1c15c0f82cbf76fa98942f11c46f3c74e7e7c82e3a8a5182d4c9e6ff19e21be738dbd098a876dde755d3aedd2cc730880
   languageName: node
   linkType: hard
-
-"docs@workspace:packages/docs":
-  version: 0.0.0-use.local
-  resolution: "docs@workspace:packages/docs"
-  dependencies:
-    "@docusaurus/core": 2.1.0
-    "@docusaurus/module-type-aliases": 2.1.0
-    "@docusaurus/preset-classic": 2.1.0
-    "@mdx-js/react": ^1.6.22
-    clsx: ^1.2.1
-    prism-react-renderer: ^1.3.5
-    react: ^17.0.2
-    react-dom: ^17.0.2
-  languageName: unknown
-  linkType: soft
 
 "doctrine@npm:^2.1.0":
   version: 2.1.0
@@ -12409,6 +12419,15 @@ __metadata:
   bin:
     mime: cli.js
   checksum: fef25e39263e6d207580bdc629f8872a3f9772c923c7f8c7e793175cee22777bbe8bba95e5d509a40aaa292d8974514ce634ae35769faa45f22d17edda5e8557
+  languageName: node
+  linkType: hard
+
+"mime@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "mime@npm:3.0.0"
+  bin:
+    mime: cli.js
+  checksum: f43f9b7bfa64534e6b05bd6062961681aeb406a5b53673b53b683f27fcc4e739989941836a355eef831f4478923651ecc739f4a5f6e20a76487b432bfd4db928
   languageName: node
   linkType: hard
 
