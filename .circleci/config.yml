@@ -16,6 +16,15 @@ workflows:
             - crypto-test:
                   requires:
                       - build
+            - docs-publish:
+                  requires:
+                      - build
+                  filters:
+                      branches:
+                          only:
+                              - main
+                              - v1.1
+                              - v1.1-docs
 
 # Just for reusing below
 step_defs:
@@ -140,3 +149,21 @@ jobs:
             - run:
                   name: Test
                   command: yarn crypto test
+    docs-publish:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run: *node_version
+            - run: *check_version
+            - run:
+                  name: Build Docs Site
+                  command: yarn docs build
+            - run:
+                  name: Publish Docs Site
+                  command: |
+                      cd packages/docs
+                      npx wrangler publish

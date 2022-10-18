@@ -16,6 +16,7 @@
         "circuits": "yarn workspace @unirep/circuits run",
         "crypto": "yarn workspace @unirep/crypto run",
         "subgraph": "yarn workspace @unirep/subgraph run",
+        "docs": "yarn workspace @unirep/docs run",
         "build": "yarn workspaces foreach -t run build",
         "test": "yarn workspaces foreach -t run test",
         "lint": "prettier .",
