@@ -8,15 +8,11 @@ This is the core UniRep contract.
 import { Unirep } from '@unirep/contracts/Unirep.sol';
 ```
 
-:::tip
-Unless otherwise marked these functions may be called by anyone.
-:::
-
 ### userSignUp
 
 Submit a signup zk proof for a user.
 
-:::tip
+:::caution
 `msg.sender` must be the attester.
 :::
 
@@ -31,7 +27,7 @@ function userSignUp(
 
 Register an attester contract. `msg.sender` will become an attester.
 
-:::info
+:::caution
 The `attesterId` is the address of the attester contract. In this case `msg.sender`.
 :::
 
