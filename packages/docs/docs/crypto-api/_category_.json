@@ -1,8 +1,8 @@
 {
-  "label": "@unirep/crypto",
-  "position": 2,
-  "link": {
-    "type": "generated-index",
-    "description": "API documentation for the crypto package."
-  }
+    "label": "@unirep/crypto",
+    "position": 2,
+    "link": {
+        "type": "generated-index",
+        "description": "API documentation for the crypto package."
+    }
 }
