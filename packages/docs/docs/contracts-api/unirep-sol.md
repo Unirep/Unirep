@@ -4,7 +4,7 @@ title: UniRep contract
 
 This is the core UniRep contract.
 
-```js
+```sol
 import { Unirep } from '@unirep/contracts/Unirep.sol';
 ```
 
@@ -20,7 +20,7 @@ Submit a signup zk proof for a user.
 `msg.sender` must be the attester.
 :::
 
-```js
+```sol
 function userSignUp(
   uint[] memory publicSignals,
   uint[8] memory proof
@@ -35,7 +35,7 @@ Register an attester contract. `msg.sender` will become an attester.
 The `attesterId` is the address of the attester contract. In this case `msg.sender`.
 :::
 
-```js
+```sol
 function attesterSignUp(uint epochLength) public
 ```
 
@@ -47,7 +47,7 @@ Create an attestation to an epoch key. If the current epoch is not the same as `
 `msg.sender` must be the attester.
 :::
 
-```js
+```sol
 function submitAttestation(
   uint targetEpoch,
   uint epochKey,
@@ -61,7 +61,7 @@ function submitAttestation(
 
 Create a hashchain of epoch key balance updates that can be used to update the epoch root.
 
-```js
+```sol
 function buildHashchain(uint160 attesterId) public
 ```
 
@@ -69,7 +69,7 @@ function buildHashchain(uint160 attesterId) public
 
 Update the epoch tree root using a ZK proof and a hashchain.
 
-```js
+```sol
 function processHashchain(
   uint[] memory publicSignals,
   uint[8] memory proof
@@ -80,7 +80,7 @@ function processHashchain(
 
 Execute a user state transition using a ZK proof. This will insert a new state tree leaf in the current epoch.
 
-```js
+```sol
 function userStateTransition(
   uint[] memory publicSignals,
   uint[8] memory proof
@@ -91,7 +91,7 @@ function userStateTransition(
 
 Get the current epoch number for an attester.
 
-```js
+```sol
 function attesterCurrentEpoch(
   uint160 attesterId
 ) public view returns (uint)
@@ -101,7 +101,7 @@ function attesterCurrentEpoch(
 
 Get the remaining time, in seconds, for the current epoch for an attester.
 
-```js
+```sol
 function attesterEpochRemainingTime(
   uint160 attesterId
 ) public view returns (uint)
