@@ -8,7 +8,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 const config = {
     title: 'UniRep Docs',
     tagline: 'Universal Reputation',
-    url: 'https://docs.unirep.io',
+    url: 'https://developer.unirep.io',
     baseUrl: '/',
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
@@ -84,7 +84,7 @@ const config = {
                         title: 'Docs',
                         items: [
                             {
-                                label: 'Tutorial',
+                                label: 'Welcome',
                                 to: '/docs/welcome',
                             },
                         ],
