@@ -56,14 +56,6 @@ Get the latest state tree leaf index for either the latest transitioned epoch, o
 state.latestStateTreeLeafIndex(epoch?: number): Promise<number>
 ```
 
-### getAttestations
-
-Get all attestations to an epoch key.
-
-```ts
-state.getAttestations(epochKey: bigint): Promise<any[]>
-```
-
 ### getEpochKeys
 
 Get epoch keys for the current user, for the current epoch.
@@ -136,4 +128,3 @@ state.genAggregateEpochKeysProof(
     epoch?: number
 ): Promise<AggregateEpochKeysProof>
 ```
-

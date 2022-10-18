@@ -46,6 +46,11 @@ const sidebars = {
                     label: 'Synchronizer',
                     id: 'core-api/synchronizer',
                 },
+                {
+                    type: 'doc',
+                    label: 'schema',
+                    id: 'core-api/schema',
+                },
             ],
         },
         {
@@ -92,89 +97,27 @@ const sidebars = {
                 {
                     type: 'link',
                     label: 'genEpochKey()',
-                    href: 'crypto-hashes#genepochkey',
+                    href: '/docs/crypto-api/crypto-hashes#genepochkey',
                 },
                 {
                     type: 'link',
                     label: 'genEpochNullifier()',
-                    href: 'crypto-hashes#genepochnullifier',
+                    href: '/docs/crypto-api/crypto-hashes#genepochnullifier',
                 },
                 {
                     type: 'link',
                     label: 'genStateTreeLeaf()',
-                    href: 'crypto-hashes#genstatetreeleaf',
+                    href: '/docs/crypto-api/crypto-hashes#genstatetreeleaf',
                 },
                 {
-                    type: 'category',
+                    type: 'doc',
                     label: 'IncrementalMerkleTree',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'constructor',
-                            id: 'crypto-api/crypto-incremental-tree',
-                        },
-                        {
-                            type: 'link',
-                            label: 'insert()',
-                            href: 'crypto-incremental-tree#insert',
-                        },
-                        {
-                            type: 'link',
-                            label: 'update()',
-                            href: 'crypto-incremental-tree#update',
-                        },
-                        {
-                            type: 'link',
-                            label: 'delete()',
-                            href: 'crypto-incremental-tree#delete',
-                        },
-                        {
-                            type: 'link',
-                            label: 'createProof()',
-                            href: 'crypto-incremental-tree#createproof',
-                        },
-                        {
-                            type: 'link',
-                            label: 'verifyProof()',
-                            href: 'crypto-incremental-tree#verifyproof',
-                        },
-                    ],
+                    id: 'crypto-api/crypto-incremental-tree',
                 },
                 {
-                    type: 'category',
+                    type: 'doc',
                     label: 'SparseMerkleTree',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'constructor',
-                            id: 'crypto-api/crypto-sparse-tree',
-                        },
-                        {
-                            type: 'link',
-                            label: 'height',
-                            href: 'crypto-sparse-tree#height',
-                        },
-                        {
-                            type: 'link',
-                            label: 'root',
-                            href: 'crypto-sparse-tree#root',
-                        },
-                        {
-                            type: 'link',
-                            label: 'update()',
-                            href: 'crypto-sparse-tree#update',
-                        },
-                        {
-                            type: 'link',
-                            label: 'createProof()',
-                            href: 'crypto-sparse-tree#createproof',
-                        },
-                        {
-                            type: 'link',
-                            label: 'verifyProof()',
-                            href: 'crypto-sparse-tree#verifyproof',
-                        },
-                    ],
+                    id: 'crypto-api/crypto-sparse-tree',
                 },
             ],
         },
