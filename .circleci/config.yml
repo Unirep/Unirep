@@ -22,12 +22,12 @@ step_defs:
     - run: &node_version
           name: Set Node version
           command: |
-              nvm install v14
-              nvm alias default v14
+              nvm install v16
+              nvm alias default v16
               echo "nvm use default" >> $BASH_ENV
     - run: &check_version
           name: Check Node version
-          command: node -v | grep v14
+          command: node -v | grep v16
     - run: &install_circom
           name: Install Circom
           command: |
