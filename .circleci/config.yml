@@ -17,6 +17,7 @@ workflows:
                   requires:
                       - build
             - docs-publish:
+                  context: cloudflare
                   requires:
                       - build
                   filters:
