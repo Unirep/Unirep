@@ -62,6 +62,26 @@ const sidebars = {
                     label: 'Unirep.sol',
                     id: 'contracts-api/unirep-sol',
                 },
+                {
+                    type: 'doc',
+                    label: 'BaseProof',
+                    id: 'contracts-api/base-proof',
+                },
+                {
+                    type: 'doc',
+                    label: 'EpochKeyProof',
+                    id: 'contracts-api/epoch-key-proof',
+                },
+                {
+                    type: 'doc',
+                    label: 'SignupProof',
+                    id: 'contracts-api/signup-proof',
+                },
+                {
+                    type: 'doc',
+                    label: 'UserStateTransitionProof',
+                    id: 'contracts-api/user-state-transition-proof',
+                },
             ],
         },
         {
