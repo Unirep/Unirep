@@ -92,32 +92,32 @@ const sidebars = {
                 {
                     type: 'doc',
                     label: 'hash()',
-                    id: 'crypto-api/crypto-hashes',
+                    id: 'crypto-api/hashes',
                 },
                 {
                     type: 'link',
                     label: 'genEpochKey()',
-                    href: '/docs/crypto-api/crypto-hashes#genepochkey',
+                    href: '/docs/crypto-api/hashes#genepochkey',
                 },
                 {
                     type: 'link',
                     label: 'genEpochNullifier()',
-                    href: '/docs/crypto-api/crypto-hashes#genepochnullifier',
+                    href: '/docs/crypto-api/hashes#genepochnullifier',
                 },
                 {
                     type: 'link',
                     label: 'genStateTreeLeaf()',
-                    href: '/docs/crypto-api/crypto-hashes#genstatetreeleaf',
+                    href: '/docs/crypto-api/hashes#genstatetreeleaf',
                 },
                 {
                     type: 'doc',
                     label: 'IncrementalMerkleTree',
-                    id: 'crypto-api/crypto-incremental-tree',
+                    id: 'crypto-api/incremental-tree',
                 },
                 {
                     type: 'doc',
                     label: 'SparseMerkleTree',
-                    id: 'crypto-api/crypto-sparse-tree',
+                    id: 'crypto-api/sparse-tree',
                 },
             ],
         },
