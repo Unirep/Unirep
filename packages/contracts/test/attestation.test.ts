@@ -59,10 +59,11 @@ describe('Attestations', function () {
             EPOCH_TREE_DEPTH,
             hash4([0, 0, 0, 0])
         )
+        const wrongEpoch = 444444
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .submitAttestation(444444, epochKey, 1, 1, 0)
+                .submitAttestation(wrongEpoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 

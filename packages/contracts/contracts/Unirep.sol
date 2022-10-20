@@ -268,12 +268,11 @@ contract Unirep is IUnirep, VerifySignature {
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
             .hashchain[hashchainIndex];
-        require(hashchain.head != 0 && !hashchain.processed);
-        require(hashchainHead == hashchain.head, 'mismatch hashchain');
-        require(
-            attester.epochTreeRoots[epoch] == publicSignals[2],
-            'mismatch from epoch root'
-        );
+        if (hashchain.head == 0 || hashchain.processed)
+            revert HashchainInvalid();
+        if (hashchainHead != hashchain.head) revert HashchainInvalid();
+        if (attester.epochTreeRoots[epoch] != publicSignals[2])
+            revert InvalidEpochTreeRoot(publicSignals[2]);
         // Verify the zk proof
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
@@ -309,7 +308,7 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
-        require(publicSignals[5] < type(uint160).max, 'attesterId');
+        if (publicSignals[5] >= type(uint160).max) revert AttesterInvalid();
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
@@ -323,12 +322,11 @@ contract Unirep is IUnirep, VerifySignature {
 
         uint256 fromEpoch = publicSignals[3];
         // check for attestation processing
-        require(
-            attester.epochKeyState[fromEpoch].owedKeys.length == 0 &&
-                attester.epochKeyState[fromEpoch].totalHashchains ==
-                attester.epochKeyState[fromEpoch].processedHashchains,
-            'hashchain'
-        );
+        if (
+            attester.epochKeyState[fromEpoch].owedKeys.length != 0 ||
+            attester.epochKeyState[fromEpoch].totalHashchains !=
+            attester.epochKeyState[fromEpoch].processedHashchains
+        ) revert HashchainNotProcessed();
         // make sure from epoch tree root is valid
         if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
             revert InvalidEpochTreeRoot(publicSignals[6]);
