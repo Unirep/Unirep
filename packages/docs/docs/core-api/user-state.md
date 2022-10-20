@@ -14,7 +14,7 @@ const state = new UserState({
   db,
   defaultProver,
   unirepContract: new ethers.Contract(UNIREP_ADDRESS),
-  identity,
+  _id: identity,
   attesterId: ATTESTER_ADDRESS,
 })
 ```
