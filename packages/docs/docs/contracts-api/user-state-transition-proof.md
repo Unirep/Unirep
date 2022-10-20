@@ -4,7 +4,7 @@ title: UserStateTransitionProof
 
 A class representing a user state transition proof. Each of the following properties are public signals for the proof.
 
-### fromStateTreeRoot
+## fromStateTreeRoot
 
 The state tree root in the from epoch the proof was made for.
 
@@ -12,7 +12,7 @@ The state tree root in the from epoch the proof was made for.
 this.fromStateTreeRoot
 ```
 
-### stateTreeLeaf
+## stateTreeLeaf
 
 The new state tree leaf for the user.
 
@@ -20,7 +20,7 @@ The new state tree leaf for the user.
 this.stateTreeLeaf
 ```
 
-### fromEpoch
+## fromEpoch
 
 The epoch the user is transitioning from.
 
@@ -28,7 +28,7 @@ The epoch the user is transitioning from.
 this.fromEpoch
 ```
 
-### toEpoch
+## toEpoch
 
 The epoch the user is transitioning to.
 
@@ -36,7 +36,7 @@ The epoch the user is transitioning to.
 this.toEpoch
 ```
 
-### attesterId
+## attesterId
 
 The attester id for the proof.
 
@@ -44,7 +44,7 @@ The attester id for the proof.
 this.attesterId
 ```
 
-### epochTreeRoot
+## epochTreeRoot
 
 The epoch tree root from the old epoch.
 

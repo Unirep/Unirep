@@ -2,7 +2,7 @@
 title: "Hash functions"
 ---
 
-### Hashes
+## Hashes
 
 Poseidon hash of variable number of items.
 ```ts
@@ -15,7 +15,7 @@ hash3(items: any[]): bigint
 hash8(items: any[]): bigint
 ```
 
-### genEpochKey
+## genEpochKey
 
 Calculate an epoch key. `maxEpochKey` is the maximum value for a key. The hash will be modded by this value, e.g. `H(...) % maxEpochKey`. For a binary tree this should be `2**depth`.
 ```ts
@@ -30,7 +30,7 @@ genEpochKey(
 ): bigint
 ```
 
-### genEpochNullifier
+## genEpochNullifier
 
 Calculate a user state transition nullifier. TODO: update name
 ```ts
@@ -43,7 +43,7 @@ genEpochNullifier(
 ): bigint
 ```
 
-### genStateTreeLeaf
+## genStateTreeLeaf
 
 Calculate a state tree leaf for a user.
 ```ts

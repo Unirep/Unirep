@@ -6,7 +6,7 @@ title: What is UniRep?
 
 <center><img src="/img/unirep-banner.png" alt="UniRep: Privacy &#x26; provable reputation" width="800px" /></center>
 
-### Overview
+## Overview
 
 **UniRep** (**Uni**versal **Rep**utation) is a _private_ and _non-repudiable_ **reputation system**. Users can&#x20;
 
@@ -18,7 +18,7 @@ The high-level goal for **UniRep** is to be a base layer on top of which anyone 
 
 UniRep is originally proposed by BarryWhiteHat in [this ethresear.ch post](https://ethresear.ch/t/anonymous-reputation-risking-and-burning/3926)
 
-### v1.1
+## v1.1
 
 Version 1.1 of the protocol reduces the complexity of user proofs to constant time. Users can receive unlimited attestations while keeping the proving time constant.
 

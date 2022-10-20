@@ -4,7 +4,7 @@ title: SignupProof
 
 A class representing a signup proof. Each of the following properties are public signals for the proof.
 
-### identityCommitment
+## identityCommitment
 
 The identity commitment for the user signing up.
 
@@ -12,7 +12,7 @@ The identity commitment for the user signing up.
 this.identityCommitment
 ```
 
-### stateTreeLeaf
+## stateTreeLeaf
 
 The new state tree leaf for the user. This leaf will contain zero values for `posRep`, `negRep`, and `graffiti`.
 
@@ -20,7 +20,7 @@ The new state tree leaf for the user. This leaf will contain zero values for `po
 this.stateTreeLeaf
 ```
 
-### epoch
+## epoch
 
 The epoch the proof was made within.
 
@@ -28,7 +28,7 @@ The epoch the proof was made within.
 this.epoch
 ```
 
-### attesterId
+## attesterId
 
 The attester id for the proof.
 

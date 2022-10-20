@@ -21,7 +21,7 @@ import { IndexedDBConnector } from 'anondb/web'
 }
 ```
 
-### SynchronizerState
+## SynchronizerState
 
 Used to store information about what blocks/transactions/events have been processed.
 
@@ -34,7 +34,7 @@ Used to store information about what blocks/transactions/events have been proces
 }
 ```
 
-### Attestation
+## Attestation
 
 An attestation given to an epoch key.
 
@@ -53,7 +53,7 @@ An attestation given to an epoch key.
 }
 ```
 
-### StateTreeLeaf
+## StateTreeLeaf
 
 A leaf from a state tree.
 
@@ -66,7 +66,7 @@ A leaf from a state tree.
 }
 ```
 
-### EpochTreeLeaf
+## EpochTreeLeaf
 
 A leaf from an epoch tree.
 
@@ -79,7 +79,7 @@ A leaf from an epoch tree.
 }
 ```
 
-### Epoch
+## Epoch
 
 An epoch entry.
 
@@ -91,7 +91,7 @@ An epoch entry.
 }
 ```
 
-### Nullifier
+## Nullifier
 
 ```ts
 {
@@ -102,7 +102,7 @@ An epoch entry.
 }
 ```
 
-### UserSignUp
+## UserSignUp
 
 An object created when a user joins an attester.
 

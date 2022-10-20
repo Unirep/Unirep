@@ -10,7 +10,7 @@ import { IncrementalMerkleTree } from '@unirep/crypto'
 const tree = new IncrementalMerkleTree(32)
 ```
 
-### constructor
+## constructor
 
 Get a new tree instance.
 ```ts
@@ -21,28 +21,28 @@ constructor(
 ): IncrementalMerkleTree
 ```
 
-### insert
+## insert
 
 Insert a new leaf in the next free index.
 ```ts
 tree.insert(leaf: bigint)
 ```
 
-### update
+## update
 
 Update a leaf in the tree by index.
 ```ts
 tree.update(index: number, leaf: bigint)
 ```
 
-### delete
+## delete
 
 Delete (set to zero value) a leaf in the tree.
 ```ts
 tree.delete(index: number)
 ```
 
-### Proof
+## Proof
 
 A struct for representing merkle proofs.
 
@@ -55,14 +55,14 @@ type Proof = {
 }
 ```
 
-### createProof
+## createProof
 
 Get a merkle inclusion proof for an index.
 ```ts
 tree.createProof(index: number): Proof
 ```
 
-### verifyProof
+## verifyProof
 
 Verify a merkle proof in the tree.
 ```ts

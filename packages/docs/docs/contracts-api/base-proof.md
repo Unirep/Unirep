@@ -23,11 +23,11 @@ class MyCustomProof extends BaseProof {
 }
 ```
 
-### BaseProof
+## BaseProof
 
 The base class for a proof that can be verified using a [`Prover`](../circuits-api/prover).
 
-### constructor
+## constructor
 
 Create a new instance of the class.
 
@@ -39,7 +39,7 @@ constructor(
 )
 ```
 
-### \_snarkProof
+## \_snarkProof
 
 The proof data in `SnarkProof` format. Use this when manually verifying with `snarkjs`.
 
@@ -47,7 +47,7 @@ The proof data in `SnarkProof` format. Use this when manually verifying with `sn
 proof._snarkProof
 ```
 
-### circuit
+## circuit
 
 The string name of the type of circuit this proof came from. For the `BaseProof` class this is undefined.
 
@@ -55,7 +55,7 @@ The string name of the type of circuit this proof came from. For the `BaseProof`
 proof.circuit
 ```
 
-### publicSignals
+## publicSignals
 
 The raw array of public signals for the proof.
 
@@ -63,7 +63,7 @@ The raw array of public signals for the proof.
 proof.publicSignals
 ```
 
-### proof
+## proof
 
 The proof data formatted as `BigNumberish[]`. Use this property when interacting with smart contracts.
 
@@ -71,7 +71,7 @@ The proof data formatted as `BigNumberish[]`. Use this property when interacting
 proof.proof
 ```
 
-### veriy
+## verify
 
 A function to verify the proof with the supplied `Prover`. The `prover` property must be set either in the constructor, or manually otherwise this will throw.
 
@@ -79,7 +79,7 @@ A function to verify the proof with the supplied `Prover`. The `prover` property
 proof.verify(): Promise<boolean>
 ```
 
-### hash
+## hash
 
 Calculate a Solidity Keccak256 hash for the proof. This is the equivalent of `keccak256(abi.encode(publicSignals, proof))` in Solidity.
 

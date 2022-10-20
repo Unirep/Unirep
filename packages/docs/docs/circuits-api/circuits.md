@@ -20,7 +20,7 @@ Use it like so:
 import { Circuit } from '@unirep/circuits'
 ```
 
-### Signup Proof
+## Signup Proof
 
 The signup proof outputs a state tree leaf and an identity commitment for the user. The state tree leaf will have zero values for positive and negative reputation.
 
@@ -34,7 +34,7 @@ Outputs:
 - `identity_commitment`
 - `state_tree_leaf`
 
-### Epoch Key Proof
+## Epoch Key Proof
 
 The epoch key proof allows a user to prove control of an epoch key in a certain epoch. This proof calculates two things: merkle inclusion of a state leaf against the current state root, and an epoch key.
 
@@ -53,7 +53,7 @@ Outputs:
 - `epoch_key`
 - `state_tree_root`
 
-### Prove Reputation Proof
+## Prove Reputation Proof
 
 The prove reputation proof allows a user to prove a reputation balance in the state tree. The user is not able to prove reputation received in the current epoch. The user can also optionally prove some minimum amount of reputation, and their graffiti pre-image.
 
@@ -74,7 +74,7 @@ Outputs:
 - `epoch_key`
 - `state_tree_root`
 
-### User State Transition Proof
+## User State Transition Proof
 
 The user state transition proof allows a user to prove how much reputation they have at the end of an epoch and output a new state tree leaf. The proof calculates an inclusion proof for the state tree, and for each epoch key nonce an inclusion proof for the epoch tree.
 
@@ -103,7 +103,7 @@ Outputs:
 - `state_tree_leaf`
 - `transition_nullifier`
 
-### Aggregate Epoch Keys
+## Aggregate Epoch Keys
 
 Only the root of the epoch tree is stored on chain. This proof allows multiple leaves to be added or updated in the tree using a single proof. This proof is used to update the epoch tree root onchain root.
 

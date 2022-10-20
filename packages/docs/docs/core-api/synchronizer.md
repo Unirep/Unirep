@@ -18,7 +18,7 @@ const state = new Synchronizer({
 })
 ```
 
-### constructor
+## constructor
 
 ```ts
 constructor(config: {
@@ -29,7 +29,7 @@ constructor(config: {
 })
 ```
 
-### start
+## start
 
 Start the synchronizer daemon.
 
@@ -37,7 +37,7 @@ Start the synchronizer daemon.
 synchronizer.start(): Promise<void>
 ```
 
-### stop
+## stop
 
 Stop the synchronizer daemon.
 
@@ -45,7 +45,7 @@ Stop the synchronizer daemon.
 synchronizer.stop(): Promise<void>
 ```
 
-### waitForSync
+## waitForSync
 
 Wait for the synchronizer to sync up to a certain block. By default this will wait until the current latest known block (according to the provider).
 
@@ -53,7 +53,7 @@ Wait for the synchronizer to sync up to a certain block. By default this will wa
 synchronizer.waitForSync(blockNumber?: number): Promise<void>
 ```
 
-### epochTreeRoot
+## epochTreeRoot
 
 Get the epoch tree root for a certain epoch.
 
@@ -61,7 +61,7 @@ Get the epoch tree root for a certain epoch.
 synchronizer.epochTreeRoot(epoch: number): Promise<bigint>
 ```
 
-### epochTreeProof
+## epochTreeProof
 
 Build a merkle inclusion proof for the tree from a certain epoch.
 
@@ -69,7 +69,7 @@ Build a merkle inclusion proof for the tree from a certain epoch.
 synchronizer.epochTreeProof(epoch: number, leafIndex: bigint): Promise<bigint[]>
 ```
 
-### nullifierExists
+## nullifierExists
 
 Determine if a nullifier exists. This can be a proof nullifier, user state transition nullifier, or any other kind of nullifier. All nullifiers are stored in a single mapping and expected to be globally unique.
 
@@ -77,7 +77,7 @@ Determine if a nullifier exists. This can be a proof nullifier, user state trans
 synchronizer.nullifierExists(nullifier: bigint): Promise<boolean>
 ```
 
-### genStateTree
+## genStateTree
 
 Build the latest state tree for a certain epoch.
 
@@ -85,7 +85,7 @@ Build the latest state tree for a certain epoch.
 synchronizer.genStateTree(epoch: bigint): Promise<IncrementalMerkleTree>
 ```
 
-### genEpochTree
+## genEpochTree
 
 Build the latest epoch tree for a certain epoch.
 
@@ -93,7 +93,7 @@ Build the latest epoch tree for a certain epoch.
 synchronizer.genEpochTree(epoch: bigint): Promise<SparseMerkleTree>
 ```
 
-### stateRootExists
+## stateRootExists
 
 Determine if a state root exists in a certain epoch.
 
@@ -101,7 +101,7 @@ Determine if a state root exists in a certain epoch.
 synchronizer.stateRootExists(root: bigint, epoch: bigint): Promise<boolean>
 ```
 
-### epochTreeRootExists
+## epochTreeRootExists
 
 Determine if an epoch tree root exists for a certain epoch.
 
@@ -109,7 +109,7 @@ Determine if an epoch tree root exists for a certain epoch.
 synchronizer.epochTreeRootExists(root: bigint, epoch: bigint): Promise<boolean>
 ```
 
-### getNumStateTreeLeaves
+## getNumStateTreeLeaves
 
 Get the number of state tree leaves in a certain epoch.
 
@@ -117,7 +117,7 @@ Get the number of state tree leaves in a certain epoch.
 synchronizer.getNumStateTreeLeaves(epoch: number): Promise<number>
 ```
 
-### getAttestations
+## getAttestations
 
 Get all attestations to an epoch key.
 

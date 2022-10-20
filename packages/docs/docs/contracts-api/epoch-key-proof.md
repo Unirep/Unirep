@@ -4,7 +4,7 @@ title: EpochKeyProof
 
 A class representing an epoch key proof. Each of the following properties are public signals for the proof.
 
-### epochKey
+## epochKey
 
 The epoch key being proved.
 
@@ -12,7 +12,7 @@ The epoch key being proved.
 this.epochKey
 ```
 
-### stateTreeRoot
+## stateTreeRoot
 
 The state tree root the proof was made against. This should be verified to exist onchain. When verifying the proof.
 
@@ -20,7 +20,7 @@ The state tree root the proof was made against. This should be verified to exist
 this.stateTreeRoot
 ```
 
-### epoch
+## epoch
 
 The epoch the proof was made within.
 
@@ -28,7 +28,7 @@ The epoch the proof was made within.
 this.epoch
 ```
 
-### attesterId
+## attesterId
 
 The attester id for the proof.
 

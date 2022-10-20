@@ -23,7 +23,7 @@ const state = new UserState({
 The `UserState` class is a superclass of [`Synchronizer`](./synchronizer).
 :::
 
-### constructor
+## constructor
 
 ```ts
 constructor(config: {
@@ -35,20 +35,20 @@ constructor(config: {
 }) {
 ```
 
-### hasSignedUp
+## hasSignedUp
 
 ```ts
 state.hasSignedUp(): Promise<boolean>
 ```
 
-### latestTransitionedEpoch
+## latestTransitionedEpoch
 
 
 ```ts
 state.latestTransitionedEpoch(): Promise<number>
 ```
 
-### latestStateTreeLeafIndex
+## latestStateTreeLeafIndex
 
 Get the latest state tree leaf index for either the latest transitioned epoch, or the epoch specified.
 
@@ -56,7 +56,7 @@ Get the latest state tree leaf index for either the latest transitioned epoch, o
 state.latestStateTreeLeafIndex(epoch?: number): Promise<number>
 ```
 
-### getEpochKeys
+## getEpochKeys
 
 Get epoch keys for the current user, for the current epoch.
 
@@ -64,7 +64,7 @@ Get epoch keys for the current user, for the current epoch.
 state.getEpochKeys(epoch: number): bigint[]
 ```
 
-### getRepByAttester
+## getRepByAttester
 
 Get the reputation balance for an attester in an epoch. By default we use the currently specified attester and the latest epoch.
 
@@ -72,7 +72,7 @@ Get the reputation balance for an attester in an epoch. By default we use the cu
 state.getRepByAttester(attesterId?: bigint, epoch: number): Promise<Reputation>
 ```
 
-### getRepByEpochKey
+## getRepByEpochKey
 
 Get the rep owed to an epoch key in a certain epoch.
 
@@ -80,7 +80,7 @@ Get the rep owed to an epoch key in a certain epoch.
 state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
 ```
 
-### genUserStateTransitionProof
+## genUserStateTransitionProof
 
 Generate a user state transition proof.
 
@@ -88,7 +88,7 @@ Generate a user state transition proof.
 state.genUserStateTransitionProof(): Promise<UserStateTransitionProof>
 ```
 
-### genProveReputationProof
+## genProveReputationProof
 
 Generate a proof of reputation.
 
@@ -96,7 +96,7 @@ Generate a proof of reputation.
 state.genProveReputationProof(epochKeyNonce: number, minRep?: number): Promise<ReputationProof>
 ```
 
-### genUserSignUpProof
+## genUserSignUpProof
 
 Generate a proof that can be used to signup.
 
@@ -104,7 +104,7 @@ Generate a proof that can be used to signup.
 state.genUserSignUpProof(): Promise<SignupProof>
 ```
 
-### genAggregateEpochKeysProof
+## genAggregateEpochKeysProof
 
 Generate a proof that can be used to update the epoch tree root on chain.
 

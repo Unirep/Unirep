@@ -2,7 +2,7 @@
 title: "Prover"
 ---
 
-### Prover
+## Prover
 
 The prover interface is used to write custom implementations for creating and verifying proofs. This abstracts away the logic of loading the proving keys. For example, a prover implementation could load the keys from disk, from a remote url, etc.
 
@@ -12,7 +12,7 @@ See the `defaultProver` for an example implementation.
 
 :::
 
-### verifyProof
+## verifyProof
 
 ```ts
 verifyProof: (
@@ -22,7 +22,7 @@ verifyProof: (
 ) => Promise<boolean>
 ```
 
-### genProofAndPublicSignals
+## genProofAndPublicSignals
 
 ```ts
 genProofAndPublicSignals: (
@@ -34,7 +34,7 @@ genProofAndPublicSignals: (
 }>
 ```
 
-### getVKey
+## getVKey
 
 ```ts
 getVKey: (name: string | Circuit) => any

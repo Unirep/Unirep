@@ -10,7 +10,7 @@ import { SparseMerkleTree } from '@unirep/crypto'
 const tree = new SparseMerkleTree(32)
 ```
 
-### constructor
+## constructor
 
 Get a new tree instance.
 ```ts
@@ -20,35 +20,35 @@ constructor(
 ): SparseMerkleTree
 ```
 
-### height
+## height
 
 Get the number of levels in the tree. (getter)
 ```ts
 tree.height
 ```
 
-### root
+## root
 
 Get the current root of the tree. (getter)
 ```ts
 tree.root
 ```
 
-### update
+## update
 
 Update a leaf in the tree.
 ```ts
 tree.update(index: bigint, value: bigint)
 ```
 
-### createProof
+## createProof
 
 Create a merkle inclusion proof for a leaf.
 ```ts
 tree.createProof(index: bigint): bigint[]
 ```
 
-### verifyProof
+## verifyProof
 
 Verify a merkle inclusion proof.
 ```ts
