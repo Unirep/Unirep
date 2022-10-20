@@ -106,6 +106,16 @@ describe('Attestations', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
+    it('should fail to attest to invalid epoch key', async () => {
+        const accounts = await ethers.getSigners()
+        const epochKey = BigInt(2 ** 50)
+        await expect(
+            unirepContract
+                .connect(accounts[1])
+                .submitAttestation(1, epochKey, 1, 1, 0)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
+    })
+
     it('should submit attestation with graffiti', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
