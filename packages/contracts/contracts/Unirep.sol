@@ -390,11 +390,11 @@ contract Unirep is IUnirep, VerifySignature {
         return attesters[attesterId].epochKeyState[epoch].processedHashchains;
     }
 
-    function attesterHashchain(
-        uint160 attesterId,
-        uint256 epoch,
-        uint256 index
-    ) public view returns (EpochKeyHashchain memory) {
+    function attesterHashchain(uint160 attesterId, uint256 epoch, uint256 index)
+        public
+        view
+        returns (EpochKeyHashchain memory)
+    {
         return attesters[attesterId].epochKeyState[epoch].hashchain[index];
     }
 

@@ -171,18 +171,6 @@ export default class UserState extends Synchronizer {
         })
     }
 
-    async getAttestations(epochKey: string): Promise<any[]> {
-        await this._checkEpochKeyRange(epochKey)
-        return this._db.findMany('Attestation', {
-            where: {
-                epochKey,
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-    }
-
     async getEpochKeys(epoch: number) {
         await this._checkValidEpoch(epoch)
         return Array(this.settings.numEpochKeyNoncePerEpoch)
