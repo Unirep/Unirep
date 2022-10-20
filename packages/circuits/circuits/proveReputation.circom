@@ -1,3 +1,5 @@
+pragma circom 2.0.0;
+
 /*
     Prove:
         1. if user has a leaf in current state tree
@@ -15,21 +17,21 @@ include "./modulo.circom";
 
 template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input epoch;
-    signal private input epoch_key_nonce;
+    signal input epoch_key_nonce;
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
-    signal private input identity_nullifier;
+    signal input identity_nullifier;
     // Global state tree
-    signal private input GST_path_index[GST_TREE_DEPTH];
-    signal private input GST_path_elements[GST_TREE_DEPTH][1];
+    signal input GST_path_index[GST_TREE_DEPTH];
+    signal input GST_path_elements[GST_TREE_DEPTH][1];
     signal output gst_root;
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
-    signal private input pos_rep;
-    signal private input neg_rep;
-    // signal private input graffiti;
+    signal input pos_rep;
+    signal input neg_rep;
+    // signal input graffiti;
     // Prove the minimum reputation
     signal input min_rep;
     // Graffiti - todo?
@@ -38,9 +40,9 @@ template ProveReputation(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_E
 
     // prove what we've received this epoch
     signal input epoch_tree_root;
-    signal private input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal private input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal private input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
 
     signal output pos_rep_balance;
     signal output neg_rep_balance;

@@ -1,4 +1,6 @@
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../../node_modules/circomlib/circuits/comparators.circom";
+include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "./sparseMerkleTree.circom";
 
 template UpdateSparseTree(TREE_DEPTH) {
@@ -10,23 +12,21 @@ template UpdateSparseTree(TREE_DEPTH) {
     signal input pos_rep;
     signal input neg_rep;
 
-    signal private input old_pos_rep;
-    signal private input old_neg_rep;
+    signal input old_leaf;
 
-    signal private input leaf_elements[TREE_DEPTH];
+    signal input leaf_elements[TREE_DEPTH];
+
+    // if this is true output the from_root
+    signal input should_ignore;
 
     // verify membership of old rep
     // calculate new root
 
     /** 1. Verify old_leaf membership in from_root **/
 
-    component old_leaf_hasher = Poseidon(2);
-    old_leaf_hasher.inputs[0] <== old_pos_rep;
-    old_leaf_hasher.inputs[1] <== old_neg_rep;
-
     component tree_membership = SMTInclusionProof(TREE_DEPTH);
     tree_membership.leaf_index <== leaf_index;
-    tree_membership.leaf <== old_leaf_hasher.out;
+    tree_membership.leaf <== old_leaf;
     for (var i = 0; i < TREE_DEPTH; i++) {
         tree_membership.path_elements[i][0] <== leaf_elements[i];
     }
@@ -37,8 +37,8 @@ template UpdateSparseTree(TREE_DEPTH) {
     /** 2. Calculate the to_root by inserting the new_leaf **/
 
     component leaf_hasher = Poseidon(2);
-    leaf_hasher.inputs[0] <== pos_rep + old_pos_rep;
-    leaf_hasher.inputs[1] <== neg_rep + old_neg_rep;
+    leaf_hasher.inputs[0] <== pos_rep;
+    leaf_hasher.inputs[1] <== neg_rep;
     new_leaf <== leaf_hasher.out;
 
     component new_tree = SMTInclusionProof(TREE_DEPTH);
@@ -47,7 +47,18 @@ template UpdateSparseTree(TREE_DEPTH) {
     for (var i = 0; i < TREE_DEPTH; i++) {
         new_tree.path_elements[i][0] <== leaf_elements[i];
     }
-    to_root <== new_tree.root;
+
+    // if the ignore check is 0 we output new_tree.root
+    // if it is 1 we output the from_root
+    component should_not_ignore = IsZero();
+    should_not_ignore.in <== should_ignore;
+
+    component root_selector = Mux1();
+    root_selector.c[0] <== from_root;
+    root_selector.c[1] <== new_tree.root;
+    root_selector.s <== should_not_ignore.out;
+
+    to_root <== root_selector.out;
 
     /** End of check 2 **/
 }

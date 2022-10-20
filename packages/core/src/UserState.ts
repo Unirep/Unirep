@@ -19,9 +19,9 @@ import {
     EpochKeyProof,
     SignupProof,
     UserStateTransitionProof,
-    UpdateSparseTreeProof,
+    AggregateEpochKeysProof,
 } from '@unirep/contracts'
-import { Circuit, Prover } from '@unirep/circuits'
+import { Circuit, Prover, AGGREGATE_KEY_COUNT } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 /**
@@ -290,56 +290,72 @@ export default class UserState extends Synchronizer {
         )
     }
 
-    public genAttestationProof = async (
-        epochKey: bigint,
-        posRep: bigint,
-        negRep: bigint,
-        epochTreeRoot?: bigint,
-        epoch?: bigint
+    public genAggregateEpochKeysProof = async (
+        epochKeys: bigint[],
+        newBalances: bigint[][],
+        hashchainIndex: number | bigint,
+        epoch?: bigint | number
     ) => {
-        // get the old balance of the key
+        if (epochKeys.length > this.settings.aggregateKeyCount) {
+            throw new Error(`Too many keys for circuit`)
+        }
         const targetEpoch =
             epoch ?? BigInt(await this.getUnirepStateCurrentEpoch())
-        const targetRoot =
-            epochTreeRoot ??
-            (await this.unirepContract.attesterEpochRoot(
-                this.attesterId,
-                targetEpoch
-            ))
-        const existingBalance = await this.getRepByEpochKey(
-            epochKey,
+        const targetRoot = await this.unirepContract.attesterEpochRoot(
+            this.attesterId,
             targetEpoch
         )
-        // verify that the existing balance exists in the tree
-        const epochTree = await this.genEpochTree(targetEpoch)
-        const leaf = await this._db.findOne('EpochTreeLeaf', {
+        const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
-                epoch: Number(targetEpoch),
-                index: epochKey.toString(),
+                epoch: targetEpoch,
+                index: epochKeys.map((k) => k.toString()),
                 attesterId: this.attesterId.toString(),
             },
         })
-        if (
-            !leaf &&
-            (existingBalance.posRep.toString() !== '0' ||
-                existingBalance.negRep.toString() !== '0')
-        ) {
-            throw new Error('Unable to find existing leaf')
-        }
+        const leavesByEpochKey = leaves.reduce((acc, obj) => {
+            return {
+                ...acc,
+                [obj.index]: obj,
+            }
+        }, {})
+        const dummyEpochKeys = Array(
+            this.settings.aggregateKeyCount - epochKeys.length
+        )
+            .fill(null)
+            .map(() => '0x0000000')
+        const dummyBalances = Array(
+            this.settings.aggregateKeyCount - newBalances.length
+        )
+            .fill(null)
+            .map(() => [0, 0])
+        const allEpochKeys = [epochKeys, dummyEpochKeys].flat()
+        const allBalances = [newBalances, dummyBalances].flat()
+        const epochTree = await this.genEpochTree(targetEpoch)
         const circuitInputs = {
-            from_root: targetRoot,
-            leaf_index: epochKey,
-            pos_rep: existingBalance.posRep + posRep,
-            neg_rep: existingBalance.negRep + negRep,
-            old_pos_rep: existingBalance.posRep,
-            old_neg_rep: existingBalance.negRep,
-            leaf_elements: epochTree.createProof(epochKey),
+            start_root: epochTree.root,
+            epoch: targetEpoch,
+            attester_id: this.attesterId.toString(),
+            epoch_keys: allEpochKeys.map((k) => k.toString()),
+            epoch_key_balances: allBalances,
+            old_epoch_key_hashes: allEpochKeys.map((key) => {
+                const leaf = leavesByEpochKey[key.toString()]
+                return leaf?.hash ?? hash2([0, 0])
+            }),
+            path_elements: allEpochKeys.map((key, i) => {
+                const p = epochTree.createProof(BigInt(key))
+                if (i < epochKeys.length) {
+                    epochTree.update(BigInt(key), hash2(newBalances[i]))
+                }
+                return p
+            }),
+            hashchain_index: hashchainIndex,
+            epoch_key_count: epochKeys.length,
         }
         const results = await this.prover.genProofAndPublicSignals(
-            Circuit.updateSparseTree,
+            Circuit.aggregateEpochKeys,
             stringifyBigInts(circuitInputs)
         )
-        return new UpdateSparseTreeProof(
+        return new AggregateEpochKeysProof(
             results.publicSignals,
             results.proof,
             this.prover

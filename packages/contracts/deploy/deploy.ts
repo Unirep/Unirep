@@ -5,6 +5,7 @@ import {
     GLOBAL_STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     EMPTY_EPOCH_TREE_ROOT,
+    AGGREGATE_KEY_COUNT,
     Prover,
 } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
@@ -37,6 +38,7 @@ export const deployUnirep = async (
         epochTreeDepth: EPOCH_TREE_DEPTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         emptyEpochTreeRoot: EMPTY_EPOCH_TREE_ROOT,
+        aggregateKeyCount: AGGREGATE_KEY_COUNT,
         ..._settings,
     }
 
@@ -94,12 +96,14 @@ export const deployUnirep = async (
         {
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
+            ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
+            ['contracts/Hash.sol:Poseidon4']: libraries['Poseidon4'],
         },
         deployer
     ).deploy(
         settings,
         verifiers[Circuit.signup],
-        verifiers[Circuit.updateSparseTree],
+        verifiers[Circuit.aggregateEpochKeys],
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation]
     )

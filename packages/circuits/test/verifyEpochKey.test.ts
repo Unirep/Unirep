@@ -170,19 +170,9 @@ describe('Verify Epoch Key circuits', function () {
             posRep,
             negRep,
         })
-        const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.verifyEpochKey,
-            circuitInputs
-        )
-        expect(isValid).to.be.false
-        expect(publicSignals[0]).to.equal(
-            genEpochKey(
-                id.identityNullifier,
-                attesterId,
-                epoch,
-                nonce
-            ).toString()
-        )
-        expect(publicSignals[1]).to.equal(tree.root.toString())
+        try {
+            await genProofAndVerify(Circuit.verifyEpochKey, circuitInputs)
+            expect(false).to.be.true
+        } catch (_) {}
     })
 })

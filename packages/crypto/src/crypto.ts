@@ -4,7 +4,7 @@ import {
     stringifyBigInts,
     unstringifyBigInts,
 } from 'maci-crypto'
-import circom from 'circomlib'
+import circom from 'circomlibjs'
 
 export const [, hash1, hash2, hash3, hash4, hash5] = Array(6)
     .fill(null)

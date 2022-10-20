@@ -1,3 +1,5 @@
+pragma circom 2.0.0;
+
 /*
     Verify that an epoch key exists in a state tree
 */
@@ -9,19 +11,19 @@ include "./modulo.circom";
 
 template VerifyEpochKey(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
-    signal private input gst_path_index[GST_TREE_DEPTH];
-    signal private input gst_path_elements[GST_TREE_DEPTH];
+    signal input gst_path_index[GST_TREE_DEPTH];
+    signal input gst_path_elements[GST_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
-    signal private input identity_nullifier;
+    signal input identity_nullifier;
 
-    signal private input nonce;
+    signal input nonce;
     signal input epoch;
     signal input attester_id;
     signal output epoch_key;
     signal output gst_root;
 
-    signal private input pos_rep;
-    signal private input neg_rep;
+    signal input pos_rep;
+    signal input neg_rep;
 
     /* 1. Check if user exists in the Global State Tree */
 

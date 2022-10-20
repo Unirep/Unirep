@@ -28,8 +28,8 @@ template CalculateIdentityCommitment() {
 
 template IdentityCommitment() {
 
-    signal private input identity_nullifier;
-    signal private input identity_trapdoor;
+    signal input identity_nullifier;
+    signal input identity_trapdoor;
 
     signal output out;
 

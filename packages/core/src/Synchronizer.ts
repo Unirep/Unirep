@@ -52,6 +52,7 @@ export class Synchronizer extends EventEmitter {
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
             emptyEpochTreeRoot: BigInt(0),
+            aggregateKeyCount: 0,
         }
     }
 
@@ -64,6 +65,7 @@ export class Synchronizer extends EventEmitter {
         this.settings.epochLength = (
             await this.unirepContract.attesterEpochLength(this.attesterId)
         ).toNumber()
+        this.settings.aggregateKeyCount = config.aggregateKeyCount.toNumber()
         this.settings.emptyEpochTreeRoot = config.emptyEpochTreeRoot
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database

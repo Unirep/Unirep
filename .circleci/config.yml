@@ -28,6 +28,16 @@ step_defs:
     - run: &check_version
           name: Check Node version
           command: node -v | grep v14
+    - run: &install_circom
+          name: Install Circom
+          command: |
+              curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
+              source "$HOME/.cargo/env"
+              cd /tmp
+              git clone https://github.com/iden3/circom.git
+              cd circom
+              cargo build --release
+              cargo install --path circom
 
 jobs:
     build:
@@ -37,6 +47,7 @@ jobs:
             - checkout
             - run: *node_version
             - run: *check_version
+            - run: *install_circom
             - run:
                   name: Install Packages
                   command: yarn
@@ -81,6 +92,7 @@ jobs:
                   at: ~/project
             - run: *node_version
             - run: *check_version
+            - run: *install_circom
             - run:
                   name: Test
                   command: |
@@ -97,6 +109,7 @@ jobs:
                   at: ~/project
             - run: *node_version
             - run: *check_version
+            - run: *install_circom
             - run:
                   name: Test
                   command: yarn circuits test
@@ -110,6 +123,7 @@ jobs:
                   at: ~/project
             - run: *node_version
             - run: *check_version
+            - run: *install_circom
             - run:
                   name: Test
                   command: yarn contracts coverage
