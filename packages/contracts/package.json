@@ -23,7 +23,8 @@
         "compile": "hardhat compile",
         "test": "hardhat test ./test/*.test.ts",
         "lint": "prettier --write .",
-        "coverage": "hardhat coverage"
+        "coverage": "hardhat coverage",
+        "deploy": "hardhat run scripts/deploy.mjs"
     },
     "dependencies": {
         "@unirep/circuits": "1.0.0",
