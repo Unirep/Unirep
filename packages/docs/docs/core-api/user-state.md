@@ -12,10 +12,11 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 const db = new SQLiteConnector(schema, ':memory:')
 const state = new UserState({
   db,
-  defaultProver,
-  unirepContract: new ethers.Contract(UNIREP_ADDRESS),
-  _id: identity,
+  prover: defaultProver, // a circuit prover
+  unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
+  provider, // an ethers.js provider
   attesterId: ATTESTER_ADDRESS,
+  _id: identity, // a user identity that will be used for making proofs
 })
 ```
 

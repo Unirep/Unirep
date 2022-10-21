@@ -180,13 +180,13 @@ export const genUnirepState = async (
     attesterId: bigint,
     _db?: DB
 ) => {
-    const unirepContract: Unirep = await getUnirepContract(address, provider)
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     synchronizer = new Synchronizer({
         db,
         prover: defaultProver,
-        unirepContract,
+        unirepAddress: address,
+        provider,
         attesterId,
     })
     await synchronizer.start()
@@ -209,14 +209,14 @@ export const genUserState = async (
     attesterId: bigint,
     _db?: DB
 ) => {
-    const unirepContract: Unirep = getUnirepContract(address, provider)
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     const userState = new UserState({
         db,
         prover: defaultProver,
-        unirepContract,
-        _id: userIdentity,
+        unirepAddress: address,
+        provider,
         attesterId,
+        _id: userIdentity,
     })
     await userState.start()
     await userState.waitForSync()

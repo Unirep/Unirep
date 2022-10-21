@@ -39,9 +39,10 @@ export default class UserState extends Synchronizer {
     constructor(config: {
         db: DB
         prover: Prover
-        unirepContract: ethers.Contract
-        _id: ZkIdentity
+        unirepAddress: string
+        provider: ethers.providers.Provider
         attesterId: bigint
+        _id: ZkIdentity
     }) {
         super(config)
         this.id = config._id

@@ -8,6 +8,7 @@ import {
     hash2,
     hash4,
 } from '@unirep/crypto'
+import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 
 const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
@@ -41,15 +42,20 @@ export class Synchronizer extends EventEmitter {
     constructor(config: {
         db: DB
         prover: Prover
-        unirepContract: ethers.Contract
+        provider: ethers.providers.Provider
+        unirepAddress: string
         attesterId: bigint
     }) {
         super()
-        const { db, prover, unirepContract, attesterId } = config
+        const { db, prover, unirepAddress, provider, attesterId } = config
         this.attesterId = attesterId
         this._db = db
-        this.unirepContract = unirepContract
-        this.provider = this.unirepContract.provider
+        this.unirepContract = new ethers.Contract(
+            unirepAddress,
+            UNIREP_ABI,
+            provider
+        )
+        this.provider = provider
         this.prover = prover
         this.settings = {
             stateTreeDepth: 0,
