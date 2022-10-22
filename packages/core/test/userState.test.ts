@@ -8,6 +8,7 @@ import { deployUnirep } from '@unirep/contracts/deploy'
 import { genUserState } from './utils'
 
 describe('User state', function () {
+    this.timeout(0)
     let unirepContract
 
     before(async () => {

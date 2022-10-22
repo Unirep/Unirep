@@ -18,27 +18,27 @@ import { expect } from 'chai'
 const defaultEpochTreeLeaf = crypto.hash2([0, 0])
 
 interface IAttestation {
-    attesterId: BigInt
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
-    signUp: BigInt
-    hash: BigInt | string
+    attesterId: bigint
+    posRep: bigint
+    negRep: bigint
+    graffiti: bigint
+    signUp: bigint
+    hash: bigint | string
 }
 
 class Attestation implements IAttestation {
-    public attesterId: BigInt
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public signUp: BigInt
+    public attesterId: bigint
+    public posRep: bigint
+    public negRep: bigint
+    public graffiti: bigint
+    public signUp: bigint
 
     constructor(
-        _attesterId: BigInt,
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _attesterId: bigint,
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ) {
         this.attesterId = _attesterId
         this.posRep = _posRep
@@ -73,24 +73,24 @@ class Attestation implements IAttestation {
 }
 
 interface IReputation {
-    posRep: BigInt
-    negRep: BigInt
-    graffiti: BigInt
-    signUp: BigInt
+    posRep: bigint
+    negRep: bigint
+    graffiti: bigint
+    signUp: bigint
 }
 
 class Reputation implements IReputation {
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public graffitiPreImage: BigInt = BigInt(0)
-    public signUp: BigInt
+    public posRep: bigint
+    public negRep: bigint
+    public graffiti: bigint
+    public graffitiPreImage: bigint = BigInt(0)
+    public signUp: bigint
 
     constructor(
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ) {
         this.posRep = _posRep
         this.negRep = _negRep
@@ -103,13 +103,13 @@ class Reputation implements IReputation {
     }
 
     public update = (
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ): Reputation => {
-        this.posRep = BigInt(Number(this.posRep) + Number(_posRep))
-        this.negRep = BigInt(Number(this.negRep) + Number(_negRep))
+        this.posRep = this.posRep + _posRep
+        this.negRep = this.negRep + _negRep
         if (_graffiti != BigInt(0)) {
             this.graffiti = _graffiti
         }
@@ -117,7 +117,7 @@ class Reputation implements IReputation {
         return this
     }
 
-    public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
+    public addGraffitiPreImage = (_graffitiPreImage: bigint) => {
         assert(
             crypto.hashOne(_graffitiPreImage) === this.graffiti,
             'Graffiti pre-image does not match'
@@ -125,7 +125,7 @@ class Reputation implements IReputation {
         this.graffitiPreImage = _graffitiPreImage
     }
 
-    public hash = (): BigInt => {
+    public hash = (): bigint => {
         return crypto.hash5([
             this.posRep,
             this.negRep,
@@ -152,15 +152,18 @@ class Reputation implements IReputation {
 
 // TODO: needs to be updated
 const genEpochKey = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
     attesterId: number,
     epoch: number,
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
-): BigInt => {
-    const epochKey = crypto
-        .hash4([identityNullifier as any, BigInt(attesterId), epoch, nonce])
-        .valueOf()
+): bigint => {
+    const epochKey = crypto.hash4([
+        identityNullifier,
+        BigInt(attesterId),
+        epoch,
+        nonce,
+    ])
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed

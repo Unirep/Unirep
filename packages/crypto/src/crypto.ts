@@ -1,6 +1,6 @@
 import {
     SNARK_FIELD_SIZE,
-    genRandomSalt,
+    genRandomSalt as _genRandomSalt,
     stringifyBigInts,
     unstringifyBigInts,
 } from 'maci-crypto'
@@ -21,8 +21,9 @@ export const [, hash1, hash2, hash3, hash4, hash5] = Array(6)
 export const hashLeftRight = (input1: any, input2: any) =>
     hash2([input1, input2])
 export const hashOne = (input: any) => hash1([input])
+export const genRandomSalt = () => _genRandomSalt() as bigint
 
-export { SNARK_FIELD_SIZE, genRandomSalt, stringifyBigInts, unstringifyBigInts }
+export { SNARK_FIELD_SIZE, stringifyBigInts, unstringifyBigInts }
 
 export const genEpochKey = (
     identityNullifier: bigint,

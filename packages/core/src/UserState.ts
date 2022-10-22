@@ -131,7 +131,7 @@ export default class UserState extends Synchronizer {
             return foundLeaf.index
         }
         const { posRep, negRep } = await this.getRepByAttester(
-            this.attesterId.toString(),
+            this.attesterId,
             latestTransitionedEpoch
         )
         const leaf = genStateTreeLeaf(
@@ -188,7 +188,7 @@ export default class UserState extends Synchronizer {
      * @returns The reputation object
      */
     public getRepByAttester = async (
-        _attesterId?: BigInt | string,
+        _attesterId?: bigint,
         toEpoch?: number
     ): Promise<{ posRep; negRep }> => {
         let posRep = BigInt(0)
