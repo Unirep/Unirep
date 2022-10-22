@@ -10,5 +10,6 @@ export const EPOCH_TREE_DEPTH = 32
 
 export const AGGREGATE_KEY_COUNT = 7
 
-const smt = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+const defaultEpochTreeLeaf = hash2([0, 0])
+const smt = new SparseMerkleTree(EPOCH_TREE_DEPTH, defaultEpochTreeLeaf)
 export const EMPTY_EPOCH_TREE_ROOT = smt.root.toString()

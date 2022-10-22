@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, hashLeftRight, genStateTreeLeaf } from '@unirep/crypto'
+import { ZkIdentity, genStateTreeLeaf } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState, genNewGST } from './utils'
@@ -26,14 +26,16 @@ describe('User Signup', function () {
 
     it('attester sign up', async () => {
         const accounts = await ethers.getSigners()
+        const attester = accounts[1]
         await unirepContract
-            .connect(accounts[1])
+            .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
     })
 
     it('sign up users with no airdrop', async () => {
         const accounts = await ethers.getSigners()
+        const attester = accounts[1]
         for (let i = 0; i < 5; i++) {
             const id = new ZkIdentity()
             const commitment = id.genIdentityCommitment()
@@ -41,25 +43,25 @@ describe('User Signup', function () {
                 ethers.provider,
                 unirepContract.address,
                 id,
-                BigInt(accounts[1].address)
+                BigInt(attester.address)
             )
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
 
             const tx = await unirepContract
-                .connect(accounts[1])
+                .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
 
             const contractEpoch = await unirepContract.attesterCurrentEpoch(
-                accounts[1].address
+                attester.address
             )
             const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
                 id.identityNullifier,
-                accounts[1].address,
+                attester.address,
                 contractEpoch.toNumber(),
                 0,
                 0
@@ -69,7 +71,7 @@ describe('User Signup', function () {
 
             const onchainGSTExists =
                 await unirepContract.attesterStateTreeRootExists(
-                    accounts[1].address,
+                    attester.address,
                     contractEpoch,
                     GSTree.root
                 )
@@ -81,10 +83,11 @@ describe('User Signup', function () {
 
     it('Check GST roots match Unirep state', async () => {
         const accounts = await ethers.getSigners()
+        const attester = accounts[1]
         const unirepState = await genUnirepState(
             ethers.provider,
             unirepContract.address,
-            BigInt(accounts[1].address)
+            BigInt(attester.address)
         )
         for (let root of rootHistories) {
             const exist = await unirepState.GSTRootExists(

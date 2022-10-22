@@ -2,7 +2,6 @@ import { expect } from 'chai'
 import { ZkIdentity, IncrementalMerkleTree, hash5 } from '@unirep/crypto'
 import { Circuit } from '../src'
 import {
-    genReputationCircuitInput,
     genProofAndVerify,
     genEpochKey,
     genUserStateTransitionCircuitInput,

@@ -2,7 +2,6 @@
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
 import assert from 'assert'
-import { ethers } from 'ethers'
 import * as crypto from '@unirep/crypto'
 
 import {
@@ -10,18 +9,13 @@ import {
     Circuit,
     EPOCH_TREE_DEPTH,
     GLOBAL_STATE_TREE_DEPTH,
-    NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    VerifyEpochKeyInput,
-    ProveReputationInput,
-    ProveUserSignUpInput,
     CircuitInput,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
 
-const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
+const defaultEpochTreeLeaf = crypto.hash2([0, 0])
 
 interface IAttestation {
     attesterId: BigInt
@@ -156,21 +150,6 @@ class Reputation implements IReputation {
     }
 }
 
-const toCompleteHexString = (str: string, len?: number): string => {
-    str = str.startsWith('0x') ? str : '0x' + str
-    if (len) str = ethers.utils.hexZeroPad(str, len)
-    return str
-}
-
-const genNewSMT = (treeDepth: number, defaultLeafHash: BigInt = BigInt(0)) => {
-    return new crypto.SparseMerkleTree(treeDepth, defaultLeafHash)
-}
-
-const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
-    const defaultLeaf = crypto.hash2([BigInt(0), BigInt(0)])
-    return genNewSMT(_epochTreeDepth, defaultLeaf)
-}
-
 // TODO: needs to be updated
 const genEpochKey = (
     identityNullifier: BigInt,
@@ -238,7 +217,10 @@ const genUserStateTransitionCircuitInput = (config: {
         },
         config
     )
-    const epochTree = genNewEpochTree(EPOCH_TREE_DEPTH)
+    const epochTree = new crypto.SparseMerkleTree(
+        EPOCH_TREE_DEPTH,
+        defaultEpochTreeLeaf
+    )
     for (const [key, val] of Object.entries(epochKeyBalances)) {
         const { posRep, negRep } = val
         epochTree.update(BigInt(key), crypto.hash2([posRep, negRep]))
@@ -302,7 +284,10 @@ const genReputationCircuitInput = (config: {
         config
     )
 
-    const epochTree = genNewEpochTree(EPOCH_TREE_DEPTH)
+    const epochTree = new crypto.SparseMerkleTree(
+        EPOCH_TREE_DEPTH,
+        defaultEpochTreeLeaf
+    )
     for (const [key, val] of Object.entries(epochKeyBalances)) {
         const { posRep, negRep } = val
         epochTree.update(BigInt(key), crypto.hash2([posRep, negRep]))
@@ -403,13 +388,9 @@ const throwError = async (
 }
 
 export {
+    defaultEpochTreeLeaf,
     Attestation,
     Reputation,
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
-    genNewEpochTree,
-    genNewSMT,
-    toCompleteHexString,
     genEpochKey,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,

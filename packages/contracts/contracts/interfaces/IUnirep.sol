@@ -66,6 +66,11 @@ interface IUnirep {
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
+    error InvalidAttesterId();
+    error HashchainHasBeenProcessed();
+    error MismatchedHashchain();
+    error NoUnprocessedEpochKeys();
+    error UnprocessedEpochKeys();
 
     struct EpochKeyHashchain {
         uint256 index;

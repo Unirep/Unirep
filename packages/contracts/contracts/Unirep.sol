@@ -205,7 +205,8 @@ contract Unirep is IUnirep, VerifySignature {
 
     function buildHashchain(uint160 attesterId, uint256 epoch) public {
         AttesterData storage attester = attesters[attesterId];
-        require(attester.epochKeyState[epoch].owedKeys.length > 0);
+        if (attester.epochKeyState[epoch].owedKeys.length == 0)
+            revert NoUnprocessedEpochKeys();
         // target some specific length
         uint256 index = attester.epochKeyState[epoch].totalHashchains;
         EpochKeyHashchain storage hashchain = attester
@@ -243,8 +244,9 @@ contract Unirep is IUnirep, VerifySignature {
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
             .hashchain[publicSignals[5]];
-        require(hashchain.head != 0 && !hashchain.processed);
-        require(hashchainHead == hashchain.head);
+        if (hashchain.head == 0 || hashchain.processed)
+            revert HashchainHasBeenProcessed();
+        if (hashchainHead != hashchain.head) revert MismatchedHashchain();
         // Verify the zk proof
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
@@ -272,7 +274,7 @@ contract Unirep is IUnirep, VerifySignature {
         if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
 
-        require(publicSignals[5] < type(uint160).max);
+        if (publicSignals[5] >= type(uint160).max) revert InvalidAttesterId();
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
@@ -285,13 +287,13 @@ contract Unirep is IUnirep, VerifySignature {
         if (attester.currentEpoch != publicSignals[4]) revert EpochNotMatch();
 
         uint256 fromEpoch = publicSignals[3];
-        require(
-            attester.epochKeyState[fromEpoch].owedKeys.length == 0 &&
-                attester.epochKeyState[fromEpoch].totalHashchains ==
-                attester.epochKeyState[fromEpoch].processedHashchains
-        );
-        // make sure from epoch tree root is valid
+        if (
+            attester.epochKeyState[fromEpoch].owedKeys.length != 0 ||
+            attester.epochKeyState[fromEpoch].totalHashchains !=
+            attester.epochKeyState[fromEpoch].processedHashchains
+        ) revert UnprocessedEpochKeys();
         if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
+            // make sure from epoch tree root is valid
             revert InvalidEpochTreeRoot(publicSignals[6]);
 
         // make sure from state tree root is valid
@@ -325,7 +327,7 @@ contract Unirep is IUnirep, VerifySignature {
      * @dev Update the currentEpoch for an attester, if needed
      */
     function updateEpochIfNeeded(uint256 attesterId) public {
-        require(attesterId < type(uint160).max);
+        if (attesterId >= type(uint160).max) revert InvalidAttesterId();
         AttesterData storage attester = attesters[uint160(attesterId)];
         if (attester.startTimestamp == 0)
             revert AttesterNotSignUp(uint160(attesterId));
@@ -354,7 +356,7 @@ contract Unirep is IUnirep, VerifySignature {
         returns (uint256)
     {
         AttesterData storage attester = attesters[attesterId];
-        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
         return
             (block.timestamp - attester.startTimestamp) / attester.epochLength;
     }
@@ -365,7 +367,7 @@ contract Unirep is IUnirep, VerifySignature {
         returns (uint256)
     {
         AttesterData storage attester = attesters[attesterId];
-        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
         uint256 _currentEpoch = (block.timestamp - attester.startTimestamp) /
             attester.epochLength;
         return
