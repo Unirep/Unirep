@@ -14,6 +14,7 @@ import {
     SignupProof,
     UserStateTransitionProof,
     AggregateEpochKeysProof,
+    EpochKeyProof,
 } from '@unirep/contracts'
 import { Circuit, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
@@ -338,6 +339,40 @@ export default class UserState extends Synchronizer {
             stringifyBigInts(circuitInputs)
         )
         return new AggregateEpochKeysProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
+    }
+
+    public genVerifyEpochKeyProof = async (
+        epochKeyNonce: number,
+        _epoch?: number
+    ): Promise<EpochKeyProof> => {
+        this._checkEpkNonce(epochKeyNonce)
+        const epoch = _epoch ?? (await this.latestTransitionedEpoch())
+        const latestLeafIndex = await this.latestGSTLeafIndex()
+        const GSTree = await this.genGSTree(epoch)
+        const GSTProof = GSTree.createProof(latestLeafIndex)
+        const { posRep, negRep } = await this.getRepByAttester()
+
+        const circuitInputs = stringifyBigInts({
+            gst_path_elements: GSTProof.siblings,
+            gst_path_index: GSTProof.pathIndices,
+            identity_nullifier: this.id.identityNullifier,
+            nonce: epochKeyNonce,
+            epoch: epoch,
+            pos_rep: posRep,
+            neg_rep: negRep,
+            attester_id: this.attesterId,
+        })
+
+        const results = await this.prover.genProofAndPublicSignals(
+            Circuit.verifyEpochKey,
+            circuitInputs
+        )
+
+        return new EpochKeyProof(
             results.publicSignals,
             results.proof,
             this.prover

@@ -19,12 +19,15 @@ import {Poseidon4, Poseidon2} from './Hash.sol';
  */
 contract Unirep is IUnirep, VerifySignature {
     using SafeMath for uint256;
+    uint256 internal constant SNARK_SCALAR_FIELD =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // All verifier contracts
-    IVerifier internal signupVerifier;
-    IVerifier internal aggregateEpochKeysVerifier;
-    IVerifier internal userStateTransitionVerifier;
-    IVerifier internal reputationVerifier;
+    IVerifier public immutable signupVerifier;
+    IVerifier public immutable aggregateEpochKeysVerifier;
+    IVerifier public immutable userStateTransitionVerifier;
+    IVerifier public immutable reputationVerifier;
+    IVerifier public immutable epochKeyVerifier;
 
     // Circuits configurations and contracts configurations
     Config public config;
@@ -46,7 +49,8 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _signupVerifier,
         IVerifier _aggregateEpochKeysVerifier,
         IVerifier _userStateTransitionVerifier,
-        IVerifier _reputationVerifier
+        IVerifier _reputationVerifier,
+        IVerifier _epochKeyVerifier
     ) {
         config = _config;
 
@@ -55,6 +59,7 @@ contract Unirep is IUnirep, VerifySignature {
         aggregateEpochKeysVerifier = _aggregateEpochKeysVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
+        epochKeyVerifier = _epochKeyVerifier;
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
 
@@ -74,8 +79,7 @@ contract Unirep is IUnirep, VerifySignature {
         if (uint256(uint160(msg.sender)) != attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
-        if (!signupVerifier.verifyProof(proof, publicSignals))
-            revert InvalidProof();
+        if (!verifySignUpProof(publicSignals, proof)) revert InvalidProof();
 
         uint256 identityCommitment = publicSignals[0];
         updateEpochIfNeeded(attesterId);
@@ -235,7 +239,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        if (!aggregateEpochKeysVerifier.verifyProof(proof, publicSignals))
+        if (!verifyAggregateEpochKeysProof(publicSignals, proof))
             revert InvalidProof();
         uint256 epoch = publicSignals[3];
         uint256 attesterId = publicSignals[4];
@@ -271,7 +275,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[8] memory proof
     ) public {
         // Verify the proof
-        if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
+        if (!verifyUserStateTransitionProof(publicSignals, proof))
             revert InvalidProof();
 
         if (publicSignals[5] >= type(uint160).max) revert InvalidAttesterId();
@@ -348,6 +352,58 @@ contract Unirep is IUnirep, VerifySignature {
         emit EpochEnded(attester.currentEpoch, uint160(attesterId));
 
         attester.currentEpoch = newEpoch;
+    }
+
+    function isSNARKField(uint256[] memory signals)
+        internal
+        pure
+        returns (bool)
+    {
+        uint256 len = signals.length;
+        for (uint256 i = 0; i < len; ++i) {
+            if (signals[i] >= SNARK_SCALAR_FIELD) return false;
+        }
+        return true;
+    }
+
+    function verifySignUpProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
+        if (!isSNARKField(publicSignals)) revert InvalidSignals();
+        return signupVerifier.verifyProof(proof, publicSignals);
+    }
+
+    function verifyAggregateEpochKeysProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
+        if (!isSNARKField(publicSignals)) revert InvalidSignals();
+        return aggregateEpochKeysVerifier.verifyProof(proof, publicSignals);
+    }
+
+    function verifyUserStateTransitionProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
+        if (!isSNARKField(publicSignals)) revert InvalidSignals();
+        return userStateTransitionVerifier.verifyProof(proof, publicSignals);
+    }
+
+    function verifyReputationProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
+        if (!isSNARKField(publicSignals)) revert InvalidSignals();
+        return reputationVerifier.verifyProof(proof, publicSignals);
+    }
+
+    function verifyEpochKeyProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public view returns (bool) {
+        if (!isSNARKField(publicSignals)) revert InvalidSignals();
+        return epochKeyVerifier.verifyProof(proof, publicSignals);
     }
 
     function attesterCurrentEpoch(uint160 attesterId)
