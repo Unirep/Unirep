@@ -1,27 +1,21 @@
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import assert from 'assert'
 import { DB } from 'anondb'
 import {
-    IncrementalMerkleTree,
     hash2,
-    hash5,
     stringifyBigInts,
-    hashLeftRight,
-    SparseMerkleTree,
     ZkIdentity,
-    unstringifyBigInts,
     genEpochKey,
     genStateTreeLeaf,
     genEpochNullifier,
 } from '@unirep/crypto'
 import {
     ReputationProof,
-    EpochKeyProof,
     SignupProof,
     UserStateTransitionProof,
     AggregateEpochKeysProof,
 } from '@unirep/contracts'
-import { Circuit, Prover, AGGREGATE_KEY_COUNT } from '@unirep/circuits'
+import { Circuit, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 /**

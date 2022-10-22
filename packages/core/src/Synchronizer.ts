@@ -294,10 +294,10 @@ export class Synchronizer extends EventEmitter {
     }
 
     protected async _checkCurrentEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch !== Number(currentEpoch)) {
+        const currentEpoch = await this.readCurrentEpoch()
+        if (epoch !== currentEpoch.number) {
             throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch}`
+                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
             )
         }
     }
@@ -590,7 +590,7 @@ export class Synchronizer extends EventEmitter {
             'AttestationSubmitted',
             event.data
         )
-        if (_attesterId.toString() !== this.attesterId.toString(10)) return
+        if (_attesterId.toString() !== this.attesterId.toString()) return
 
         const index = `${event.blockNumber
             .toString()
@@ -602,13 +602,6 @@ export class Synchronizer extends EventEmitter {
         await this._checkEpochKeyRange(_epochKey.toString())
         const { posRep, negRep } = decodedData
 
-        // const attestation = new Attestation(
-        //     BigInt(decodedData.attestation.attesterId),
-        //     BigInt(decodedData.attestation.posRep),
-        //     BigInt(decodedData.attestation.negRep),
-        //     BigInt(decodedData.attestation.graffiti),
-        //     BigInt(decodedData.attestation.signUp)
-        // )
         db.create('Attestation', {
             epoch: _epoch,
             epochKey: _epochKey.toString(),
