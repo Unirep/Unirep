@@ -6,16 +6,11 @@ import { ethers } from 'ethers'
 import * as crypto from '@unirep/crypto'
 
 import {
-    executeCircuit,
     Circuit,
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    VerifyEpochKeyInput,
-    ProveReputationInput,
-    ProveUserSignUpInput,
-    CircuitInput,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
@@ -373,10 +368,7 @@ const genReputationCircuitInput = (config: {
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const genProofAndVerify = async (
-    circuit: Circuit,
-    circuitInputs: CircuitInput
-) => {
+const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     const startTime = new Date().getTime()
     const { proof, publicSignals } =
         await defaultProver.genProofAndPublicSignals(circuit, circuitInputs)
@@ -406,22 +398,6 @@ const genUserStateTransitionNullifier = (
     ])
 }
 
-const throwError = async (
-    circuit: any,
-    circuitInputs: any,
-    errorMsg: string
-) => {
-    let error
-    try {
-        await executeCircuit(circuit, circuitInputs)
-    } catch (e) {
-        error = e
-        expect(true).to.be.true
-    } finally {
-        if (!error) throw Error(errorMsg)
-    }
-}
-
 export {
     Attestation,
     Reputation,
@@ -436,5 +412,4 @@ export {
     genUserStateTransitionCircuitInput,
     genUserStateTransitionNullifier,
     genProofAndVerify,
-    throwError,
 }
