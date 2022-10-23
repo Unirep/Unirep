@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ZkIdentity, IncrementalMerkleTree, hash5 } from '@unirep/crypto'
+import { ZkIdentity, IncrementalMerkleTree, hash7 } from '@unirep/crypto'
 import { Circuit } from '../src'
 import {
     genReputationCircuitInput,
@@ -8,10 +8,7 @@ import {
     genUserStateTransitionCircuitInput,
     genUserStateTransitionNullifier,
 } from './utils'
-import {
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    GLOBAL_STATE_TREE_DEPTH,
-} from '../config'
+import { NUM_EPOCH_KEY_NONCE_PER_EPOCH, STATE_TREE_DEPTH } from '../config'
 
 describe('User state transition', function () {
     this.timeout(300000)
@@ -23,16 +20,26 @@ describe('User state transition', function () {
         const attesterId = 290
         const posRep = 10
         const negRep = 108
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const graffiti = 190129
+        const timestamp = 9241
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash5([id.identityNullifier, attesterId, fromEpoch, posRep, negRep])
+            hash7([
+                id.identityNullifier,
+                attesterId,
+                fromEpoch,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
         )
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
             attesterId,
-            startBalance: { posRep, negRep },
+            startBalance: { posRep, negRep, graffiti, timestamp },
             tree,
             leafIndex: 0,
         })
@@ -42,12 +49,14 @@ describe('User state transition', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash5([
+        const newLeaf = hash7([
             id.identityNullifier,
             attesterId,
             toEpoch,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
@@ -65,9 +74,19 @@ describe('User state transition', function () {
         const attesterId = 290
         const posRep = 10
         const negRep = 108
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const graffiti = 1241
+        const timestamp = 124
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash5([id.identityNullifier, attesterId, fromEpoch, posRep, negRep])
+            hash7([
+                id.identityNullifier,
+                attesterId,
+                fromEpoch,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
         )
         const epochKey = genEpochKey(
             id.identityNullifier,
@@ -80,7 +99,7 @@ describe('User state transition', function () {
             fromEpoch,
             toEpoch,
             attesterId,
-            startBalance: { posRep, negRep },
+            startBalance: { posRep, negRep, graffiti, timestamp },
             tree,
             leafIndex: 0,
             epochKeyBalances: {
@@ -96,12 +115,14 @@ describe('User state transition', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash5([
+        const newLeaf = hash7([
             id.identityNullifier,
             attesterId,
             toEpoch,
             posRep + 10,
             negRep + 20,
+            graffiti,
+            timestamp,
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
@@ -119,9 +140,19 @@ describe('User state transition', function () {
         const attesterId = 290
         const posRep = 10
         const negRep = 108
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const graffiti = 1241
+        const timestamp = 124
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash5([id.identityNullifier, attesterId, fromEpoch, posRep, negRep])
+            hash7([
+                id.identityNullifier,
+                attesterId,
+                fromEpoch,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
         )
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -133,7 +164,7 @@ describe('User state transition', function () {
             fromEpoch,
             toEpoch,
             attesterId,
-            startBalance: { posRep, negRep },
+            startBalance: { posRep, negRep, graffiti, timestamp },
             tree,
             leafIndex: 0,
             epochKeyBalances: epochKeys.reduce(
@@ -150,12 +181,14 @@ describe('User state transition', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash5([
+        const newLeaf = hash7([
             id.identityNullifier,
             attesterId,
             toEpoch,
             posRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 10,
             negRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 20,
+            graffiti,
+            timestamp,
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(

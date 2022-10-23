@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState, genUnirepState, genNewGST } from './utils'
+import { genUserState, genUnirepState } from './utils'
 
 const EPOCH_LENGTH = 1000
 
@@ -51,10 +51,11 @@ describe('Attester signs up and gives attestation', function () {
         const [epk] = epochKeys
         const newPosRep = 10
         const newNegRep = 5
+        const newGraffiti = 1294194
         // now submit the attestation from the attester
         await unirepContract
             .connect(accounts[1])
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, {})
+            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -81,16 +82,16 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep } = await userState.getRepByEpochKey(
-                key,
-                BigInt(epoch)
-            )
+            const { posRep, negRep, graffiti, timestamp } =
+                await userState.getRepByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
+                expect(graffiti).to.equal(newGraffiti)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
+                expect(graffiti).to.equal(0)
             }
         })
         await Promise.all(checkPromises)

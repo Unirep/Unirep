@@ -24,10 +24,12 @@ interface IUnirep {
         uint256 indexed epochKey,
         uint160 indexed attesterId,
         uint256 posRep,
-        uint256 negRep
+        uint256 negRep,
+        uint256 graffiti,
+        uint256 timestamp
     );
 
-    event NewGSTLeaf(
+    event StateTreeLeaf(
         uint256 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
@@ -43,17 +45,12 @@ interface IUnirep {
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
-    enum AttestationFieldError {
-        POS_REP,
-        NEG_REP,
-        GRAFFITI
-    }
-
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error ReachedMaximumNumberUserSignedUp();
     error AttesterAlreadySignUp(uint160 attester);
     error AttesterNotSignUp(uint160 attester);
+    error AttesterInvalid();
     error ProofAlreadyUsed(bytes32 nullilier);
     error NullifierAlreadyUsed(uint256 nullilier);
     error AttesterIdNotMatch(uint160 attesterId);
@@ -62,16 +59,25 @@ interface IUnirep {
     error InvalidEpochKey();
     error EpochNotMatch();
 
-    error InvalidSNARKField(AttestationFieldError); // better name???
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
+
+    error HashchainInvalid();
+    error HashchainNotProcessed();
+
+    struct Reputation {
+        uint256 posRep;
+        uint256 negRep;
+        uint256 graffiti;
+        uint256 timestamp;
+    }
 
     struct EpochKeyHashchain {
         uint256 index;
         uint256 head;
         uint256[] epochKeys;
-        uint256[2][] epochKeyBalances;
+        Reputation[] epochKeyBalances;
         bool processed;
     }
 
@@ -80,7 +86,7 @@ interface IUnirep {
         mapping(uint256 => EpochKeyHashchain) hashchain;
         uint256 totalHashchains;
         uint256 processedHashchains;
-        mapping(uint256 => uint256[2]) balances;
+        mapping(uint256 => Reputation) balances;
         mapping(uint256 => bool) isKeyOwed;
         uint256[] owedKeys;
     }
@@ -101,22 +107,9 @@ interface IUnirep {
         mapping(uint256 => EpochKeyState) epochKeyState;
     }
 
-    struct Attestation {
-        // The attester’s ID
-        uint160 attesterId;
-        // Positive reputation
-        uint256 posRep;
-        // Negative reputation
-        uint256 negRep;
-        // A hash of an arbitary string
-        uint256 graffiti;
-        // A flag to indicate if user has signed up in the attester's app
-        uint256 signUp;
-    }
-
     struct Config {
         // circuit config
-        uint8 globalStateTreeDepth;
+        uint8 stateTreeDepth;
         uint8 epochTreeDepth;
         uint256 numEpochKeyNoncePerEpoch;
         // contract config

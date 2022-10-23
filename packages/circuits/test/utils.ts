@@ -6,16 +6,11 @@ import { ethers } from 'ethers'
 import * as crypto from '@unirep/crypto'
 
 import {
-    executeCircuit,
     Circuit,
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    VerifyEpochKeyInput,
-    ProveReputationInput,
-    ProveUserSignUpInput,
-    CircuitInput,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { expect } from 'chai'
@@ -167,7 +162,12 @@ const genNewSMT = (treeDepth: number, defaultLeafHash: BigInt = BigInt(0)) => {
 }
 
 const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
-    const defaultLeaf = crypto.hash2([BigInt(0), BigInt(0)])
+    const defaultLeaf = crypto.hash4([
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+    ])
     return genNewSMT(_epochTreeDepth, defaultLeaf)
 }
 
@@ -196,18 +196,32 @@ const genEpochKeyCircuitInput = (config: {
     attesterId: number
     posRep: number
     negRep: number
+    graffiti: number | bigint
+    timestamp: number | bigint
 }) => {
-    const { id, tree, leafIndex, epoch, nonce, attesterId, posRep, negRep } =
-        config
+    const {
+        id,
+        tree,
+        leafIndex,
+        epoch,
+        nonce,
+        attesterId,
+        posRep,
+        negRep,
+        graffiti,
+        timestamp,
+    } = config
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
-        gst_path_elements: proof.siblings,
-        gst_path_index: proof.pathIndices,
+        state_tree_elements: proof.siblings,
+        state_tree_indexes: proof.pathIndices,
         identity_nullifier: id.identityNullifier,
         nonce: nonce,
         epoch: epoch,
         pos_rep: posRep,
         neg_rep: negRep,
+        graffiti,
+        timestamp,
         attester_id: attesterId,
     }
     return crypto.stringifyBigInts(circuitInputs)
@@ -220,8 +234,15 @@ const genUserStateTransitionCircuitInput = (config: {
     tree: crypto.IncrementalMerkleTree
     leafIndex: number
     attesterId: number
-    startBalance: { posRep: any; negRep: any }
-    epochKeyBalances?: { [key: string]: { posRep: number; negRep: number } }
+    startBalance: { posRep: any; negRep: any; graffiti: any; timestamp: any }
+    epochKeyBalances?: {
+        [key: string]: {
+            posRep: number
+            negRep: number
+            graffiti?: any
+            timestamp?: any
+        }
+    }
 }) => {
     const {
         id,
@@ -240,8 +261,11 @@ const genUserStateTransitionCircuitInput = (config: {
     )
     const epochTree = genNewEpochTree(EPOCH_TREE_DEPTH)
     for (const [key, val] of Object.entries(epochKeyBalances)) {
-        const { posRep, negRep } = val
-        epochTree.update(BigInt(key), crypto.hash2([posRep, negRep]))
+        const { posRep, negRep, graffiti, timestamp } = val
+        epochTree.update(
+            BigInt(key),
+            crypto.hash4([posRep, negRep, graffiti ?? 0, timestamp ?? 0])
+        )
     }
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
@@ -255,21 +279,29 @@ const genUserStateTransitionCircuitInput = (config: {
             )
         )
 
-    const GSTreeProof = tree.createProof(leafIndex)
+    const stateTreeProof = tree.createProof(leafIndex)
     const circuitInputs = {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
         identity_nullifier: id.identityNullifier,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
+        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_elements: stateTreeProof.siblings,
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
+        graffiti: startBalance.graffiti,
+        timestamp: startBalance.timestamp,
         new_pos_rep: epochKeys.map(
             (k) => epochKeyBalances[k.toString()]?.posRep ?? BigInt(0)
         ),
         new_neg_rep: epochKeys.map(
             (k) => epochKeyBalances[k.toString()]?.negRep ?? BigInt(0)
+        ),
+        new_graffiti: epochKeys.map(
+            (k) => epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0)
+        ),
+        new_timestamp: epochKeys.map(
+            (k) => epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0)
         ),
         epoch_tree_elements: epochKeys.map((k) => epochTree.createProof(k)),
         epoch_tree_root: epochTree.root,
@@ -282,9 +314,10 @@ const genReputationCircuitInput = (config: {
     epoch: number
     nonce: number
     attesterId: number
-    startBalance: { posRep: any; negRep: any }
+    startBalance: { posRep: any; negRep: any; graffiti?: any; timestamp?: any }
     minRep?: number
-    epochKeyBalances?: { [key: string]: { posRep: number; negRep: number } }
+    proveGraffiti?: boolean
+    graffitiPreImage?: any
 }) => {
     const {
         id,
@@ -293,70 +326,49 @@ const genReputationCircuitInput = (config: {
         attesterId,
         startBalance,
         minRep,
-        epochKeyBalances,
+        proveGraffiti,
+        graffitiPreImage,
     } = Object.assign(
         {
-            epochKeyBalances: {},
             minRep: 0,
+            graffitiPreImage: 0,
         },
         config
     )
 
-    const epochTree = genNewEpochTree(EPOCH_TREE_DEPTH)
-    for (const [key, val] of Object.entries(epochKeyBalances)) {
-        const { posRep, negRep } = val
-        epochTree.update(BigInt(key), crypto.hash2([posRep, negRep]))
-    }
-    const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-        .fill(null)
-        .map((_, i) =>
-            genEpochKey(
-                id.identityNullifier,
-                attesterId,
-                epoch,
-                i,
-                EPOCH_TREE_DEPTH
-            )
-        )
-
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-    const hashedLeaf = crypto.hash5([
+    const stateTree = new crypto.IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const hashedLeaf = crypto.hash7([
         id.identityNullifier,
         attesterId,
         epoch,
         startBalance.posRep,
         startBalance.negRep,
+        startBalance.graffiti ?? 0,
+        startBalance.timestamp ?? 0,
     ])
-    GSTree.insert(hashedLeaf)
-    const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
+    stateTree.insert(hashedLeaf)
+    const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
         epoch: epoch,
-        epoch_key_nonce: nonce,
+        nonce,
         identity_nullifier: id.identityNullifier,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
+        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_elements: stateTreeProof.siblings,
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
+        graffiti: startBalance.graffiti ?? 0,
+        timestamp: startBalance.timestamp ?? 0,
         min_rep: minRep,
-        new_pos_rep: epochKeys.map(
-            (k) => epochKeyBalances[k.toString()]?.posRep ?? BigInt(0)
-        ),
-        new_neg_rep: epochKeys.map(
-            (k) => epochKeyBalances[k.toString()]?.negRep ?? BigInt(0)
-        ),
-        epoch_tree_elements: epochKeys.map((k) => epochTree.createProof(k)),
-        epoch_tree_root: epochTree.root,
+        prove_graffiti: proveGraffiti ? 1 : 0,
+        graffiti_pre_image: graffitiPreImage,
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
 
-const genProofAndVerify = async (
-    circuit: Circuit,
-    circuitInputs: CircuitInput
-) => {
+const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     const startTime = new Date().getTime()
     const { proof, publicSignals } =
         await defaultProver.genProofAndPublicSignals(circuit, circuitInputs)
@@ -386,22 +398,6 @@ const genUserStateTransitionNullifier = (
     ])
 }
 
-const throwError = async (
-    circuit: any,
-    circuitInputs: any,
-    errorMsg: string
-) => {
-    let error
-    try {
-        await executeCircuit(circuit, circuitInputs)
-    } catch (e) {
-        error = e
-        expect(true).to.be.true
-    } finally {
-        if (!error) throw Error(errorMsg)
-    }
-}
-
 export {
     Attestation,
     Reputation,
@@ -416,5 +412,4 @@ export {
     genUserStateTransitionCircuitInput,
     genUserStateTransitionNullifier,
     genProofAndVerify,
-    throwError,
 }

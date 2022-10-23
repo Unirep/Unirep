@@ -4,13 +4,13 @@ import { expect } from 'chai'
 import {
     IncrementalMerkleTree,
     SparseMerkleTree,
-    hash2,
+    hash4,
     ZkIdentity,
     stringifyBigInts,
 } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
 } from '@unirep/circuits'
@@ -34,8 +34,8 @@ describe('Attestations', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
-        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
+        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash4([0, 0, 0, 0]))
         expect(tree.root.toString()).equal(config.emptyEpochTreeRoot.toString())
     })
 
@@ -55,11 +55,15 @@ describe('Attestations', function () {
             0
         )
         const epochKey = BigInt(24910)
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
+        const wrongEpoch = 444444
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .submitAttestation(444444, epochKey, 1, 1)
+                .submitAttestation(wrongEpoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -71,12 +75,15 @@ describe('Attestations', function () {
             0
         )
         const epochKey = BigInt(24910)
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await expect(
             unirepContract
                 .connect(accounts[1])
-                .submitAttestation(0, epochKey, 1, 1)
+                .submitAttestation(0, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -88,15 +95,60 @@ describe('Attestations', function () {
             0
         )
         const epochKey = BigInt(24910)
-        const epochTree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const epochTree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash4([0, 0, 0, 0])
+        )
         await expect(
             unirepContract
                 .connect(accounts[5])
-                .submitAttestation(1, epochKey, 1, 1)
+                .submitAttestation(1, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
-    it('should submit attestation', async () => {
+    it('should fail to attest to invalid epoch key', async () => {
+        const accounts = await ethers.getSigners()
+        const epochKey = BigInt(2 ** 50)
+        await expect(
+            unirepContract
+                .connect(accounts[1])
+                .submitAttestation(1, epochKey, 1, 1, 0)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
+    })
+
+    it('should submit attestation with graffiti', async () => {
+        const accounts = await ethers.getSigners()
+        const id = new ZkIdentity()
+        const epochRoot = await unirepContract.attesterEpochRoot(
+            accounts[1].address,
+            0
+        )
+        const epochKey = BigInt(24910)
+        const posRep = 1
+        const negRep = 5
+        const graffiti = 101910
+        const tx = await unirepContract
+            .connect(accounts[1])
+            .submitAttestation(1, epochKey, posRep, negRep, graffiti)
+        await tx.wait()
+        const blockNumber = await ethers.provider.getBlockNumber()
+        const block = await ethers.provider.getBlock(blockNumber)
+        const { timestamp } = block
+
+        expect(tx)
+            .to.emit(unirepContract, 'AttestationSubmitted')
+            .withArgs(
+                1,
+                epochKey,
+                accounts[1].address,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp
+            )
+    })
+
+    it('should submit attestation without graffiti', async () => {
         const accounts = await ethers.getSigners()
         const id = new ZkIdentity()
         const epochRoot = await unirepContract.attesterEpochRoot(
@@ -108,11 +160,11 @@ describe('Attestations', function () {
         const negRep = 5
         const tx = await unirepContract
             .connect(accounts[1])
-            .submitAttestation(1, epochKey, posRep, negRep)
+            .submitAttestation(1, epochKey, posRep, negRep, 0)
         await tx.wait()
 
         expect(tx)
             .to.emit(unirepContract, 'AttestationSubmitted')
-            .withArgs(1, epochKey, accounts[1].address, posRep, negRep)
+            .withArgs(1, epochKey, accounts[1].address, posRep, negRep, 0, 0)
     })
 })

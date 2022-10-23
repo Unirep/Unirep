@@ -2,7 +2,7 @@ import { BigNumberish, ethers } from 'ethers'
 import {
     Circuit,
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     EMPTY_EPOCH_TREE_ROOT,
     AGGREGATE_KEY_COUNT,
@@ -26,7 +26,7 @@ import {
 export const deployUnirep = async (
     deployer: ethers.Signer,
     _settings: {
-        globalStateTreeDepth?: BigNumberish
+        stateTreeDepth?: BigNumberish
         epochTreeDepth?: BigNumberish
         numEpochKeyNoncePerEpoch?: BigNumberish
         emptyEpochTreeRoot?: BigNumberish
@@ -34,7 +34,7 @@ export const deployUnirep = async (
     prover?: Prover
 ): Promise<Unirep> => {
     const settings = {
-        globalStateTreeDepth: GLOBAL_STATE_TREE_DEPTH,
+        stateTreeDepth: STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         emptyEpochTreeRoot: EMPTY_EPOCH_TREE_ROOT,
@@ -96,8 +96,9 @@ export const deployUnirep = async (
         {
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
-            ['contracts/Hash.sol:Poseidon2']: libraries['Poseidon2'],
+            ['contracts/Hash.sol:Poseidon3']: libraries['Poseidon3'],
             ['contracts/Hash.sol:Poseidon4']: libraries['Poseidon4'],
+            ['contracts/Hash.sol:Poseidon6']: libraries['Poseidon6'],
         },
         deployer
     ).deploy(

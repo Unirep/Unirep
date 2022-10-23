@@ -233,7 +233,7 @@ const epkProof = new EpochKeyProof(
 ```typescript
 const epoch = epkProof.epoch
 const epochKey = epkProof.epochKey
-const globalStateTree = epkProof.globalStateTree
+const stateTree = epkProof.stateTree
 ```
 
 **3. Verify the epoch key proof**
@@ -253,23 +253,3 @@ const tx = await unirepContract.submitEpochKeyProof(
     epkProof.proof
 )
 ```
-
-### Attestation
-**An example of constructing an Attestation object**
-
-```typescript
-import { Attestation } from '@unirep/contracts'
-
-const attestation = new Attestation(
-    attesterID,
-    positiveReputation,
-    negativeReputation,
-    graffiti,
-    signUpFlag
-)
-const hash = attestation.hash()
-```
-
-### Event/ Attestation event
-
-The event enum is used to help with determining the type of the event, which are as the same definition in `IUnirep.sol`

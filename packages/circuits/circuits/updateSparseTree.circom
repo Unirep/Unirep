@@ -11,6 +11,8 @@ template UpdateSparseTree(TREE_DEPTH) {
     signal input leaf_index;
     signal input pos_rep;
     signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
 
     signal input old_leaf;
 
@@ -36,9 +38,11 @@ template UpdateSparseTree(TREE_DEPTH) {
 
     /** 2. Calculate the to_root by inserting the new_leaf **/
 
-    component leaf_hasher = Poseidon(2);
+    component leaf_hasher = Poseidon(4);
     leaf_hasher.inputs[0] <== pos_rep;
     leaf_hasher.inputs[1] <== neg_rep;
+    leaf_hasher.inputs[2] <== graffiti;
+    leaf_hasher.inputs[3] <== timestamp;
     new_leaf <== leaf_hasher.out;
 
     component new_tree = SMTInclusionProof(TREE_DEPTH);

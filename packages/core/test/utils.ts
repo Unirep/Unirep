@@ -20,14 +20,6 @@ import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
 import { schema } from '../src/schema'
 
-export const genNewGST = (
-    GSTDepth: number,
-    defaultGSTLeaf = BigInt(0)
-): IncrementalMerkleTree => {
-    const GST = new IncrementalMerkleTree(GSTDepth, defaultGSTLeaf)
-    return GST
-}
-
 export const computeEpochKeyProofHash = (epochKeyProof: any) => {
     const abiEncoder = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'uint256', 'uint256[8]'],
@@ -36,7 +28,13 @@ export const computeEpochKeyProofHash = (epochKeyProof: any) => {
     return ethers.utils.keccak256(abiEncoder)
 }
 
-const tables = ['Nullifier', 'GSTLeaf', 'Attestation', 'Epoch', 'UserSignUp']
+const tables = [
+    'Nullifier',
+    'StateTreeLeaf',
+    'Attestation',
+    'Epoch',
+    'UserSignUp',
+]
 
 const hash = (obj: any) => {
     const stringContent = JSON.stringify({
@@ -182,13 +180,13 @@ export const genUnirepState = async (
     attesterId: bigint,
     _db?: DB
 ) => {
-    const unirepContract: Unirep = await getUnirepContract(address, provider)
     let synchronizer: Synchronizer
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     synchronizer = new Synchronizer({
         db,
         prover: defaultProver,
-        unirepContract,
+        unirepAddress: address,
+        provider,
         attesterId,
     })
     await synchronizer.start()
@@ -211,14 +209,14 @@ export const genUserState = async (
     attesterId: bigint,
     _db?: DB
 ) => {
-    const unirepContract: Unirep = getUnirepContract(address, provider)
     let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
     const userState = new UserState({
         db,
         prover: defaultProver,
-        unirepContract,
-        _id: userIdentity,
+        unirepAddress: address,
+        provider,
         attesterId,
+        _id: userIdentity,
     })
     await userState.start()
     await userState.waitForSync()

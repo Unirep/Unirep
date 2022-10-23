@@ -2,9 +2,15 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers, BigNumberish } from 'ethers'
 import { Prover } from '@unirep/circuits'
-import { IncrementalMerkleTree, SparseMerkleTree, hash2 } from '@unirep/crypto'
+import {
+    IncrementalMerkleTree,
+    SparseMerkleTree,
+    hash2,
+    hash4,
+} from '@unirep/crypto'
+import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 
-const defaultEpochTreeLeaf = hash2([0, 0])
+const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
 /**
  * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
@@ -17,15 +23,15 @@ export class Synchronizer extends EventEmitter {
     unirepContract: ethers.Contract
     attesterId: bigint
     public settings: any
-    // GST for current epoch
-    private _globalStateTree?: IncrementalMerkleTree
-    protected defaultGSTLeaf?: BigInt
+    // state tree for current epoch
+    private stateTree?: IncrementalMerkleTree
+    protected defaultStateTreeLeaf?: BigInt
 
-    private get globalStateTree() {
-        if (!this._globalStateTree) {
-            throw new Error('Synchronizer: in memory GST not initialized')
+    private get _stateTree() {
+        if (!this.stateTree) {
+            throw new Error('Synchronizer: in memory tree not initialized')
         }
-        return this._globalStateTree
+        return this.stateTree
     }
 
     /**
@@ -36,18 +42,23 @@ export class Synchronizer extends EventEmitter {
     constructor(config: {
         db: DB
         prover: Prover
-        unirepContract: ethers.Contract
+        provider: ethers.providers.Provider
+        unirepAddress: string
         attesterId: bigint
     }) {
         super()
-        const { db, prover, unirepContract, attesterId } = config
+        const { db, prover, unirepAddress, provider, attesterId } = config
         this.attesterId = attesterId
         this._db = db
-        this.unirepContract = unirepContract
-        this.provider = this.unirepContract.provider
+        this.unirepContract = new ethers.Contract(
+            unirepAddress,
+            UNIREP_ABI,
+            provider
+        )
+        this.provider = provider
         this.prover = prover
         this.settings = {
-            globalStateTreeDepth: 0,
+            stateTreeDepth: 0,
             epochTreeDepth: 0,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
@@ -58,7 +69,7 @@ export class Synchronizer extends EventEmitter {
 
     async setup() {
         const config = await this.unirepContract.config()
-        this.settings.globalStateTreeDepth = config.globalStateTreeDepth
+        this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
         this.settings.numEpochKeyNoncePerEpoch =
             config.numEpochKeyNoncePerEpoch.toNumber()
@@ -78,17 +89,17 @@ export class Synchronizer extends EventEmitter {
         if (epochs.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
-        this.defaultGSTLeaf = BigInt(0)
-        this._globalStateTree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf
+        this.defaultStateTreeLeaf = BigInt(0)
+        this.stateTree = new IncrementalMerkleTree(
+            this.settings.stateTreeDepth,
+            this.defaultStateTreeLeaf
         )
         // if it's a new sync, start with epoch 1
         const epoch = epochs[0]?.number ?? 1
         // otherwise load the leaves and insert them
         // TODO: index consistency verification, ensure that indexes are
         // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
-        const leaves = await this._db.findMany('GSTLeaf', {
+        const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
                 epoch,
                 attesterId: this.attesterId.toString(),
@@ -98,7 +109,7 @@ export class Synchronizer extends EventEmitter {
             },
         })
         for (const leaf of leaves) {
-            this.globalStateTree.insert(leaf.hash)
+            this._stateTree.insert(leaf.hash)
         }
     }
 
@@ -347,16 +358,16 @@ export class Synchronizer extends EventEmitter {
         return epochEmitted.gt(0)
     }
 
-    async genGSTree(
+    async genStateTree(
         _epoch: number | ethers.BigNumberish
     ): Promise<IncrementalMerkleTree> {
         const epoch = Number(_epoch)
         await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf
+            this.settings.stateTreeDepth,
+            this.defaultStateTreeLeaf
         )
-        const leaves = await this._db.findMany('GSTLeaf', {
+        const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
                 epoch,
                 attesterId: this.attesterId.toString(),
@@ -378,7 +389,7 @@ export class Synchronizer extends EventEmitter {
         await this._checkValidEpoch(epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            hash2([0, 0])
+            hash4([0, 0, 0, 0])
         )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
@@ -394,16 +405,16 @@ export class Synchronizer extends EventEmitter {
 
     /**
      * Check if the global state tree root is stored in the database
-     * @param GSTRoot The queried global state tree root
+     * @param root The queried global state tree root
      * @param epoch The queried epoch of the global state tree
      * @returns True if the global state tree root exists, false otherwise.
      */
-    async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
+    async stateTreeRootExists(root: BigInt | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         return this.unirepContract.attesterStateTreeRootExists(
             this.attesterId,
             epoch,
-            GSTRoot
+            root
         )
     }
 
@@ -427,9 +438,9 @@ export class Synchronizer extends EventEmitter {
      * @param epoch The epoch query
      * @returns The number of the global state tree leaves
      */
-    async getNumGSTLeaves(epoch: number) {
+    async numStateTreeLeaves(epoch: number) {
         await this._checkValidEpoch(epoch)
-        return this._db.count('GSTLeaf', {
+        return this._db.count('StateTreeLeaf', {
             epoch: epoch,
             attesterId: this.attesterId.toString(),
         })
@@ -464,7 +475,7 @@ export class Synchronizer extends EventEmitter {
                 .topics as string[]
         const [EpochEnded] = this.unirepContract.filters.EpochEnded()
             .topics as string[]
-        const [NewGSTLeaf] = this.unirepContract.filters.NewGSTLeaf()
+        const [StateTreeLeaf] = this.unirepContract.filters.StateTreeLeaf()
             .topics as string[]
         const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
             .topics as string[]
@@ -473,7 +484,7 @@ export class Synchronizer extends EventEmitter {
             [UserStateTransitioned]: this.USTEvent.bind(this),
             [AttestationSubmitted]: this.attestationEvent.bind(this),
             [EpochEnded]: this.epochEndedEvent.bind(this),
-            [NewGSTLeaf]: this.newGSTLeaf.bind(this),
+            [StateTreeLeaf]: this.stateTreeLeaf.bind(this),
             [EpochTreeLeaf]: this.epochTreeLeaf.bind(this),
         } as {
             [key: string]: (
@@ -494,7 +505,7 @@ export class Synchronizer extends EventEmitter {
                 .topics as string[]
         const [EpochEnded] = this.unirepContract.filters.EpochEnded()
             .topics as string[]
-        const [NewGSTLeaf] = this.unirepContract.filters.NewGSTLeaf()
+        const [StateTreeLeaf] = this.unirepContract.filters.StateTreeLeaf()
             .topics as string[]
         const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
             .topics as string[]
@@ -507,7 +518,7 @@ export class Synchronizer extends EventEmitter {
                     UserStateTransitioned,
                     AttestationSubmitted,
                     EpochEnded,
-                    NewGSTLeaf,
+                    StateTreeLeaf,
                     EpochTreeLeaf,
                 ],
             ],
@@ -516,17 +527,17 @@ export class Synchronizer extends EventEmitter {
 
     // unirep event handlers
 
-    async newGSTLeaf(event: ethers.Event, db: TransactionDB) {
+    async stateTreeLeaf(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event.topics[1])
         const attesterId = BigInt(event.topics[2]).toString()
         const index = Number(event.topics[3])
         const decodedData = this.unirepContract.interface.decodeEventLog(
-            'NewGSTLeaf',
+            'StateTreeLeaf',
             event.data
         )
         const hash = BigInt(decodedData.leaf.toString()).toString()
         if (attesterId !== this.attesterId.toString()) return
-        db.create('GSTLeaf', {
+        db.create('StateTreeLeaf', {
             epoch,
             hash,
             index,
@@ -617,7 +628,8 @@ export class Synchronizer extends EventEmitter {
             attesterId: _attesterId.toString(),
             posRep: Number(decodedData.posRep),
             negRep: Number(decodedData.negRep),
-            // graffiti: decodedData.attestation.graffiti.toString(),
+            graffiti: decodedData.graffiti.toString(),
+            timestamp: decodedData.timestamp.toString(),
             hash: hash2([posRep, negRep]).toString(),
         })
         return true
