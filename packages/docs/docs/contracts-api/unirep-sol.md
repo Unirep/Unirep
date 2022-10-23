@@ -108,7 +108,7 @@ function attesterEpochRemainingTime(
 A contract address for a signup proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ```sol
-IVerifier public signupVerifier;
+IVerifier public immutable signupVerifier;
 ```
 
 ## reputationVerifier
@@ -116,7 +116,7 @@ IVerifier public signupVerifier;
 A contract address for a reputation proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ```sol
-IVerifier public reputationVerifier;
+IVerifier public immutable reputationVerifier;
 ```
 
 ## userStateTransitionVerifier
@@ -124,7 +124,7 @@ IVerifier public reputationVerifier;
 A contract address for a user state transition proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ```sol
-IVerifier public userStateTransitionVerifier;
+IVerifier public immutable userStateTransitionVerifier;
 ```
 
 ## aggregateEpochKeysVerifier
@@ -132,7 +132,7 @@ IVerifier public userStateTransitionVerifier;
 A contract address for an aggregate epoch keys proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ```sol
-IVerifier public aggregateEpochKeysVerifier;
+IVerifier public immutable aggregateEpochKeysVerifier;
 ```
 
 ## Events

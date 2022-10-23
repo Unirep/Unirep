@@ -21,10 +21,10 @@ contract Unirep is IUnirep, VerifySignature {
     using SafeMath for uint256;
 
     // All verifier contracts
-    IVerifier public signupVerifier;
-    IVerifier public aggregateEpochKeysVerifier;
-    IVerifier public userStateTransitionVerifier;
-    IVerifier public reputationVerifier;
+    IVerifier public immutable signupVerifier;
+    IVerifier public immutable aggregateEpochKeysVerifier;
+    IVerifier public immutable userStateTransitionVerifier;
+    IVerifier public immutable reputationVerifier;
 
     // Circuits configurations and contracts configurations
     Config public config;
