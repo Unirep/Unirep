@@ -507,7 +507,7 @@ export default class UserState extends Synchronizer {
         data: {
             nonce?: number
             epoch?: number
-            hash?: bigint
+            data?: bigint
         } = {}
     ): Promise<EpochKeyProof> => {
         const nonce = data.nonce ?? 0
@@ -526,7 +526,7 @@ export default class UserState extends Synchronizer {
             neg_rep: negRep,
             graffiti,
             timestamp,
-            hash: data.hash ?? BigInt(0),
+            data: data.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
         }

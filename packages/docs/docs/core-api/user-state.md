@@ -107,13 +107,13 @@ state.genUserSignUpProof(): Promise<SignupProof>
 
 ## genEpochKeyProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a value to sign.
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign.
 
 ```ts
 state.genEpochKeyProof(data: {
   nonce?: number,
   epoch?: number,
-  hash?: bigint,
+  data?: bigint,
 }): Promise<EpochKeyProof>
 ```
 

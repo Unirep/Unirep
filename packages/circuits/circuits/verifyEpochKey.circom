@@ -28,7 +28,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_
     signal input timestamp;
 
     // Some arbitrary data to endorse
-    signal input hash;
+    signal input data;
 
     /* 1. Check if user exists in the Global State Tree */
 

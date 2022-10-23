@@ -62,7 +62,7 @@ describe('Verify Epoch Key circuits', function () {
         }
     })
 
-    it('should prove a hash value', async () => {
+    it('should prove a data value', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const attesterId = 10210
             const epoch = 120958
@@ -70,7 +70,7 @@ describe('Verify Epoch Key circuits', function () {
             const negRep = 987
             const graffiti = 1294129
             const timestamp = 214
-            const hash = BigInt(1288972090)
+            const data = BigInt(1288972090)
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = hash7([
@@ -94,7 +94,7 @@ describe('Verify Epoch Key circuits', function () {
                 negRep,
                 graffiti,
                 timestamp,
-                hash,
+                data,
             })
             const { isValid, publicSignals } = await genProofAndVerify(
                 Circuit.verifyEpochKey,
@@ -110,7 +110,7 @@ describe('Verify Epoch Key circuits', function () {
                 ).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            expect(publicSignals[4].toString()).to.equal(hash.toString())
+            expect(publicSignals[4].toString()).to.equal(data.toString())
         }
     })
 
