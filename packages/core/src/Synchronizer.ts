@@ -27,7 +27,7 @@ export class Synchronizer extends EventEmitter {
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: BigInt
 
-    private get globalStateTree() {
+    private get _stateTree() {
         if (!this.stateTree) {
             throw new Error('Synchronizer: in memory GST not initialized')
         }
@@ -109,7 +109,7 @@ export class Synchronizer extends EventEmitter {
             },
         })
         for (const leaf of leaves) {
-            this.globalStateTree.insert(leaf.hash)
+            this._stateTree.insert(leaf.hash)
         }
     }
 
