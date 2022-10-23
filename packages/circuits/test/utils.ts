@@ -173,14 +173,18 @@ const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
 
 // TODO: needs to be updated
 const genEpochKey = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
     attesterId: number,
     epoch: number,
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
-): BigInt => {
-    const epochKey = crypto
-        .hash4([identityNullifier as any, BigInt(attesterId), epoch, nonce])
+): bigint => {
+    const epochKey = crypto.hash4([
+        identityNullifier,
+        BigInt(attesterId),
+        epoch,
+        nonce,
+    ])
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed
@@ -390,11 +394,7 @@ const genUserStateTransitionNullifier = (
     epoch: number,
     attesterId: number
 ): bigint => {
-    return crypto.hash3([
-        BigInt(attesterId),
-        BigInt(epoch),
-        identityNullifier,
-    ])
+    return crypto.hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
 }
 
 export {

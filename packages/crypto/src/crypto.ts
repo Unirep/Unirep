@@ -35,11 +35,11 @@ export const genEpochKey = (
     maxEpochKey: bigint | number
 ): bigint => {
     const epochKey = hash4([
-        identityNullifier as any,
+        identityNullifier,
         BigInt(attesterId),
         epoch,
         BigInt(nonce),
-    ]).valueOf()
+    ])
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(maxEpochKey)
     return epochKeyModed
@@ -50,7 +50,7 @@ export const genEpochNullifier = (
     attesterId: bigint | string,
     epoch: number | bigint
 ): bigint => {
-    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier as any])
+    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
 }
 
 export const genStateTreeLeaf = (

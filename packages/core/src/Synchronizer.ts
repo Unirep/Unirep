@@ -26,7 +26,7 @@ export class Synchronizer extends EventEmitter {
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: bigint
-    
+
     private get _stateTree() {
         if (!this.stateTree) {
             throw new Error('Synchronizer: in memory tree not initialized')
@@ -409,7 +409,7 @@ export class Synchronizer extends EventEmitter {
      * @param epoch The queried epoch of the global state tree
      * @returns True if the global state tree root exists, false otherwise.
      */
-    async stateTreeRootExists(root: BigInt | string, epoch: number) {
+    async stateTreeRootExists(root: bigint | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         return this.unirepContract.attesterStateTreeRootExists(
             this.attesterId,
