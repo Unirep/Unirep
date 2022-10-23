@@ -5,15 +5,15 @@ import { genRandomSalt } from 'maci-crypto'
 /**
  * Type of snark public signals
  */
-type SnarkPublicSignals = BigInt[]
+type SnarkPublicSignals = bigint[]
 
 /**
  * Interface of snark proof
  */
 interface SnarkProof {
-    pi_a: BigInt[]
-    pi_b: BigInt[][]
-    pi_c: BigInt[]
+    pi_a: bigint[]
+    pi_b: bigint[][]
+    pi_c: bigint[]
 }
 
 /**

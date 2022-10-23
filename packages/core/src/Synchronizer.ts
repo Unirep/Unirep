@@ -25,7 +25,7 @@ export class Synchronizer extends EventEmitter {
     public settings: any
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
-    protected defaultStateTreeLeaf?: BigInt
+    protected defaultStateTreeLeaf?: bigint
 
     private get _stateTree() {
         if (!this.stateTree) {
@@ -409,7 +409,7 @@ export class Synchronizer extends EventEmitter {
      * @param epoch The queried epoch of the global state tree
      * @returns True if the global state tree root exists, false otherwise.
      */
-    async stateTreeRootExists(root: BigInt | string, epoch: number) {
+    async stateTreeRootExists(root: bigint | string, epoch: number) {
         await this._checkValidEpoch(epoch)
         return this.unirepContract.attesterStateTreeRootExists(
             this.attesterId,
@@ -425,7 +425,7 @@ export class Synchronizer extends EventEmitter {
      * @returns True if the epoch tree root is in the database, false otherwise.
      */
     async epochTreeRootExists(
-        _epochTreeRoot: BigInt | string,
+        _epochTreeRoot: bigint | string,
         epoch: number
     ): Promise<boolean> {
         await this._checkValidEpoch(epoch)

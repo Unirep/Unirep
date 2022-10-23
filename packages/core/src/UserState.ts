@@ -187,12 +187,12 @@ export default class UserState extends Synchronizer {
 
     /**
      * Get the reputation object from a given attester
-     * @param attesterId The attester ID that the user queries
+     * @param _attesterId The attester ID that the user queries
      * @param toEpoch The latest epoch that the reputation is accumulated
      * @returns The reputation object
      */
     public getRepByAttester = async (
-        _attesterId?: BigInt | string,
+        _attesterId?: bigint | string,
         toEpoch?: number
     ): Promise<{ posRep; negRep; graffiti; timestamp }> => {
         let posRep = BigInt(0)
