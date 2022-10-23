@@ -105,6 +105,18 @@ Generate a proof that can be used to signup.
 state.genUserSignUpProof(): Promise<SignupProof>
 ```
 
+## genEpochKeyProof
+
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a value to sign.
+
+```ts
+state.genEpochKeyProof(data: {
+  nonce?: number,
+  epoch?: number,
+  hash?: bigint,
+}): Promise<EpochKeyProof>
+```
+
 ## genAggregateEpochKeysProof
 
 Generate a proof that can be used to update the epoch tree root on chain.
