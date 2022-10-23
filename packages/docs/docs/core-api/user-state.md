@@ -80,6 +80,14 @@ Get the rep owed to an epoch key in a certain epoch.
 state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
 ```
 
+## genVerifyEpochKeyProof
+
+Generate a proof of epoch key.
+
+```ts
+state.genVerifyEpochKeyProof(epochKeyNonce: number, _epoch?: number): Promise<EpochKeyProof>
+```
+
 ## genUserStateTransitionProof
 
 Generate a user state transition proof.
