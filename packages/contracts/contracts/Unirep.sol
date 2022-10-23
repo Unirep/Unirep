@@ -77,7 +77,7 @@ contract Unirep is IUnirep, VerifySignature {
         if (uint256(uint160(msg.sender)) != attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
-        if (!signupVerifier.verifyProof(proof, publicSignals))
+        if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
         uint256 identityCommitment = publicSignals[0];
@@ -257,7 +257,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        if (!aggregateEpochKeysVerifier.verifyProof(proof, publicSignals))
+        if (!aggregateEpochKeysVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
         uint256 hashchainHead = publicSignals[1];
         uint256 attesterId = hashchainMapping[hashchainHead][0];
@@ -306,7 +306,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[8] memory proof
     ) public {
         // Verify the proof
-        if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
+        if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
         if (publicSignals[5] >= type(uint160).max) revert AttesterInvalid();
         uint160 attesterId = uint160(publicSignals[5]);

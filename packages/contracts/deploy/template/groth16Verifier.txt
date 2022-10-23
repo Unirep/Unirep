@@ -169,14 +169,14 @@ contract <%contract_name%> {
         vk.delta2 = Pairing.G2Point(<%vk_delta2%>);
         <%vk_ic_pts%>
     }
-    
+
     /*
      * @returns Whether the proof is valid given the hardcoded verifying key
      *          above and the public inputs
      */
     function verifyProof(
-        uint256[8] calldata _proof,
-        uint256[] calldata input
+        uint256[] calldata input,
+        uint256[8] calldata _proof
     ) public view returns (bool) {
 
         Proof memory proof;
