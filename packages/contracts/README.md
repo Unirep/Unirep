@@ -55,7 +55,7 @@ yarn add @unirep/contracts
 
 **🍀 Solution 1. Download circuit keys from server**
 
-_(TODO) Get circuits files from [PSE server](http://www.trusted-setup-pse.org/)_
+Get circuits files from [PSE server](http://www.trusted-setup-pse.org/).
 
 **🍀 Solution 2. Build circuits locally**
 
