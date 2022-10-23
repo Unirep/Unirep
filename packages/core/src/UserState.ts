@@ -510,6 +510,44 @@ export default class UserState extends Synchronizer {
             this.prover
         )
     }
+
+    public genEpochKeyProof = async (
+        data: {
+            nonce?: number
+            epoch?: number
+            hash?: bigint
+        } = {}
+    ): Promise<EpochKeyProof> => {
+        const nonce = data.nonce ?? 0
+        const epoch = data.epoch ?? (await this.latestTransitionedEpoch())
+        const tree = await this.genStateTree(epoch)
+        const leafIndex = await this.latestStateTreeLeafIndex(epoch)
+        const { posRep, negRep, graffiti, timestamp } =
+            await this.getRepByAttester(this.attesterId, epoch)
+        const proof = tree.createProof(leafIndex)
+        const circuitInputs = {
+            epoch,
+            identity_nullifier: this.id.identityNullifier,
+            attester_id: this.attesterId.toString(),
+            nonce,
+            pos_rep: posRep,
+            neg_rep: negRep,
+            graffiti,
+            timestamp,
+            hash: data.hash ?? BigInt(0),
+            state_tree_elements: proof.siblings,
+            state_tree_indexes: proof.pathIndices,
+        }
+        const results = await this.prover.genProofAndPublicSignals(
+            Circuit.verifyEpochKey,
+            stringifyBigInts(circuitInputs)
+        )
+        return new EpochKeyProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
+    }
 }
 
 export { UserState }

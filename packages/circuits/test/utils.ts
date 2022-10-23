@@ -203,6 +203,7 @@ const genEpochKeyCircuitInput = (config: {
     negRep: number
     graffiti: number | bigint
     timestamp: number | bigint
+    hash?: bigint
 }) => {
     const {
         id,
@@ -215,6 +216,7 @@ const genEpochKeyCircuitInput = (config: {
         negRep,
         graffiti,
         timestamp,
+        hash,
     } = config
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
@@ -228,6 +230,7 @@ const genEpochKeyCircuitInput = (config: {
         graffiti,
         timestamp,
         attester_id: attesterId,
+        hash: hash ?? BigInt(0),
     }
     return crypto.stringifyBigInts(circuitInputs)
 }
