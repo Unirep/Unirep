@@ -126,12 +126,12 @@ function genReputationCircuitInput(
     const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(gstDepth)
+    const stateTree = new crypto.IncrementalMerkleTree(gstDepth)
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
-    GSTree.insert(hashedLeaf)
-    const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
-    const GSTreeRoot = GSTree.root
+    stateTree.insert(hashedLeaf)
+    const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
+    const stateTreeRoot = stateTree.root
 
     // selectors and karma nonce
     const nonceStarter = 0
@@ -153,9 +153,9 @@ function genReputationCircuitInput(
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
+        GST_path_index: stateTreeProof.pathIndices,
+        GST_path_elements: stateTreeProof.siblings,
+        GST_root: stateTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],

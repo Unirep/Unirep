@@ -284,13 +284,13 @@ const genUserStateTransitionCircuitInput = (config: {
             )
         )
 
-    const GSTreeProof = tree.createProof(leafIndex)
+    const stateTreeProof = tree.createProof(leafIndex)
     const circuitInputs = {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
         identity_nullifier: id.identityNullifier,
-        state_tree_indexes: GSTreeProof.pathIndices,
-        state_tree_elements: GSTreeProof.siblings,
+        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_elements: stateTreeProof.siblings,
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
@@ -342,7 +342,7 @@ const genReputationCircuitInput = (config: {
     )
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const stateTree = new crypto.IncrementalMerkleTree(STATE_TREE_DEPTH)
     const hashedLeaf = crypto.hash7([
         id.identityNullifier,
         attesterId,
@@ -352,15 +352,15 @@ const genReputationCircuitInput = (config: {
         startBalance.graffiti ?? 0,
         startBalance.timestamp ?? 0,
     ])
-    GSTree.insert(hashedLeaf)
-    const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
+    stateTree.insert(hashedLeaf)
+    const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
         epoch: epoch,
         nonce,
         identity_nullifier: id.identityNullifier,
-        state_tree_indexes: GSTreeProof.pathIndices,
-        state_tree_elements: GSTreeProof.siblings,
+        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_elements: stateTreeProof.siblings,
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
