@@ -103,6 +103,38 @@ function attesterEpochRemainingTime(
 ) public view returns (uint)
 ```
 
+## signupVerifier
+
+A contract address for a signup proof verifier.
+
+```sol
+IVerifier public signupVerifier;
+```
+
+## reputationVerifier
+
+A contract address for a reputation proof verifier.
+
+```sol
+IVerifier public reputationVerifier;
+```
+
+## userStateTransitionVerifier
+
+A contract address for a user state transition proof verifier.
+
+```sol
+IVerifier public userStateTransitionVerifier;
+```
+
+## aggregateEpochKeysVerifier
+
+A contract address for an aggregate epoch keys proof verifier.
+
+```sol
+IVerifier public aggregateEpochKeysVerifier;
+```
+
 ## Events
 
 The UniRep contract emits a number of events to help offchain observers track state.
