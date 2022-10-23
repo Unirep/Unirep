@@ -22,7 +22,8 @@ export class Synchronizer extends EventEmitter {
     public settings: any
     // GST for current epoch
     private stateTree?: IncrementalMerkleTree
-    public defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
+    public defaultStateTreeLeaf: bigint = BigInt(0)
+    public defaultEpochTreeLeaf: bigint = hash4([0, 0, 0, 0])
 
     private get globalStateTree() {
         if (!this.stateTree) {
@@ -81,7 +82,6 @@ export class Synchronizer extends EventEmitter {
         if (epochs.length > 1) {
             throw new Error('Multiple unsealed epochs')
         }
-        this.defaultStateTreeLeaf = BigInt(0)
         this.stateTree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
