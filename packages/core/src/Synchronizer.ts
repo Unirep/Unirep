@@ -23,13 +23,13 @@ export class Synchronizer extends EventEmitter {
     unirepContract: ethers.Contract
     attesterId: bigint
     public settings: any
-    // GST for current epoch
+    // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: BigInt
 
     private get _stateTree() {
         if (!this.stateTree) {
-            throw new Error('Synchronizer: in memory GST not initialized')
+            throw new Error('Synchronizer: in memory tree not initialized')
         }
         return this.stateTree
     }

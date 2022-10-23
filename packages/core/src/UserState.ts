@@ -170,14 +170,6 @@ export default class UserState extends Synchronizer {
         return (await this.readCurrentEpoch()).number
     }
 
-    async getNumGSTLeaves(epoch: number) {
-        await this._checkValidEpoch(epoch)
-        return this._db.count('GSTLeaf', {
-            epoch: epoch,
-            attesterId: this.attesterId.toString(),
-        })
-    }
-
     async getEpochKeys(epoch: number) {
         await this._checkValidEpoch(epoch)
         return Array(this.settings.numEpochKeyNoncePerEpoch)
