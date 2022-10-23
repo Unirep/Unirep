@@ -20,15 +20,17 @@ describe('Attester signs up and gives attestation', function () {
 
     it('attester sign up', async () => {
         const accounts = await ethers.getSigners()
+        const attester = accounts[1]
         await unirepContract
-            .connect(accounts[1])
+            .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
     })
 
     it('user sign up and receive attestation', async () => {
         const accounts = await ethers.getSigners()
-        const attesterId = BigInt(accounts[1].address)
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
         const id = new ZkIdentity()
         const userState = await genUserState(
             ethers.provider,
@@ -40,7 +42,7 @@ describe('Attester signs up and gives attestation', function () {
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
             await unirepContract
-                .connect(accounts[1])
+                .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
         }
@@ -54,17 +56,17 @@ describe('Attester signs up and gives attestation', function () {
         const newGraffiti = 1294194
         // now submit the attestation from the attester
         await unirepContract
-            .connect(accounts[1])
+            .connect(attester)
             .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
         await unirepContract
             .connect(accounts[5])
-            .buildHashchain(accounts[1].address, epoch)
+            .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
         const hashchain = await unirepContract.attesterHashchain(
-            accounts[1].address,
+            attester.address,
             epoch,
             0
         )
