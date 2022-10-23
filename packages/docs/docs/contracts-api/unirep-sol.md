@@ -103,6 +103,20 @@ function attesterEpochRemainingTime(
 ) public view returns (uint)
 ```
 
+## epochKeyVerifier
+
+A contract address for an epoch key proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+
+```sol
+IVerifier public immutable epochKeyVerifier;
+```
+
+Example use:
+
+```sol
+bool valid = unirep.epochKeyVerifier.verifyProof(publicSignals, proof);
+```
+
 ## signupVerifier
 
 A contract address for a signup proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.

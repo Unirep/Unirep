@@ -25,6 +25,7 @@ contract Unirep is IUnirep, VerifySignature {
     IVerifier public immutable aggregateEpochKeysVerifier;
     IVerifier public immutable userStateTransitionVerifier;
     IVerifier public immutable reputationVerifier;
+    IVerifier public immutable epochKeyVerifier;
 
     // Circuits configurations and contracts configurations
     Config public config;
@@ -49,7 +50,8 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _signupVerifier,
         IVerifier _aggregateEpochKeysVerifier,
         IVerifier _userStateTransitionVerifier,
-        IVerifier _reputationVerifier
+        IVerifier _reputationVerifier,
+        IVerifier _epochKeyVerifier
     ) {
         config = _config;
 
@@ -58,6 +60,7 @@ contract Unirep is IUnirep, VerifySignature {
         aggregateEpochKeysVerifier = _aggregateEpochKeysVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
+        epochKeyVerifier = _epochKeyVerifier;
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
 
