@@ -53,10 +53,11 @@ describe('Attester signs up and gives attestation', function () {
         const [epk] = epochKeys
         const newPosRep = 10
         const newNegRep = 5
+        const newGraffiti = 1294194
         // now submit the attestation from the attester
         await unirepContract
-            .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, {})
+            .connect(accounts[1])
+            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -83,16 +84,16 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep } = await userState.getRepByEpochKey(
-                key,
-                BigInt(epoch)
-            )
+            const { posRep, negRep, graffiti, timestamp } =
+                await userState.getRepByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
+                expect(graffiti).to.equal(newGraffiti)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
+                expect(graffiti).to.equal(0)
             }
         })
         await Promise.all(checkPromises)

@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/circuits'
 
@@ -27,7 +27,7 @@ describe('Attester Signup', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
     })
 
     it('should fail to double signup', async () => {
@@ -62,22 +62,22 @@ describe('Attester Signup', function () {
         )
         expect(epochLength.toNumber()).to.equal(EPOCH_LENGTH)
 
-        const GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const exists = await unirepContract.attesterStateTreeRootExists(
             attester.address,
             currentEpoch,
-            GSTree.root
+            stateTree.root
         )
         expect(exists).to.be.true
         const stateRoot = await unirepContract.attesterStateTreeRoot(
             attester.address,
             currentEpoch
         )
-        expect(stateRoot).to.equal(GSTree.root)
+        expect(stateRoot).to.equal(stateTree.root)
         const semaphoreRoot = await unirepContract.attesterSemaphoreGroupRoot(
             attester.address
         )
-        expect(semaphoreRoot).to.equal(GSTree.root)
+        expect(semaphoreRoot).to.equal(stateTree.root)
         for (let x = 1; x < 10; x++) {
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])

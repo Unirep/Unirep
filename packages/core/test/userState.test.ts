@@ -106,10 +106,17 @@ describe('User state', function () {
         const epoch = await userState.getUnirepStateCurrentEpoch()
         const newPosRep = 10
         const newNegRep = 5
+        const newGraffiti = 1294194
         // now submit the attestation from the attester
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epochKey, newPosRep, newNegRep, {})
+            .submitAttestation(
+                epoch,
+                epochKey,
+                newPosRep,
+                newNegRep,
+                newGraffiti
+            )
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -202,10 +209,11 @@ describe('User state', function () {
         const [epk] = epochKeys
         const newPosRep = 10
         const newNegRep = 5
+        const newGraffiti = 1294194
         // now submit the attestation from the attester
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, {})
+            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -235,16 +243,16 @@ describe('User state', function () {
 
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep } = await userState.getRepByEpochKey(
-                key,
-                BigInt(epoch)
-            )
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
+                expect(graffiti).to.equal(newGraffiti)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
+                expect(graffiti).to.equal(0)
             }
         })
         await Promise.all(checkPromises)
@@ -262,9 +270,11 @@ describe('User state', function () {
         }
         await userState.waitForSync()
         {
-            const { posRep, negRep } = await userState.getRepByAttester()
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByAttester()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
+            expect(graffiti).to.equal(newGraffiti)
         }
 
         await userState.waitForSync()

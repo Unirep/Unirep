@@ -7,7 +7,7 @@ import url from 'url'
 import https from 'https'
 import readline from 'readline'
 import child_process from 'child_process'
-import { circuitContents } from './circuits.mjs'
+import { circuitContents, ptauName } from './circuits.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -37,7 +37,7 @@ for (const name of circuits) {
     const wasmOut = path.join(outDir, `${name}_main_js/${name}_main.wasm`)
     const wasmOutDir = path.join(outDir, `${name}_main_js`)
     const wasmOutFinal = path.join(outDir, `${name}.wasm`)
-    const ptau = path.join(outDir, `powersOfTau28_hez_final_17.ptau`)
+    const ptau = path.join(outDir, ptauName)
     const zkey = path.join(outDir, `${name}.zkey`)
     const vkOut = path.join(outDir, `${name}.vkey.json`)
 

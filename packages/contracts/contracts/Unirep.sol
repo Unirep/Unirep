@@ -10,7 +10,7 @@ import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
-import {Poseidon4, Poseidon2} from './Hash.sol';
+import {Poseidon6, Poseidon4, Poseidon3} from './Hash.sol';
 
 /**
  * @title Unirep
@@ -44,6 +44,9 @@ contract Unirep is IUnirep, VerifySignature {
     // Mapping of used nullifiers
     mapping(uint256 => bool) public usedNullifiers;
 
+    // Bind the hashchain head to an attesterId, epoch number, and hashchain index
+    mapping(uint256 => uint256[3]) public hashchainMapping;
+
     constructor(
         Config memory _config,
         IVerifier _signupVerifier,
@@ -64,7 +67,7 @@ contract Unirep is IUnirep, VerifySignature {
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
 
         // for initializing other trees without using poseidon function
-        IncrementalBinaryTree.init(emptyTree, config.globalStateTreeDepth, 0);
+        IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
     }
 
     /**
@@ -99,7 +102,7 @@ contract Unirep is IUnirep, VerifySignature {
             uint160(attesterId),
             attester.stateTrees[attester.currentEpoch].numberOfLeaves
         );
-        emit NewGSTLeaf(
+        emit StateTreeLeaf(
             attester.currentEpoch,
             uint160(attesterId),
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
@@ -128,19 +131,19 @@ contract Unirep is IUnirep, VerifySignature {
         attester.startTimestamp = block.timestamp;
 
         // initialize the first state tree
-        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+        for (uint8 i; i < config.stateTreeDepth; i++) {
             attester.stateTrees[0].zeroes[i] = emptyTree.zeroes[i];
         }
         attester.stateTrees[0].root = emptyTree.root;
-        attester.stateTrees[0].depth = config.globalStateTreeDepth;
+        attester.stateTrees[0].depth = config.stateTreeDepth;
         attester.stateTreeRoots[0][emptyTree.root] = true;
 
         // initialize the semaphore group tree
-        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+        for (uint8 i; i < config.stateTreeDepth; i++) {
             attester.semaphoreGroup.zeroes[i] = emptyTree.zeroes[i];
         }
         attester.semaphoreGroup.root = emptyTree.root;
-        attester.semaphoreGroup.depth = config.globalStateTreeDepth;
+        attester.semaphoreGroup.depth = config.stateTreeDepth;
 
         // set the first epoch tree root
         attester.epochTreeRoots[0] = config.emptyEpochTreeRoot;
@@ -180,7 +183,8 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 targetEpoch,
         uint256 epochKey,
         uint256 posRep,
-        uint256 negRep
+        uint256 negRep,
+        uint256 graffiti
     ) public {
         updateEpochIfNeeded(uint160(msg.sender));
 
@@ -189,24 +193,33 @@ contract Unirep is IUnirep, VerifySignature {
 
         if (epochKey >= maxEpochKey) revert InvalidEpochKey();
 
+        uint256 timestamp = block.timestamp;
+
         emit AttestationSubmitted(
             attester.currentEpoch,
             epochKey,
             uint160(msg.sender),
             posRep,
-            negRep
+            negRep,
+            graffiti,
+            graffiti != 0 ? timestamp : 0
         );
         // emit EpochTreeLeaf(targetEpoch, uint160(msg.sender), epochKey, newLeaf);
-        uint256[2] storage balance = attester
+        Reputation storage balance = attester
             .epochKeyState[targetEpoch]
             .balances[epochKey];
         if (!attester.epochKeyState[targetEpoch].isKeyOwed[epochKey]) {
             attester.epochKeyState[targetEpoch].owedKeys.push(epochKey);
         }
-        balance[0] += posRep;
-        balance[1] += negRep;
+        balance.posRep += posRep;
+        balance.negRep += negRep;
+        if (graffiti != 0) {
+            balance.graffiti = graffiti;
+            balance.timestamp = timestamp;
+        }
     }
 
+    // build a hashchain of epoch key balances that we'll put in the epoch tree
     function buildHashchain(uint160 attesterId, uint256 epoch) public {
         AttesterData storage attester = attesters[attesterId];
         if (attester.epochKeyState[epoch].owedKeys.length == 0)
@@ -216,6 +229,8 @@ contract Unirep is IUnirep, VerifySignature {
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
             .hashchain[index];
+        // attester id, epoch, hashchain index
+        hashchain.head = Poseidon3.poseidon([attesterId, epoch, index]);
         hashchain.index = index;
         attester.epochKeyState[epoch].totalHashchains++;
         for (uint8 x = 0; x < config.aggregateKeyCount; x++) {
@@ -224,15 +239,23 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 epochKey = owedKeys[owedKeys.length - 1];
             owedKeys.pop();
             attester.epochKeyState[epoch].isKeyOwed[epochKey] = false;
-            uint256[2] memory balance = attester.epochKeyState[epoch].balances[
+            Reputation storage balance = attester.epochKeyState[epoch].balances[
                 epochKey
             ];
-            hashchain.head = Poseidon4.poseidon(
-                [hashchain.head, epochKey, balance[0], balance[1]]
+            hashchain.head = Poseidon6.poseidon(
+                [
+                    hashchain.head,
+                    epochKey,
+                    balance.posRep,
+                    balance.negRep,
+                    balance.graffiti,
+                    balance.timestamp
+                ]
             );
             hashchain.epochKeys.push(epochKey);
             hashchain.epochKeyBalances.push(balance);
         }
+        hashchainMapping[hashchain.head] = [attesterId, epoch, index];
     }
 
     function processHashchain(
@@ -241,30 +264,45 @@ contract Unirep is IUnirep, VerifySignature {
     ) public {
         if (!verifyAggregateEpochKeysProof(publicSignals, proof))
             revert InvalidProof();
-        uint256 epoch = publicSignals[3];
-        uint256 attesterId = publicSignals[4];
-        AttesterData storage attester = attesters[uint160(attesterId)];
         uint256 hashchainHead = publicSignals[1];
+        uint256 attesterId = hashchainMapping[hashchainHead][0];
+        uint256 epoch = hashchainMapping[hashchainHead][1];
+        uint256 hashchainIndex = hashchainMapping[hashchainHead][2];
+        require(attesterId != 0, 'value is 0');
+        AttesterData storage attester = attesters[uint160(attesterId)];
         EpochKeyHashchain storage hashchain = attester
             .epochKeyState[epoch]
-            .hashchain[publicSignals[5]];
+            .hashchain[hashchainIndex];
         if (hashchain.head == 0 || hashchain.processed)
             revert HashchainHasBeenProcessed();
         if (hashchainHead != hashchain.head) revert MismatchedHashchain();
+        require(
+            attester.epochTreeRoots[epoch] == publicSignals[2],
+            'mismatch from epoch root'
+        );
         // Verify the zk proof
         for (uint8 x = 0; x < hashchain.epochKeys.length; x++) {
             // emit the new leaves from the hashchain
             uint256 epochKey = hashchain.epochKeys[x];
+            Reputation storage balance = hashchain.epochKeyBalances[x];
             emit EpochTreeLeaf(
                 epoch,
                 uint160(attesterId),
                 epochKey,
-                Poseidon2.poseidon(hashchain.epochKeyBalances[x])
+                Poseidon4.poseidon(
+                    [
+                        balance.posRep,
+                        balance.negRep,
+                        balance.graffiti,
+                        balance.timestamp
+                    ]
+                )
             );
         }
         hashchain.processed = true;
         attester.epochKeyState[epoch].processedHashchains++;
         attester.epochTreeRoots[epoch] = publicSignals[0];
+        hashchainMapping[hashchainHead] = [0, 0, 0];
     }
 
     /**
@@ -305,7 +343,7 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidStateTreeRoot(publicSignals[0]);
 
         // update the current state tree
-        emit NewGSTLeaf(
+        emit StateTreeLeaf(
             attester.currentEpoch,
             attesterId,
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
@@ -340,11 +378,11 @@ contract Unirep is IUnirep, VerifySignature {
 
         // otherwise initialize the new epoch structures
 
-        for (uint8 i; i < config.globalStateTreeDepth; i++) {
+        for (uint8 i; i < config.stateTreeDepth; i++) {
             attester.stateTrees[newEpoch].zeroes[i] = emptyTree.zeroes[i];
         }
         attester.stateTrees[newEpoch].root = emptyTree.root;
-        attester.stateTrees[newEpoch].depth = config.globalStateTreeDepth;
+        attester.stateTrees[newEpoch].depth = config.stateTreeDepth;
         attester.stateTreeRoots[newEpoch][emptyTree.root] = true;
 
         attester.epochTreeRoots[newEpoch] = config.emptyEpochTreeRoot;
@@ -510,8 +548,8 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.epochTreeRoots[epoch];
     }
 
-    function globalStateTreeDepth() public view returns (uint8) {
-        return config.globalStateTreeDepth;
+    function stateTreeDepth() public view returns (uint8) {
+        return config.stateTreeDepth;
     }
 
     function epochTreeDepth() public view returns (uint8) {

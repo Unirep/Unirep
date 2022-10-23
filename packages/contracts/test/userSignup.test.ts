@@ -2,14 +2,15 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    hash5,
+    hash7,
+    hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
     stringifyBigInts,
 } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
 } from '@unirep/circuits'
@@ -34,7 +35,7 @@ describe('User Signup', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
     })
 
     it('attester sign up', async () => {
@@ -103,15 +104,17 @@ describe('User Signup', function () {
         // check semaphoreGroup root
         // check stateTreeRoots
         // check event emission
-        const gstLeaf = hash5([
+        const gstLeaf = hash7([
             id.identityNullifier,
             BigInt(attester.address),
             0,
             0,
             0,
+            0,
+            0,
         ])
-        const GSTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        GSTree.insert(gstLeaf)
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        stateTree.insert(gstLeaf)
         const currentRoot = await unirepContract.attesterStateTreeRoot(
             attester.address,
             0
@@ -119,13 +122,13 @@ describe('User Signup', function () {
         const rootExists = await unirepContract.attesterStateTreeRootExists(
             attester.address,
             0,
-            GSTree.root
+            stateTree.root
         )
         expect(rootExists).to.be.true
         expect(currentRoot.toString(), 'state tree root').to.equal(
-            GSTree.root.toString()
+            stateTree.root.toString()
         )
-        const semaphoreTree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
+        const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         semaphoreTree.insert(id.genIdentityCommitment())
         const semaphoreRoot = await unirepContract.attesterSemaphoreGroupRoot(
             attester.address
@@ -138,7 +141,7 @@ describe('User Signup', function () {
             .to.emit(unirepContract, 'UserSignedUp')
             .withArgs(0, id.genIdentityCommitment(), attester.address, 0)
         expect(tx)
-            .to.emit(unirepContract, 'NewGSTLeaf')
+            .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(BigInt(0), attester.address, BigInt(0), gstLeaf)
     })
 

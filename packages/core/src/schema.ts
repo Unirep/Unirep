@@ -26,11 +26,13 @@ const _schema = [
             ['attesterId', 'String', { optional: true }],
             ['posRep', 'Int', { optional: true }],
             ['negRep', 'Int', { optional: true }],
+            ['graffiti', 'String', { optional: true }],
+            ['timestamp', 'String', { optional: true }],
             ['hash', 'String'],
         ],
     },
     {
-        name: 'GSTLeaf',
+        name: 'StateTreeLeaf',
         indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int'],

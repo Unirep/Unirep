@@ -18,7 +18,7 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
 
     signal input path_elements[KEY_COUNT][EPOCH_TREE_DEPTH];
     signal input epoch_keys[KEY_COUNT];
-    signal input epoch_key_balances[KEY_COUNT][2];
+    signal input epoch_key_balances[KEY_COUNT][4];
     signal input old_epoch_key_hashes[KEY_COUNT];
 
     signal input epoch_key_count;
@@ -33,6 +33,11 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
     component epoch_key_count_check = IsZero();
     epoch_key_count_check.in <== epoch_key_count;
     epoch_key_count_check.out === 0;
+
+    component start_hasher = Poseidon(3);
+    start_hasher.inputs[0] <== attester_id;
+    start_hasher.inputs[1] <== epoch;
+    start_hasher.inputs[2] <== hashchain_index;
 
     component sparse_tree_updaters[KEY_COUNT];
     component hashers[KEY_COUNT];
@@ -50,6 +55,8 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
         sparse_tree_updaters[i].leaf_index <== epoch_keys[i];
         sparse_tree_updaters[i].pos_rep <== epoch_key_balances[i][0];
         sparse_tree_updaters[i].neg_rep <== epoch_key_balances[i][1];
+        sparse_tree_updaters[i].graffiti <== epoch_key_balances[i][2];
+        sparse_tree_updaters[i].timestamp <== epoch_key_balances[i][3];
         sparse_tree_updaters[i].old_leaf <== old_epoch_key_hashes[i];
         for (var x = 0; x < EPOCH_TREE_DEPTH; x++) {
             sparse_tree_updaters[i].leaf_elements[x] <== path_elements[i][x];
@@ -64,16 +71,20 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
         // and return the last root
         sparse_tree_updaters[i].should_ignore <== should_not_process[i].out;
 
-        hashers[i] = Poseidon(4);
+        hashers[i] = Poseidon(6);
 
         if (i == 0) {
             // epoch_key_count will never be 0, so we always evaluate the first epoch key
-            hashers[i].inputs[0] <== 0;
+            hashers[i].inputs[0] <== start_hasher.out;
             hashers[i].inputs[1] <== epoch_keys[i];
             hashers[i].inputs[2] <== epoch_key_balances[i][0];
             hashers[i].inputs[3] <== epoch_key_balances[i][1];
+            hashers[i].inputs[4] <== epoch_key_balances[i][2];
+            hashers[i].inputs[5] <== epoch_key_balances[i][3];
         } else {
-            hash_selector[i] = MultiMux1(4);
+            // If we're done processing keys use the same inputs as the previous
+            // hash so we get the same value
+            hash_selector[i] = MultiMux1(6);
 
             hash_selector[i].c[0][0] <== hashers[i - 1].out;
             hash_selector[i].c[0][1] <== hashers[i-1].inputs[0];
@@ -86,6 +97,11 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
 
             hash_selector[i].c[3][0] <== epoch_key_balances[i][1];
             hash_selector[i].c[3][1] <== hashers[i-1].inputs[3];
+            hash_selector[i].c[4][0] <== epoch_key_balances[i][2];
+            hash_selector[i].c[4][1] <== hashers[i-1].inputs[4];
+
+            hash_selector[i].c[5][0] <== epoch_key_balances[i][3];
+            hash_selector[i].c[5][1] <== hashers[i-1].inputs[5];
 
             hash_selector[i].s <== should_not_process[i].out;
 
@@ -93,6 +109,8 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
             hashers[i].inputs[1] <== hash_selector[i].out[1];
             hashers[i].inputs[2] <== hash_selector[i].out[2];
             hashers[i].inputs[3] <== hash_selector[i].out[3];
+            hashers[i].inputs[4] <== hash_selector[i].out[4];
+            hashers[i].inputs[5] <== hash_selector[i].out[5];
         }
     }
 

@@ -1,10 +1,14 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, genStateTreeLeaf } from '@unirep/crypto'
+import {
+    ZkIdentity,
+    genStateTreeLeaf,
+    IncrementalMerkleTree,
+} from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState, genUnirepState, genNewGST } from './utils'
+import { genUserState, genUnirepState } from './utils'
 
 const EPOCH_LENGTH = 1000
 
@@ -14,14 +18,14 @@ describe('User Signup', function () {
     let unirepContract
 
     const rootHistories = [] as any
-    let GSTree
+    let stateTree
 
     before(async () => {
         const accounts = await ethers.getSigners()
 
         unirepContract = await deployUnirep(accounts[0])
         const config = await unirepContract.config()
-        GSTree = genNewGST(config.globalStateTreeDepth)
+        stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
     })
 
     it('attester sign up', async () => {
@@ -64,18 +68,20 @@ describe('User Signup', function () {
                 attester.address,
                 contractEpoch.toNumber(),
                 0,
+                0,
+                0,
                 0
             )
-            GSTree.insert(leaf)
-            rootHistories.push(GSTree.root)
+            stateTree.insert(leaf)
+            rootHistories.push(stateTree.root)
 
-            const onchainGSTExists =
+            const stateRootExists =
                 await unirepContract.attesterStateTreeRootExists(
                     attester.address,
                     contractEpoch,
-                    GSTree.root
+                    stateTree.root
                 )
-            expect(onchainGSTExists).to.be.true
+            expect(stateRootExists).to.be.true
 
             await userState.stop()
         }
@@ -90,7 +96,7 @@ describe('User Signup', function () {
             BigInt(attester.address)
         )
         for (let root of rootHistories) {
-            const exist = await unirepState.GSTRootExists(
+            const exist = await unirepState.stateTreeRootExists(
                 root,
                 Number(await unirepState.loadCurrentEpoch())
             )

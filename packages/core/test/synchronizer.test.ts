@@ -51,13 +51,14 @@ describe('Synchronizer process events', function () {
         const [UserSignedUp] =
             synchronizer.unirepContract.filters.UserSignedUp()
                 .topics as string[]
-        const [NewGSTLeaf] = synchronizer.unirepContract.filters.NewGSTLeaf()
-            .topics as string[]
+        const [StateTreeLeaf] =
+            synchronizer.unirepContract.filters.StateTreeLeaf()
+                .topics as string[]
         const signUpEvent = new Promise((rs, rj) =>
             synchronizer.once(UserSignedUp, (event) => rs(event))
         )
-        const newLeafEvent = new Promise((rs, rj) =>
-            synchronizer.once(NewGSTLeaf, (event) => rs(event))
+        const stateLeafEvent = new Promise((rs, rj) =>
+            synchronizer.once(StateTreeLeaf, (event) => rs(event))
         )
         const userCount = await (synchronizer as any)._db.count(
             'UserSignUp',
@@ -79,10 +80,10 @@ describe('Synchronizer process events', function () {
 
         const epoch = await synchronizer.loadCurrentEpoch()
         const attesterId = BigInt(attester.address).toString()
-        const tree = await synchronizer.genGSTree(epoch)
+        const tree = await synchronizer.genStateTree(epoch)
         await synchronizer.waitForSync()
         await signUpEvent
-        await newLeafEvent
+        await stateLeafEvent
         const docs = await (synchronizer as any)._db.findMany('UserSignUp', {
             where: {
                 commitment: id.genIdentityCommitment().toString(),
@@ -103,29 +104,34 @@ describe('Synchronizer process events', function () {
             )
         const leaf = genStateTreeLeaf(
             id.identityNullifier,
-            attester.address,
-            contractEpoch,
+            BigInt(attester.address),
+            contractEpoch.toNumber(),
+            0,
+            0,
             0,
             0
         )
         const storedLeaves = await (synchronizer as any)._db.findMany(
-            'GSTLeaf',
+            'StateTreeLeaf',
             {
                 where: {
                     hash: leaf.toString(),
                 },
             }
         )
-        const leafIndex = await (synchronizer as any)._db.count('GSTLeaf', {
-            epoch: Number(epoch),
-        })
+        const leafIndex = await (synchronizer as any)._db.count(
+            'StateTreeLeaf',
+            {
+                epoch: Number(epoch),
+            }
+        )
         expect(storedLeaves.length).to.equal(1)
         expect(storedLeaves[0].epoch).to.equal(Number(epoch))
         expect(storedLeaves[0].index).to.equal(leafIndex - 1)
         // now look for a new GSTRoot
         tree.insert(leaf)
         expect(
-            await synchronizer.GSTRootExists(
+            await synchronizer.stateTreeRootExists(
                 tree.root.toString(),
                 Number(epoch)
             )
@@ -176,10 +182,11 @@ describe('Synchronizer process events', function () {
         const [epk] = epochKeys
         const newPosRep = 10
         const newNegRep = 5
+        const newGraffiti = 1294194
         // now submit the attestation from the attester
         await synchronizer.unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, {})
+            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -206,16 +213,16 @@ describe('Synchronizer process events', function () {
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep } = await userState.getRepByEpochKey(
-                key,
-                BigInt(epoch)
-            )
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
+                expect(graffiti).to.equal(newGraffiti)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
+                expect(graffiti).to.equal(0)
             }
         })
         await Promise.all(checkPromises)
@@ -265,10 +272,11 @@ describe('Synchronizer process events', function () {
         const [epk] = epochKeys
         const newPosRep = 10
         const newNegRep = 5
+        const newGraffiti = 1294194
         // now submit the attestation from the attester
         await synchronizer.unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, {})
+            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -295,16 +303,16 @@ describe('Synchronizer process events', function () {
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep } = await userState.getRepByEpochKey(
-                key,
-                BigInt(epoch)
-            )
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
+                expect(graffiti).to.equal(newGraffiti)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
+                expect(graffiti).to.equal(0)
             }
         })
         await Promise.all(checkPromises)
@@ -339,9 +347,11 @@ describe('Synchronizer process events', function () {
         await epochEndedEvent
 
         {
-            const { posRep, negRep } = await userState.getRepByAttester()
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByAttester()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
+            expect(graffiti).to.equal(newGraffiti)
         }
         await userState.stop()
     })

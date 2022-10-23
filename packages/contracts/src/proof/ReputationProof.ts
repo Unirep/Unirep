@@ -9,13 +9,12 @@ import { BaseProof } from './BaseProof'
 export class ReputationProof extends BaseProof {
     readonly idx: any
     public epochKey: BigNumberish
-    public globalStateTreeRoot: BigNumberish
-    public posRepBalance: BigNumberish
-    public negRepBalance: BigNumberish
+    public stateTreeRoot: BigNumberish
     public epoch: BigNumberish
     public attesterId: BigNumberish
     public minRep: BigNumberish
-    public epochTreeRoot: BigNumberish
+    public proveGraffiti: BigNumberish
+    public graffitiPreImage: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the reputation proof that can be verified by the prover
@@ -30,23 +29,20 @@ export class ReputationProof extends BaseProof {
         super(_publicSignals, _proof, prover)
         this.idx = {
             epochKey: 0,
-            globalStateTreeRoot: 1,
-            posRepBalance: 2,
-            negRepBalance: 3,
-            epoch: 4,
-            attesterId: 5,
-            minRep: 6,
-            epochTreeRoot: 7,
+            stateTreeRoot: 1,
+            epoch: 2,
+            attesterId: 3,
+            minRep: 4,
+            proveGraffiti: 5,
+            graffitiPreImage: 6,
         }
-
         this.epochKey = _publicSignals[this.idx.epochKey]
-        this.globalStateTreeRoot = _publicSignals[this.idx.globalStateTreeRoot]
-        this.posRepBalance = _publicSignals[this.idx.posRepBalance]
-        this.negRepBalance = _publicSignals[this.idx.negRepBalance]
+        this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot]
         this.epoch = _publicSignals[this.idx.epoch]
         this.attesterId = _publicSignals[this.idx.attesterId]
         this.minRep = _publicSignals[this.idx.minRep]
-        this.epochTreeRoot = _publicSignals[this.idx.epochTreeRoot]
+        this.proveGraffiti = _publicSignals[this.idx.proveGraffiti]
+        this.graffitiPreImage = _publicSignals[this.idx.graffitiPreImage]
         this.circuit = Circuit.proveReputation
     }
 }

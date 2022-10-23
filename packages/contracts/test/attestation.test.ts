@@ -1,12 +1,12 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { hash2, SparseMerkleTree } from '@unirep/crypto'
+import { hash4, SparseMerkleTree } from '@unirep/crypto'
 import {
     AGGREGATE_KEY_COUNT,
     Circuit,
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -30,7 +30,7 @@ describe('Attestations', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(GLOBAL_STATE_TREE_DEPTH).equal(config.globalStateTreeDepth)
+        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
             defaultEpochTreeLeaf
@@ -55,7 +55,7 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(wrongEpoch, epochKey, 1, 1)
+                .submitAttestation(wrongEpoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -78,7 +78,7 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(oldEpoch, epochKey, 1, 1)
+                .submitAttestation(oldEpoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -94,30 +94,39 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(wrontAttester)
-                .submitAttestation(epoch, epochKey, 1, 1)
+                .submitAttestation(epoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
-    it('should submit attestation', async () => {
+    it('should submit attestation with graffiti', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
         const epochKey = BigInt(24910)
         const posRep = 1
         const negRep = 5
-
+        const graffiti = 101910
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epochKey, posRep, negRep)
+            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
         await tx.wait()
+        const blockNumber = await ethers.provider.getBlockNumber()
+        const block = await ethers.provider.getBlock(blockNumber)
+        const { timestamp } = block
 
         expect(tx)
             .to.emit(unirepContract, 'AttestationSubmitted')
-            .withArgs(epoch, epochKey, attester.address, posRep, negRep)
-
+            .withArgs(
+                epoch,
+                epochKey,
+                attester.address,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp
+            )
         {
             const tx = await unirepContract.buildHashchain(
                 attester.address,
@@ -135,24 +144,35 @@ describe('Attestations', function () {
             const newLeaves = Array(AGGREGATE_KEY_COUNT).fill({
                 posRep: BigInt(0),
                 negRep: BigInt(0),
+                graffiti: BigInt(0),
+                timestamp: BigInt(0),
                 leafIndex: BigInt(0),
             })
             newLeaves[0] = {
                 posRep,
                 negRep,
+                graffiti,
+                timestamp,
                 leafIndex: epochKey,
             }
             const circuitInputs = {
                 start_root: startRoot,
                 epoch_keys: newLeaves.map(({ leafIndex }) => leafIndex),
-                epoch_key_balances: newLeaves.map(({ posRep, negRep }) => [
-                    posRep,
-                    negRep,
-                ]),
+                epoch_key_balances: newLeaves.map(
+                    ({ posRep, negRep, graffiti, timestamp }) => [
+                        posRep,
+                        negRep,
+                        graffiti,
+                        timestamp,
+                    ]
+                ),
                 old_epoch_key_hashes: newLeaves.map(() => defaultEpochTreeLeaf),
                 path_elements: newLeaves.map((d) => {
                     const p = tree.createProof(d.leafIndex)
-                    tree.update(d.leafIndex, hash2([d.posRep, d.negRep]))
+                    tree.update(
+                        d.leafIndex,
+                        hash4([d.posRep, d.negRep, d.graffiti, d.timestamp])
+                    )
                     return p
                 }),
                 epoch: epoch.toString(),
@@ -177,5 +197,26 @@ describe('Attestations', function () {
             )
             await tx.wait()
         }
+    })
+
+    it('should submit attestation without graffiti', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const epochKey = BigInt(24920)
+        const posRep = 1
+        const negRep = 5
+
+        const tx = await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, epochKey, posRep, negRep, 0)
+        await tx.wait()
+
+        expect(tx)
+            .to.emit(unirepContract, 'AttestationSubmitted')
+            .withArgs(epoch, epochKey, attester.address, posRep, negRep, 0, 0)
     })
 })

@@ -1,11 +1,8 @@
 import { expect } from 'chai'
-import { IncrementalMerkleTree, ZkIdentity, hash5 } from '@unirep/crypto'
+import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/crypto'
 import { Circuit } from '../src'
 
-import {
-    GLOBAL_STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '../config'
+import { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 
 import {
     genEpochKeyCircuitInput,
@@ -22,14 +19,18 @@ describe('Verify Epoch Key circuits', function () {
             const epoch = 120958
             const posRep = 2988
             const negRep = 987
+            const graffiti = 1294129
+            const timestamp = 214
             const id = new ZkIdentity()
-            const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-            const leaf = hash5([
+            const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const leaf = hash7([
                 id.identityNullifier,
                 attesterId,
                 epoch,
                 posRep,
                 negRep,
+                graffiti,
+                timestamp,
             ])
             tree.insert(leaf)
             const circuitInputs = genEpochKeyCircuitInput({
@@ -41,6 +42,8 @@ describe('Verify Epoch Key circuits', function () {
                 attesterId,
                 posRep,
                 negRep,
+                graffiti,
+                timestamp,
             })
             const { isValid, publicSignals } = await genProofAndVerify(
                 Circuit.verifyEpochKey,
@@ -63,15 +66,19 @@ describe('Verify Epoch Key circuits', function () {
         const epoch = 120958
         const posRep = 2988
         const negRep = 987
+        const graffiti = 1294129
+        const timestamp = 214
         const nonce = 0
         const id = new ZkIdentity()
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        const leaf = hash5([
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        const leaf = hash7([
             id.identityNullifier,
             attesterId,
             epoch,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         ])
         tree.insert(leaf)
         const circuitInputs = genEpochKeyCircuitInput({
@@ -83,6 +90,8 @@ describe('Verify Epoch Key circuits', function () {
             attesterId,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         })
         circuitInputs.pos_rep = 21908
         const { isValid, publicSignals } = await genProofAndVerify(
@@ -106,15 +115,19 @@ describe('Verify Epoch Key circuits', function () {
         const epoch = 120958
         const posRep = 2988
         const negRep = 987
+        const graffiti = 1294129
+        const timestamp = 214
         const nonce = 0
         const id = new ZkIdentity()
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        const leaf = hash5([
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        const leaf = hash7([
             id.identityNullifier,
             attesterId,
             epoch,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         ])
         tree.insert(leaf)
         const circuitInputs = genEpochKeyCircuitInput({
@@ -126,6 +139,8 @@ describe('Verify Epoch Key circuits', function () {
             attesterId,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         })
         circuitInputs.attester_id = 21789
         const { isValid, publicSignals } = await genProofAndVerify(
@@ -149,15 +164,19 @@ describe('Verify Epoch Key circuits', function () {
         const epoch = 120958
         const posRep = 2988
         const negRep = 987
+        const graffiti = 1294129
+        const timestamp = 214
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
         const id = new ZkIdentity()
-        const tree = new IncrementalMerkleTree(GLOBAL_STATE_TREE_DEPTH)
-        const leaf = hash5([
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        const leaf = hash7([
             id.identityNullifier,
             attesterId,
             epoch,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         ])
         tree.insert(leaf)
         const circuitInputs = genEpochKeyCircuitInput({
@@ -169,6 +188,8 @@ describe('Verify Epoch Key circuits', function () {
             attesterId,
             posRep,
             negRep,
+            graffiti,
+            timestamp,
         })
         try {
             await genProofAndVerify(Circuit.verifyEpochKey, circuitInputs)

@@ -8,16 +8,16 @@ import { BaseProof } from './BaseProof'
  */
 export class UserStateTransitionProof extends BaseProof {
     readonly idx = {
-        fromGlobalStateTreeRoot: 0,
-        globalStateTreeLeaf: 1,
+        fromStateTreeRoot: 0,
+        stateTreeLeaf: 1,
         transitionNullifier: 2,
         fromEpoch: 3,
         toEpoch: 4,
         attesterId: 5,
         epochTreeRoot: 6,
     }
-    public fromGlobalStateTreeRoot: BigNumberish
-    public globalStateTreeLeaf: BigNumberish
+    public fromStateTreeRoot: BigNumberish
+    public stateTreeLeaf: BigNumberish
     public transitionNullifier: BigNumberish
     public fromEpoch: BigNumberish
     public toEpoch: BigNumberish
@@ -35,10 +35,9 @@ export class UserStateTransitionProof extends BaseProof {
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.fromGlobalStateTreeRoot =
-            _publicSignals[this.idx.fromGlobalStateTreeRoot].toString()
-        this.globalStateTreeLeaf =
-            _publicSignals[this.idx.globalStateTreeLeaf].toString()
+        this.fromStateTreeRoot =
+            _publicSignals[this.idx.fromStateTreeRoot].toString()
+        this.stateTreeLeaf = _publicSignals[this.idx.stateTreeLeaf].toString()
         this.transitionNullifier =
             _publicSignals[this.idx.transitionNullifier].toString()
         this.fromEpoch = _publicSignals[this.idx.fromEpoch].toString()

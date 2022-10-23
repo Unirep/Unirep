@@ -75,7 +75,7 @@ await synchronizer.waitForSync()
 **Example: use the synchronizer to generate unirep state**
 ```typescript
 const epoch = 1
-const globalStateTree = await synchronizer.genGSTree(epoch)
+const stateTree = await synchronizer.genStateTree(epoch)
 ```
 
 ### UserState 👤

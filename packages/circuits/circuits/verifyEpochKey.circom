@@ -9,10 +9,10 @@ include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template VerifyEpochKey(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
+template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
-    signal input gst_path_index[GST_TREE_DEPTH];
-    signal input gst_path_elements[GST_TREE_DEPTH];
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
 
@@ -20,28 +20,32 @@ template VerifyEpochKey(GST_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EP
     signal input epoch;
     signal input attester_id;
     signal output epoch_key;
-    signal output gst_root;
+    signal output state_tree_root;
 
     signal input pos_rep;
     signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
 
     /* 1. Check if user exists in the Global State Tree */
 
     // Compute user state tree root
-    component leaf_hasher = Poseidon(5);
+    component leaf_hasher = Poseidon(7);
     leaf_hasher.inputs[0] <== identity_nullifier;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== epoch;
     leaf_hasher.inputs[3] <== pos_rep;
     leaf_hasher.inputs[4] <== neg_rep;
+    leaf_hasher.inputs[5] <== graffiti;
+    leaf_hasher.inputs[6] <== timestamp;
 
-    component merkletree = MerkleTreeInclusionProof(GST_TREE_DEPTH);
+    component merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
     merkletree.leaf <== leaf_hasher.out;
-    for (var i = 0; i < GST_TREE_DEPTH; i++) {
-        merkletree.path_index[i] <== gst_path_index[i];
-        merkletree.path_elements[i] <== gst_path_elements[i];
+    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
+        merkletree.path_index[i] <== state_tree_indexes[i];
+        merkletree.path_elements[i] <== state_tree_elements[i];
     }
-    gst_root <== merkletree.root;
+    state_tree_root <== merkletree.root;
 
     /* End of check 1 */
 
