@@ -34,7 +34,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint256 public immutable maxEpochKey;
 
     // Attester id == address
-    mapping(uint160 => AttesterData) public attesters;
+    mapping(uint160 => AttesterData) attesters;
 
     // for cheap initialization
     IncrementalTreeData emptyTree;
@@ -386,6 +386,43 @@ contract Unirep is IUnirep, VerifySignature {
         emit EpochEnded(attester.currentEpoch, uint160(attesterId));
 
         attester.currentEpoch = newEpoch;
+    }
+
+    function verifyEpochKeyProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public returns (bool) {
+        bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
+        // short circuit if the proof is invalid
+        if (!valid) return false;
+        require(publicSignals[3] < type(uint160).max);
+        require(publicSignals[0] < maxEpochKey);
+        updateEpochIfNeeded(uint160(publicSignals[3]));
+        AttesterData storage attester = attesters[uint160(publicSignals[3])];
+        // epoch check
+        if (publicSignals[2] > attester.currentEpoch) return false;
+        // state tree root check
+        if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
+            return false;
+        return true;
+    }
+
+    function verifyReputationProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public returns (bool) {
+        bool valid = reputationVerifier.verifyProof(publicSignals, proof);
+        if (!valid) return false;
+        require(publicSignals[3] < type(uint160).max);
+        require(publicSignals[0] < maxEpochKey);
+        updateEpochIfNeeded(uint160(publicSignals[3]));
+        AttesterData storage attester = attesters[uint160(publicSignals[3])];
+        // epoch check
+        if (publicSignals[2] > attester.currentEpoch) return false;
+        // state tree root check
+        if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
+            return false;
+        return true;
     }
 
     function attesterCurrentEpoch(uint160 attesterId)

@@ -103,9 +103,35 @@ function attesterEpochRemainingTime(
 ) public view returns (uint)
 ```
 
+## verifyReputationProof
+
+Verify a reputation proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
+
+```sol
+function verifyReputationProof(
+    uint256[] memory publicSignals,
+    uint256[8] memory proof
+) public returns (bool);
+```
+
+## verifyEpochKeyProof
+
+Verify an epoch key proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
+
+```sol
+function verifyEpochKeyProof(
+    uint256[] memory publicSignals,
+    uint256[8] memory proof
+) public returns (bool);
+```
+
 ## epochKeyVerifier
 
 A contract address for an epoch key proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+
+:::danger
+Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
+:::
 
 ```sol
 IVerifier public immutable epochKeyVerifier;
@@ -128,6 +154,10 @@ IVerifier public immutable signupVerifier;
 ## reputationVerifier
 
 A contract address for a reputation proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+
+:::danger
+Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyReputationProof`](#verifyreputationproof) function unless you know what you are doing.
+:::
 
 ```sol
 IVerifier public immutable reputationVerifier;
