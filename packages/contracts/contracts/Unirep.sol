@@ -34,7 +34,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint256 public immutable maxEpochKey;
 
     // Attester id == address
-    mapping(uint160 => AttesterData) attesters;
+    mapping(uint160 => AttesterData) public attesters;
 
     // for cheap initialization
     IncrementalTreeData emptyTree;
