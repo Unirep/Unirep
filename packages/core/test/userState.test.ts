@@ -186,108 +186,105 @@ describe('User state', function () {
     })
 
     // TODO: should fix reputation proof first
-    // it('reputation proof', async () => {
-    //     const accounts = await ethers.getSigners()
-    //     const attester = accounts[1]
-    //     const attesterId = BigInt(attester.address)
-    //     const id = new ZkIdentity()
-    //     const userState = await genUserState(
-    //         ethers.provider,
-    //         unirepContract.address,
-    //         id,
-    //         attesterId
-    //     )
-    //     {
-    //         const { publicSignals, proof } =
-    //             await userState.genUserSignUpProof()
-    //         await unirepContract
-    //             .connect(attester)
-    //             .userSignUp(publicSignals, proof)
-    //             .then((t) => t.wait())
-    //     }
-    //     await userState.waitForSync()
-    //     // we're signed up, now run an attestation
-    //     const epoch = await userState.getUnirepStateCurrentEpoch()
-    //     const epochKeys = await userState.getEpochKeys(epoch)
-    //     const [epk] = epochKeys
-    //     const newPosRep = 10
-    //     const newNegRep = 5
-    //     const newGraffiti = 1294194
-    //     // now submit the attestation from the attester
-    //     await unirepContract
-    //         .connect(attester)
-    //         .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
-    //         .then((t) => t.wait())
-    //     await userState.waitForSync()
-    //     // now commit the attetstations
-    //     await unirepContract
-    //         .connect(accounts[5])
-    //         .buildHashchain(attester.address, epoch)
-    //         .then((t) => t.wait())
-    //     const hashchain = await unirepContract.attesterHashchain(
-    //         attester.address,
-    //         epoch,
-    //         0
-    //     )
-    //     {
-    //         const { publicSignals, proof } =
-    //             await userState.genAggregateEpochKeysProof(
-    //                 hashchain.epochKeys,
-    //                 hashchain.epochKeyBalances,
-    //                 hashchain.index,
-    //                 epoch
-    //             )
-    //         await unirepContract
-    //             .connect(accounts[5])
-    //             .processHashchain(publicSignals, proof)
-    //             .then((t) => t.wait())
-    //         await userState.waitForSync()
-    //     }
+    it('reputation proof', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new ZkIdentity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
+        {
+            const { publicSignals, proof } =
+                await userState.genUserSignUpProof()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+        await userState.waitForSync()
+        // we're signed up, now run an attestation
+        const epoch = await userState.getUnirepStateCurrentEpoch()
+        const epochKeys = await userState.getEpochKeys(epoch)
+        const [epk] = epochKeys
+        const newPosRep = 10
+        const newNegRep = 5
+        const newGraffiti = 1294194
+        // now submit the attestation from the attester
+        await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
+            .then((t) => t.wait())
+        await userState.waitForSync()
+        // now commit the attetstations
+        await unirepContract
+            .connect(accounts[5])
+            .buildHashchain(attester.address, epoch)
+            .then((t) => t.wait())
+        const hashchain = await unirepContract.attesterHashchain(
+            attester.address,
+            epoch,
+            0
+        )
+        {
+            const { publicSignals, proof } =
+                await userState.genAggregateEpochKeysProof(
+                    hashchain.epochKeys,
+                    hashchain.epochKeyBalances,
+                    hashchain.index,
+                    epoch
+                )
+            await unirepContract
+                .connect(accounts[5])
+                .processHashchain(publicSignals, proof)
+                .then((t) => t.wait())
+            await userState.waitForSync()
+        }
 
-    //     // now check the reputation
-    //     const checkPromises = epochKeys.map(async (key) => {
-    //         const { posRep, negRep, graffiti } =
-    //             await userState.getRepByEpochKey(key, BigInt(epoch))
-    //         if (key.toString() === epk.toString()) {
-    //             expect(posRep).to.equal(newPosRep)
-    //             expect(negRep).to.equal(newNegRep)
-    //             expect(graffiti).to.equal(newGraffiti)
-    //         } else {
-    //             expect(posRep).to.equal(0)
-    //             expect(negRep).to.equal(0)
-    //             expect(graffiti).to.equal(0)
-    //         }
-    //     })
-    //     await Promise.all(checkPromises)
-    //     // then run an epoch transition and check the rep
-    //     await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-    //     await ethers.provider.send('evm_mine', [])
-    //     {
-    //         const { publicSignals, proof } =
-    //             await userState.genUserStateTransitionProof()
-    //         // submit it
-    //         await unirepContract
-    //             .connect(accounts[4])
-    //             .userStateTransition(publicSignals, proof)
-    //             .then((t) => t.wait())
-    //     }
-    //     await userState.waitForSync()
-    //     {
-    //         const { posRep, negRep, graffiti } =
-    //             await userState.getRepByAttester()
-    //         expect(posRep).to.equal(newPosRep)
-    //         expect(negRep).to.equal(newNegRep)
-    //         expect(graffiti).to.equal(newGraffiti)
-    //     }
+        // now check the reputation
+        const checkPromises = epochKeys.map(async (key) => {
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByEpochKey(key, BigInt(epoch))
+            if (key.toString() === epk.toString()) {
+                expect(posRep).to.equal(newPosRep)
+                expect(negRep).to.equal(newNegRep)
+                expect(graffiti).to.equal(newGraffiti)
+            } else {
+                expect(posRep).to.equal(0)
+                expect(negRep).to.equal(0)
+                expect(graffiti).to.equal(0)
+            }
+        })
+        await Promise.all(checkPromises)
+        // then run an epoch transition and check the rep
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        {
+            const { publicSignals, proof } =
+                await userState.genUserStateTransitionProof()
+            // submit it
+            await unirepContract
+                .connect(accounts[4])
+                .userStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+        await userState.waitForSync()
+        {
+            const { posRep, negRep, graffiti } =
+                await userState.getRepByAttester()
+            expect(posRep).to.equal(newPosRep)
+            expect(negRep).to.equal(newNegRep)
+            expect(graffiti).to.equal(newGraffiti)
+        }
 
-    //     await userState.waitForSync()
-    //     const { publicSignals, proof } =
-    //         await userState.genProveReputationProof(0, 1)
-    //     const valid = await unirepContract.verifyReputationProof(
-    //         publicSignals,
-    //         proof
-    //     )
-    //     expect(valid).to.be.true
-    //     await userState.stop()
-    // })
+        await userState.waitForSync()
+        const proof = await userState.genProveReputationProof(0, 1)
+
+        const valid = await proof.verify()
+        expect(valid).to.be.true
+        await userState.stop()
+    })
 })

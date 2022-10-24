@@ -85,7 +85,7 @@ describe('Attestations', function () {
     it('should fail to submit from non-attester', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const wrontAttester = accounts[5]
+        const wrongAttester = accounts[5]
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
@@ -93,7 +93,7 @@ describe('Attestations', function () {
 
         await expect(
             unirepContract
-                .connect(wrontAttester)
+                .connect(wrongAttester)
                 .submitAttestation(epoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
