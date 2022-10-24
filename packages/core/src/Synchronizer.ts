@@ -48,7 +48,7 @@ export class Synchronizer extends EventEmitter {
     }) {
         super()
         const { db, prover, unirepAddress, provider, attesterId } = config
-        this.attesterId = attesterId
+        this.attesterId = BigInt(attesterId)
         this._db = db
         this.unirepContract = new ethers.Contract(
             unirepAddress,
