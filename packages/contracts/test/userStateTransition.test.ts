@@ -426,6 +426,8 @@ describe('User State Transition', function () {
             attester.address,
             attester
         )
+        const fromEpoch = 0
+        const toEpoch = fromEpoch + 1
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -446,8 +448,8 @@ describe('User State Transition', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
-                from_epoch: 0,
-                to_epoch: 1,
+                from_epoch: fromEpoch,
+                to_epoch: toEpoch,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
@@ -477,15 +479,17 @@ describe('User State Transition', function () {
             .connect(attester)
             .userStateTransition(publicSignals, proof)
         await tx.wait()
+        const leafIndex = 0
+
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(1, attester.address, 0, publicSignals[1])
+            .withArgs(toEpoch, attester.address, leafIndex, publicSignals[1])
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
             .withArgs(
-                1,
+                toEpoch,
                 attester.address,
-                0,
+                leafIndex,
                 publicSignals[1],
                 publicSignals[2]
             )
@@ -502,6 +506,8 @@ describe('User State Transition', function () {
             attester.address,
             attester
         )
+        const fromEpoch = 0
+        const toEpoch = fromEpoch + 1
         stateTree.insert(leaf)
         const snapshot = await ethers.provider.send('evm_snapshot', [])
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
@@ -510,7 +516,7 @@ describe('User State Transition', function () {
                 genEpochKey(
                     id.identityNullifier,
                     BigInt(attester.address),
-                    0, // from epoch
+                    fromEpoch, // from epoch
                     i,
                     2 ** EPOCH_TREE_DEPTH
                 )
@@ -523,8 +529,8 @@ describe('User State Transition', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
-                from_epoch: 0,
-                to_epoch: 1,
+                from_epoch: fromEpoch,
+                to_epoch: toEpoch,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
@@ -553,15 +559,16 @@ describe('User State Transition', function () {
             .connect(attester)
             .userStateTransition(publicSignals, proof)
         await tx.wait()
+        const leafIndex = 0
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(1, attester.address, 0, publicSignals[1])
+            .withArgs(toEpoch, attester.address, leafIndex, publicSignals[1])
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
             .withArgs(
-                1,
+                toEpoch,
                 attester.address,
-                0,
+                leafIndex,
                 publicSignals[1],
                 publicSignals[2]
             )
@@ -592,7 +599,8 @@ describe('User State Transition', function () {
                 0
             )
             _stateTree.insert(leaf)
-            const _stateTreeProof = _stateTree.createProof(0)
+            const index = 0
+            const _stateTreeProof = _stateTree.createProof(index)
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.userStateTransition,
                 stringifyBigInts({
@@ -601,7 +609,7 @@ describe('User State Transition', function () {
                     identity_nullifier: id.identityNullifier,
                     state_tree_indexes: _stateTreeProof.pathIndices,
                     state_tree_elements: _stateTreeProof.siblings,
-                    attester_id: BigInt(attester.address),
+                    attester_id: attester.address,
                     pos_rep: 0,
                     neg_rep: 0,
                     graffiti: 0,
@@ -626,15 +634,16 @@ describe('User State Transition', function () {
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
             await tx.wait()
+            const leafIndex = 0
             await expect(tx)
                 .to.emit(unirepContract, 'StateTreeLeaf')
-                .withArgs(x + 1, attester.address, 0, publicSignals[1])
+                .withArgs(x + 1, attester.address, leafIndex, publicSignals[1])
             await expect(tx)
                 .to.emit(unirepContract, 'UserStateTransitioned')
                 .withArgs(
                     x + 1,
                     attester.address,
-                    0,
+                    leafIndex,
                     publicSignals[1],
                     publicSignals[2]
                 )
