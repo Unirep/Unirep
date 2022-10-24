@@ -442,7 +442,8 @@ export default class UserState extends Synchronizer {
      */
     public genProveReputationProof = async (
         epkNonce: number,
-        minRep?: number
+        minRep?: number,
+        graffitiPreImage?: bigint | string
     ): Promise<ReputationProof> => {
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
@@ -463,7 +464,9 @@ export default class UserState extends Synchronizer {
             neg_rep: negRep,
             graffiti,
             timestamp,
-            min_rep: minRep === undefined ? 0 : minRep,
+            min_rep: minRep ?? 0,
+            prove_graffiti: graffitiPreImage ? 1 : 0,
+            graffiti_pre_image: graffitiPreImage ?? 0,
         }
 
         const results = await this.prover.genProofAndPublicSignals(
