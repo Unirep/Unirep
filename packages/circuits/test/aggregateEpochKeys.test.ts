@@ -1,13 +1,16 @@
 import { expect } from 'chai'
 import { SparseMerkleTree, hash2, hash3, hash4, hash6 } from '@unirep/crypto'
 import { Circuit } from '../src'
-import { genProofAndVerify } from './utils'
+import { defaultEpochTreeLeaf, genProofAndVerify } from './utils'
 import { EPOCH_TREE_DEPTH, AGGREGATE_KEY_COUNT } from '../config'
 
 describe('Multiple SMT updates', function () {
     this.timeout(300000)
     it('should update many leaves in an SMT', async () => {
-        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash4([0, 0, 0, 0]))
+        const tree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            defaultEpochTreeLeaf
+        )
         const startRoot = tree.root
         const newLeaves = Array(AGGREGATE_KEY_COUNT)
             .fill(null)
@@ -32,7 +35,7 @@ describe('Multiple SMT updates', function () {
                     timestamp,
                 ]
             ),
-            old_epoch_key_hashes: newLeaves.map(() => hash4([0, 0, 0, 0])),
+            old_epoch_key_hashes: newLeaves.map(() => defaultEpochTreeLeaf),
             path_elements: newLeaves.map((d) => {
                 const p = tree.createProof(d.leafIndex)
                 tree.update(
@@ -66,7 +69,10 @@ describe('Multiple SMT updates', function () {
     })
 
     it('should short circuit leaf updates and hashchain', async () => {
-        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash4([0, 0, 0, 0]))
+        const tree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            defaultEpochTreeLeaf
+        )
         const startRoot = tree.root
         const count = Math.ceil(AGGREGATE_KEY_COUNT / 2)
         const newLeaves = Array(count)
@@ -102,7 +108,7 @@ describe('Multiple SMT updates', function () {
                     timestamp,
                 ]
             ),
-            old_epoch_key_hashes: allLeaves.map(() => hash4([0, 0, 0, 0])),
+            old_epoch_key_hashes: allLeaves.map(() => defaultEpochTreeLeaf),
             path_elements: allLeaves.map((d, i) => {
                 const p = tree.createProof(d.leafIndex)
                 if (i < newLeaves.length) {
@@ -163,7 +169,7 @@ describe('Multiple SMT updates', function () {
                     timestamp,
                 ]
             ),
-            old_epoch_key_hashes: newLeaves.map(() => hash4([0, 0, 0, 0])),
+            old_epoch_key_hashes: newLeaves.map(() => defaultEpochTreeLeaf),
             path_elements: newLeaves.map((d, i) => {
                 const p = tree.createProof(d.leafIndex)
                 if (i < newLeaves.length) {

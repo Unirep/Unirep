@@ -343,7 +343,7 @@ export default class UserState extends Synchronizer {
             epoch_key_balances: allBalances,
             old_epoch_key_hashes: allEpochKeys.map((key) => {
                 const leaf = leavesByEpochKey[key.toString()]
-                return leaf?.hash ?? hash4([0, 0, 0, 0])
+                return leaf?.hash ?? this.defaultEpochTreeLeaf
             }),
             path_elements: allEpochKeys.map((key, i) => {
                 const p = epochTree.createProof(BigInt(key))

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
-import { ethers, BigNumberish } from 'ethers'
+import { ethers } from 'ethers'
 import { Prover } from '@unirep/circuits'
 import {
     IncrementalMerkleTree,
@@ -9,8 +9,6 @@ import {
     hash4,
 } from '@unirep/crypto'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
-
-const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
 /**
  * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
@@ -26,6 +24,7 @@ export class Synchronizer extends EventEmitter {
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: bigint
+    protected defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     private get _stateTree() {
         if (!this.stateTree) {
@@ -344,7 +343,7 @@ export class Synchronizer extends EventEmitter {
         })
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            defaultEpochTreeLeaf
+            this.defaultEpochTreeLeaf
         )
         for (const leaf of leaves) {
             tree.update(leaf.index, leaf.hash)

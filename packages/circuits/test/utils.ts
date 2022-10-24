@@ -9,14 +9,13 @@ import {
     Circuit,
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
-    NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
-import { expect } from 'chai'
 
 const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
 const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
+const defaultEpochTreeLeaf = crypto.hash4([0, 0, 0, 0])
 
 interface IAttestation {
     attesterId: bigint
@@ -400,6 +399,7 @@ const genUserStateTransitionNullifier = (
 export {
     Attestation,
     Reputation,
+    defaultEpochTreeLeaf,
     SMT_ONE_LEAF,
     SMT_ZERO_LEAF,
     genNewEpochTree,

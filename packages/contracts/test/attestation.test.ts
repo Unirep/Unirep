@@ -1,27 +1,20 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    IncrementalMerkleTree,
-    SparseMerkleTree,
-    hash4,
-    ZkIdentity,
-    stringifyBigInts,
-} from '@unirep/crypto'
+import { hash4, SparseMerkleTree, ZkIdentity } from '@unirep/crypto'
 import {
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    Circuit,
 } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, AggregateEpochKeysProof } from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 describe('Attestations', function () {
     this.timeout(120000)
     let unirepContract
+    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -35,7 +28,10 @@ describe('Attestations', function () {
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
         expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
-        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash4([0, 0, 0, 0]))
+        const tree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            defaultEpochTreeLeaf
+        )
         expect(tree.root.toString()).equal(config.emptyEpochTreeRoot.toString())
     })
 
@@ -59,7 +55,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            hash4([0, 0, 0, 0])
+            defaultEpochTreeLeaf
         )
         const wrongEpoch = 444444
         await expect(
@@ -80,7 +76,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            hash4([0, 0, 0, 0])
+            defaultEpochTreeLeaf
         )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await expect(
@@ -102,7 +98,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            hash4([0, 0, 0, 0])
+            defaultEpochTreeLeaf
         )
         await expect(
             unirepContract
