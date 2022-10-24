@@ -3,7 +3,6 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
     ZkIdentity,
-    hashLeftRight,
     genStateTreeLeaf,
     IncrementalMerkleTree,
 } from '@unirep/crypto'
@@ -43,7 +42,6 @@ describe('User Signup', function () {
         const attester = accounts[1]
         for (let i = 0; i < 5; i++) {
             const id = new ZkIdentity()
-            const commitment = id.genIdentityCommitment()
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,

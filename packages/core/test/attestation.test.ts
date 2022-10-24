@@ -1,10 +1,10 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, hashLeftRight } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/crypto'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState, genUnirepState } from './utils'
+import { genUserState } from './utils'
 
 const EPOCH_LENGTH = 1000
 

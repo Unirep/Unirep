@@ -3,7 +3,6 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
     hash7,
-    hashLeftRight,
     IncrementalMerkleTree,
     ZkIdentity,
     stringifyBigInts,
@@ -16,7 +15,7 @@ import {
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, Unirep, SignupProof } from '../src'
+import { EPOCH_LENGTH, SignupProof } from '../src'
 import { deployUnirep } from '../deploy'
 
 describe('User Signup', function () {
