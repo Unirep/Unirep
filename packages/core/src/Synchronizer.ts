@@ -301,7 +301,7 @@ export class Synchronizer extends EventEmitter {
         const timestamp = Math.floor(+new Date() / 1000)
         return Math.max(
             0,
-            Math.ceil(
+            Math.floor(
                 (timestamp - this.settings.startTimestamp) /
                     this.settings.epochLength
             )
@@ -313,7 +313,7 @@ export class Synchronizer extends EventEmitter {
         const currentEpoch = this.calcCurrentEpoch()
         const epochEnd =
             this.settings.startTimestamp +
-            currentEpoch * this.settings.epochLength
+            (currentEpoch + 1) * this.settings.epochLength
         return Math.max(0, epochEnd - timestamp)
     }
 
