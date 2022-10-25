@@ -3,15 +3,12 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { hash4, SparseMerkleTree } from '@unirep/crypto'
 import {
-    AGGREGATE_KEY_COUNT,
-    Circuit,
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { AggregateEpochKeysProof, EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 describe('Attestations', function () {
@@ -127,76 +124,6 @@ describe('Attestations', function () {
                 graffiti,
                 timestamp
             )
-        {
-            const tx = await unirepContract.buildHashchain(
-                attester.address,
-                epoch
-            )
-            await tx.wait()
-        }
-
-        {
-            const tree = new SparseMerkleTree(
-                EPOCH_TREE_DEPTH,
-                defaultEpochTreeLeaf
-            )
-            const startRoot = tree.root
-            const newLeaves = Array(AGGREGATE_KEY_COUNT).fill({
-                posRep: BigInt(0),
-                negRep: BigInt(0),
-                graffiti: BigInt(0),
-                timestamp: BigInt(0),
-                leafIndex: BigInt(0),
-            })
-            newLeaves[0] = {
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-                leafIndex: epochKey,
-            }
-            const circuitInputs = {
-                start_root: startRoot,
-                epoch_keys: newLeaves.map(({ leafIndex }) => leafIndex),
-                epoch_key_balances: newLeaves.map(
-                    ({ posRep, negRep, graffiti, timestamp }) => [
-                        posRep,
-                        negRep,
-                        graffiti,
-                        timestamp,
-                    ]
-                ),
-                old_epoch_key_hashes: newLeaves.map(() => defaultEpochTreeLeaf),
-                path_elements: newLeaves.map((d) => {
-                    const p = tree.createProof(d.leafIndex)
-                    tree.update(
-                        d.leafIndex,
-                        hash4([d.posRep, d.negRep, d.graffiti, d.timestamp])
-                    )
-                    return p
-                }),
-                epoch: epoch.toString(),
-                attester_id: attester.address,
-                hashchain_index: 0,
-                epoch_key_count: 1, // process all of them
-            }
-            const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.aggregateEpochKeys,
-                circuitInputs
-            )
-
-            const proof = new AggregateEpochKeysProof(
-                r.publicSignals,
-                r.proof,
-                defaultProver
-            )
-
-            const tx = await unirepContract.processHashchain(
-                proof.publicSignals,
-                proof.proof
-            )
-            await tx.wait()
-        }
     })
 
     it('should submit attestation without graffiti', async () => {
