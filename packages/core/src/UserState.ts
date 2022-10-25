@@ -1,16 +1,10 @@
-import { BigNumber, BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import assert from 'assert'
 import { DB } from 'anondb'
 import {
-    IncrementalMerkleTree,
-    hash2,
     hash4,
-    hash5,
     stringifyBigInts,
-    hashLeftRight,
-    SparseMerkleTree,
     ZkIdentity,
-    unstringifyBigInts,
     genEpochKey,
     genStateTreeLeaf,
     genEpochNullifier,
@@ -22,7 +16,7 @@ import {
     UserStateTransitionProof,
     AggregateEpochKeysProof,
 } from '@unirep/contracts'
-import { Circuit, Prover, AGGREGATE_KEY_COUNT } from '@unirep/circuits'
+import { Circuit, Prover } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 /**
@@ -106,7 +100,7 @@ export default class UserState extends Synchronizer {
      */
     async latestStateTreeLeafIndex(_epoch?: number): Promise<number> {
         if (!(await this.hasSignedUp())) return -1
-        const currentEpoch = _epoch ?? (await this.getUnirepStateCurrentEpoch())
+        const currentEpoch = _epoch ?? this.calcCurrentEpoch()
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         if (latestTransitionedEpoch !== currentEpoch) return -1
         if (latestTransitionedEpoch === 0) {
@@ -167,7 +161,7 @@ export default class UserState extends Synchronizer {
      * Proxy methods to get underlying UnirepState data
      */
     public getUnirepStateCurrentEpoch = async (): Promise<number> => {
-        return (await this.readCurrentEpoch()).number
+        return this.calcCurrentEpoch()
     }
 
     async getEpochKeys(epoch: number) {
@@ -376,7 +370,7 @@ export default class UserState extends Synchronizer {
             const { posRep, negRep, graffiti, timestamp } =
                 await this.getRepByAttester()
             const fromEpoch = await this.latestTransitionedEpoch()
-            const toEpoch = await this.loadCurrentEpoch()
+            const toEpoch = this.calcCurrentEpoch()
             if (fromEpoch.toString() === toEpoch.toString()) {
                 throw new Error('Cannot transition to same epoch')
             }
@@ -401,7 +395,9 @@ export default class UserState extends Synchronizer {
                     return { posRep, negRep, graffiti, timestamp, proof }
                 })
             const epochKeyData = await Promise.all(epochKeyPromises)
-            const latestLeafIndex = await this.latestStateTreeLeafIndex()
+            const latestLeafIndex = await this.latestStateTreeLeafIndex(
+                fromEpoch
+            )
             const stateTree = await this.genStateTree(fromEpoch)
             const stateTreeProof = stateTree.createProof(latestLeafIndex)
             const circuitInputs = {
@@ -483,11 +479,10 @@ export default class UserState extends Synchronizer {
 
     /**
      * Generate a user sign up proof of current user state and the given attester ID
-     * @param attesterId The attester ID that the user wants to prove the sign up status
      * @returns The sign up proof of type `SignUpProof`.
      */
     public genUserSignUpProof = async (): Promise<SignupProof> => {
-        const epoch = await this.getUnirepStateCurrentEpoch()
+        const epoch = this.calcCurrentEpoch()
         const circuitInputs = {
             epoch,
             identity_nullifier: this.id.identityNullifier,
@@ -498,7 +493,6 @@ export default class UserState extends Synchronizer {
             Circuit.signup,
             stringifyBigInts(circuitInputs)
         )
-
         return new SignupProof(
             results.publicSignals,
             results.proof,
