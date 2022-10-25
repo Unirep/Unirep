@@ -425,6 +425,16 @@ contract Unirep is IUnirep, VerifySignature {
         return true;
     }
 
+    function attesterStartTimestamp(uint160 attesterId)
+        public
+        view
+        returns (uint256)
+    {
+        AttesterData storage attester = attesters[attesterId];
+        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        return attester.startTimestamp;
+    }
+
     function attesterCurrentEpoch(uint160 attesterId)
         public
         view

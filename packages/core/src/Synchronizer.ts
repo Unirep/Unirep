@@ -78,6 +78,9 @@ export class Synchronizer extends EventEmitter {
         ).toNumber()
         this.settings.aggregateKeyCount = config.aggregateKeyCount.toNumber()
         this.settings.emptyEpochTreeRoot = config.emptyEpochTreeRoot
+        this.settings.startTimestamp = (
+            await this.unirepContract.attesterStartTimestamp(this.attesterId)
+        ).toNumber()
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database
         const epochs = await this._db.findMany('Epoch', {
@@ -86,16 +89,13 @@ export class Synchronizer extends EventEmitter {
                 sealed: false,
             },
         })
-        if (epochs.length > 1) {
-            throw new Error('Multiple unsealed epochs')
-        }
         this.defaultStateTreeLeaf = BigInt(0)
         this.stateTree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
         )
         // if it's a new sync, start with epoch 1
-        const epoch = epochs[0]?.number ?? 1
+        const epoch = epochs[epochs.length - 1]?.number ?? 0
         // otherwise load the leaves and insert them
         // TODO: index consistency verification, ensure that indexes are
         // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
@@ -298,6 +298,26 @@ export class Synchronizer extends EventEmitter {
         )
     }
 
+    calcCurrentEpoch() {
+        const timestamp = Math.floor(+new Date() / 1000)
+        return Math.max(
+            0,
+            Math.ceil(
+                (timestamp - this.settings.startTimestamp) /
+                    this.settings.epochLength
+            )
+        )
+    }
+
+    calcEpochRemainingTime() {
+        const timestamp = Math.floor(+new Date() / 1000)
+        const currentEpoch = this.calcCurrentEpoch()
+        const epochEnd =
+            this.settings.startTimestamp +
+            currentEpoch * this.settings.epochLength
+        return Math.max(0, epochEnd - timestamp)
+    }
+
     async loadCurrentEpoch() {
         const epoch = await this.unirepContract.attesterCurrentEpoch(
             this.attesterId
@@ -306,7 +326,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     protected async _checkCurrentEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
+        const currentEpoch = this.calcCurrentEpoch()
         if (epoch !== Number(currentEpoch)) {
             throw new Error(
                 `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch}`
@@ -315,7 +335,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     protected async _checkValidEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
+        const currentEpoch = this.calcCurrentEpoch()
         if (epoch > Number(currentEpoch)) {
             throw new Error(
                 `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch}`
