@@ -157,14 +157,7 @@ export default class UserState extends Synchronizer {
         return foundLeaf.index
     }
 
-    /**
-     * Proxy methods to get underlying UnirepState data
-     */
-    public getUnirepStateCurrentEpoch = async (): Promise<number> => {
-        return this.calcCurrentEpoch()
-    }
-
-    async getEpochKeys(epoch: number) {
+    async getEpochKeys(epoch: bigint) {
         await this._checkValidEpoch(epoch)
         return Array(this.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
@@ -297,15 +290,10 @@ export default class UserState extends Synchronizer {
         if (epochKeys.length > this.settings.aggregateKeyCount) {
             throw new Error(`Too many keys for circuit`)
         }
-        const targetEpoch =
-            epoch ?? BigInt(await this.getUnirepStateCurrentEpoch())
-        const targetRoot = await this.unirepContract.attesterEpochRoot(
-            this.attesterId,
-            targetEpoch
-        )
+        const targetEpoch = epoch ?? BigInt(this.calcCurrentEpoch())
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
-                epoch: targetEpoch,
+                epoch: Number(targetEpoch),
                 index: epochKeys.map((k) => k.toString()),
                 attesterId: this.attesterId.toString(),
             },
@@ -365,70 +353,68 @@ export default class UserState extends Synchronizer {
         )
     }
 
-    public genUserStateTransitionProof =
-        async (): Promise<UserStateTransitionProof> => {
-            const { posRep, negRep, graffiti, timestamp } =
-                await this.getRepByAttester()
-            const fromEpoch = await this.latestTransitionedEpoch()
-            const toEpoch = this.calcCurrentEpoch()
-            if (fromEpoch.toString() === toEpoch.toString()) {
-                throw new Error('Cannot transition to same epoch')
-            }
-            const epochTree = await this.genEpochTree(fromEpoch)
-            const epochKeyPromises = Array(
-                this.settings.numEpochKeyNoncePerEpoch
-            )
-                .fill(null)
-                .map((_, i) =>
-                    genEpochKey(
-                        this.id.identityNullifier,
-                        this.attesterId.toString(),
-                        fromEpoch,
-                        i,
-                        2 ** this.settings.epochTreeDepth
-                    ).toString()
-                )
-                .map(async (epochKey) => {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        await this.getRepByEpochKey(epochKey, fromEpoch)
-                    const proof = epochTree.createProof(BigInt(epochKey))
-                    return { posRep, negRep, graffiti, timestamp, proof }
-                })
-            const epochKeyData = await Promise.all(epochKeyPromises)
-            const latestLeafIndex = await this.latestStateTreeLeafIndex(
-                fromEpoch
-            )
-            const stateTree = await this.genStateTree(fromEpoch)
-            const stateTreeProof = stateTree.createProof(latestLeafIndex)
-            const circuitInputs = {
-                from_epoch: fromEpoch,
-                to_epoch: toEpoch,
-                identity_nullifier: this.id.identityNullifier,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                attester_id: this.attesterId.toString(),
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti,
-                timestamp,
-                new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
-                new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
-                new_graffiti: epochKeyData.map(({ graffiti }) => graffiti),
-                new_timestamp: epochKeyData.map(({ timestamp }) => timestamp),
-                epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
-                epoch_tree_root: epochTree.root,
-            }
-            const results = await this.prover.genProofAndPublicSignals(
-                Circuit.userStateTransition,
-                stringifyBigInts(circuitInputs)
-            )
-
-            return new UserStateTransitionProof(
-                results.publicSignals,
-                results.proof,
-                this.prover
-            )
+    public genUserStateTransitionProof = async (
+        options: { toEpoch?: bigint | number } = {}
+    ): Promise<UserStateTransitionProof> => {
+        const { toEpoch: _toEpoch } = options
+        const { posRep, negRep, graffiti, timestamp } =
+            await this.getRepByAttester()
+        const fromEpoch = await this.latestTransitionedEpoch()
+        const toEpoch = _toEpoch ?? this.calcCurrentEpoch()
+        if (fromEpoch.toString() === toEpoch.toString()) {
+            throw new Error('Cannot transition to same epoch')
         }
+        const epochTree = await this.genEpochTree(fromEpoch)
+        const epochKeyPromises = Array(this.settings.numEpochKeyNoncePerEpoch)
+            .fill(null)
+            .map((_, i) =>
+                genEpochKey(
+                    this.id.identityNullifier,
+                    this.attesterId.toString(),
+                    fromEpoch,
+                    i,
+                    2 ** this.settings.epochTreeDepth
+                ).toString()
+            )
+            .map(async (epochKey) => {
+                const { posRep, negRep, graffiti, timestamp } =
+                    await this.getRepByEpochKey(epochKey, fromEpoch)
+                const proof = epochTree.createProof(BigInt(epochKey))
+                return { posRep, negRep, graffiti, timestamp, proof }
+            })
+        const epochKeyData = await Promise.all(epochKeyPromises)
+        const latestLeafIndex = await this.latestStateTreeLeafIndex(fromEpoch)
+        const stateTree = await this.genStateTree(fromEpoch)
+        const stateTreeProof = stateTree.createProof(latestLeafIndex)
+        const circuitInputs = {
+            from_epoch: fromEpoch,
+            to_epoch: toEpoch,
+            identity_nullifier: this.id.identityNullifier,
+            state_tree_indexes: stateTreeProof.pathIndices,
+            state_tree_elements: stateTreeProof.siblings,
+            attester_id: this.attesterId.toString(),
+            pos_rep: posRep,
+            neg_rep: negRep,
+            graffiti,
+            timestamp,
+            new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
+            new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
+            new_graffiti: epochKeyData.map(({ graffiti }) => graffiti),
+            new_timestamp: epochKeyData.map(({ timestamp }) => timestamp),
+            epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
+            epoch_tree_root: epochTree.root,
+        }
+        const results = await this.prover.genProofAndPublicSignals(
+            Circuit.userStateTransition,
+            stringifyBigInts(circuitInputs)
+        )
+
+        return new UserStateTransitionProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
+    }
 
     /**
      * Generate a reputation proof of current user state and given conditions

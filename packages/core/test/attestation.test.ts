@@ -48,7 +48,7 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.getUnirepStateCurrentEpoch()
+        const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -102,7 +102,9 @@ describe('Attester signs up and gives attestation', function () {
         await ethers.provider.send('evm_mine', [])
         {
             const { publicSignals, proof } =
-                await userState.genUserStateTransitionProof()
+                await userState.genUserStateTransitionProof({
+                    toEpoch: await userState.loadCurrentEpoch(),
+                })
             // submit it
             await unirepContract
                 .connect(accounts[4])
