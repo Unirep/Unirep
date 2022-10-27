@@ -71,12 +71,12 @@ describe('Attester signs up and gives attestation', function () {
             0
         )
         const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof(
-                hashchain.epochKeys,
-                hashchain.epochKeyBalances,
-                hashchain.index,
-                epoch
-            )
+            await userState.genAggregateEpochKeysProof({
+                epochKeys: hashchain.epochKeys,
+                newBalances: hashchain.epochKeyBalances,
+                hashchainIndex: hashchain.index,
+                epoch,
+            })
         await unirepContract
             .connect(accounts[5])
             .processHashchain(publicSignals, proof)

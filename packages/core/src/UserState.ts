@@ -276,17 +276,18 @@ export default class UserState extends Synchronizer {
         )
     }
 
-    public genAggregateEpochKeysProof = async (
-        epochKeys: bigint[],
+    public genAggregateEpochKeysProof = async (options: {
+        epochKeys: bigint[]
         newBalances: {
             posRep: bigint
             negRep: bigint
             graffiti: bigint
             timestamp: bigint
-        }[],
-        hashchainIndex: number | bigint,
+        }[]
+        hashchainIndex: number | bigint
         epoch?: bigint | number
-    ) => {
+    }) => {
+        const { epochKeys, newBalances, hashchainIndex, epoch } = options
         if (epochKeys.length > this.settings.aggregateKeyCount) {
             throw new Error(`Too many keys for circuit`)
         }
@@ -422,11 +423,12 @@ export default class UserState extends Synchronizer {
      * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
      * @returns The reputation proof of type `ReputationProof`.
      */
-    public genProveReputationProof = async (
-        epkNonce: number,
-        minRep?: number,
+    public genProveReputationProof = async (options: {
+        epkNonce: number
+        minRep?: number
         graffitiPreImage?: bigint | string
-    ): Promise<ReputationProof> => {
+    }): Promise<ReputationProof> => {
+        const { epkNonce, minRep, graffitiPreImage } = options
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestStateTreeLeafIndex()
@@ -487,14 +489,14 @@ export default class UserState extends Synchronizer {
     }
 
     public genEpochKeyProof = async (
-        data: {
+        options: {
             nonce?: number
             epoch?: number
             data?: bigint
         } = {}
     ): Promise<EpochKeyProof> => {
-        const nonce = data.nonce ?? 0
-        const epoch = data.epoch ?? (await this.latestTransitionedEpoch())
+        const nonce = options.nonce ?? 0
+        const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
         const tree = await this.genStateTree(epoch)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
         const { posRep, negRep, graffiti, timestamp } =
@@ -509,7 +511,7 @@ export default class UserState extends Synchronizer {
             neg_rep: negRep,
             graffiti,
             timestamp,
-            data: data.data ?? BigInt(0),
+            data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
         }
