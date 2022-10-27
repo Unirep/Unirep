@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
-import { ethers, BigNumberish } from 'ethers'
+import { ethers } from 'ethers'
 import { Prover } from '@unirep/circuits'
 import {
     IncrementalMerkleTree,
@@ -9,8 +9,6 @@ import {
     hash4,
 } from '@unirep/crypto'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
-
-const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
 /**
  * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
@@ -26,6 +24,7 @@ export class Synchronizer extends EventEmitter {
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: bigint
+    protected defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     private get _stateTree() {
         if (!this.stateTree) {
@@ -306,10 +305,10 @@ export class Synchronizer extends EventEmitter {
     }
 
     protected async _checkCurrentEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch !== Number(currentEpoch)) {
+        const currentEpoch = await this.readCurrentEpoch()
+        if (epoch !== currentEpoch.number) {
             throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch}`
+                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
             )
         }
     }
@@ -344,7 +343,7 @@ export class Synchronizer extends EventEmitter {
         })
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            defaultEpochTreeLeaf
+            this.defaultEpochTreeLeaf
         )
         for (const leaf of leaves) {
             tree.update(leaf.index, leaf.hash)
@@ -614,13 +613,6 @@ export class Synchronizer extends EventEmitter {
         await this._checkEpochKeyRange(_epochKey.toString())
         const { posRep, negRep } = decodedData
 
-        // const attestation = new Attestation(
-        //     BigInt(decodedData.attestation.attesterId),
-        //     BigInt(decodedData.attestation.posRep),
-        //     BigInt(decodedData.attestation.negRep),
-        //     BigInt(decodedData.attestation.graffiti),
-        //     BigInt(decodedData.attestation.signUp)
-        // )
         db.create('Attestation', {
             epoch: _epoch,
             epochKey: _epochKey.toString(),

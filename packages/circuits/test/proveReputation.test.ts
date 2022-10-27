@@ -1,12 +1,7 @@
 import { expect } from 'chai'
 import { ZkIdentity, hash1 } from '@unirep/crypto'
 import { Circuit } from '../src'
-import {
-    genReputationCircuitInput,
-    genProofAndVerify,
-    genEpochKey,
-} from './utils'
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
+import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -20,7 +15,7 @@ describe('Prove reputation from attester circuit', function () {
             attesterId: 1,
             startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
         })
-        const { isValid, publicSignals } = await genProofAndVerify(
+        const { isValid } = await genProofAndVerify(
             Circuit.proveReputation,
             circuitInputs
         )
@@ -49,7 +44,6 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
-        const epk = genEpochKey(id.identityNullifier, attesterId, epoch, 1)
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,

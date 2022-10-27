@@ -1,174 +1,17 @@
-// The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
-// it can not read the hardhat config and error ts-2503 will be reported.
-// @ts-ignore
-import assert from 'assert'
-import { ethers } from 'ethers'
 import * as crypto from '@unirep/crypto'
 
 import {
     Circuit,
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
-    NUM_ATTESTATIONS_PER_PROOF,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
-import { expect } from 'chai'
 
-const SMT_ZERO_LEAF = crypto.hashLeftRight(BigInt(0), BigInt(0))
-const SMT_ONE_LEAF = crypto.hashLeftRight(BigInt(1), BigInt(0))
-
-interface IAttestation {
-    attesterId: bigint
-    posRep: bigint
-    negRep: bigint
-    graffiti: bigint
-    signUp: bigint
-    hash: bigint | string
-}
-
-class Attestation implements IAttestation {
-    public attesterId: bigint
-    public posRep: bigint
-    public negRep: bigint
-    public graffiti: bigint
-    public signUp: bigint
-
-    constructor(
-        _attesterId: bigint,
-        _posRep: bigint,
-        _negRep: bigint,
-        _graffiti: bigint,
-        _signUp: bigint
-    ) {
-        this.attesterId = _attesterId
-        this.posRep = _posRep
-        this.negRep = _negRep
-        this.graffiti = _graffiti
-        this.signUp = _signUp
-    }
-
-    get hash() {
-        return crypto.hash5([
-            this.attesterId,
-            this.posRep,
-            this.negRep,
-            this.graffiti,
-            this.signUp,
-        ])
-    }
-
-    public toJSON = (space = 0): string => {
-        return JSON.stringify(
-            {
-                attesterId: this.attesterId.toString(),
-                posRep: this.posRep.toString(),
-                negRep: this.negRep.toString(),
-                graffiti: this.graffiti.toString(),
-                signUp: this.signUp.toString(),
-            },
-            null,
-            space
-        )
-    }
-}
-
-interface IReputation {
-    posRep: bigint
-    negRep: bigint
-    graffiti: bigint
-    signUp: bigint
-}
-
-class Reputation implements IReputation {
-    public posRep: bigint
-    public negRep: bigint
-    public graffiti: bigint
-    public graffitiPreImage: bigint = BigInt(0)
-    public signUp: bigint
-
-    constructor(
-        _posRep: bigint,
-        _negRep: bigint,
-        _graffiti: bigint,
-        _signUp: bigint
-    ) {
-        this.posRep = _posRep
-        this.negRep = _negRep
-        this.graffiti = _graffiti
-        this.signUp = _signUp
-    }
-
-    public static default(): Reputation {
-        return new Reputation(BigInt(0), BigInt(0), BigInt(0), BigInt(0))
-    }
-
-    public update = (
-        _posRep: bigint,
-        _negRep: bigint,
-        _graffiti: bigint,
-        _signUp: bigint
-    ): Reputation => {
-        this.posRep = this.posRep + _posRep
-        this.negRep = this.negRep + _negRep
-        if (_graffiti != BigInt(0)) {
-            this.graffiti = _graffiti
-        }
-        this.signUp = this.signUp || _signUp
-        return this
-    }
-
-    public addGraffitiPreImage = (_graffitiPreImage: bigint) => {
-        assert(
-            crypto.hashOne(_graffitiPreImage) === this.graffiti,
-            'Graffiti pre-image does not match'
-        )
-        this.graffitiPreImage = _graffitiPreImage
-    }
-
-    public hash = (): bigint => {
-        return crypto.hash5([
-            this.posRep,
-            this.negRep,
-            this.graffiti,
-            this.signUp,
-            BigInt(0),
-        ])
-    }
-
-    public toJSON = (space = 0): string => {
-        return JSON.stringify(
-            {
-                posRep: this.posRep.toString(),
-                negRep: this.negRep.toString(),
-                graffiti: this.graffiti.toString(),
-                graffitiPreImage: this.graffitiPreImage.toString(),
-                signUp: this.signUp.toString(),
-            },
-            null,
-            space
-        )
-    }
-}
-
-const toCompleteHexString = (str: string, len?: number): string => {
-    str = str.startsWith('0x') ? str : '0x' + str
-    if (len) str = ethers.utils.hexZeroPad(str, len)
-    return str
-}
-
-const genNewSMT = (treeDepth: number, defaultLeafHash: bigint = BigInt(0)) => {
-    return new crypto.SparseMerkleTree(treeDepth, defaultLeafHash)
-}
+const defaultEpochTreeLeaf = crypto.hash4([0, 0, 0, 0])
 
 const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
-    const defaultLeaf = crypto.hash4([
-        BigInt(0),
-        BigInt(0),
-        BigInt(0),
-        BigInt(0),
-    ])
-    return genNewSMT(_epochTreeDepth, defaultLeaf)
+    return new crypto.SparseMerkleTree(_epochTreeDepth, defaultEpochTreeLeaf)
 }
 
 // TODO: needs to be updated
@@ -398,13 +241,8 @@ const genUserStateTransitionNullifier = (
 }
 
 export {
-    Attestation,
-    Reputation,
-    SMT_ONE_LEAF,
-    SMT_ZERO_LEAF,
+    defaultEpochTreeLeaf,
     genNewEpochTree,
-    genNewSMT,
-    toCompleteHexString,
     genEpochKey,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
