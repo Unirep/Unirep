@@ -167,9 +167,9 @@ describe('Verify Epoch Key circuits', function () {
             console.log(publicSignals[4])
             publicSignals[4] = '00000'
             const valid = await defaultProver.verifyProof(
-              Circuit.verifyEpochKey,
-              publicSignals,
-              proof
+                Circuit.verifyEpochKey,
+                publicSignals,
+                proof
             )
             expect(valid).to.be.false
         }
