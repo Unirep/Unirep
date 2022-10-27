@@ -281,23 +281,6 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async readCurrentEpoch() {
-        const currentEpoch = await this._db.findOne('Epoch', {
-            where: {
-                attesterId: this.attesterId.toString(),
-            },
-            orderBy: {
-                number: 'desc',
-            },
-        })
-        return (
-            currentEpoch || {
-                number: 0,
-                sealed: false,
-            }
-        )
-    }
-
     calcCurrentEpoch() {
         const timestamp = Math.floor(+new Date() / 1000)
         return Math.max(
@@ -334,9 +317,9 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    protected async _checkValidEpoch(epoch: number) {
+    protected async _checkValidEpoch(epoch: bigint | number) {
         const currentEpoch = this.calcCurrentEpoch()
-        if (epoch > Number(currentEpoch)) {
+        if (BigInt(epoch) > currentEpoch) {
             throw new Error(
                 `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch}`
             )

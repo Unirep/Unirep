@@ -59,7 +59,7 @@ describe('User Signup', function () {
             const contractEpoch = await unirepContract.attesterCurrentEpoch(
                 accounts[1].address
             )
-            const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
+            const unirepEpoch = await userState.loadCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
