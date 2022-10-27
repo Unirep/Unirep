@@ -280,23 +280,6 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async readCurrentEpoch() {
-        const currentEpoch = await this._db.findOne('Epoch', {
-            where: {
-                attesterId: this.attesterId.toString(),
-            },
-            orderBy: {
-                number: 'desc',
-            },
-        })
-        return (
-            currentEpoch || {
-                number: 0,
-                sealed: false,
-            }
-        )
-    }
-
     calcCurrentEpoch() {
         const timestamp = Math.floor(+new Date() / 1000)
         return Math.max(
