@@ -86,7 +86,9 @@ state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
 Generate a user state transition proof.
 
 ```ts
-state.genUserStateTransitionProof(): Promise<UserStateTransitionProof>
+state.genUserStateTransitionProof(options?: {
+  toEpoch?: bigint | number
+}): Promise<UserStateTransitionProof>
 ```
 
 ## genProveReputationProof
@@ -94,7 +96,10 @@ state.genUserStateTransitionProof(): Promise<UserStateTransitionProof>
 Generate a proof of reputation.
 
 ```ts
-state.genProveReputationProof(epochKeyNonce: number, minRep?: number): Promise<ReputationProof>
+state.genProveReputationProof(options: {
+  epochKeyNonce: number,
+  minRep?: number
+}): Promise<ReputationProof>
 ```
 
 ## genUserSignUpProof
@@ -110,7 +115,7 @@ state.genUserSignUpProof(): Promise<SignupProof>
 Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign.
 
 ```ts
-state.genEpochKeyProof(data: {
+state.genEpochKeyProof(options: {
   nonce?: number,
   epoch?: number,
   data?: bigint,
@@ -134,10 +139,10 @@ Users shouldn't be generating this proof.
 :::
 
 ```ts
-state.genAggregateEpochKeysProof(
+state.genAggregateEpochKeysProof(options: {
     epochKeys: bigint[],
     newBalances: Reputation[],
     hashchainIndex: bigint,
     epoch?: number
-): Promise<AggregateEpochKeysProof>
+}): Promise<AggregateEpochKeysProof>
 ```
