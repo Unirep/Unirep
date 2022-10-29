@@ -280,6 +280,23 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    async readCurrentEpoch() {
+        const currentEpoch = await this._db.findOne('Epoch', {
+            where: {
+                attesterId: this.attesterId.toString(),
+            },
+            orderBy: {
+                number: 'desc',
+            },
+        })
+        return (
+            currentEpoch || {
+                number: 0,
+                sealed: false,
+            }
+        )
+    }
+
     calcCurrentEpoch() {
         const timestamp = Math.floor(+new Date() / 1000)
         return Math.max(
@@ -305,15 +322,6 @@ export class Synchronizer extends EventEmitter {
             this.attesterId
         )
         return BigInt(epoch.toString())
-    }
-
-    protected async _checkCurrentEpoch(epoch: number) {
-        const currentEpoch = this.calcCurrentEpoch()
-        if (epoch !== Number(currentEpoch)) {
-            throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
-            )
-        }
     }
 
     protected async _checkValidEpoch(epoch: bigint | number) {
@@ -612,7 +620,12 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
-        await this._checkCurrentEpoch(_epoch)
+        const currentEpoch = await this.readCurrentEpoch()
+        if (_epoch !== Number(currentEpoch.number)) {
+            throw new Error(
+                `Synchronizer: Epoch (${_epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
+            )
+        }
         await this._checkEpochKeyRange(_epochKey.toString())
         const { posRep, negRep } = decodedData
 
