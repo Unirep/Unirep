@@ -2,11 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/crypto'
-import {
-    EPOCH_TREE_DEPTH,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits'
+import { STATE_TREE_DEPTH } from '@unirep/circuits'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -19,15 +15,6 @@ describe('Attester Signup', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
-
-    it('should have the correct config value', async () => {
-        const config = await unirepContract.config()
-        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(
-            config.numEpochKeyNoncePerEpoch
-        )
-        expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
     })
 
     it('should fail to double signup', async () => {

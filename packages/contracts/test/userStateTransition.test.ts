@@ -59,15 +59,6 @@ describe('User State Transition', function () {
         unirepContract = await deployUnirep(accounts[0])
     })
 
-    it('should have the correct config value', async () => {
-        const config = await unirepContract.config()
-        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(
-            config.numEpochKeyNoncePerEpoch
-        )
-        expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
-    })
-
     it('attester sign up', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
