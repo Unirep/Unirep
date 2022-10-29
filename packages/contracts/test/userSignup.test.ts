@@ -69,8 +69,10 @@ describe('User Signup', function () {
             attester.address
         )
         const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        const roots = {}
         for (let epoch = startEpoch.toNumber(); epoch < 3; epoch++) {
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            roots[epoch] = []
             for (let i = 0; i < 3; i++) {
                 console.log('epoch:', epoch, ', the', i, 'th user')
                 const id = new ZkIdentity()
@@ -108,19 +110,13 @@ describe('User Signup', function () {
                     attester.address,
                     epoch
                 )
-                const rootExists =
-                    await unirepContract.attesterStateTreeRootExists(
-                        attester.address,
-                        epoch,
-                        stateTree.root
-                    )
+                roots[epoch].push(currentRoot.toString())
                 const leafCount =
                     await unirepContract.attesterStateTreeLeafCount(
                         attester.address,
                         epoch
                     )
                 expect(leafCount).to.equal(i + 1)
-                expect(rootExists).to.be.true
                 expect(currentRoot.toString(), 'state tree root').to.equal(
                     stateTree.root.toString()
                 )
@@ -134,6 +130,17 @@ describe('User Signup', function () {
                 )
             }
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        }
+        for (const epoch in roots) {
+            for (const root of roots[epoch]) {
+                const rootExists =
+                    await unirepContract.attesterStateTreeRootExists(
+                        attester.address,
+                        epoch,
+                        root
+                    )
+                expect(rootExists).to.be.true
+            }
         }
     })
 
