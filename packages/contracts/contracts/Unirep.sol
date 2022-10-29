@@ -206,6 +206,7 @@ contract Unirep is IUnirep, VerifySignature {
             .balances[epochKey];
         if (!attester.epochKeyState[targetEpoch].isKeyOwed[epochKey]) {
             attester.epochKeyState[targetEpoch].owedKeys.push(epochKey);
+            attester.epochKeyState[targetEpoch].isKeyOwed[epochKey] = true;
         }
         balance.posRep += posRep;
         balance.negRep += negRep;
