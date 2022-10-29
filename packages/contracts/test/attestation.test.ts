@@ -4,6 +4,8 @@ import { expect } from 'chai'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
+import { genRandomSalt, hash3, hash6 } from '@unirep/crypto'
+import { EPOCH_TREE_DEPTH } from '@unirep/circuits'
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -33,6 +35,18 @@ describe('Attestations', function () {
                 .connect(attester)
                 .submitAttestation(wrongEpoch, epochKey, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+    })
+
+    it('should fail to submit attestation with invalid epoch key', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = 0
+        const invalidEpochKey = genRandomSalt()
+        await expect(
+            unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, invalidEpochKey, 1, 1, 0)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 
     it('should fail to submit attestation after epoch ends', async () => {
@@ -134,5 +148,159 @@ describe('Attestations', function () {
                 graffiti,
                 timestamp
             )
+    })
+
+    it('should fail to build hashchain without attestation', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[2]
+        await unirepContract
+            .connect(attester)
+            .attesterSignUp(EPOCH_LENGTH)
+            .then((t) => t.wait())
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await expect(unirepContract.buildHashchain(attester.address, epoch)).to
+            .be.reverted
+    })
+
+    it('should build correct hash chain with different epoch keys', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[2]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        for (let i = 0; i < 5; i++) {
+            const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+            const posRep = Math.floor(Math.random() * 10)
+            const negRep = Math.floor(Math.random() * 10)
+            const graffiti = genRandomSalt()
+            let timestamp
+            {
+                const tx = await unirepContract
+                    .connect(attester)
+                    .submitAttestation(
+                        epoch,
+                        epochKey,
+                        posRep,
+                        negRep,
+                        graffiti
+                    )
+                const receipt = await tx.wait()
+                const block = await ethers.provider.getBlock(
+                    receipt.blockNumber
+                )
+                timestamp = block.timestamp
+            }
+
+            {
+                const tx = await unirepContract.buildHashchain(
+                    attester.address,
+                    epoch
+                )
+                await tx.wait()
+            }
+
+            const currentHead = hash3([attester.address, epoch, i])
+            const head = hash6([
+                currentHead,
+                epochKey,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
+            const _attesterId = await unirepContract.hashchainMapping(head, 0)
+            const _epoch = await unirepContract.hashchainMapping(head, 1)
+            const _index = await unirepContract.hashchainMapping(head, 2)
+            expect(_attesterId.toString()).to.equal(
+                BigInt(attester.address).toString()
+            )
+            expect(_epoch.toString()).to.equal(epoch.toString())
+            expect(_index.toNumber()).to.equal(i)
+            const count = await unirepContract.attesterHashchainTotalCount(
+                attester.address,
+                epoch
+            )
+            expect(count).to.equal(i + 1)
+        }
+    })
+
+    it('should build correct hash chain with the same epoch key', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[3]
+        await unirepContract
+            .connect(attester)
+            .attesterSignUp(EPOCH_LENGTH)
+            .then((t) => t.wait())
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const epochKey = BigInt(12345)
+        let posRep = 0
+        let negRep = 0
+        let graffiti = BigInt(0)
+        let timestamp
+        for (let i = 0; i < 5; i++) {
+            const newPosRep = Math.floor(Math.random() * 10)
+            const newNegRep = Math.floor(Math.random() * 10)
+            const newGraffiti = genRandomSalt()
+
+            {
+                const tx = await unirepContract
+                    .connect(attester)
+                    .submitAttestation(
+                        epoch,
+                        epochKey,
+                        newPosRep,
+                        newNegRep,
+                        newGraffiti
+                    )
+                const receipt = await tx.wait()
+                const block = await ethers.provider.getBlock(
+                    receipt.blockNumber
+                )
+                timestamp = block.timestamp
+            }
+
+            posRep += newPosRep
+            negRep += newNegRep
+            graffiti = newGraffiti
+        }
+
+        {
+            const tx = await unirepContract.buildHashchain(
+                attester.address,
+                epoch
+            )
+            await tx.wait()
+        }
+
+        const currentHead = hash3([attester.address, epoch, 0])
+        const head = hash6([
+            currentHead,
+            epochKey,
+            posRep,
+            negRep,
+            graffiti,
+            timestamp,
+        ])
+        const _attesterId = await unirepContract.hashchainMapping(head, 0)
+        const _epoch = await unirepContract.hashchainMapping(head, 1)
+        const _index = await unirepContract.hashchainMapping(head, 2)
+        expect(_attesterId.toString()).to.equal(
+            BigInt(attester.address).toString()
+        )
+        expect(_epoch.toString()).to.equal(epoch.toString())
+        expect(_index.toNumber()).to.equal(0)
+        const count = await unirepContract.attesterHashchainTotalCount(
+            attester.address,
+            epoch
+        )
+        expect(count).to.equal(1)
     })
 })
