@@ -103,6 +103,17 @@ function attesterEpochRemainingTime(
 ) public view returns (uint)
 ```
 
+## attesterOwedEpochKeys
+
+Get the number of epoch keys with an owed balance for an attester.
+
+```sol
+function attesterOwedEpochKeys(
+  uint160 attesterId,
+  uint256 epoch
+) public view returns (uint)
+```
+
 ## verifyReputationProof
 
 Verify a reputation proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
