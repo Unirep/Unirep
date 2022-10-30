@@ -180,4 +180,16 @@ describe('Attester Signup', function () {
                 )
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterAlreadySignUp')
     })
+
+    it("should fail to query attester's data if attester doesn't sign up", async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[11]
+
+        await expect(unirepContract.attesterCurrentEpoch(attester.address)).to
+            .be.reverted
+
+        await expect(
+            unirepContract.attesterEpochRemainingTime(attester.address)
+        ).to.be.reverted
+    })
 })
