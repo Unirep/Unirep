@@ -2,7 +2,6 @@ import { ethers } from 'ethers'
 import assert from 'assert'
 import { DB } from 'anondb'
 import {
-    hash4,
     stringifyBigInts,
     ZkIdentity,
     genEpochKey,
