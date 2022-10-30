@@ -93,7 +93,7 @@ export class Synchronizer extends EventEmitter {
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
         )
-        // if it's a new sync, start with epoch 1
+        // if it's a new sync, start with epoch 0
         const epoch = epochs[epochs.length - 1]?.number ?? 0
         // otherwise load the leaves and insert them
         // TODO: index consistency verification, ensure that indexes are
