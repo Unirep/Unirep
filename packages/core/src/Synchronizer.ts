@@ -211,11 +211,75 @@ export class Synchronizer extends EventEmitter {
 
     // Overridden in subclasses
     async loadNewEvents(fromBlock: number, toBlock: number) {
-        return this.unirepContract.queryFilter(
-            this.unirepFilter,
-            fromBlock,
-            toBlock
-        )
+        const promises = [] as any[]
+        for (const address of Object.keys(this.contracts)) {
+            const { contract } = this.contracts[address]
+            const filter = this.eventFilters[address]
+            promises.push(contract.queryFilter(filter, fromBlock, toBlock))
+        }
+        return (await Promise.all(promises)).flat()
+    }
+
+    get contracts() {
+        return {
+            [this.unirepContract.address]: {
+                contract: this.unirepContract,
+                eventNames: [
+                    'UserSignedUp',
+                    'UserStateTransitioned',
+                    'AttestationSubmitted',
+                    'EpochEnded',
+                    'StateTreeLeaf',
+                    'EpochTreeLeaf',
+                ],
+            },
+        }
+    }
+
+    // topic keyed to a bound function
+    get eventHandlers() {
+        const allEventNames = {} as any
+        return Object.keys(this.contracts).reduce((acc, address) => {
+            const { contract, eventNames } = this.contracts[address]
+            const handlers = {}
+            for (const name of eventNames) {
+                if (allEventNames[name]) {
+                    throw new Error(`duplicate event name registered "${name}"`)
+                }
+                allEventNames[name] = true
+                const topic = (contract.filters[name] as any)().topics[0]
+                const handlerName = `handle${name}`
+                if (typeof this[handlerName] !== 'function') {
+                    throw new Error(
+                        `No handler for event ${name} expected property "${handlerName}" to exist and be a function`
+                    )
+                }
+                handlers[topic] = this[`handle${name}`].bind(this)
+            }
+            return {
+                ...acc,
+                ...handlers,
+            }
+        }, {})
+    }
+
+    get eventFilters() {
+        return Object.keys(this.contracts).reduce((acc, address) => {
+            const { contract, eventNames } = this.contracts[address]
+            const filter = {
+                address,
+                topics: [
+                    // don't spread here, it should be a nested array
+                    eventNames.map(
+                        (name) => (contract.filters[name] as any)().topics[0]
+                    ),
+                ],
+            }
+            return {
+                ...acc,
+                [address]: filter,
+            }
+        }, {})
     }
 
     async processEvents(events: ethers.Event[]) {
@@ -229,12 +293,13 @@ export class Synchronizer extends EventEmitter {
             }
             return a.logIndex - b.logIndex
         })
+        const eventHandlers = this.eventHandlers
 
         for (const event of events) {
             try {
                 let success: boolean | undefined
                 await this._db.transaction(async (db) => {
-                    const handler = this.topicHandlers[event.topics[0]]
+                    const handler = eventHandlers[event.topics[0]]
                     if (!handler) {
                         throw new Error(
                             `Unrecognized event topic "${event.topics[0]}"`
@@ -459,71 +524,9 @@ export class Synchronizer extends EventEmitter {
         })
     }
 
-    // get a function that will process an event for a topic
-    get topicHandlers() {
-        const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
-            .topics as string[]
-        const [UserStateTransitioned] =
-            this.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
-        const [AttestationSubmitted] =
-            this.unirepContract.filters.AttestationSubmitted()
-                .topics as string[]
-        const [EpochEnded] = this.unirepContract.filters.EpochEnded()
-            .topics as string[]
-        const [StateTreeLeaf] = this.unirepContract.filters.StateTreeLeaf()
-            .topics as string[]
-        const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
-            .topics as string[]
-        return {
-            [UserSignedUp]: this.userSignedUpEvent.bind(this),
-            [UserStateTransitioned]: this.USTEvent.bind(this),
-            [AttestationSubmitted]: this.attestationEvent.bind(this),
-            [EpochEnded]: this.epochEndedEvent.bind(this),
-            [StateTreeLeaf]: this.stateTreeLeaf.bind(this),
-            [EpochTreeLeaf]: this.epochTreeLeaf.bind(this),
-        } as {
-            [key: string]: (
-                event: ethers.Event,
-                db: TransactionDB
-            ) => Promise<undefined | boolean>
-        }
-    }
-
-    get unirepFilter() {
-        const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
-            .topics as string[]
-        const [UserStateTransitioned] =
-            this.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
-        const [AttestationSubmitted] =
-            this.unirepContract.filters.AttestationSubmitted()
-                .topics as string[]
-        const [EpochEnded] = this.unirepContract.filters.EpochEnded()
-            .topics as string[]
-        const [StateTreeLeaf] = this.unirepContract.filters.StateTreeLeaf()
-            .topics as string[]
-        const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
-            .topics as string[]
-
-        return {
-            address: this.unirepContract.address,
-            topics: [
-                [
-                    UserSignedUp,
-                    UserStateTransitioned,
-                    AttestationSubmitted,
-                    EpochEnded,
-                    StateTreeLeaf,
-                    EpochTreeLeaf,
-                ],
-            ],
-        }
-    }
-
     // unirep event handlers
 
-    async stateTreeLeaf(event: ethers.Event, db: TransactionDB) {
+    async handleStateTreeLeaf(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event.topics[1])
         const attesterId = BigInt(event.topics[2]).toString()
         const index = Number(event.topics[3])
@@ -542,7 +545,7 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async epochTreeLeaf(event: ethers.Event, db: TransactionDB) {
+    async handleEpochTreeLeaf(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event.topics[1])
         const attesterId = BigInt(event.topics[2]).toString()
         const index = BigInt(event.topics[3]).toString()
@@ -572,7 +575,7 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async userSignedUpEvent(event: ethers.Event, db: TransactionDB) {
+    async handleUserSignedUp(event: ethers.Event, db: TransactionDB) {
         const decodedData = this.unirepContract.interface.decodeEventLog(
             'UserSignedUp',
             event.data
@@ -590,7 +593,7 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async attestationEvent(event: ethers.Event, db: TransactionDB) {
+    async handleAttestationSubmitted(event: ethers.Event, db: TransactionDB) {
         const _epoch = Number(event.topics[1])
         const _epochKey = BigInt(event.topics[2])
         const _attesterId = BigInt(event.topics[3])
@@ -629,7 +632,7 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async USTEvent(event: ethers.Event, db: TransactionDB) {
+    async handleUserStateTransitioned(event: ethers.Event, db: TransactionDB) {
         const decodedData = this.unirepContract.interface.decodeEventLog(
             'UserStateTransitioned',
             event.data
@@ -652,7 +655,7 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
+    async handleEpochEnded(event: ethers.Event, db: TransactionDB) {
         const epoch = Number(event?.topics[1])
         const attesterId = BigInt(event?.topics[2]).toString()
         console.log(`Epoch ${epoch} ended`)
