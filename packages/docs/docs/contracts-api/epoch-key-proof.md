@@ -35,3 +35,11 @@ The attester id for the proof.
 ```ts
 this.attesterId
 ```
+
+## data
+
+The 32 byte data endorsed by the proof.
+
+```ts
+this.data
+```

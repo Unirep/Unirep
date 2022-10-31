@@ -12,11 +12,13 @@ export class EpochKeyProof extends BaseProof {
         stateTreeRoot: 1,
         epoch: 2,
         attesterId: 3,
+        data: 4,
     }
     public stateTreeRoot: BigNumberish
     public epoch: BigNumberish
     public epochKey: BigNumberish
     public attesterId: BigNumberish
+    public data: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -33,6 +35,7 @@ export class EpochKeyProof extends BaseProof {
         this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
         this.epoch = _publicSignals[this.idx.epoch].toString()
         this.attesterId = _publicSignals[this.idx.attesterId].toString()
+        this.data = _publicSignals[this.idx.data].toString()
         this.circuit = Circuit.verifyEpochKey
     }
 }

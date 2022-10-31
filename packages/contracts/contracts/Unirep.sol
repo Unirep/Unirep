@@ -21,10 +21,11 @@ contract Unirep is IUnirep, VerifySignature {
     using SafeMath for uint256;
 
     // All verifier contracts
-    IVerifier internal signupVerifier;
-    IVerifier internal aggregateEpochKeysVerifier;
-    IVerifier internal userStateTransitionVerifier;
-    IVerifier internal reputationVerifier;
+    IVerifier public immutable signupVerifier;
+    IVerifier public immutable aggregateEpochKeysVerifier;
+    IVerifier public immutable userStateTransitionVerifier;
+    IVerifier public immutable reputationVerifier;
+    IVerifier public immutable epochKeyVerifier;
 
     // Circuits configurations and contracts configurations
     Config public config;
@@ -49,7 +50,8 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _signupVerifier,
         IVerifier _aggregateEpochKeysVerifier,
         IVerifier _userStateTransitionVerifier,
-        IVerifier _reputationVerifier
+        IVerifier _reputationVerifier,
+        IVerifier _epochKeyVerifier
     ) {
         config = _config;
 
@@ -58,6 +60,7 @@ contract Unirep is IUnirep, VerifySignature {
         aggregateEpochKeysVerifier = _aggregateEpochKeysVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
+        epochKeyVerifier = _epochKeyVerifier;
 
         maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
 
@@ -77,7 +80,7 @@ contract Unirep is IUnirep, VerifySignature {
         if (uint256(uint160(msg.sender)) != attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
-        if (!signupVerifier.verifyProof(proof, publicSignals))
+        if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
         uint256 identityCommitment = publicSignals[0];
@@ -257,7 +260,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        if (!aggregateEpochKeysVerifier.verifyProof(proof, publicSignals))
+        if (!aggregateEpochKeysVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
         uint256 hashchainHead = publicSignals[1];
         uint256 attesterId = hashchainMapping[hashchainHead][0];
@@ -306,7 +309,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[8] memory proof
     ) public {
         // Verify the proof
-        if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
+        if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
         if (publicSignals[5] >= type(uint160).max) revert AttesterInvalid();
         uint160 attesterId = uint160(publicSignals[5]);
@@ -383,6 +386,43 @@ contract Unirep is IUnirep, VerifySignature {
         emit EpochEnded(attester.currentEpoch, uint160(attesterId));
 
         attester.currentEpoch = newEpoch;
+    }
+
+    function verifyEpochKeyProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public returns (bool) {
+        bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
+        // short circuit if the proof is invalid
+        if (!valid) return false;
+        if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(publicSignals[3]));
+        AttesterData storage attester = attesters[uint160(publicSignals[3])];
+        // epoch check
+        if (publicSignals[2] > attester.currentEpoch) return false;
+        // state tree root check
+        if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
+            return false;
+        return true;
+    }
+
+    function verifyReputationProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public returns (bool) {
+        bool valid = reputationVerifier.verifyProof(publicSignals, proof);
+        if (!valid) return false;
+        if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(publicSignals[3]));
+        AttesterData storage attester = attesters[uint160(publicSignals[3])];
+        // epoch check
+        if (publicSignals[2] > attester.currentEpoch) return false;
+        // state tree root check
+        if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
+            return false;
+        return true;
     }
 
     function attesterCurrentEpoch(uint160 attesterId)
