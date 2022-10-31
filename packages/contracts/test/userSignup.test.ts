@@ -21,10 +21,7 @@ describe('User Signup', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
 
-    it('attester sign up', async () => {
-        const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
             .connect(attester)

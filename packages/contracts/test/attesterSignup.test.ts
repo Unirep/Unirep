@@ -72,16 +72,6 @@ describe('Attester Signup', function () {
                     attester.address
                 )
             expect(semaphoreRoot).to.equal(stateTree.root)
-            for (let x = 1; x < 10; x++) {
-                await ethers.provider.send('evm_increaseTime', [
-                    attesterEpochLength,
-                ])
-                await ethers.provider.send('evm_mine', [])
-                const _currentEpoch = await unirepContract.attesterCurrentEpoch(
-                    attester.address
-                )
-                expect(_currentEpoch.toString()).to.equal(x.toString())
-            }
         }
     })
 
@@ -148,14 +138,6 @@ describe('Attester Signup', function () {
             attester.address
         )
         expect(semaphoreRoot).to.equal(stateTree.root)
-        for (let x = 1; x < 10; x++) {
-            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-            await ethers.provider.send('evm_mine', [])
-            const _currentEpoch = await unirepContract.attesterCurrentEpoch(
-                attester.address
-            )
-            expect(_currentEpoch.toString()).to.equal(x.toString())
-        }
     })
 
     it('should fail to double signup via relayer', async () => {

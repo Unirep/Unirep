@@ -16,6 +16,7 @@ import {
     Circuit,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { defaultEpochTreeLeaf } from '@unirep/circuits/test/utils'
 
 import { EPOCH_LENGTH, UserStateTransitionProof, SignupProof } from '../src'
 import { deployUnirep } from '../deploy'
@@ -51,15 +52,11 @@ describe('User State Transition', function () {
     this.timeout(120000)
 
     let unirepContract
-    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
 
-    it('attester sign up', async () => {
-        const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
             .connect(attester)
