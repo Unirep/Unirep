@@ -309,7 +309,6 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(proof, publicSignals))
             revert InvalidProof();
-        if (publicSignals[5] >= type(uint160).max) revert AttesterInvalid();
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
