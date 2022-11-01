@@ -50,7 +50,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
 }
 
 describe('Epoch key proof verifier', function () {
-    this.timeout(120000)
+    this.timeout(500000)
     let unirepContract
     const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 

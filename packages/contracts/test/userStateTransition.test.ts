@@ -49,7 +49,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
 }
 
 describe('User State Transition', function () {
-    this.timeout(120000)
+    this.timeout(500000)
 
     let unirepContract
 
