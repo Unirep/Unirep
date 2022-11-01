@@ -14,10 +14,6 @@ describe('User state', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
-
-    it('attester sign up', async () => {
-        const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
             .connect(attester)
@@ -105,7 +101,7 @@ describe('User state', function () {
         // const { epochKey } = await userState.genVerifyEpochKeyProof(0)
         const epochKey = 123444
 
-        const epoch = await userState.getUnirepStateCurrentEpoch()
+        const epoch = await userState.loadCurrentEpoch()
         const newPosRep = 10
         const newNegRep = 5
         const newGraffiti = 1294194
@@ -132,12 +128,12 @@ describe('User state', function () {
             0
         )
         const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof(
-                hashchain.epochKeys,
-                hashchain.epochKeyBalances,
-                hashchain.index,
-                epoch
-            )
+            await userState.genAggregateEpochKeysProof({
+                epochKeys: hashchain.epochKeys,
+                newBalances: hashchain.epochKeyBalances,
+                hashchainIndex: hashchain.index,
+                epoch,
+            })
         await unirepContract
             .connect(accounts[5])
             .processHashchain(publicSignals, proof)
@@ -171,8 +167,9 @@ describe('User state', function () {
         await ethers.provider.send('evm_mine', [])
         {
             await userState.waitForSync()
+            const toEpoch = await userState.loadCurrentEpoch()
             const { publicSignals, proof } =
-                await userState.genUserStateTransitionProof()
+                await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
             await unirepContract
                 .connect(accounts[4])
@@ -185,7 +182,6 @@ describe('User state', function () {
         await userState.stop()
     })
 
-    // TODO: should fix reputation proof first
     it('reputation proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -197,9 +193,11 @@ describe('User state', function () {
             id,
             attesterId
         )
+        const epoch = await userState.loadCurrentEpoch()
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -207,7 +205,6 @@ describe('User state', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.getUnirepStateCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -231,12 +228,12 @@ describe('User state', function () {
         )
         {
             const { publicSignals, proof } =
-                await userState.genAggregateEpochKeysProof(
-                    hashchain.epochKeys,
-                    hashchain.epochKeyBalances,
-                    hashchain.index,
-                    epoch
-                )
+                await userState.genAggregateEpochKeysProof({
+                    epochKeys: hashchain.epochKeys,
+                    newBalances: hashchain.epochKeyBalances,
+                    hashchainIndex: hashchain.index,
+                    epoch,
+                })
             await unirepContract
                 .connect(accounts[5])
                 .processHashchain(publicSignals, proof)
@@ -263,8 +260,9 @@ describe('User state', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         {
+            const toEpoch = await userState.loadCurrentEpoch()
             const { publicSignals, proof } =
-                await userState.genUserStateTransitionProof()
+                await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
             await unirepContract
                 .connect(accounts[4])
@@ -281,7 +279,10 @@ describe('User state', function () {
         }
 
         await userState.waitForSync()
-        const proof = await userState.genProveReputationProof(0, 1)
+        const proof = await userState.genProveReputationProof({
+            epkNonce: 0,
+            minRep: 1,
+        })
 
         const valid = await proof.verify()
         expect(valid).to.be.true

@@ -77,6 +77,9 @@ export class Synchronizer extends EventEmitter {
         ).toNumber()
         this.settings.aggregateKeyCount = config.aggregateKeyCount.toNumber()
         this.settings.emptyEpochTreeRoot = config.emptyEpochTreeRoot
+        this.settings.startTimestamp = (
+            await this.unirepContract.attesterStartTimestamp(this.attesterId)
+        ).toNumber()
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database
         const epochs = await this._db.findMany('Epoch', {
@@ -85,16 +88,13 @@ export class Synchronizer extends EventEmitter {
                 sealed: false,
             },
         })
-        if (epochs.length > 1) {
-            throw new Error('Multiple unsealed epochs')
-        }
         this.defaultStateTreeLeaf = BigInt(0)
         this.stateTree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
         )
-        // if it's a new sync, start with epoch 1
-        const epoch = epochs[0]?.number ?? 1
+        // if it's a new sync, start with epoch 0
+        const epoch = epochs[epochs.length - 1]?.number ?? 0
         // otherwise load the leaves and insert them
         // TODO: index consistency verification, ensure that indexes are
         // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
@@ -297,29 +297,31 @@ export class Synchronizer extends EventEmitter {
         )
     }
 
+    calcCurrentEpoch() {
+        const timestamp = Math.floor(+new Date() / 1000)
+        return Math.max(
+            0,
+            Math.floor(
+                (timestamp - this.settings.startTimestamp) /
+                    this.settings.epochLength
+            )
+        )
+    }
+
+    calcEpochRemainingTime() {
+        const timestamp = Math.floor(+new Date() / 1000)
+        const currentEpoch = this.calcCurrentEpoch()
+        const epochEnd =
+            this.settings.startTimestamp +
+            (currentEpoch + 1) * this.settings.epochLength
+        return Math.max(0, epochEnd - timestamp)
+    }
+
     async loadCurrentEpoch() {
         const epoch = await this.unirepContract.attesterCurrentEpoch(
             this.attesterId
         )
         return BigInt(epoch.toString())
-    }
-
-    protected async _checkCurrentEpoch(epoch: number) {
-        const currentEpoch = await this.readCurrentEpoch()
-        if (epoch !== currentEpoch.number) {
-            throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
-            )
-        }
-    }
-
-    protected async _checkValidEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch > Number(currentEpoch)) {
-            throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch}`
-            )
-        }
     }
 
     protected async _checkEpochKeyRange(epochKey: string) {
@@ -361,7 +363,6 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<IncrementalMerkleTree> {
         const epoch = Number(_epoch)
-        await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
@@ -385,7 +386,6 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<SparseMerkleTree> {
         const epoch = Number(_epoch)
-        await this._checkValidEpoch(epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
             hash4([0, 0, 0, 0])
@@ -409,7 +409,6 @@ export class Synchronizer extends EventEmitter {
      * @returns True if the global state tree root exists, false otherwise.
      */
     async stateTreeRootExists(root: bigint | string, epoch: number) {
-        await this._checkValidEpoch(epoch)
         return this.unirepContract.attesterStateTreeRootExists(
             this.attesterId,
             epoch,
@@ -427,7 +426,6 @@ export class Synchronizer extends EventEmitter {
         _epochTreeRoot: bigint | string,
         epoch: number
     ): Promise<boolean> {
-        await this._checkValidEpoch(epoch)
         const root = await this.unirepContract.epochRoots(epoch)
         return root.toString() === _epochTreeRoot.toString()
     }
@@ -438,7 +436,6 @@ export class Synchronizer extends EventEmitter {
      * @returns The number of the global state tree leaves
      */
     async numStateTreeLeaves(epoch: number) {
-        await this._checkValidEpoch(epoch)
         return this._db.count('StateTreeLeaf', {
             epoch: epoch,
             attesterId: this.attesterId.toString(),
@@ -609,7 +606,12 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
-        await this._checkCurrentEpoch(_epoch)
+        const currentEpoch = await this.readCurrentEpoch()
+        if (_epoch !== Number(currentEpoch.number)) {
+            throw new Error(
+                `Synchronizer: Epoch (${_epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
+            )
+        }
         await this._checkEpochKeyRange(_epochKey.toString())
         const { posRep, negRep } = decodedData
 

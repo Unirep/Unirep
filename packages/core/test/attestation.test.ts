@@ -16,10 +16,6 @@ describe('Attester signs up and gives attestation', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
-
-    it('attester sign up', async () => {
-        const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
             .connect(attester)
@@ -48,7 +44,7 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.getUnirepStateCurrentEpoch()
+        const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -71,12 +67,12 @@ describe('Attester signs up and gives attestation', function () {
             0
         )
         const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof(
-                hashchain.epochKeys,
-                hashchain.epochKeyBalances,
-                hashchain.index,
-                epoch
-            )
+            await userState.genAggregateEpochKeysProof({
+                epochKeys: hashchain.epochKeys,
+                newBalances: hashchain.epochKeyBalances,
+                hashchainIndex: hashchain.index,
+                epoch,
+            })
         await unirepContract
             .connect(accounts[5])
             .processHashchain(publicSignals, proof)
@@ -102,7 +98,9 @@ describe('Attester signs up and gives attestation', function () {
         await ethers.provider.send('evm_mine', [])
         {
             const { publicSignals, proof } =
-                await userState.genUserStateTransitionProof()
+                await userState.genUserStateTransitionProof({
+                    toEpoch: await userState.loadCurrentEpoch(),
+                })
             // submit it
             await unirepContract
                 .connect(accounts[4])
