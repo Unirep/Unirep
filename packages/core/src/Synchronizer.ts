@@ -26,6 +26,9 @@ export class Synchronizer extends EventEmitter {
     protected defaultStateTreeLeaf?: bigint
     protected defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
+    private _eventHandlers: any
+    private _eventFilters: any
+
     private get _stateTree() {
         if (!this.stateTree) {
             throw new Error('Synchronizer: in memory tree not initialized')
@@ -64,6 +67,54 @@ export class Synchronizer extends EventEmitter {
             emptyEpochTreeRoot: BigInt(0),
             aggregateKeyCount: 0,
         }
+        const allEventNames = {} as any
+        this._eventHandlers = Object.keys(this.contracts).reduce(
+            (acc, address) => {
+                const { contract, eventNames } = this.contracts[address]
+                const handlers = {}
+                for (const name of eventNames) {
+                    if (allEventNames[name]) {
+                        throw new Error(
+                            `duplicate event name registered "${name}"`
+                        )
+                    }
+                    allEventNames[name] = true
+                    const topic = (contract.filters[name] as any)().topics[0]
+                    const handlerName = `handle${name}`
+                    if (typeof this[handlerName] !== 'function') {
+                        throw new Error(
+                            `No handler for event ${name} expected property "${handlerName}" to exist and be a function`
+                        )
+                    }
+                    handlers[topic] = this[`handle${name}`].bind(this)
+                }
+                return {
+                    ...acc,
+                    ...handlers,
+                }
+            },
+            {}
+        )
+        this._eventFilters = Object.keys(this.contracts).reduce(
+            (acc, address) => {
+                const { contract, eventNames } = this.contracts[address]
+                const filter = {
+                    address,
+                    topics: [
+                        // don't spread here, it should be a nested array
+                        eventNames.map(
+                            (name) =>
+                                (contract.filters[name] as any)().topics[0]
+                        ),
+                    ],
+                }
+                return {
+                    ...acc,
+                    [address]: filter,
+                }
+            },
+            {}
+        )
     }
 
     async setup() {
@@ -214,12 +265,13 @@ export class Synchronizer extends EventEmitter {
         const promises = [] as any[]
         for (const address of Object.keys(this.contracts)) {
             const { contract } = this.contracts[address]
-            const filter = this.eventFilters[address]
+            const filter = this._eventFilters[address]
             promises.push(contract.queryFilter(filter, fromBlock, toBlock))
         }
         return (await Promise.all(promises)).flat()
     }
 
+    // override this and only this
     get contracts() {
         return {
             [this.unirepContract.address]: {
@@ -236,52 +288,6 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    // topic keyed to a bound function
-    get eventHandlers() {
-        const allEventNames = {} as any
-        return Object.keys(this.contracts).reduce((acc, address) => {
-            const { contract, eventNames } = this.contracts[address]
-            const handlers = {}
-            for (const name of eventNames) {
-                if (allEventNames[name]) {
-                    throw new Error(`duplicate event name registered "${name}"`)
-                }
-                allEventNames[name] = true
-                const topic = (contract.filters[name] as any)().topics[0]
-                const handlerName = `handle${name}`
-                if (typeof this[handlerName] !== 'function') {
-                    throw new Error(
-                        `No handler for event ${name} expected property "${handlerName}" to exist and be a function`
-                    )
-                }
-                handlers[topic] = this[`handle${name}`].bind(this)
-            }
-            return {
-                ...acc,
-                ...handlers,
-            }
-        }, {})
-    }
-
-    get eventFilters() {
-        return Object.keys(this.contracts).reduce((acc, address) => {
-            const { contract, eventNames } = this.contracts[address]
-            const filter = {
-                address,
-                topics: [
-                    // don't spread here, it should be a nested array
-                    eventNames.map(
-                        (name) => (contract.filters[name] as any)().topics[0]
-                    ),
-                ],
-            }
-            return {
-                ...acc,
-                [address]: filter,
-            }
-        }, {})
-    }
-
     async processEvents(events: ethers.Event[]) {
         if (events.length === 0) return
         events.sort((a: any, b: any) => {
@@ -293,13 +299,12 @@ export class Synchronizer extends EventEmitter {
             }
             return a.logIndex - b.logIndex
         })
-        const eventHandlers = this.eventHandlers
 
         for (const event of events) {
             try {
                 let success: boolean | undefined
                 await this._db.transaction(async (db) => {
-                    const handler = eventHandlers[event.topics[0]]
+                    const handler = this._eventHandlers[event.topics[0]]
                     if (!handler) {
                         throw new Error(
                             `Unrecognized event topic "${event.topics[0]}"`
