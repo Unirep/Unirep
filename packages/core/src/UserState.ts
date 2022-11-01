@@ -158,7 +158,6 @@ export default class UserState extends Synchronizer {
     }
 
     async getEpochKeys(epoch: bigint) {
-        await this._checkValidEpoch(epoch)
         return Array(this.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
@@ -431,7 +430,7 @@ export default class UserState extends Synchronizer {
         const { epkNonce, minRep, graffitiPreImage } = options
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
-        const leafIndex = await this.latestStateTreeLeafIndex()
+        const leafIndex = await this.latestStateTreeLeafIndex(epoch)
         const { posRep, negRep, graffiti, timestamp } =
             await this.getRepByAttester()
         const stateTree = await this.genStateTree(epoch)
@@ -469,8 +468,10 @@ export default class UserState extends Synchronizer {
      * Generate a user sign up proof of current user state and the given attester ID
      * @returns The sign up proof of type `SignUpProof`.
      */
-    public genUserSignUpProof = async (): Promise<SignupProof> => {
-        const epoch = this.calcCurrentEpoch()
+    public genUserSignUpProof = async (
+        options: { epoch?: number | bigint } = {}
+    ): Promise<SignupProof> => {
+        const epoch = options.epoch ?? this.calcCurrentEpoch()
         const circuitInputs = {
             epoch,
             identity_nullifier: this.id.identityNullifier,

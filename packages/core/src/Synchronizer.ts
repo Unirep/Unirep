@@ -324,15 +324,6 @@ export class Synchronizer extends EventEmitter {
         return BigInt(epoch.toString())
     }
 
-    protected async _checkValidEpoch(epoch: bigint | number) {
-        const currentEpoch = this.calcCurrentEpoch()
-        if (BigInt(epoch) > currentEpoch) {
-            throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch}`
-            )
-        }
-    }
-
     protected async _checkEpochKeyRange(epochKey: string) {
         if (BigInt(epochKey) >= BigInt(2 ** this.settings.epochTreeDepth)) {
             throw new Error(
@@ -372,7 +363,6 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<IncrementalMerkleTree> {
         const epoch = Number(_epoch)
-        await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
@@ -396,7 +386,6 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<SparseMerkleTree> {
         const epoch = Number(_epoch)
-        await this._checkValidEpoch(epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
             hash4([0, 0, 0, 0])
@@ -420,7 +409,6 @@ export class Synchronizer extends EventEmitter {
      * @returns True if the global state tree root exists, false otherwise.
      */
     async stateTreeRootExists(root: bigint | string, epoch: number) {
-        await this._checkValidEpoch(epoch)
         return this.unirepContract.attesterStateTreeRootExists(
             this.attesterId,
             epoch,
@@ -438,7 +426,6 @@ export class Synchronizer extends EventEmitter {
         _epochTreeRoot: bigint | string,
         epoch: number
     ): Promise<boolean> {
-        await this._checkValidEpoch(epoch)
         const root = await this.unirepContract.epochRoots(epoch)
         return root.toString() === _epochTreeRoot.toString()
     }
@@ -449,7 +436,6 @@ export class Synchronizer extends EventEmitter {
      * @returns The number of the global state tree leaves
      */
     async numStateTreeLeaves(epoch: number) {
-        await this._checkValidEpoch(epoch)
         return this._db.count('StateTreeLeaf', {
             epoch: epoch,
             attesterId: this.attesterId.toString(),
