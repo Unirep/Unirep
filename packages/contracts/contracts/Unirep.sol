@@ -391,12 +391,11 @@ contract Unirep is IUnirep, VerifySignature {
     function verifyEpochKeyProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) public returns (bool) {
+    ) public view returns (bool) {
         bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
         // short circuit if the proof is invalid
         if (!valid) return false;
         if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
-        updateEpochIfNeeded(uint160(publicSignals[3]));
         AttesterData storage attester = attesters[uint160(publicSignals[3])];
         // epoch check
         if (publicSignals[2] > attester.currentEpoch) return false;
@@ -409,11 +408,10 @@ contract Unirep is IUnirep, VerifySignature {
     function verifyReputationProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) public returns (bool) {
+    ) public view returns (bool) {
         bool valid = reputationVerifier.verifyProof(publicSignals, proof);
         if (!valid) return false;
         if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
-        updateEpochIfNeeded(uint160(publicSignals[3]));
         AttesterData storage attester = attesters[uint160(publicSignals[3])];
         // epoch check
         if (publicSignals[2] > attester.currentEpoch) return false;
