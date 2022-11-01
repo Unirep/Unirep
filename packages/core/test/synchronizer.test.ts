@@ -179,7 +179,7 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.getUnirepStateCurrentEpoch()
+        const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -202,12 +202,12 @@ describe('Synchronizer process events', function () {
             0
         )
         const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof(
-                hashchain.epochKeys,
-                hashchain.epochKeyBalances,
-                hashchain.index,
-                epoch
-            )
+            await userState.genAggregateEpochKeysProof({
+                epochKeys: hashchain.epochKeys,
+                newBalances: hashchain.epochKeyBalances,
+                hashchainIndex: hashchain.index,
+                epoch,
+            })
         await synchronizer.unirepContract
             .connect(accounts[5])
             .processHashchain(publicSignals, proof)
@@ -269,7 +269,7 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.getUnirepStateCurrentEpoch()
+        const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -292,12 +292,12 @@ describe('Synchronizer process events', function () {
             1
         )
         const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof(
-                hashchain.epochKeys,
-                hashchain.epochKeyBalances,
-                hashchain.index,
-                epoch
-            )
+            await userState.genAggregateEpochKeysProof({
+                epochKeys: hashchain.epochKeys,
+                newBalances: hashchain.epochKeyBalances,
+                hashchainIndex: hashchain.index,
+                epoch,
+            })
         await synchronizer.unirepContract
             .connect(accounts[5])
             .processHashchain(publicSignals, proof)
@@ -334,10 +334,13 @@ describe('Synchronizer process events', function () {
         // then run an epoch transition and check the rep
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
+        const toEpoch = await userState.loadCurrentEpoch()
         {
             await userState.waitForSync()
             const { publicSignals, proof } =
-                await userState.genUserStateTransitionProof()
+                await userState.genUserStateTransitionProof({
+                    toEpoch,
+                })
             // submit it
             await synchronizer.unirepContract
                 .connect(accounts[4])

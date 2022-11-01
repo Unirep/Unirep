@@ -24,6 +24,7 @@ workflows:
                       branches:
                           only:
                               - main
+                              - v1.1
 
 # Just for reusing below
 step_defs:

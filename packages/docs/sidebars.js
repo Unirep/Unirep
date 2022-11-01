@@ -64,6 +64,11 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
+                    label: 'IVerifier.sol',
+                    id: 'contracts-api/iverifier-sol',
+                },
+                {
+                    type: 'doc',
                     label: 'BaseProof',
                     id: 'contracts-api/base-proof',
                 },

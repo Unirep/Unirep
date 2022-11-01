@@ -26,10 +26,6 @@ describe('User Signup', function () {
         unirepContract = await deployUnirep(accounts[0])
         const config = await unirepContract.config()
         stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
-    })
-
-    it('attester sign up', async () => {
-        const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
             .connect(attester)
@@ -59,7 +55,7 @@ describe('User Signup', function () {
             const contractEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
             )
-            const unirepEpoch = await userState.getUnirepStateCurrentEpoch()
+            const unirepEpoch = await userState.loadCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(

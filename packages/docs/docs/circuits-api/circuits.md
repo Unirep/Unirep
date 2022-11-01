@@ -36,11 +36,12 @@ Outputs:
 
 ## Epoch Key Proof
 
-The epoch key proof allows a user to prove control of an epoch key in a certain epoch. This proof calculates two things: merkle inclusion of a state leaf against the current state root, and an epoch key.
+The epoch key proof allows a user to prove control of an epoch key in a certain epoch. This proof calculates two things: merkle inclusion of a state leaf against the current state root, and an epoch key. A data value can be included and endorsed by this proof.
 
 Inputs:
 - `epoch` (public)
 - `attester_id` (public)
+- `data` (public)
 - `pos_rep`
 - `neg_rep`
 - `graffiti`

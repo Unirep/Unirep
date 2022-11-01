@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/crypto'
 import { Circuit } from '../src'
+import { defaultProver } from '../provers/defaultProver'
 
 import { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 
@@ -61,6 +62,119 @@ describe('Verify Epoch Key circuits', function () {
             expect(publicSignals[1]).to.equal(tree.root.toString())
         }
     })
+
+    it('should prove a data value', async () => {
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const attesterId = 10210
+            const epoch = 120958
+            const posRep = 2988
+            const negRep = 987
+            const graffiti = 1294129
+            const timestamp = 214
+            const data = BigInt(1288972090)
+            const id = new ZkIdentity()
+            const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const leaf = hash7([
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
+            tree.insert(leaf)
+            const circuitInputs = genEpochKeyCircuitInput({
+                id,
+                tree,
+                leafIndex: 0,
+                epoch,
+                nonce,
+                attesterId,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+                data,
+            })
+            const { isValid, publicSignals } = await genProofAndVerify(
+                Circuit.verifyEpochKey,
+                circuitInputs
+            )
+            expect(isValid).to.be.true
+            expect(publicSignals[0]).to.equal(
+                genEpochKey(
+                    id.identityNullifier,
+                    attesterId,
+                    epoch,
+                    nonce
+                ).toString()
+            )
+            expect(publicSignals[1]).to.equal(tree.root.toString())
+            expect(publicSignals[4].toString()).to.equal(data.toString())
+        }
+    })
+
+    it('data value should be verified in proof', async () => {
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const attesterId = 10210
+            const epoch = 120958
+            const posRep = 2988
+            const negRep = 987
+            const graffiti = 1294129
+            const timestamp = 214
+            const data = BigInt(1288972090)
+            const id = new ZkIdentity()
+            const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const leaf = hash7([
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
+            tree.insert(leaf)
+            const circuitInputs = genEpochKeyCircuitInput({
+                id,
+                tree,
+                leafIndex: 0,
+                epoch,
+                nonce,
+                attesterId,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+                data,
+            })
+            const { isValid, publicSignals, proof } = await genProofAndVerify(
+                Circuit.verifyEpochKey,
+                circuitInputs
+            )
+            expect(isValid).to.be.true
+            expect(publicSignals[0]).to.equal(
+                genEpochKey(
+                    id.identityNullifier,
+                    attesterId,
+                    epoch,
+                    nonce
+                ).toString()
+            )
+            expect(publicSignals[1]).to.equal(tree.root.toString())
+            expect(publicSignals[4].toString()).to.equal(data.toString())
+            console.log(publicSignals[4])
+            publicSignals[4] = '00000'
+            const valid = await defaultProver.verifyProof(
+                Circuit.verifyEpochKey,
+                publicSignals,
+                proof
+            )
+            expect(valid).to.be.false
+        }
+    })
+
     it('should prove wrong gst root for wrong rep', async () => {
         const attesterId = 10210
         const epoch = 120958
