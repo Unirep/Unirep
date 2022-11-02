@@ -64,11 +64,8 @@ describe('User state', function () {
         }
 
         await userState.waitForSync()
-        const { publicSignals, proof } = await userState.genEpochKeyProof()
-        const valid = await unirepContract.verifyEpochKeyProof(
-            publicSignals,
-            proof
-        )
+        const proof = await userState.genEpochKeyProof()
+        const valid = await proof.verify()
         expect(valid).to.be.true
         await userState.stop()
     })
