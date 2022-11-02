@@ -388,7 +388,7 @@ export class Synchronizer extends EventEmitter {
         const epoch = Number(_epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            hash4([0, 0, 0, 0])
+            this.defaultEpochTreeLeaf
         )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
