@@ -21,6 +21,9 @@ Client library for contracts related functions which are used in unirep protocol
     <a href="https://prettier.io/">
         <img alt="Code style prettier" src="https://img.shields.io/badge/code%20style-prettier-f8bc45?style=flat-square&logo=prettier" />
     </a>
+    <a href="https://contracts-coverage.unirep.io/">
+        <img alt="Coverage report" src="https://contracts-coverage.unirep.io/badge.svg" />
+    </a>
 </p>
 
 <div align="center">
