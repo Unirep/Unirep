@@ -14,9 +14,9 @@ import {
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
+    defaultEpochTreeLeaf,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { defaultEpochTreeLeaf } from '@unirep/circuits/test/utils'
 
 import { EPOCH_LENGTH, UserStateTransitionProof, SignupProof } from '../src'
 import { deployUnirep } from '../deploy'

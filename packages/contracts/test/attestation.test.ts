@@ -15,8 +15,8 @@ import {
     AGGREGATE_KEY_COUNT,
     Circuit,
     EPOCH_TREE_DEPTH,
+    defaultEpochTreeLeaf,
 } from '@unirep/circuits'
-import { defaultEpochTreeLeaf } from '@unirep/circuits/test/utils'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 describe('Attestations', function () {
@@ -186,31 +186,18 @@ describe('Attestations', function () {
             const posRep = Math.floor(Math.random() * 10)
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = genRandomSalt()
-            let timestamp
-            {
-                const tx = await unirepContract
-                    .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epochKey,
-                        posRep,
-                        negRep,
-                        graffiti
-                    )
-                const receipt = await tx.wait()
-                const block = await ethers.provider.getBlock(
-                    receipt.blockNumber
-                )
-                timestamp = block.timestamp
-            }
 
-            {
-                const tx = await unirepContract.buildHashchain(
-                    attester.address,
-                    epoch
-                )
-                await tx.wait()
-            }
+            const tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            const receipt = await tx.wait()
+            const { timestamp } = await ethers.provider.getBlock(
+                receipt.blockNumber
+            )
+
+            await unirepContract
+                .buildHashchain(attester.address, epoch)
+                .then((t) => t.wait())
 
             const currentHead = hash3([attester.address, epoch, i])
             const head = hash6([
@@ -259,35 +246,27 @@ describe('Attestations', function () {
             const newNegRep = Math.floor(Math.random() * 10)
             const newGraffiti = genRandomSalt()
 
-            {
-                const tx = await unirepContract
-                    .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epochKey,
-                        newPosRep,
-                        newNegRep,
-                        newGraffiti
-                    )
-                const receipt = await tx.wait()
-                const block = await ethers.provider.getBlock(
-                    receipt.blockNumber
+            const tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    epoch,
+                    epochKey,
+                    newPosRep,
+                    newNegRep,
+                    newGraffiti
                 )
-                timestamp = block.timestamp
-            }
+            const receipt = await tx.wait()
+            timestamp = (await ethers.provider.getBlock(receipt.blockNumber))
+                .timestamp
 
             posRep += newPosRep
             negRep += newNegRep
             graffiti = newGraffiti
         }
 
-        {
-            const tx = await unirepContract.buildHashchain(
-                attester.address,
-                epoch
-            )
-            await tx.wait()
-        }
+        await unirepContract
+            .buildHashchain(attester.address, epoch)
+            .then((t) => t.wait())
 
         const currentHead = hash3([attester.address, epoch, 0])
         const head = hash6([
@@ -329,15 +308,7 @@ describe('Attestations', function () {
             defaultEpochTreeLeaf
         )
         const startRoot = tree.root
-        const newLeaves = Array(AGGREGATE_KEY_COUNT)
-            .fill(null)
-            .map((_, i) => ({
-                posRep: 0,
-                negRep: 0,
-                leafIndex: BigInt(0),
-                graffiti: BigInt(0),
-                timestamp: BigInt(0),
-            }))
+        const attestations = [] as any
         const attestationsCount = 5
 
         // submit attestations
@@ -347,21 +318,24 @@ describe('Attestations', function () {
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = genRandomSalt()
 
-            {
-                await unirepContract
-                    .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epochKey,
-                        posRep,
-                        negRep,
-                        graffiti
-                    )
-                    .then((t) => t.wait())
-            }
+            const receipt = await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .then((t) => t.wait())
+            const { timestamp } = await ethers.provider.getBlock(
+                receipt.blockNumber
+            )
+            attestations.push({
+                posRep,
+                negRep,
+                epochKey,
+                graffiti,
+                timestamp,
+            })
         }
 
         // build hash chain
+        attestations.reverse()
         await unirepContract
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
@@ -377,6 +351,23 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
+        for (let i = 0; i < hashchain.epochKeys.length; i++) {
+            expect(attestations[i].epochKey.toString()).to.equal(
+                hashchain.epochKeys[i].toString()
+            )
+            expect(attestations[i].posRep).to.equal(
+                hashchain.epochKeyBalances[i].posRep.toNumber()
+            )
+            expect(attestations[i].negRep).to.equal(
+                hashchain.epochKeyBalances[i].negRep.toNumber()
+            )
+            expect(attestations[i].graffiti.toString()).to.equal(
+                hashchain.epochKeyBalances[i].graffiti.toString()
+            )
+            expect(attestations[i].timestamp).to.equal(
+                hashchain.epochKeyBalances[i].timestamp.toNumber()
+            )
+        }
         const dummyEpochKeys = Array(
             AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
         )
@@ -405,7 +396,8 @@ describe('Attestations', function () {
             start_root: startRoot,
             epoch_keys: allEpochKeys.map((k) => k.toString()),
             epoch_key_balances: allBalances,
-            old_epoch_key_hashes: newLeaves.map(() => defaultEpochTreeLeaf),
+            old_epoch_key_hashes:
+                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
             path_elements: allEpochKeys.map((key, i) => {
                 const p = tree.createProof(BigInt(key))
                 if (i < hashchain.epochKeys.length) {
@@ -439,8 +431,9 @@ describe('Attestations', function () {
             r.proof,
             defaultProver
         )
-        const tx = await unirepContract.processHashchain(publicSignals, proof)
-        await tx.wait()
+        await unirepContract
+            .processHashchain(publicSignals, proof)
+            .then((t) => t.wait())
     })
 
     it('should process hash chain with the same epoch key', async () => {
@@ -459,17 +452,15 @@ describe('Attestations', function () {
             defaultEpochTreeLeaf
         )
         const startRoot = tree.root
-        const newLeaves = Array(AGGREGATE_KEY_COUNT)
-            .fill(null)
-            .map((_, i) => ({
-                posRep: 0,
-                negRep: 0,
-                leafIndex: BigInt(0),
-                graffiti: BigInt(0),
-                timestamp: BigInt(0),
-            }))
         const attestationsCount = 5
         const epochKey = BigInt(1234)
+        let attestation = {
+            posRep: 0,
+            negRep: 0,
+            epochKey,
+            graffiti: BigInt(0),
+            timestamp: BigInt(0),
+        }
 
         // submit attestations
         for (let i = 0; i < attestationsCount; i++) {
@@ -477,18 +468,17 @@ describe('Attestations', function () {
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = genRandomSalt()
 
-            {
-                await unirepContract
-                    .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epochKey,
-                        posRep,
-                        negRep,
-                        graffiti
-                    )
-                    .then((t) => t.wait())
-            }
+            const receipt = await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .then((t) => t.wait())
+            const { timestamp } = await ethers.provider.getBlock(
+                receipt.blockNumber
+            )
+            attestation.posRep += posRep
+            attestation.negRep += negRep
+            attestation.graffiti = graffiti
+            attestation.timestamp = timestamp
         }
 
         // build hash chain
@@ -506,6 +496,23 @@ describe('Attestations', function () {
             attester.address,
             epoch,
             hashchainIndex
+        )
+        expect(hashchain.epochKeys.length).to.equal(1)
+        expect(hashchain.epochKeyBalances.length).to.equal(1)
+        expect(hashchain.epochKeys[0].toString()).to.equal(
+            attestation.epochKey.toString()
+        )
+        expect(hashchain.epochKeyBalances[0].posRep.toNumber()).to.equal(
+            attestation.posRep
+        )
+        expect(hashchain.epochKeyBalances[0].negRep.toNumber()).to.equal(
+            attestation.negRep
+        )
+        expect(hashchain.epochKeyBalances[0].graffiti.toString()).to.equal(
+            attestation.graffiti.toString()
+        )
+        expect(hashchain.epochKeyBalances[0].timestamp.toNumber()).to.equal(
+            attestation.timestamp
         )
         const dummyEpochKeys = Array(
             AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
@@ -535,7 +542,8 @@ describe('Attestations', function () {
             start_root: startRoot,
             epoch_keys: allEpochKeys.map((k) => k.toString()),
             epoch_key_balances: allBalances,
-            old_epoch_key_hashes: newLeaves.map(() => defaultEpochTreeLeaf),
+            old_epoch_key_hashes:
+                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
             path_elements: allEpochKeys.map((key, i) => {
                 const p = tree.createProof(BigInt(key))
                 if (i < hashchain.epochKeys.length) {
@@ -569,8 +577,9 @@ describe('Attestations', function () {
             r.proof,
             defaultProver
         )
-        const tx = await unirepContract.processHashchain(publicSignals, proof)
-        await tx.wait()
+        await unirepContract
+            .processHashchain(publicSignals, proof)
+            .then((t) => t.wait())
     })
 
     it('should fail to process hash chain with invalid proof', async () => {
@@ -591,12 +600,10 @@ describe('Attestations', function () {
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
 
-        {
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-        }
+        await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            .then((t) => t.wait())
 
         // build hash chain
         await unirepContract
@@ -625,12 +632,10 @@ describe('Attestations', function () {
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
 
-        {
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-        }
+        await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            .then((t) => t.wait())
 
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
@@ -736,12 +741,10 @@ describe('Attestations', function () {
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
 
-        {
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-        }
+        await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            .then((t) => t.wait())
 
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
@@ -850,12 +853,10 @@ describe('Attestations', function () {
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
 
-        {
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-        }
+        await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            .then((t) => t.wait())
 
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
