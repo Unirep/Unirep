@@ -21,7 +21,6 @@ workflows:
                           only:
                               - main
                               - v1.1
-                              - coverage-reports
             - crypto-test:
                   requires:
                       - build
