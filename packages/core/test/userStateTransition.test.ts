@@ -55,6 +55,8 @@ describe('User state transition', function () {
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
+
+            await userState.stop()
         }
 
         // epoch transition
@@ -89,6 +91,8 @@ describe('User state transition', function () {
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
+
+            await userState.stop()
         }
     })
 

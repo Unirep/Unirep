@@ -113,5 +113,6 @@ describe('Attester signs up and gives attestation', function () {
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
         }
+        await userState.stop()
     })
 })

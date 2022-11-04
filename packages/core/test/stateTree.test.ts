@@ -256,7 +256,6 @@ describe('State tree', function () {
                     .connect(attester)
                     .userSignUp(publicSignals, proof)
                     .then((t) => t.wait())
-                await userState.stop()
             }
 
             const epoch = await userState.loadCurrentEpoch()

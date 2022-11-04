@@ -125,5 +125,6 @@ describe('Epoch tree', function () {
         expect(onchainEpochRoot.toString()).to.equal(
             userEpochRoot.root.toString()
         )
+        await userState.stop()
     })
 })
