@@ -312,6 +312,7 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
+        if (publicSignals[5] >= type(uint160).max) revert AttesterInvalid();
         uint160 attesterId = uint160(publicSignals[5]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
@@ -391,11 +392,13 @@ contract Unirep is IUnirep, VerifySignature {
     function verifyEpochKeyProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) public view returns (bool) {
+    ) public returns (bool) {
         bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
         // short circuit if the proof is invalid
         if (!valid) return false;
         if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(publicSignals[3]));
         AttesterData storage attester = attesters[uint160(publicSignals[3])];
         // epoch check
         if (publicSignals[2] > attester.currentEpoch) return false;
@@ -408,10 +411,12 @@ contract Unirep is IUnirep, VerifySignature {
     function verifyReputationProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) public view returns (bool) {
+    ) public returns (bool) {
         bool valid = reputationVerifier.verifyProof(publicSignals, proof);
         if (!valid) return false;
         if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
+        if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(publicSignals[3]));
         AttesterData storage attester = attesters[uint160(publicSignals[3])];
         // epoch check
         if (publicSignals[2] > attester.currentEpoch) return false;
