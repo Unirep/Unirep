@@ -392,38 +392,38 @@ contract Unirep is IUnirep, VerifySignature {
     function verifyEpochKeyProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) public returns (bool) {
+    ) public {
         bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
         // short circuit if the proof is invalid
-        if (!valid) return false;
+        if (!valid) revert InvalidProof();
         if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
         if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
         updateEpochIfNeeded(uint160(publicSignals[3]));
         AttesterData storage attester = attesters[uint160(publicSignals[3])];
         // epoch check
-        if (publicSignals[2] > attester.currentEpoch) return false;
+        if (publicSignals[2] > attester.currentEpoch)
+            revert InvalidEpoch(publicSignals[2]);
         // state tree root check
         if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
-            return false;
-        return true;
+            revert InvalidStateTreeRoot(publicSignals[1]);
     }
 
     function verifyReputationProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
-    ) public returns (bool) {
+    ) public {
         bool valid = reputationVerifier.verifyProof(publicSignals, proof);
-        if (!valid) return false;
+        if (!valid) revert InvalidProof();
         if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
         if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
         updateEpochIfNeeded(uint160(publicSignals[3]));
         AttesterData storage attester = attesters[uint160(publicSignals[3])];
         // epoch check
-        if (publicSignals[2] > attester.currentEpoch) return false;
+        if (publicSignals[2] > attester.currentEpoch)
+            revert InvalidEpoch(publicSignals[2]);
         // state tree root check
         if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
-            return false;
-        return true;
+            revert InvalidStateTreeRoot(publicSignals[1]);
     }
 
     function attesterStartTimestamp(uint160 attesterId)

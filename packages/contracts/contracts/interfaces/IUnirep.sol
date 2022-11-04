@@ -58,6 +58,7 @@ interface IUnirep {
     error InvalidSignature();
     error InvalidEpochKey();
     error EpochNotMatch();
+    error InvalidEpoch(uint256 epoch);
 
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
