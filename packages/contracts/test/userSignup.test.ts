@@ -71,7 +71,6 @@ describe('User Signup', function () {
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             roots[epoch] = []
             for (let i = 0; i < 3; i++) {
-                console.log('epoch:', epoch, ', the', i, 'th user')
                 const id = new ZkIdentity()
                 const r = await defaultProver.genProofAndPublicSignals(
                     Circuit.signup,
@@ -87,10 +86,10 @@ describe('User Signup', function () {
                     r.proof,
                     defaultProver
                 )
-                const tx = await unirepContract
+                await unirepContract
                     .connect(attester)
                     .userSignUp(publicSignals, proof)
-                await tx.wait()
+                    .then((t) => t.wait())
 
                 const gstLeaf = hash7([
                     id.identityNullifier,
@@ -145,8 +144,9 @@ describe('User Signup', function () {
         const id = new ZkIdentity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const tx = await unirepContract.updateEpochIfNeeded(attester.address)
-        await tx.wait()
+        await unirepContract
+            .updateEpochIfNeeded(attester.address)
+            .then((t) => t.wait())
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )

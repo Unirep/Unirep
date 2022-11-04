@@ -1,7 +1,10 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
+import {
+    IncrementalMerkleTree,
+    SparseMerkleTree,
+} from '@unirep/crypto'
 import { EPOCH_TREE_DEPTH, STATE_TREE_DEPTH } from '@unirep/circuits'
 import { defaultEpochTreeLeaf } from '@unirep/circuits/test/utils'
 
@@ -76,11 +79,10 @@ describe('Epoch', function () {
     })
 
     it('should fail to update epoch with non-signup attester', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[2] // non-signup attester
+        const address = 12345 // non-signup attester
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await expect(
-            unirepContract.updateEpochIfNeeded(attester.address)
+            unirepContract.updateEpochIfNeeded(address)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 })

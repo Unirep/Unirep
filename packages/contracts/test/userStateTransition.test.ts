@@ -138,15 +138,14 @@ describe('User State Transition', function () {
     })
 
     it('should fail to transition with invalid attester', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[5] // not signed up attester
+        const address = BigInt(12345) // not signed up attester
         const id = new ZkIdentity()
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
                     id.identityNullifier,
-                    BigInt(attester.address),
+                    address,
                     0, // from epoch
                     i,
                     2 ** EPOCH_TREE_DEPTH
@@ -166,7 +165,7 @@ describe('User State Transition', function () {
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
-                attester_id: attester.address,
+                attester_id: address,
                 pos_rep: 0,
                 neg_rep: 0,
                 graffiti: 0,
@@ -187,9 +186,7 @@ describe('User State Transition', function () {
             defaultProver
         )
         await expect(
-            unirepContract
-                .connect(attester)
-                .userStateTransition(publicSignals, proof)
+            unirepContract.userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
@@ -559,7 +556,7 @@ describe('User State Transition', function () {
                 genEpochKey(
                     id.identityNullifier,
                     BigInt(attester.address),
-                    0, // from epoch
+                    fromEpoch, // from epoch
                     i,
                     2 ** EPOCH_TREE_DEPTH
                 )
@@ -659,7 +656,6 @@ describe('User State Transition', function () {
         for (let epoch = startEpoch; epoch < startEpoch + epochs; epoch++) {
             _stateTree[epoch] = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             for (let i = 0; i < users; i++) {
-                console.log(`epoch: ${epoch}, user: ${i}`)
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(null)
                     .map((_, i) =>
