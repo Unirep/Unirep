@@ -112,11 +112,9 @@ describe('Epoch key proof verifier', function () {
                 r.publicSignals,
                 r.proof
             )
-            const isValid = await unirepContract.verifyEpochKeyProof(
-                publicSignals,
-                proof
-            )
-            expect(isValid).to.be.true
+            await unirepContract
+                .verifyEpochKeyProof(publicSignals, proof)
+                .then((t) => t.wait())
         }
     })
 
@@ -168,11 +166,9 @@ describe('Epoch key proof verifier', function () {
             r.publicSignals,
             r.proof
         )
-        const isValid = await unirepContract.verifyEpochKeyProof(
-            publicSignals,
-            proof
-        )
-        expect(isValid).to.be.false
+        await expect(
+            unirepContract.verifyEpochKeyProof(publicSignals, proof)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpoch')
     })
 
     it('should fail to verify an epoch key proof with invalid proof', async () => {
@@ -233,15 +229,13 @@ describe('Epoch key proof verifier', function () {
         {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
-            const isValid = await unirepContract.verifyEpochKeyProof(
-                _publicSignals,
-                proof
-            )
-            expect(isValid).to.be.false
+            await expect(
+                unirepContract.verifyEpochKeyProof(_publicSignals, proof)
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
         }
     })
 
-    it('should fail to verify an epoch key proof with state tree root', async () => {
+    it('should fail to verify an epoch key proof with bad state tree root', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new ZkIdentity()
@@ -290,11 +284,9 @@ describe('Epoch key proof verifier', function () {
             r.publicSignals,
             r.proof
         )
-        const isValid = await unirepContract.verifyEpochKeyProof(
-            publicSignals,
-            proof
-        )
-        expect(isValid).to.be.false
+        await expect(
+            unirepContract.verifyEpochKeyProof(publicSignals, proof)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidStateTreeRoot')
     })
 })
 
@@ -365,11 +357,9 @@ describe('Reputation proof verifier', function () {
                 r.publicSignals,
                 r.proof
             )
-            const isValid = await unirepContract.verifyReputationProof(
-                publicSignals,
-                proof
-            )
-            expect(isValid).to.be.true
+            await unirepContract
+                .verifyReputationProof(publicSignals, proof)
+                .then((t) => t.wait())
         }
     })
 
@@ -425,11 +415,9 @@ describe('Reputation proof verifier', function () {
             r.publicSignals,
             r.proof
         )
-        const isValid = await unirepContract.verifyReputationProof(
-            publicSignals,
-            proof
-        )
-        expect(isValid).to.be.false
+        await expect(
+            unirepContract.verifyReputationProof(publicSignals, proof)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpoch')
     })
 
     it('should fail to verify a reputation proof with invalid proof', async () => {
@@ -488,11 +476,9 @@ describe('Reputation proof verifier', function () {
         {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
-            const isValid = await unirepContract.verifyEpochKeyProof(
-                _publicSignals,
-                proof
-            )
-            expect(isValid).to.be.false
+            await expect(
+                unirepContract.verifyReputationProof(_publicSignals, proof)
+            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
         }
     })
 
@@ -549,10 +535,8 @@ describe('Reputation proof verifier', function () {
             r.publicSignals,
             r.proof
         )
-        const isValid = await unirepContract.verifyReputationProof(
-            publicSignals,
-            proof
-        )
-        expect(isValid).to.be.false
+        await expect(
+            unirepContract.verifyReputationProof(publicSignals, proof)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidStateTreeRoot')
     })
 })

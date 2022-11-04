@@ -1,10 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    IncrementalMerkleTree,
-    SparseMerkleTree,
-} from '@unirep/crypto'
+import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
 import { EPOCH_TREE_DEPTH, STATE_TREE_DEPTH } from '@unirep/circuits'
 import { defaultEpochTreeLeaf } from '@unirep/circuits/test/utils'
 
