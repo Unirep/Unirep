@@ -4547,7 +4547,7 @@ __metadata:
     "@unirep/circuits": 1.0.1
     "@unirep/contracts": 1.0.1
     "@unirep/crypto": 1.0.1
-    anondb: ^0.0.10
+    anondb: ^0.0.16
     ethers: ^5.6.8
     hardhat: ^2.9.9
     nanoid: 3
@@ -5011,9 +5011,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"anondb@npm:^0.0.10":
-  version: 0.0.10
-  resolution: "anondb@npm:0.0.10"
+"anondb@npm:^0.0.16":
+  version: 0.0.16
+  resolution: "anondb@npm:0.0.16"
   dependencies:
     async-lock: ^1.2.11
     idb: ^6.0.0
@@ -5022,7 +5022,7 @@ __metadata:
     sql.js: ^1.5.0
     sqlite: ^4.0.19
     sqlite3: ^5.0.2
-  checksum: 90841f8ef1aed320956b1fd084eb12897c32b55a155d3c7fca74823dec35189af975bf375780dc38d6ed465bf005bfa074388a66e3cfb07c1e52ec0cef47f52f
+  checksum: 5870e1138143c2e3f1a57ab3df58017c10a771331eb914e33ace7374bba4173198919824ead7d64823e9b17e826f31caf9e7f9d7d7cfc8b2471b8ca05f10dfd6
   languageName: node
   linkType: hard
 

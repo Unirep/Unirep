@@ -552,17 +552,16 @@ export class Synchronizer extends EventEmitter {
         )
         const leaf = BigInt(decodedData.leaf.toString()).toString()
         if (attesterId !== this.attesterId.toString()) return
-
+        const id = `${epoch}-${index}-${attesterId}`
         db.upsert('EpochTreeLeaf', {
             where: {
-                epoch,
-                index,
-                attesterId,
+                id,
             },
             update: {
                 hash: leaf,
             },
             create: {
+                id,
                 epoch,
                 index,
                 hash: leaf,
