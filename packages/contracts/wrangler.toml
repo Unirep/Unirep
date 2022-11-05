@@ -1,0 +1,6 @@
+name = "unirep-contracts-coverage"
+main = "worker.js"
+compatibility_date = "2022-10-18"
+
+[site]
+bucket = "./coverage"
