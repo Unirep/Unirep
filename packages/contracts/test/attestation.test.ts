@@ -10,6 +10,7 @@ import {
     hash4,
     hash6,
     SparseMerkleTree,
+    stringifyBigInts,
 } from '@unirep/crypto'
 import {
     AGGREGATE_KEY_COUNT,
@@ -18,6 +19,68 @@ import {
     defaultEpochTreeLeaf,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+
+function genCircuitInputs(
+    epoch,
+    attester,
+    hashchainIndex,
+    hashchain,
+    epochTree?
+) {
+    const tree =
+        epochTree ??
+        new SparseMerkleTree(EPOCH_TREE_DEPTH, defaultEpochTreeLeaf)
+    const startRoot = tree.root
+    const dummyEpochKeys = Array(
+        AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
+    )
+        .fill(null)
+        .map(() => '0x0000000')
+    const dummyBalances = Array(
+        AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
+    )
+        .fill(null)
+        .map(() => [0, 0, 0, 0])
+    const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
+    const allBalances = [
+        hashchain.epochKeyBalances.map(
+            ({ posRep, negRep, graffiti, timestamp }) => {
+                return [
+                    posRep.toString(),
+                    negRep.toString(),
+                    graffiti.toString(),
+                    timestamp.toString(),
+                ]
+            }
+        ),
+        dummyBalances,
+    ].flat()
+    const circuitInputs = {
+        start_root: startRoot,
+        epoch_keys: allEpochKeys.map((k) => k.toString()),
+        epoch_key_balances: allBalances,
+        old_epoch_key_hashes:
+            Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
+        path_elements: allEpochKeys.map((key, i) => {
+            const p = tree.createProof(BigInt(key))
+            if (i < hashchain.epochKeys.length) {
+                const { posRep, negRep, graffiti, timestamp } =
+                    hashchain.epochKeyBalances[i]
+                tree.update(
+                    BigInt(key),
+                    hash4([posRep, negRep, graffiti, timestamp])
+                )
+            }
+            return p
+        }),
+        epoch: epoch.toString(),
+        attester_id: attester.address,
+        hashchain_index: hashchainIndex.toString(),
+        epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
+    }
+
+    return stringifyBigInts(circuitInputs)
+}
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -98,6 +161,7 @@ describe('Attestations', function () {
     })
 
     it('should submit attestation with graffiti', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const epoch = await unirepContract.attesterCurrentEpoch(
@@ -112,8 +176,7 @@ describe('Attestations', function () {
             .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
         await tx.wait()
         const blockNumber = await ethers.provider.getBlockNumber()
-        const block = await ethers.provider.getBlock(blockNumber)
-        const { timestamp } = block
+        const { timestamp } = await ethers.provider.getBlock(blockNumber)
 
         expect(tx)
             .to.emit(unirepContract, 'AttestationSubmitted')
@@ -126,9 +189,11 @@ describe('Attestations', function () {
                 graffiti,
                 timestamp
             )
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should submit attestation without graffiti', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -157,80 +222,124 @@ describe('Attestations', function () {
                 graffiti,
                 timestamp
             )
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to build hashchain without attestation', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[2]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
         await expect(unirepContract.buildHashchain(attester.address, epoch)).to
             .be.reverted
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should build correct hash chain with different epoch keys', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[2]
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        for (let i = 0; i < 5; i++) {
+        const attestations = [] as any
+        const attestationsCount = 5
+        for (let i = 0; i < attestationsCount; i++) {
             const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
             const posRep = Math.floor(Math.random() * 10)
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = genRandomSalt()
 
-            const tx = await unirepContract
+            const receipt = await unirepContract
                 .connect(attester)
                 .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-            const receipt = await tx.wait()
+                .then((t) => t.wait())
             const { timestamp } = await ethers.provider.getBlock(
                 receipt.blockNumber
             )
-
-            await unirepContract
-                .buildHashchain(attester.address, epoch)
-                .then((t) => t.wait())
-
-            const currentHead = hash3([attester.address, epoch, i])
-            const head = hash6([
-                currentHead,
-                epochKey,
+            attestations.push({
                 posRep,
                 negRep,
+                epochKey,
                 graffiti,
                 timestamp,
-            ])
-            const _attesterId = await unirepContract.hashchainMapping(head, 0)
-            const _epoch = await unirepContract.hashchainMapping(head, 1)
-            const _index = await unirepContract.hashchainMapping(head, 2)
-            expect(_attesterId.toString()).to.equal(
-                BigInt(attester.address).toString()
-            )
-            expect(_epoch.toString()).to.equal(epoch.toString())
-            expect(_index.toNumber()).to.equal(i)
-            const count = await unirepContract.attesterHashchainTotalCount(
+            })
+        }
+
+        await unirepContract
+            .buildHashchain(attester.address, epoch)
+            .then((t) => t.wait())
+
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
                 attester.address,
                 epoch
             )
-            expect(count).to.equal(i + 1)
+        const hashchain = await unirepContract.attesterHashchain(
+            attester.address,
+            epoch,
+            hashchainIndex
+        )
+        attestations.reverse()
+        const index = await unirepContract.attesterHashchainProcessedCount(
+            attester.address,
+            epoch
+        )
+        let currentHead = hash3([attester.address, epoch, index])
+        for (let i = 0; i < hashchain.epochKeys.length; i++) {
+            expect(attestations[i].epochKey.toString()).to.equal(
+                hashchain.epochKeys[i].toString()
+            )
+            expect(attestations[i].posRep).to.equal(
+                hashchain.epochKeyBalances[i].posRep.toNumber()
+            )
+            expect(attestations[i].negRep).to.equal(
+                hashchain.epochKeyBalances[i].negRep.toNumber()
+            )
+            expect(attestations[i].graffiti.toString()).to.equal(
+                hashchain.epochKeyBalances[i].graffiti.toString()
+            )
+            expect(attestations[i].timestamp).to.equal(
+                hashchain.epochKeyBalances[i].timestamp.toNumber()
+            )
+
+            currentHead = hash6([
+                currentHead,
+                attestations[i].epochKey,
+                attestations[i].posRep,
+                attestations[i].negRep,
+                attestations[i].graffiti,
+                attestations[i].timestamp,
+            ])
         }
+
+        const _attesterId = await unirepContract.hashchainMapping(
+            currentHead,
+            0
+        )
+        const _epoch = await unirepContract.hashchainMapping(currentHead, 1)
+        const _index = await unirepContract.hashchainMapping(currentHead, 2)
+        expect(_attesterId.toString()).to.equal(
+            BigInt(attester.address).toString()
+        )
+        expect(_epoch.toString()).to.equal(epoch.toString())
+        expect(_index.toNumber()).to.equal(index)
+        const count = await unirepContract.attesterHashchainTotalCount(
+            attester.address,
+            epoch
+        )
+        expect(count).to.equal(index + 1)
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should build correct hash chain with the same epoch key', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[3]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
@@ -290,203 +399,6 @@ describe('Attestations', function () {
             epoch
         )
         expect(count).to.equal(1)
-    })
-
-    it('should process hash chain with different epoch keys', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[4]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        const tree = new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
-        )
-        const startRoot = tree.root
-        const attestations = [] as any
-        const attestationsCount = 5
-
-        // submit attestations
-        for (let i = 0; i < attestationsCount; i++) {
-            const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
-            const posRep = Math.floor(Math.random() * 10)
-            const negRep = Math.floor(Math.random() * 10)
-            const graffiti = genRandomSalt()
-
-            const receipt = await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-            const { timestamp } = await ethers.provider.getBlock(
-                receipt.blockNumber
-            )
-            attestations.push({
-                posRep,
-                negRep,
-                epochKey,
-                graffiti,
-                timestamp,
-            })
-        }
-
-        // build hash chain
-        attestations.reverse()
-        await unirepContract
-            .buildHashchain(attester.address, epoch)
-            .then((t) => t.wait())
-
-        // generate hashchain proof
-        const hashchainIndex =
-            await unirepContract.attesterHashchainProcessedCount(
-                attester.address,
-                epoch
-            )
-        const hashchain = await unirepContract.attesterHashchain(
-            attester.address,
-            epoch,
-            hashchainIndex
-        )
-        for (let i = 0; i < hashchain.epochKeys.length; i++) {
-            expect(attestations[i].epochKey.toString()).to.equal(
-                hashchain.epochKeys[i].toString()
-            )
-            expect(attestations[i].posRep).to.equal(
-                hashchain.epochKeyBalances[i].posRep.toNumber()
-            )
-            expect(attestations[i].negRep).to.equal(
-                hashchain.epochKeyBalances[i].negRep.toNumber()
-            )
-            expect(attestations[i].graffiti.toString()).to.equal(
-                hashchain.epochKeyBalances[i].graffiti.toString()
-            )
-            expect(attestations[i].timestamp).to.equal(
-                hashchain.epochKeyBalances[i].timestamp.toNumber()
-            )
-        }
-        const dummyEpochKeys = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
-        )
-            .fill(null)
-            .map(() => '0x0000000')
-        const dummyBalances = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
-        )
-            .fill(null)
-            .map(() => [0, 0, 0, 0])
-        const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
-        const allBalances = [
-            hashchain.epochKeyBalances.map(
-                ({ posRep, negRep, graffiti, timestamp }) => {
-                    return [
-                        posRep.toString(),
-                        negRep.toString(),
-                        graffiti.toString(),
-                        timestamp.toString(),
-                    ]
-                }
-            ),
-            dummyBalances,
-        ].flat()
-        const circuitInputs = {
-            start_root: startRoot,
-            epoch_keys: allEpochKeys.map((k) => k.toString()),
-            epoch_key_balances: allBalances,
-            old_epoch_key_hashes:
-                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
-            path_elements: allEpochKeys.map((key, i) => {
-                const p = tree.createProof(BigInt(key))
-                if (i < hashchain.epochKeys.length) {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        hashchain.epochKeyBalances[i]
-                    tree.update(
-                        BigInt(key),
-                        hash4([posRep, negRep, graffiti, timestamp])
-                    )
-                }
-                return p
-            }),
-            epoch: epoch.toString(),
-            attester_id: attester.address,
-            hashchain_index: hashchainIndex.toString(),
-            epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
-        }
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.aggregateEpochKeys,
-            circuitInputs
-        )
-        const isValid = await defaultProver.verifyProof(
-            Circuit.aggregateEpochKeys,
-            r.publicSignals,
-            r.proof
-        )
-        expect(isValid).to.be.true
-
-        const { publicSignals, proof } = new AggregateEpochKeysProof(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-        await unirepContract
-            .processHashchain(publicSignals, proof)
-            .then((t) => t.wait())
-    })
-
-    it('should process hash chain with the same epoch key', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[5]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        const tree = new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
-        )
-        const startRoot = tree.root
-        const attestationsCount = 5
-        const epochKey = BigInt(1234)
-        let attestation = {
-            posRep: 0,
-            negRep: 0,
-            epochKey,
-            graffiti: BigInt(0),
-            timestamp: BigInt(0),
-        }
-
-        // submit attestations
-        for (let i = 0; i < attestationsCount; i++) {
-            const posRep = Math.floor(Math.random() * 10)
-            const negRep = Math.floor(Math.random() * 10)
-            const graffiti = genRandomSalt()
-
-            const receipt = await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-            const { timestamp } = await ethers.provider.getBlock(
-                receipt.blockNumber
-            )
-            attestation.posRep += posRep
-            attestation.negRep += negRep
-            attestation.graffiti = graffiti
-            attestation.timestamp = timestamp
-        }
-
-        // build hash chain
-        await unirepContract
-            .buildHashchain(attester.address, epoch)
-            .then((t) => t.wait())
-
-        // generate hashchain proof
         const hashchainIndex =
             await unirepContract.attesterHashchainProcessedCount(
                 attester.address,
@@ -499,68 +411,151 @@ describe('Attestations', function () {
         )
         expect(hashchain.epochKeys.length).to.equal(1)
         expect(hashchain.epochKeyBalances.length).to.equal(1)
-        expect(hashchain.epochKeys[0].toString()).to.equal(
-            attestation.epochKey.toString()
-        )
-        expect(hashchain.epochKeyBalances[0].posRep.toNumber()).to.equal(
-            attestation.posRep
-        )
-        expect(hashchain.epochKeyBalances[0].negRep.toNumber()).to.equal(
-            attestation.negRep
-        )
+        expect(hashchain.epochKeys[0].toString()).to.equal(epochKey.toString())
+        expect(hashchain.epochKeyBalances[0].posRep.toNumber()).to.equal(posRep)
+        expect(hashchain.epochKeyBalances[0].negRep.toNumber()).to.equal(negRep)
         expect(hashchain.epochKeyBalances[0].graffiti.toString()).to.equal(
-            attestation.graffiti.toString()
+            graffiti.toString()
         )
         expect(hashchain.epochKeyBalances[0].timestamp.toNumber()).to.equal(
-            attestation.timestamp
+            timestamp
         )
-        const dummyEpochKeys = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
+        await ethers.provider.send('evm_revert', [snapshot])
+    })
+
+    it('should build multiple hash chains with correct balances', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
         )
-            .fill(null)
-            .map(() => '0x0000000')
-        const dummyBalances = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
-        )
-            .fill(null)
-            .map(() => [0, 0, 0, 0])
-        const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
-        const allBalances = [
-            hashchain.epochKeyBalances.map(
-                ({ posRep, negRep, graffiti, timestamp }) => {
-                    return [
-                        posRep.toString(),
-                        negRep.toString(),
-                        graffiti.toString(),
-                        timestamp.toString(),
-                    ]
-                }
-            ),
-            dummyBalances,
-        ].flat()
-        const circuitInputs = {
-            start_root: startRoot,
-            epoch_keys: allEpochKeys.map((k) => k.toString()),
-            epoch_key_balances: allBalances,
-            old_epoch_key_hashes:
-                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
-            path_elements: allEpochKeys.map((key, i) => {
-                const p = tree.createProof(BigInt(key))
-                if (i < hashchain.epochKeys.length) {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        hashchain.epochKeyBalances[i]
-                    tree.update(
-                        BigInt(key),
-                        hash4([posRep, negRep, graffiti, timestamp])
-                    )
-                }
-                return p
-            }),
-            epoch: epoch.toString(),
-            attester_id: attester.address,
-            hashchain_index: hashchainIndex.toString(),
-            epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
+        const epochKey = BigInt(12345)
+        let posRep = 0
+        let negRep = 0
+        let graffiti = BigInt(0)
+        let timestamp
+        for (let i = 0; i < 5; i++) {
+            const newPosRep = Math.floor(Math.random() * 10)
+            const newNegRep = Math.floor(Math.random() * 10)
+            const newGraffiti = genRandomSalt()
+
+            const tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(
+                    epoch,
+                    epochKey,
+                    newPosRep,
+                    newNegRep,
+                    newGraffiti
+                )
+            const receipt = await tx.wait()
+            timestamp = (await ethers.provider.getBlock(receipt.blockNumber))
+                .timestamp
+
+            posRep += newPosRep
+            negRep += newNegRep
+            graffiti = newGraffiti
+
+            await unirepContract
+                .buildHashchain(attester.address, epoch)
+                .then((t) => t.wait())
+
+            const currentHead = hash3([attester.address, epoch, i])
+            const head = hash6([
+                currentHead,
+                epochKey,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
+            const _attesterId = await unirepContract.hashchainMapping(head, 0)
+            const _epoch = await unirepContract.hashchainMapping(head, 1)
+            const _index = await unirepContract.hashchainMapping(head, 2)
+            expect(_attesterId.toString()).to.equal(
+                BigInt(attester.address).toString()
+            )
+            expect(_epoch.toString()).to.equal(epoch.toString())
+            expect(_index.toNumber()).to.equal(i)
+            const count = await unirepContract.attesterHashchainTotalCount(
+                attester.address,
+                epoch
+            )
+            expect(count.toNumber()).to.equal(i + 1)
+            const hashchain = await unirepContract.attesterHashchain(
+                attester.address,
+                epoch,
+                i
+            )
+            expect(hashchain.epochKeys.length).to.equal(1)
+            expect(hashchain.epochKeyBalances.length).to.equal(1)
+            expect(hashchain.epochKeys[0].toString()).to.equal(
+                epochKey.toString()
+            )
+            expect(hashchain.epochKeyBalances[0].posRep.toNumber()).to.equal(
+                posRep
+            )
+            expect(hashchain.epochKeyBalances[0].negRep.toNumber()).to.equal(
+                negRep
+            )
+            expect(hashchain.epochKeyBalances[0].graffiti.toString()).to.equal(
+                graffiti.toString()
+            )
+            expect(hashchain.epochKeyBalances[0].timestamp.toNumber()).to.equal(
+                timestamp
+            )
         }
+        await ethers.provider.send('evm_revert', [snapshot])
+    })
+
+    it('should process hash chain with different epoch keys', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const attestationsCount = 5
+
+        // submit attestations
+        for (let i = 0; i < attestationsCount; i++) {
+            const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+            const posRep = Math.floor(Math.random() * 10)
+            const negRep = Math.floor(Math.random() * 10)
+            const graffiti = genRandomSalt()
+
+            await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .then((t) => t.wait())
+        }
+
+        // build hash chain
+        await unirepContract
+            .buildHashchain(attester.address, epoch)
+            .then((t) => t.wait())
+
+        // generate hashchain proof
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
+        const hashchain = await unirepContract.attesterHashchain(
+            attester.address,
+            epoch,
+            hashchainIndex
+        )
+
+        const circuitInputs = genCircuitInputs(
+            epoch,
+            attester,
+            hashchainIndex,
+            hashchain
+        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.aggregateEpochKeys,
             circuitInputs
@@ -580,15 +575,80 @@ describe('Attestations', function () {
         await unirepContract
             .processHashchain(publicSignals, proof)
             .then((t) => t.wait())
+        await ethers.provider.send('evm_revert', [snapshot])
+    })
+
+    it('should process hash chain with the same epoch key', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const attestationsCount = 5
+        const epochKey = BigInt(1234)
+
+        // submit attestations
+        for (let i = 0; i < attestationsCount; i++) {
+            const posRep = Math.floor(Math.random() * 10)
+            const negRep = Math.floor(Math.random() * 10)
+            const graffiti = genRandomSalt()
+
+            await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .then((t) => t.wait())
+        }
+
+        // build hash chain
+        await unirepContract
+            .buildHashchain(attester.address, epoch)
+            .then((t) => t.wait())
+
+        // generate hashchain proof
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
+        const hashchain = await unirepContract.attesterHashchain(
+            attester.address,
+            epoch,
+            hashchainIndex
+        )
+        const circuitInputs = genCircuitInputs(
+            epoch,
+            attester,
+            hashchainIndex,
+            hashchain
+        )
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.aggregateEpochKeys,
+            circuitInputs
+        )
+        const isValid = await defaultProver.verifyProof(
+            Circuit.aggregateEpochKeys,
+            r.publicSignals,
+            r.proof
+        )
+        expect(isValid).to.be.true
+
+        const { publicSignals, proof } = new AggregateEpochKeysProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await unirepContract
+            .processHashchain(publicSignals, proof)
+            .then((t) => t.wait())
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with invalid proof', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[6]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
@@ -616,11 +676,13 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with wrong hashchain', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[6]
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
@@ -636,11 +698,6 @@ describe('Attestations', function () {
             .connect(attester)
             .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
             .then((t) => t.wait())
-
-        const tree = new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
-        )
 
         // build hash chain
         await unirepContract
@@ -658,54 +715,13 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const dummyEpochKeys = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
-        )
-            .fill(null)
-            .map(() => '0x0000000')
-        const dummyBalances = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
-        )
-            .fill(null)
-            .map(() => [0, 0, 0, 0])
-        const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
-        const allBalances = [
-            hashchain.epochKeyBalances.map(
-                ({ posRep, negRep, graffiti, timestamp }) => {
-                    return [
-                        posRep.toString(),
-                        negRep.toString(),
-                        graffiti.toString(),
-                        timestamp.toString(),
-                    ]
-                }
-            ),
-            dummyBalances,
-        ].flat()
         const wrongHashIndex = 1
-        const circuitInputs = {
-            start_root: tree.root,
-            epoch_keys: allEpochKeys.map((k) => k.toString()),
-            epoch_key_balances: allBalances,
-            old_epoch_key_hashes:
-                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
-            path_elements: allEpochKeys.map((key, i) => {
-                const p = tree.createProof(BigInt(key))
-                if (i < hashchain.epochKeys.length) {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        hashchain.epochKeyBalances[i]
-                    tree.update(
-                        BigInt(key),
-                        hash4([posRep, negRep, graffiti, timestamp])
-                    )
-                }
-                return p
-            }),
-            epoch: epoch.toString(),
-            attester_id: attester.address,
-            hashchain_index: wrongHashIndex, // make the proof valid but the hashchain doesn't exist
-            epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
-        }
+        const circuitInputs = genCircuitInputs(
+            epoch,
+            attester,
+            wrongHashIndex,
+            hashchain
+        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.aggregateEpochKeys,
             circuitInputs
@@ -725,11 +741,13 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWith('value is 0')
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with processed hashchain', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[6]
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
@@ -745,11 +763,6 @@ describe('Attestations', function () {
             .connect(attester)
             .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
             .then((t) => t.wait())
-
-        const tree = new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
-        )
 
         // build hash chain
         await unirepContract
@@ -767,53 +780,12 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const dummyEpochKeys = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
+        const circuitInputs = genCircuitInputs(
+            epoch,
+            attester,
+            hashchainIndex,
+            hashchain
         )
-            .fill(null)
-            .map(() => '0x0000000')
-        const dummyBalances = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
-        )
-            .fill(null)
-            .map(() => [0, 0, 0, 0])
-        const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
-        const allBalances = [
-            hashchain.epochKeyBalances.map(
-                ({ posRep, negRep, graffiti, timestamp }) => {
-                    return [
-                        posRep.toString(),
-                        negRep.toString(),
-                        graffiti.toString(),
-                        timestamp.toString(),
-                    ]
-                }
-            ),
-            dummyBalances,
-        ].flat()
-        const circuitInputs = {
-            start_root: tree.root,
-            epoch_keys: allEpochKeys.map((k) => k.toString()),
-            epoch_key_balances: allBalances,
-            old_epoch_key_hashes:
-                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
-            path_elements: allEpochKeys.map((key, i) => {
-                const p = tree.createProof(BigInt(key))
-                if (i < hashchain.epochKeys.length) {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        hashchain.epochKeyBalances[i]
-                    tree.update(
-                        BigInt(key),
-                        hash4([posRep, negRep, graffiti, timestamp])
-                    )
-                }
-                return p
-            }),
-            epoch: epoch.toString(),
-            attester_id: attester.address,
-            hashchain_index: hashchainIndex.toString(),
-            epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
-        }
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.aggregateEpochKeys,
             circuitInputs
@@ -837,11 +809,13 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWith('value is 0')
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with invalid epoch tree', async () => {
+        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
-        const attester = accounts[6]
+        const attester = accounts[1]
 
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
@@ -858,10 +832,11 @@ describe('Attestations', function () {
             .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
             .then((t) => t.wait())
 
-        const tree = new SparseMerkleTree(
+        const invalidTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
             defaultEpochTreeLeaf
         )
+        invalidTree.update(BigInt(1234), genRandomSalt())
 
         // build hash chain
         await unirepContract
@@ -879,53 +854,13 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const dummyEpochKeys = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
+        const circuitInputs = genCircuitInputs(
+            epoch,
+            attester,
+            hashchainIndex,
+            hashchain,
+            invalidTree
         )
-            .fill(null)
-            .map(() => '0x0000000')
-        const dummyBalances = Array(
-            AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
-        )
-            .fill(null)
-            .map(() => [0, 0, 0, 0])
-        const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
-        const allBalances = [
-            hashchain.epochKeyBalances.map(
-                ({ posRep, negRep, graffiti, timestamp }) => {
-                    return [
-                        posRep.toString(),
-                        negRep.toString(),
-                        graffiti.toString(),
-                        timestamp.toString(),
-                    ]
-                }
-            ),
-            dummyBalances,
-        ].flat()
-        const circuitInputs = {
-            start_root: tree.root,
-            epoch_keys: allEpochKeys.map((k) => k.toString()),
-            epoch_key_balances: allBalances,
-            old_epoch_key_hashes:
-                Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
-            path_elements: allEpochKeys.map((key, i) => {
-                const p = tree.createProof(BigInt(key))
-                if (i < hashchain.epochKeys.length) {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        hashchain.epochKeyBalances[i]
-                    tree.update(
-                        BigInt(key),
-                        hash4([posRep, negRep, graffiti, timestamp])
-                    )
-                }
-                return p
-            }),
-            epoch: epoch.toString(),
-            attester_id: attester.address,
-            hashchain_index: hashchainIndex.toString(),
-            epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
-        }
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.aggregateEpochKeys,
             circuitInputs
@@ -945,5 +880,6 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochTreeRoot')
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 })
