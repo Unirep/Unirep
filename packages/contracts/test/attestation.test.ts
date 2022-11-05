@@ -174,9 +174,9 @@ describe('Attestations', function () {
         const tx = await unirepContract
             .connect(attester)
             .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-        await tx.wait()
-        const blockNumber = await ethers.provider.getBlockNumber()
-        const { timestamp } = await ethers.provider.getBlock(blockNumber)
+        const { timestamp } = await tx
+            .wait()
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         expect(tx)
             .to.emit(unirepContract, 'AttestationSubmitted')
@@ -254,13 +254,14 @@ describe('Attestations', function () {
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = genRandomSalt()
 
-            const receipt = await unirepContract
+            const { timestamp } = await unirepContract
                 .connect(attester)
                 .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
                 .then((t) => t.wait())
-            const { timestamp } = await ethers.provider.getBlock(
-                receipt.blockNumber
-            )
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
+
             attestations.push({
                 posRep,
                 negRep,
@@ -355,7 +356,7 @@ describe('Attestations', function () {
             const newNegRep = Math.floor(Math.random() * 10)
             const newGraffiti = genRandomSalt()
 
-            const tx = await unirepContract
+            timestamp = await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     epoch,
@@ -364,9 +365,13 @@ describe('Attestations', function () {
                     newNegRep,
                     newGraffiti
                 )
-            const receipt = await tx.wait()
-            timestamp = (await ethers.provider.getBlock(receipt.blockNumber))
-                .timestamp
+                .then((t) => t.wait())
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
+                .then(({ timestamp }) => {
+                    return timestamp
+                })
 
             posRep += newPosRep
             negRep += newNegRep
@@ -441,7 +446,7 @@ describe('Attestations', function () {
             const newNegRep = Math.floor(Math.random() * 10)
             const newGraffiti = genRandomSalt()
 
-            const tx = await unirepContract
+            timestamp = await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     epoch,
@@ -450,9 +455,13 @@ describe('Attestations', function () {
                     newNegRep,
                     newGraffiti
                 )
-            const receipt = await tx.wait()
-            timestamp = (await ethers.provider.getBlock(receipt.blockNumber))
-                .timestamp
+                .then((t) => t.wait())
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
+                .then(({ timestamp }) => {
+                    return timestamp
+                })
 
             posRep += newPosRep
             negRep += newNegRep
