@@ -17,7 +17,6 @@ describe('State tree', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-
     let stateTree
 
     before(async () => {
@@ -358,5 +357,79 @@ describe('State tree', function () {
 
             await userState.stop()
         }
+    })
+
+    it('should generate state tree after epoch transition', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const prevEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        for (let i = 0; i < 3; i++) {
+            const id = new ZkIdentity()
+            const userState = await genUserState(
+                ethers.provider,
+                unirepContract.address,
+                id,
+                BigInt(attester.address)
+            )
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch: prevEpoch.toNumber() }
+            )
+
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+
+            const leaf = genStateTreeLeaf(
+                id.identityNullifier,
+                attester.address,
+                prevEpoch,
+                0,
+                0,
+                0,
+                0
+            )
+            stateTree.insert(leaf)
+            await userState.stop()
+        }
+
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        const newEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
+
+        const unirepState = await genUnirepState(
+            ethers.provider,
+            unirepContract.address,
+            attester.address
+        )
+        const stateRootExists =
+            await unirepContract.attesterStateTreeRootExists(
+                attester.address,
+                prevEpoch,
+                stateTree.root
+            )
+        expect(stateRootExists).to.be.true
+
+        const unirepStateTree = await unirepState.genStateTree(
+            prevEpoch.toNumber()
+        )
+        expect(unirepStateTree.root.toString()).to.equal(
+            stateTree.root.toString()
+        )
+
+        const numLeaves = await unirepState.numStateTreeLeaves(
+            prevEpoch.toNumber()
+        )
+        const contractLeaves = await unirepContract.attesterStateTreeLeafCount(
+            attester.address,
+            prevEpoch
+        )
+        expect(numLeaves).to.equal(contractLeaves.toNumber())
     })
 })
