@@ -4,7 +4,7 @@ import {
     formatProofForSnarkjsVerification,
     Prover,
 } from '@unirep/circuits'
-import { SnarkProof } from '@unirep/crypto'
+import { SnarkProof } from '@unirep/utils'
 import { ethers, BigNumberish } from 'ethers'
 
 /**

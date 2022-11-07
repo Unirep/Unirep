@@ -13,7 +13,7 @@ workflows:
             - contracts-test:
                   requires:
                       - build
-            - crypto-test:
+            - utils-test:
                   requires:
                       - build
             - docs-publish:
@@ -75,7 +75,7 @@ jobs:
                       - packages/contracts/contracts/verifiers
                       - packages/core/build
                       - packages/core/cache
-                      - packages/crypto/build
+                      - packages/utils/build
     lint:
         machine:
             image: ubuntu-2204:2022.04.1
@@ -136,7 +136,7 @@ jobs:
             - run:
                   name: Test
                   command: yarn contracts coverage
-    crypto-test:
+    utils-test:
         resource_class: medium
         machine:
             image: ubuntu-2204:2022.04.1
@@ -148,7 +148,7 @@ jobs:
             - run: *check_version
             - run:
                   name: Test
-                  command: yarn crypto test
+                  command: yarn utils test
     docs-publish:
         resource_class: medium
         machine:

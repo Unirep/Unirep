@@ -28,7 +28,7 @@
     },
     "dependencies": {
         "@unirep/circuits": "1.0.1",
-        "@unirep/crypto": "1.0.1",
+        "@unirep/utils": "1.0.0",
         "@zk-kit/incremental-merkle-tree.sol": "^1.2.0",
         "ethers": "^5.6.8",
         "solc": "^0.8.16"

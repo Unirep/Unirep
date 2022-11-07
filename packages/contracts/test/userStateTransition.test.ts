@@ -9,7 +9,7 @@ import {
     stringifyBigInts,
     genEpochKey,
     genStateTreeLeaf,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,

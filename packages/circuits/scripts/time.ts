@@ -2,7 +2,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as circom from 'circom'
 import * as snarkjs from 'snarkjs'
-import * as crypto from '@unirep/crypto'
+import * as utils from '@unirep/utils'
 import * as fastFile from 'fastfile'
 import { performance } from 'perf_hooks'
 import {
@@ -53,7 +53,7 @@ const dirpath = fs.mkdtempSync('/tmp/unirep')
                 BigInt(1)
             )
             const inputs = await genReputationCircuitInput(
-                new crypto.ZkIdentity(),
+                new utils.ZkIdentity(),
                 1,
                 0,
                 {
@@ -91,7 +91,7 @@ const dirpath = fs.mkdtempSync('/tmp/unirep')
 })()
 
 function genReputationCircuitInput(
-    id: crypto.ZkIdentity,
+    id: utils.ZkIdentity,
     epoch: number,
     nonce: number,
     reputationRecords,
@@ -121,9 +121,9 @@ function genReputationCircuitInput(
     const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const stateTree = new crypto.IncrementalMerkleTree(gstDepth)
+    const stateTree = new utils.IncrementalMerkleTree(gstDepth)
     const commitment = id.genIdentityCommitment()
-    const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
+    const hashedLeaf = utils.hashLeftRight(commitment, userStateRoot)
     stateTree.insert(hashedLeaf)
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
     const stateTreeRoot = stateTree.root
@@ -163,7 +163,7 @@ function genReputationCircuitInput(
         prove_graffiti: proveGraffiti,
         graffiti_pre_image: graffitiPreImage,
     }
-    return crypto.stringifyBigInts(circuitInputs)
+    return utils.stringifyBigInts(circuitInputs)
 }
 
 class Reputation {
@@ -205,13 +205,13 @@ class Reputation {
     }
 
     public addGraffitiPreImage = (_graffitiPreImage: bigint) => {
-        if (crypto.hashOne(_graffitiPreImage) !== this.graffiti)
+        if (utils.hashOne(_graffitiPreImage) !== this.graffiti)
             throw new Error('Graffiti pre-image does not match')
         this.graffitiPreImage = _graffitiPreImage
     }
 
     public hash = (): bigint => {
-        return crypto.hash5([
+        return utils.hash5([
             this.posRep,
             this.negRep,
             this.graffiti,
@@ -241,13 +241,13 @@ const genEpochKey = (
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): bigint => {
-    const epochKey = crypto.hash2([identityNullifier + BigInt(nonce), epoch])
+    const epochKey = utils.hash2([identityNullifier + BigInt(nonce), epoch])
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed
 }
 
-const defaultUserStateLeaf = crypto.hash5([
+const defaultUserStateLeaf = utils.hash5([
     BigInt(0),
     BigInt(0),
     BigInt(0),
@@ -258,8 +258,5 @@ const defaultUserStateLeaf = crypto.hash5([
 const genNewUserStateTree = (
     _userStateTreeDepth: number = USER_STATE_TREE_DEPTH
 ) => {
-    return new crypto.SparseMerkleTree(
-        _userStateTreeDepth,
-        defaultUserStateLeaf
-    )
+    return new utils.SparseMerkleTree(_userStateTreeDepth, defaultUserStateLeaf)
 }

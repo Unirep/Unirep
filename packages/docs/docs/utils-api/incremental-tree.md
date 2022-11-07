@@ -5,7 +5,7 @@ title: "Incremental Merkle Tree"
 Import this class like so:
 
 ```js
-import { IncrementalMerkleTree } from '@unirep/crypto'
+import { IncrementalMerkleTree } from '@unirep/utils'
 
 const tree = new IncrementalMerkleTree(32)
 ```

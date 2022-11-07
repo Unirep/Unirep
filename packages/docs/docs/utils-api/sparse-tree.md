@@ -5,7 +5,7 @@ title: "Sparse Merkle Tree"
 Import this class like so:
 
 ```js
-import { SparseMerkleTree } from '@unirep/crypto'
+import { SparseMerkleTree } from '@unirep/utils'
 
 const tree = new SparseMerkleTree(32)
 ```

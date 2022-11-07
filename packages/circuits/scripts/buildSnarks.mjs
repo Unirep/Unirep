@@ -1,4 +1,4 @@
-import { stringifyBigInts } from '@unirep/crypto'
+import { stringifyBigInts } from '@unirep/utils'
 import fs from 'fs'
 import path from 'path'
 import * as snarkjs from 'snarkjs'

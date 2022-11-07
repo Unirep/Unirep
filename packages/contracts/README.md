@@ -118,7 +118,7 @@ const unirepContract: Unirep = getUnirepContract(address, provider)
 
 ```typescript
 import { ethers } from 'ethers'
-import { ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/utils'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 const address = '0x....'

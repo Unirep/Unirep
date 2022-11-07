@@ -1,6 +1,6 @@
 {
-    "name": "@unirep/crypto",
-    "version": "1.0.1",
+    "name": "@unirep/utils",
+    "version": "1.0.0",
     "main": "build/index.js",
     "types": "build/index.d.ts",
     "repository": "https://github.com/unirep/unirep.git",

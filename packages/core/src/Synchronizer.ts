@@ -7,7 +7,7 @@ import {
     SparseMerkleTree,
     hash2,
     hash4,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 
 /**

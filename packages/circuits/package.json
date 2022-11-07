@@ -33,7 +33,7 @@
         "test": "mocha -r ts-node/register test/*.test.ts --exit"
     },
     "dependencies": {
-        "@unirep/crypto": "1.0.1",
+        "@unirep/utils": "1.0.0",
         "snarkjs": "^0.5.0"
     },
     "devDependencies": {

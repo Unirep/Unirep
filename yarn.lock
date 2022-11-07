@@ -4496,7 +4496,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
-    "@unirep/crypto": 1.0.1
+    "@unirep/utils": 1.0.0
     circomlib: 2.0.5
     mocha: ^10.0.0
     snarkjs: ^0.5.0
@@ -4517,7 +4517,7 @@ __metadata:
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
     "@unirep/circuits": 1.0.1
-    "@unirep/crypto": 1.0.1
+    "@unirep/utils": 1.0.0
     "@zk-kit/incremental-merkle-tree.sol": ^1.2.0
     ethers: ^5.6.8
     hardhat: ^2.9.9
@@ -4538,23 +4538,11 @@ __metadata:
     "@nomiclabs/hardhat-waffle": ^2.0.3
     "@unirep/circuits": 1.0.1
     "@unirep/contracts": 1.0.1
-    "@unirep/crypto": 1.0.1
+    "@unirep/utils": 1.0.0
     anondb: ^0.0.10
     ethers: ^5.6.8
     hardhat: ^2.9.9
     nanoid: 3
-    typescript: ^4.7.3
-  languageName: unknown
-  linkType: soft
-
-"@unirep/crypto@1.0.1, @unirep/crypto@workspace:packages/crypto":
-  version: 0.0.0-use.local
-  resolution: "@unirep/crypto@workspace:packages/crypto"
-  dependencies:
-    "@zk-kit/incremental-merkle-tree": ^0.4.3
-    circomlibjs: 0.0.8
-    maci-crypto: ^0.9.1
-    mocha: ^10.0.0
     typescript: ^4.7.3
   languageName: unknown
   linkType: soft
@@ -4582,6 +4570,18 @@ __metadata:
     "@graphprotocol/graph-ts": 0.24.1
     "@types/node": ^18.0.1
     ts-node: ^10.8.2
+    typescript: ^4.7.3
+  languageName: unknown
+  linkType: soft
+
+"@unirep/utils@1.0.0, @unirep/utils@workspace:packages/utils":
+  version: 0.0.0-use.local
+  resolution: "@unirep/utils@workspace:packages/utils"
+  dependencies:
+    "@zk-kit/incremental-merkle-tree": ^0.4.3
+    circomlibjs: 0.0.8
+    maci-crypto: ^0.9.1
+    mocha: ^10.0.0
     typescript: ^4.7.3
   languageName: unknown
   linkType: soft

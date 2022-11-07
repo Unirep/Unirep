@@ -9,7 +9,7 @@ import {
     stringifyBigInts,
     ZkIdentity,
     genEpochKey,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { UserState } from '../src'

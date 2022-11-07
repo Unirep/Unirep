@@ -13,10 +13,10 @@ export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
     .map((_, i) => (inputs) => {
         if (!Array.isArray(inputs))
             throw new Error(
-                `@unirep/crypto invalid hash${i} input, expected array`
+                `@unirep/utils invalid hash${i} input, expected array`
             )
         if (inputs.length !== i)
-            throw new Error(`@unirep/crypto invalid hash${i} input length`)
+            throw new Error(`@unirep/utils invalid hash${i} input length`)
         return circom.poseidon(inputs)
     })
 

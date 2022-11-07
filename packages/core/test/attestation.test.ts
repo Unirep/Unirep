@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState } from './utils'

@@ -57,7 +57,7 @@ yarn add @unirep/circuits
 ```typescript
 import * as snarkjs from 'snarkjs'
 import { Circuit, Prover } from '@unirep/circuits'
-import { SnarkProof, SnarkPublicSignals } from '@unirep/crypto'
+import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
 
 const buildPath = 'PATH/TO/CIRCUIT/FOLDER/'
 

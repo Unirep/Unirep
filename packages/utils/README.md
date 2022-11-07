@@ -1,4 +1,4 @@
-# Unirep crypto package
+# Unirep utils package
 
 Client library for cryptography related functions which are used in unirep protocol.
 
@@ -9,11 +9,11 @@ Client library for cryptography related functions which are used in unirep proto
     <a href="https://github.com/unirep/unirep/blob/master/LICENSE">
         <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square">
     </a>
-    <a href="https://www.npmjs.com/package/@unirep/crypto">
-        <img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/crypto?style=flat-square" />
+    <a href="https://www.npmjs.com/package/@unirep/utils">
+        <img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/utils?style=flat-square" />
     </a>
-    <a href="https://npmjs.org/package/@unirep/crypto">
-        <img alt="Downloads" src="https://img.shields.io/npm/dm/@unirep/crypto.svg?style=flat-square" />
+    <a href="https://npmjs.org/package/@unirep/utils">
+        <img alt="Downloads" src="https://img.shields.io/npm/dm/@unirep/utils.svg?style=flat-square" />
     </a>
     <a href="https://eslint.org/">
         <img alt="Linter eslint" src="https://img.shields.io/badge/linter-eslint-8080f2?style=flat-square&logo=eslint" />
@@ -37,16 +37,16 @@ Client library for cryptography related functions which are used in unirep proto
 
 ### npm or yarn
 
-Install the `@unirep/crypto` package with npm:
+Install the `@unirep/utils` package with npm:
 
 ```bash
-npm i @unirep/crypto
+npm i @unirep/utils
 ```
 
 or yarn:
 
 ```bash
-yarn add @unirep/crypto
+yarn add @unirep/utils
 ```
 
 ## 📔 Usage
@@ -55,7 +55,7 @@ yarn add @unirep/crypto
 
 **Generate a random ZkIdentity**
 ```typescript
-import { ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/utils'
 const identity = new ZkIdentity()
 ```
 
@@ -76,7 +76,7 @@ const commitment = identity.trapdoor
 **Serialize/ unserialize identity**
 
 ```typescript
-import { Strategy } from '@unirep/crypto'
+import { Strategy } from '@unirep/utils'
 // serialize identity
 const serializedIdentity = identity.serializeIdentity()
 // unserialize identity
@@ -90,7 +90,7 @@ const unserializedIdentity = new ZkIdentity(
 
 **Create a IncrementalMerkleTree**
 ```typescript
-import { IncrementalMerkleTree } from '@unirep/crypto'
+import { IncrementalMerkleTree } from '@unirep/utils'
 
 const depth = 4
 // initialize incremental merkle tree with depth 4
@@ -123,7 +123,7 @@ const isValid = tree.verifyProof(proof)
 
 **Create a SparseMerkleTree**
 ```typescript
-import { SparseMerkleTree } from '@unirep/crypto'
+import { SparseMerkleTree } from '@unirep/utils'
 
 const depth = 4
 // initialize incremental merkle tree with depth 4
@@ -162,18 +162,18 @@ const isValid = tree.verifyProof(proof)
 
 **genRandomSalt**
 ```typescript
-import { genRandomSalt } from '@unirep/crypto'
+import { genRandomSalt } from '@unirep/utils'
 
-// generate random BigInt
+// generate random bigint
 const salt = genRandomSalt()
 ```
 
 **hash5**
 
 ```typescript
-import { hash5 } from '@unirep/crypto'
+import { hash5 } from '@unirep/utils'
 
-// poseidon hash 5 BigInt elements
+// poseidon hash 5 bigint elements
 const values = [
     genRandomSalt(),
     genRandomSalt(),
@@ -185,17 +185,17 @@ const hash5Value = hash5(values)
 ```
 **hashOne**
 ```typescript
-import { hashOne } from '@unirep/crypto'
+import { hashOne } from '@unirep/utils'
 
-// poseidon hash 1 BigInt elements
+// poseidon hash 1 bigint elements
 const value = genRandomSalt()
 const hashOneValue = hashOne(value)
 ```
 **hashLeftRight**
 ```typescript
-import { hashLeftRight } from '@unirep/crypto'
+import { hashLeftRight } from '@unirep/utils'
 
-// poseidon hash 2 BigInt elements
+// poseidon hash 2 bigint elements
 const leftValue = genRandomSalt()
 const rightValue = genRandomSalt()
 const hash = hashLeftRight(leftValue, rightValue)
@@ -207,7 +207,7 @@ const values = {
     input2: genRandomSalt(),
     input3: genRandomSalt(),
 }
-// stringify BigInt elements with stringifyBigInts function
+// stringify bigint elements with stringifyBigInts function
 const stringifiedValues = stringifyBigInts(values)
 // it can be recoverd by unstringifyBigInts function
 const unstringifiedValues = unstringifyBigInts(stringifiedValues)

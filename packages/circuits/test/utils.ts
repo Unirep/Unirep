@@ -1,4 +1,4 @@
-import * as crypto from '@unirep/crypto'
+import * as utils from '@unirep/utils'
 
 import {
     Circuit,
@@ -8,10 +8,10 @@ import {
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
-const defaultEpochTreeLeaf = crypto.hash4([0, 0, 0, 0])
+const defaultEpochTreeLeaf = utils.hash4([0, 0, 0, 0])
 
 const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
-    return new crypto.SparseMerkleTree(_epochTreeDepth, defaultEpochTreeLeaf)
+    return new utils.SparseMerkleTree(_epochTreeDepth, defaultEpochTreeLeaf)
 }
 
 // TODO: needs to be updated
@@ -22,7 +22,7 @@ const genEpochKey = (
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
 ): bigint => {
-    const epochKey = crypto.hash4([
+    const epochKey = utils.hash4([
         identityNullifier,
         BigInt(attesterId),
         epoch,
@@ -34,8 +34,8 @@ const genEpochKey = (
 }
 
 const genEpochKeyCircuitInput = (config: {
-    id: crypto.ZkIdentity
-    tree: crypto.IncrementalMerkleTree
+    id: utils.ZkIdentity
+    tree: utils.IncrementalMerkleTree
     leafIndex: number
     epoch: number
     nonce: number
@@ -73,14 +73,14 @@ const genEpochKeyCircuitInput = (config: {
         attester_id: attesterId,
         data: data ?? BigInt(0),
     }
-    return crypto.stringifyBigInts(circuitInputs)
+    return utils.stringifyBigInts(circuitInputs)
 }
 
 const genUserStateTransitionCircuitInput = (config: {
-    id: crypto.ZkIdentity
+    id: utils.ZkIdentity
     fromEpoch: number
     toEpoch: number
-    tree: crypto.IncrementalMerkleTree
+    tree: utils.IncrementalMerkleTree
     leafIndex: number
     attesterId: number
     startBalance: { posRep: any; negRep: any; graffiti: any; timestamp: any }
@@ -113,7 +113,7 @@ const genUserStateTransitionCircuitInput = (config: {
         const { posRep, negRep, graffiti, timestamp } = val
         epochTree.update(
             BigInt(key),
-            crypto.hash4([posRep, negRep, graffiti ?? 0, timestamp ?? 0])
+            utils.hash4([posRep, negRep, graffiti ?? 0, timestamp ?? 0])
         )
     }
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
@@ -155,11 +155,11 @@ const genUserStateTransitionCircuitInput = (config: {
         epoch_tree_elements: epochKeys.map((k) => epochTree.createProof(k)),
         epoch_tree_root: epochTree.root,
     }
-    return crypto.stringifyBigInts(circuitInputs)
+    return utils.stringifyBigInts(circuitInputs)
 }
 
 const genReputationCircuitInput = (config: {
-    id: crypto.ZkIdentity
+    id: utils.ZkIdentity
     epoch: number
     nonce: number
     attesterId: number
@@ -186,8 +186,8 @@ const genReputationCircuitInput = (config: {
     )
 
     // Global state tree
-    const stateTree = new crypto.IncrementalMerkleTree(STATE_TREE_DEPTH)
-    const hashedLeaf = crypto.hash7([
+    const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const hashedLeaf = utils.hash7([
         id.identityNullifier,
         attesterId,
         epoch,
@@ -214,7 +214,7 @@ const genReputationCircuitInput = (config: {
         prove_graffiti: proveGraffiti ? 1 : 0,
         graffiti_pre_image: graffitiPreImage,
     }
-    return crypto.stringifyBigInts(circuitInputs)
+    return utils.stringifyBigInts(circuitInputs)
 }
 
 const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
@@ -240,7 +240,7 @@ const genUserStateTransitionNullifier = (
     epoch: number,
     attesterId: number
 ): bigint => {
-    return crypto.hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
+    return utils.hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
 }
 
 export {
