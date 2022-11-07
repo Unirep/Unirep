@@ -23,7 +23,8 @@
         "compile": "hardhat compile",
         "test": "hardhat test ./test/*.test.ts",
         "lint": "prettier --write .",
-        "coverage": "hardhat coverage",
+        "coverage": "hardhat coverage && yarn badge",
+        "badge": "lcov-badge-generator ./coverage/lcov.info -o coverage/badge.svg",
         "deploy": "hardhat run scripts/deploy.mjs"
     },
     "dependencies": {
@@ -44,6 +45,7 @@
         "@typechain/hardhat": "^6.1.0",
         "hardhat": "^2.9.9",
         "hardhat-gas-reporter": "^1.0.8",
+        "lcov-badge-generator": "^1.0.5",
         "solidity-coverage": "^0.7.21",
         "typechain": "^8.1.0",
         "typescript": "^4.7.3"
