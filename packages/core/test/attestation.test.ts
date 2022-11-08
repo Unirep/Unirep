@@ -51,10 +51,12 @@ describe('Attester signs up and gives attestation', function () {
         const newNegRep = 5
         const newGraffiti = 1294194
         // now submit the attestation from the attester
-        await unirepContract
+        const { timestamp: newTimestamp } = await unirepContract
             .connect(attester)
             .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
             .then((t) => t.wait())
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
+
         await userState.waitForSync()
         // now commit the attetstations
         await unirepContract
@@ -86,10 +88,12 @@ describe('Attester signs up and gives attestation', function () {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
                 expect(graffiti).to.equal(newGraffiti)
+                expect(timestamp).to.equal(newTimestamp)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
                 expect(graffiti).to.equal(0)
+                expect(timestamp).to.equal(0)
             }
         })
         await Promise.all(checkPromises)
@@ -109,9 +113,12 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.waitForSync()
         {
-            const { posRep, negRep } = await userState.getRepByAttester()
+            const { posRep, negRep, graffiti, timestamp } =
+                await userState.getRepByAttester()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
+            expect(graffiti).to.equal(newGraffiti)
+            expect(timestamp).to.equal(newTimestamp)
         }
         await userState.stop()
     })

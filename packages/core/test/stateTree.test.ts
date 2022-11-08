@@ -261,7 +261,7 @@ describe('State tree', function () {
             const epochKeys = await userState.getEpochKeys(epoch)
             const [epk] = epochKeys
             // now submit the attestation from the attester
-            const { blockNumber } = await unirepContract
+            const { timestamp } = await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     epoch,
@@ -271,7 +271,9 @@ describe('State tree', function () {
                     attestations[i].graffiti
                 )
                 .then((t) => t.wait())
-            const { timestamp } = await ethers.provider.getBlock(blockNumber)
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
             attestations[i].timestamp = timestamp
             // now commit the attetstations
             await unirepContract
