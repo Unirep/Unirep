@@ -519,7 +519,7 @@ describe('Attestations', function () {
         await ethers.provider.send('evm_revert', [snapshot])
     })
 
-    it('should process hash chain with different epoch keys', async () => {
+    it('should process hash chain', async () => {
         const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -527,19 +527,28 @@ describe('Attestations', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
+        const epkCounts = 8
         const attestationsCount = 5
 
         // submit attestations
-        for (let i = 0; i < attestationsCount; i++) {
+        for (let i = 0; i < epkCounts; i++) {
             const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
-            const posRep = Math.floor(Math.random() * 10)
-            const negRep = Math.floor(Math.random() * 10)
-            const graffiti = genRandomSalt()
+            for (let j = 0; j < attestationsCount; j++) {
+                const posRep = Math.floor(Math.random() * 10)
+                const negRep = Math.floor(Math.random() * 10)
+                const graffiti = genRandomSalt()
 
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
+                await unirepContract
+                    .connect(attester)
+                    .submitAttestation(
+                        epoch,
+                        epochKey,
+                        posRep,
+                        negRep,
+                        graffiti
+                    )
+                    .then((t) => t.wait())
+            }
         }
 
         // build hash chain
@@ -559,73 +568,6 @@ describe('Attestations', function () {
             hashchainIndex
         )
 
-        const circuitInputs = genAggregateEpochKeysCircuitInputs(
-            epoch,
-            attester,
-            hashchainIndex,
-            hashchain
-        )
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.aggregateEpochKeys,
-            circuitInputs
-        )
-        const isValid = await defaultProver.verifyProof(
-            Circuit.aggregateEpochKeys,
-            r.publicSignals,
-            r.proof
-        )
-        expect(isValid).to.be.true
-
-        const { publicSignals, proof } = new AggregateEpochKeysProof(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-        await unirepContract
-            .processHashchain(publicSignals, proof)
-            .then((t) => t.wait())
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
-
-    it('should process hash chain with the same epoch key', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        const attestationsCount = 5
-        const epochKey = BigInt(1234)
-
-        // submit attestations
-        for (let i = 0; i < attestationsCount; i++) {
-            const posRep = Math.floor(Math.random() * 10)
-            const negRep = Math.floor(Math.random() * 10)
-            const graffiti = genRandomSalt()
-
-            await unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-                .then((t) => t.wait())
-        }
-
-        // build hash chain
-        await unirepContract
-            .buildHashchain(attester.address, epoch)
-            .then((t) => t.wait())
-
-        // generate hashchain proof
-        const hashchainIndex =
-            await unirepContract.attesterHashchainProcessedCount(
-                attester.address,
-                epoch
-            )
-        const hashchain = await unirepContract.attesterHashchain(
-            attester.address,
-            epoch,
-            hashchainIndex
-        )
         const circuitInputs = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
