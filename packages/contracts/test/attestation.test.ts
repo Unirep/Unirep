@@ -20,7 +20,7 @@ import {
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-function genCircuitInputs(
+function genAggregateEpochKeysCircuitInputs(
     epoch,
     attester,
     hashchainIndex,
@@ -559,7 +559,7 @@ describe('Attestations', function () {
             hashchainIndex
         )
 
-        const circuitInputs = genCircuitInputs(
+        const circuitInputs = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
@@ -626,7 +626,7 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const circuitInputs = genCircuitInputs(
+        const circuitInputs = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
@@ -725,7 +725,7 @@ describe('Attestations', function () {
             hashchainIndex
         )
         const wrongHashIndex = 1
-        const circuitInputs = genCircuitInputs(
+        const circuitInputs = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             wrongHashIndex,
@@ -789,7 +789,7 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const circuitInputs = genCircuitInputs(
+        const circuitInputs = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
@@ -863,7 +863,7 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const circuitInputs = genCircuitInputs(
+        const circuitInputs = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
