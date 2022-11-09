@@ -7,12 +7,7 @@ import {
     ZkIdentity,
     stringifyBigInts,
 } from '@unirep/utils'
-import {
-    EPOCH_TREE_DEPTH,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    Circuit,
-} from '@unirep/circuits'
+import { STATE_TREE_DEPTH, Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH, SignupProof } from '../src'
@@ -26,19 +21,7 @@ describe('User Signup', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
 
-    it('should have the correct config value', async () => {
-        const config = await unirepContract.config()
-        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(
-            config.numEpochKeyNoncePerEpoch
-        )
-        expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
-    })
-
-    it('attester sign up', async () => {
-        const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
             .connect(attester)
@@ -76,84 +59,103 @@ describe('User Signup', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 
-    it('sign up should succeed', async () => {
-        const id = new ZkIdentity()
+    it('sign up many users should succeed', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.signup,
-            stringifyBigInts({
-                epoch: 0,
-                identity_nullifier: id.identityNullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
-            })
-        )
-        const { publicSignals, proof } = new SignupProof(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-        const tx = await unirepContract
-            .connect(attester)
-            .userSignUp(publicSignals, proof)
-        await tx.wait()
-
-        // check state tree
-        // check semaphoreGroup root
-        // check stateTreeRoots
-        // check event emission
-        const gstLeaf = hash7([
-            id.identityNullifier,
-            BigInt(attester.address),
-            0,
-            0,
-            0,
-            0,
-            0,
-        ])
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(gstLeaf)
-        const currentRoot = await unirepContract.attesterStateTreeRoot(
-            attester.address,
-            0
-        )
-        const rootExists = await unirepContract.attesterStateTreeRootExists(
-            attester.address,
-            0,
-            stateTree.root
-        )
-        expect(rootExists).to.be.true
-        expect(currentRoot.toString(), 'state tree root').to.equal(
-            stateTree.root.toString()
-        )
-        const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        semaphoreTree.insert(id.genIdentityCommitment())
-        const semaphoreRoot = await unirepContract.attesterSemaphoreGroupRoot(
+        const startEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        expect(semaphoreRoot.toString(), 'semaphore root').to.equal(
-            semaphoreTree.root.toString()
-        )
+        const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        const roots = {}
+        for (let epoch = startEpoch.toNumber(); epoch < 3; epoch++) {
+            const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            roots[epoch] = []
+            for (let i = 0; i < 3; i++) {
+                const id = new ZkIdentity()
+                const r = await defaultProver.genProofAndPublicSignals(
+                    Circuit.signup,
+                    stringifyBigInts({
+                        epoch,
+                        identity_nullifier: id.identityNullifier,
+                        identity_trapdoor: id.trapdoor,
+                        attester_id: attester.address,
+                    })
+                )
+                const { publicSignals, proof } = new SignupProof(
+                    r.publicSignals,
+                    r.proof,
+                    defaultProver
+                )
+                await unirepContract
+                    .connect(attester)
+                    .userSignUp(publicSignals, proof)
+                    .then((t) => t.wait())
 
-        expect(tx)
-            .to.emit(unirepContract, 'UserSignedUp')
-            .withArgs(0, id.genIdentityCommitment(), attester.address, 0)
-        expect(tx)
-            .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(BigInt(0), attester.address, BigInt(0), gstLeaf)
+                const gstLeaf = hash7([
+                    id.identityNullifier,
+                    BigInt(attester.address),
+                    epoch,
+                    0,
+                    0,
+                    0,
+                    0,
+                ])
+
+                stateTree.insert(gstLeaf)
+                const currentRoot = await unirepContract.attesterStateTreeRoot(
+                    attester.address,
+                    epoch
+                )
+                roots[epoch].push(currentRoot.toString())
+                const leafCount =
+                    await unirepContract.attesterStateTreeLeafCount(
+                        attester.address,
+                        epoch
+                    )
+                expect(leafCount).to.equal(i + 1)
+                expect(currentRoot.toString(), 'state tree root').to.equal(
+                    stateTree.root.toString()
+                )
+                semaphoreTree.insert(id.genIdentityCommitment())
+                const semaphoreRoot =
+                    await unirepContract.attesterSemaphoreGroupRoot(
+                        attester.address
+                    )
+                expect(semaphoreRoot.toString(), 'semaphore root').to.equal(
+                    semaphoreTree.root.toString()
+                )
+            }
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        }
+        for (const epoch in roots) {
+            for (const root of roots[epoch]) {
+                const rootExists =
+                    await unirepContract.attesterStateTreeRootExists(
+                        attester.address,
+                        epoch,
+                        root
+                    )
+                expect(rootExists).to.be.true
+            }
+        }
     })
 
     it('double sign up should fail', async () => {
         const id = new ZkIdentity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        await unirepContract
+            .updateEpochIfNeeded(attester.address)
+            .then((t) => t.wait())
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         {
             // first signup
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.signup,
                 stringifyBigInts({
-                    epoch: 0,
+                    epoch,
                     identity_nullifier: id.identityNullifier,
                     identity_trapdoor: id.trapdoor,
                     attester_id: attester.address,
@@ -173,7 +175,7 @@ describe('User Signup', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch: 0,
+                epoch,
                 identity_nullifier: id.identityNullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
@@ -192,11 +194,15 @@ describe('User Signup', function () {
     it('should fail to signup for unregistered attester', async () => {
         const id = new ZkIdentity()
         const accounts = await ethers.getSigners()
+        const attester = accounts[1]
         const unregisteredAttester = accounts[5]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch: 0,
+                epoch,
                 identity_nullifier: id.identityNullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: BigInt(unregisteredAttester.address),
@@ -218,10 +224,11 @@ describe('User Signup', function () {
         const id = new ZkIdentity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const wrongEpoch = 44444
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch: 44444,
+                epoch: wrongEpoch,
                 identity_nullifier: id.identityNullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
@@ -242,10 +249,13 @@ describe('User Signup', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const wrongAttester = accounts[2]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch: 0,
+                epoch,
                 identity_nullifier: id.identityNullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
@@ -267,10 +277,13 @@ describe('User Signup', function () {
         const id = new ZkIdentity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch: 0,
+                epoch,
                 identity_nullifier: id.identityNullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,

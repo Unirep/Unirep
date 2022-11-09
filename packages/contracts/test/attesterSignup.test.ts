@@ -2,11 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/utils'
-import {
-    EPOCH_TREE_DEPTH,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits'
+import { STATE_TREE_DEPTH } from '@unirep/circuits'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -21,15 +17,6 @@ describe('Attester Signup', function () {
         unirepContract = await deployUnirep(accounts[0])
     })
 
-    it('should have the correct config value', async () => {
-        const config = await unirepContract.config()
-        expect(NUM_EPOCH_KEY_NONCE_PER_EPOCH).equal(
-            config.numEpochKeyNoncePerEpoch
-        )
-        expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
-    })
-
     it('should fail to double signup', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -42,12 +29,85 @@ describe('Attester Signup', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterAlreadySignUp')
     })
 
-    it('should signup attester', async () => {
+    it('should signup many attesters', async () => {
         const accounts = await ethers.getSigners()
-        const attester = accounts[2]
+        for (let i = 2; i < 10; i++) {
+            const attester = accounts[i]
+            const attesterEpochLength = EPOCH_LENGTH * i
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(attesterEpochLength)
+                .then((t) => t.wait())
+
+            const currentEpoch = await unirepContract.attesterCurrentEpoch(
+                attester.address
+            )
+            expect(currentEpoch.toString()).to.equal('0')
+            const epochTimeRemaining =
+                await unirepContract.attesterEpochRemainingTime(
+                    attester.address
+                )
+            expect(epochTimeRemaining.toNumber()).to.be.lte(
+                +attesterEpochLength
+            )
+            const epochLength = await unirepContract.attesterEpochLength(
+                attester.address
+            )
+            expect(epochLength.toNumber()).to.equal(attesterEpochLength)
+
+            const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const exists = await unirepContract.attesterStateTreeRootExists(
+                attester.address,
+                currentEpoch,
+                stateTree.root
+            )
+            expect(exists).to.be.true
+            const stateRoot = await unirepContract.attesterStateTreeRoot(
+                attester.address,
+                currentEpoch
+            )
+            expect(stateRoot).to.equal(stateTree.root)
+            const semaphoreRoot =
+                await unirepContract.attesterSemaphoreGroupRoot(
+                    attester.address
+                )
+            expect(semaphoreRoot).to.equal(stateTree.root)
+        }
+    })
+
+    it('should fail to signup attester via relayer if signature is not valid', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[10]
+        const relayer = accounts[0]
+
+        const wrongMessage = genRandomSalt()
+        const signature = await attester.signMessage(wrongMessage)
+        await expect(
+            unirepContract
+                .connect(relayer)
+                .attesterSignUpViaRelayer(
+                    attester.address,
+                    EPOCH_LENGTH,
+                    signature
+                )
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignature')
+    })
+
+    it('should signup attester via relayer', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[10]
+        const relayer = accounts[0]
+
+        const message = ethers.utils.solidityKeccak256(
+            ['address', 'address'],
+            [attester.address, unirepContract.address]
+        )
+        const signature = await attester.signMessage(
+            ethers.utils.arrayify(message)
+        )
         await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
+            .connect(relayer)
+            .attesterSignUpViaRelayer(attester.address, EPOCH_LENGTH, signature)
             .then((t) => t.wait())
 
         const currentEpoch = await unirepContract.attesterCurrentEpoch(
@@ -78,13 +138,38 @@ describe('Attester Signup', function () {
             attester.address
         )
         expect(semaphoreRoot).to.equal(stateTree.root)
-        for (let x = 1; x < 10; x++) {
-            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-            await ethers.provider.send('evm_mine', [])
-            const _currentEpoch = await unirepContract.attesterCurrentEpoch(
-                attester.address
-            )
-            expect(_currentEpoch.toString()).to.equal(x.toString())
-        }
+    })
+
+    it('should fail to double signup via relayer', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[10]
+        const relayer = accounts[0]
+
+        const message = ethers.utils.solidityKeccak256(
+            ['address', 'address'],
+            [attester.address, unirepContract.address]
+        )
+        const signature = await attester.signMessage(
+            ethers.utils.arrayify(message)
+        )
+        await expect(
+            unirepContract
+                .connect(relayer)
+                .attesterSignUpViaRelayer(
+                    attester.address,
+                    EPOCH_LENGTH,
+                    signature
+                )
+        ).to.be.revertedWithCustomError(unirepContract, 'AttesterAlreadySignUp')
+    })
+
+    it("should fail to query attester's data if attester doesn't sign up", async () => {
+        const address = 12345
+
+        await expect(unirepContract.attesterCurrentEpoch(address)).to.be
+            .reverted
+
+        await expect(unirepContract.attesterEpochRemainingTime(address)).to.be
+            .reverted
     })
 })
