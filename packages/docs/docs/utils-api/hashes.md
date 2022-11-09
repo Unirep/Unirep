@@ -6,7 +6,7 @@ title: "Hash functions"
 
 Poseidon hash of variable number of items.
 ```ts
-import { hash1, hash2, hash3, /* etc */ } from '@unirep/crypto'
+import { hash1, hash2, hash3, /* etc */ } from '@unirep/utils'
 
 hash1(items: any[]): bigint
 hash2(items: any[]): bigint
@@ -19,7 +19,7 @@ hash8(items: any[]): bigint
 
 Calculate an epoch key. `maxEpochKey` is the maximum value for a key. The hash will be modded by this value, e.g. `H(...) % maxEpochKey`. For a binary tree this should be `2**depth`.
 ```ts
-import { genEpochKey } from '@unirep/crypto'
+import { genEpochKey } from '@unirep/utils'
 
 genEpochKey(
     identityNullifier: bigint,
@@ -34,7 +34,7 @@ genEpochKey(
 
 Calculate a user state transition nullifier. TODO: update name
 ```ts
-import { genEpochNullifier } from '@unirep/crypto'
+import { genEpochNullifier } from '@unirep/utils'
 
 genEpochNullifier(
     identityNullifier: bigint,
@@ -47,7 +47,7 @@ genEpochNullifier(
 
 Calculate a state tree leaf for a user.
 ```ts
-import { genStateTreeLeaf } from '@unirep/crypto'
+import { genStateTreeLeaf } from '@unirep/utils'
 
 genStateTreeLeaf(
     idNullifier: bigint,

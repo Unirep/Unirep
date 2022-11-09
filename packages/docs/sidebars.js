@@ -112,37 +112,37 @@ const sidebars = {
         },
         {
             type: 'category',
-            label: '@unirep/crypto',
+            label: '@unirep/utils',
             items: [
                 {
                     type: 'doc',
                     label: 'hash()',
-                    id: 'crypto-api/hashes',
+                    id: 'utils-api/hashes',
                 },
                 {
                     type: 'link',
                     label: 'genEpochKey()',
-                    href: '/docs/crypto-api/hashes#genepochkey',
+                    href: '/docs/utils-api/hashes#genepochkey',
                 },
                 {
                     type: 'link',
                     label: 'genEpochNullifier()',
-                    href: '/docs/crypto-api/hashes#genepochnullifier',
+                    href: '/docs/utils-api/hashes#genepochnullifier',
                 },
                 {
                     type: 'link',
                     label: 'genStateTreeLeaf()',
-                    href: '/docs/crypto-api/hashes#genstatetreeleaf',
+                    href: '/docs/utils-api/hashes#genstatetreeleaf',
                 },
                 {
                     type: 'doc',
                     label: 'IncrementalMerkleTree',
-                    id: 'crypto-api/incremental-tree',
+                    id: 'utils-api/incremental-tree',
                 },
                 {
                     type: 'doc',
                     label: 'SparseMerkleTree',
-                    id: 'crypto-api/sparse-tree',
+                    id: 'utils-api/sparse-tree',
                 },
             ],
         },

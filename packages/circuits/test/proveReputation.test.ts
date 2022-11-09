@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ZkIdentity, hash1 } from '@unirep/crypto'
+import { ZkIdentity, hash1 } from '@unirep/utils'
 import { Circuit } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 

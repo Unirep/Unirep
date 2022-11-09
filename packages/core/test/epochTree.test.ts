@@ -6,7 +6,7 @@ import {
     ZkIdentity,
     hash4,
     SparseMerkleTree,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUnirepState, genUserState } from './utils'

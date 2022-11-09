@@ -6,7 +6,7 @@ import {
     IncrementalMerkleTree,
     ZkIdentity,
     stringifyBigInts,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import { STATE_TREE_DEPTH, Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 

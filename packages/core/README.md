@@ -82,7 +82,7 @@ const stateTree = await synchronizer.genStateTree(epoch)
 
 **Construct a user state**
 ```typescript
-import { ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/utils'
 import { Synchronizer, schema } from '@unirep/core'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
@@ -129,7 +129,7 @@ const index = await unirepContract.getProofIndex(proofHash)
 ### Utils 🧳
 **Example: Compute an epoch key**
 ```typescript
-import { ZkIdentity, genEpochKey } from '@unirep/crypto'
+import { ZkIdentity, genEpochKey } from '@unirep/utils'
 import { genEpochKey } from '@unirep/core'
 
 const identity = new ZkIdentity()

@@ -1,5 +1,5 @@
 import { Circuit, Prover } from '@unirep/circuits'
-import { SnarkProof } from '@unirep/crypto'
+import { SnarkProof } from '@unirep/utils'
 import { BigNumberish } from 'ethers'
 import { BaseProof } from './BaseProof'
 

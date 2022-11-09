@@ -1,4 +1,4 @@
-import { SnarkProof } from '@unirep/crypto'
+import { SnarkProof } from '@unirep/utils'
 
 /**
  * Name of the circuits that are used in Unirep protocol

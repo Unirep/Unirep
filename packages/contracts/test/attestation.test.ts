@@ -1,23 +1,24 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-
-import { AggregateEpochKeysProof, EPOCH_LENGTH } from '../src'
-import { deployUnirep } from '../deploy'
 import {
+    hash4,
+    SparseMerkleTree,
     genRandomSalt,
     hash3,
-    hash4,
     hash6,
-    SparseMerkleTree,
     stringifyBigInts,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import {
     AGGREGATE_KEY_COUNT,
     Circuit,
     EPOCH_TREE_DEPTH,
     defaultEpochTreeLeaf,
 } from '@unirep/circuits'
+
+import { AggregateEpochKeysProof, EPOCH_LENGTH } from '../src'
+import { deployUnirep } from '../deploy'
+
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 function genAggregateEpochKeysCircuitInputs(

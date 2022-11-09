@@ -8,7 +8,7 @@ import {
     genEpochKey,
     genStateTreeLeaf,
     genEpochNullifier,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import {
     ReputationProof,
     EpochKeyProof,

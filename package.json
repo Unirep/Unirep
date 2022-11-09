@@ -14,7 +14,7 @@
         "contracts": "yarn workspace @unirep/contracts run",
         "core": "yarn workspace @unirep/core run",
         "circuits": "yarn workspace @unirep/circuits run",
-        "crypto": "yarn workspace @unirep/crypto run",
+        "utils": "yarn workspace @unirep/utils run",
         "subgraph": "yarn workspace @unirep/subgraph run",
         "docs": "yarn workspace @unirep/docs run",
         "build": "yarn workspaces foreach -t run build",

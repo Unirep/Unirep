@@ -39,7 +39,7 @@ For more information, refer to the [documentation](https://docs.unirep.io/)
     | [`core`](./packages/core/) | <a href="https://www.npmjs.com/package/@unirep/core"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/core?color=%230004&style=flat-square" /></a> | Unirep protocol related functions. |
     | [`contracts`](./packages/contracts/) | <a href="https://www.npmjs.com/package/@unirep/contracts"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/contracts?color=%230004&style=flat-square" /></a> | Unirep smart contracts, ZKP verifiers and contract related functions. |
     | [`circuits`](./packages/circuits/) | <a href="https://www.npmjs.com/package/@unirep/circuits"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/circuits?color=%230004&style=flat-square" /></a> | Unirep circom circuits and circuit related functions. |
-    | [`crypto`](./packages/crypto) | <a href="https://www.npmjs.com/package/@unirep/crypto"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/crypto?color=%230004&style=flat-square" /></a> | Crypto utils which are used in unirep protocol. |
+    | [`utils`](./packages/utils) | <a href="https://www.npmjs.com/package/@unirep/utils"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/utils?color=%230004&style=flat-square" /></a> | Utils which are used in unirep protocol. |
     | [`subgraph`](./packages/subgraph/) | - | Subgraph of unirep smart contract. |
 ​
 ## 🛠 Install and test

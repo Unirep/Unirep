@@ -6,7 +6,7 @@ import {
     IncrementalMerkleTree,
     stringifyBigInts,
     ZkIdentity,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import {
     Circuit,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,

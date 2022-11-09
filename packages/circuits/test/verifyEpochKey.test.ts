@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/crypto'
+import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/utils'
 import { Circuit } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 

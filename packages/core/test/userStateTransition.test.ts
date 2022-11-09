@@ -5,7 +5,7 @@ import {
     ZkIdentity,
     genStateTreeLeaf,
     IncrementalMerkleTree,
-} from '@unirep/crypto'
+} from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState } from './utils'

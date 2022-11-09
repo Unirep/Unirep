@@ -34,7 +34,7 @@
     "dependencies": {
         "@unirep/circuits": "1.0.1",
         "@unirep/contracts": "1.0.1",
-        "@unirep/crypto": "1.0.1",
+        "@unirep/utils": "1.0.0",
         "anondb": "^0.0.16",
         "ethers": "^5.6.8",
         "nanoid": "3"
