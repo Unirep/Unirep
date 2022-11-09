@@ -42,39 +42,33 @@ describe('User state', function () {
         await userState.stop()
     })
 
-    // TODO: should include genEpochKeyProof first
-    // it('epoch key proof', async () => {
-    //     const accounts = await ethers.getSigners()
-    //     const attester = accounts[1]
-    //     const attesterId = BigInt(attester.address)
-    //     const id = new ZkIdentity()
-    //     const userState = await genUserState(
-    //         ethers.provider,
-    //         unirepContract.address,
-    //         id,
-    //         attesterId
-    //     )
+    it('epoch key proof', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new ZkIdentity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
 
-    //     {
-    //         const { publicSignals, proof } =
-    //             await userState.genUserSignUpProof()
-    //         await unirepContract
-    //             .connect(attester)
-    //             .userSignUp(publicSignals, proof)
-    //             .then((t) => t.wait())
-    //     }
+        {
+            const { publicSignals, proof } =
+                await userState.genUserSignUpProof()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+        }
 
-    //     await userState.waitForSync()
-    //     const { publicSignals, proof } = await userState.genVerifyEpochKeyProof(
-    //         0
-    //     )
-    //     const valid = await unirepContract.verifyEpochKeyProof(
-    //         publicSignals,
-    //         proof
-    //     )
-    //     expect(valid).to.be.true
-    //     await userState.stop()
-    // })
+        await userState.waitForSync()
+        const proof = await userState.genEpochKeyProof()
+        const valid = await proof.verify()
+        expect(valid).to.be.true
+        await userState.stop()
+    })
 
     it('aggregate epoch key proof', async () => {
         const accounts = await ethers.getSigners()
@@ -98,8 +92,7 @@ describe('User state', function () {
         }
 
         await userState.waitForSync()
-        // const { epochKey } = await userState.genVerifyEpochKeyProof(0)
-        const epochKey = 123444
+        const { epochKey } = await userState.genEpochKeyProof()
 
         const epoch = await userState.loadCurrentEpoch()
         const newPosRep = 10
