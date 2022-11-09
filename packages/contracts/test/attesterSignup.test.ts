@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { IncrementalMerkleTree } from '@unirep/utils'
+import { IncrementalMerkleTree, genRandomSalt } from '@unirep/utils'
 import { STATE_TREE_DEPTH } from '@unirep/circuits'
 
 import { EPOCH_LENGTH } from '../src'

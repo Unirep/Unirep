@@ -1,7 +1,14 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { hash4, SparseMerkleTree } from '@unirep/utils'
+import {
+    hash4,
+    SparseMerkleTree,
+    genRandomSalt,
+    hash3,
+    hash6,
+    stringifyBigInts,
+} from '@unirep/utils'
 import {
     AGGREGATE_KEY_COUNT,
     Circuit,
