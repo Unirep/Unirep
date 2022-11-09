@@ -5,18 +5,18 @@ import { hashLeftRight } from './crypto'
  * The SparseMerkleTree class is a TypeScript implementation of sparse merkle tree with specified tree depth and it provides all the functions to create efficient trees and to generate and verify proofs of membership.
  */
 export class SparseMerkleTree {
-    protected _root: BigInt
-    private zeroHashes!: BigInt[]
-    private node: { [key: string]: BigInt }[]
+    protected _root: bigint
+    private zeroHashes!: bigint[]
+    private node: { [key: string]: bigint }[]
 
-    public readonly numLeaves: BigInt
+    public readonly numLeaves: bigint
 
     /**
      * Initialize the sparse merkle tree with customized depth and default value of leaves
      * @param _height The fixed depth of the sparse merkle tree
      * @param zeroHash The default value of empty leaves
      */
-    constructor(private _height: number, zeroHash: BigInt = BigInt(0)) {
+    constructor(private _height: number, zeroHash: bigint = BigInt(0)) {
         assert(_height > 0, 'SMT height needs to be > 0')
         // prevent get method returns undefined
         this._root = BigInt(0)
@@ -33,8 +33,8 @@ export class SparseMerkleTree {
      * Compute the sparse merkle tree root of given `zeroHash`
      * @param zeroHash The default value of empty leaves
      */
-    private init(zeroHash: BigInt): void {
-        const hashes = Array(this.height).fill(null) as BigInt[]
+    private init(zeroHash: bigint): void {
+        const hashes = Array(this.height).fill(null)
         hashes[0] = zeroHash
         for (let i = 1; i < this.height; i++) {
             hashes[i] = hashLeftRight(hashes[i - 1], hashes[i - 1])
@@ -68,7 +68,7 @@ export class SparseMerkleTree {
      * @param index The index of the `zeroHashes` array, which indicates the `zeroHash` has been hased for `index` times
      * @returns return the hash value of `zeroHashes` array
      */
-    public getZeroHash(index: number): BigInt {
+    public getZeroHash(index: number): bigint {
         return this.zeroHashes[index]
     }
 
@@ -77,7 +77,7 @@ export class SparseMerkleTree {
      * @param leafKey The index of the tree leaves that user wants to insert the leaf
      * @param leafValue The value of the leaf that the user wants to insert
      */
-    public update(leafKey: BigInt, leafValue: BigInt): void {
+    public update(leafKey: bigint, leafValue: bigint): void {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -109,13 +109,13 @@ export class SparseMerkleTree {
      * @param leafKey A key of an existing or a non-existing entry.
      * @returns A merkle proof of a given `leafKey`
      */
-    public createProof(leafKey: BigInt): BigInt[] {
+    public createProof(leafKey: bigint): bigint[] {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
         )
 
-        const siblingNodeHashes: BigInt[] = []
+        const siblingNodeHashes: bigint[] = []
         let nodeIndex = leafKey.valueOf()
         for (let i = 0; i < this.height; i++) {
             if (nodeIndex % BigInt(2) === BigInt(0)) {
@@ -144,7 +144,7 @@ export class SparseMerkleTree {
      * @param proof The merkle proof of given `leafkey`
      * @returns True if the proof is valid, false otherwise
      */
-    public verifyProof(leafKey: BigInt, proof: BigInt[]): boolean {
+    public verifyProof(leafKey: bigint, proof: bigint[]): boolean {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`

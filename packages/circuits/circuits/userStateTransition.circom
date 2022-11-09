@@ -1,172 +1,154 @@
+pragma circom 2.0.0;
+
+include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
-include "../../../node_modules/circomlib/circuits/poseidon.circom";
-include "./modulo.circom";
 include "./sparseMerkleTree.circom";
-include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
+include "./modulo.circom";
 
-/*
-    Prove: if epoch key and sealed_hash_chain matches the epoch tree root
-    epoch tree:
-        leaf index: epoch key
-        leaf value: sealed hash chain
-*/
-
-template EpochKeyExist(epoch_tree_depth) {
-    signal input identity_nullifier;
-    signal input epoch;
-    signal input nonce;
-    signal input hash_chain_result;
-    signal input epoch_tree_root;
-    signal input path_elements[epoch_tree_depth];
-    signal output epoch_key;
-
-    component epochKeyHasher = Poseidon(2);
-    epochKeyHasher.inputs[0] <== identity_nullifier + nonce;
-    epochKeyHasher.inputs[1] <== epoch;
-
-    signal epkModed;
-    // 2.1.2 Mod epoch key
-    component modEPK = ModuloTreeDepth(epoch_tree_depth);
-    modEPK.dividend <== epochKeyHasher.out;
-    epkModed <== modEPK.remainder;
-
-    // 2.1.6 Check if hash chain of the epoch key exists in epoch tree
-    component epk_exists = SMTLeafExists(epoch_tree_depth);
-    epk_exists.leaf_index <== epkModed;
-    epk_exists.leaf <== hash_chain_result;
-    epk_exists.root <== epoch_tree_root;
-    for (var i = 0; i < epoch_tree_depth; i++) {
-        epk_exists.path_elements[i][0] <== path_elements[i];
-    }
-    epoch_key <== epkModed;
-}
-
-/*
-    Prove:
-        1. if user transitioned from an existed global state tree
-        2. all hash chain results and epoch keys match the same epoch tree root
-        3. computes a new global state tree leaf by hashLeftRight(id_commitment, UST_root)
-*/
-
-template UserStateTransition( GST_tree_depth,  epoch_tree_depth,  user_state_tree_depth,  EPOCH_KEY_NONCE_PER_EPOCH) {
-    signal input epoch;
-
-    // User state tree
-    // First intermediate root is the user state tree root before processing
-    // Second intermediate root is the new user state tree root after processing
-    signal input blinded_user_state[2];
-    signal private input intermediate_user_state_tree_roots[2];
-    signal private input start_epoch_key_nonce;
-    signal private input end_epoch_key_nonce;
+template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+    signal input from_epoch;
+    signal input to_epoch;
 
     // Global state tree leaf: Identity & user state root
-    signal private input identity_nullifier;
-    signal private input identity_trapdoor;
-
+    signal input identity_nullifier;
     // Global state tree
-    signal private input GST_path_elements[GST_tree_depth][1];
-    signal private input GST_path_index[GST_tree_depth];
-    signal output GST_root;
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH][1];
+    signal output state_tree_root;
+    signal output state_tree_leaf;
+    // Attester to prove reputation from
+    signal input attester_id;
+    // Attestation by the attester
+    signal input pos_rep;
+    signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
+    // signal input graffiti;
+    // Graffiti - todo?
+    // signal input prove_graffiti;
+    // signal input graffiti_pre_image;
 
-    // Epoch key & epoch tree
-    signal private input epk_path_elements[EPOCH_KEY_NONCE_PER_EPOCH][epoch_tree_depth];
-    signal private input hash_chain_results[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input blinded_hash_chain_results[EPOCH_KEY_NONCE_PER_EPOCH];
+    // prove what we've received in from epoch
     signal input epoch_tree_root;
+    signal input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal output transition_nullifier;
 
-    signal output new_GST_leaf;
-    signal output epoch_key_nullifier[EPOCH_KEY_NONCE_PER_EPOCH];
+    component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
+    epoch_check.in[0] <== to_epoch;
+    epoch_check.in[1] <== from_epoch;
+    epoch_check.out === 1;
 
     /* 1. Check if user exists in the Global State Tree */
-    component identity_commitment = IdentityCommitment();
-    identity_commitment.identity_nullifier <== identity_nullifier;
-    identity_commitment.identity_trapdoor <== identity_trapdoor;
 
-    // Compute user state tree root
-    component leaf_hasher = Poseidon(2);
-    leaf_hasher.inputs[0] <== identity_commitment.out;
-    leaf_hasher.inputs[1] <== intermediate_user_state_tree_roots[0];
+    component leaf_hasher = Poseidon(7);
+    leaf_hasher.inputs[0] <== identity_nullifier;
+    leaf_hasher.inputs[1] <== attester_id;
+    leaf_hasher.inputs[2] <== from_epoch;
+    leaf_hasher.inputs[3] <== pos_rep;
+    leaf_hasher.inputs[4] <== neg_rep;
+    leaf_hasher.inputs[5] <== graffiti;
+    leaf_hasher.inputs[6] <== timestamp;
 
-    component merkletree = MerkleTreeInclusionProof(GST_tree_depth);
-    merkletree.leaf <== leaf_hasher.out;
-    for (var i = 0; i < GST_tree_depth; i++) {
-        merkletree.path_index[i] <== GST_path_index[i];
-        merkletree.path_elements[i] <== GST_path_elements[i][0];
+    component state_merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
+    state_merkletree.leaf <== leaf_hasher.out;
+    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
+        state_merkletree.path_index[i] <== state_tree_indexes[i];
+        state_merkletree.path_elements[i] <== state_tree_elements[i][0];
     }
-    GST_root <== merkletree.root;
+    state_tree_root <== state_merkletree.root;
 
     /* End of check 1 */
 
-    /* 2. Process the hashchain of the epoch key specified by nonce `n` */
-    var start_index;
-    component blinded_hash_chain_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
-    component seal_hash_chain_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
-    component epkExist[EPOCH_KEY_NONCE_PER_EPOCH];
-    for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
-        // 2.1 Check if blinded hash chain matches hash chain
-        blinded_hash_chain_hasher[n] = Poseidon(5);
-        blinded_hash_chain_hasher[n].inputs[0] <== identity_nullifier;
-        blinded_hash_chain_hasher[n].inputs[1] <== hash_chain_results[n];
-        blinded_hash_chain_hasher[n].inputs[2] <== epoch;
-        blinded_hash_chain_hasher[n].inputs[3] <== n;
-        blinded_hash_chain_hasher[n].inputs[4] <== 0;
-        blinded_hash_chain_results[n] === blinded_hash_chain_hasher[n].out;
+    /* 2. Verify new reputation for the from epoch */
 
-        // 2.2 Sealed the hash chain result
-        seal_hash_chain_hasher[n] = Poseidon(2)
-        seal_hash_chain_hasher[n].inputs[0] <== 1;
-        seal_hash_chain_hasher[n].inputs[1] <== hash_chain_results[n];
+    component epoch_key_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
+    component epoch_key_mods[EPOCH_KEY_NONCE_PER_EPOCH];
+    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        epoch_key_hashers[i] = Poseidon(4);
+        epoch_key_hashers[i].inputs[0] <== identity_nullifier;
+        epoch_key_hashers[i].inputs[1] <== attester_id;
+        epoch_key_hashers[i].inputs[2] <== from_epoch;
+        epoch_key_hashers[i].inputs[3] <== i;
 
-        // 2.3 Check if epoch key exists in epoch tree
-        epkExist[n] = EpochKeyExist(epoch_tree_depth);
-        epkExist[n].identity_nullifier <== identity_nullifier;
-        epkExist[n].epoch <== epoch;
-        epkExist[n].nonce <== n;
-        epkExist[n].hash_chain_result <== seal_hash_chain_hasher[n].out;
-        epkExist[n].epoch_tree_root <== epoch_tree_root;
-        for (var i = 0; i < epoch_tree_depth; i++) {
-            epkExist[n].path_elements[i] <== epk_path_elements[n][i];
+        epoch_key_mods[i] = ModuloTreeDepth(EPOCH_TREE_DEPTH);
+        epoch_key_mods[i].dividend <== epoch_key_hashers[i].out;
+    }
+
+    component epoch_tree_membership[EPOCH_KEY_NONCE_PER_EPOCH];
+    component new_leaf_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
+
+    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        epoch_tree_membership[i] = SMTInclusionProof(EPOCH_TREE_DEPTH);
+        epoch_tree_membership[i].leaf_index <== epoch_key_mods[i].remainder;
+        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
+            epoch_tree_membership[i].path_elements[j][0] <== epoch_tree_elements[i][j];
         }
-    }
-    /* End of 2. process the hashchain of the epoch key specified by nonce `n` */
-
-    /* 3. Check if blinded user state matches */
-    component blinded_user_state_hasher[2];
-    // 3.1 Check blinded user state when nonce = start_epoch_key_nonce
-    blinded_user_state_hasher[0] = Poseidon(5);
-    blinded_user_state_hasher[0].inputs[0] <== identity_nullifier;
-    blinded_user_state_hasher[0].inputs[1] <== intermediate_user_state_tree_roots[0];
-    blinded_user_state_hasher[0].inputs[2] <== epoch;
-    blinded_user_state_hasher[0].inputs[3] <== start_epoch_key_nonce;
-    blinded_user_state_hasher[0].inputs[4] <== 0;
-    blinded_user_state[0] === blinded_user_state_hasher[0].out;
-    // 3.2 Check blinded user state when nonce = latest_epoch_key_nonce
-    blinded_user_state_hasher[1] = Poseidon(5);
-    blinded_user_state_hasher[1].inputs[0] <== identity_nullifier;
-    blinded_user_state_hasher[1].inputs[1] <== intermediate_user_state_tree_roots[1];
-    blinded_user_state_hasher[1].inputs[2] <== epoch;
-    blinded_user_state_hasher[1].inputs[3] <== end_epoch_key_nonce;
-    blinded_user_state_hasher[1].inputs[4] <== 0;
-    blinded_user_state[1] === blinded_user_state_hasher[1].out;
-    /* End of 3. Check if blinded user state matches*/
-
-    /* 4. Compute and output nullifiers and new GST leaf */
-    // 4.1 Compute nullifier
-    component epoch_key_nullifier_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
-    for (var n = 0; n < EPOCH_KEY_NONCE_PER_EPOCH; n++) {
-        epoch_key_nullifier_hasher[n] = Poseidon(2);
-        epoch_key_nullifier_hasher[n].inputs[0] <== epoch;
-        epoch_key_nullifier_hasher[n].inputs[1] <== identity_nullifier + n;
-        epoch_key_nullifier[n] <== epoch_key_nullifier_hasher[n].out;
+        // calculate leaf
+        new_leaf_hasher[i] = Poseidon(4);
+        new_leaf_hasher[i].inputs[0] <== new_pos_rep[i];
+        new_leaf_hasher[i].inputs[1] <== new_neg_rep[i];
+        new_leaf_hasher[i].inputs[2] <== new_graffiti[i];
+        new_leaf_hasher[i].inputs[3] <== new_timestamp[i];
+        epoch_tree_membership[i].leaf <== new_leaf_hasher[i].out;
+        // check root
+        epoch_tree_root === epoch_tree_membership[i].root;
     }
 
-    // 4.2 Compute new GST leaf
-    component new_leaf_hasher = Poseidon(2);
-    new_leaf_hasher.inputs[0] <== identity_commitment.out;
-    // Last intermediate root is the new user state tree root
-    new_leaf_hasher.inputs[1] <== intermediate_user_state_tree_roots[1];
-    new_GST_leaf <== new_leaf_hasher.out;
-    /* End of 4. compute and output nullifiers and new GST leaf */
+    /* End of check 2 */
+
+    /* 3. Calculate the new gst leaf */
+
+    var final_pos_rep = pos_rep;
+    var final_neg_rep = neg_rep;
+    var final_graffiti = graffiti;
+    var final_timestamp = timestamp;
+
+    component timestamp_check[EPOCH_KEY_NONCE_PER_EPOCH];
+    component graffiti_select[EPOCH_KEY_NONCE_PER_EPOCH];
+
+    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        final_pos_rep += new_pos_rep[i];
+        final_neg_rep += new_neg_rep[i];
+        // if timestamp is > final_timestamp we take the graffiti
+        // timestamp must be smaller than 2^64
+        timestamp_check[i] = GreaterThan(64);
+        timestamp_check[i].in[0] <== new_timestamp[i];
+        timestamp_check[i].in[1] <== final_timestamp;
+        graffiti_select[i] = MultiMux1(2);
+        graffiti_select[i].c[0][0] <== final_timestamp;
+        graffiti_select[i].c[0][1] <== new_timestamp[i];
+        graffiti_select[i].c[1][0] <== final_graffiti;
+        graffiti_select[i].c[1][1] <== new_graffiti[i];
+        graffiti_select[i].s <== timestamp_check[i].out;
+        final_timestamp = graffiti_select[i].out[0];
+        final_graffiti = graffiti_select[i].out[1];
+    }
+
+    component out_leaf_hasher = Poseidon(7);
+    out_leaf_hasher.inputs[0] <== identity_nullifier;
+    out_leaf_hasher.inputs[1] <== attester_id;
+    out_leaf_hasher.inputs[2] <== to_epoch;
+    out_leaf_hasher.inputs[3] <== final_pos_rep;
+    out_leaf_hasher.inputs[4] <== final_neg_rep;
+    out_leaf_hasher.inputs[5] <== final_graffiti;
+    out_leaf_hasher.inputs[6] <== final_timestamp;
+    state_tree_leaf <== out_leaf_hasher.out;
+
+    /* End of check 3 */
+
+    /* 4. Output epoch transition nullifier */
+
+    component nullifier_hasher = Poseidon(3);
+    nullifier_hasher.inputs[0] <== attester_id;
+    nullifier_hasher.inputs[1] <== from_epoch;
+    nullifier_hasher.inputs[2] <== identity_nullifier;
+    transition_nullifier <== nullifier_hasher.out;
+
+    /* End of check 4 */
 }

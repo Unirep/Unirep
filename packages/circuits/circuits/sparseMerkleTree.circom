@@ -49,8 +49,8 @@ template SMTLeafExists(levels){
     // levels is depth of tree
     signal input leaf;
 
-    signal private input path_elements[levels][1];
-    signal private input leaf_index;
+    signal input path_elements[levels][1];
+    signal input leaf_index;
 
     signal input root;
 

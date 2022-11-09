@@ -4,17 +4,12 @@ import * as circom from 'circom'
 import * as snarkjs from 'snarkjs'
 import * as crypto from '@unirep/crypto'
 import * as fastFile from 'fastfile'
-import { stringifyBigInts } from '@unirep/crypto'
 import { performance } from 'perf_hooks'
 import {
-    proveReputationCircuitPath,
-    MAX_REPUTATION_BUDGET,
-    USER_STATE_TREE_DEPTH,
     EPOCH_TREE_DEPTH,
-    GLOBAL_STATE_TREE_DEPTH,
+    STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../config'
-import { Circuit, executeCircuit } from '../src'
 
 const dirpath = fs.mkdtempSync('/tmp/unirep')
 
@@ -126,17 +121,17 @@ function genReputationCircuitInput(
     const USTPathElements = userStateTree.createProof(BigInt(attesterId))
 
     // Global state tree
-    const GSTree = new crypto.IncrementalMerkleTree(gstDepth)
+    const stateTree = new crypto.IncrementalMerkleTree(gstDepth)
     const commitment = id.genIdentityCommitment()
     const hashedLeaf = crypto.hashLeftRight(commitment, userStateRoot)
-    GSTree.insert(hashedLeaf)
-    const GSTreeProof = GSTree.createProof(0) // if there is only one GST leaf, the index is 0
-    const GSTreeRoot = GSTree.root
+    stateTree.insert(hashedLeaf)
+    const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
+    const stateTreeRoot = stateTree.root
 
     // selectors and karma nonce
     const nonceStarter = 0
-    const selectors: BigInt[] = []
-    const nonceList: BigInt[] = []
+    const selectors: bigint[] = []
+    const nonceList: bigint[] = []
     for (let i = 0; i < repNullifiersAmount; i++) {
         nonceList.push(BigInt(nonceStarter + i))
         selectors.push(BigInt(1))
@@ -153,9 +148,9 @@ function genReputationCircuitInput(
         identity_nullifier: id.identityNullifier,
         identity_trapdoor: id.trapdoor,
         user_tree_root: userStateRoot,
-        GST_path_index: GSTreeProof.pathIndices,
-        GST_path_elements: GSTreeProof.siblings,
-        GST_root: GSTreeRoot,
+        GST_path_index: stateTreeProof.pathIndices,
+        GST_path_elements: stateTreeProof.siblings,
+        GST_root: stateTreeRoot,
         attester_id: attesterId,
         pos_rep: reputationRecords[attesterId]['posRep'],
         neg_rep: reputationRecords[attesterId]['negRep'],
@@ -172,17 +167,17 @@ function genReputationCircuitInput(
 }
 
 class Reputation {
-    public posRep: BigInt
-    public negRep: BigInt
-    public graffiti: BigInt
-    public graffitiPreImage: BigInt = BigInt(0)
-    public signUp: BigInt
+    public posRep: bigint
+    public negRep: bigint
+    public graffiti: bigint
+    public graffitiPreImage: bigint = BigInt(0)
+    public signUp: bigint
 
     constructor(
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ) {
         this.posRep = _posRep
         this.negRep = _negRep
@@ -195,13 +190,13 @@ class Reputation {
     }
 
     public update = (
-        _posRep: BigInt,
-        _negRep: BigInt,
-        _graffiti: BigInt,
-        _signUp: BigInt
+        _posRep: bigint,
+        _negRep: bigint,
+        _graffiti: bigint,
+        _signUp: bigint
     ): Reputation => {
-        this.posRep = BigInt(Number(this.posRep) + Number(_posRep))
-        this.negRep = BigInt(Number(this.negRep) + Number(_negRep))
+        this.posRep = this.posRep + _posRep
+        this.negRep = this.negRep + _negRep
         if (_graffiti != BigInt(0)) {
             this.graffiti = _graffiti
         }
@@ -209,13 +204,13 @@ class Reputation {
         return this
     }
 
-    public addGraffitiPreImage = (_graffitiPreImage: BigInt) => {
+    public addGraffitiPreImage = (_graffitiPreImage: bigint) => {
         if (crypto.hashOne(_graffitiPreImage) !== this.graffiti)
             throw new Error('Graffiti pre-image does not match')
         this.graffitiPreImage = _graffitiPreImage
     }
 
-    public hash = (): BigInt => {
+    public hash = (): bigint => {
         return crypto.hash5([
             this.posRep,
             this.negRep,
@@ -241,14 +236,12 @@ class Reputation {
 }
 
 const genEpochKey = (
-    identityNullifier: BigInt,
+    identityNullifier: bigint,
     epoch: number,
     nonce: number,
     _epochTreeDepth: number = EPOCH_TREE_DEPTH
-): BigInt => {
-    const epochKey = crypto
-        .hash2([(identityNullifier as any) + BigInt(nonce), epoch])
-        .valueOf()
+): bigint => {
+    const epochKey = crypto.hash2([identityNullifier + BigInt(nonce), epoch])
     // Adjust epoch key size according to epoch tree depth
     const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
     return epochKeyModed

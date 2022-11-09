@@ -75,7 +75,7 @@ await synchronizer.waitForSync()
 **Example: use the synchronizer to generate unirep state**
 ```typescript
 const epoch = 1
-const globalStateTree = await synchronizer.genGSTree(epoch)
+const stateTree = await synchronizer.genStateTree(epoch)
 ```
 
 ### UserState 👤
@@ -129,7 +129,7 @@ const index = await unirepContract.getProofIndex(proofHash)
 ### Utils 🧳
 **Example: Compute an epoch key**
 ```typescript
-import { ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity, genEpochKey } from '@unirep/crypto'
 import { genEpochKey } from '@unirep/core'
 
 const identity = new ZkIdentity()
@@ -138,9 +138,9 @@ const nonce = 0
 const epochTreeDepth = 64
 
 const epk = genEpochKey(
-    identity.identityNullifier, 
-    epoch, 
-    nonce, 
+    identity.identityNullifier,
+    epoch,
+    nonce,
     epochTreeDepth
 )
 ```

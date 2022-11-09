@@ -1,11 +1,20 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Attestation, IAttestation } from '@unirep/contracts'
 import { Prover } from '@unirep/circuits'
-import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/crypto'
-import { ISettings } from './interfaces'
-import { SMT_ONE_LEAF } from './utils'
+import {
+    IncrementalMerkleTree,
+    SparseMerkleTree,
+    hash2,
+    hash4,
+} from '@unirep/crypto'
+import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
+
+type EventHandlerArgs = {
+    event: ethers.Event
+    decodedData: { [key: string]: any }
+    db: TransactionDB
+}
 
 /**
  * The synchronizer is used to construct the Unirep state. After events are emitted from the Unirep contract,
@@ -16,16 +25,21 @@ export class Synchronizer extends EventEmitter {
     prover: Prover
     provider: any
     unirepContract: ethers.Contract
-    public settings: ISettings
-    // GST for current epoch
-    private _globalStateTree?: IncrementalMerkleTree
-    protected defaultGSTLeaf?: BigInt
+    attesterId: bigint
+    public settings: any
+    // state tree for current epoch
+    private stateTree?: IncrementalMerkleTree
+    protected defaultStateTreeLeaf?: bigint
+    protected defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
-    private get globalStateTree() {
-        if (!this._globalStateTree) {
-            throw new Error('Synchronizer: in memory GST not initialized')
+    private _eventHandlers: any
+    private _eventFilters: any
+
+    private get _stateTree() {
+        if (!this.stateTree) {
+            throw new Error('Synchronizer: in memory tree not initialized')
         }
-        return this._globalStateTree
+        return this.stateTree
     }
 
     /**
@@ -33,67 +47,144 @@ export class Synchronizer extends EventEmitter {
      * that downstream packages don't have to worry about it unless they want
      * to persist things?
      **/
-    constructor(db: DB, prover: Prover, unirepContract: ethers.Contract) {
+    constructor(config: {
+        db: DB
+        prover: Prover
+        provider: ethers.providers.Provider
+        unirepAddress: string
+        attesterId: bigint
+    }) {
         super()
+        const { db, prover, unirepAddress, provider, attesterId } = config
+        this.attesterId = BigInt(attesterId)
         this._db = db
-        this.unirepContract = unirepContract
-        this.provider = this.unirepContract.provider
+        this.unirepContract = new ethers.Contract(
+            unirepAddress,
+            UNIREP_ABI,
+            provider
+        )
+        this.provider = provider
         this.prover = prover
         this.settings = {
-            globalStateTreeDepth: 0,
-            userStateTreeDepth: 0,
+            stateTreeDepth: 0,
             epochTreeDepth: 0,
             numEpochKeyNoncePerEpoch: 0,
-            attestingFee: ethers.utils.parseEther('0'),
             epochLength: 0,
-            maxReputationBudget: 0,
-            numAttestationsPerProof: 0,
+            emptyEpochTreeRoot: BigInt(0),
+            aggregateKeyCount: 0,
         }
+        const allEventNames = {} as any
+
+        this._eventHandlers = Object.keys(this.contracts).reduce(
+            (acc, address) => {
+                // build _eventHandlers and decodeData functions
+                const { contract, eventNames } = this.contracts[address]
+                const handlers = {}
+                for (const name of eventNames) {
+                    if (allEventNames[name]) {
+                        throw new Error(
+                            `duplicate event name registered "${name}"`
+                        )
+                    }
+                    allEventNames[name] = true
+                    const topic = (contract.filters[name] as any)().topics[0]
+                    const handlerName = `handle${name}`
+                    if (typeof this[handlerName] !== 'function') {
+                        throw new Error(
+                            `No handler for event ${name} expected property "${handlerName}" to exist and be a function`
+                        )
+                    }
+                    // set this up here to avoid re-binding on every call
+                    const handler = this[`handle${name}`].bind(this)
+                    handlers[topic] = ({ event, ...args }: any) => {
+                        const decodedData = contract.interface.decodeEventLog(
+                            name,
+                            event.data,
+                            event.topics
+                        )
+                        // call the handler with the event and decodedData
+                        return handler({ decodedData, event, ...args }).catch(
+                            (err) => {
+                                console.log(`${name} handler error`)
+                                throw err
+                            }
+                        )
+                        // uncomment this to debug
+                        // console.log(name, decodedData)
+                    }
+                }
+                return {
+                    ...acc,
+                    ...handlers,
+                }
+            },
+            {}
+        )
+        this._eventFilters = Object.keys(this.contracts).reduce(
+            (acc, address) => {
+                const { contract, eventNames } = this.contracts[address]
+                const filter = {
+                    address,
+                    topics: [
+                        // don't spread here, it should be a nested array
+                        eventNames.map(
+                            (name) =>
+                                (contract.filters[name] as any)().topics[0]
+                        ),
+                    ],
+                }
+                return {
+                    ...acc,
+                    [address]: filter,
+                }
+            },
+            {}
+        )
     }
 
     async setup() {
         const config = await this.unirepContract.config()
-        this.settings.globalStateTreeDepth = config.globalStateTreeDepth
-        this.settings.userStateTreeDepth = config.userStateTreeDepth
+        this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
         this.settings.numEpochKeyNoncePerEpoch =
             config.numEpochKeyNoncePerEpoch.toNumber()
-        this.settings.attestingFee = config.attestingFee
-        this.settings.epochLength = config.epochLength.toNumber()
-        this.settings.maxReputationBudget =
-            config.maxReputationBudget.toNumber()
-        this.settings.numAttestationsPerProof =
-            config.numAttestationsPerProof.toNumber()
+        this.settings.epochLength = (
+            await this.unirepContract.attesterEpochLength(this.attesterId)
+        ).toNumber()
+        this.settings.aggregateKeyCount = config.aggregateKeyCount.toNumber()
+        this.settings.emptyEpochTreeRoot = config.emptyEpochTreeRoot
+        this.settings.startTimestamp = (
+            await this.unirepContract.attesterStartTimestamp(this.attesterId)
+        ).toNumber()
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database
         const epochs = await this._db.findMany('Epoch', {
             where: {
+                attesterId: this.attesterId.toString(),
                 sealed: false,
             },
         })
-        if (epochs.length > 1) {
-            throw new Error('Multiple unsealed epochs')
-        }
-        this.defaultGSTLeaf = BigInt(0)
-        this._globalStateTree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf
+        this.defaultStateTreeLeaf = BigInt(0)
+        this.stateTree = new IncrementalMerkleTree(
+            this.settings.stateTreeDepth,
+            this.defaultStateTreeLeaf
         )
-        // if it's a new sync, start with epoch 1
-        const epoch = epochs[0]?.number ?? 1
+        // if it's a new sync, start with epoch 0
+        const epoch = epochs[epochs.length - 1]?.number ?? 0
         // otherwise load the leaves and insert them
         // TODO: index consistency verification, ensure that indexes are
         // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
-        const leaves = await this._db.findMany('GSTLeaf', {
+        const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
                 epoch,
+                attesterId: this.attesterId.toString(),
             },
             orderBy: {
                 index: 'asc',
             },
         })
         for (const leaf of leaves) {
-            this.globalStateTree.insert(leaf.hash)
+            this._stateTree.insert(leaf.hash)
         }
     }
 
@@ -109,6 +200,7 @@ export class Synchronizer extends EventEmitter {
         })
         if (!state) {
             await this._db.create('SynchronizerState', {
+                attesterId: this.attesterId.toString(),
                 latestProcessedBlock: 0,
                 latestProcessedTransactionIndex: 0,
                 latestProcessedEventIndex: 0,
@@ -141,7 +233,9 @@ export class Synchronizer extends EventEmitter {
                 this.provider.once('block', rs)
             })
         const startState = await this._db.findOne('SynchronizerState', {
-            where: {},
+            where: {
+                attesterId: this.attesterId.toString(),
+            },
         })
         let latestProcessed = startState?.latestCompleteBlock ?? 0
         for (;;) {
@@ -156,7 +250,9 @@ export class Synchronizer extends EventEmitter {
                 newBlockNumber as number
             )
             const state = await this._db.findOne('SynchronizerState', {
-                where: {},
+                where: {
+                    attesterId: this.attesterId.toString(),
+                },
             })
             if (!state) throw new Error('State not initialized')
             const unprocessedEvents = allEvents.filter((e) => {
@@ -176,7 +272,9 @@ export class Synchronizer extends EventEmitter {
             })
             await this.processEvents(unprocessedEvents)
             await this._db.update('SynchronizerState', {
-                where: {},
+                where: {
+                    attesterId: this.attesterId.toString(),
+                },
                 update: {
                     latestCompleteBlock: newBlockNumber,
                 },
@@ -189,11 +287,30 @@ export class Synchronizer extends EventEmitter {
 
     // Overridden in subclasses
     async loadNewEvents(fromBlock: number, toBlock: number) {
-        return this.unirepContract.queryFilter(
-            this.unirepFilter,
-            fromBlock,
-            toBlock
-        )
+        const promises = [] as any[]
+        for (const address of Object.keys(this.contracts)) {
+            const { contract } = this.contracts[address]
+            const filter = this._eventFilters[address]
+            promises.push(contract.queryFilter(filter, fromBlock, toBlock))
+        }
+        return (await Promise.all(promises)).flat()
+    }
+
+    // override this and only this
+    get contracts() {
+        return {
+            [this.unirepContract.address]: {
+                contract: this.unirepContract,
+                eventNames: [
+                    'UserSignedUp',
+                    'UserStateTransitioned',
+                    'AttestationSubmitted',
+                    'EpochEnded',
+                    'StateTreeLeaf',
+                    'EpochTreeLeaf',
+                ],
+            },
+        }
     }
 
     async processEvents(events: ethers.Event[]) {
@@ -212,15 +329,17 @@ export class Synchronizer extends EventEmitter {
             try {
                 let success: boolean | undefined
                 await this._db.transaction(async (db) => {
-                    const handler = this.topicHandlers[event.topics[0]]
+                    const handler = this._eventHandlers[event.topics[0]]
                     if (!handler) {
                         throw new Error(
                             `Unrecognized event topic "${event.topics[0]}"`
                         )
                     }
-                    success = await handler(event, db)
+                    success = await handler({ event, db })
                     db.update('SynchronizerState', {
-                        where: {},
+                        where: {
+                            attesterId: this.attesterId.toString(),
+                        },
                         update: {
                             latestProcessedBlock: +event.blockNumber,
                             latestProcessedTransactionIndex:
@@ -247,44 +366,57 @@ export class Synchronizer extends EventEmitter {
             blockNumber ?? (await this.unirepContract.provider.getBlockNumber())
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
-                where: {},
+                where: {
+                    attesterId: this.attesterId.toString(),
+                },
             })
             if (state && state.latestCompleteBlock >= latestBlock) return
             await new Promise((r) => setTimeout(r, 250))
         }
     }
 
-    async loadCurrentEpoch() {
+    async readCurrentEpoch() {
         const currentEpoch = await this._db.findOne('Epoch', {
-            where: {},
+            where: {
+                attesterId: this.attesterId.toString(),
+            },
             orderBy: {
                 number: 'desc',
             },
         })
         return (
             currentEpoch || {
-                number: 1,
+                number: 0,
                 sealed: false,
             }
         )
     }
 
-    protected async _checkCurrentEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch !== currentEpoch.number) {
-            throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be the same as the current epoch ${currentEpoch.number}`
+    calcCurrentEpoch() {
+        const timestamp = Math.floor(+new Date() / 1000)
+        return Math.max(
+            0,
+            Math.floor(
+                (timestamp - this.settings.startTimestamp) /
+                    this.settings.epochLength
             )
-        }
+        )
     }
 
-    protected async _checkValidEpoch(epoch: number) {
-        const currentEpoch = await this.loadCurrentEpoch()
-        if (epoch > currentEpoch.number) {
-            throw new Error(
-                `Synchronizer: Epoch (${epoch}) must be less than the current epoch ${currentEpoch.number}`
-            )
-        }
+    calcEpochRemainingTime() {
+        const timestamp = Math.floor(+new Date() / 1000)
+        const currentEpoch = this.calcCurrentEpoch()
+        const epochEnd =
+            this.settings.startTimestamp +
+            (currentEpoch + 1) * this.settings.epochLength
+        return Math.max(0, epochEnd - timestamp)
+    }
+
+    async loadCurrentEpoch() {
+        const epoch = await this.unirepContract.attesterCurrentEpoch(
+            this.attesterId
+        )
+        return BigInt(epoch.toString())
     }
 
     protected async _checkEpochKeyRange(epochKey: string) {
@@ -296,11 +428,24 @@ export class Synchronizer extends EventEmitter {
     }
 
     async epochTreeRoot(epoch: number) {
-        return this.unirepContract.epochRoots(epoch)
+        return this.unirepContract.attesterEpochRoot(this.attesterId, epoch)
     }
 
     async epochTreeProof(epoch: number, leafIndex: any) {
-        const proof = await this.unirepContract.epochTreeProof(epoch, leafIndex)
+        const leaves = await this._db.findMany('EpochTreeLeaf', {
+            where: {
+                epoch,
+                attesterId: this.attesterId.toString(),
+            },
+        })
+        const tree = new SparseMerkleTree(
+            this.settings.epochTreeDepth,
+            this.defaultEpochTreeLeaf
+        )
+        for (const leaf of leaves) {
+            tree.update(leaf.index, leaf.hash)
+        }
+        const proof = tree.createProof(leafIndex)
         return proof
     }
 
@@ -309,18 +454,18 @@ export class Synchronizer extends EventEmitter {
         return epochEmitted.gt(0)
     }
 
-    async genGSTree(
+    async genStateTree(
         _epoch: number | ethers.BigNumberish
     ): Promise<IncrementalMerkleTree> {
         const epoch = Number(_epoch)
-        await this._checkValidEpoch(epoch)
         const tree = new IncrementalMerkleTree(
-            this.settings.globalStateTreeDepth,
-            this.defaultGSTLeaf
+            this.settings.stateTreeDepth,
+            this.defaultStateTreeLeaf
         )
-        const leaves = await this._db.findMany('GSTLeaf', {
+        const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
-                epoch,
+                epoch: Number(epoch),
+                attesterId: this.attesterId.toString(),
             },
             orderBy: {
                 index: 'asc',
@@ -336,31 +481,34 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<SparseMerkleTree> {
         const epoch = Number(_epoch)
-        await this._checkValidEpoch(epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            SMT_ONE_LEAF
+            this.defaultEpochTreeLeaf
         )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
                 epoch,
+                attesterId: this.attesterId.toString(),
             },
         })
-        for (const { index, leaf } of leaves) {
-            tree.update(BigInt(index), BigInt(leaf))
+        for (const { index, hash } of leaves) {
+            tree.update(BigInt(index), BigInt(hash))
         }
         return tree
     }
 
     /**
      * Check if the global state tree root is stored in the database
-     * @param GSTRoot The queried global state tree root
+     * @param root The queried global state tree root
      * @param epoch The queried epoch of the global state tree
      * @returns True if the global state tree root exists, false otherwise.
      */
-    async GSTRootExists(GSTRoot: BigInt | string, epoch: number) {
-        await this._checkValidEpoch(epoch)
-        return this.unirepContract.globalStateTreeRoots(epoch, GSTRoot)
+    async stateTreeRootExists(root: bigint | string, epoch: number) {
+        return this.unirepContract.attesterStateTreeRootExists(
+            this.attesterId,
+            epoch,
+            root
+        )
     }
 
     /**
@@ -370,10 +518,9 @@ export class Synchronizer extends EventEmitter {
      * @returns True if the epoch tree root is in the database, false otherwise.
      */
     async epochTreeRootExists(
-        _epochTreeRoot: BigInt | string,
+        _epochTreeRoot: bigint | string,
         epoch: number
     ): Promise<boolean> {
-        await this._checkValidEpoch(epoch)
         const root = await this.unirepContract.epochRoots(epoch)
         return root.toString() === _epochTreeRoot.toString()
     }
@@ -383,10 +530,10 @@ export class Synchronizer extends EventEmitter {
      * @param epoch The epoch query
      * @returns The number of the global state tree leaves
      */
-    async getNumGSTLeaves(epoch: number) {
-        await this._checkValidEpoch(epoch)
-        return this._db.count('GSTLeaf', {
+    async numStateTreeLeaves(epoch: number) {
+        return this._db.count('StateTreeLeaf', {
             epoch: epoch,
+            attesterId: this.attesterId.toString(),
         })
     }
 
@@ -396,141 +543,86 @@ export class Synchronizer extends EventEmitter {
      * @param epochKey The query epoch key
      * @returns A list of the attestations.
      */
-    async getAttestations(epochKey: string): Promise<IAttestation[]> {
+    async getAttestations(epochKey: string): Promise<any[]> {
         await this._checkEpochKeyRange(epochKey)
         // TODO: transform db entries to IAttestation (they're already pretty similar)
         return this._db.findMany('Attestation', {
             where: {
                 epochKey,
+                attesterId: this.attesterId.toString(),
             },
         })
-    }
-
-    // get a function that will process an event for a topic
-    get topicHandlers() {
-        const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
-            .topics as string[]
-        const [UserStateTransitioned] =
-            this.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
-        const [AttestationSubmitted] =
-            this.unirepContract.filters.AttestationSubmitted()
-                .topics as string[]
-        const [EpochEnded] = this.unirepContract.filters.EpochEnded()
-            .topics as string[]
-        const [NewGSTLeaf] = this.unirepContract.filters.NewGSTLeaf()
-            .topics as string[]
-        const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
-            .topics as string[]
-        return {
-            [UserSignedUp]: this.userSignedUpEvent.bind(this),
-            [UserStateTransitioned]: this.USTEvent.bind(this),
-            [AttestationSubmitted]: this.attestationEvent.bind(this),
-            [EpochEnded]: this.epochEndedEvent.bind(this),
-            [NewGSTLeaf]: this.newGSTLeaf.bind(this),
-            [EpochTreeLeaf]: this.epochTreeLeaf.bind(this),
-        } as {
-            [key: string]: (
-                event: ethers.Event,
-                db: TransactionDB
-            ) => Promise<undefined | boolean>
-        }
-    }
-
-    get unirepFilter() {
-        const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
-            .topics as string[]
-        const [UserStateTransitioned] =
-            this.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
-        const [AttestationSubmitted] =
-            this.unirepContract.filters.AttestationSubmitted()
-                .topics as string[]
-        const [EpochEnded] = this.unirepContract.filters.EpochEnded()
-            .topics as string[]
-        const [NewGSTLeaf] = this.unirepContract.filters.NewGSTLeaf()
-            .topics as string[]
-        const [EpochTreeLeaf] = this.unirepContract.filters.EpochTreeLeaf()
-            .topics as string[]
-
-        return {
-            address: this.unirepContract.address,
-            topics: [
-                [
-                    UserSignedUp,
-                    UserStateTransitioned,
-                    AttestationSubmitted,
-                    EpochEnded,
-                    NewGSTLeaf,
-                    EpochTreeLeaf,
-                ],
-            ],
-        }
     }
 
     // unirep event handlers
 
-    async newGSTLeaf(event: ethers.Event, db: TransactionDB) {
-        const epoch = Number(event.topics[1])
-        const hash = BigInt(event.topics[2]).toString()
-        const index = Number(event.topics[3])
-
-        db.create('GSTLeaf', {
+    async handleStateTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const index = Number(decodedData.index)
+        const attesterId = BigInt(decodedData.attesterId).toString()
+        const hash = BigInt(decodedData.leaf).toString()
+        if (attesterId !== this.attesterId.toString()) return
+        db.create('StateTreeLeaf', {
             epoch,
             hash,
             index,
+            attesterId,
         })
         return true
     }
 
-    async epochTreeLeaf(event: ethers.Event, db: TransactionDB) {
-        const epoch = Number(event.topics[1])
-        const leaf = BigInt(event.topics[2]).toString()
-        const index = BigInt(event.topics[3]).toString()
-
+    async handleEpochTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const index = BigInt(decodedData.index).toString()
+        const attesterId = BigInt(decodedData.attesterId).toString()
+        const leaf = BigInt(decodedData.leaf).toString()
+        if (attesterId !== this.attesterId.toString()) return
+        const id = `${epoch}-${index}-${attesterId}`
         db.upsert('EpochTreeLeaf', {
             where: {
-                epoch,
-                index,
+                id,
             },
             update: {
-                leaf,
+                hash: leaf,
             },
             create: {
+                id,
                 epoch,
                 index,
-                leaf,
+                attesterId,
+                hash: leaf,
             },
         })
         return true
     }
 
-    async userSignedUpEvent(event: ethers.Event, db: TransactionDB) {
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'UserSignedUp',
-            event.data
-        )
-        const epoch = Number(event.topics[1])
-        const idCommitment = BigInt(event.topics[2])
-        const attesterId = Number(decodedData.attesterId)
-        const airdrop = Number(decodedData.airdropAmount)
+    async handleUserSignedUp({ decodedData, event, db }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const commitment = BigInt(
+            decodedData.identityCommitment.toString()
+        ).toString()
+        const attesterId = BigInt(decodedData.attesterId.toString()).toString()
+        const leafIndex = Number(decodedData.leafIndex)
+        if (attesterId !== this.attesterId.toString()) return
         db.create('UserSignUp', {
-            commitment: idCommitment.toString(),
+            commitment,
             epoch,
             attesterId,
-            airdrop,
         })
         return true
     }
 
-    async attestationEvent(event: ethers.Event, db: TransactionDB) {
-        const _epoch = Number(event.topics[1])
-        const _epochKey = BigInt(event.topics[2])
-        const _attester = event.topics[3]
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'AttestationSubmitted',
-            event.data
-        )
+    async handleAttestationSubmitted({
+        decodedData,
+        event,
+        db,
+    }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const epochKey = BigInt(decodedData.epochKey).toString()
+        const attesterId = BigInt(decodedData.attesterId).toString()
+        const posRep = Number(decodedData.posRep)
+        const negRep = Number(decodedData.negRep)
+        if (attesterId !== this.attesterId.toString()) return
 
         const index = `${event.blockNumber
             .toString()
@@ -538,69 +630,74 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
-        await this._checkCurrentEpoch(_epoch)
-        await this._checkEpochKeyRange(_epochKey.toString())
+        const currentEpoch = await this.readCurrentEpoch()
+        if (epoch !== Number(currentEpoch.number)) {
+            throw new Error(
+                `Synchronizer: Epoch (${epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
+            )
+        }
+        await this._checkEpochKeyRange(epochKey)
 
-        const attestation = new Attestation(
-            BigInt(decodedData.attestation.attesterId),
-            BigInt(decodedData.attestation.posRep),
-            BigInt(decodedData.attestation.negRep),
-            BigInt(decodedData.attestation.graffiti),
-            BigInt(decodedData.attestation.signUp)
-        )
         db.create('Attestation', {
-            epoch: _epoch,
-            epochKey: _epochKey.toString(),
-            index: index,
-            attester: _attester,
-            attesterId: Number(decodedData.attestation.attesterId),
-            posRep: Number(decodedData.attestation.posRep),
-            negRep: Number(decodedData.attestation.negRep),
-            graffiti: decodedData.attestation.graffiti.toString(),
-            signUp: Number(decodedData.attestation?.signUp),
-            hash: attestation.hash().toString(),
+            epoch,
+            epochKey,
+            index,
+            attesterId,
+            posRep,
+            negRep,
+            graffiti: decodedData.graffiti.toString(),
+            timestamp: decodedData.timestamp.toString(),
+            hash: hash2([posRep, negRep]).toString(),
         })
         return true
     }
 
-    async USTEvent(event: ethers.Event, db: TransactionDB) {
-        const decodedData = this.unirepContract.interface.decodeEventLog(
-            'UserStateTransitioned',
-            event.data
-        )
-
+    async handleUserStateTransitioned({
+        decodedData,
+        event,
+        db,
+    }: EventHandlerArgs) {
         const transactionHash = event.transactionHash
-        const epoch = Number(event.topics[1])
-        const leaf = BigInt(event.topics[2])
-        const nullifier = decodedData.firstEpkNullifier
+        const epoch = Number(decodedData.epoch)
+        const attesterId = BigInt(decodedData.attesterId).toString()
+        const leafIndex = BigInt(decodedData.leafIndex).toString()
+        const nullifier = BigInt(decodedData.nullifier).toString()
+        const hashedLeaf = BigInt(decodedData.hashedLeaf).toString()
+        if (attesterId.toString() !== this.attesterId.toString()) return
 
         db.create('Nullifier', {
             epoch,
-            nullifier: nullifier.toString(),
-            transactionHash: event.transactionHash,
+            attesterId,
+            nullifier,
+            transactionHash,
         })
 
         return true
     }
 
-    async epochEndedEvent(event: ethers.Event, db: TransactionDB) {
-        const epoch = Number(event?.topics[1])
+    async handleEpochEnded({ decodedData, event, db }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const attesterId = BigInt(decodedData.attesterId).toString()
         console.log(`Epoch ${epoch} ended`)
+        if (attesterId !== this.attesterId.toString()) return
         db.upsert('Epoch', {
             where: {
                 number: epoch,
+                attesterId,
             },
             update: {
                 sealed: true,
             },
             create: {
                 number: epoch,
+                attesterId,
                 sealed: true,
             },
         })
         // create the next stub entry
         db.create('Epoch', {
             number: epoch + 1,
+            attesterId,
             sealed: false,
         })
         return true

@@ -5,6 +5,7 @@ const _schema = [
     {
         name: 'SynchronizerState',
         rows: [
+            ['attesterId', 'String', { unique: true }],
             ['latestProcessedBlock', 'Int'],
             ['latestProcessedTransactionIndex', 'Int'],
             ['latestProcessedEventIndex', 'Int'],
@@ -22,30 +23,33 @@ const _schema = [
             ['epochKey', 'String', { optional: true }],
             ['index', 'String'], // event index, tx index, block index
             ['attester', 'String', { optional: true }],
-            ['attesterId', 'Int', { optional: true }],
+            ['attesterId', 'String', { optional: true }],
             ['posRep', 'Int', { optional: true }],
             ['negRep', 'Int', { optional: true }],
             ['graffiti', 'String', { optional: true }],
-            ['signUp', 'Int', { optional: true }],
+            ['timestamp', 'String', { optional: true }],
             ['hash', 'String'],
         ],
     },
     {
-        name: 'GSTLeaf',
+        name: 'StateTreeLeaf',
         indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int'],
             ['hash', 'String'],
             ['index', 'Int'],
+            ['attesterId', 'String'],
         ],
     },
     {
         name: 'EpochTreeLeaf',
-        primaryKey: ['epoch', 'index'],
+        primaryKey: 'id',
         rows: [
+            ['id', 'String'],
             ['epoch', 'Int'],
-            ['leaf', 'String'],
+            ['hash', 'String'],
             ['index', 'String'],
+            ['attesterId', 'String'],
         ],
     },
     {
@@ -53,6 +57,7 @@ const _schema = [
         indexes: [{ keys: ['number'] }],
         rows: [
             ['number', 'Int', { unique: true }],
+            ['attesterId', 'String'],
             ['sealed', 'Bool'],
         ],
     },
@@ -60,6 +65,7 @@ const _schema = [
         name: 'Nullifier',
         rows: [
             ['epoch', 'Int'],
+            ['attesterId', 'String'],
             ['nullifier', 'String', { unique: true }],
             ['transactionHash', 'String', { optional: true }],
         ],
@@ -70,8 +76,7 @@ const _schema = [
         rows: [
             ['commitment', 'String', { index: true }],
             ['epoch', 'Int'],
-            ['attesterId', 'Int'],
-            ['airdrop', 'Int'],
+            ['attesterId', 'String'],
         ],
     },
 ]

@@ -1,14 +1,13 @@
 import { stringifyBigInts } from '@unirep/crypto'
 import fs from 'fs'
 import path from 'path'
-import circom from 'circom'
 import * as snarkjs from 'snarkjs'
 import * as fastFile from 'fastfile'
 import url from 'url'
 import https from 'https'
 import readline from 'readline'
 import child_process from 'child_process'
-import { circuitContents } from './circuits.mjs'
+import { circuitContents, ptauName } from './circuits.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
@@ -34,10 +33,11 @@ for (const name of circuits) {
     )
 
     const inputFile = path.join(outDir, `${name}_main.circom`)
-    const circuitOut = path.join(outDir, `${name}.r1cs`)
-    const symOut = path.join(outDir, `${name}.sym`)
-    const wasmOut = path.join(outDir, `${name}.wasm`)
-    const ptau = path.join(outDir, `powersOfTau28_hez_final_17.ptau`)
+    const circuitOut = path.join(outDir, `${name}_main.r1cs`)
+    const wasmOut = path.join(outDir, `${name}_main_js/${name}_main.wasm`)
+    const wasmOutDir = path.join(outDir, `${name}_main_js`)
+    const wasmOutFinal = path.join(outDir, `${name}.wasm`)
+    const ptau = path.join(outDir, ptauName)
     const zkey = path.join(outDir, `${name}.zkey`)
     const vkOut = path.join(outDir, `${name}.vkey.json`)
 
@@ -53,12 +53,15 @@ for (const name of circuits) {
     } else {
         console.log(`Compiling ${inputFile.split('/').pop()}...`)
         // Compile the .circom file
-        const options = {
-            wasmFile: await fastFile.createOverride(wasmOut),
-            r1csFileName: circuitOut,
-            symWriteStream: fs.createWriteStream(symOut),
-        }
-        await circom.compiler(inputFile, options)
+        await new Promise((rs, rj) =>
+            child_process.exec(
+                `circom --r1cs --wasm -o ${outDir} ${inputFile}`,
+                (err, stdout, stderr) => {
+                    if (err) rj(err)
+                    else rs()
+                }
+            )
+        )
         console.log(
             'Generated',
             circuitOut.split('/').pop(),
@@ -79,6 +82,8 @@ for (const name of circuits) {
         console.log(
             `Generated ${zkey.split('/').pop()} and ${vkOut.split('/').pop()}`
         )
+        await fs.promises.rename(wasmOut, wasmOutFinal)
+        await fs.promises.rm(wasmOutDir, { recursive: true, force: true })
     }
 }
 

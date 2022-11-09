@@ -1,90 +1,120 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {UnirepTypes} from '../types/UnirepTypes.sol';
+import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 
-interface IUnirep is UnirepTypes {
+interface IUnirep {
     event UserSignedUp(
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
-        uint256 attesterId,
-        uint256 airdropAmount,
+        uint160 indexed attesterId,
         uint256 leafIndex
     );
 
     event UserStateTransitioned(
         uint256 indexed epoch,
-        uint256 indexed hashedLeaf,
+        uint160 indexed attesterId,
         uint256 indexed leafIndex,
-        uint256 firstEpkNullifier
+        uint256 hashedLeaf,
+        uint256 nullifier
     );
 
     event AttestationSubmitted(
         uint256 indexed epoch,
         uint256 indexed epochKey,
-        address indexed attester,
-        Attestation attestation
+        uint160 indexed attesterId,
+        uint256 posRep,
+        uint256 negRep,
+        uint256 graffiti,
+        uint256 timestamp
     );
 
-    event NewGSTLeaf(
+    event StateTreeLeaf(
         uint256 indexed epoch,
-        uint256 indexed leaf,
-        uint256 indexed index
+        uint160 indexed attesterId,
+        uint256 indexed index,
+        uint256 leaf
     );
 
     event EpochTreeLeaf(
         uint256 indexed epoch,
-        uint256 indexed leaf,
-        uint256 indexed index
+        uint160 indexed attesterId,
+        uint256 indexed index,
+        uint256 leaf
     );
 
-    event EpochEnded(uint256 indexed epoch);
-
-    enum AttestationFieldError {
-        POS_REP,
-        NEG_REP,
-        GRAFFITI
-    }
+    event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error ReachedMaximumNumberUserSignedUp();
-    error AttesterAlreadySignUp(address attester);
-    error AttesterNotSignUp(address attester);
+    error AttesterAlreadySignUp(uint160 attester);
+    error AttesterNotSignUp(uint160 attester);
+    error AttesterInvalid();
     error ProofAlreadyUsed(bytes32 nullilier);
     error NullifierAlreadyUsed(uint256 nullilier);
-    error AttestingFeeInvalid();
-    error AttesterIdNotMatch(uint256 attesterId);
-    error AirdropWithoutAttester();
+    error AttesterIdNotMatch(uint160 attesterId);
 
     error InvalidSignature();
-    error InvalidProofIndex();
-    error InvalidSignUpFlag();
     error InvalidEpochKey();
     error EpochNotMatch();
-    error InvalidTransitionEpoch();
-    error InvalidBlindedUserState(uint256 blindedUserState);
-    error InvalidBlindedHashChain(uint256 blindedHashChain);
+    error InvalidEpoch(uint256 epoch);
 
-    error InvalidSNARKField(AttestationFieldError); // better name???
-    error EpochNotEndYet();
-    error InvalidSignals();
     error InvalidProof();
-    error InvalidGlobalStateTreeRoot(uint256 globalStateTreeRoot);
+    error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
-    /**
-     * Sign up an attester using the address who sends the transaction
-     */
-    function attesterSignUp() external;
+    error HashchainInvalid();
+    error HashchainNotProcessed();
 
-    /**
-     * Sign up an attester using the claimed address and the signature
-     * @param attester The address of the attester who wants to sign up
-     * @param signature The signature of the attester
-     */
-    function attesterSignUpViaRelayer(
-        address attester,
-        bytes calldata signature
-    ) external;
+    struct Reputation {
+        uint256 posRep;
+        uint256 negRep;
+        uint256 graffiti;
+        uint256 timestamp;
+    }
+
+    struct EpochKeyHashchain {
+        uint256 index;
+        uint256 head;
+        uint256[] epochKeys;
+        Reputation[] epochKeyBalances;
+        bool processed;
+    }
+
+    struct EpochKeyState {
+        // key the head to the struct?
+        mapping(uint256 => EpochKeyHashchain) hashchain;
+        uint256 totalHashchains;
+        uint256 processedHashchains;
+        mapping(uint256 => Reputation) balances;
+        mapping(uint256 => bool) isKeyOwed;
+        uint256[] owedKeys;
+    }
+
+    struct AttesterData {
+        // epoch keyed to tree data
+        mapping(uint256 => IncrementalTreeData) stateTrees;
+        // epoch keyed to root keyed to whether it's valid
+        mapping(uint256 => mapping(uint256 => bool)) stateTreeRoots;
+        // epoch keyed to root
+        mapping(uint256 => uint256) epochTreeRoots;
+        uint256 startTimestamp;
+        uint256 currentEpoch;
+        uint256 epochLength;
+        mapping(uint256 => bool) identityCommitments;
+        IncrementalTreeData semaphoreGroup;
+        // attestation management
+        mapping(uint256 => EpochKeyState) epochKeyState;
+    }
+
+    struct Config {
+        // circuit config
+        uint8 stateTreeDepth;
+        uint8 epochTreeDepth;
+        uint256 numEpochKeyNoncePerEpoch;
+        // contract config
+        uint256 emptyEpochTreeRoot;
+        uint256 aggregateKeyCount;
+    }
 }

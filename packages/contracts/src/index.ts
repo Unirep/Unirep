@@ -1,7 +1,5 @@
 export * from './config'
 export * from './proof'
-export * from './Event'
-export * from './Attestation'
 
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import { ethers } from 'ethers'

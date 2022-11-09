@@ -21,6 +21,9 @@ Client library for contracts related functions which are used in unirep protocol
     <a href="https://prettier.io/">
         <img alt="Code style prettier" src="https://img.shields.io/badge/code%20style-prettier-f8bc45?style=flat-square&logo=prettier" />
     </a>
+    <a href="https://contracts-coverage.unirep.io/">
+        <img alt="Coverage report" src="https://contracts-coverage.unirep.io/badge.svg" />
+    </a>
 </p>
 
 <div align="center">
@@ -233,7 +236,7 @@ const epkProof = new EpochKeyProof(
 ```typescript
 const epoch = epkProof.epoch
 const epochKey = epkProof.epochKey
-const globalStateTree = epkProof.globalStateTree
+const stateTree = epkProof.stateTree
 ```
 
 **3. Verify the epoch key proof**
@@ -253,23 +256,3 @@ const tx = await unirepContract.submitEpochKeyProof(
     epkProof.proof
 )
 ```
-
-### Attestation
-**An example of constructing an Attestation object**
-
-```typescript
-import { Attestation } from '@unirep/contracts'
-
-const attestation = new Attestation(
-    attesterID,
-    positiveReputation,
-    negativeReputation,
-    graffiti,
-    signUpFlag
-)
-const hash = attestation.hash()
-```
-
-### Event/ Attestation event
-
-The event enum is used to help with determining the type of the event, which are as the same definition in `IUnirep.sol`

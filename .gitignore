@@ -24,3 +24,7 @@ lerna-debug.log*
 .env
 subgraph.yaml
 generated
+
+.docusaurus
+.cache-loader
+

@@ -1,66 +1,78 @@
+pragma circom 2.0.0;
+
 /*
-    Verify if epoch key is computed correctly
-    epoch_key = hash2(id_nullifier + nonce, epoch);
+    Verify that an epoch key exists in a state tree
 */
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
-include "./identityCommitment.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template VerifyEpochKey(GST_tree_depth, epoch_tree_depth, EPOCH_KEY_NONCE_PER_EPOCH) {
+template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
-    signal private input GST_path_index[GST_tree_depth];
-    signal private input GST_path_elements[GST_tree_depth];
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
-    signal private input identity_nullifier;
-    signal private input identity_trapdoor;
-    signal private input user_tree_root;
+    signal input identity_nullifier;
 
-    signal private input nonce;
+    signal input nonce;
     signal input epoch;
+    signal input attester_id;
     signal output epoch_key;
-    signal output GST_root;
+    signal output state_tree_root;
+
+    signal input pos_rep;
+    signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
+
+    // Some arbitrary data to endorse
+    signal input data;
 
     /* 1. Check if user exists in the Global State Tree */
 
-    component identity_commitment = IdentityCommitment();
-    identity_commitment.identity_nullifier <== identity_nullifier;
-    identity_commitment.identity_trapdoor <== identity_trapdoor;
-
     // Compute user state tree root
-    component leaf_hasher = Poseidon(2);
-    leaf_hasher.inputs[0] <== identity_commitment.out;
-    leaf_hasher.inputs[1] <== user_tree_root;
+    component leaf_hasher = Poseidon(7);
+    leaf_hasher.inputs[0] <== identity_nullifier;
+    leaf_hasher.inputs[1] <== attester_id;
+    leaf_hasher.inputs[2] <== epoch;
+    leaf_hasher.inputs[3] <== pos_rep;
+    leaf_hasher.inputs[4] <== neg_rep;
+    leaf_hasher.inputs[5] <== graffiti;
+    leaf_hasher.inputs[6] <== timestamp;
 
-    component merkletree = MerkleTreeInclusionProof(GST_tree_depth);
+    component merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
     merkletree.leaf <== leaf_hasher.out;
-    for (var i = 0; i < GST_tree_depth; i++) {
-        merkletree.path_index[i] <== GST_path_index[i];
-        merkletree.path_elements[i] <== GST_path_elements[i];
+    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
+        merkletree.path_index[i] <== state_tree_indexes[i];
+        merkletree.path_elements[i] <== state_tree_elements[i];
     }
-    GST_root <== merkletree.root;
+    state_tree_root <== merkletree.root;
+
     /* End of check 1 */
 
     /* 2. Check nonce validity */
-    var bitsPerNonce = 8;
 
+    var bitsPerNonce = 8;
     component nonce_lt = LessThan(bitsPerNonce);
     nonce_lt.in[0] <== nonce;
     nonce_lt.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
     nonce_lt.out === 1;
+
     /* End of check 2*/
 
-    /* 3. Check epoch key is computed correctly */
-    // 3.1.1 Compute epoch key
-    component epochKeyHasher = Poseidon(2);
-    epochKeyHasher.inputs[0] <== identity_nullifier + nonce;
-    epochKeyHasher.inputs[1] <== epoch;
+    /* 3. Output an epoch key */
 
-    // signal quotient;
-    // 3.1.2 Mod epoch key
-    component modEPK = ModuloTreeDepth(epoch_tree_depth);
-    modEPK.dividend <== epochKeyHasher.out;
-    epoch_key <== modEPK.remainder;
+    component epoch_key_hasher = Poseidon(4);
+    epoch_key_hasher.inputs[0] <== identity_nullifier;
+    epoch_key_hasher.inputs[1] <== attester_id;
+    epoch_key_hasher.inputs[2] <== epoch;
+    epoch_key_hasher.inputs[3] <== nonce;
+
+    component epoch_key_mod = ModuloTreeDepth(EPOCH_TREE_DEPTH);
+    epoch_key_mod.dividend <== epoch_key_hasher.out;
+    epoch_key <== epoch_key_mod.remainder;
+
+    /* End of check 3 */
 }

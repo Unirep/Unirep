@@ -7,30 +7,54 @@ workflows:
             - core-test:
                   requires:
                       - build
-            - core-cli-test:
-                  requires:
-                      - build
             - circuits-test:
                   requires:
                       - build
             - contracts-test:
                   requires:
                       - build
+            - contracts-coverage:
+                  requires:
+                      - contracts-test
+                  filters:
+                      branches:
+                          only:
+                              - main
+                              - v1.1
             - crypto-test:
                   requires:
                       - build
+            - docs-publish:
+                  context: cloudflare
+                  requires:
+                      - build
+                  filters:
+                      branches:
+                          only:
+                              - main
+                              - v1.1
 
 # Just for reusing below
 step_defs:
     - run: &node_version
           name: Set Node version
           command: |
-              nvm install v14
-              nvm alias default v14
+              nvm install v16
+              nvm alias default v16
               echo "nvm use default" >> $BASH_ENV
     - run: &check_version
           name: Check Node version
-          command: node -v | grep v14
+          command: node -v | grep v16
+    - run: &install_circom
+          name: Install Circom
+          command: |
+              curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
+              source "$HOME/.cargo/env"
+              cd /tmp
+              git clone https://github.com/iden3/circom.git
+              cd circom
+              cargo build --release
+              cargo install --path circom
 
 jobs:
     build:
@@ -40,6 +64,7 @@ jobs:
             - checkout
             - run: *node_version
             - run: *check_version
+            - run: *install_circom
             - run:
                   name: Install Packages
                   command: yarn
@@ -88,21 +113,8 @@ jobs:
                   name: Test
                   command: |
                       cd packages/core
-                      TEST_FILES=$(circleci tests glob "test/*/*.test.ts" | circleci tests split)
+                      TEST_FILES=$(circleci tests glob "test/*.test.ts" | circleci tests split)
                       yarn test-ci $TEST_FILES
-    core-cli-test:
-        resource_class: medium
-        machine:
-            image: ubuntu-2204:2022.04.1
-        steps:
-            - checkout
-            - attach_workspace:
-                  at: ~/project
-            - run: *node_version
-            - run: *check_version
-            - run:
-                  name: Test
-                  command: yarn core test-cli
     circuits-test:
         resource_class: medium
         machine:
@@ -128,7 +140,26 @@ jobs:
             - run: *check_version
             - run:
                   name: Test
-                  command: yarn contracts test
+                  command: yarn contracts coverage
+            - persist_to_workspace:
+                  root: ~/project
+                  paths:
+                      - packages/contracts
+    contracts-coverage:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run: *node_version
+            - run: *check_version
+            - run:
+                  name: Upload Coverage
+                  command: |
+                      cd packages/contracts
+                      npx wrangler@2.1 publish
     crypto-test:
         resource_class: medium
         machine:
@@ -142,3 +173,21 @@ jobs:
             - run:
                   name: Test
                   command: yarn crypto test
+    docs-publish:
+        resource_class: medium
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run: *node_version
+            - run: *check_version
+            - run:
+                  name: Build Docs Site
+                  command: yarn docs build
+            - run:
+                  name: Publish Docs Site
+                  command: |
+                      cd packages/docs
+                      npx wrangler@2.1 publish

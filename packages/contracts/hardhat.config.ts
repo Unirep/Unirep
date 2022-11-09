@@ -28,7 +28,6 @@ const config: HardhatUserConfig = {
             },
         ],
     },
-
     typechain: {
         outDir: './typechain',
     },
