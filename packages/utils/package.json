@@ -25,8 +25,8 @@
     },
     "dependencies": {
         "@zk-kit/incremental-merkle-tree": "^0.4.3",
-        "circomlibjs": "0.0.8",
-        "maci-crypto": "^0.9.1"
+        "maci-crypto": "^0.9.1",
+        "poseidon-lite": "^0.0.2"
     },
     "devDependencies": {
         "mocha": "^10.0.0",
