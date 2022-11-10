@@ -462,6 +462,14 @@ contract Unirep is IUnirep, VerifySignature {
                 attester.epochLength) - block.timestamp;
     }
 
+    function attesterOwedEpochKeys(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (uint256)
+    {
+        return attesters[attesterId].epochKeyState[epoch].owedKeys.length;
+    }
+
     function attesterHashchainTotalCount(uint160 attesterId, uint256 epoch)
         public
         view
