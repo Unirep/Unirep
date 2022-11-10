@@ -647,7 +647,12 @@ export class Synchronizer extends EventEmitter {
             negRep,
             graffiti: decodedData.graffiti.toString(),
             timestamp: decodedData.timestamp.toString(),
-            hash: hash2([posRep, negRep]).toString(),
+            hash: hash4([
+                posRep,
+                negRep,
+                decodedData.graffiti,
+                decodedData.timestamp,
+            ]).toString(),
         })
         return true
     }
