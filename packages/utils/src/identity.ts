@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { poseidon } from 'circomlibjs'
+import poseidon from 'poseidon-lite'
 import { genRandomSalt } from 'maci-crypto'
 
 /**

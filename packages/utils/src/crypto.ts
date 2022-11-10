@@ -4,7 +4,7 @@ import {
     stringifyBigInts,
     unstringifyBigInts,
 } from 'maci-crypto'
-import circom from 'circomlibjs'
+import poseidon from 'poseidon-lite'
 
 export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
     9
@@ -17,7 +17,7 @@ export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
             )
         if (inputs.length !== i)
             throw new Error(`@unirep/utils invalid hash${i} input length`)
-        return circom.poseidon(inputs)
+        return poseidon(inputs)
     })
 
 export const hashLeftRight = (input1: any, input2: any) =>
