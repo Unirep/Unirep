@@ -43,6 +43,7 @@
         "@openzeppelin/contracts": "^4.6.0",
         "@typechain/ethers-v5": "^10.1.0",
         "@typechain/hardhat": "^6.1.0",
+        "circomlibjs": "0.0.8",
         "hardhat": "^2.9.9",
         "hardhat-gas-reporter": "^1.0.8",
         "lcov-badge-generator": "^1.0.5",
