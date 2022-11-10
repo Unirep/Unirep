@@ -41,6 +41,8 @@ function copy(currentDir, outPath) {
 }
 copy(path.join(__dirname, '../contracts'), path.join(__dirname, '../build'))
 copy(path.join(__dirname, '../abi'), path.join(__dirname, '../build/abi'))
-fs.rmSync(path.join(__dirname, '../build/artifacts/build-info'), {
-    recursive: true,
-})
+try {
+    fs.rmSync(path.join(__dirname, '../build/artifacts/build-info'), {
+        recursive: true,
+    })
+} catch (_) {}
