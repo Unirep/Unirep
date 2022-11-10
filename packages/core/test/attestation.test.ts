@@ -122,4 +122,28 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.stop()
     })
+
+    it('should skip multiple epochs', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new ZkIdentity()
+
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
+
+        await ethers.provider.send('evm_increaseTime', [5 * EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        const epoch = await userState.loadCurrentEpoch()
+        await unirepContract
+            .connect(attester)
+            .submitAttestation(epoch, '0x01', 1, 0, 0)
+            .then((t) => t.wait())
+        await userState.waitForSync()
+        await userState.stop()
+    })
 })
