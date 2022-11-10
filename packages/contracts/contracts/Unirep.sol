@@ -384,7 +384,7 @@ contract Unirep is IUnirep, VerifySignature {
 
         attester.epochTreeRoots[newEpoch] = config.emptyEpochTreeRoot;
 
-        emit EpochEnded(attester.currentEpoch, uint160(attesterId));
+        emit EpochEnded(newEpoch - 1, uint160(attesterId));
 
         attester.currentEpoch = newEpoch;
     }
