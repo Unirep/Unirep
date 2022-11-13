@@ -16,6 +16,7 @@ import {
     linkLibrary,
     tryPath,
 } from './utils'
+import { SparseMerkleTree, hash4 } from '@unirep/utils'
 
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
@@ -29,7 +30,7 @@ export const deployUnirep = async (
         stateTreeDepth?: BigNumberish
         epochTreeDepth?: BigNumberish
         numEpochKeyNoncePerEpoch?: BigNumberish
-        emptyEpochTreeRoot?: BigNumberish
+        defaultEpochTreeLeaf?: bigint
     } = {},
     prover?: Prover
 ): Promise<Unirep> => {
@@ -37,10 +38,29 @@ export const deployUnirep = async (
         stateTreeDepth: STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        emptyEpochTreeRoot: EMPTY_EPOCH_TREE_ROOT,
+        defaultEpochTreeLeaf: hash4([0, 0, 0, 0]),
         aggregateKeyCount: AGGREGATE_KEY_COUNT,
         ..._settings,
-    }
+    } as any
+    const emptyEpochTree = new SparseMerkleTree(
+        Number(settings.epochTreeDepth.toString()),
+        settings.defaultEpochTreeLeaf
+    )
+    settings.emptyEpochTreeRoot = emptyEpochTree.root.toString()
+
+    console.log(
+        '-----------------------------------------------------------------'
+    )
+    console.log(`Epoch tree depth: ${settings.epochTreeDepth}`)
+    console.log(`State tree depth: ${settings.stateTreeDepth}`)
+    console.log(`Empty epoch tree root: ${settings.emptyEpochTreeRoot}`)
+    console.log(
+        '-----------------------------------------------------------------'
+    )
+    console.log(`Make sure these match what you expect!`)
+    console.log(
+        '-----------------------------------------------------------------'
+    )
 
     const libraries = {}
     for (const [inputCount, { abi, bytecode }] of Object.entries(
