@@ -556,6 +556,10 @@ contract Unirep is IUnirep, VerifySignature {
         return config.epochTreeDepth;
     }
 
+    function epochTreeArity() public view returns (uint8) {
+        return config.epochTreeArity;
+    }
+
     function numEpochKeyNoncePerEpoch() public view returns (uint256) {
         return config.numEpochKeyNoncePerEpoch;
     }

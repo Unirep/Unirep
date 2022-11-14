@@ -70,6 +70,7 @@ export class Synchronizer extends EventEmitter {
         this.settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,
+            epochTreeArity: 2,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
             emptyEpochTreeRoot: BigInt(0),
@@ -148,6 +149,7 @@ export class Synchronizer extends EventEmitter {
         const config = await this.unirepContract.config()
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
+        this.settings.epochTreeArity = config.epochTreeArity
         this.settings.numEpochKeyNoncePerEpoch =
             config.numEpochKeyNoncePerEpoch.toNumber()
         this.settings.epochLength = (
@@ -520,7 +522,8 @@ export class Synchronizer extends EventEmitter {
         })
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            this.defaultEpochTreeLeaf
+            this.defaultEpochTreeLeaf,
+            this.settings.epochTreeArity
         )
         for (const leaf of leaves) {
             tree.update(leaf.index, leaf.hash)
@@ -563,7 +566,8 @@ export class Synchronizer extends EventEmitter {
         const epoch = Number(_epoch)
         const tree = new SparseMerkleTree(
             this.settings.epochTreeDepth,
-            this.defaultEpochTreeLeaf
+            this.defaultEpochTreeLeaf,
+            this.settings.epochTreeArity
         )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
