@@ -2,14 +2,19 @@ import { expect } from 'chai'
 import { SparseMerkleTree, hash2, hash3, hash4, hash6 } from '@unirep/utils'
 import { Circuit } from '../src'
 import { defaultEpochTreeLeaf, genProofAndVerify } from './utils'
-import { EPOCH_TREE_DEPTH, AGGREGATE_KEY_COUNT } from '../config'
+import {
+    EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
+    AGGREGATE_KEY_COUNT,
+} from '../config'
 
 describe('Multiple SMT updates', function () {
     this.timeout(300000)
     it('should update many leaves in an SMT', async () => {
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const startRoot = tree.root
         const newLeaves = Array(AGGREGATE_KEY_COUNT)
@@ -71,7 +76,8 @@ describe('Multiple SMT updates', function () {
     it('should short circuit leaf updates and hashchain', async () => {
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const startRoot = tree.root
         const count = Math.ceil(AGGREGATE_KEY_COUNT / 2)
@@ -144,7 +150,11 @@ describe('Multiple SMT updates', function () {
     })
 
     it('should fail to prove with 0 epoch keys', async () => {
-        const tree = new SparseMerkleTree(EPOCH_TREE_DEPTH, hash2([0, 0]))
+        const tree = new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            hash2([0, 0]),
+            EPOCH_TREE_ARITY
+        )
         const startRoot = tree.root
         const newLeaves = Array(AGGREGATE_KEY_COUNT)
             .fill(null)
