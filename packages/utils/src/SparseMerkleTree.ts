@@ -1,11 +1,12 @@
 import assert from 'assert'
-import { hashLeftRight } from './crypto'
+import { poseidon } from './crypto'
 
 /**
  * The SparseMerkleTree class is a TypeScript implementation of sparse merkle tree with specified tree depth and it provides all the functions to create efficient trees and to generate and verify proofs of membership.
  */
 export class SparseMerkleTree {
     protected _root: bigint
+    protected arity: number
     private zeroHashes!: bigint[]
     private node: { [key: string]: bigint }[]
 
@@ -16,17 +17,26 @@ export class SparseMerkleTree {
      * @param _height The fixed depth of the sparse merkle tree
      * @param zeroHash The default value of empty leaves
      */
-    constructor(private _height: number, zeroHash: bigint = BigInt(0)) {
+    constructor(
+        private _height: number,
+        zeroHash: bigint = BigInt(0),
+        arity: number = 2
+    ) {
         assert(_height > 0, 'SMT height needs to be > 0')
+        assert(
+            arity >= 2 && arity <= 16,
+            'arity must be between 2 and 16 inclusive'
+        )
         // prevent get method returns undefined
         this._root = BigInt(0)
+        this.arity = arity
         this._height = _height
         this.node = Array(this._height)
             .fill(null)
             .map(() => ({}))
         this.init(zeroHash)
 
-        this.numLeaves = BigInt(2 ** _height)
+        this.numLeaves = BigInt(BigInt(arity) ** BigInt(_height))
     }
 
     /**
@@ -37,12 +47,16 @@ export class SparseMerkleTree {
         const hashes = Array(this.height).fill(null)
         hashes[0] = zeroHash
         for (let i = 1; i < this.height; i++) {
-            hashes[i] = hashLeftRight(hashes[i - 1], hashes[i - 1])
+            const inputs = Array(this.arity)
+                .fill(null)
+                .map(() => hashes[i - 1])
+            hashes[i] = poseidon(inputs)
         }
         this.zeroHashes = hashes
-        this._root = hashLeftRight(
-            hashes[this.height - 1],
-            hashes[this.height - 1]
+        this._root = poseidon(
+            Array(this.arity)
+                .fill(null)
+                .map(() => hashes[this.height - 1])
         )
     }
 
@@ -84,22 +98,25 @@ export class SparseMerkleTree {
         )
 
         let nodeIndex = leafKey.valueOf()
-
         let hash = leafValue.valueOf()
+
         for (let i = 0; i < this.height; i++) {
             this.node[i][nodeIndex.toString()] = hash
-            if (nodeIndex % BigInt(2) === BigInt(0)) {
-                const sibling =
-                    this.node[i][(nodeIndex + BigInt(1)).toString()] ??
-                    this.zeroHashes[i]
-                hash = hashLeftRight(hash, sibling)
-            } else {
-                const sibling =
-                    this.node[i][(nodeIndex - BigInt(1)).toString()] ??
-                    this.zeroHashes[i]
-                hash = hashLeftRight(sibling, hash)
+            const nodeSiblingIndex = nodeIndex % BigInt(this.arity)
+            const startIndex = nodeIndex - nodeSiblingIndex
+            const inputs = [] as bigint[]
+            for (let j = 0; j < this.arity; j++) {
+                if (BigInt(j) === nodeSiblingIndex) {
+                    inputs.push(hash)
+                } else {
+                    inputs.push(
+                        this.node[i][(startIndex + BigInt(j)).toString()] ??
+                            this.zeroHashes[i]
+                    )
+                }
             }
-            nodeIndex /= BigInt(2)
+            hash = poseidon(inputs)
+            nodeIndex = nodeIndex / BigInt(this.arity)
         }
         this._root = hash
     }
@@ -109,27 +126,30 @@ export class SparseMerkleTree {
      * @param leafKey A key of an existing or a non-existing entry.
      * @returns A merkle proof of a given `leafKey`
      */
-    public createProof(leafKey: bigint): bigint[] {
+    public createProof(leafKey: bigint): bigint[][] {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
         )
 
-        const siblingNodeHashes: bigint[] = []
+        const siblingNodeHashes: bigint[][] = Array(this.height)
+            .fill(null)
+            .map(() => [])
         let nodeIndex = leafKey.valueOf()
         for (let i = 0; i < this.height; i++) {
-            if (nodeIndex % BigInt(2) === BigInt(0)) {
-                const sibling =
-                    this.node[i][(nodeIndex + BigInt(1)).toString()] ??
-                    this.zeroHashes[i]
-                siblingNodeHashes.push(sibling)
-            } else {
-                const sibling =
-                    this.node[i][(nodeIndex - BigInt(1)).toString()] ??
-                    this.zeroHashes[i]
-                siblingNodeHashes.push(sibling)
+            const nodeSiblingIndex = nodeIndex % BigInt(this.arity)
+            const startIndex = nodeIndex - nodeSiblingIndex
+            for (let j = 0; j < this.arity; j++) {
+                if (BigInt(j) === nodeSiblingIndex) {
+                    siblingNodeHashes[i].push(BigInt(0))
+                } else {
+                    siblingNodeHashes[i].push(
+                        this.node[i][(startIndex + BigInt(j)).toString()] ??
+                            this.zeroHashes[i]
+                    )
+                }
             }
-            nodeIndex /= BigInt(2)
+            nodeIndex = nodeIndex / BigInt(this.arity)
         }
         assert(
             siblingNodeHashes.length == this.height,
@@ -144,7 +164,7 @@ export class SparseMerkleTree {
      * @param proof The merkle proof of given `leafkey`
      * @returns True if the proof is valid, false otherwise
      */
-    public verifyProof(leafKey: bigint, proof: bigint[]): boolean {
+    public verifyProof(leafKey: bigint, proof: bigint[][]): boolean {
         assert(
             leafKey < this.numLeaves,
             `leaf key ${leafKey} exceeds total number of leaves ${this.numLeaves}`
@@ -153,12 +173,13 @@ export class SparseMerkleTree {
 
         let nodeIndex = leafKey.valueOf()
         let nodeHash = this.node[0][nodeIndex.toString()] ?? this.zeroHashes[0]
-        for (let sibNodeHash of proof) {
-            const isLeftNode = nodeIndex % BigInt(2) === BigInt(0)
-            nodeHash = isLeftNode
-                ? hashLeftRight(nodeHash, sibNodeHash)
-                : hashLeftRight(sibNodeHash, nodeHash)
-            nodeIndex = nodeIndex / BigInt(2)
+        for (let sibNodeHashes of proof) {
+            const leafIndex = nodeIndex % BigInt(this.arity)
+            const inputs = sibNodeHashes.map((v, i) => {
+                return BigInt(i) === leafIndex ? nodeHash : v
+            })
+            nodeHash = poseidon(inputs)
+            nodeIndex = nodeIndex / BigInt(this.arity)
         }
         return nodeHash === this.root
     }
