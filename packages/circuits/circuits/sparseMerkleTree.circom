@@ -8,7 +8,7 @@ template Modulo() {
     signal input dividend;
     signal output remainder;
 
-    signal quotient;
+    signal output quotient;
 
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
@@ -52,7 +52,7 @@ template SMTInclusionProof(HEIGHT, ARITY) {
         if (i == 0) {
             modulos[i].dividend <== leaf_index;
         } else {
-            modulos[i].dividend <== modulos[i - 1].remainder;
+            modulos[i].dividend <== modulos[i - 1].quotient;
         }
 
         for (var j = 0; j < ARITY; j++) {
