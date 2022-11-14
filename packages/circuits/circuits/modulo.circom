@@ -1,24 +1,17 @@
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 
-template ModuloTreeDepth() {
+template Modulo() {
     signal input divisor;
     signal input dividend;
     signal output remainder;
 
-    signal quotient;
+    signal output quotient;
 
     // circom's best practices state that we should avoid using <-- unless
     // we know what we are doing. But this is the only way to perform the
     // modulo operation.
     quotient <-- dividend \ divisor;
     remainder <-- dividend % divisor;
-
-    component divisor_lt;
-    // Range check on divisor
-    divisor_lt = LessThan(252);
-    divisor_lt.in[0] <== divisor;
-    divisor_lt.in[1] <== 2**252 - 1;
-    divisor_lt.out === 1;
 
     component remainder_lt;
     // Range check on remainder

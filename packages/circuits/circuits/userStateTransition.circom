@@ -76,7 +76,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i;
 
-        epoch_key_mods[i] = ModuloTreeDepth();
+        epoch_key_mods[i] = Modulo();
         epoch_key_mods[i].divisor <== EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH;
         epoch_key_mods[i].dividend <== epoch_key_hashers[i].out;
     }
