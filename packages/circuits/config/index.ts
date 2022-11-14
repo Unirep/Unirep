@@ -6,7 +6,8 @@ export const NUM_ATTESTATIONS_PER_PROOF = 5
 
 export const STATE_TREE_DEPTH = 9
 
-export const EPOCH_TREE_DEPTH = 32
+export const EPOCH_TREE_DEPTH = 9
+export const EPOCH_TREE_ARITY = 14
 
 export const AGGREGATE_KEY_COUNT = 7
 

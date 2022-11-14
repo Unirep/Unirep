@@ -9,14 +9,14 @@ include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/mux1.circom";
 include "./updateSparseTree.circom";
 
-template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
+template AggregateEpochKeys(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, KEY_COUNT) {
 
     signal input start_root;
     signal input epoch;
     signal input attester_id;
     signal input hashchain_index;
 
-    signal input path_elements[KEY_COUNT][EPOCH_TREE_DEPTH];
+    signal input path_elements[KEY_COUNT][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY];
     signal input epoch_keys[KEY_COUNT];
     signal input epoch_key_balances[KEY_COUNT][4];
     signal input old_epoch_key_hashes[KEY_COUNT];
@@ -45,7 +45,7 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
     component hash_selector[KEY_COUNT];
 
     for (var i = 0; i < KEY_COUNT; i++) {
-        sparse_tree_updaters[i] = UpdateSparseTree(EPOCH_TREE_DEPTH);
+        sparse_tree_updaters[i] = UpdateSparseTree(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
 
         if (i == 0) {
             sparse_tree_updaters[i].from_root <== start_root;
@@ -59,7 +59,9 @@ template AggregateEpochKeys(EPOCH_TREE_DEPTH, KEY_COUNT) {
         sparse_tree_updaters[i].timestamp <== epoch_key_balances[i][3];
         sparse_tree_updaters[i].old_leaf <== old_epoch_key_hashes[i];
         for (var x = 0; x < EPOCH_TREE_DEPTH; x++) {
-            sparse_tree_updaters[i].leaf_elements[x] <== path_elements[i][x];
+            for (var y = 0; y < EPOCH_TREE_ARITY; y++) {
+                sparse_tree_updaters[i].leaf_elements[x][y] <== path_elements[i][x][y];
+            }
         }
 
         // only process the inputs < epoch_key_count

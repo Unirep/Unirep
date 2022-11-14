@@ -14,7 +14,7 @@ include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input epoch;
     signal input nonce;
     signal output epoch_key;
@@ -110,7 +110,8 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;
 
-    component epoch_key_mod = ModuloTreeDepth(EPOCH_TREE_DEPTH);
+    component epoch_key_mod = ModuloTreeDepth();
+    epoch_key_mod.divisor <== EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH;
     epoch_key_mod.dividend <== epoch_key_hasher.out;
     epoch_key <== epoch_key_mod.remainder;
 
