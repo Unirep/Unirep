@@ -55,6 +55,12 @@ export const deployUnirep = async (
     console.log(`State tree depth: ${settings.stateTreeDepth}`)
     console.log(`Empty epoch tree root: ${settings.emptyEpochTreeRoot}`)
     console.log(
+        `Number of epoch keys per aggregate proof: ${settings.aggregateKeyCount}`
+    )
+    console.log(
+        `Number of epoch keys per epoch: ${settings.numEpochKeyNoncePerEpoch}`
+    )
+    console.log(
         '-----------------------------------------------------------------'
     )
     console.log(`Make sure these match what you expect!`)
