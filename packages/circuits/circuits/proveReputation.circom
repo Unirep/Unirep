@@ -60,11 +60,11 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER
     /* End of check 1a */
 
     /* 2. Check if user has positive reputation greater than min_rep */
-    // if proving min_rep > 0, check if pos_rep + min_rep >= neg_rep
+    // if proving min_rep > 0, check if pos_rep >= neg_rep + min_rep
 
     component min_rep_check = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
-    min_rep_check.in[0] <== pos_rep + min_rep;
-    min_rep_check.in[1] <== neg_rep;
+    min_rep_check.in[0] <== pos_rep;
+    min_rep_check.in[1] <== neg_rep + min_rep;
 
     component if_not_prove_min_rep = IsZero();
     if_not_prove_min_rep.in <== min_rep;
