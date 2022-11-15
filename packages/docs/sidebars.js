@@ -113,6 +113,11 @@ const sidebars = {
                     label: 'defaultProver',
                     id: 'circuits-api/default-prover',
                 },
+                {
+                    type: 'doc',
+                    label: 'networkProver',
+                    id: 'circuits-api/network-prover',
+                },
             ],
         },
         {
