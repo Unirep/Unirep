@@ -502,9 +502,12 @@ export class Synchronizer extends EventEmitter {
     }
 
     protected async _checkEpochKeyRange(epochKey: string) {
-        if (BigInt(epochKey) >= BigInt(2 ** this.settings.epochTreeDepth)) {
+        if (
+            BigInt(epochKey) >=
+            BigInt(this.settings.epochTreeArity ** this.settings.epochTreeDepth)
+        ) {
             throw new Error(
-                `Synchronizer: Epoch key (${epochKey}) greater than max leaf value(2**epochTreeDepth)`
+                `Synchronizer: Epoch key (${epochKey}) greater than max leaf value(epochTreeArity**epochTreeDepth)`
             )
         }
     }

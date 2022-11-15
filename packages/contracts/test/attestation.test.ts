@@ -13,6 +13,7 @@ import {
     AGGREGATE_KEY_COUNT,
     Circuit,
     EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
     defaultEpochTreeLeaf,
 } from '@unirep/circuits'
 
@@ -30,7 +31,11 @@ function genAggregateEpochKeysCircuitInputs(
 ) {
     const tree =
         epochTree ??
-        new SparseMerkleTree(EPOCH_TREE_DEPTH, defaultEpochTreeLeaf)
+        new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
+        )
     const startRoot = tree.root
     const dummyEpochKeys = Array(
         AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
@@ -786,7 +791,8 @@ describe('Attestations', function () {
 
         const invalidTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         invalidTree.update(BigInt(1234), genRandomSalt())
 

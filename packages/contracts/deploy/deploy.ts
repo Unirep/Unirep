@@ -47,7 +47,8 @@ export const deployUnirep = async (
     } as any
     const emptyEpochTree = new SparseMerkleTree(
         Number(settings.epochTreeDepth.toString()),
-        settings.defaultEpochTreeLeaf
+        settings.defaultEpochTreeLeaf,
+        settings.epochTreeArity
     )
     settings.emptyEpochTreeRoot = emptyEpochTree.root.toString()
 
