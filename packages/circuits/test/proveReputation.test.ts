@@ -49,7 +49,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 5, negRep: 5 },
+            startBalance: { posRep: 10, negRep: 5 },
             minRep: 8,
         })
         try {
