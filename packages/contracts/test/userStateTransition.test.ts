@@ -210,7 +210,7 @@ describe('User State Transition', function () {
                 genEpochKey(
                     id.identityNullifier,
                     BigInt(attester.address),
-                    0, // from epoch
+                    1, // from epoch
                     i,
                     EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
@@ -667,12 +667,12 @@ describe('User State Transition', function () {
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(null)
-                    .map((_, i) =>
+                    .map((_, n) =>
                         genEpochKey(
                             userState[i].id.identityNullifier,
                             BigInt(attester.address),
                             fromEpoch, // from epoch
-                            i,
+                            n,
                             EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                         )
                     )
