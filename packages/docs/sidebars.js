@@ -23,6 +23,11 @@ const sidebars = {
             id: 'welcome',
         },
         {
+            type: 'doc',
+            label: '🤝 Testnet Deployment',
+            id: 'testnet-deployment',
+        },
+        {
             type: 'category',
             label: '📘 Protocol',
             items: [
