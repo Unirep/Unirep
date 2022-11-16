@@ -16,7 +16,6 @@ function HomepageHeader() {
             <div
                 style={{
                     display: 'flex',
-                    flexWrap: 'wrap',
                     margin: 'auto',
                     justifyContent: 'center',
                 }}
@@ -36,8 +35,8 @@ function HomepageHeader() {
                     </div>
                     <div style={{ height: '24px' }} />
                     <div className={clsx(styles.subtitleText)}>
-                        UniRep protocol is a private a non-repudiable reputation
-                        system.
+                        UniRep protocol is a private and non-repudiable
+                        reputation system.
                     </div>
                     <div style={{ height: '24px' }} />
                     <Link className={clsx(styles.apiButton)} to="/docs/welcome">
@@ -53,6 +52,7 @@ function HomepageHeader() {
                     }}
                 >
                     <img
+                        className={styles.heroImage}
                         src={require('@site/static/img/img-hero.png').default}
                     />
                 </div>
@@ -66,7 +66,7 @@ export default function Home() {
     return (
         <Layout
             title={`${siteConfig.title}`}
-            description="Description will go into a meta tag in <head />"
+            description="Universal Reputation is an anonymous reputation protocol."
         >
             <HomepageHeader />
             <main>
