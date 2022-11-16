@@ -4,6 +4,7 @@ import { expect } from 'chai'
 import { hash4, SparseMerkleTree } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '@unirep/circuits'
@@ -26,23 +27,28 @@ describe('Config', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
+        expect(EPOCH_TREE_ARITY).equal(config.epochTreeArity)
         expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         expect(tree.root.toString()).equal(config.emptyEpochTreeRoot.toString())
     })
 
     it('helper functions', async () => {
         const maxEpochKey = await unirepContract.maxEpochKey()
-        expect(2 ** EPOCH_TREE_DEPTH - 1).equal(maxEpochKey)
+        expect(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 1).equal(maxEpochKey)
 
         const stateTreeDepth = await unirepContract.stateTreeDepth()
         expect(STATE_TREE_DEPTH).equal(stateTreeDepth)
 
         const epochTreeDepth = await unirepContract.epochTreeDepth()
         expect(EPOCH_TREE_DEPTH).equal(epochTreeDepth)
+
+        const epochTreeArity = await unirepContract.epochTreeArity()
+        expect(EPOCH_TREE_ARITY).equal(epochTreeArity)
 
         const numEpochKeyNoncePerEpoch =
             await unirepContract.numEpochKeyNoncePerEpoch()

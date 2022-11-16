@@ -5,6 +5,7 @@ import {
     unstringifyBigInts,
 } from 'maci-crypto'
 import poseidon from 'poseidon-lite'
+export { poseidon }
 
 export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
     9

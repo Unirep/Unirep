@@ -62,7 +62,7 @@ contract Unirep is IUnirep, VerifySignature {
         reputationVerifier = _reputationVerifier;
         epochKeyVerifier = _epochKeyVerifier;
 
-        maxEpochKey = uint256(2)**config.epochTreeDepth - 1;
+        maxEpochKey = uint256(config.epochTreeArity)**config.epochTreeDepth - 1;
 
         // for initializing other trees without using poseidon function
         IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
@@ -554,6 +554,10 @@ contract Unirep is IUnirep, VerifySignature {
 
     function epochTreeDepth() public view returns (uint8) {
         return config.epochTreeDepth;
+    }
+
+    function epochTreeArity() public view returns (uint8) {
+        return config.epochTreeArity;
     }
 
     function numEpochKeyNoncePerEpoch() public view returns (uint256) {

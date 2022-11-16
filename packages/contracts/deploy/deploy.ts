@@ -2,6 +2,7 @@ import { BigNumberish, ethers } from 'ethers'
 import {
     Circuit,
     EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     EMPTY_EPOCH_TREE_ROOT,
@@ -29,6 +30,7 @@ export const deployUnirep = async (
     _settings: {
         stateTreeDepth?: BigNumberish
         epochTreeDepth?: BigNumberish
+        epochTreeArity?: BigNumberish
         numEpochKeyNoncePerEpoch?: BigNumberish
         defaultEpochTreeLeaf?: bigint
     } = {},
@@ -37,6 +39,7 @@ export const deployUnirep = async (
     const settings = {
         stateTreeDepth: STATE_TREE_DEPTH,
         epochTreeDepth: EPOCH_TREE_DEPTH,
+        epochTreeArity: EPOCH_TREE_ARITY,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         defaultEpochTreeLeaf: hash4([0, 0, 0, 0]),
         aggregateKeyCount: AGGREGATE_KEY_COUNT,
@@ -44,7 +47,8 @@ export const deployUnirep = async (
     } as any
     const emptyEpochTree = new SparseMerkleTree(
         Number(settings.epochTreeDepth.toString()),
-        settings.defaultEpochTreeLeaf
+        settings.defaultEpochTreeLeaf,
+        settings.epochTreeArity
     )
     settings.emptyEpochTreeRoot = emptyEpochTree.root.toString()
 
@@ -52,6 +56,7 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
     console.log(`Epoch tree depth: ${settings.epochTreeDepth}`)
+    console.log(`Epoch tree arity: ${settings.epochTreeArity}`)
     console.log(`State tree depth: ${settings.stateTreeDepth}`)
     console.log(`Empty epoch tree root: ${settings.emptyEpochTreeRoot}`)
     console.log(

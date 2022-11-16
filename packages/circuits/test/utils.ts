@@ -3,6 +3,7 @@ import * as utils from '@unirep/utils'
 import {
     Circuit,
     EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } from '../src'
@@ -10,8 +11,15 @@ import { defaultProver } from '../provers/defaultProver'
 
 const defaultEpochTreeLeaf = utils.hash4([0, 0, 0, 0])
 
-const genNewEpochTree = (_epochTreeDepth: number = EPOCH_TREE_DEPTH) => {
-    return new utils.SparseMerkleTree(_epochTreeDepth, defaultEpochTreeLeaf)
+const genNewEpochTree = (
+    _epochTreeDepth: number = EPOCH_TREE_DEPTH,
+    _epochTreeArity = EPOCH_TREE_ARITY
+) => {
+    return new utils.SparseMerkleTree(
+        _epochTreeDepth,
+        defaultEpochTreeLeaf,
+        _epochTreeArity
+    )
 }
 
 // TODO: needs to be updated
@@ -20,7 +28,8 @@ const genEpochKey = (
     attesterId: number,
     epoch: number,
     nonce: number,
-    _epochTreeDepth: number = EPOCH_TREE_DEPTH
+    _epochTreeDepth: number = EPOCH_TREE_DEPTH,
+    _epochTreeArity: number = EPOCH_TREE_ARITY
 ): bigint => {
     const epochKey = utils.hash4([
         identityNullifier,
@@ -29,7 +38,8 @@ const genEpochKey = (
         nonce,
     ])
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = epochKey % BigInt(2 ** _epochTreeDepth)
+    const epochKeyModed =
+        epochKey % BigInt(_epochTreeArity) ** BigInt(_epochTreeDepth)
     return epochKeyModed
 }
 

@@ -187,6 +187,159 @@ A contract address for an aggregate epoch keys proof verifier. See [IVerifier](/
 IVerifier public immutable aggregateEpochKeysVerifier;
 ```
 
+## attesterStartTimestamp
+
+Get the start timestamp for an attester (in seconds). This is the start of the 0th epoch.
+
+```sol
+function attesterStartTimestamp(uint160 attesterId)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterOwedEpochKeys
+
+Get the number of epoch keys that are owed a balance for an attester in an epoch.
+
+```sol
+function attesterOwedEpochKeys(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterHashchainTotalCount
+
+Get the total number of hashchains for an attester in an epoch.
+
+```sol
+function attesterHashchainTotalCount(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterHashchainProcessedCount
+
+Get the number of processed hashchains for an attester in an epoch.
+
+```sol
+function attesterHashchainProcessedCount(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterHashchain
+
+Get a hashchain for an attester.
+
+```sol
+function attesterHashchain(uint160 attesterId, uint256 epoch, uint256 index)
+  public
+  view
+  returns (EpochKeyHashchain)
+```
+
+## attesterEpochLength
+
+Get the epoch length for an attester.
+
+```sol
+function attesterEpochLength(uint160 attesterId)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterStateTreeRootExists
+
+Check if a state tree root exists for an attester and epoch.
+
+```sol
+function attesterStateTreeRootExists(uint160 attesterId, uint256 epoch, uint256 root)
+  public
+  view
+  returns (bool)
+```
+
+## attesterStateTreeRoot
+
+Get the state tree root for an attester for an epoch.
+
+```sol
+function attesterStateTreeRoot(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterStateTreeLeafCount
+
+Get the number of state tree leaves for an attester for an epoch.
+
+```sol
+function attesterStateTreeLeafCount(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterSemaphoreGroupRoot
+
+Get the semaphore group root for an attester.
+
+```sol
+function attesterSemaphoreGroupRoot(uint160 attesterId)
+  public
+  view
+  returns (uint256)
+```
+
+## attesterEpochRoot
+
+Get the epoch tree root for an attester for a certain epoch.
+
+```sol
+function attesterEpochRoot(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (uint256)
+```
+
+## stateTreeDepth
+
+Get the state tree depth for the Unirep contract.
+
+```sol
+function stateTreeDepth() public view returns (uint8)
+```
+
+## epochTreeDepth
+
+Get the epoch tree depth for the Unirep contract.
+
+```sol
+function epochTreeDepth() public view returns (uint8)
+```
+
+## epochTreeArity
+
+Get the epoch tree arity for the Unirep contract.
+
+```sol
+function epochTreeArity() public view returns (uint8)
+```
+
+## numEpochKeyNoncePerEpoch
+
+Get the maximum nonce value for an epoch key. This determines the number of epoch keys per epoch.
+
+```sol
+function numEpochKeyNoncePerEpoch() public view returns (uint256)
+```
+
 ## Events
 
 The UniRep contract emits a number of events to help offchain observers track state.

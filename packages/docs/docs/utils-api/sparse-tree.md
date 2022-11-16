@@ -16,7 +16,8 @@ Get a new tree instance.
 ```ts
 constructor(
   height: number,
-  zeroValue: bigint = 0
+  zeroValue: bigint = 0,
+  arity: number = 2
 ): SparseMerkleTree
 ```
 
@@ -45,12 +46,12 @@ tree.update(index: bigint, value: bigint)
 
 Create a merkle inclusion proof for a leaf.
 ```ts
-tree.createProof(index: bigint): bigint[]
+tree.createProof(index: bigint): bigint[][]
 ```
 
 ## verifyProof
 
 Verify a merkle inclusion proof.
 ```ts
-tree.verifyProof(index: bigint, proof: bigint[]): boolean
+tree.verifyProof(index: bigint, proof: bigint[][]): boolean
 ```

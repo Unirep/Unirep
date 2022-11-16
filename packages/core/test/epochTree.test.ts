@@ -57,7 +57,8 @@ describe('Epoch tree', function () {
         const config = await unirepContract.config()
         const epochTree = new SparseMerkleTree(
             config.epochTreeDepth,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            config.epochTreeArity
         )
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
@@ -93,7 +94,8 @@ describe('Epoch tree', function () {
         const config = await unirepContract.config()
         const epochTree = new SparseMerkleTree(
             config.epochTreeDepth,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            config.epochTreeArity
         )
 
         for (const epk of epochKeys) {
@@ -194,7 +196,8 @@ describe('Epoch tree', function () {
         const config = await unirepContract.config()
         const epochTree = new SparseMerkleTree(
             config.epochTreeDepth,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            config.epochTreeArity
         )
 
         for (const epk of epochKeys) {

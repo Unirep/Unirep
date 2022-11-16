@@ -4,6 +4,7 @@ import { expect } from 'chai'
 import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     defaultEpochTreeLeaf,
 } from '@unirep/circuits'
@@ -37,7 +38,8 @@ describe('Epoch', function () {
         const emptyStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const emptyEpochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         for (let x = startEpoch.toNumber(); x < 10; x++) {
             const prevEpoch = await unirepContract.attesterCurrentEpoch(

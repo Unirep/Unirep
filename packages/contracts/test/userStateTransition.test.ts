@@ -11,6 +11,7 @@ import {
 } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
@@ -85,12 +86,13 @@ describe('User State Transition', function () {
                     BigInt(attester.address),
                     0, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -148,12 +150,13 @@ describe('User State Transition', function () {
                     address,
                     0, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const index = 0
         const stateTreeProof = stateTree.createProof(index)
@@ -207,14 +210,15 @@ describe('User State Transition', function () {
                 genEpochKey(
                     id.identityNullifier,
                     BigInt(attester.address),
-                    0, // from epoch
+                    1, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -288,12 +292,13 @@ describe('User State Transition', function () {
                     BigInt(attester.address),
                     0, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -353,12 +358,13 @@ describe('User State Transition', function () {
                     BigInt(attester.address),
                     0, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         epochTree.update(BigInt(1), hash4([2, 2, 0, 0]))
         const stateTreeProof = stateTree.createProof(index)
@@ -422,12 +428,13 @@ describe('User State Transition', function () {
                     BigInt(attester.address),
                     0, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const stateTreeProof = _stateTree.createProof(1)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -487,12 +494,13 @@ describe('User State Transition', function () {
                     BigInt(attester.address),
                     0, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -558,12 +566,13 @@ describe('User State Transition', function () {
                     BigInt(attester.address),
                     fromEpoch, // from epoch
                     i,
-                    2 ** EPOCH_TREE_DEPTH
+                    EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                 )
             )
         const epochTree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
         )
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -658,18 +667,19 @@ describe('User State Transition', function () {
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(null)
-                    .map((_, i) =>
+                    .map((_, n) =>
                         genEpochKey(
                             userState[i].id.identityNullifier,
                             BigInt(attester.address),
                             fromEpoch, // from epoch
-                            i,
-                            2 ** EPOCH_TREE_DEPTH
+                            n,
+                            EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
                         )
                     )
                 const epochTree = new SparseMerkleTree(
                     EPOCH_TREE_DEPTH,
-                    defaultEpochTreeLeaf
+                    defaultEpochTreeLeaf,
+                    EPOCH_TREE_ARITY
                 )
                 const stateTreeProof = _stateTree[fromEpoch].createProof(
                     userState[i].index

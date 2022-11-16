@@ -165,7 +165,7 @@ export default class UserState extends Synchronizer {
                     this.attesterId.toString(),
                     epoch,
                     i,
-                    2 ** this.settings.epochTreeDepth
+                    this.settings.epochTreeArity ** this.settings.epochTreeDepth
                 )
             )
     }
@@ -202,7 +202,8 @@ export default class UserState extends Synchronizer {
                         attesterId.toString(),
                         x,
                         i,
-                        2 ** this.settings.epochTreeDepth
+                        this.settings.epochTreeArity **
+                            this.settings.epochTreeDepth
                     ).toString()
                 )
             allEpks.push(...epks)
@@ -294,7 +295,7 @@ export default class UserState extends Synchronizer {
                     this.attesterId.toString(),
                     fromEpoch,
                     i,
-                    2 ** this.settings.epochTreeDepth
+                    this.settings.epochTreeArity ** this.settings.epochTreeDepth
                 ).toString()
             )
             .map(async (epochKey) => {

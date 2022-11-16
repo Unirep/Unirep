@@ -7,7 +7,7 @@ include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
-template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input from_epoch;
     signal input to_epoch;
 
@@ -36,7 +36,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE
     signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY];
     signal output transition_nullifier;
 
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
@@ -76,7 +76,8 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i;
 
-        epoch_key_mods[i] = ModuloTreeDepth(EPOCH_TREE_DEPTH);
+        epoch_key_mods[i] = Modulo();
+        epoch_key_mods[i].divisor <== EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH;
         epoch_key_mods[i].dividend <== epoch_key_hashers[i].out;
     }
 
@@ -84,10 +85,12 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_KEY_NONCE
     component new_leaf_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
 
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        epoch_tree_membership[i] = SMTInclusionProof(EPOCH_TREE_DEPTH);
+        epoch_tree_membership[i] = SMTInclusionProof(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
         epoch_tree_membership[i].leaf_index <== epoch_key_mods[i].remainder;
         for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
-            epoch_tree_membership[i].path_elements[j][0] <== epoch_tree_elements[i][j];
+            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
+                epoch_tree_membership[i].path_elements[j][k] <== epoch_tree_elements[i][j][k];
+            }
         }
         // calculate leaf
         new_leaf_hasher[i] = Poseidon(4);
