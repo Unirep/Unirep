@@ -7,20 +7,54 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures'
 
 import styles from './index.module.css'
 
+// const HeroImage = require('@site/static/img/img-hero.png').default
+
 function HomepageHeader() {
     const { siteConfig } = useDocusaurusContext()
     return (
         <header className={clsx('hero hero--primary', styles.heroBanner)}>
-            <div className="container">
-                <h1 className="hero__title">{siteConfig.title}</h1>
-                <p className="hero__subtitle">{siteConfig.tagline}</p>
-                <div className={styles.buttons}>
-                    <Link
-                        className="button button--secondary button--lg"
-                        to="/docs/welcome"
-                    >
-                        API Docs
+            <div
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    margin: 'auto',
+                    justifyContent: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        maxWidth: '534px',
+                        textAlign: 'left',
+                        margin: '0px 16px',
+                    }}
+                >
+                    <div className={clsx(styles.titleText)}>
+                        Universal Reputation
+                    </div>
+                    <div style={{ height: '24px' }} />
+                    <div className={clsx(styles.subtitleText)}>
+                        UniRep protocol is a private a non-repudiable reputation
+                        system.
+                    </div>
+                    <div style={{ height: '24px' }} />
+                    <Link className={clsx(styles.apiButton)} to="/docs/welcome">
+                        Get Started
                     </Link>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        maxWidth: 'min(761px, 50vw)',
+                    }}
+                >
+                    <img
+                        src={require('@site/static/img/img-hero.png').default}
+                    />
                 </div>
             </div>
         </header>
@@ -31,7 +65,7 @@ export default function Home() {
     const { siteConfig } = useDocusaurusContext()
     return (
         <Layout
-            title={`Hello from ${siteConfig.title}`}
+            title={`${siteConfig.title}`}
             description="Description will go into a meta tag in <head />"
         >
             <HomepageHeader />

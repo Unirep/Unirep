@@ -4,8 +4,7 @@
  */
 
 .heroBanner {
-    padding: 4rem 0;
-    text-align: center;
+    padding: 4rem 0 0rem 0;
     position: relative;
     overflow: hidden;
 }
@@ -20,4 +19,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.apiButton {
+    padding: 12px 24px;
+    background: #234345;
+    border-radius: 24px;
+    color: #fcfcfc;
+    font-weight: 700;
+    font-size: min(16px, 3vw);
+}
+
+.titleText {
+    color: #234345;
+    font-weight: 900;
+    font-size: min(96px, 10vw);
+    line-height: 106%;
+}
+
+.subtitleText {
+    color: #234345;
+    font-weight: 400;
+    font-size: min(20px, 3vw);
+    line-height: 120%;
 }
