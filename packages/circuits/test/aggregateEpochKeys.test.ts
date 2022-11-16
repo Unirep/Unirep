@@ -152,7 +152,7 @@ describe('Multiple SMT updates', function () {
     it('should fail to prove with 0 epoch keys', async () => {
         const tree = new SparseMerkleTree(
             EPOCH_TREE_DEPTH,
-            hash2([0, 0]),
+            hash4([0, 0, 0, 0]),
             EPOCH_TREE_ARITY
         )
         const startRoot = tree.root
