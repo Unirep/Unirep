@@ -2,65 +2,71 @@ import React from 'react'
 import clsx from 'clsx'
 import styles from './styles.module.css'
 
+const DescriptionImage =
+    require('@site/static/img/description-image.svg').default
+
 const FeatureList = [
     {
-        title: 'Easy to Use',
-        Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+        title: 'Extensible',
         description: (
             <>
-                Docusaurus was designed from the ground up to be easily
-                installed and used to get your website up and running quickly.
+                UniRep is designed to be extended to fulfill the needs of any
+                application. The smart contracts, ZK circuits, and data
+                structures are all built with extensibility in mind.
             </>
         ),
     },
     {
-        title: 'Focus on What Matters',
-        Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+        title: 'Anonymous',
         description: (
             <>
-                Docusaurus lets you focus on your docs, and we&apos;ll do the
-                chores. Go ahead and move your docs into the <code>docs</code>{' '}
-                directory.
+                UniRep gives users true anonymity using short lived psuedonyms.
+                A single user has a number of valid identifiers at any given
+                time. These identifiers will change over time. The user can
+                always retroactively prove control of old identifiers in ZK.
             </>
         ),
     },
     {
-        title: 'Powered by React',
-        Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+        title: 'Interoperable',
         description: (
             <>
-                Extend or customize your website layout by reusing React.
-                Docusaurus can be extended while reusing the same header and
-                footer.
+                A standard protocol for reputation allows applications to
+                interoperate with each other by verifying common proofs. This
+                can happen offchain using protocols like http or ipfs; and can
+                also happen onchain by verifying a ZK proof in a smart contract.
             </>
         ),
     },
 ]
 
-function Feature({ Svg, title, description }) {
+function Feature({ title, description }) {
     return (
-        <div className={clsx('col col--4')}>
-            <div className="text--center">
-                <Svg className={styles.featureSvg} role="img" />
-            </div>
-            <div className="text--center padding-horiz--md">
-                <h3>{title}</h3>
-                <p>{description}</p>
-            </div>
+        <div className={styles.featureContainer}>
+            <h3 className={styles.featureTitle}>{title}</h3>
+            <p className={styles.featureDescription}>{description}</p>
         </div>
     )
 }
 
 export default function HomepageFeatures() {
     return (
-        <section className={styles.features}>
-            <div className="container">
-                <div className="row">
-                    {FeatureList.map((props, idx) => (
-                        <Feature key={idx} {...props} />
+        <div
+            style={{
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%',
+                margin: 'min(130px, 10vw) 0px',
+            }}
+        >
+            <DescriptionImage className={styles.descriptionImage} role="img" />
+            <section className={styles.features}>
+                <div className="container">
+                    {FeatureList.map((f) => (
+                        <Feature {...f} />
                     ))}
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     )
 }

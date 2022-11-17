@@ -1,11 +1,41 @@
 .features {
     display: flex;
-    align-items: center;
-    padding: 2rem 0;
-    width: 100%;
 }
 
 .featureSvg {
     height: 200px;
     width: 200px;
+}
+
+.featureTitle {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--ifm-color-primary-darkest);
+}
+
+.featureDescription {
+    font-size: 20px;
+    line-height: 120%;
+    color: var(--ifm-color-primary-darkest);
+}
+
+.featureContainer {
+    max-width: 530px;
+    margin-bottom: 93px;
+}
+
+.descriptionImage {
+    padding: 0px 2rem;
+}
+
+@media screen and (max-width: 700px) {
+    .descriptionImage {
+        display: none;
+    }
+}
+
+@media screen and (min-width: 996px) {
+    .featureContainer {
+        margin-left: 123px;
+    }
 }

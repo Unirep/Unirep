@@ -7,11 +7,18 @@
     padding: 4rem 0 0rem 0;
     position: relative;
     overflow: hidden;
+    background: #bae1e3;
+}
+
+.heroImage {
 }
 
 @media screen and (max-width: 996px) {
     .heroBanner {
         padding: 2rem;
+    }
+    .heroImage {
+        display: none;
     }
 }
 
