@@ -6,6 +6,7 @@ pragma circom 2.0.0;
 
 include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../../node_modules/circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
@@ -16,9 +17,9 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
 
-    signal input nonce;
-    signal input epoch;
-    signal input attester_id;
+    // signal input nonce;
+    // signal input epoch;
+    // signal input attester_id;
     signal output epoch_key;
     signal output state_tree_root;
 
@@ -29,6 +30,39 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
 
     // Some arbitrary data to endorse
     signal input data;
+
+    /**
+     * Optionally reveal nonce, epoch, attester_id
+     **/
+    signal output public_params;
+
+    /**
+     * 8 bits nonce
+     * 64 bits epoch
+     * 160 bits attester_id
+     * 1 bit reveal nonce
+     **/
+    signal input control;
+
+    // no bits above 233 should be set
+    control \ (2 ** 233) === 0;
+
+    signal reveal_nonce <-- control \ 2 ** 232;
+    signal attester_id <-- (control \ 2 ** 72) & (2**160 - 1);
+    signal epoch <-- (control \ 2 ** 8) & (2**64 - 1);
+    signal nonce <-- control & (2 ** 8 - 1);
+
+    // individual range check
+    reveal_nonce \ 2 === 0;
+    attester_id \ 2**160 === 0;
+    epoch \ 2**64 === 0;
+    nonce \ 2**8 === 0;
+
+    // check extracted value
+    control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
+
+    // generate the public params
+    public_params <== attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
     /* 1. Check if user exists in the Global State Tree */
 

@@ -9,6 +9,7 @@ import {
     genEpochKeyCircuitInput,
     genProofAndVerify,
     genEpochKey,
+    buildControlInput,
 } from './utils'
 
 describe('Verify Epoch Key circuits', function () {
@@ -60,6 +61,69 @@ describe('Verify Epoch Key circuits', function () {
                 ).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
+            expect(publicSignals[2]).to.equal(
+                (
+                    (BigInt(attesterId) << BigInt(72)) +
+                    (BigInt(epoch) << BigInt(8))
+                ).toString()
+            )
+        }
+    })
+
+    it('should reveal nonce value', async () => {
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const attesterId = 10210
+            const epoch = 120958
+            const posRep = 2988
+            const negRep = 987
+            const graffiti = 1294129
+            const timestamp = 214
+            const id = new ZkIdentity()
+            const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const leaf = hash7([
+                id.identityNullifier,
+                attesterId,
+                epoch,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ])
+            tree.insert(leaf)
+            const circuitInputs = genEpochKeyCircuitInput({
+                id,
+                tree,
+                leafIndex: 0,
+                epoch,
+                nonce,
+                attesterId,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+                revealNonce: 1,
+            })
+            const { isValid, publicSignals } = await genProofAndVerify(
+                Circuit.verifyEpochKey,
+                circuitInputs
+            )
+            expect(isValid).to.be.true
+            expect(publicSignals[0]).to.equal(
+                genEpochKey(
+                    id.identityNullifier,
+                    attesterId,
+                    epoch,
+                    nonce
+                ).toString()
+            )
+            expect(publicSignals[1]).to.equal(tree.root.toString())
+            expect(publicSignals[2]).to.equal(
+                (
+                    (BigInt(attesterId) << BigInt(72)) +
+                    (BigInt(epoch) << BigInt(8)) +
+                    BigInt(nonce)
+                ).toString()
+            )
         }
     })
 
@@ -111,7 +175,7 @@ describe('Verify Epoch Key circuits', function () {
                 ).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            expect(publicSignals[4].toString()).to.equal(data.toString())
+            expect(publicSignals[3].toString()).to.equal(data.toString())
         }
     })
 
@@ -163,9 +227,9 @@ describe('Verify Epoch Key circuits', function () {
                 ).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            expect(publicSignals[4].toString()).to.equal(data.toString())
-            console.log(publicSignals[4])
-            publicSignals[4] = '00000'
+            expect(publicSignals[3].toString()).to.equal(data.toString())
+            console.log(publicSignals[3])
+            publicSignals[3] = '00000'
             const valid = await defaultProver.verifyProof(
                 Circuit.verifyEpochKey,
                 publicSignals,
@@ -256,7 +320,11 @@ describe('Verify Epoch Key circuits', function () {
             graffiti,
             timestamp,
         })
-        circuitInputs.attester_id = 21789
+        circuitInputs.control = buildControlInput({
+            epoch,
+            nonce,
+            attesterId: 2171828,
+        })
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.verifyEpochKey,
             circuitInputs

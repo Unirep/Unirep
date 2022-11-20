@@ -43,6 +43,15 @@ const genEpochKey = (
     return epochKeyModed
 }
 
+const buildControlInput = ({ attesterId, epoch, nonce, revealNonce }: any) => {
+    let control = BigInt(0)
+    control += BigInt(revealNonce ?? 0) << BigInt(232)
+    control += BigInt(attesterId) << BigInt(72)
+    control += BigInt(epoch) << BigInt(8)
+    control += BigInt(nonce)
+    return control
+}
+
 const genEpochKeyCircuitInput = (config: {
     id: utils.ZkIdentity
     tree: utils.IncrementalMerkleTree
@@ -55,6 +64,7 @@ const genEpochKeyCircuitInput = (config: {
     graffiti: number | bigint
     timestamp: number | bigint
     data?: bigint
+    revealNonce?: number
 }) => {
     const {
         id,
@@ -68,20 +78,19 @@ const genEpochKeyCircuitInput = (config: {
         graffiti,
         timestamp,
         data,
+        revealNonce,
     } = config
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
         identity_nullifier: id.identityNullifier,
-        nonce: nonce,
-        epoch: epoch,
         pos_rep: posRep,
         neg_rep: negRep,
         graffiti,
         timestamp,
-        attester_id: attesterId,
         data: data ?? BigInt(0),
+        control: buildControlInput({ nonce, epoch, attesterId, revealNonce }),
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -257,6 +266,7 @@ export {
     defaultEpochTreeLeaf,
     genNewEpochTree,
     genEpochKey,
+    buildControlInput,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genUserStateTransitionCircuitInput,
