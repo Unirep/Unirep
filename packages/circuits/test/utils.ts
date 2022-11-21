@@ -182,8 +182,13 @@ const genReputationCircuitInput = (config: {
     attesterId: number
     startBalance: { posRep: any; negRep: any; graffiti?: any; timestamp?: any }
     minRep?: number
+    maxRep?: number
+    proveMinRep?: number
+    proveMaxRep?: number
+    proveZeroRep?: number
     proveGraffiti?: boolean
     graffitiPreImage?: any
+    revealNonce?: number
 }) => {
     const {
         id,
@@ -194,9 +199,15 @@ const genReputationCircuitInput = (config: {
         minRep,
         proveGraffiti,
         graffitiPreImage,
+        maxRep,
+        proveMinRep,
+        proveMaxRep,
+        proveZeroRep,
+        revealNonce,
     } = Object.assign(
         {
             minRep: 0,
+            maxRep: 0,
             graffitiPreImage: 0,
         },
         config
@@ -231,7 +242,11 @@ const genReputationCircuitInput = (config: {
             attesterId,
             proveGraffiti: proveGraffiti ? 1 : 0,
             minRep,
-            maxRep: 0,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
+            proveZeroRep,
+            revealNonce,
         }),
     }
     return utils.stringifyBigInts(circuitInputs)
