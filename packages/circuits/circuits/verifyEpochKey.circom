@@ -62,7 +62,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
     control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
 
     // generate the public params
-    public_params <== attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
+    public_params <== reveal_nonce * (2 ** 232) + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
     /* 1. Check if user exists in the Global State Tree */
 

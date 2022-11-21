@@ -68,6 +68,7 @@ interface IUnirep {
     error HashchainNotProcessed();
 
     struct EpochKeySignals {
+        uint256 revealNonce;
         uint256 stateTreeRoot;
         uint256 epochKey;
         uint256 data;

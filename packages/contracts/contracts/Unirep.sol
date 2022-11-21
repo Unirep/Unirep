@@ -399,6 +399,7 @@ contract Unirep is IUnirep, VerifySignature {
         signals.stateTreeRoot = publicSignals[1];
         signals.data = publicSignals[3];
         // now decode the control values
+        signals.revealNonce = (publicSignals[2] >> 232) & 1;
         signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
         signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
         signals.nonce = publicSignals[2] & ((2 << 8) - 1);

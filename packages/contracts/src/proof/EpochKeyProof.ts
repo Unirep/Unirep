@@ -19,6 +19,7 @@ export class EpochKeyProof extends BaseProof {
     public epoch: BigNumberish
     public attesterId: BigNumberish
     public nonce: BigNumberish
+    public revealNonce: BigNumberish
     public data: BigNumberish
 
     /**
@@ -35,6 +36,7 @@ export class EpochKeyProof extends BaseProof {
         this.epochKey = _publicSignals[this.idx.epochKey].toString()
         this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
         this.control = _publicSignals[this.idx.control].toString()
+        this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &
             ((BigInt(2) << BigInt(160)) - BigInt(1))

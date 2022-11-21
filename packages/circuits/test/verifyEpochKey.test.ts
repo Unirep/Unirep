@@ -119,6 +119,7 @@ describe('Verify Epoch Key circuits', function () {
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
                 (
+                    (BigInt(1) << BigInt(232)) +
                     (BigInt(attesterId) << BigInt(72)) +
                     (BigInt(epoch) << BigInt(8)) +
                     BigInt(nonce)
