@@ -366,7 +366,6 @@ export default class UserState extends Synchronizer {
             neg_rep: negRep,
             graffiti,
             timestamp,
-            min_rep: minRep ?? 0,
             graffiti_pre_image: graffitiPreImage ?? 0,
             control: ReputationProof.buildControlInput({
                 epoch,
