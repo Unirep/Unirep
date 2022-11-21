@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/utils'
-import { Circuit } from '../src'
+import { Circuit, EpochKeyProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
 import { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
@@ -9,7 +9,6 @@ import {
     genEpochKeyCircuitInput,
     genProofAndVerify,
     genEpochKey,
-    buildControlInput,
 } from './utils'
 
 describe('Verify Epoch Key circuits', function () {
@@ -321,7 +320,7 @@ describe('Verify Epoch Key circuits', function () {
             graffiti,
             timestamp,
         })
-        circuitInputs.control = buildControlInput({
+        circuitInputs.control = EpochKeyProof.buildControlInput({
             epoch,
             nonce,
             attesterId: 2171828,

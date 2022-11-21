@@ -6,6 +6,8 @@ import {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    ReputationProof,
+    EpochKeyProof,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
@@ -41,42 +43,6 @@ const genEpochKey = (
     const epochKeyModed =
         epochKey % BigInt(_epochTreeArity) ** BigInt(_epochTreeDepth)
     return epochKeyModed
-}
-
-const buildControlInput = ({ attesterId, epoch, nonce, revealNonce }: any) => {
-    let control = BigInt(0)
-    control += BigInt(revealNonce ?? 0) << BigInt(232)
-    control += BigInt(attesterId) << BigInt(72)
-    control += BigInt(epoch) << BigInt(8)
-    control += BigInt(nonce)
-    return control
-}
-
-const buildRepControlInput = ({
-    attesterId,
-    epoch,
-    nonce,
-    revealNonce,
-    proveGraffiti,
-    minRep,
-    maxRep,
-    proveMinRep,
-    proveMaxRep,
-    zeroRep,
-}: any) => {
-    let control0 = BigInt(0)
-    control0 += BigInt(proveGraffiti ?? 0) << BigInt(233)
-    control0 += BigInt(revealNonce ?? 0) << BigInt(232)
-    control0 += BigInt(attesterId) << BigInt(72)
-    control0 += BigInt(epoch) << BigInt(8)
-    control0 += BigInt(nonce)
-    let control1 = BigInt(0)
-    control1 += BigInt(zeroRep ?? 0) << BigInt(130)
-    control1 += BigInt(proveMaxRep ?? 0) << BigInt(129)
-    control1 += BigInt(proveMinRep ?? 0) << BigInt(128)
-    control1 += BigInt(maxRep) << BigInt(64)
-    control1 += BigInt(minRep)
-    return [control0, control1]
 }
 
 const genEpochKeyCircuitInput = (config: {
@@ -117,7 +83,12 @@ const genEpochKeyCircuitInput = (config: {
         graffiti,
         timestamp,
         data: data ?? BigInt(0),
-        control: buildControlInput({ nonce, epoch, attesterId, revealNonce }),
+        control: EpochKeyProof.buildControlInput({
+            nonce,
+            epoch,
+            attesterId,
+            revealNonce,
+        }),
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -254,7 +225,7 @@ const genReputationCircuitInput = (config: {
         graffiti: startBalance.graffiti ?? 0,
         timestamp: startBalance.timestamp ?? 0,
         graffiti_pre_image: graffitiPreImage,
-        control: buildRepControlInput({
+        control: ReputationProof.buildControlInput({
             epoch,
             nonce,
             attesterId,
@@ -296,7 +267,6 @@ export {
     defaultEpochTreeLeaf,
     genNewEpochTree,
     genEpochKey,
-    buildControlInput,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genUserStateTransitionCircuitInput,
