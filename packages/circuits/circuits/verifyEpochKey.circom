@@ -34,7 +34,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
     /**
      * Optionally reveal nonce, epoch, attester_id
      **/
-    signal output public_params;
+    signal output control_output;
 
     /**
      * 8 bits nonce
@@ -62,7 +62,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
     control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
 
     // generate the public params
-    public_params <== reveal_nonce * (2 ** 232) + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
+    control_output <== reveal_nonce * (2 ** 232) + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
     /* 1. Check if user exists in the Global State Tree */
 
