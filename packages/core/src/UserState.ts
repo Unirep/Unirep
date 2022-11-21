@@ -416,6 +416,7 @@ export default class UserState extends Synchronizer {
             nonce?: number
             epoch?: number
             data?: bigint
+            revealNonce?: boolean
         } = {}
     ): Promise<EpochKeyProof> => {
         const nonce = options.nonce ?? 0
@@ -426,10 +427,7 @@ export default class UserState extends Synchronizer {
             await this.getRepByAttester(this.attesterId, epoch)
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
-            epoch,
             identity_nullifier: this.id.identityNullifier,
-            attester_id: this.attesterId.toString(),
-            nonce,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,
@@ -437,6 +435,12 @@ export default class UserState extends Synchronizer {
             data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
+            control: EpochKeyProof.buildControlInput({
+                epoch,
+                nonce,
+                attesterId: this.attesterId.toString(),
+                revealNonce: options.revealNonce ? 1 : 0,
+            }),
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
