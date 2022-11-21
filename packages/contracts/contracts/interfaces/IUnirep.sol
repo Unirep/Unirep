@@ -67,6 +67,15 @@ interface IUnirep {
     error HashchainInvalid();
     error HashchainNotProcessed();
 
+    struct EpochKeySignals {
+        uint256 stateTreeRoot;
+        uint256 epochKey;
+        uint256 data;
+        uint256 nonce;
+        uint256 epoch;
+        uint256 attesterId;
+    }
+
     struct Reputation {
         uint256 posRep;
         uint256 negRep;

@@ -10,14 +10,15 @@ export class EpochKeyProof extends BaseProof {
     readonly idx = {
         epochKey: 0,
         stateTreeRoot: 1,
-        epoch: 2,
-        attesterId: 3,
-        data: 4,
+        control: 2,
+        data: 3,
     }
-    public stateTreeRoot: BigNumberish
-    public epoch: BigNumberish
     public epochKey: BigNumberish
+    public stateTreeRoot: BigNumberish
+    public control: BigNumberish
+    public epoch: BigNumberish
     public attesterId: BigNumberish
+    public nonce: BigNumberish
     public data: BigNumberish
 
     /**
@@ -33,9 +34,25 @@ export class EpochKeyProof extends BaseProof {
         super(_publicSignals, _proof, prover)
         this.epochKey = _publicSignals[this.idx.epochKey].toString()
         this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
-        this.epoch = _publicSignals[this.idx.epoch].toString()
-        this.attesterId = _publicSignals[this.idx.attesterId].toString()
+        this.control = _publicSignals[this.idx.control].toString()
+        this.attesterId =
+            (BigInt(this.control) >> BigInt(72)) &
+            ((BigInt(2) << BigInt(160)) - BigInt(1))
+        this.epoch =
+            (BigInt(this.control) >> BigInt(8)) &
+            ((BigInt(2) << BigInt(64)) - BigInt(1))
+        this.nonce =
+            BigInt(this.control) & ((BigInt(2) << BigInt(8)) - BigInt(1))
         this.data = _publicSignals[this.idx.data].toString()
         this.circuit = Circuit.verifyEpochKey
+    }
+
+    static buildControlInput({ attesterId, epoch, nonce, revealNonce }: any) {
+        let control = BigInt(0)
+        control += BigInt(revealNonce ?? 0) << BigInt(232)
+        control += BigInt(attesterId) << BigInt(72)
+        control += BigInt(epoch) << BigInt(8)
+        control += BigInt(nonce)
+        return control
     }
 }

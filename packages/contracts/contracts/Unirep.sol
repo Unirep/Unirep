@@ -389,23 +389,40 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = newEpoch;
     }
 
+    function decodeEpochKeySignals(uint256[] memory publicSignals)
+        public
+        pure
+        returns (EpochKeySignals memory)
+    {
+        EpochKeySignals memory signals;
+        signals.epochKey = publicSignals[0];
+        signals.stateTreeRoot = publicSignals[1];
+        signals.data = publicSignals[3];
+        // now decode the control values
+        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
+        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        return signals;
+    }
+
     function verifyEpochKeyProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
+        EpochKeySignals memory signals = decodeEpochKeySignals(publicSignals);
         bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
         // short circuit if the proof is invalid
         if (!valid) revert InvalidProof();
-        if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
-        if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
-        updateEpochIfNeeded(uint160(publicSignals[3]));
-        AttesterData storage attester = attesters[uint160(publicSignals[3])];
+        if (signals.epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(signals.attesterId));
+        AttesterData storage attester = attesters[uint160(signals.attesterId)];
         // epoch check
-        if (publicSignals[2] > attester.currentEpoch)
-            revert InvalidEpoch(publicSignals[2]);
+        if (signals.epoch > attester.currentEpoch)
+            revert InvalidEpoch(signals.epoch);
         // state tree root check
-        if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
-            revert InvalidStateTreeRoot(publicSignals[1]);
+        if (!attester.stateTreeRoots[signals.epoch][signals.stateTreeRoot])
+            revert InvalidStateTreeRoot(signals.stateTreeRoot);
     }
 
     function verifyReputationProof(

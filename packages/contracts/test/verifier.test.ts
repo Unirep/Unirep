@@ -91,14 +91,17 @@ describe('Epoch key proof verifier', function () {
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
                     identity_nullifier: id.identityNullifier,
-                    nonce,
-                    epoch: epoch.toNumber(),
                     pos_rep: posRep,
                     neg_rep: negRep,
                     graffiti,
                     timestamp,
-                    attester_id: attester.address,
                     data,
+                    control: EpochKeyProof.buildControlInput({
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        attesterId: attester.address,
+                        revealNonce: 0,
+                    }),
                 })
             )
 
@@ -114,6 +117,74 @@ describe('Epoch key proof verifier', function () {
             )
             await unirepContract
                 .verifyEpochKeyProof(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+    })
+
+    it('should decode public signals', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const id = new ZkIdentity()
+        // sign up a user
+        const { leaf, index, epoch } = await signupUser(
+            id,
+            unirepContract,
+            attester.address,
+            attester
+        )
+        stateTree.insert(leaf)
+
+        const merkleProof = stateTree.createProof(index)
+        const posRep = 0
+        const negRep = 0
+        const graffiti = 0
+        const timestamp = 0
+        const data = 0
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.verifyEpochKey,
+                stringifyBigInts({
+                    state_tree_elements: merkleProof.siblings,
+                    state_tree_indexes: merkleProof.pathIndices,
+                    identity_nullifier: id.identityNullifier,
+                    pos_rep: posRep,
+                    neg_rep: negRep,
+                    graffiti,
+                    timestamp,
+                    data,
+                    control: EpochKeyProof.buildControlInput({
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        attesterId: attester.address,
+                        revealNonce: 0,
+                    }),
+                })
+            )
+
+            const v = await defaultProver.verifyProof(
+                Circuit.verifyEpochKey,
+                r.publicSignals,
+                r.proof
+            )
+            expect(v).to.be.true
+            const proof = new EpochKeyProof(r.publicSignals, r.proof)
+            const signals = await unirepContract.decodeEpochKeySignals(
+                proof.publicSignals
+            )
+            expect(signals.epochKey.toString()).to.equal(
+                proof.epochKey.toString()
+            )
+            expect(signals.stateTreeRoot.toString()).to.equal(
+                proof.stateTreeRoot.toString()
+            )
+            expect(signals.data.toString()).to.equal(proof.data.toString())
+            expect(signals.attesterId.toString()).to.equal(
+                proof.attesterId.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
+            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
+            await unirepContract
+                .verifyEpochKeyProof(proof.publicSignals, proof.proof)
                 .then((t) => t.wait())
         }
     })
@@ -145,14 +216,17 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_nullifier: id.identityNullifier,
-                nonce,
-                epoch: invalidEpoch,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
                 timestamp,
-                attester_id: attester.address,
                 data,
+                control: EpochKeyProof.buildControlInput({
+                    epoch: invalidEpoch,
+                    nonce,
+                    attesterId: attester.address,
+                    revealNonce: 0,
+                }),
             })
         )
 
@@ -197,14 +271,17 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_nullifier: id.identityNullifier,
-                nonce,
-                epoch: epoch.toNumber(),
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
                 timestamp,
-                attester_id: attester.address,
                 data,
+                control: EpochKeyProof.buildControlInput({
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    attesterId: attester.address,
+                    revealNonce: 0,
+                }),
             })
         )
 
@@ -263,14 +340,17 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_nullifier: id.identityNullifier,
-                nonce,
-                epoch: epoch.toNumber(),
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
                 timestamp,
-                attester_id: attester.address,
                 data,
+                control: EpochKeyProof.buildControlInput({
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    attesterId: attester.address,
+                    revealNonce: 0,
+                }),
             })
         )
 
