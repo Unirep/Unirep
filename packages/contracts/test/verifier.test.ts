@@ -11,15 +11,13 @@ import {
     Circuit,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
+    EpochKeyProof,
+    ReputationProof,
+    SignupProof,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import {
-    EpochKeyProof,
-    EPOCH_LENGTH,
-    ReputationProof,
-    SignupProof,
-} from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 const signupUser = async (id, unirepContract, attesterId, account) => {

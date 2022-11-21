@@ -3,9 +3,10 @@ import {
     formatProofForVerifierContract,
     formatProofForSnarkjsVerification,
     Prover,
-} from '@unirep/circuits'
+} from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { ethers, BigNumberish } from 'ethers'
+import { BigNumberish } from '@ethersproject/bignumber'
+import { keccak256 } from '@ethersproject/solidity'
 
 /**
  * The basic proof structure that is used in unirep protocol
@@ -70,7 +71,7 @@ export class BaseProof {
      * @returns A `keccak256` hash value of public signals and proof
      */
     public hash(): string {
-        return ethers.utils.solidityKeccak256(
+        return keccak256(
             ['uint256[]', 'uint256[8]'],
             [this.publicSignals, this.proof]
         )

@@ -15,9 +15,10 @@ import {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
     defaultEpochTreeLeaf,
+    AggregateEpochKeysProof,
 } from '@unirep/circuits'
 
-import { AggregateEpochKeysProof, EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'

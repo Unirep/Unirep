@@ -19,7 +19,7 @@ import {
 } from './utils'
 import { SparseMerkleTree, hash4 } from '@unirep/utils'
 
-const DEPLOY_DELAY = process.env.DEPLOY_DELAY ?? 1500
+const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
 
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings

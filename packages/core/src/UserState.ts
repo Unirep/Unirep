@@ -10,12 +10,13 @@ import {
     genEpochNullifier,
 } from '@unirep/utils'
 import {
+    Circuit,
+    Prover,
     ReputationProof,
     EpochKeyProof,
     SignupProof,
     UserStateTransitionProof,
-} from '@unirep/contracts'
-import { Circuit, Prover } from '@unirep/circuits'
+} from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 /**

@@ -1,6 +1,0 @@
-export * from './BaseProof'
-export * from './EpochKeyProof'
-export * from './ReputationProof'
-export * from './SignupProof'
-export * from './UserStateTransitionProof'
-export * from './AggregateEpochKeysProof'

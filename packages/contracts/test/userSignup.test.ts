@@ -7,10 +7,10 @@ import {
     ZkIdentity,
     stringifyBigInts,
 } from '@unirep/utils'
-import { STATE_TREE_DEPTH, Circuit } from '@unirep/circuits'
+import { STATE_TREE_DEPTH, Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, SignupProof } from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 describe('User Signup', function () {

@@ -2535,7 +2535,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ethersproject/solidity@npm:5.7.0":
+"@ethersproject/solidity@npm:5.7.0, @ethersproject/solidity@npm:^5.7.0":
   version: 5.7.0
   resolution: "@ethersproject/solidity@npm:5.7.0"
   dependencies:
@@ -4535,6 +4535,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
+    "@ethersproject/solidity": ^5.7.0
     "@unirep/utils": 1.0.0
     circomlib: 2.0.5
     mocha: ^10.0.0
