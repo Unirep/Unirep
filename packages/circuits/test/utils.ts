@@ -52,6 +52,33 @@ const buildControlInput = ({ attesterId, epoch, nonce, revealNonce }: any) => {
     return control
 }
 
+const buildRepControlInput = ({
+    attesterId,
+    epoch,
+    nonce,
+    revealNonce,
+    proveGraffiti,
+    minRep,
+    maxRep,
+    proveMinRep,
+    proveMaxRep,
+    zeroRep,
+}: any) => {
+    let control0 = BigInt(0)
+    control0 += BigInt(proveGraffiti ?? 0) << BigInt(233)
+    control0 += BigInt(revealNonce ?? 0) << BigInt(232)
+    control0 += BigInt(attesterId) << BigInt(72)
+    control0 += BigInt(epoch) << BigInt(8)
+    control0 += BigInt(nonce)
+    let control1 = BigInt(0)
+    control1 += BigInt(zeroRep ?? 0) << BigInt(130)
+    control1 += BigInt(proveMaxRep ?? 0) << BigInt(129)
+    control1 += BigInt(proveMinRep ?? 0) << BigInt(128)
+    control1 += BigInt(maxRep) << BigInt(64)
+    control1 += BigInt(minRep)
+    return [control0, control1]
+}
+
 const genEpochKeyCircuitInput = (config: {
     id: utils.ZkIdentity
     tree: utils.IncrementalMerkleTree
@@ -219,19 +246,22 @@ const genReputationCircuitInput = (config: {
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
-        epoch: epoch,
-        nonce,
         identity_nullifier: id.identityNullifier,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
-        attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
         graffiti: startBalance.graffiti ?? 0,
         timestamp: startBalance.timestamp ?? 0,
-        min_rep: minRep,
-        prove_graffiti: proveGraffiti ? 1 : 0,
         graffiti_pre_image: graffitiPreImage,
+        control: buildRepControlInput({
+            epoch,
+            nonce,
+            attesterId,
+            proveGraffiti: proveGraffiti ? 1 : 0,
+            minRep,
+            maxRep: 0,
+        }),
     }
     return utils.stringifyBigInts(circuitInputs)
 }

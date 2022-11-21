@@ -15,8 +15,8 @@ include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
 template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
-    signal input epoch;
-    signal input nonce;
+    // signal input epoch;
+    // signal input nonce;
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
@@ -26,17 +26,68 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, E
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
     signal output state_tree_root;
     // Attester to prove reputation from
-    signal input attester_id;
+    // signal input attester_id;
     // Attestation by the attester
     signal input pos_rep;
     signal input neg_rep;
     signal input graffiti;
     signal input timestamp;
     // Prove the minimum reputation
-    signal input min_rep;
+    // signal input min_rep;
     // Graffiti
-    signal input prove_graffiti;
+    // signal input prove_graffiti;
     signal input graffiti_pre_image;
+
+    signal input control[2];
+    signal output control_output[2];
+
+    /**
+     * control[0]:
+     * 8 bits nonce
+     * 64 bits epoch
+     * 160 bits attester_id
+     * 1 bit reveal_nonce
+     * 1 bit prove_graffiti
+     * control[1]:
+     * 64 bits min_rep
+     * 64 bits max_rep
+     * 1 bit prove min_rep
+     * 1 bit prove max_rep
+     * 1 bit prove zero rep
+     **/
+
+    control[0] \ (2 ** 234) === 0;
+    signal prove_graffiti <-- (control[0] \ 2 ** 233) & 1;
+    signal reveal_nonce <-- (control[0] \ 2 ** 232) & 1;
+    signal attester_id <-- (control[0] \ 2 ** 72) & (2 ** 160 - 1);
+    signal epoch <-- (control[0] \ 2 ** 8) & (2 ** 64 - 1);
+    signal nonce <-- control[0] & (2 ** 8 - 1);
+
+    prove_graffiti \ 2 === 0;
+    reveal_nonce \ 2 === 0;
+    attester_id \ 2**160 === 0;
+    epoch \ 2**64 === 0;
+    nonce \ 2**8 === 0;
+
+    control[0] === prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
+
+    control[1] \ (2 ** 131) === 0;
+    signal prove_zero_rep <-- (control[1] \ 2 ** 130) & 1;
+    signal prove_max_rep <-- (control[1] \ 2 ** 129) & 1;
+    signal prove_min_rep <-- (control[1] \ 2 ** 128) & 1;
+    signal max_rep <-- (control[1] \ 2 ** 64) & (2 ** 64 - 1);
+    signal min_rep <-- control[1] & (2 ** 64 - 1);
+
+    prove_zero_rep \ 2 === 0;
+    prove_max_rep \ 2 === 0;
+    prove_min_rep \ 2 === 0;
+    min_rep \ 2**64 === 0;
+    max_rep \ 2**64 === 0;
+
+    control[1] === prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
+
+    control_output[0] <== prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
+    control_output[1] <== control[1];
 
     /* 1a. Check if user exists in the Global State Tree */
 
@@ -59,7 +110,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, E
 
     /* End of check 1a */
 
-    /* 2. Check if user has positive reputation greater than min_rep */
+    /* 2. Check if user has reputation greater than min_rep */
     // if proving min_rep > 0, check if pos_rep >= neg_rep + min_rep
 
     component min_rep_check = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
@@ -67,7 +118,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, E
     min_rep_check.in[1] <== neg_rep + min_rep;
 
     component if_not_prove_min_rep = IsZero();
-    if_not_prove_min_rep.in <== min_rep;
+    if_not_prove_min_rep.in <== prove_min_rep;
 
     component output_rep_check = OR();
     output_rep_check.a <== if_not_prove_min_rep.out;
@@ -76,6 +127,41 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, E
     output_rep_check.out === 1;
 
     /* End of check 2 */
+
+    /* 3. Check if user has reputation less than max_rep */
+    // if proving max_rep > 0, check if neg_rep >= pos_rep + min_rep
+
+    component max_rep_check = GreaterEqThan(MAX_REPUTATION_SCORE_BITS);
+    max_rep_check.in[0] <== neg_rep;
+    max_rep_check.in[1] <== pos_rep + max_rep;
+
+    component if_not_prove_max_rep = IsZero();
+    if_not_prove_max_rep.in <== prove_max_rep;
+
+    component max_rep_check_out = OR();
+    max_rep_check_out.a <== if_not_prove_max_rep.out;
+    max_rep_check_out.b <== max_rep_check.out;
+
+    max_rep_check_out.out === 1;
+
+    /* End of check 3 */
+
+    /* 4. Check if user has net 0 reputation */
+
+    component zero_rep_check = IsEqual();
+    zero_rep_check.in[0] <== pos_rep;
+    zero_rep_check.in[1] <== neg_rep;
+
+    component if_not_prove_zero_rep = IsZero();
+    if_not_prove_zero_rep.in <== prove_zero_rep;
+
+    component zero_rep_check_out = OR();
+    zero_rep_check_out.a <== if_not_prove_zero_rep.out;
+    zero_rep_check_out.b <== zero_rep_check.out;
+
+    zero_rep_check_out.out === 1;
+
+    /* End of check 4 */
 
     /* 3. Prove the graffiti pre-image if needed */
 

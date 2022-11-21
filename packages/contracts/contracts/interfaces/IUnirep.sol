@@ -76,6 +76,22 @@ interface IUnirep {
         uint256 attesterId;
     }
 
+    struct ReputationSignals {
+        uint256 stateTreeRoot;
+        uint256 epochKey;
+        uint256 graffitiPreImage;
+        uint256 proveGraffiti;
+        uint256 nonce;
+        uint256 epoch;
+        uint256 attesterId;
+        uint256 revealNonce;
+        uint256 proveMinRep;
+        uint256 proveMaxRep;
+        uint256 proveZeroRep;
+        uint256 minRep;
+        uint256 maxRep;
+    }
+
     struct Reputation {
         uint256 posRep;
         uint256 negRep;

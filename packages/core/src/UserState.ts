@@ -359,19 +359,24 @@ export default class UserState extends Synchronizer {
         const stateTreeProof = stateTree.createProof(leafIndex)
 
         const circuitInputs = {
-            epoch,
-            nonce: epkNonce,
             identity_nullifier: this.id.identityNullifier,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
-            attester_id: this.attesterId,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,
             timestamp,
             min_rep: minRep ?? 0,
-            prove_graffiti: graffitiPreImage ? 1 : 0,
             graffiti_pre_image: graffitiPreImage ?? 0,
+            control: ReputationProof.buildControlInput({
+                epoch,
+                nonce: epkNonce,
+                attesterId: this.attesterId.toString(),
+                proveGraffiti: graffitiPreImage ? 1 : 0,
+                minRep: minRep ?? 0,
+                maxRep: 0,
+                proveMinRep: !!(minRep ?? 0) ? 1 : 0,
+            }),
         }
 
         const results = await this.prover.genProofAndPublicSignals(

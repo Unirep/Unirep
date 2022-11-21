@@ -425,22 +425,48 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidStateTreeRoot(signals.stateTreeRoot);
     }
 
+    function decodeReputationSignals(uint256[] memory publicSignals)
+        public
+        pure
+        returns (ReputationSignals memory)
+    {
+        ReputationSignals memory signals;
+        signals.epochKey = publicSignals[0];
+        signals.stateTreeRoot = publicSignals[1];
+        signals.graffitiPreImage = publicSignals[4];
+        // now decode the control values
+        signals.revealNonce = (publicSignals[2] >> 233) & 1;
+        signals.proveGraffiti = (publicSignals[2] >> 232) & 1;
+        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
+        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
+        signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
+        signals.proveMinRep = (publicSignals[3] >> 128) & 1;
+        signals.maxRep = (publicSignals[3] >> 64) & ((2 << 64) - 1);
+        signals.minRep = publicSignals[3] & ((2 << 64) - 1);
+        return signals;
+    }
+
     function verifyReputationProof(
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
         bool valid = reputationVerifier.verifyProof(publicSignals, proof);
         if (!valid) revert InvalidProof();
-        if (publicSignals[0] >= maxEpochKey) revert InvalidEpochKey();
-        if (publicSignals[3] >= type(uint160).max) revert AttesterInvalid();
-        updateEpochIfNeeded(uint160(publicSignals[3]));
-        AttesterData storage attester = attesters[uint160(publicSignals[3])];
+        ReputationSignals memory signals = decodeReputationSignals(
+            publicSignals
+        );
+        if (signals.epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(signals.attesterId));
+        AttesterData storage attester = attesters[uint160(signals.attesterId)];
         // epoch check
-        if (publicSignals[2] > attester.currentEpoch)
-            revert InvalidEpoch(publicSignals[2]);
+        if (signals.epoch > attester.currentEpoch)
+            revert InvalidEpoch(signals.epoch);
         // state tree root check
-        if (!attester.stateTreeRoots[publicSignals[2]][publicSignals[1]])
-            revert InvalidStateTreeRoot(publicSignals[1]);
+        if (!attester.stateTreeRoots[signals.epoch][signals.stateTreeRoot])
+            revert InvalidStateTreeRoot(signals.stateTreeRoot);
     }
 
     function attesterStartTimestamp(uint160 attesterId)

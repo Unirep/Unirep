@@ -411,19 +411,23 @@ describe('Reputation proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.proveReputation,
                 stringifyBigInts({
-                    epoch: epoch.toNumber(),
-                    nonce,
                     identity_nullifier: id.identityNullifier,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
-                    attester_id: attester.address,
                     pos_rep: posRep,
                     neg_rep: negRep,
                     graffiti: graffiti,
                     timestamp: timestamp,
-                    min_rep: minRep,
-                    prove_graffiti: proveGraffiti,
                     graffiti_pre_image: graffitiPreImage,
+                    control: ReputationProof.buildControlInput({
+                        attesterId: attester.address,
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        minRep,
+                        maxRep: 0,
+                        proveGraffiti,
+                        proveMinRep: !!minRep ? 1 : 0,
+                    }),
                 })
             )
 
@@ -469,19 +473,23 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                epoch: invalidEpoch,
-                nonce,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                attester_id: attester.address,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,
                 timestamp: timestamp,
-                min_rep: minRep,
-                prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage,
+                control: ReputationProof.buildControlInput({
+                    attesterId: attester.address,
+                    epoch: invalidEpoch,
+                    nonce,
+                    minRep,
+                    maxRep: 0,
+                    proveGraffiti,
+                    proveMinRep: !!minRep ? 1 : 0,
+                }),
             })
         )
 
@@ -525,19 +533,23 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                epoch: epoch.toNumber(),
-                nonce,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                attester_id: attester.address,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,
                 timestamp: timestamp,
-                min_rep: minRep,
-                prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage,
+                control: ReputationProof.buildControlInput({
+                    attesterId: attester.address,
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    minRep,
+                    maxRep: 0,
+                    proveGraffiti,
+                    proveMinRep: !!minRep ? 1 : 0,
+                }),
             })
         )
 
@@ -589,19 +601,23 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                epoch: epoch.toNumber(),
-                nonce,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                attester_id: attester.address,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,
                 timestamp: timestamp,
-                min_rep: minRep,
-                prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage,
+                control: ReputationProof.buildControlInput({
+                    attesterId: attester.address,
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    minRep,
+                    maxRep: 0,
+                    proveGraffiti,
+                    proveMinRep: !!minRep ? 1 : 0,
+                }),
             })
         )
 
