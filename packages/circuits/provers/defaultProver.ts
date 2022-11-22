@@ -55,7 +55,7 @@ export const defaultProver = {
      * @param name Name of the circuit, which can be chosen from `Circuit`
      * @returns vkey of the circuit
      */
-    getVKey: (name: string | Circuit) => {
+    getVKey: async (name: string | Circuit) => {
         return require(path.join(buildPath, `${name}.vkey.json`))
     },
 }

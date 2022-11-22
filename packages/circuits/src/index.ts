@@ -47,7 +47,7 @@ export interface Prover {
      * @param name Name of the circuit, which can be chosen from `Circuit`
      * @returns vkey of the circuit
      */
-    getVKey: (name: string | Circuit) => any
+    getVKey: (name: string | Circuit) => Promise<any>
 }
 
 /**

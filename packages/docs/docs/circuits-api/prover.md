@@ -37,5 +37,5 @@ genProofAndPublicSignals: (
 ## getVKey
 
 ```ts
-getVKey: (name: string | Circuit) => any
+getVKey: (name: string | Circuit) => Promise<any>
 ```
