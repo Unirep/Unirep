@@ -103,6 +103,35 @@ function attesterEpochRemainingTime(
 ) public view returns (uint)
 ```
 
+## decodeReputationSignals
+
+Decode the public signals from a reputation proof into named variables.
+
+```sol
+function decodeReputationSignals(uint256[] memory publicSignals)
+    public
+    pure
+    returns (ReputationSignals memory)
+```
+
+```sol
+struct ReputationSignals {
+    uint256 stateTreeRoot;
+    uint256 epochKey;
+    uint256 graffitiPreImage;
+    uint256 proveGraffiti;
+    uint256 nonce;
+    uint256 epoch;
+    uint256 attesterId;
+    uint256 revealNonce;
+    uint256 proveMinRep;
+    uint256 proveMaxRep;
+    uint256 proveZeroRep;
+    uint256 minRep;
+    uint256 maxRep;
+}
+```
+
 ## verifyReputationProof
 
 Verify a reputation proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
@@ -116,6 +145,29 @@ function verifyReputationProof(
     uint256[] memory publicSignals,
     uint256[8] memory proof
 ) public returns (bool);
+```
+
+## decodeEpochKeySignals
+
+Decode the public signals from an epoch key proof into named variables.
+
+```sol
+function decodeEpochKeySignals(uint256[] memory publicSignals)
+    public
+    pure
+    returns (EpochKeySignals memory)
+```
+
+```sol
+struct EpochKeySignals {
+    uint256 revealNonce;
+    uint256 stateTreeRoot;
+    uint256 epochKey;
+    uint256 data;
+    uint256 nonce;
+    uint256 epoch;
+    uint256 attesterId;
+}
 ```
 
 ## verifyEpochKeyProof
