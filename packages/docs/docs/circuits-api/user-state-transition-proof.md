@@ -4,6 +4,12 @@ title: UserStateTransitionProof
 
 A class representing a user state transition proof. Each of the following properties are public signals for the proof.
 
+```ts
+import { UserStateTransitionProof } from '@unirep/circuits'
+
+const data = new UserStateTransitionProof(publicSignals, proof)
+```
+
 ## fromStateTreeRoot
 
 The state tree root in the from epoch the proof was made for.

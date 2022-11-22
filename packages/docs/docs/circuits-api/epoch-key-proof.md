@@ -4,6 +4,12 @@ title: EpochKeyProof
 
 A class representing an epoch key proof. Each of the following properties are public signals for the proof.
 
+```ts
+import { EpochKeyProof } from '@unirep/circuits'
+
+const data = new EpochKeyProof(publicSignals, proof)
+```
+
 ## epochKey
 
 The epoch key being proved.

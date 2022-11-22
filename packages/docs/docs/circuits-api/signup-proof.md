@@ -4,6 +4,12 @@ title: SignupProof
 
 A class representing a signup proof. Each of the following properties are public signals for the proof.
 
+```ts
+import { SignupProof } from '@unirep/circuits'
+
+const data = new SignupProof(publicSignals, proof)
+```
+
 ## identityCommitment
 
 The identity commitment for the user signing up.
