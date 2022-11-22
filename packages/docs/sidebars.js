@@ -72,26 +72,6 @@ const sidebars = {
                     label: 'IVerifier.sol',
                     id: 'contracts-api/iverifier-sol',
                 },
-                {
-                    type: 'doc',
-                    label: 'BaseProof',
-                    id: 'contracts-api/base-proof',
-                },
-                {
-                    type: 'doc',
-                    label: 'EpochKeyProof',
-                    id: 'contracts-api/epoch-key-proof',
-                },
-                {
-                    type: 'doc',
-                    label: 'SignupProof',
-                    id: 'contracts-api/signup-proof',
-                },
-                {
-                    type: 'doc',
-                    label: 'UserStateTransitionProof',
-                    id: 'contracts-api/user-state-transition-proof',
-                },
             ],
         },
         {
@@ -117,6 +97,26 @@ const sidebars = {
                     type: 'doc',
                     label: 'networkProver',
                     id: 'circuits-api/network-prover',
+                },
+                {
+                    type: 'doc',
+                    label: 'BaseProof',
+                    id: 'circuits-api/base-proof',
+                },
+                {
+                    type: 'doc',
+                    label: 'EpochKeyProof',
+                    id: 'circuits-api/epoch-key-proof',
+                },
+                {
+                    type: 'doc',
+                    label: 'SignupProof',
+                    id: 'circuits-api/signup-proof',
+                },
+                {
+                    type: 'doc',
+                    label: 'UserStateTransitionProof',
+                    id: 'circuits-api/user-state-transition-proof',
                 },
             ],
         },

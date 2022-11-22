@@ -38,9 +38,16 @@ Outputs:
 
 The epoch key proof allows a user to prove control of an epoch key in a certain epoch. This proof calculates two things: merkle inclusion of a state leaf against the current state root, and an epoch key. A data value can be included and endorsed by this proof.
 
+The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
+
+Control field:
+- 8 bits `nonce`
+- 64 bits `epoch`
+- 160 bits `attester_id`
+- 1 bit `reveal_nonce`
+
 Inputs:
-- `epoch` (public)
-- `attester_id` (public)
+- `control`
 - `data` (public)
 - `pos_rep`
 - `neg_rep`
@@ -53,15 +60,34 @@ Inputs:
 Outputs:
 - `epoch_key`
 - `state_tree_root`
+- `control_output`
+
+:::info
+Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+:::
 
 ## Prove Reputation Proof
 
-The prove reputation proof allows a user to prove a reputation balance in the state tree. The user is not able to prove reputation received in the current epoch. The user can also optionally prove some minimum amount of reputation, and their graffiti pre-image.
+The prove reputation proof allows a user to prove a reputation balance in the state tree. The user is not able to prove reputation received in the current epoch. The user can also optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti pre-image.
+
+The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
+
+Control field 0:
+- 8 bits `nonce`
+- 64 bits `epoch`
+- 160 bits `attester_id`
+- 1 bit `reveal_nonce`
+- 1 bit `prove_graffiti`
+
+Control field 1:
+- 64 bits `min_rep`
+- 64 bits `max_rep`
+- 1 bit `prove_min_rep`
+- 1 bit `prove_max_rep`
+- 1 bit `prove_zero_rep`
 
 Inputs:
-- `epoch` (public)
-- `min_rep` (public)
-- `prove_graffiti` (public)
+- `control[2]`
 - `graffiti_pre_image` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
@@ -74,6 +100,10 @@ Inputs:
 Outputs:
 - `epoch_key`
 - `state_tree_root`
+
+:::info
+Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+:::
 
 ## User State Transition Proof
 

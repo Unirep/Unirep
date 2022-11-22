@@ -10,7 +10,7 @@ We build proofs using a `BaseProof` class that optionally supports verification.
 The `BaseProof` class can be used to convert between the two formats. This class should not be used directly, but should instead be inherited.
 
 ```ts
-import { BaseProof } from '@unirep/contracts'
+import { BaseProof } from '@unirep/circuits'
 
 class MyCustomProof extends BaseProof {
   constructor(publicSignals, proof, prover) {
