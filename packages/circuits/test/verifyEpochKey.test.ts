@@ -46,7 +46,7 @@ describe('Verify Epoch Key circuits', function () {
                 graffiti,
                 timestamp,
             })
-            const { isValid, publicSignals } = await genProofAndVerify(
+            const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.verifyEpochKey,
                 circuitInputs
             )
@@ -66,6 +66,11 @@ describe('Verify Epoch Key circuits', function () {
                     (BigInt(epoch) << BigInt(8))
                 ).toString()
             )
+            const data = new EpochKeyProof(publicSignals, proof)
+            expect(data.epoch.toString()).to.equal(epoch.toString())
+            expect(data.nonce.toString()).to.equal('0')
+            expect(data.revealNonce.toString()).to.equal('0')
+            expect(data.attesterId.toString()).to.equal(attesterId.toString())
         }
     })
 
@@ -102,7 +107,7 @@ describe('Verify Epoch Key circuits', function () {
                 timestamp,
                 revealNonce: 1,
             })
-            const { isValid, publicSignals } = await genProofAndVerify(
+            const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.verifyEpochKey,
                 circuitInputs
             )
@@ -124,6 +129,11 @@ describe('Verify Epoch Key circuits', function () {
                     BigInt(nonce)
                 ).toString()
             )
+            const data = new EpochKeyProof(publicSignals, proof)
+            expect(data.epoch.toString()).to.equal(epoch.toString())
+            expect(data.nonce.toString()).to.equal(nonce.toString())
+            expect(data.revealNonce.toString()).to.equal('1')
+            expect(data.attesterId.toString()).to.equal(attesterId.toString())
         }
     })
 
@@ -161,7 +171,7 @@ describe('Verify Epoch Key circuits', function () {
                 timestamp,
                 data,
             })
-            const { isValid, publicSignals } = await genProofAndVerify(
+            const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.verifyEpochKey,
                 circuitInputs
             )
@@ -176,6 +186,11 @@ describe('Verify Epoch Key circuits', function () {
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[3].toString()).to.equal(data.toString())
+            const _data = new EpochKeyProof(publicSignals, proof)
+            expect(_data.epoch.toString()).to.equal(epoch.toString())
+            expect(_data.nonce.toString()).to.equal('0')
+            expect(_data.revealNonce.toString()).to.equal('0')
+            expect(_data.attesterId.toString()).to.equal(attesterId.toString())
         }
     })
 
@@ -228,7 +243,6 @@ describe('Verify Epoch Key circuits', function () {
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[3].toString()).to.equal(data.toString())
-            console.log(publicSignals[3])
             publicSignals[3] = '00000'
             const valid = await defaultProver.verifyProof(
                 Circuit.verifyEpochKey,
