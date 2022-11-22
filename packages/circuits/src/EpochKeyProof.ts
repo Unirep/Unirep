@@ -39,12 +39,12 @@ export class EpochKeyProof extends BaseProof {
         this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &
-            ((BigInt(2) << BigInt(160)) - BigInt(1))
+            ((BigInt(1) << BigInt(160)) - BigInt(1))
         this.epoch =
             (BigInt(this.control) >> BigInt(8)) &
-            ((BigInt(2) << BigInt(64)) - BigInt(1))
+            ((BigInt(1) << BigInt(64)) - BigInt(1))
         this.nonce =
-            BigInt(this.control) & ((BigInt(2) << BigInt(8)) - BigInt(1))
+            BigInt(this.control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
         this.data = _publicSignals[this.idx.data].toString()
         this.circuit = Circuit.verifyEpochKey
     }

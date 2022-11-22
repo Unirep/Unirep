@@ -49,17 +49,17 @@ export class ReputationProof extends BaseProof {
         this.revealNonce = (BigInt(this.control0) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control0) >> BigInt(72)) &
-            ((BigInt(2) << BigInt(160)) - BigInt(1))
+            ((BigInt(1) << BigInt(160)) - BigInt(1))
         this.epoch =
             (BigInt(this.control0) >> BigInt(8)) &
-            ((BigInt(2) << BigInt(64)) - BigInt(1))
+            ((BigInt(1) << BigInt(64)) - BigInt(1))
         this.nonce =
-            BigInt(this.control0) & ((BigInt(2) << BigInt(8)) - BigInt(1))
+            BigInt(this.control0) & ((BigInt(1) << BigInt(8)) - BigInt(1))
         this.minRep =
-            BigInt(this.control1) & ((BigInt(2) << BigInt(64)) - BigInt(1))
+            BigInt(this.control1) & ((BigInt(1) << BigInt(64)) - BigInt(1))
         this.maxRep =
             (BigInt(this.control1) >> BigInt(64)) &
-            ((BigInt(2) << BigInt(64)) - BigInt(1))
+            ((BigInt(1) << BigInt(64)) - BigInt(1))
         this.proveMinRep = (BigInt(this.control1) >> BigInt(128)) & BigInt(1)
         this.proveMaxRep = (BigInt(this.control1) >> BigInt(129)) & BigInt(1)
         this.proveZeroRep = (BigInt(this.control1) >> BigInt(130)) & BigInt(1)
