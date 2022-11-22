@@ -11,6 +11,11 @@
 }
 
 .heroImage {
+    width: 180%;
+}
+
+.footerImage {
+    margin-top: 10px;
 }
 
 @media screen and (max-width: 996px) {
