@@ -7,7 +7,8 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures'
 
 import styles from './index.module.css'
 
-// const HeroImage = require('@site/static/img/img-hero.png').default
+const HeroImage = require('@site/static/img/img-hero.svg').default
+const FooterImage = require('@site/static/img/img-footer.svg').default
 
 function HomepageHeader() {
     const { siteConfig } = useDocusaurusContext()
@@ -51,10 +52,7 @@ function HomepageHeader() {
                         maxWidth: 'min(761px, 50vw)',
                     }}
                 >
-                    <img
-                        className={styles.heroImage}
-                        src={require('@site/static/img/img-hero.png').default}
-                    />
+                    <HeroImage className={styles.heroImage} role="img" />
                 </div>
             </div>
         </header>
@@ -72,6 +70,13 @@ export default function Home() {
             <main>
                 <HomepageFeatures />
             </main>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <FooterImage
+                    height="auto"
+                    className={styles.footerImage}
+                    role="img"
+                />
+            </div>
         </Layout>
     )
 }

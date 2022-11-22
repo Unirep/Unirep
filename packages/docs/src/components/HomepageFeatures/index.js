@@ -56,10 +56,10 @@ export default function HomepageFeatures() {
                 display: 'flex',
                 justifyContent: 'center',
                 width: '100%',
-                margin: 'min(130px, 10vw) 0px',
+                marginTop: 'min(130px, 10vw)',
             }}
         >
-            <DescriptionImage className={styles.descriptionImage} role="img" />
+            <DescriptionImage className={styles.descriptionImage} />
             <section className={styles.features}>
                 <div className="container">
                     {FeatureList.map((f) => (
