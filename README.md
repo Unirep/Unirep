@@ -30,7 +30,7 @@
 ## 📘 Documentation
 
 Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
-For more information, refer to the [documentation](https://docs.unirep.io/)
+For more information, refer to the [documentation](https://developer.unirep.io/)
 
 ## 📦 Project Structure
 - 
