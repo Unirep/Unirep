@@ -254,8 +254,15 @@ describe('Attestations', function () {
         )
         const attestations = [] as any
         const attestationsCount = 5
+        const epochKeys = {} as any
         for (let i = 0; i < attestationsCount; i++) {
-            const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+            let epochKey
+            do {
+                epochKey =
+                    genRandomSalt() %
+                    BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
+            } while (epochKeys[epochKey])
+            epochKeys[epochKey] = true
             const posRep = Math.floor(Math.random() * 10)
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = genRandomSalt()
@@ -535,10 +542,17 @@ describe('Attestations', function () {
         )
         const epkCounts = 8
         const attestationsCount = 5
+        const epochKeys = {} as any
 
         // submit attestations
         for (let i = 0; i < epkCounts; i++) {
-            const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+            let epochKey
+            do {
+                epochKey =
+                    genRandomSalt() %
+                    BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
+            } while (epochKeys[epochKey])
+            epochKeys[epochKey] = true
             for (let j = 0; j < attestationsCount; j++) {
                 const posRep = Math.floor(Math.random() * 10)
                 const negRep = Math.floor(Math.random() * 10)
@@ -612,7 +626,8 @@ describe('Attestations', function () {
         )
 
         // submit attestations
-        const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+        const epochKey =
+            genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
@@ -646,7 +661,8 @@ describe('Attestations', function () {
         )
 
         // submit attestations
-        const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+        const epochKey =
+            genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
@@ -711,7 +727,8 @@ describe('Attestations', function () {
         )
 
         // submit attestations
-        const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+        const epochKey =
+            genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
@@ -779,7 +796,8 @@ describe('Attestations', function () {
         )
 
         // submit attestations
-        const epochKey = genRandomSalt() % BigInt(2 ** EPOCH_TREE_DEPTH)
+        const epochKey =
+            genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
         const graffiti = genRandomSalt()
