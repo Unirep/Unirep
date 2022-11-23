@@ -107,7 +107,7 @@ export const deployUnirep = async (
         console.log(`Deploying ${contractName}`)
         let artifacts
         if (prover) {
-            const vkey = prover.getVKey(circuit)
+            const vkey = await prover.getVKey(circuit)
             artifacts = await compileVerifier(contractName, vkey)
         } else {
             const verifierPath = `contracts/verifiers/${contractName}.sol/${contractName}.json`
