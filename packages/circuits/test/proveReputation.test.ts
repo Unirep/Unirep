@@ -185,12 +185,13 @@ describe('Prove reputation from attester circuit', function () {
             nonce,
             attesterId,
             startBalance: { posRep: 10, negRep: 5 },
-            proveZeroRep: 0,
+            proveZeroRep: 1,
         })
-        try {
-            await genProofAndVerify(Circuit.proveReputation, circuitInputs)
-            expect(false).to.be.true
-        } catch (err) {}
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 
     it('should fail to prove maxRep', async () => {
@@ -207,10 +208,11 @@ describe('Prove reputation from attester circuit', function () {
             maxRep: 8,
             proveMaxRep: 1,
         })
-        try {
-            await genProofAndVerify(Circuit.proveReputation, circuitInputs)
-            expect(false).to.be.true
-        } catch (err) {}
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 
     it('should fail to prove minRep', async () => {
@@ -227,10 +229,11 @@ describe('Prove reputation from attester circuit', function () {
             minRep: 8,
             proveMinRep: 1,
         })
-        try {
-            await genProofAndVerify(Circuit.proveReputation, circuitInputs)
-            expect(false).to.be.true
-        } catch (err) {}
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 
     it('should choose not to prove minRep', async () => {
@@ -324,10 +327,11 @@ describe('Prove reputation from attester circuit', function () {
             proveGraffiti: true,
             graffitiPreImage: 124124021,
         })
-        try {
-            await genProofAndVerify(Circuit.proveReputation, circuitInputs)
-            expect(false).to.be.true
-        } catch (e) {}
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 
     it('should prove graffiti pre-image', async () => {

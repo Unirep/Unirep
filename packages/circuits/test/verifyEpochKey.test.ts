@@ -387,9 +387,10 @@ describe('Verify Epoch Key circuits', function () {
             graffiti,
             timestamp,
         })
-        try {
-            await genProofAndVerify(Circuit.verifyEpochKey, circuitInputs)
-            expect(false).to.be.true
-        } catch (_) {}
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.verifyEpochKey, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 })

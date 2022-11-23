@@ -195,9 +195,10 @@ describe('Multiple SMT updates', function () {
             hashchain_index: hashchainIndex,
             epoch_key_count: 0,
         }
-        try {
-            await genProofAndVerify(Circuit.aggregateEpochKeys, circuitInputs)
-            expect(false).to.be.true
-        } catch (err) {}
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.aggregateEpochKeys, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 })
