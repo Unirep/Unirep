@@ -17,9 +17,6 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
 
-    // signal input nonce;
-    // signal input epoch;
-    // signal input attester_id;
     signal output epoch_key;
     signal output state_tree_root;
 

@@ -15,8 +15,6 @@ include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 
 template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
-    // signal input epoch;
-    // signal input nonce;
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
@@ -25,17 +23,12 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, E
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
     signal output state_tree_root;
-    // Attester to prove reputation from
-    // signal input attester_id;
     // Attestation by the attester
     signal input pos_rep;
     signal input neg_rep;
     signal input graffiti;
     signal input timestamp;
-    // Prove the minimum reputation
-    // signal input min_rep;
     // Graffiti
-    // signal input prove_graffiti;
     signal input graffiti_pre_image;
 
     signal input control[2];
