@@ -445,6 +445,101 @@ describe('Reputation proof verifier', function () {
         }
     })
 
+    it('should decode public signals', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const id = new ZkIdentity()
+        // sign up a user
+        const { leaf, index, epoch } = await signupUser(
+            id,
+            unirepContract,
+            attester.address,
+            attester
+        )
+        stateTree.insert(leaf)
+
+        const merkleProof = stateTree.createProof(index)
+        const posRep = 0
+        const negRep = 0
+        const graffiti = 0
+        const timestamp = 0
+        const minRep = 0
+        const proveGraffiti = 0
+        const graffitiPreImage = 0
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.proveReputation,
+                stringifyBigInts({
+                    identity_nullifier: id.identityNullifier,
+                    state_tree_indexes: merkleProof.pathIndices,
+                    state_tree_elements: merkleProof.siblings,
+                    pos_rep: posRep,
+                    neg_rep: negRep,
+                    graffiti: graffiti,
+                    timestamp: timestamp,
+                    graffiti_pre_image: graffitiPreImage,
+                    control: ReputationProof.buildControlInput({
+                        attesterId: attester.address,
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        minRep,
+                        maxRep: 0,
+                        proveGraffiti,
+                        proveMinRep: !!minRep ? 1 : 0,
+                    }),
+                })
+            )
+
+            const v = await defaultProver.verifyProof(
+                Circuit.proveReputation,
+                r.publicSignals,
+                r.proof
+            )
+            expect(v).to.be.true
+            const { publicSignals, proof } = new ReputationProof(
+                r.publicSignals,
+                r.proof
+            )
+            const signals = await unirepContract.decodeReputationSignals(
+                publicSignals
+            )
+            expect(signals.epochKey.toString()).to.equal(
+                proof.epochKey.toString()
+            )
+            expect(signals.stateTreeRoot.toString()).to.equal(
+                proof.stateTreeRoot.toString()
+            )
+            expect(signals.attesterId.toString()).to.equal(
+                proof.attesterId.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
+            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
+            expect(signals.graffitiPreImage.toString()).to.equal(
+                proof.graffitiPreImage.toString()
+            )
+            expect(signals.proveGraffiti.toString()).to.equal(
+                proof.proveGraffiti.toString()
+            )
+            expect(signals.revealNonce.toString()).to.equal(
+                proof.revealNonce.toString()
+            )
+            expect(signals.proveMinRep.toString()).to.equal(
+                proof.proveMinRep.toString()
+            )
+            expect(signals.proveMaxRep.toString()).to.equal(
+                proof.proveMaxRep.toString()
+            )
+            expect(signals.proveZeroRep.toString()).to.equal(
+                proof.proveZeroRep.toString()
+            )
+            expect(signals.minRep.toString()).to.equal(proof.minRep.toString())
+            expect(signals.maxRep.toString()).to.equal(proof.maxRep.toString())
+            await unirepContract
+                .verifyReputationProof(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+    })
+
     it('should fail to verify a reputation proof with invalid epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
