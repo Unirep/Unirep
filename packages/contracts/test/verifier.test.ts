@@ -496,12 +496,9 @@ describe('Reputation proof verifier', function () {
                 r.proof
             )
             expect(v).to.be.true
-            const { publicSignals, proof } = new ReputationProof(
-                r.publicSignals,
-                r.proof
-            )
+            const proof = new ReputationProof(r.publicSignals, r.proof)
             const signals = await unirepContract.decodeReputationSignals(
-                publicSignals
+                proof.publicSignals
             )
             expect(signals.epochKey.toString()).to.equal(
                 proof.epochKey.toString()
@@ -535,7 +532,7 @@ describe('Reputation proof verifier', function () {
             expect(signals.minRep.toString()).to.equal(proof.minRep.toString())
             expect(signals.maxRep.toString()).to.equal(proof.maxRep.toString())
             await unirepContract
-                .verifyReputationProof(publicSignals, proof)
+                .verifyReputationProof(proof.publicSignals, proof.proof)
                 .then((t) => t.wait())
         }
     })
