@@ -186,13 +186,7 @@ export default class UserState extends Synchronizer {
         let graffiti = BigInt(0)
         let timestamp = BigInt(0)
         const attesterId = _attesterId ?? this.attesterId
-        const signup = await this._db.findOne('UserSignUp', {
-            where: {
-                attesterId: attesterId.toString(),
-                commitment: this.commitment.toString(),
-            },
-        })
-        const allEpks = [] as string[]
+        const orClauses = [] as any[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         for (let x = 0; x < (toEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
@@ -207,12 +201,16 @@ export default class UserState extends Synchronizer {
                             this.settings.epochTreeDepth
                     ).toString()
                 )
-            allEpks.push(...epks)
+            orClauses.push({
+                epochKey: epks,
+                epoch: x,
+            })
         }
-        if (allEpks.length === 0) return { posRep, negRep, graffiti, timestamp }
+        if (orClauses.length === 0)
+            return { posRep, negRep, graffiti, timestamp }
         const attestations = await this._db.findMany('Attestation', {
             where: {
-                epochKey: allEpks,
+                OR: orClauses,
                 attesterId: attesterId.toString(),
             },
             orderBy: {
