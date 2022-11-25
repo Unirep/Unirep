@@ -42,14 +42,16 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 20
         const nonce = 1
         const attesterId = 219090124810
+        const minRep = 2
+        const proveMinRep = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 5, negRep: 1, graffiti: 0, timestamp: 0 },
-            minRep: 2,
-            proveMinRep: 1,
+            minRep,
+            proveMinRep,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -61,10 +63,10 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.nonce.toString()).to.equal('0')
         expect(data.revealNonce.toString()).to.equal('0')
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        expect(data.proveMinRep.toString()).to.equal('1')
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
         expect(data.proveMaxRep.toString()).to.equal('0')
         expect(data.proveZeroRep.toString()).to.equal('0')
-        expect(data.minRep.toString()).to.equal('2')
+        expect(data.minRep.toString()).to.equal(minRep.toString())
         expect(data.maxRep.toString()).to.equal('0')
         expect(data.proveGraffiti.toString()).to.equal('0')
         expect(data.graffitiPreImage.toString()).to.equal('0')
@@ -75,14 +77,16 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 20
         const nonce = 1
         const attesterId = 219090124810
+        const maxRep = 4
+        const proveMaxRep = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 5, negRep: 10, graffiti: 0, timestamp: 0 },
-            maxRep: 4,
-            proveMaxRep: 1,
+            maxRep,
+            proveMaxRep,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -95,10 +99,10 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.revealNonce.toString()).to.equal('0')
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
         expect(data.proveMinRep.toString()).to.equal('0')
-        expect(data.proveMaxRep.toString()).to.equal('1')
+        expect(data.proveMaxRep.toString()).to.equal(proveMaxRep.toString())
         expect(data.proveZeroRep.toString()).to.equal('0')
         expect(data.minRep.toString()).to.equal('0')
-        expect(data.maxRep.toString()).to.equal('4')
+        expect(data.maxRep.toString()).to.equal(maxRep.toString())
         expect(data.proveGraffiti.toString()).to.equal('0')
         expect(data.graffitiPreImage.toString()).to.equal('0')
     })
@@ -108,16 +112,20 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 20
         const nonce = 2
         const attesterId = 219090124810
+        const minRep = 0
+        const maxRep = 0
+        const proveMaxRep = 1
+        const proveMinRep = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 10, negRep: 10, graffiti: 0, timestamp: 0 },
-            minRep: 0,
-            maxRep: 0,
-            proveMaxRep: 1,
-            proveMinRep: 1,
+            minRep,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -129,11 +137,11 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.nonce.toString()).to.equal('0')
         expect(data.revealNonce.toString()).to.equal('0')
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        expect(data.proveMinRep.toString()).to.equal('1')
-        expect(data.proveMaxRep.toString()).to.equal('1')
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal(proveMaxRep.toString())
         expect(data.proveZeroRep.toString()).to.equal('0')
-        expect(data.minRep.toString()).to.equal('0')
-        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal(maxRep.toString())
         expect(data.proveGraffiti.toString()).to.equal('0')
         expect(data.graffitiPreImage.toString()).to.equal('0')
     })
@@ -143,18 +151,24 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 20
         const nonce = 0
         const attesterId = 219090124810
+        const minRep = 0
+        const maxRep = 0
+        const proveMaxRep = 1
+        const proveMinRep = 1
+        const proveZeroRep = 1
+        const revealNonce = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 10, negRep: 10, graffiti: 0, timestamp: 0 },
-            minRep: 0,
-            maxRep: 0,
-            proveMaxRep: 1,
-            proveMinRep: 1,
-            proveZeroRep: 1,
-            revealNonce: 1,
+            minRep,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
+            proveZeroRep,
+            revealNonce,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -166,25 +180,25 @@ describe('Prove reputation from attester circuit', function () {
                 epoch,
                 nonce,
                 attesterId,
-                revealNonce: 1,
+                revealNonce,
                 proveGraffiti: 0,
-                minRep: 0,
-                maxRep: 0,
-                proveMaxRep: 1,
-                proveMinRep: 1,
-                proveZeroRep: 1,
+                minRep,
+                maxRep,
+                proveMaxRep,
+                proveMinRep,
+                proveZeroRep,
             })[0].toString()
         )
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal(nonce.toString())
-        expect(data.revealNonce.toString()).to.equal('1')
+        expect(data.revealNonce.toString()).to.equal(revealNonce.toString())
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        expect(data.proveMinRep.toString()).to.equal('1')
-        expect(data.proveMaxRep.toString()).to.equal('1')
-        expect(data.proveZeroRep.toString()).to.equal('1')
-        expect(data.minRep.toString()).to.equal('0')
-        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal(proveMaxRep.toString())
+        expect(data.proveZeroRep.toString()).to.equal(proveZeroRep.toString())
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal(maxRep.toString())
         expect(data.proveGraffiti.toString()).to.equal('0')
         expect(data.graffitiPreImage.toString()).to.equal('0')
     })
@@ -194,13 +208,14 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
+        const proveZeroRep = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 10, negRep: 5 },
-            proveZeroRep: 1,
+            proveZeroRep,
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.proveReputation, circuitInputs)
@@ -214,14 +229,16 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
+        const maxRep = 8
+        const proveMaxRep = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 10, negRep: 5 },
-            maxRep: 8,
-            proveMaxRep: 1,
+            maxRep,
+            proveMaxRep,
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.proveReputation, circuitInputs)
@@ -235,14 +252,16 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
+        const minRep = 8
+        const proveMinRep = 1
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 10, negRep: 5 },
-            minRep: 8,
-            proveMinRep: 1,
+            minRep,
+            proveMinRep,
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.proveReputation, circuitInputs)
@@ -257,6 +276,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = 10210
         const nonce = 0
         const minRep = 10000
+        const proveMinRep = 0
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
@@ -264,7 +284,7 @@ describe('Prove reputation from attester circuit', function () {
             attesterId,
             startBalance: { posRep: 5, negRep: 10 },
             minRep,
-            proveMinRep: 0,
+            proveMinRep,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -276,7 +296,7 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.nonce.toString()).to.equal('0')
         expect(data.revealNonce.toString()).to.equal('0')
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
         expect(data.proveMaxRep.toString()).to.equal('0')
         expect(data.proveZeroRep.toString()).to.equal('0')
         expect(data.minRep.toString()).to.equal(minRep.toString())
@@ -297,7 +317,6 @@ describe('Prove reputation from attester circuit', function () {
             nonce,
             attesterId,
             startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
-            minRep: 0,
             proveGraffiti: false,
             graffitiPreImage,
         })
@@ -327,6 +346,9 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
+        const minRep = 0
+        const proveGraffiti = true
+        const graffitiPreImage = 124124021
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
@@ -338,9 +360,9 @@ describe('Prove reputation from attester circuit', function () {
                 graffiti: 100191,
                 timestamp: 0,
             },
-            minRep: 0,
-            proveGraffiti: true,
-            graffitiPreImage: 124124021,
+            minRep,
+            proveGraffiti,
+            graffitiPreImage,
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.proveReputation, circuitInputs)
@@ -362,7 +384,6 @@ describe('Prove reputation from attester circuit', function () {
             nonce,
             attesterId,
             startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
-            minRep: 0,
             proveGraffiti: true,
             graffitiPreImage,
         })
@@ -426,6 +447,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = 10210
         const nonce = 0
         const preImage = 124914219
+        const revealNonce = 1
         const graffiti = hash1([preImage])
         const circuitInputs = genReputationCircuitInput({
             id,
@@ -433,7 +455,7 @@ describe('Prove reputation from attester circuit', function () {
             nonce,
             attesterId,
             startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
-            revealNonce: 1,
+            revealNonce,
         })
         const { isValid, proof, publicSignals } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -443,7 +465,7 @@ describe('Prove reputation from attester circuit', function () {
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal(nonce.toString())
-        expect(data.revealNonce.toString()).to.equal('1')
+        expect(data.revealNonce.toString()).to.equal(revealNonce.toString())
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
         expect(data.proveMinRep.toString()).to.equal('0')
         expect(data.proveMaxRep.toString()).to.equal('0')
