@@ -105,6 +105,11 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
+                    label: 'ReputationProof',
+                    id: 'circuits-api/reputation-proof',
+                },
+                {
+                    type: 'doc',
                     label: 'EpochKeyProof',
                     id: 'circuits-api/epoch-key-proof',
                 },

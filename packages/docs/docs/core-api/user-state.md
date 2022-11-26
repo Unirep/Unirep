@@ -95,7 +95,7 @@ state.genUserStateTransitionProof(options?: {
 
 ## genProveReputationProof
 
-Generate a proof of reputation.
+Generate a proof of reputation. Returns a [`ReputationProof`](/docs/circuits-api/reputation-proof).
 
 ```ts
 state.genProveReputationProof(options: {
