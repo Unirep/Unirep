@@ -85,7 +85,7 @@ state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
 
 ## genUserStateTransitionProof
 
-Generate a user state transition proof.
+Generate a user state transition proof. Returns a [`UserStateTransitionProof`](/docs/contracts-api/user-state-transition-proof).
 
 ```ts
 state.genUserStateTransitionProof(options?: {
@@ -107,7 +107,7 @@ state.genProveReputationProof(options: {
 
 ## genUserSignUpProof
 
-Generate a proof that can be used to signup.
+Generate a proof that can be used to signup. Returns a [`SignupProof`](/docs/contracts-api/signup-proof).
 
 ```ts
 state.genUserSignUpProof(options: {
@@ -117,7 +117,7 @@ state.genUserSignUpProof(options: {
 
 ## genEpochKeyProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign.
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyProof`](/docs/contracts-api/epoch-key-proof).
 
 ```ts
 state.genEpochKeyProof(options: {
