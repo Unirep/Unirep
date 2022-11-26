@@ -69,10 +69,10 @@ state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
 
 ## getRepByAttester
 
-Get the reputation balance for an attester in an epoch. By default we use the currently specified attester and the latest epoch.
+Get the reputation balance for the current attester up to an epoch. By default we use the epoch before the current epoch. Reputation received in the current epoch isn't considered final until the user executes a user state transition out of the epoch.
 
 ```ts
-state.getRepByAttester(attesterId?: bigint, epoch: number): Promise<Reputation>
+state.getRepByAttester(epoch?: number): Promise<Reputation>
 ```
 
 ## getRepByEpochKey
@@ -99,8 +99,9 @@ Generate a proof of reputation.
 
 ```ts
 state.genProveReputationProof(options: {
-  epochKeyNonce: number,
+  epkNonce: number,
   minRep?: number
+  graffitiPreImage?: bigint | string
 }): Promise<ReputationProof>
 ```
 
@@ -109,7 +110,9 @@ state.genProveReputationProof(options: {
 Generate a proof that can be used to signup.
 
 ```ts
-state.genUserSignUpProof(): Promise<SignupProof>
+state.genUserSignUpProof(options: {
+  epoch?: bigint | number
+}): Promise<SignupProof>
 ```
 
 ## genEpochKeyProof
