@@ -134,10 +134,7 @@ export default class UserState extends Synchronizer {
             return foundLeaf.index
         }
         const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(
-                this.attesterId.toString(),
-                latestTransitionedEpoch
-            )
+            await this.getRepByAttester(latestTransitionedEpoch)
         const leaf = genStateTreeLeaf(
             this.id.identityNullifier,
             this.attesterId.toString(),
@@ -196,15 +193,14 @@ export default class UserState extends Synchronizer {
      * @returns The reputation object
      */
     public getRepByAttester = async (
-        _attesterId?: bigint | string,
         toEpoch?: number
     ): Promise<{ posRep; negRep; graffiti; timestamp }> => {
         let posRep = BigInt(0)
         let negRep = BigInt(0)
         let graffiti = BigInt(0)
         let timestamp = BigInt(0)
-        const attesterId = _attesterId ?? this.attesterId
         const orClauses = [] as any[]
+        const attesterId = this.attesterId
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         for (let x = 0; x < (toEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
@@ -445,7 +441,7 @@ export default class UserState extends Synchronizer {
         const tree = await this.genStateTree(epoch)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
         const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(this.attesterId, epoch)
+            await this.getRepByAttester(epoch)
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
             identity_nullifier: this.id.identityNullifier,
