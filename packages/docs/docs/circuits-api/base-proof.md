@@ -25,7 +25,7 @@ class MyCustomProof extends BaseProof {
 
 ## BaseProof
 
-The base class for a proof that can be verified using a [`Prover`](../circuits-api/prover).
+The base class for a proof that can be verified using a [`Prover`](prover).
 
 ## constructor
 

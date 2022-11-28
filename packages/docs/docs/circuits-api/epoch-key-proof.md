@@ -2,6 +2,8 @@
 title: EpochKeyProof
 ---
 
+Inherits: [`BaseProof`](base-proof)
+
 A class representing an [epoch key proof](circuits#epoch-key-proof). Each of the following properties are public signals for the proof.
 
 ```ts
