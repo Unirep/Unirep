@@ -37,9 +37,9 @@ npx ts-node cli/index.ts setAirdropAmount
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/setAirdropAmount.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/setAirdropAmount.ts)
-{% endhint %}
+:::
 
 ## `genUserSignUpProof`
 
@@ -75,9 +75,9 @@ npx ts-node cli/index.ts genUserSignUpProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/genUserSignUpProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genUserSignUpProof.ts)
-{% endhint %}
+:::
 
 ## `verifyUserSignUpProof`
 
@@ -112,9 +112,9 @@ npx ts-node cli/index.ts verifyUserSignUpProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/verifyUserSignUpProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/verifyUserSignUpProof.ts)
-{% endhint %}
+:::
 
 ## `giveAirdrop`
 
@@ -151,6 +151,6 @@ npx ts-node cli/index.ts giveAirdrop
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/giveAirdrop.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/giveAirdrop.ts)
-{% endhint %}
+:::

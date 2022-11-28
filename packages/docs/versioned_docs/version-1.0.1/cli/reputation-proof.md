@@ -46,9 +46,9 @@ npx ts-node cli/index.ts genReputationProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/genReputationProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genReputationProof.ts)
-{% endhint %}
+:::
 
 ## `verifyReputationProof`
 
@@ -85,6 +85,6 @@ npx ts-node cli/index.ts verifyReputationProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/verifyReputationProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/verifyReputationProof.ts)
-{% endhint %}
+:::

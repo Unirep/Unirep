@@ -25,9 +25,9 @@ Therefore, the proof checks that
 * `attester_id`
 * `sign_up`
 
-{% hint style="info" %}
+:::info
 **NOTE:** No epoch key nonce is given.
-{% endhint %}
+:::
 
 ## Private inputs
 
@@ -48,14 +48,14 @@ Therefore, the proof checks that
 
 Check the constrains in epoch key proof.
 
-{% hint style="info" %}
+:::info
 See: [Epoch Key Proof circuit](epoch-key-proof.md)
-{% endhint %}
+:::
 
 ### 2. Check if the reputation given by the attester is in the user state tree
 
 Check if `hash(pos_rep, neg_rep, graffiti, sign_up)` is one of the leaves in the user state tree of root `user_tree_root`.
 
-{% hint style="info" %}
+:::info
 See the whole circuit in [circuits/proveUserSignUp.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/proveUserSignUp.circom)
-{% endhint %}
+:::

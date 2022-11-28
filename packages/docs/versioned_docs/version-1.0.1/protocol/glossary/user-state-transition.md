@@ -48,10 +48,10 @@ User performs user state transition by calling [`updateUserStateRoot()`](https:/
 * Once the user performed user state transition, his user state will be inserted into the [global state tree](trees.md#global-state-tree) of the latest epoch.
 * So if a user does not perform user state transition during an epoch, his user state will not be in the global state tree of that epoch.
 
-{% hint style="info" %}
+:::info
 See also
 
 * [Trees](trees.md)
 * [Epoch Transition](epoch.md)
 * [User State Transition Proof](../../circuits/user-state-transition-proof.md)
-{% endhint %}
+:::

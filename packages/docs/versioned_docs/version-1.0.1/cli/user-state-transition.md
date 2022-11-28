@@ -36,6 +36,6 @@ npx ts-node cli/index.ts userStateTransition
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/userStateTransition.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/userStateTransition.ts)
-{% endhint %}
+:::

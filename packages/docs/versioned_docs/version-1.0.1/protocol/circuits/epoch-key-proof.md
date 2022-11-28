@@ -50,6 +50,6 @@ Check if `nonce < EPOCH_KEY_NUM_PER_EPOCH`
 
 Check if `epoch_key = hash(identityNullifier, epoch, nonce) % epochTreeDepth`
 
-{% hint style="info" %}
+:::info
 See the whole circuit in [circuits/verifyEpochKey.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/verifyEpochKey.circom)
-{% endhint %}
+:::

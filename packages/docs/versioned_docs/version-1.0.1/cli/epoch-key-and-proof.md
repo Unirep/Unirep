@@ -46,9 +46,9 @@ npx ts-node cli/index.ts genEpochKeyAndProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/genEpochKeyAndProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genEpochKeyAndProof.ts)
-{% endhint %}
+:::
 
 ## `verifyEpochKeyProof`
 
@@ -82,9 +82,9 @@ npx ts-node cli/index.ts verifyEpochKeyProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/verifyEpochKeyProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/verifyEpochKeyProof.ts)
-{% endhint %}
+:::
 
 ## `submitEpochKeyProof`
 
@@ -123,6 +123,6 @@ npx ts-node cli/index.ts submitEpochKeyProof
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/submitEpochKeyProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/submitEpochKeyProof.ts)
-{% endhint %}
+:::

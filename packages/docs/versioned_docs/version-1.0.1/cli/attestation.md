@@ -52,6 +52,6 @@ npx ts-node cli/index.ts attest
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/attest.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/attest.ts)
-{% endhint %}
+:::

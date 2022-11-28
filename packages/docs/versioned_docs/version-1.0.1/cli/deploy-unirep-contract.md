@@ -11,10 +11,10 @@ description: Deploy a Unirep smart contract with an Ethereum account
 npx hardhat node
 ```
 
-{% hint style="info" %}
+:::info
 By default it runs at [http://localhost:8545](http://localhost:8545)\
 And it will list 20 accounts including their private keys
-{% endhint %}
+:::
 
 ## `deploy`
 
@@ -49,6 +49,6 @@ npx ts-node cli/index.ts deploy
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/deploy.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/deploy.ts)
-{% endhint %}
+:::

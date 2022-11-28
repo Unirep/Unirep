@@ -14,9 +14,9 @@ After signing up, attesters can set the airdrop amount that whoever signs up thr
 function setAirdropAmount(uint256 amount) external
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/setAirdropAmount](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L191)
-{% endhint %}
+:::
 
 ## Airdrop Epoch key
 
@@ -39,9 +39,9 @@ function airdropEpochKey(
 ) external payable
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/airdropEpochKey](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L340)
-{% endhint %}
+:::
 
 ## Submit Epoch Key Proof
 
@@ -62,9 +62,9 @@ function submitEpochKeyProof(
 ) external
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/submitEpochKeyProof](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L306)
-{% endhint %}
+:::
 
 ## Submit Attestation
 
@@ -81,9 +81,9 @@ function submitAttestation(
 ) external payable
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/submitAttestation](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L253)
-{% endhint %}
+:::
 
 ```solidity
 function submitAttestationViaRelayer(
@@ -96,9 +96,9 @@ function submitAttestationViaRelayer(
 ) external payable
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/submitAttestationViaRelayer](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L279)
-{% endhint %}
+:::
 
 ## Spend Reputation
 
@@ -125,9 +125,9 @@ function spendReputation(
 ) external payable
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/spendReputation](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L401)
-{% endhint %}
+:::
 
 After the `spendReputation` event emitted, the reputation will assign a `proofIndex`. Then the `proofIndex` can be included in the `fromProofIndex` of [submitAttestation](attestations.md#submit-attestation).
 

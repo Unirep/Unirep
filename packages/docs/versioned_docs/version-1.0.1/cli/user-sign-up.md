@@ -38,9 +38,9 @@ npx ts-node cli/index.ts userSignUp
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/userSignUp.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/userSignUp.ts)
-{% endhint %}
+:::
 
 ## `attesterSignUp`
 
@@ -72,6 +72,6 @@ npx ts-node cli/index.ts attesterSignUp
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/attesterSignUp.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/attesterSignUp.ts)
-{% endhint %}
+:::

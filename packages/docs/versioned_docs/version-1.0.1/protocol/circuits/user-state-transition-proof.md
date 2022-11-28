@@ -133,9 +133,9 @@ const blinded_hash_chain = hash(
 )
 ```
 
-{% hint style="info" %}
+:::info
 See the whole circuit in [circuits/startTransition.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/startTransition.circom)
-{% endhint %}
+:::
 
 ## 2. Process attestations proof
 
@@ -260,9 +260,9 @@ const output_blinded_hash_chain = hash(
 )
 ```
 
-{% hint style="info" %}
+:::info
 See the whole circuit in [circuits/processAttestations.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/processAttestations.circom)
-{% endhint %}
+:::
 
 ## 3. User State Transition proof
 
@@ -346,6 +346,6 @@ const new_GST_leaf = hash(
 )
 ```
 
-{% hint style="info" %}
+:::info
 See the whole circuit in [circuits/userStateTransition.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/userStateTransition.circom)
-{% endhint %}
+:::

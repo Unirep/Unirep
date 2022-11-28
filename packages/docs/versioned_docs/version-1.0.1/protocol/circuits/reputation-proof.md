@@ -70,9 +70,9 @@ The circuit also checks if the user has [registered](https://unirep.gitbook.io/u
 
 Check the constrains in epoch key proof.
 
-{% hint style="info" %}
+:::info
 See: [Epoch Key Proof circuit](./epoch-key-proof.md)
-{% endhint %}
+:::
 
 ### 2. Check if the reputation given by the attester is in the user state tree
 
@@ -94,9 +94,9 @@ rep_nullifier[i] = hash(
 )
 ```
 
-{% hint style="info" %}
+:::info
 See: [Reputation nullifiers](../glossary/nullifiers.md#reputation-nullifiers)
-{% endhint %}
+:::
 
 ### 4. Check if user has reputation greater than `min_rep`
 
@@ -110,6 +110,6 @@ Check if&#x20;
 
 Check if `hash(graffiti_pre_image) == graffiti`.
 
-{% hint style="info" %}
+:::info
 See the whole circuit in [circuits/proveReputation.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/proveReputation.circom)
-{% endhint %}
+:::

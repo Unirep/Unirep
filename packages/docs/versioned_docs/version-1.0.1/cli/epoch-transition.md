@@ -37,6 +37,6 @@ npx ts-node cli/index.ts epochTransition
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/epochTransition.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/epochTransition.ts)
-{% endhint %}
+:::

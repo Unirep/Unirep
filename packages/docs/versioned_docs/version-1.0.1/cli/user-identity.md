@@ -8,9 +8,9 @@ description: Create a user identity with semaphore
 * We use [semaphore](https://github.com/semaphore-protocol/semaphore) here to generate users' identity and the identity commitment. Users can send their identity commitment instead of their semaphore identity to sign up.
 * Only a user has the semaphore identity and the identity commitment has signed up on the Unirep contract, the user can perform actions in the Unirep protocol.
 
-{% hint style="info" %}
+:::info
 This function does not require users connect to an Ethereum provider.
-{% endhint %}
+:::
 
 ## `genUnirepIdentity`
 
@@ -28,6 +28,6 @@ npx ts-node cli/index.ts genUnirepIdentity [-h]
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/genUnirepIdentity.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genUnirepIdentity.ts)
-{% endhint %}
+:::

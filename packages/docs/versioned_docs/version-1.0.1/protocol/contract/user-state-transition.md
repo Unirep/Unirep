@@ -19,9 +19,9 @@ function startUserStateTransition(
 ) external 
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/startUserStateTransition](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L523)
-{% endhint %}
+:::
 
 After start user state transition proof event is emitted, the proof will be assign a proof index, which will be attached to [updateUserStateRoot](user-state-transition.md#user-state-transition) function.
 
@@ -82,9 +82,9 @@ function processAttestations(
 ) external
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/processAttestations](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L553)
-{% endhint %}
+:::
 
 After process attestations proof event is emitted, the proof will be assign a proof index, which will be attached to [updateUserStateRoot](user-state-transition.md#user-state-transition) function.
 
@@ -153,8 +153,8 @@ function updateUserStateRoot(
 ) external 
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/updateUserStateRoot](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L588)
-{% endhint %}
+:::
 
 The `proofIndexRecords` is the proof indexes of all `startTransitionProof` and `processAttestationsProof` that are submitted sequentially. See [Start user state transition](user-state-transition.md#start-user-state-transition) and [Process attestations](user-state-transition.md#undefined).

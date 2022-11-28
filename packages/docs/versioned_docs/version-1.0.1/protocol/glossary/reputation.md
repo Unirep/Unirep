@@ -41,11 +41,11 @@ const hashAttestation = hash(attesterId, posRep, negRep, graffiti, signUp)
     * So user **can not omit any attestation** because the [circuit](../../circuits/user-state-transition-proof.md) requires each attestation in the hashchain to be processed. <font color="red">**->**</font> <font color="red"></font><font color="red"></font> <font color="red"></font><font color="red">**Non-repudiable**</font>
     * if user omits an attestation, then the computed hashchain would not match the one in the Unirep contract
 
-{% hint style="info" %}
+:::info
 See also
 
 * [Trees](trees.md)
 * [Epoch Transition](epoch-transition.md)
 * [User State Transition](user-state-transition.md)
 * [User State Transition Proof](../../circuits/user-state-transition-proof.md)
-{% endhint %}
+:::

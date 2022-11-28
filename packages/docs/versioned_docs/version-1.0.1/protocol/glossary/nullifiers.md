@@ -36,6 +36,6 @@ hash(
 
 * The `nonce` can only be within `0` to `posRep-negRep-1` with the given attesterID.
 
-{% hint style="info" %}
+:::info
 **NOTE:** `EPOCH_KEY_NULLIFIER_DOMAIN` and `REPUTATION_NULLIFIER_DOMAIN` are used to prevent mixed-up of epoch key nullifiers and reputation nullifiers.
-{% endhint %}
+:::

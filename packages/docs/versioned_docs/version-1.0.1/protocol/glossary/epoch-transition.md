@@ -25,11 +25,11 @@ description: Definition of epoch transition in UniRep
 * There will be a new [global state tree](trees.md#global-state-tree) for each epoch.
 * And after epoch transition, user needs to perform [user state transition](user-state-transition.md) to transition his user state into the latest epoch
 
-{% hint style="info" %}
+:::info
 See also
 
 * [Epoch](epoch.md)
 * [Reputation](reputation.md)
 * [Trees](trees.md)
 * [User State Transition](user-state-transition.md)
-{% endhint %}
+:::

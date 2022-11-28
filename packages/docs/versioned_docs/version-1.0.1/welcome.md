@@ -21,7 +21,7 @@ UniRep is originally proposed by BarryWhiteHat in [this ethresear.ch post](https
 ### Quick Links
 
 * [Protocol introduction](introduction.md)
-* [Getting started](getting-started/)
+* [Getting started](getting-started/install-and-build.md)
 
 
 

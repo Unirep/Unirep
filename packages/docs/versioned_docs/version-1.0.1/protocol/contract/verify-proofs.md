@@ -15,9 +15,9 @@ function verifyEpochKeyValidity(
 ) external view returns (bool)
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/verifyEpochKeyValidity](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L630)
-{% endhint %}
+:::
 
 ## Reputation Verifier
 
@@ -30,9 +30,9 @@ function verifyReputation(
 ) external view returns (bool)
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/verifyReputation](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L746)
-{% endhint %}
+:::
 
 ## User Sign Up Verifier
 
@@ -45,9 +45,9 @@ function verifyUserSignUp(
 ) external view returns (bool)
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/verifyUserSignUp](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L775)
-{% endhint %}
+:::
 
 ## Start Transition Verifier
 
@@ -60,9 +60,9 @@ function verifyStartTransitionProof(
 ) external view returns (bool)
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/verifyStartTransitionProof](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L657)
-{% endhint %}
+:::
 
 ## Process Attestations Verifier
 
@@ -75,9 +75,9 @@ function verifyProcessAttestationProof(
 ) external view returns (bool)
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/verifyProcessAttestationProof](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L684)
-{% endhint %}
+:::
 
 ## User State Transition Verifier
 
@@ -90,6 +90,6 @@ function verifyUserStateTransition(
 ) external view returns (bool)
 ```
 
-{% hint style="info" %}
+:::info
 source: [Unirep.sol/verifyUserStateTransition](https://github.com/Unirep/Unirep/blob/0067a483e1766645bc9bbf881a3ccdb0b32b8a63/packages/contracts/contracts/Unirep.sol#L716)
-{% endhint %}
+:::

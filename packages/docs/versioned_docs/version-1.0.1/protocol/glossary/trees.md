@@ -30,9 +30,9 @@ If there is no reputation from attester, then the leaf stores a default reputati
 const defaultReputation = hash(0,0,0,0)
 ```
 
-{% hint style="info" %}
+:::info
 The index `0` is reserved to have no reputation (default reputation) since the attester ID starts from index `1`.
-{% endhint %}
+:::
 
 ## **Global state tree**
 
@@ -43,11 +43,11 @@ The index `0` is reserved to have no reputation (default reputation) since the a
 
 ![An example of global state tree](../../.gitbook/assets/3.png)
 
-{% hint style="info" %}
+:::info
 **NOTE:** this is an incremental merkle tree so leaves are inserted from left (leaf index 0) to right, one by one, instead of inserted directly into the specified leaf index.
 
 **NOTE:** since global state tree leaf is the hash of `identityCommitment` and `userStateRoot`, others will be not be able to tell which user (his `identityCommitment`) inserted his user state into global state tree.
-{% endhint %}
+:::
 
 ## **Epoch tree**
 
@@ -62,10 +62,10 @@ const hashChainResult = hash(attestation_3, hash(attestation_2, hash(attestation
 const sealedHashChain = hash(1, hashChainResult)
 ```
 
-{% hint style="info" %}
+:::info
 The hash chain is **sealed** because it prevents epoch keys from receiving attestations anymore.\
 See: [Epoch Transition](epoch-transition.md)
-{% endhint %}
+:::
 
 ![An example of epoch tree with epoch key 1 and epoch key 3 has non-zero attestations.](<../../.gitbook/assets/epoch tree (1).png>)
 
@@ -86,8 +86,8 @@ struct Attestation {
 }
 ```
 
-{% hint style="info" %}
+:::info
 A reputation includes the following data: `posRep, negRep, graffiti, signUp`.\
 ``It does not include `attesterId` like an attestation does because reputation is already stored in user state tree with `attesterId` as leaf index\
 See: [Reputation](reputation.md)
-{% endhint %}
+:::

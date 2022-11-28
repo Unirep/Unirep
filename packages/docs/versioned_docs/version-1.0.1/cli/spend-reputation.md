@@ -42,6 +42,6 @@ npx ts-node cli/index.ts spendReputation
   -h, --help            Show this help message and exit.
 ```
 
-{% hint style="info" %}
+:::info
 source: [core/cli/spendReputation.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/spendReputation.ts)
-{% endhint %}
+:::
