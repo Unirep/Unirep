@@ -85,7 +85,7 @@ state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
 
 ## genUserStateTransitionProof
 
-Generate a user state transition proof. Returns a [`UserStateTransitionProof`](/docs/contracts-api/user-state-transition-proof).
+Generate a user state transition proof. Returns a [`UserStateTransitionProof`](../circuits-api/user-state-transition-proof).
 
 ```ts
 state.genUserStateTransitionProof(options?: {
@@ -95,7 +95,7 @@ state.genUserStateTransitionProof(options?: {
 
 ## genProveReputationProof
 
-Generate a proof of reputation. Returns a [`ReputationProof`](/docs/circuits-api/reputation-proof).
+Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/reputation-proof).
 
 ```ts
 state.genProveReputationProof(options: {
@@ -107,7 +107,7 @@ state.genProveReputationProof(options: {
 
 ## genUserSignUpProof
 
-Generate a proof that can be used to signup. Returns a [`SignupProof`](/docs/contracts-api/signup-proof).
+Generate a proof that can be used to signup. Returns a [`SignupProof`](../circuits-api/signup-proof).
 
 ```ts
 state.genUserSignUpProof(options: {
