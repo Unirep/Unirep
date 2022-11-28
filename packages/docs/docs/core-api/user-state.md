@@ -69,7 +69,7 @@ state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
 
 ## getRepByAttester
 
-Get the reputation balance for the current attester up to an epoch. By default we use the epoch before the current epoch. Reputation received in the current epoch isn't considered final until the user executes a user state transition out of the epoch.
+Get the reputation balance for the current attester up to and including the provided epoch. By default reputation up to and including the current epoch is returned.
 
 ```ts
 state.getRepByAttester(epoch?: number): Promise<Reputation>
