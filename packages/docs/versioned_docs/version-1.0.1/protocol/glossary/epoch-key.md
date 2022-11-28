@@ -15,7 +15,7 @@ hash(identityNullifier, epoch, nonce) % epochTreeDepth
 where `nonce` and be any value between `0` and `numEpochKeyNoncePerEpoch - 1`, so that a user can have `numEpochKeyNoncePerEpoch` epoch keys per epoch.
 
 * Only the user knows his `identityNullifier` so only he knows if he is receiving an attestation, others would see an attestation attesting to a random value.
-* In the [epoch key proof](../../circuits/epoch-key-proof.md) circuit user can prove that he knows the `epochKey` and can rightfully receive and process the attestations attested to this `epochKey`.
+* In the [epoch key proof](../circuits/epoch-key-proof.md) circuit user can prove that he knows the `epochKey` and can rightfully receive and process the attestations attested to this `epochKey`.
 
 :::info
 See also
@@ -23,5 +23,5 @@ See also
 * [Epoch](epoch.md)
 * [Epoch Transition](epoch-transition.md)
 * [User State Transition](user-state-transition.md)
-* [Epoch Key Proof](../../circuits/epoch-key-proof.md)
+* [Epoch Key Proof](../circuits/epoch-key-proof.md)
 :::

@@ -4,7 +4,7 @@ description: The zero-knowledge circuit of user sign up proof in UniRep
 
 # User Sign Up Proof
 
-The user sign up proof is used to indicate if the user has a valid membership from an attester. Attesters can send a [reputation](../protocol/glossary/reputation.md) with a `signUp` flag to authenticate the user. Once the attester has signed the user up, the sign up flag will not be changed (in the current version).
+The user sign up proof is used to indicate if the user has a valid membership from an attester. Attesters can send a [reputation](../glossary/reputation.md) with a `signUp` flag to authenticate the user. Once the attester has signed the user up, the sign up flag will not be changed (in the current version).
 
 In the current version, the user sign up proof is used to give users the reputation airdrop. Once the users are authenticated by an attester, the user can get the airdrop from the attester. Then the users also need epoch keys to receive reputation from the attester.
 
@@ -13,7 +13,7 @@ The idea of the user sign up proof (or called the airdrop proof) is to prevent t
 Therefore, the proof checks that
 
 1. If the user has a sign-up flag from a given attester.
-2. The user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) in UniRep and has performed the [user state transition](../protocol/glossary/user-state-transition.md) in the latest epoch. In other words, the user has a leaf in the global state tree.
+2. The user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) in UniRep and has performed the [user state transition](../glossary/user-state-transition.md) in the latest epoch. In other words, the user has a leaf in the global state tree.
 3. If the sign up proof epoch matches the current epoch.
 4. If the output epoch key is computed with the `nonce = 0`
 
