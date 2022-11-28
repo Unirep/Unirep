@@ -1,6 +1,6 @@
-import { Circuit, Prover } from '@unirep/circuits'
+import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { BigNumberish } from 'ethers'
+import { BigNumberish } from '@ethersproject/bignumber'
 import { BaseProof } from './BaseProof'
 
 export class AggregateEpochKeysProof extends BaseProof {

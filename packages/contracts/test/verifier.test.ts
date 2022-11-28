@@ -11,15 +11,13 @@ import {
     Circuit,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
+    EpochKeyProof,
+    ReputationProof,
+    SignupProof,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import {
-    EpochKeyProof,
-    EPOCH_LENGTH,
-    ReputationProof,
-    SignupProof,
-} from '../src'
+import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
@@ -91,14 +89,17 @@ describe('Epoch key proof verifier', function () {
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
                     identity_nullifier: id.identityNullifier,
-                    nonce,
-                    epoch: epoch.toNumber(),
                     pos_rep: posRep,
                     neg_rep: negRep,
                     graffiti,
                     timestamp,
-                    attester_id: attester.address,
                     data,
+                    control: EpochKeyProof.buildControlInput({
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        attesterId: attester.address,
+                        revealNonce: 0,
+                    }),
                 })
             )
 
@@ -114,6 +115,74 @@ describe('Epoch key proof verifier', function () {
             )
             await unirepContract
                 .verifyEpochKeyProof(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+    })
+
+    it('should decode public signals', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const id = new ZkIdentity()
+        // sign up a user
+        const { leaf, index, epoch } = await signupUser(
+            id,
+            unirepContract,
+            attester.address,
+            attester
+        )
+        stateTree.insert(leaf)
+
+        const merkleProof = stateTree.createProof(index)
+        const posRep = 0
+        const negRep = 0
+        const graffiti = 0
+        const timestamp = 0
+        const data = 0
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.verifyEpochKey,
+                stringifyBigInts({
+                    state_tree_elements: merkleProof.siblings,
+                    state_tree_indexes: merkleProof.pathIndices,
+                    identity_nullifier: id.identityNullifier,
+                    pos_rep: posRep,
+                    neg_rep: negRep,
+                    graffiti,
+                    timestamp,
+                    data,
+                    control: EpochKeyProof.buildControlInput({
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        attesterId: attester.address,
+                        revealNonce: 0,
+                    }),
+                })
+            )
+
+            const v = await defaultProver.verifyProof(
+                Circuit.verifyEpochKey,
+                r.publicSignals,
+                r.proof
+            )
+            expect(v).to.be.true
+            const proof = new EpochKeyProof(r.publicSignals, r.proof)
+            const signals = await unirepContract.decodeEpochKeySignals(
+                proof.publicSignals
+            )
+            expect(signals.epochKey.toString()).to.equal(
+                proof.epochKey.toString()
+            )
+            expect(signals.stateTreeRoot.toString()).to.equal(
+                proof.stateTreeRoot.toString()
+            )
+            expect(signals.data.toString()).to.equal(proof.data.toString())
+            expect(signals.attesterId.toString()).to.equal(
+                proof.attesterId.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
+            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
+            await unirepContract
+                .verifyEpochKeyProof(proof.publicSignals, proof.proof)
                 .then((t) => t.wait())
         }
     })
@@ -145,14 +214,17 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_nullifier: id.identityNullifier,
-                nonce,
-                epoch: invalidEpoch,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
                 timestamp,
-                attester_id: attester.address,
                 data,
+                control: EpochKeyProof.buildControlInput({
+                    epoch: invalidEpoch,
+                    nonce,
+                    attesterId: attester.address,
+                    revealNonce: 0,
+                }),
             })
         )
 
@@ -197,14 +269,17 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_nullifier: id.identityNullifier,
-                nonce,
-                epoch: epoch.toNumber(),
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
                 timestamp,
-                attester_id: attester.address,
                 data,
+                control: EpochKeyProof.buildControlInput({
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    attesterId: attester.address,
+                    revealNonce: 0,
+                }),
             })
         )
 
@@ -263,14 +338,17 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_nullifier: id.identityNullifier,
-                nonce,
-                epoch: epoch.toNumber(),
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
                 timestamp,
-                attester_id: attester.address,
                 data,
+                control: EpochKeyProof.buildControlInput({
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    attesterId: attester.address,
+                    revealNonce: 0,
+                }),
             })
         )
 
@@ -331,19 +409,23 @@ describe('Reputation proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.proveReputation,
                 stringifyBigInts({
-                    epoch: epoch.toNumber(),
-                    nonce,
                     identity_nullifier: id.identityNullifier,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
-                    attester_id: attester.address,
                     pos_rep: posRep,
                     neg_rep: negRep,
                     graffiti: graffiti,
                     timestamp: timestamp,
-                    min_rep: minRep,
-                    prove_graffiti: proveGraffiti,
                     graffiti_pre_image: graffitiPreImage,
+                    control: ReputationProof.buildControlInput({
+                        attesterId: attester.address,
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        minRep,
+                        maxRep: 0,
+                        proveGraffiti,
+                        proveMinRep: !!minRep ? 1 : 0,
+                    }),
                 })
             )
 
@@ -359,6 +441,98 @@ describe('Reputation proof verifier', function () {
             )
             await unirepContract
                 .verifyReputationProof(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+    })
+
+    it('should decode public signals', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const id = new ZkIdentity()
+        // sign up a user
+        const { leaf, index, epoch } = await signupUser(
+            id,
+            unirepContract,
+            attester.address,
+            attester
+        )
+        stateTree.insert(leaf)
+
+        const merkleProof = stateTree.createProof(index)
+        const posRep = 0
+        const negRep = 0
+        const graffiti = 0
+        const timestamp = 0
+        const minRep = 0
+        const proveGraffiti = 0
+        const graffitiPreImage = 0
+        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.proveReputation,
+                stringifyBigInts({
+                    identity_nullifier: id.identityNullifier,
+                    state_tree_indexes: merkleProof.pathIndices,
+                    state_tree_elements: merkleProof.siblings,
+                    pos_rep: posRep,
+                    neg_rep: negRep,
+                    graffiti: graffiti,
+                    timestamp: timestamp,
+                    graffiti_pre_image: graffitiPreImage,
+                    control: ReputationProof.buildControlInput({
+                        attesterId: attester.address,
+                        epoch: epoch.toNumber(),
+                        nonce,
+                        minRep,
+                        maxRep: 0,
+                        proveGraffiti,
+                        proveMinRep: !!minRep ? 1 : 0,
+                    }),
+                })
+            )
+
+            const v = await defaultProver.verifyProof(
+                Circuit.proveReputation,
+                r.publicSignals,
+                r.proof
+            )
+            expect(v).to.be.true
+            const proof = new ReputationProof(r.publicSignals, r.proof)
+            const signals = await unirepContract.decodeReputationSignals(
+                proof.publicSignals
+            )
+            expect(signals.epochKey.toString()).to.equal(
+                proof.epochKey.toString()
+            )
+            expect(signals.stateTreeRoot.toString()).to.equal(
+                proof.stateTreeRoot.toString()
+            )
+            expect(signals.attesterId.toString()).to.equal(
+                proof.attesterId.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
+            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
+            expect(signals.graffitiPreImage.toString()).to.equal(
+                proof.graffitiPreImage.toString()
+            )
+            expect(signals.proveGraffiti.toString()).to.equal(
+                proof.proveGraffiti.toString()
+            )
+            expect(signals.revealNonce.toString()).to.equal(
+                proof.revealNonce.toString()
+            )
+            expect(signals.proveMinRep.toString()).to.equal(
+                proof.proveMinRep.toString()
+            )
+            expect(signals.proveMaxRep.toString()).to.equal(
+                proof.proveMaxRep.toString()
+            )
+            expect(signals.proveZeroRep.toString()).to.equal(
+                proof.proveZeroRep.toString()
+            )
+            expect(signals.minRep.toString()).to.equal(proof.minRep.toString())
+            expect(signals.maxRep.toString()).to.equal(proof.maxRep.toString())
+            await unirepContract
+                .verifyReputationProof(proof.publicSignals, proof.proof)
                 .then((t) => t.wait())
         }
     })
@@ -389,19 +563,23 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                epoch: invalidEpoch,
-                nonce,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                attester_id: attester.address,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,
                 timestamp: timestamp,
-                min_rep: minRep,
-                prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage,
+                control: ReputationProof.buildControlInput({
+                    attesterId: attester.address,
+                    epoch: invalidEpoch,
+                    nonce,
+                    minRep,
+                    maxRep: 0,
+                    proveGraffiti,
+                    proveMinRep: !!minRep ? 1 : 0,
+                }),
             })
         )
 
@@ -445,19 +623,23 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                epoch: epoch.toNumber(),
-                nonce,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                attester_id: attester.address,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,
                 timestamp: timestamp,
-                min_rep: minRep,
-                prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage,
+                control: ReputationProof.buildControlInput({
+                    attesterId: attester.address,
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    minRep,
+                    maxRep: 0,
+                    proveGraffiti,
+                    proveMinRep: !!minRep ? 1 : 0,
+                }),
             })
         )
 
@@ -509,19 +691,23 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                epoch: epoch.toNumber(),
-                nonce,
                 identity_nullifier: id.identityNullifier,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                attester_id: attester.address,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,
                 timestamp: timestamp,
-                min_rep: minRep,
-                prove_graffiti: proveGraffiti,
                 graffiti_pre_image: graffitiPreImage,
+                control: ReputationProof.buildControlInput({
+                    attesterId: attester.address,
+                    epoch: epoch.toNumber(),
+                    nonce,
+                    minRep,
+                    maxRep: 0,
+                    proveGraffiti,
+                    proveMinRep: !!minRep ? 1 : 0,
+                }),
             })
         )
 

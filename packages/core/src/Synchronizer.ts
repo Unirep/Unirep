@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover, Circuit } from '@unirep/circuits'
+import { Prover, Circuit, AggregateEpochKeysProof } from '@unirep/circuits'
 import {
     IncrementalMerkleTree,
     SparseMerkleTree,
@@ -9,7 +9,6 @@ import {
     hash4,
     stringifyBigInts,
 } from '@unirep/utils'
-import { AggregateEpochKeysProof } from '@unirep/contracts'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 
 type EventHandlerArgs = {

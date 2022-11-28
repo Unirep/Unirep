@@ -33,6 +33,7 @@
         "test": "mocha -r ts-node/register test/*.test.ts --exit"
     },
     "dependencies": {
+        "@ethersproject/solidity": "^5.7.0",
         "@unirep/utils": "1.0.0",
         "snarkjs": "^0.5.0"
     },

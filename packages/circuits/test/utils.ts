@@ -6,6 +6,8 @@ import {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    ReputationProof,
+    EpochKeyProof,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
@@ -55,6 +57,7 @@ const genEpochKeyCircuitInput = (config: {
     graffiti: number | bigint
     timestamp: number | bigint
     data?: bigint
+    revealNonce?: number
 }) => {
     const {
         id,
@@ -68,20 +71,24 @@ const genEpochKeyCircuitInput = (config: {
         graffiti,
         timestamp,
         data,
+        revealNonce,
     } = config
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
         identity_nullifier: id.identityNullifier,
-        nonce: nonce,
-        epoch: epoch,
         pos_rep: posRep,
         neg_rep: negRep,
         graffiti,
         timestamp,
-        attester_id: attesterId,
         data: data ?? BigInt(0),
+        control: EpochKeyProof.buildControlInput({
+            nonce,
+            epoch,
+            attesterId,
+            revealNonce,
+        }),
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -175,8 +182,13 @@ const genReputationCircuitInput = (config: {
     attesterId: number
     startBalance: { posRep: any; negRep: any; graffiti?: any; timestamp?: any }
     minRep?: number
+    maxRep?: number
+    proveMinRep?: number
+    proveMaxRep?: number
+    proveZeroRep?: number
     proveGraffiti?: boolean
     graffitiPreImage?: any
+    revealNonce?: number
 }) => {
     const {
         id,
@@ -187,9 +199,15 @@ const genReputationCircuitInput = (config: {
         minRep,
         proveGraffiti,
         graffitiPreImage,
+        maxRep,
+        proveMinRep,
+        proveMaxRep,
+        proveZeroRep,
+        revealNonce,
     } = Object.assign(
         {
             minRep: 0,
+            maxRep: 0,
             graffitiPreImage: 0,
         },
         config
@@ -210,19 +228,26 @@ const genReputationCircuitInput = (config: {
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
-        epoch: epoch,
-        nonce,
         identity_nullifier: id.identityNullifier,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
-        attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
         graffiti: startBalance.graffiti ?? 0,
         timestamp: startBalance.timestamp ?? 0,
-        min_rep: minRep,
-        prove_graffiti: proveGraffiti ? 1 : 0,
         graffiti_pre_image: graffitiPreImage,
+        control: ReputationProof.buildControlInput({
+            epoch,
+            nonce,
+            attesterId,
+            proveGraffiti: proveGraffiti ? 1 : 0,
+            minRep,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
+            proveZeroRep,
+            revealNonce,
+        }),
     }
     return utils.stringifyBigInts(circuitInputs)
 }

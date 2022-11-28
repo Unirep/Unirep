@@ -19,6 +19,8 @@ import {
 } from './utils'
 import { SparseMerkleTree, hash4 } from '@unirep/utils'
 
+const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
+
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
  * @param deployer A signer who will deploy the contracts
@@ -77,13 +79,13 @@ export const deployUnirep = async (
     for (const [inputCount, { abi, bytecode }] of Object.entries(
         poseidon
     ) as any) {
-        await new Promise((r) => setTimeout(r, 1500))
+        await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
         const f = new ethers.ContractFactory(abi, bytecode, deployer)
         const c = await f.deploy()
         await c.deployed()
         libraries[`Poseidon${inputCount}`] = c.address
     }
-    await new Promise((r) => setTimeout(r, 1500))
+    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
     const incArtifacts: any = tryPath(incPath)
@@ -97,11 +99,11 @@ export const deployUnirep = async (
     )
     const incrementalMerkleTreeLib = await incrementalMerkleTreeFactory.deploy()
     await incrementalMerkleTreeLib.deployed()
-    await new Promise((r) => setTimeout(r, 1500))
+    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
     const verifiers = {}
     for (const circuit in Circuit) {
-        await new Promise((r) => setTimeout(r, 1500))
+        await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
         const contractName = createVerifierName(circuit)
 
         console.log(`Deploying ${contractName}`)
@@ -124,7 +126,7 @@ export const deployUnirep = async (
         await verifierContract.deployed()
         verifiers[circuit] = verifierContract.address
     }
-    await new Promise((r) => setTimeout(r, 1500))
+    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
     console.log('Deploying Unirep')
 

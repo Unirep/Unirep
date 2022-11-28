@@ -10,12 +10,13 @@ import {
     genEpochNullifier,
 } from '@unirep/utils'
 import {
+    Circuit,
+    Prover,
     ReputationProof,
     EpochKeyProof,
     SignupProof,
     UserStateTransitionProof,
-} from '@unirep/contracts'
-import { Circuit, Prover } from '@unirep/circuits'
+} from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
 /**
@@ -359,19 +360,23 @@ export default class UserState extends Synchronizer {
         const stateTreeProof = stateTree.createProof(leafIndex)
 
         const circuitInputs = {
-            epoch,
-            nonce: epkNonce,
             identity_nullifier: this.id.identityNullifier,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
-            attester_id: this.attesterId,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,
             timestamp,
-            min_rep: minRep ?? 0,
-            prove_graffiti: graffitiPreImage ? 1 : 0,
             graffiti_pre_image: graffitiPreImage ?? 0,
+            control: ReputationProof.buildControlInput({
+                epoch,
+                nonce: epkNonce,
+                attesterId: this.attesterId.toString(),
+                proveGraffiti: graffitiPreImage ? 1 : 0,
+                minRep: minRep ?? 0,
+                maxRep: 0,
+                proveMinRep: !!(minRep ?? 0) ? 1 : 0,
+            }),
         }
 
         const results = await this.prover.genProofAndPublicSignals(
@@ -416,6 +421,7 @@ export default class UserState extends Synchronizer {
             nonce?: number
             epoch?: number
             data?: bigint
+            revealNonce?: boolean
         } = {}
     ): Promise<EpochKeyProof> => {
         const nonce = options.nonce ?? 0
@@ -426,10 +432,7 @@ export default class UserState extends Synchronizer {
             await this.getRepByAttester(this.attesterId, epoch)
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
-            epoch,
             identity_nullifier: this.id.identityNullifier,
-            attester_id: this.attesterId.toString(),
-            nonce,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,
@@ -437,6 +440,12 @@ export default class UserState extends Synchronizer {
             data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
+            control: EpochKeyProof.buildControlInput({
+                epoch,
+                nonce,
+                attesterId: this.attesterId.toString(),
+                revealNonce: options.revealNonce ? 1 : 0,
+            }),
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
