@@ -65,42 +65,37 @@
                         },
                         {
                             "type": "doc",
-                            "label": "8. Submit epoch key proof to Unirep smart contract",
-                            "id": "getting-started/start-with-cli-commands/submit-epoch-key-proof-to-unirep-smart-contract"
-                        },
-                        {
-                            "type": "doc",
-                            "label": "9. Attester attest to epoch key",
+                            "label": "8. Attester attest to epoch key",
                             "id": "getting-started/start-with-cli-commands/attester-attest-to-epoch-key"
                         },
                         {
                             "type": "doc",
-                            "label": "10. Epoch transition",
+                            "label": "9. Epoch transition",
                             "id": "getting-started/start-with-cli-commands/epoch-transition"
                         },
                         {
                             "type": "doc",
-                            "label": "11. User state transition",
+                            "label": "10. User state transition",
                             "id": "getting-started/start-with-cli-commands/user-state-transition"
                         },
                         {
                             "type": "doc",
-                            "label": "12. User generates reputation proof",
+                            "label": "11. User generates reputation proof",
                             "id": "getting-started/start-with-cli-commands/user-generates-reputation-proof"
                         },
                         {
                             "type": "doc",
-                            "label": "13. Attesters/ Users verify the reputation proof",
+                            "label": "12. Attesters/ Users verify the reputation proof",
                             "id": "getting-started/start-with-cli-commands/attesters-users-verify-the-reputation-proof"
                         },
                         {
                             "type": "doc",
-                            "label": "14. User generates sign up proof",
+                            "label": "13. User generates sign up proof",
                             "id": "getting-started/start-with-cli-commands/user-generates-sign-up-proof"
                         },
                         {
                             "type": "doc",
-                            "label": "15. Attesters/ Users verify the sign up proof",
+                            "label": "14. Attesters/ Users verify the sign up proof",
                             "id": "getting-started/start-with-cli-commands/attesters-users-verify-the-sign-up-proof"
                         }
                     ]
@@ -246,6 +241,11 @@
                             "type": "doc",
                             "label": "Epoch Key And Proof",
                             "id": "cli/epoch-key-and-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Attestation",
+                            "id": "cli/attestation"
                         },
                         {
                             "type": "doc",

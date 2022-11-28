@@ -4,7 +4,8 @@
 
 ```bash
 git clone https://github.com/Unirep/Unirep.git && \
-cd Unirep
+cd Unirep && \
+git checkout v1.0.1
 ```
 
 ### 2. Install packages and build
