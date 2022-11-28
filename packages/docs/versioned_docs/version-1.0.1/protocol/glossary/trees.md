@@ -38,7 +38,7 @@ The index `0` is reserved to have no reputation (default reputation) since the a
 
 * A global state tree stores the updated user state after a user signs up and a user performs the [user state transition](user-state-transition.md).
 * It is an **incremental merkle tree** with it's leaves storing users' `identityCommitment`s and `userStateRoot`s, e.g.,
-  * a global state tree leaf: `hash(`<mark style="color:green;">`identityCommitment`</mark>`,`` `<mark style="color:red;">`userStateTreeRoot`</mark>`)`
+  * a global state tree leaf: `hash(`<font color="green">`identityCommitment`</font>`,`` `<font color="red">`userStateTreeRoot`</font>`)`
   * The default leaf is `0`
 
 ![An example of global state tree](../../.gitbook/assets/3.png)

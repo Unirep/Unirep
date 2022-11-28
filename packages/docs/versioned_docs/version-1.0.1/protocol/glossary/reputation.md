@@ -38,7 +38,7 @@ const hashAttestation = hash(attesterId, posRep, negRep, graffiti, signUp)
     const hashChainResult = hash(hashAttestation_3, hash(hashAttestation_2, hash(hashAttestation_1, 0)))
     ```
 
-    * So user **can not omit any attestation** because the [circuit](../../circuits/user-state-transition-proof.md) requires each attestation in the hashchain to be processed. <mark style="color:red;">**->**</mark> <mark style="color:red;"></mark><mark style="color:red;"></mark> <mark style="color:red;"></mark><mark style="color:red;">**Non-repudiable**</mark>
+    * So user **can not omit any attestation** because the [circuit](../../circuits/user-state-transition-proof.md) requires each attestation in the hashchain to be processed. <font color="red">**->**</font> <font color="red"></font><font color="red"></font> <font color="red"></font><font color="red">**Non-repudiable**</font>
     * if user omits an attestation, then the computed hashchain would not match the one in the Unirep contract
 
 {% hint style="info" %}

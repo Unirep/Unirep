@@ -19,12 +19,12 @@ _**Users and attesters use different ways to sign up in Unirep**_
 
 *   **User**
 
-    A user generates <mark style="color:red;">identity</mark> and <mark style="color:green;">identity commitment</mark> through [Semaphore](https://github.com/semaphore-protocol).
+    A user generates <font color="red">identity</font> and <font color="green">identity commitment</font> through [Semaphore](https://github.com/semaphore-protocol).
 
     The user holds the _identity_ like a private key, and the _identity commitment_ is like a public key that is submitted to the Unirep contract.
 *   **Attester**
 
-    The attester uses his own **wallet** or the address of a **smart contract** to register. After calling the attester sign up function, the Unirep contract will assign an _attester ID_ to this <mark style="color:green;">address</mark>.
+    The attester uses his own **wallet** or the address of a **smart contract** to register. After calling the attester sign up function, the Unirep contract will assign an _attester ID_ to this <font color="green">address</font>.
 
     Whenever the attester gives an attestation, the Unirep contract will check whether the address is registered. If it is registered, the attester is allowed to give reputation to an epoch key.
 
