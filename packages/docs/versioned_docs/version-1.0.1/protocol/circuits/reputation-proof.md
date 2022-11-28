@@ -16,7 +16,7 @@ Users can use a reputation proof to claim that how the reputation is from a give
     ```
     hash(graffiti_preimage) == graffiti
     ```
-3.  The [reputation nullifiers](../protocol/glossary/nullifiers.md#reputation-nullifiers) are computed correctly i.e.
+3.  The [reputation nullifiers](../glossary/nullifiers.md#reputation-nullifiers) are computed correctly i.e.
 
     ```
     // for all nonces
@@ -31,7 +31,7 @@ Users can use a reputation proof to claim that how the reputation is from a give
     )
     ```
 
-The circuit also checks if the user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) and performed [user state transition](../protocol/glossary/user-state-transition.md) in the claimed epoch.
+The circuit also checks if the user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) and performed [user state transition](../glossary/user-state-transition.md) in the claimed epoch.
 
 ## Public inputs
 
@@ -71,7 +71,7 @@ The circuit also checks if the user has [registered](https://unirep.gitbook.io/u
 Check the constrains in epoch key proof.
 
 {% hint style="info" %}
-See: [Epoch Key Proof circuit](epoch-key-proof.md)
+See: [Epoch Key Proof circuit](./epoch-key-proof.md)
 {% endhint %}
 
 ### 2. Check if the reputation given by the attester is in the user state tree
@@ -95,7 +95,7 @@ rep_nullifier[i] = hash(
 ```
 
 {% hint style="info" %}
-See: [Reputation nullifiers](../protocol/glossary/nullifiers.md#reputation-nullifiers)
+See: [Reputation nullifiers](../glossary/nullifiers.md#reputation-nullifiers)
 {% endhint %}
 
 ### 4. Check if user has reputation greater than `min_rep`

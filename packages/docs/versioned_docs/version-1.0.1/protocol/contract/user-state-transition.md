@@ -1,6 +1,6 @@
 # User state transition
 
-There are three steps in user state transition (see [user state transition proof](../../circuits/user-state-transition-proof.md)), and they should be performed in order.
+There are three steps in user state transition (see [user state transition proof](../circuits/user-state-transition-proof.md)), and they should be performed in order.
 
 ## Start user state transition
 

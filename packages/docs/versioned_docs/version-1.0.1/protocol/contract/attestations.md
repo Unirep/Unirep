@@ -20,7 +20,7 @@ source: [Unirep.sol/setAirdropAmount](https://github.com/Unirep/Unirep/blob/0067
 
 ## Airdrop Epoch key
 
-An attester can submit the airdrop attestation to an epoch key with a [sign up proof](../../circuits/user-sign-up-proof.md). The `msg.sender` should match the `attesterId` in the `publicSignals`.
+An attester can submit the airdrop attestation to an epoch key with a [sign up proof](../circuits/user-sign-up-proof.md). The `msg.sender` should match the `attesterId` in the `publicSignals`.
 
 ```solidity
 /**
@@ -68,9 +68,9 @@ source: [Unirep.sol/submitEpochKeyProof](https://github.com/Unirep/Unirep/blob/0
 
 ## Submit Attestation
 
-An attester can submit the attestation with a **proof index**. A valid proof is either an [epoch key proof](../../circuits/epoch-key-proof.md), a [user sign up proof](../../circuits/user-sign-up-proof.md) or a [reputation proof](../../circuits/reputation-proof.md) with epoch key being one of the public signals. An attester can also submit attestations through a relayer or not.
+An attester can submit the attestation with a **proof index**. A valid proof is either an [epoch key proof](../circuits/epoch-key-proof.md), a [user sign up proof](../circuits/user-sign-up-proof.md) or a [reputation proof](../circuits/reputation-proof.md) with epoch key being one of the public signals. An attester can also submit attestations through a relayer or not.
 
-It it is from a [reputation proof](../../circuits/reputation-proof.md) we should include a **`fromProofIndex`** to make sure the attestation is from a valid reputation proof, or the attestation will fail.
+It it is from a [reputation proof](../circuits/reputation-proof.md) we should include a **`fromProofIndex`** to make sure the attestation is from a valid reputation proof, or the attestation will fail.
 
 ```solidity
 function submitAttestation(
@@ -102,7 +102,7 @@ source: [Unirep.sol/submitAttestationViaRelayer](https://github.com/Unirep/Unire
 
 ## Spend Reputation
 
-A user include a [reputation proof](../../circuits/reputation-proof.md) to spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation, and the spent reputation cannot be re-used.&#x20;
+A user include a [reputation proof](../circuits/reputation-proof.md) to spend reputation via an attester, the non-zero nullifiers will be processed as a negative attestation, and the spent reputation cannot be re-used.&#x20;
 
 ```solidity
 /**

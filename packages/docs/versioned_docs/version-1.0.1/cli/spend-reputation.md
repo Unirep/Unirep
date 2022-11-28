@@ -17,7 +17,7 @@ npx ts-node cli/index.ts spendReputation
                   -d ETH_PRIVKEY
 ```
 
-* After user [generate a reputation proof with nullifiers](../circuits/reputation-proof.md), the attester can **spend** the reputation. In other words, the attester will send the negative reputation to the epoch key of the reputation proof, then the (`positive_reputation` - `negative_reputation`) reputation from the attester will decrease.
+* After user [generate a reputation proof with nullifiers](../protocol/circuits/reputation-proof.md), the attester can **spend** the reputation. In other words, the attester will send the negative reputation to the epoch key of the reputation proof, then the (`positive_reputation` - `negative_reputation`) reputation from the attester will decrease.
 
 ### Options
 

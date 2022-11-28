@@ -54,7 +54,7 @@ npx ts-node cli/index.ts genUserSignUpProof
 
 * Attester can give user a sign up flag to indicate the user is one of the membership of the attester's application (or event).
 * Then user can generate a sign up proof to show that he has been authenticated by the attester.
-* See [user sign up proof](../circuits/user-sign-up-proof.md)
+* See [user sign up proof](../protocol/circuits/user-sign-up-proof.md)
 
 ### Options
 

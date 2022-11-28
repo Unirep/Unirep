@@ -4,12 +4,12 @@ description: The zero-knowledge circuit of user state transition proof in UniRep
 
 # User State Transition Proof
 
-The [user state transition](../protocol/glossary/user-state-transition.md) proof is used to process attestations from the latest epoch the user transitioned and then compute the latest [global state tree](../protocol/glossary/trees.md#global-state-tree) leaf.
+The [user state transition](../glossary/user-state-transition.md) proof is used to process attestations from the latest epoch the user transitioned and then compute the latest [global state tree](../glossary/trees.md#global-state-tree) leaf.
 
 The user state transition circuit checks that
 
-1. The user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) and performed [user state transition](../protocol/glossary/user-state-transition.md) in the previous epoch.
-2.  The [user state tree](../protocol/glossary/trees.md#user-state-tree) is updated correctly by the attestations, and the same attestations are chained by hash functions.
+1. The user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) and performed [user state transition](../glossary/user-state-transition.md) in the previous epoch.
+2.  The [user state tree](../glossary/trees.md#user-state-tree) is updated correctly by the attestations, and the same attestations are chained by hash functions.
 
     * For example, the original user state tree root is `r_1`, and the original user state tree leaf has 5 positive reputation
 
@@ -20,14 +20,14 @@ The user state transition circuit checks that
     * An incoming attestation has
       * `attester_id = 1`
       * `pos_rep = 3`
-    * compute the hash of [reputation](../protocol/glossary/reputation.md#reputation)
+    * compute the hash of [reputation](../glossary/reputation.md#reputation)
 
     ```
     hash_reputation = hash(5 + 3, 0, 0, 0, 0)
     ```
 
     * compute the updated user state tree root `r_2` with user state tree leaf `hash(8, 0, 0, 0, 0)` in the leaf index `1`
-    * compute the hash of [attestation](../protocol/glossary/reputation.md#attestation)
+    * compute the hash of [attestation](../glossary/reputation.md#attestation)
 
     ```
     hash_attestation = hash(1, 3, 0, 0, 0)
@@ -38,7 +38,7 @@ The user state transition circuit checks that
     ```
     hash_chain = hash(hash_attestation, hash_chain)
     ```
-3. After all attestations of all epoch keys are processed, the circuit seals all hash chains and computes the [epoch tree](../protocol/glossary/trees.md#epoch-tree). (If the output epoch tree root mismatches others' epoch tree roots, then the user state transition proof is invalid because the user process attestations in a wrong way.)
+3. After all attestations of all epoch keys are processed, the circuit seals all hash chains and computes the [epoch tree](../glossary/trees.md#epoch-tree). (If the output epoch tree root mismatches others' epoch tree roots, then the user state transition proof is invalid because the user process attestations in a wrong way.)
 4. Compute the updated global state tree leaf by
 
 ```typescript
@@ -66,19 +66,19 @@ const blinded_hash_chain = hash(
 
 In the **start transition proof**, the circuit will compute the initial `blinded_user_state` and `blinded_hash_chain`, the `user_tree_root` is the latest transitioned user state tree and the `hash(identity_commitment, updated_user_state_root)` should be in a global state tree. The `current_hash_chain` is start with `0` as the definition of hash chain.
 
-![How blinded user states and blinded hash chains are computed.](<../.gitbook/assets/截圖 2022-07-22 下午1.27.59.png>)
+![How blinded user states and blinded hash chains are computed.](<../../.gitbook/assets/截圖 2022-07-22 下午1.27.59.png>)
 
 After `blinded_user_state` and `blinded_hash_chain` are submitted, the user can take them as public inputs and start to **process attestations** according to the `user_tree_root` and `current_hash_chain`. When the attestations limit reaches (e.g. a `processAttestations` circuit can process only 10 attestations per proof) or all attestations to the epoch key are processed, the circuit will output another `blinded_user_state` and `blinded_hash_chain` to continue processing attestations.
 
-![How hash chain is processed in process attestations proofs.](<../.gitbook/assets/截圖 2022-07-23 下午3.55.55.png>)
+![How hash chain is processed in process attestations proofs.](<../../.gitbook/assets/截圖 2022-07-23 下午3.55.55.png>)
 
-![How user state tree is processed in process attestation proofs.](<../.gitbook/assets/截圖 2022-07-23 下午4.06.07.png>)
+![How user state tree is processed in process attestation proofs.](<../../.gitbook/assets/截圖 2022-07-23 下午4.06.07.png>)
 
-The `epoch_key_nonce` is used in the blinded user state and blinded hash chain to indicate the attestations of which epoch key is processed. In the final **`userStateTransition`** proof, it checks all epoch key with different `epoch_key_nonce` are processed and the hash chain result matches the [epoch tree](../protocol/glossary/trees.md#epoch-tree).
+The `epoch_key_nonce` is used in the blinded user state and blinded hash chain to indicate the attestations of which epoch key is processed. In the final **`userStateTransition`** proof, it checks all epoch key with different `epoch_key_nonce` are processed and the hash chain result matches the [epoch tree](../glossary/trees.md#epoch-tree).
 
 There are only one user state tree result after all attestations are processed, so in the final proof it only takes the initial `blinded_user_state` and the final one and computes the new global state tree leaf. On the other hand, there are `numEpochKeyNoncePerEpoch` hash chains after processing attestations, so the final circuit will take `numEpochKeyNoncePerEpoch` `blinded_hash_chain` to check the epoch tree root.
 
-![How the final user state transition proof verifies hash chains and user states.](<../.gitbook/assets/截圖 2022-07-23 下午11.10.10.png>)
+![How the final user state transition proof verifies hash chains and user states.](<../../.gitbook/assets/截圖 2022-07-23 下午11.10.10.png>)
 
 The user state tree root is continuously updated: the output should be the input of another proof, so the `processAttestation` proof takes `blinded_user_state` as public input and output another `blinded_user_state`. The hash chain results might not be continuously. When all attestations of one epoch key is processed, the hash chain of the next epoch key should be `0` but not the previous hash chain. Therefore, `processAttestation` proof does not take `blinded_hash_chain` as input.
 

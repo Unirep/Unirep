@@ -1,12 +1,12 @@
 ---
-description: Introduction to Unirep protocol
+Title: 🧩 Introduction
 ---
 
 # 🧩 Introduction
 
 ## How does the Unirep protocol work?
 
-There are two different actors in the Unirep protocol: [users and attesters](broken-reference)
+There are two different actors in the Unirep protocol: [users and attesters](protocol/glossary/users-and-attesters.md)
 
 * **Users** can receive and spend [**reputation**](protocol/glossary/reputation.md), prove their reputation, and use temporary identities called [**epoch keys**](protocol/glossary/epoch-key.md) to interact with other people. Users can generate a set of new epoch keys every [**epoch**](protocol/glossary/epoch.md) (in this case, 7 days). In a way, the user gets a completely new identities every epoch which preserves their privacy.
 * **Attesters** represent users to give reputation to an epoch key. Attester IDs are public and unchangeable so users can always prove that the reputation is from the attester.

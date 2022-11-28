@@ -6,7 +6,7 @@ description: How to use UniRep smart contract to verify proofs.
 
 ## Epoch Key Verifier
 
-Verify an [epoch key proof](../../circuits/epoch-key-proof.md) with UniRep smart contract.
+Verify an [epoch key proof](../circuits/epoch-key-proof.md) with UniRep smart contract.
 
 ```solidity
 function verifyEpochKeyValidity(
@@ -21,7 +21,7 @@ source: [Unirep.sol/verifyEpochKeyValidity](https://github.com/Unirep/Unirep/blo
 
 ## Reputation Verifier
 
-Verify a [reputation proof](../../circuits/reputation-proof.md) with UniRep smart contract.
+Verify a [reputation proof](../circuits/reputation-proof.md) with UniRep smart contract.
 
 ```solidity
 function verifyReputation(
@@ -36,7 +36,7 @@ source: [Unirep.sol/verifyReputation](https://github.com/Unirep/Unirep/blob/0067
 
 ## User Sign Up Verifier
 
-Verify a [user sign up proof](../../circuits/user-sign-up-proof.md) with UniRep smart contract.
+Verify a [user sign up proof](../circuits/user-sign-up-proof.md) with UniRep smart contract.
 
 ```solidity
 function verifyUserSignUp(
@@ -51,7 +51,7 @@ source: [Unirep.sol/verifyUserSignUp](https://github.com/Unirep/Unirep/blob/0067
 
 ## Start Transition Verifier
 
-Verify a [start transition proof](../../circuits/user-state-transition-proof.md#1.-start-transition-proof) with UniRep smart contract.
+Verify a [start transition proof](../circuits/user-state-transition-proof.md#1.-start-transition-proof) with UniRep smart contract.
 
 ```solidity
 function verifyStartTransitionProof(
@@ -66,7 +66,7 @@ source: [Unirep.sol/verifyStartTransitionProof](https://github.com/Unirep/Unirep
 
 ## Process Attestations Verifier
 
-Verify a [process attestations proof](../../circuits/user-state-transition-proof.md#2.-process-attestations-proof) with UniRep smart contract.
+Verify a [process attestations proof](../circuits/user-state-transition-proof.md#2.-process-attestations-proof) with UniRep smart contract.
 
 ```solidity
 function verifyProcessAttestationProof(
@@ -81,7 +81,7 @@ source: [Unirep.sol/verifyProcessAttestationProof](https://github.com/Unirep/Uni
 
 ## User State Transition Verifier
 
-Verify a [user state transition proof](../../circuits/user-state-transition-proof.md#3.-user-state-transition-proof) with UniRep smart contract.
+Verify a [user state transition proof](../circuits/user-state-transition-proof.md#3.-user-state-transition-proof) with UniRep smart contract.
 
 ```solidity
 function verifyUserStateTransition(
