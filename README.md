@@ -42,6 +42,11 @@ For more information, refer to the [documentation](https://developer.unirep.io/)
     | [`utils`](./packages/utils) | <a href="https://www.npmjs.com/package/@unirep/utils"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/utils?color=%230004&style=flat-square" /></a> | Utils which are used in unirep protocol. |
     | [`subgraph`](./packages/subgraph/) | - | Subgraph of unirep smart contract. |
 ​
+## 🔋 Requirements
+
+- Intall [rust](https://www.rust-lang.org/tools/install) and [circom 2](https://docs.circom.io/getting-started/installation/)
+- Node.js >=16.14
+
 ## 🛠 Install and test
 
 Install and build
