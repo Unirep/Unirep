@@ -116,7 +116,7 @@ this.graffitiPreImage
 
 ## control
 
-The control field used for the proof. This field contains many signals binary encoded into an array of 256 bit values. This value is automatically decoded into the other properties on this class.
+The control field used for the proof. This field contains many signals binary encoded into an array of 256 bit values. This value is automatically decoded into the other properties on this class. See the [circuit documentation](circuits#prove-reputation-proof) for more information.
 
 ```ts
 this.control[0]
