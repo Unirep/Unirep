@@ -4,14 +4,14 @@ description: Definition of epoch transition in UniRep
 
 # Epoch Transition
 
-* Epoch transition happens when someone calls [`beginEpochTransition()`](https://github.com/Unirep/Unirep/blob/f3502e1a551f63ab44b73444b60ead8731d45167/packages/contracts/contracts/Unirep.sol#L468) and the current block is `epochLength` blocks more since last transitioned block.
+* Epoch transition happens when someone calls [`beginEpochTransition()`](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/contracts/contracts/Unirep.sol#L480) and the current block is `epochLength` blocks more since last transitioned block.
 * In `beginEpochTransition()`
   * An `EpochEnded` event is emitted and `currentEpoch` increases by 1.
 
 ![currentEpoch is increased by one.](<../../.gitbook/assets/截圖 2022-07-22 上午11.58.55.png>)
 
-* After the `EpochEnded` event is emitted, all epoch keys attested during this epoch will have their [hash chain](reputation.md) sealed
-  * by _**sealed**_ it means that the hash chain is hashed again with `1`, e.g., \
+* After the `EpochEnded` event is emitted, all epoch keys attested during this epoch will have their [hash chain](reputation.md)s sealed
+  * by _**sealed**_ it means that the hash chain is hashed again with `1`, e.g., 
     `hash(1, originalHashChain)`
   * if an epoch key received no attestation, it's hash chain would be `hash(1, 0)`
 

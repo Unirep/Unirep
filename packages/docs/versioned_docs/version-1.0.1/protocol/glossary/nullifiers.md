@@ -10,13 +10,24 @@
 * Nullifier of an epoch key is computed by
 
 ```typescript
-hash(
-    EPOCH_KEY_NULLIFIER_DOMAIN, 
-    identityNullifier, 
+hash2([
     epoch, 
-    nonce
-)
+    identityNullifier + nonce
+])
 ```
+
+:::caution
+It would be better to be expressed as
+```typescript
+hash3([
+    epoch,
+    identityNullifier,
+    nonce
+]) % BigInt(2 ** epochTreeDepth)
+```
+But to save circuit constraints, we put `identityNullifier` and `nonce` in one input field. <br/>
+**NOTE:** It is similar but not the same as [epoch key](epoch-key.md).
+:::
 
 ## Reputation nullifiers
 
@@ -25,17 +36,12 @@ hash(
 * Nullifier of a reputation spent is computed by
 
 ```typescript
-hash(
-    REPUTATION_NULLIFIER_DOMAIN, 
+hash4([
     identityNullifier, 
     epoch, 
     nonce, 
     attesterId
-)
+])
 ```
 
 * The `nonce` can only be within `0` to `posRep-negRep-1` with the given attesterID.
-
-:::info
-**NOTE:** `EPOCH_KEY_NULLIFIER_DOMAIN` and `REPUTATION_NULLIFIER_DOMAIN` are used to prevent mixed-up of epoch key nullifiers and reputation nullifiers.
-:::

@@ -42,7 +42,7 @@ const newLeaf = hash(idCommitment, userStateTreeRoot)
 
 #### 5. Call unirep smart contract to insert a new global state tree leaf
 
-User performs user state transition by calling [`updateUserStateRoot()`](https://github.com/Unirep/Unirep/blob/f3502e1a551f63ab44b73444b60ead8731d45167/packages/contracts/contracts/Unirep.sol#L559)``
+User performs user state transition by calling [`updateUserStateRoot()`](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/contracts/contracts/Unirep.sol#L606)
 
 * User will attach a [User State Transition Proof](../circuits/user-state-transition-proof.md) when calling `updateUserStateRoot`. Others can make sure if the user state transition is correct by verifying the User State Transition Proof.
 * Once the user performed user state transition, his user state will be inserted into the [global state tree](trees.md#global-state-tree) of the latest epoch.
