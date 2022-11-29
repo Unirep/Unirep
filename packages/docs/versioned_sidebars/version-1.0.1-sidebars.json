@@ -150,11 +150,6 @@
                             "id": "getting-started/start-with-typescript/reputation-proof"
                         }
                     ]
-                },
-                {
-                    "type": "doc",
-                    "label": "Computation happens off-chain ℹ️",
-                    "id": "getting-started/computation-happens-off-chain"
                 }
             ]
         },
