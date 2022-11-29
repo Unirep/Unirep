@@ -9,21 +9,20 @@ Users can use a reputation proof to claim that how the reputation is from a give
 1.  The `pos_rep - neg_rep` given by the attester is more than the claimed `min_rep` i.e.
 
     ```
-    (pos_rep - neg_rep) > min_rep
+    (pos_rep - neg_rep) >= min_rep
     ```
 2.  The `graffiti_preimage` of a `graffiti` i.e.
 
     ```
     hash(graffiti_preimage) == graffiti
     ```
-3.  The [reputation nullifiers](../glossary/nullifiers.md#reputation-nullifiers) are computed correctly i.e.
+3.  The [reputation nullifiers](../glossary/nullifiers#reputation-nullifiers) are computed correctly i.e.
 
     ```
     // for all nonces
     nonce >= 0
     nonce < pos_rep - neg_rep
-    reputation_nullifiers = hash5(
-        REPUTATION_NULLIFIER_DOMAIN, 
+    reputation_nullifiers = hash4(
         identity_nullifier, 
         epoch, 
         nonce, 
@@ -31,13 +30,11 @@ Users can use a reputation proof to claim that how the reputation is from a give
     )
     ```
 
-The circuit also checks if the user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) and performed [user state transition](../glossary/user-state-transition.md) in the claimed epoch.
+The circuit also checks if the user has [registered](../glossary/users-and-attesters#user) and performed [user state transition](../glossary/user-state-transition.md) in the claimed epoch.
 
 ## Public inputs
 
 * `epoch`
-* `epoch_key`
-* `GST_root`
 * `attester_id`
 * `rep_nullifiers_amount`
 * `min_rep`
@@ -46,6 +43,8 @@ The circuit also checks if the user has [registered](https://unirep.gitbook.io/u
 
 ## Public outputs
 
+* `epoch_key`
+* `GST_root`
 * `rep_nullifiers`
 
 ## Private inputs
@@ -61,8 +60,7 @@ The circuit also checks if the user has [registered](https://unirep.gitbook.io/u
 * `graffiti`
 * `sign_up`
 * `UST_path_elements`
-* `selectors`
-* `rep_nonce`
+* `start_rep_nonce`
 
 ## Contraints
 
@@ -80,19 +78,20 @@ Check if `hash(pos_rep, neg_rep, graffiti, sign_up)` is one of the leaves in the
 
 ### 3. Check if reputation nullifiers are valid
 
-Check if `rep_nonce[i] < pos_rep - neg_rep` for all output `rep_nullifiers[i]`.
+Check if `start_rep_nonce + rep_nullifiers_amount < pos_rep - neg_rep`.
 
 Check if&#x20;
 
 ```javascript
-rep_nullifier[i] = hash(
-    REPUTATION_NULLIFIER_DOMAIN = 2, 
+rep_nullifier[i] = hash4(
     identity_nullifier, 
     epoch, 
-    rep_nonce[i], 
+    start_rep_nonce + i, 
     attester_id
 )
 ```
+
+for all `0 <= i < rep_nullifiers_amount`
 
 :::info
 See: [Reputation nullifiers](../glossary/nullifiers.md#reputation-nullifiers)
@@ -111,5 +110,5 @@ Check if&#x20;
 Check if `hash(graffiti_pre_image) == graffiti`.
 
 :::info
-See the whole circuit in [circuits/proveReputation.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/proveReputation.circom)
+See the whole circuit in [circuits/proveReputation.circom](https://github.com/Unirep/Unirep/blob/v1.0.1/packages/circuits/circuits/proveReputation.circom)
 :::

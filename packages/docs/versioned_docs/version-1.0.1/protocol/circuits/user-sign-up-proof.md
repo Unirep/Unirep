@@ -13,21 +13,20 @@ The idea of the user sign up proof (or called the airdrop proof) is to prevent t
 Therefore, the proof checks that
 
 1. If the user has a sign-up flag from a given attester.
-2. The user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) in UniRep and has performed the [user state transition](../glossary/user-state-transition.md) in the latest epoch. In other words, the user has a leaf in the global state tree.
+2. The user has [registered](../glossary/users-and-attesters#user) in UniRep and has performed the [user state transition](../glossary/user-state-transition.md) in the latest epoch. In other words, the user has a leaf in the global state tree.
 3. If the sign up proof epoch matches the current epoch.
 4. If the output epoch key is computed with the `nonce = 0`
 
 ## Public inputs
 
 * `epoch`
-* `epoch_key`
-* `GST_root`
 * `attester_id`
 * `sign_up`
 
-:::info
-**NOTE:** No epoch key nonce is given.
-:::
+## Public outputs
+
+* `epoch_key`
+* `GST_root`
 
 ## Private inputs
 
@@ -41,6 +40,10 @@ Therefore, the proof checks that
 * `graffiti`
 * `sign_up`
 * `UST_path_elements`
+
+:::info
+**NOTE:** No epoch key nonce is given.
+:::
 
 ## Contraints
 
@@ -57,5 +60,5 @@ See: [Epoch Key Proof circuit](epoch-key-proof.md)
 Check if `hash(pos_rep, neg_rep, graffiti, sign_up)` is one of the leaves in the user state tree of root `user_tree_root`.
 
 :::info
-See the whole circuit in [circuits/proveUserSignUp.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/proveUserSignUp.circom)
+See the whole circuit in [circuits/proveUserSignUp.circom](https://github.com/Unirep/Unirep/blob/v1.0.1/packages/circuits/circuits/proveUserSignUp.circom)
 :::

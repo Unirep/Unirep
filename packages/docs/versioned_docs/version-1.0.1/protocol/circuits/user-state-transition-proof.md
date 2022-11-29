@@ -8,7 +8,7 @@ The [user state transition](../glossary/user-state-transition.md) proof is used 
 
 The user state transition circuit checks that
 
-1. The user has [registered](https://unirep.gitbook.io/unirep/protocol/glossary/users-and-attesters#user) and performed [user state transition](../glossary/user-state-transition.md) in the previous epoch.
+1. The user has [registered](../glossary/users-and-attesters#user) and performed [user state transition](../glossary/user-state-transition.md) in the previous epoch.
 2.  The [user state tree](../glossary/trees.md#user-state-tree) is updated correctly by the attestations, and the same attestations are chained by hash functions.
 
     * For example, the original user state tree root is `r_1`, and the original user state tree leaf has 5 positive reputation
@@ -91,12 +91,9 @@ While verifying all of the proofs, there are the following things to check to ma
 
 ## 1. Start Transition proof
 
-### Public inputs
-
-* `GST_root`
-
 ### Public outputs
 
+* `GST_root`
 * `blinded_user_state`
 * `blinded_hash_chain_result`
 
@@ -134,7 +131,7 @@ const blinded_hash_chain = hash(
 ```
 
 :::info
-See the whole circuit in [circuits/startTransition.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/startTransition.circom)
+See the whole circuit in [circuits/startTransition.circom](https://github.com/Unirep/Unirep/blob/v1.0.1/packages/circuits/circuits/startTransition.circom)
 :::
 
 ## 2. Process attestations proof
@@ -261,7 +258,7 @@ const output_blinded_hash_chain = hash(
 ```
 
 :::info
-See the whole circuit in [circuits/processAttestations.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/processAttestations.circom)
+See the whole circuit in [circuits/processAttestations.circom](https://github.com/Unirep/Unirep/blob/v1.0.1/packages/circuits/circuits/processAttestations.circom)
 :::
 
 ## 3. User State Transition proof
@@ -269,18 +266,18 @@ See the whole circuit in [circuits/processAttestations.circom](https://github.co
 ### Public inputs
 
 * `epoch`
-* `GST_root`
+* `blinded_user_state`
 * `blinded_hash_chain_results`
 * `epoch_tree_root`
 
 ### Public outputs
 
+* `GST_root`
 * `new_GST_leaf`
 * `epoch_key_nullifier`
 
 ### Private inputs
 
-* `blinded_user_state`
 * `intermediate_user_state_tree_roots`
 * `start_epoch_key_nonce`
 * `end_epoch_key_nonce`
@@ -347,5 +344,5 @@ const new_GST_leaf = hash(
 ```
 
 :::info
-See the whole circuit in [circuits/userStateTransition.circom](https://github.com/Unirep/Unirep/blob/main/packages/circuits/circuits/userStateTransition.circom)
+See the whole circuit in [circuits/userStateTransition.circom](https://github.com/Unirep/Unirep/blob/v1.0.1/packages/circuits/circuits/userStateTransition.circom)
 :::
