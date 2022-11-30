@@ -309,7 +309,7 @@ export default class UserState extends Synchronizer {
                 BigNumber.from(1)
             )
         }
-        const allEpks = [] as string[]
+        const orClauses = [] as any[]
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         for (let x = 1; x < (toEpoch ?? latestTransitionedEpoch); x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
@@ -322,12 +322,17 @@ export default class UserState extends Synchronizer {
                         this.settings.epochTreeDepth
                     ).toString()
                 )
-            allEpks.push(...epks)
+            orClauses.push(
+                ...epks.map((epk) => ({
+                    epoch: x,
+                    epochKey: epk,
+                }))
+            )
         }
-        if (allEpks.length === 0) return r
+        if (orClauses.length === 0) return r
         const attestations = await this._db.findMany('Attestation', {
             where: {
-                epochKey: allEpks,
+                OR: orClauses,
                 attesterId: Number(attesterId),
             },
             orderBy: {
