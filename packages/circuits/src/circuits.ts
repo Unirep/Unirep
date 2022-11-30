@@ -10,6 +10,7 @@ export enum Circuit {
     signup = 'signup',
     aggregateEpochKeys = 'aggregateEpochKeys',
     epochKeyLite = 'epochKeyLite',
+    epochKeyMulti = 'epochKeyMulti',
 }
 
 /**
