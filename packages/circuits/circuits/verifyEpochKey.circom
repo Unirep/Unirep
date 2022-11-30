@@ -4,7 +4,6 @@ pragma circom 2.0.0;
     Verify that an epoch key exists in a state tree
 */
 
-include "../../../node_modules/circomlib/circuits/comparators.circom";
 include "../../../node_modules/circomlib/circuits/poseidon.circom";
 include "../../../node_modules/circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
@@ -85,11 +84,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
 
     /* 2. Check nonce validity */
 
-    var bitsPerNonce = 8;
-    component nonce_lt = LessThan(bitsPerNonce);
-    nonce_lt.in[0] <== nonce;
-    nonce_lt.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
-    nonce_lt.out === 1;
+    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
 
     /* End of check 2*/
 
