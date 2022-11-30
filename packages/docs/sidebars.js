@@ -110,6 +110,11 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
+                    label: 'EpochKeyLiteProof',
+                    id: 'circuits-api/epoch-key-lite-proof',
+                },
+                {
+                    type: 'doc',
                     label: 'SignupProof',
                     id: 'circuits-api/signup-proof',
                 },
