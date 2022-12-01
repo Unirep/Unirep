@@ -390,22 +390,6 @@ export class Synchronizer extends EventEmitter {
         })
     }
 
-    /**
-     * Get the list of attestations that is set to the epoch key.
-     * The attestations are verified valid.
-     * @param epochKey The query epoch key
-     * @returns A list of the attestations.
-     */
-    async getAttestations(epochKey: string): Promise<IAttestation[]> {
-        await this._checkEpochKeyRange(epochKey)
-        // TODO: transform db entries to IAttestation (they're already pretty similar)
-        return this._db.findMany('Attestation', {
-            where: {
-                epochKey,
-            },
-        })
-    }
-
     // get a function that will process an event for a topic
     get topicHandlers() {
         const [UserSignedUp] = this.unirepContract.filters.UserSignedUp()
