@@ -25,10 +25,10 @@
         "lint": "prettier --write ."
     },
     "devDependencies": {
-        "@nomicfoundation/hardhat-chai-matchers": "^1.0.0-beta.3",
+        "@nomicfoundation/hardhat-chai-matchers": "^1.0.5",
         "@nomiclabs/hardhat-ethers": "^2.0.6",
         "@nomiclabs/hardhat-waffle": "^2.0.3",
-        "hardhat": "^2.9.9",
+        "hardhat": "^2.12.3",
         "typescript": "^4.7.3"
     },
     "dependencies": {
