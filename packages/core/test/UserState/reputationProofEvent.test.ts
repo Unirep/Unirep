@@ -73,7 +73,10 @@ const genIdAndRepProof = async (unirepContract, attester) => {
     ).to.be.revertedWithCustomError(unirepContract, 'ProofAlreadyUsed')
     const epochKey = formattedProof.epochKey
     await userState.waitForSync()
-    const attestations = await userState.getAttestations(epochKey.toString())
+    const attestations = await userState.getAttestations(
+        epochKey.toString(),
+        epoch
+    )
     expect(attestations.length).equal(1)
 
     // nullifiers should be added to unirepState
@@ -183,7 +186,10 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
             await userState.waitForSync()
 
-            const attestations = await userState.getAttestations(epk.toString())
+            const attestations = await userState.getAttestations(
+                epk.toString(),
+                epoch
+            )
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
             await userState.stop()
@@ -207,7 +213,7 @@ describe('Reputation proof events in Unirep User State', function () {
             expect(receipt.status).to.equal(1)
             await userState.waitForSync()
 
-            const attestations = await userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey, 0)
             expect(attestations.length).equal(0)
             await userState.stop()
         })
@@ -234,7 +240,10 @@ describe('Reputation proof events in Unirep User State', function () {
                 .then((t) => t.wait())
             await userState.waitForSync()
 
-            const attestations = await userState.getAttestations(epk.toString())
+            const attestations = await userState.getAttestations(
+                epk.toString(),
+                epoch
+            )
             expect(attestations.length).equal(2)
             compareAttestations(attestations[1], attestation)
             await userState.stop()
@@ -257,7 +266,7 @@ describe('Reputation proof events in Unirep User State', function () {
             const receipt = await tx.wait()
             expect(receipt.status).to.equal(1)
 
-            const attestations = await userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(epochKey, 0)
             expect(attestations.length).equal(0)
         })
 

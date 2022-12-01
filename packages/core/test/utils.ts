@@ -93,7 +93,10 @@ const getReputationRecords = async (id: ZkIdentity, userState: UserState) => {
     for (let i = 0; i < currentEpoch; i++) {
         for (let j = 0; j < userState.settings.numEpochKeyNoncePerEpoch; j++) {
             const epk = genEpochKey(id.identityNullifier, i, j)
-            const attestations = await userState.getAttestations(epk.toString())
+            const attestations = await userState.getAttestations(
+                epk.toString(),
+                i
+            )
             for (let attestation of attestations) {
                 const attesterId = attestation.attesterId.toString()
                 if (reputaitonRecord[attesterId] === undefined) {
@@ -356,9 +359,9 @@ const compareStates = async (
                 nonce,
                 usWithNoStorage.settings.epochTreeDepth
             ).toString()
-            expect((await usWithNoStorage.getAttestations(epk)).length).equal(
-                (await usWithStorage.getAttestations(epk)).length
-            )
+            expect(
+                (await usWithNoStorage.getAttestations(epk, epoch)).length
+            ).equal((await usWithStorage.getAttestations(epk, epoch)).length)
         }
         expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
             await usWithStorage.genGSTree(epoch)

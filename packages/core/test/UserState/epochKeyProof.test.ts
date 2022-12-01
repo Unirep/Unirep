@@ -193,7 +193,10 @@ describe('Epoch key proof events in Unirep User State', function () {
                 unirepContract.address,
                 new ZkIdentity()
             )
-            const attestations = await userState.getAttestations(epochKey)
+            const attestations = await userState.getAttestations(
+                epochKey,
+                epoch
+            )
             expect(attestations.length).equal(1)
             compareAttestations(attestations[0], attestation)
             await userState.stop()
