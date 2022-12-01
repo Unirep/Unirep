@@ -47,7 +47,6 @@ interface IUnirep {
 
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
-    error ReachedMaximumNumberUserSignedUp();
     error AttesterAlreadySignUp(uint160 attester);
     error AttesterNotSignUp(uint160 attester);
     error AttesterInvalid();
