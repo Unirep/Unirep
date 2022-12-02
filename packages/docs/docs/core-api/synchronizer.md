@@ -54,6 +54,49 @@ Wait for the synchronizer to sync up to a certain block. By default this will wa
 synchronizer.waitForSync(blockNumber?: number): Promise<void>
 ```
 
+## calcCurrentEpoch
+
+Calculate the current epoch determining the amount of time since the attester registration timestamp. This operation is synchronous and does not involve any database operations.
+
+```ts
+synchronizer.calcCurrentEpoch(): number
+```
+
+## calcEpochRemainingTime
+
+Calculate the amount of time remaining in the current epoch. This operation is synchronous and does not involve any database operations.
+
+```ts
+synchronizer.calcEpochRemainingTime(): number
+```
+
+## readCurrentEpoch
+
+Get the latest processed epoch from the database.
+
+:::caution
+This value may mismatch the onchain value depending on synchronization status.
+:::
+
+```ts
+synchronizer.readCurrentEpoch(): Promise<{
+  number: number,
+  sealed: boolean
+}>
+```
+
+## loadCurrentEpoch
+
+Load the current epoch number from the blockchain.
+
+:::tip
+Use this function in test environments where the blockchain timestamp may not match the real timestamp (e.g. due to snapshot/revert patterns).
+:::
+
+```ts
+synchronizer.loadCurrentEpoch(): Promise<bigint>
+```
+
 ## epochTreeRoot
 
 Get the epoch tree root for a certain epoch.
