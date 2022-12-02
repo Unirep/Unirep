@@ -172,7 +172,7 @@ export default class UserState extends Synchronizer {
                 this.id.identityNullifier,
                 this.attesterId.toString(),
                 epoch,
-                i,
+                nonce,
                 this.settings.epochTreeArity ** this.settings.epochTreeDepth
             )
         }
