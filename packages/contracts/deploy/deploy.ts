@@ -145,7 +145,8 @@ export const deployUnirep = async (
         verifiers[Circuit.aggregateEpochKeys],
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation],
-        verifiers[Circuit.verifyEpochKey]
+        verifiers[Circuit.verifyEpochKey],
+        verifiers[Circuit.epochKeyLite]
     )
 
     await c.deployTransaction.wait()

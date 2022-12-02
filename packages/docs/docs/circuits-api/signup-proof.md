@@ -2,7 +2,7 @@
 title: SignupProof
 ---
 
-A class representing a signup proof. Each of the following properties are public signals for the proof.
+A class representing a [signup proof](circuits#signup-proof). Each of the following properties are public signals for the proof.
 
 ```ts
 import { SignupProof } from '@unirep/circuits'

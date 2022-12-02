@@ -11,6 +11,7 @@ enum Circuit {
   userStateTransition,
   signup,
   aggregateEpochKeys,
+  epochKeyLite,
 }
 ```
 
@@ -60,6 +61,37 @@ Inputs:
 Outputs:
 - `epoch_key`
 - `state_tree_root`
+- `control_output`
+
+:::info
+Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+:::
+
+## Epoch Key Lite Proof
+
+The epoch key lite proof allows a user to prove control of an epoch key. Unlike the epoch key proof, this proof does not perform a state tree inclusion. A data value can be included and endorsed by this proof.
+
+The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
+
+:::tip
+Don't use this proof for keys in the current epoch. If a user has not inserted a leaf into the current state tree they may choose not to accept reputation.
+
+Instead this proof is more useful for proving control of keys from past epochs.
+:::
+
+Control field:
+- 8 bits `nonce`
+- 64 bits `epoch`
+- 160 bits `attester_id`
+- 1 bit `reveal_nonce`
+
+Inputs:
+- `control`
+- `data` (public)
+- `identity_nullifier`
+
+Outputs:
+- `epoch_key`
 - `control_output`
 
 :::info
