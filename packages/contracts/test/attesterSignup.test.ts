@@ -11,10 +11,19 @@ describe('Attester Signup', function () {
     this.timeout(120000)
 
     let unirepContract
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to double signup', async () => {
@@ -152,6 +161,9 @@ describe('Attester Signup', function () {
         const signature = await attester.signMessage(
             ethers.utils.arrayify(message)
         )
+        await unirepContract
+            .connect(relayer)
+            .attesterSignUpViaRelayer(attester.address, EPOCH_LENGTH, signature)
         await expect(
             unirepContract
                 .connect(relayer)
