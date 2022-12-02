@@ -117,11 +117,3 @@ Get the number of state tree leaves in a certain epoch.
 ```ts
 synchronizer.getNumStateTreeLeaves(epoch: number): Promise<number>
 ```
-
-## getAttestations
-
-Get all attestations to an epoch key.
-
-```ts
-state.getAttestations(epochKey: bigint): Promise<any[]>
-```
