@@ -269,6 +269,22 @@ export class Synchronizer extends EventEmitter {
         )
     }
 
+    async getAttestations(
+        epochKey: string,
+        epoch: number
+    ): Promise<IAttestation[]> {
+        await this._checkEpochKeyRange(epochKey)
+        return this._db.findMany('Attestation', {
+            where: {
+                epochKey,
+                epoch,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+    }
+
     protected async _checkCurrentEpoch(epoch: number) {
         const currentEpoch = await this.loadCurrentEpoch()
         if (epoch !== currentEpoch.number) {
