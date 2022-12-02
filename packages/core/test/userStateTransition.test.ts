@@ -36,7 +36,6 @@ describe('User state transition', function () {
 
     afterEach(async () => {
         await ethers.provider.send('evm_revert', [snapshot])
-        snapshot = await ethers.provider.send('evm_snapshot', [])
     })
 
     it('users should perform user state transition', async () => {

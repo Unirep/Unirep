@@ -35,7 +35,6 @@ describe('User Signup', function () {
 
     afterEach(async () => {
         await ethers.provider.send('evm_revert', [snapshot])
-        snapshot = await ethers.provider.send('evm_snapshot', [])
     })
 
     it('sign up users with no airdrop', async () => {

@@ -28,7 +28,6 @@ describe('User state', function () {
 
     afterEach(async () => {
         await ethers.provider.send('evm_revert', [snapshot])
-        snapshot = await ethers.provider.send('evm_snapshot', [])
     })
 
     it('user sign up proof', async () => {
