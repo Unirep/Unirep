@@ -157,7 +157,25 @@ export default class UserState extends Synchronizer {
         return foundLeaf.index
     }
 
-    async getEpochKeys(epoch: bigint) {
+    getEpochKeys(_epoch?: bigint | number, nonce?: number) {
+        const epoch = _epoch ?? this.calcCurrentEpoch()
+        if (
+            typeof nonce === 'number' &&
+            nonce >= this.settings.numEpochKeyNoncePerEpoch
+        ) {
+            throw new Error(
+                `getEpochKeys nonce ${nonce} exceeds max nonce value ${this.settings.numEpochKeyNoncePerEpoch}`
+            )
+        }
+        if (typeof nonce === 'number') {
+            return genEpochKey(
+                this.id.identityNullifier,
+                this.attesterId.toString(),
+                epoch,
+                nonce,
+                this.settings.epochTreeArity ** this.settings.epochTreeDepth
+            )
+        }
         return Array(this.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
