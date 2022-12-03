@@ -265,8 +265,9 @@ describe('User state', function () {
         await userState.waitForSync()
         {
             const currentEpoch = await userState.loadCurrentEpoch()
-            const { posRep, negRep, graffiti } =
-                await userState.getRepByAttester(Number(currentEpoch))
+            const { posRep, negRep, graffiti } = await userState.getRep(
+                Number(currentEpoch)
+            )
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)

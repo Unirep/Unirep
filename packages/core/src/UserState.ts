@@ -133,8 +133,9 @@ export default class UserState extends Synchronizer {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(latestTransitionedEpoch - 1)
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            latestTransitionedEpoch - 1
+        )
         const leaf = genStateTreeLeaf(
             this.id.identityNullifier,
             this.attesterId.toString(),
@@ -187,11 +188,11 @@ export default class UserState extends Synchronizer {
     }
 
     /**
-     * Get the reputation object from a given attester
+     * Get the reputation object from the attester
      * @param toEpoch The latest epoch that the reputation is accumulated
      * @returns The reputation object
      */
-    public getRepByAttester = async (
+    public getRep = async (
         _toEpoch?: number
     ): Promise<{ posRep; negRep; graffiti; timestamp }> => {
         let posRep = BigInt(0)
@@ -239,6 +240,16 @@ export default class UserState extends Synchronizer {
             }
         }
         return { posRep, negRep, graffiti, timestamp }
+    }
+
+    public async getProvableRep(): Promise<{
+        posRep
+        negRep
+        graffiti
+        timestamp
+    }> {
+        const epoch = await this.latestTransitionedEpoch()
+        return this.getRep(epoch - 1)
     }
 
     public getRepByEpochKey = async (
@@ -292,8 +303,9 @@ export default class UserState extends Synchronizer {
     ): Promise<UserStateTransitionProof> => {
         const { toEpoch: _toEpoch } = options
         const fromEpoch = await this.latestTransitionedEpoch()
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(fromEpoch - 1)
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            fromEpoch - 1
+        )
         const toEpoch = _toEpoch ?? this.calcCurrentEpoch()
         if (fromEpoch.toString() === toEpoch.toString()) {
             throw new Error('Cannot transition to same epoch')
@@ -365,8 +377,9 @@ export default class UserState extends Synchronizer {
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(epoch - 1)
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            epoch - 1
+        )
         const stateTree = await this.genStateTree(epoch)
         const stateTreeProof = stateTree.createProof(leafIndex)
 
@@ -439,8 +452,9 @@ export default class UserState extends Synchronizer {
         const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
         const tree = await this.genStateTree(epoch)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(epoch - 1)
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            epoch - 1
+        )
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
             identity_nullifier: this.id.identityNullifier,

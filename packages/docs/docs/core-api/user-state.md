@@ -67,12 +67,24 @@ If no `epoch` is supplied the current epoch will be used (as determined by [`cal
 state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
 ```
 
-## getRepByAttester
+## getRep
 
-Get the reputation balance for the current attester up to and including the provided epoch. By default reputation up to and including the current epoch is returned.
+Get the reputation balance for the user up to and including the provided epoch. By default reputation up to and including the current epoch is returned.
+
+:::tip
+If you want to make a proof of reputation make sure to use [`getProvableRep`](#getprovablerep) to show the user balance. Reputation can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#prove-reputation-proof).
+:::
 
 ```ts
-state.getRepByAttester(epoch?: number): Promise<Reputation>
+state.getRep(toEpoch?: number): Promise<Reputation>
+```
+
+## getProvableRep
+
+Get the reputation balance that can be proven by the user in a [reputation proof](../circuits-api/circuits#prove-reputation-proof). This is the balance up to, but not including, the epoch the user has transitioned into.
+
+```ts
+state.getProvableRep(): Promise<Reputation>
 ```
 
 ## getRepByEpochKey

@@ -114,7 +114,7 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         {
             const { posRep, negRep, graffiti, timestamp } =
-                await userState.getRepByAttester()
+                await userState.getRep()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)
