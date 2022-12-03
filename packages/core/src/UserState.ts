@@ -238,18 +238,6 @@ export default class UserState extends Synchronizer {
         })
     }
 
-    async getAttestations(epochKey: string): Promise<IAttestation[]> {
-        await this._checkEpochKeyRange(epochKey)
-        return this._db.findMany('Attestation', {
-            where: {
-                epochKey,
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-    }
-
     async getEpochKeys(epoch: number) {
         await this._checkValidEpoch(epoch)
         return Array(this.settings.numEpochKeyNoncePerEpoch)
@@ -542,7 +530,10 @@ export default class UserState extends Synchronizer {
             hashChainStarter.push(currentHashChain)
 
             // Attestations
-            const attestations = await this.getAttestations(epochKey.toString())
+            const attestations = await this.getAttestations(
+                epochKey.toString(),
+                fromEpoch
+            )
             // TODO: update attestation types
             for (let i = 0; i < attestations.length; i++) {
                 // Include a blinded user state and blinded hash chain per proof

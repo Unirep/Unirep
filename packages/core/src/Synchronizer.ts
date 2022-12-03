@@ -269,6 +269,22 @@ export class Synchronizer extends EventEmitter {
         )
     }
 
+    async getAttestations(
+        epochKey: string,
+        epoch: number
+    ): Promise<IAttestation[]> {
+        await this._checkEpochKeyRange(epochKey)
+        return this._db.findMany('Attestation', {
+            where: {
+                epochKey,
+                epoch,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+    }
+
     protected async _checkCurrentEpoch(epoch: number) {
         const currentEpoch = await this.loadCurrentEpoch()
         if (epoch !== currentEpoch.number) {
@@ -387,22 +403,6 @@ export class Synchronizer extends EventEmitter {
         await this._checkValidEpoch(epoch)
         return this._db.count('GSTLeaf', {
             epoch: epoch,
-        })
-    }
-
-    /**
-     * Get the list of attestations that is set to the epoch key.
-     * The attestations are verified valid.
-     * @param epochKey The query epoch key
-     * @returns A list of the attestations.
-     */
-    async getAttestations(epochKey: string): Promise<IAttestation[]> {
-        await this._checkEpochKeyRange(epochKey)
-        // TODO: transform db entries to IAttestation (they're already pretty similar)
-        return this._db.findMany('Attestation', {
-            where: {
-                epochKey,
-            },
         })
     }
 

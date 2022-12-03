@@ -214,7 +214,7 @@ describe('User state transition events in Unirep User State', function () {
                 userState.settings.epochTreeDepth
             ).toString()
             expect(
-                (await userState.getAttestations(epk)).length
+                (await userState.getAttestations(epk, epoch)).length
             ).to.be.greaterThan(0)
             const diffs = await getSnapDBDiffs(snap, (userState as any)._db)
             // just the attestation document
