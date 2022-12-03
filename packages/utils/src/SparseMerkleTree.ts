@@ -121,6 +121,10 @@ export class SparseMerkleTree {
         this._root = hash
     }
 
+    public getLeaf(index: bigint): bigint {
+        return this.node[0][index.toString()] ?? this.zeroHashes[0]
+    }
+
     /**
      * Creates a merkle proof to prove the membership of a tree entry.
      * @param leafKey A key of an existing or a non-existing entry.
