@@ -26,15 +26,13 @@ export class EpochKeyLiteProof extends BaseProof {
         this.epochKey = _publicSignals[this.idx.epochKey].toString()
         this.control = _publicSignals[this.idx.control].toString()
         this.data = _publicSignals[this.idx.data].toString()
-        this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
-        this.attesterId =
-            (BigInt(this.control) >> BigInt(72)) &
-            ((BigInt(1) << BigInt(160)) - BigInt(1))
-        this.epoch =
-            (BigInt(this.control) >> BigInt(8)) &
-            ((BigInt(1) << BigInt(64)) - BigInt(1))
-        this.nonce =
-            BigInt(this.control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
+        const typedConstructor = this
+            .constructor as unknown as typeof EpochKeyLiteProof
+        const decoded = typedConstructor.decodeControl(BigInt(this.control))
+        this.revealNonce = decoded.revealNonce
+        this.attesterId = decoded.attesterId
+        this.epoch = decoded.epoch
+        this.nonce = decoded.nonce
         this.circuit = Circuit.epochKeyLite
     }
 
@@ -45,5 +43,22 @@ export class EpochKeyLiteProof extends BaseProof {
         control += BigInt(epoch) << BigInt(8)
         control += BigInt(nonce)
         return control
+    }
+
+    static decodeControl(control: bigint): {
+        revealNonce: bigint
+        attesterId: bigint
+        epoch: bigint
+        nonce: bigint
+    } {
+        const revealNonce = (BigInt(control) >> BigInt(232)) & BigInt(1)
+        const attesterId =
+            (BigInt(control) >> BigInt(72)) &
+            ((BigInt(1) << BigInt(160)) - BigInt(1))
+        const epoch =
+            (BigInt(control) >> BigInt(8)) &
+            ((BigInt(1) << BigInt(64)) - BigInt(1))
+        const nonce = BigInt(control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
+        return { attesterId, epoch, nonce, revealNonce }
     }
 }

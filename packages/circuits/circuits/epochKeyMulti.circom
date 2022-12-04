@@ -48,5 +48,4 @@ template EpochKeyMulti(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPO
 
     epoch_key[1] <== epoch_key_lite.epoch_key;
     control_output[1] <== epoch_key_lite.control_output;
-
 }
