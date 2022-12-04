@@ -187,7 +187,7 @@ function verifyEpochKeyProof(
 
 ## decodeEpochKeyLiteSignals
 
-Decode the public signals from an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) info named variables.
+Decode the public signals from an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) into named variables.
 
 ```sol
 function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
@@ -227,6 +227,48 @@ function verifyEpochKeyLiteProof(
 ) public;
 ```
 
+## decodeEpochKeyMultiSignals
+
+Decode the public signals from an [epoch key multi](../circuits-api/circuits#epoch-key-multi-proof) into named variables. Returns an array of two elements. The first entry is the data from the full proof, second is the data from the lite proof.
+
+```sol
+function decodeEpochKeyMultiSignals(uint256[] memory publicSignals)
+    public
+    pure
+    returns (EpochKeySignals[2] memory)
+```
+
+:::tip
+The `stateTreeRoot` variable in this struct is unused for the epoch key lite proof (second entry).
+:::
+
+```sol
+struct EpochKeySignals {
+    uint256 revealNonce;
+    uint256 stateTreeRoot;
+    uint256 epochKey;
+    uint256 data;
+    uint256 nonce;
+    uint256 epoch;
+    uint256 attesterId;
+}
+```
+
+## verifyEpochKeyMultiProof
+
+Verify an [epoch key multi proof](../circuits-api/circuits#epoch-key-multi-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
+
+:::caution
+This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+:::
+
+```sol
+function verifyEpochKeyMultiProof(
+    uint256[] memory publicSignals,
+    uint256[8] memory proof
+) public;
+```
+
 ## epochKeyVerifier
 
 A contract address for an epoch key proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
@@ -250,7 +292,7 @@ bool valid = unirep.epochKeyVerifier.verifyProof(publicSignals, proof);
 A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 :::warning
-Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
+Using the verifier directly does not validate the attester id, or epoch. Prefer the [`verifyEpochKeyLiteProof`](#verifyepochkeyliteproof) function unless you know what you are doing.
 :::
 
 ```sol
@@ -261,6 +303,24 @@ Example use:
 
 ```sol
 bool valid = unirep.epochKeyLiteVerifier.verifyProof(publicSignals, proof);
+```
+
+## epochKeyMultiVerifier
+
+A contract address for an epoch key multi proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+
+:::warning
+Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyMultiProof`](#verifyepochkeymultiproof) function unless you know what you are doing.
+:::
+
+```sol
+IVerifier public immutable epochKeyMultiVerifier;
+```
+
+Example use:
+
+```sol
+bool valid = unirep.epochKeyMultiVerifier.verifyProof(publicSignals, proof);
 ```
 
 ## signupVerifier

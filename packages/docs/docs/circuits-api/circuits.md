@@ -98,6 +98,40 @@ Outputs:
 Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
+## Epoch Key Multi Proof
+
+The epoch key multi proof allows a user to prove control of two different epoch keys. This can be used to prove that the same user controlled two different epoch keys from different epochs, or even different attesters. This proof is a combination of the full epoch key proof and lite epoch key proof.
+
+In each of the array outputs the full proof data is returned first, then the lite data.
+
+Control field 0 (full proof input):
+- 8 bits `nonce`
+- 64 bits `epoch`
+- 160 bits `attester_id`
+- 1 bit `reveal_nonce`
+
+Control field 1 (lite proof input):
+- 8 bits `nonce`
+- 64 bits `epoch`
+- 160 bits `attester_id`
+- 1 bit `reveal_nonce`
+
+Inputs:
+- `data` (public)
+- `control[2]`
+- `pos_rep`
+- `neg_rep`
+- `graffiti`
+- `timestamp`
+- `state_tree_indexes[STATE_TREE_DEPTH]`
+- `state_tree_elements[STATE_TREE_DEPTH]`
+- `identity_nullifier`
+
+Outputs:
+- `state_tree_root`
+- `epoch_key[2]` - [full, lite]
+- `control_output[2]` - [full, lite]
+
 ## Prove Reputation Proof
 
 The prove reputation proof allows a user to prove a reputation balance in the state tree. The user is not able to prove reputation received in the current epoch. The user can also optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti pre-image.
