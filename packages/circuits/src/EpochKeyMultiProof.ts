@@ -12,6 +12,7 @@ export class EpochKeyMultiProof extends BaseProof {
         epochKey: [3, 4],
         data: 5,
     }
+    public stateTreeRoot: BigNumberish
     public epochKey: [BigNumberish, BigNumberish]
     public control: [BigNumberish, BigNumberish]
     public epoch: [BigNumberish, BigNumberish]
@@ -26,6 +27,7 @@ export class EpochKeyMultiProof extends BaseProof {
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
+        this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
         this.epochKey = [
             _publicSignals[this.idx.epochKey[0]].toString(),
             _publicSignals[this.idx.epochKey[1]],
