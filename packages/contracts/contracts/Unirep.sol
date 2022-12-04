@@ -556,7 +556,17 @@ contract Unirep is IUnirep, VerifySignature {
         if (
             !attester.stateTreeRoots[signals[0].epoch][signals[0].stateTreeRoot]
         ) revert InvalidStateTreeRoot(signals[0].stateTreeRoot);
-        // we don't do any epoch checks!
+        // epoch check
+        if (signals[0].epoch > attester.currentEpoch)
+            revert InvalidEpoch(signals[0].epoch);
+        {
+            AttesterData storage attester2 = attesters[
+                uint160(signals[1].attesterId)
+            ];
+            // epoch check
+            if (signals[1].epoch > attester2.currentEpoch)
+                revert InvalidEpoch(signals[1].epoch);
+        }
     }
 
     function decodeReputationSignals(uint256[] memory publicSignals)
