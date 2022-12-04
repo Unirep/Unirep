@@ -27,6 +27,7 @@ contract Unirep is IUnirep, VerifySignature {
     IVerifier public immutable reputationVerifier;
     IVerifier public immutable epochKeyVerifier;
     IVerifier public immutable epochKeyLiteVerifier;
+    IVerifier public immutable epochKeyMultiVerifier;
 
     // Circuits configurations and contracts configurations
     Config public config;
@@ -53,7 +54,8 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier,
         IVerifier _epochKeyVerifier,
-        IVerifier _epochKeyLiteVerifier
+        IVerifier _epochKeyLiteVerifier,
+        IVerifier _epochKeyMultiVerifier
     ) {
         config = _config;
 
@@ -64,6 +66,7 @@ contract Unirep is IUnirep, VerifySignature {
         reputationVerifier = _reputationVerifier;
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
+        epochKeyMultiVerifier = _epochKeyMultiVerifier;
 
         maxEpochKey = uint256(config.epochTreeArity)**config.epochTreeDepth - 1;
 
@@ -392,6 +395,18 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = newEpoch;
     }
 
+    function decodeEpochKeyControl(uint256 control)
+        public
+        pure
+        returns (uint, uint, uint, uint)
+    {
+        uint256 revealNonce = (control >> 232) & 1;
+        uint256 attesterId = (control >> 72) & ((2 << 160) - 1);
+        uint256 epoch = (control >> 8) & ((2 << 64) - 1);
+        uint256 nonce = control & ((2 << 8) - 1);
+        return (revealNonce, attesterId, epoch, nonce);
+    }
+
     function decodeEpochKeySignals(uint256[] memory publicSignals)
         public
         pure
@@ -402,10 +417,16 @@ contract Unirep is IUnirep, VerifySignature {
         signals.stateTreeRoot = publicSignals[1];
         signals.data = publicSignals[3];
         // now decode the control values
-        signals.revealNonce = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        (
+            uint256 revealNonce,
+            uint256 attesterId,
+            uint256 epoch,
+            uint256 nonce
+        ) = decodeEpochKeyControl(publicSignals[2]);
+        signals.revealNonce = revealNonce;
+        signals.attesterId = attesterId;
+        signals.epoch = epoch;
+        signals.nonce = nonce;
         return signals;
     }
 
@@ -430,7 +451,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
-        public
+        internal
         pure
         returns (EpochKeySignals memory)
     {
@@ -438,10 +459,16 @@ contract Unirep is IUnirep, VerifySignature {
         signals.epochKey = publicSignals[1];
         signals.data = publicSignals[2];
         // now decode the control values
-        signals.revealNonce = (publicSignals[0] >> 232) & 1;
-        signals.attesterId = (publicSignals[0] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[0] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[0] & ((2 << 8) - 1);
+        (
+            uint256 revealNonce,
+            uint256 attesterId,
+            uint256 epoch,
+            uint256 nonce
+        ) = decodeEpochKeyControl(publicSignals[0]);
+        signals.revealNonce = revealNonce;
+        signals.attesterId = attesterId;
+        signals.epoch = epoch;
+        signals.nonce = nonce;
         return signals;
     }
 
@@ -464,6 +491,74 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidEpoch(signals.epoch);
     }
 
+    function decodeEpochKeyMultiSignals(uint256[] memory publicSignals)
+        public
+        pure
+        returns (EpochKeySignals[2] memory)
+    {
+        // first entry is full proof, second is lite proof
+        EpochKeySignals[2] memory signals;
+        signals[0].stateTreeRoot = publicSignals[0];
+        {
+            (
+                uint256 revealNonce,
+                uint256 attesterId,
+                uint256 epoch,
+                uint256 nonce
+            ) = decodeEpochKeyControl(publicSignals[1]);
+            signals[0].revealNonce = revealNonce;
+            signals[0].attesterId = attesterId;
+            signals[0].epoch = epoch;
+            signals[0].nonce = nonce;
+        }
+        {
+            (
+                uint256 revealNonce,
+                uint256 attesterId,
+                uint256 epoch,
+                uint256 nonce
+            ) = decodeEpochKeyControl(publicSignals[2]);
+            signals[1].revealNonce = revealNonce;
+            signals[1].attesterId = attesterId;
+            signals[1].epoch = epoch;
+            signals[1].nonce = nonce;
+        }
+        signals[0].epochKey = publicSignals[3];
+        signals[1].epochKey = publicSignals[4];
+        signals[0].data = publicSignals[5];
+        signals[1].data = publicSignals[5];
+        return signals;
+    }
+
+    function verifyEpochKeyMultiProof(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public {
+        EpochKeySignals[2] memory signals = decodeEpochKeyMultiSignals(
+            publicSignals
+        );
+        bool valid = epochKeyMultiVerifier.verifyProof(publicSignals, proof);
+        // short circuit if the proof is invalid
+        if (!valid) revert InvalidProof();
+        if (signals[0].epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals[1].epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals[0].attesterId >= type(uint160).max)
+            revert AttesterInvalid();
+        if (signals[1].attesterId >= type(uint160).max)
+            revert AttesterInvalid();
+        updateEpochIfNeeded(uint160(signals[0].attesterId));
+        if (signals[1].attesterId != signals[0].attesterId)
+            updateEpochIfNeeded(uint160(signals[1].attesterId));
+        AttesterData storage attester = attesters[
+            uint160(signals[0].attesterId)
+        ];
+        // state tree root check
+        if (
+            !attester.stateTreeRoots[signals[0].epoch][signals[0].stateTreeRoot]
+        ) revert InvalidStateTreeRoot(signals[0].stateTreeRoot);
+        // we don't do any epoch checks!
+    }
+
     function decodeReputationSignals(uint256[] memory publicSignals)
         public
         pure
@@ -479,6 +574,7 @@ contract Unirep is IUnirep, VerifySignature {
         signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
         signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
         signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        // decode the second control value
         signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
         signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
         signals.proveMinRep = (publicSignals[3] >> 128) & 1;
