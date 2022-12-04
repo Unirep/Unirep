@@ -396,7 +396,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function decodeEpochKeyControl(uint256 control)
-        public
+        internal
         pure
         returns (uint, uint, uint, uint)
     {
@@ -451,7 +451,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
-        internal
+        public
         pure
         returns (EpochKeySignals memory)
     {
