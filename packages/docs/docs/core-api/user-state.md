@@ -67,12 +67,24 @@ If no `epoch` is supplied the current epoch will be used (as determined by [`cal
 state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
 ```
 
-## getRepByAttester
+## getRep
 
-Get the reputation balance for an attester in an epoch. By default we use the currently specified attester and the latest epoch.
+Get the reputation balance for the user up to and including the provided epoch. By default reputation up to and including the current epoch is returned.
+
+:::tip
+If you want to make a proof of reputation make sure to use [`getProvableRep`](#getprovablerep) to show the user balance. Reputation can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#prove-reputation-proof).
+:::
 
 ```ts
-state.getRepByAttester(attesterId?: bigint, epoch: number): Promise<Reputation>
+state.getRep(toEpoch?: number): Promise<Reputation>
+```
+
+## getProvableRep
+
+Get the reputation balance that can be proven by the user in a [reputation proof](../circuits-api/circuits#prove-reputation-proof). This is the balance up to, but not including, the epoch the user has transitioned into.
+
+```ts
+state.getProvableRep(): Promise<Reputation>
 ```
 
 ## getRepByEpochKey
@@ -85,7 +97,7 @@ state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
 
 ## genUserStateTransitionProof
 
-Generate a user state transition proof.
+Generate a user state transition proof. Returns a [`UserStateTransitionProof`](../circuits-api/user-state-transition-proof).
 
 ```ts
 state.genUserStateTransitionProof(options?: {
@@ -95,26 +107,29 @@ state.genUserStateTransitionProof(options?: {
 
 ## genProveReputationProof
 
-Generate a proof of reputation.
+Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/reputation-proof).
 
 ```ts
 state.genProveReputationProof(options: {
-  epochKeyNonce: number,
+  epkNonce: number,
   minRep?: number
+  graffitiPreImage?: bigint | string
 }): Promise<ReputationProof>
 ```
 
 ## genUserSignUpProof
 
-Generate a proof that can be used to signup.
+Generate a proof that can be used to signup. Returns a [`SignupProof`](../circuits-api/signup-proof).
 
 ```ts
-state.genUserSignUpProof(): Promise<SignupProof>
+state.genUserSignUpProof(options: {
+  epoch?: bigint | number
+}): Promise<SignupProof>
 ```
 
 ## genEpochKeyProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign.
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyProof`](/docs/contracts-api/epoch-key-proof).
 
 ```ts
 state.genEpochKeyProof(options: {

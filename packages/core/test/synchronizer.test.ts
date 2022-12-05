@@ -352,8 +352,7 @@ describe('Synchronizer process events', function () {
         await epochEndedEvent
 
         {
-            const { posRep, negRep, graffiti } =
-                await userState.getRepByAttester()
+            const { posRep, negRep, graffiti } = await userState.getRep()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)

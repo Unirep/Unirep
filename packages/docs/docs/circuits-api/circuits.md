@@ -100,7 +100,7 @@ Control fields are use to encode many small values into a single field element. 
 
 ## Prove Reputation Proof
 
-The prove reputation proof allows a user to prove a reputation balance in the state tree. The user is not able to prove reputation received in the current epoch. The user can also optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti pre-image.
+The prove reputation proof allows a user to prove a reputation balance in the [state tree](../protocol/trees#state-tree). The user is not able to prove reputation received in the current epoch. The user can optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti pre-image.
 
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
 

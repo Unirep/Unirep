@@ -2,6 +2,8 @@
 title: SignupProof
 ---
 
+Inherits: [`BaseProof`](base-proof)
+
 A class representing a [signup proof](circuits#signup-proof). Each of the following properties are public signals for the proof.
 
 ```ts
