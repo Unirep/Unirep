@@ -178,10 +178,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, E
 
     /* 4. Check nonce and output epoch key */
 
-    component nonce_checker = LessThan(8);
-    nonce_checker.in[0] <== nonce;
-    nonce_checker.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
-    nonce_checker.out === 1;
+    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
 
     component epoch_key_hasher = Poseidon(4);
     epoch_key_hasher.inputs[0] <== identity_nullifier;
