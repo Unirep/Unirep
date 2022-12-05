@@ -638,12 +638,10 @@ describe('User State Transition', function () {
 
         const users = 3
         const epochs = 3
-        let stateTreeMap = {}
         let fromEpoch = (
             await unirepContract.attesterCurrentEpoch(attester.address)
         ).toNumber()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTreeMap[fromEpoch] = stateTree
+        let fromEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const userState = Array(users)
             .fill(null)
             .map(() => {
@@ -659,7 +657,7 @@ describe('User State Transition', function () {
                 attester.address,
                 attester
             )
-            stateTreeMap[fromEpoch].insert(leaf)
+            fromEpochStateTree.insert(leaf)
             userState[i].index = index
         }
 
@@ -669,7 +667,7 @@ describe('User State Transition', function () {
             await unirepContract.attesterCurrentEpoch(attester.address)
         ).toNumber()
         for (let epoch = startEpoch; epoch < startEpoch + epochs; epoch++) {
-            stateTreeMap[epoch] = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const toEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(null)
@@ -687,7 +685,7 @@ describe('User State Transition', function () {
                     defaultEpochTreeLeaf,
                     EPOCH_TREE_ARITY
                 )
-                const stateTreeProof = stateTreeMap[fromEpoch].createProof(
+                const stateTreeProof = fromEpochStateTree.createProof(
                     userState[i].index
                 )
                 const r = await defaultProver.genProofAndPublicSignals(
@@ -724,16 +722,17 @@ describe('User State Transition', function () {
                     .userStateTransition(publicSignals, proof)
                     .then((t) => t.wait())
                 userState[i].index = i
-                stateTreeMap[epoch].insert(stateTreeLeaf)
+                toEpochStateTree.insert(stateTreeLeaf)
 
                 const exist = await unirepContract.attesterStateTreeRootExists(
                     attester.address,
                     epoch,
-                    stateTreeMap[epoch].root
+                    toEpochStateTree.root
                 )
                 expect(exist).to.be.true
             }
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            fromEpochStateTree = toEpochStateTree
             fromEpoch = epoch
         }
     })
