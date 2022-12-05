@@ -28,23 +28,23 @@ yarn add @unirep/core
 
 ### Synchronizer ⏲
 
-**Construct a synchronizer**
+**Construct a Unirep state**
 ```typescript
-import { Synchronizer, schema } from '@unirep/core'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
-import { DB, SQLiteConnector } from 'anondb/node'
+import { Synchronizer } from '@unirep/core'
 
-// connect a unirep contract with the address and a provider
-const unirepContract: Unirep = getUnirepContract(address, provider)
-// initialize a database
-const db: DB = await SQLiteConnector.create(schema, ':memory:')
-
-// 1. initialize a synchronizer
-const synchronizer = new Synchronizer(db, provider, unirepContract)
-// 2. start listening to unriep contract events
-await synchronizer.start()
-// 3. wait until the latest block is processed
-await synchronizer.waitForSync()
+const genUnirepState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = await getUnirepContract(address, provider)
+    let synchronizer: Synchronizer
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    synchronizer = new Synchronizer(db, defaultProver, unirepContract)
+    await synchronizer.start()
+    await synchronizer.waitForSync()
+    return synchronizer
+}
 ```
 
 **Example: use the synchronizer to generate unirep state**
@@ -55,50 +55,36 @@ const globalStateTree = await synchronizer.genGSTree(epoch)
 
 ### UserState 👤
 
-**Construct a user state**
+**Construct a Unirep user state**
 ```typescript
-import { ZkIdentity } from '@unirep/crypto'
-import { Synchronizer, schema } from '@unirep/core'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
-import { DB, SQLiteConnector } from 'anondb/node'
+import { UserState } from '@unirep/core'
 
-// random generate a user identity
-const identity = new ZkIdentity()
-// connect a unirep contract with the address and a provider
-const unirepContract: Unirep = getUnirepContract(address, provider)
-// initialize a database
-const db: DB = await SQLiteConnector.create(schema, ':memory:')
-
-// 1. initialize a user state object
-const userState = new UserState(
-    db,
-    provider,
-    unirepContract,
-    identity
-)
-// 2. start listening to unriep contract events
-await userState.start()
-// 3. wait until the latest block is processed
-await userState.waitForSync()
+const genUserState = async (
+    provider: ethers.providers.Provider,
+    address: string,
+    userIdentity: ZkIdentity,
+    _db?: DB
+) => {
+    const unirepContract: Unirep = getUnirepContract(address, provider)
+    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
+    const userState = new UserState(
+        db,
+        defaultProver,
+        unirepContract,
+        userIdentity
+    )
+    await userState.start()
+    await userState.waitForSync()
+    return userState
+}
 ```
 
 **Example: use the user state to generate proofs**
 ```typescript
 const nonce = 1
 const epochKeyProof = await userState.genVerifyEpochKeyProof(nonce)
-
-// 1. submit the epoch key proof to smart contract
-const tx = await unirepContract.submitEpochKeyProof(
-    epochKeyProof.publicSignals,
-    epochKeyProof.proof
-)
-
-// 2. get the index of the epoch key proof
-const proofHash = epochKeyProof.hash()
-const index = await unirepContract.getProofIndex(proofHash)
-
 // Then the attester can call `submitAttestation` on Unirep contract
-// to send attestation to the epoch key with a proof index
+// to send attestation to the epoch key
 ```
 
 ### Utils 🧳

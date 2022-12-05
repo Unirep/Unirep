@@ -39,14 +39,11 @@ const buildPath = 'PATH/TO/CIRCUIT/FOLDER/'
 
 const prover: Prover = {
     genProofAndPublicSignals: async (
-        proofType: string | Circuit,
+        circuitName: string | Circuit,
         inputs: any
-    ): Promise<{
-        proof: any,
-        publicSignals: any
-    }> => {
-        const circuitWasmPath = buildPath + `${proofType}.wasm`
-        const zkeyPath = buildPath + `${proofType}.zkey`
+    ): Promise<any> => {
+        const circuitWasmPath = path.join(buildPath, `${circuitName}.wasm`)
+        const zkeyPath = path.join(buildPath, `${circuitName}.zkey`)
         const { proof, publicSignals } = await snarkjs.groth16.fullProve(
             inputs,
             circuitWasmPath,
@@ -57,13 +54,17 @@ const prover: Prover = {
     },
 
     verifyProof: async (
-        name: string | Circuit,
+        circuitName: string | Circuit,
         publicSignals: SnarkPublicSignals,
         proof: SnarkProof
     ): Promise<boolean> => {
-        const vkey = require(buildPath +  `${name}.vkey.json`)
+        const vkey = require(path.join(buildPath, `${circuitName}.vkey.json`))
         return snarkjs.groth16.verify(vkey, publicSignals, proof)
     },
+
+    getVKey: (name: string | Circuit) => {
+        return require(path.join(buildPath, `${name}.vkey.json`))
+    }
 }
 ```
 

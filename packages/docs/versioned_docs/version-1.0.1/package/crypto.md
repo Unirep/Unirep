@@ -41,12 +41,12 @@ const commitment = identity.genIdentityCommitment()
 
 **Get identity nullifier**
 ```typescript
-const commitment = identity.identityNullifier
+const idNullifier = identity.identityNullifier
 ```
 
 **get identity trapdoor**
 ```typescript
-const commitment = identity.trapdoor
+const idTrapdoor = identity.trapdoor
 ```
 **Serialize/ unserialize identity**
 
@@ -102,7 +102,7 @@ import { SparseMerkleTree } from '@unirep/crypto'
 
 const depth = 4
 // initialize incremental merkle tree with depth 4
-const zeroHash = 0
+const zeroHash = BigInt(0)
 // initialize sparse merkle tree with depth 4 and zeroHash 0
 const tree = new SparseMerkleTree(
     depth, 
@@ -124,13 +124,13 @@ tree.update(leafKey, leafValue)
 
 **Generate merkle proof**
 ```typescript
-const leafKey = Bigint(1)
+const leafKey = BigInt(1)
 const proof = tree.createProof(leafKey)
 ```
 
 **Verify merkle proof**
 ```typescript
-const isValid = tree.verifyProof(proof)
+const isValid = tree.verifyProof(leafKey, proof)
 ```
 
 ### Crypto utils
@@ -177,10 +177,12 @@ const hash = hashLeftRight(leftValue, rightValue)
 ```
 **stringifyBigInts/unstringifyBigInts**
 ```typescript
+import { stringifyBigInts, unstringifyBigInts } from '@unirep/crypto'
+
 const values = {
-    input1: genRandomSalt(),
-    input2: genRandomSalt(),
-    input3: genRandomSalt(),
+    input1: BigInt(1),
+    input2: BigInt(2),
+    input3: BigInt(3),
 }
 // stringify BigInt elements with stringifyBigInts function
 const stringifiedValues = stringifyBigInts(values)

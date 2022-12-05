@@ -24,42 +24,14 @@ or yarn:
 yarn add @unirep/contracts
 ```
 
-## 👩🏻‍⚕️ Haven't deployed a contract yet?
-
-### Get circuit keys from one of the following methods
-
-**🍀 Solution 1. Download circuit keys from server**
-
-Get circuits files from [PSE server](http://www.trusted-setup-pse.org/).
-
-**🍀 Solution 2. Build circuits locally**
-
-```bash
-git clone https://github.com/Unirep/Unirep.git && \
-cd Unirep/ && \
-yarn install && \
-yarn build
-```
-
-By default, The `zksnarkBuild` directory will be found in `./packages/circuits`
-
-### Compile contracts from the keys
-
-**Step 1. Set the `zksnarkBuild` path in buildVerifier.ts**
-
-**Step 2. Run compile command**
-
-By default, The `artifacts` directory will be found in `./packages/contracts/build`
-
-## 🙆🏻‍♀️ Unirep contract has been compiled
-
-### Deploy Unirep contract
+## Deploy Unirep contract
 
 Deploy Unirep smart contract with default config:
 
 ```typescript
-import ethers from 'ethers'
-import { deployUnirep, Unirep } from '@unirep/contracts/deploy'
+import { ethers } from 'ethers'
+import { deployUnirep } from '@unirep/contracts/deploy'
+import { Unirep } from '@unirep/contracts'
 
 const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'
@@ -68,14 +40,10 @@ const deployer = new ethers.Wallet(privateKey, provider);
 const unirepContract: Unirep = await deployUnirep(deployer)
 ```
 
-```bash
-yarn contracts deploy
-```
-
 ### Get unirep contract with address
 
 ```typescript
-import ethers from 'ethers'
+import { ethers } from 'ethers'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 const address = '0x....'
@@ -101,19 +69,13 @@ const unirepContract: Unirep = getUnirepContract(address, signer)
 
 // user sign up
 const id = new ZkIdentity()
-const tx = await unirepContract.userSignUp(id.genIdentityCommitment())
+const tx = await unirepContract['userSignUp(uint256)'](id.genIdentityCommitment())
 
 // attester sign up
 const tx = await unirepContract.attesterSignUp()
 ```
 
 ## 🙋🏻‍♂️ Call Unirep contract in DApps
-
--   🚸 Please copy `verifiers/*.sol` files to `node_modules/@unirep/contracts/verifiers/` directories.
-    ```bash
-    cp -rf ../Unirep/packages/contracts/contracts/verifiers/* ./node_modules/@unirep/contracts/verifiers
-    ```
-    _(TODO) Find a better way to do this._
 
 ```solidity
 import { Unirep } from '@unirep/contracts/Unirep.sol';
@@ -140,31 +102,25 @@ contract YourContract {
         _attesterId = unirep.attesters(address(this));
     }
 
-    // Users submit their epoch key proof to Unirep contract
     // And get attestation from the contract
-    function submitEpochKeyProof(Unirep.EpochKeyProof memory input)
-        external
-        payable
-    {
-        // Step 1. submit epoch key proof
-        unirep.submitEpochKeyProof(input);
+    function submitAttestation(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) external payable {
+        // Step 1. verify epoch key proof
+        bool valid = unirep.verifyEpochKeyValidity(publicSignals, proof);
+        require(valid);
 
-        // Step 2. get proof index
-        bytes32 proofNullifier = unirep.hashEpochKeyProof(input);
-        uint256 proofIndex = unirep.getProofIndex(proofNullifier);
-
-        // Step 3. init attestation
+        // Step 2. init attestation
         // create an attestation which sends 5 positive Rep to the epochKey
         Unirep.Attestation memory attestation;
         attestation.attesterId = _attesterId;
         attestation.posRep = 5;
 
-        // Step 4. send attestation
+        // Step 3. send attestation
         unirep.submitAttestation{ value: unirep.attestingFee() }(
             attestation,
-            input.epochKey,
-            proofIndex,
-            0 // if no reputation spent required
+            publicSignals[0] // epoch key
         );
     }
 }
