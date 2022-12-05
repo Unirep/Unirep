@@ -59,10 +59,12 @@ state.latestStateTreeLeafIndex(epoch?: number): Promise<number>
 
 ## getEpochKeys
 
-Get epoch keys for the current user, for the current epoch.
+Get epoch keys for the current user, for an epoch. If a `nonce` value is supplied the return value will be a single epoch key. Otherwise an array of all epoch keys will be returned.
+
+If no `epoch` is supplied the current epoch will be used (as determined by [`calcCurrentEpoch`](synchronizer#calcCurrentEpoch)).
 
 ```ts
-state.getEpochKeys(epoch: number): bigint[]
+state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
 ```
 
 ## getRepByAttester

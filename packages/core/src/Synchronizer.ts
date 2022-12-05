@@ -623,23 +623,6 @@ export class Synchronizer extends EventEmitter {
         })
     }
 
-    /**
-     * Get the list of attestations that is set to the epoch key.
-     * The attestations are verified valid.
-     * @param epochKey The query epoch key
-     * @returns A list of the attestations.
-     */
-    async getAttestations(epochKey: string): Promise<any[]> {
-        await this._checkEpochKeyRange(epochKey)
-        // TODO: transform db entries to IAttestation (they're already pretty similar)
-        return this._db.findMany('Attestation', {
-            where: {
-                epochKey,
-                attesterId: this.attesterId.toString(),
-            },
-        })
-    }
-
     // unirep event handlers
 
     async handleStateTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
