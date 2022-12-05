@@ -47,7 +47,7 @@ npx ts-node cli/index.ts genEpochKeyAndProof
 ```
 
 :::info
-source: [core/cli/genEpochKeyAndProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genEpochKeyAndProof.ts)
+source: [core/cli/genEpochKeyAndProof.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/genEpochKeyAndProof.ts)
 :::
 
 ## `verifyEpochKeyProof`
@@ -83,46 +83,5 @@ npx ts-node cli/index.ts verifyEpochKeyProof
 ```
 
 :::info
-source: [core/cli/verifyEpochKeyProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/verifyEpochKeyProof.ts)
-:::
-
-## `submitEpochKeyProof`
-
-```
-npx ts-node cli/index.ts submitEpochKeyProof 
-                  [-h] 
-                  [-e ETH_PROVIDER] 
-                  -p PUBLIC_SIGNALS 
-                  -pf PROOF 
-                  -x CONTRACT 
-                  -d ETH_PRIVKEY
-```
-
-* Epoch key proof should be submitted to UniRep and get the index of the proof.
-* Then the attester can submit attestation to the epoch key with a valid proof index.
-* Only if the epoch key proof is valid, the attestation can be processed.
-
-### Options
-
-```
-  -e ETH_PROVIDER, --eth-provider ETH_PROVIDER
-                        A connection string to an Ethereum provider. Default: http://localhost:8545
-  -p PUBLIC_SIGNALS, --public-signals PUBLIC_SIGNALS
-                        The snark public signals of the user's epoch key
-  -pf PROOF, --proof PROOF
-                        The snark proof of the user's epoch key
-  -x CONTRACT, --contract CONTRACT
-                        The Unirep contract address
-  -d ETH_PRIVKEY, --eth-privkey ETH_PRIVKEY
-                        The attester's Ethereum private key
-```
-
-#### Options inherited from parent commands <a href="#options-inherited-from-parent-commands" id="options-inherited-from-parent-commands"></a>
-
-```
-  -h, --help            Show this help message and exit.
-```
-
-:::info
-source: [core/cli/submitEpochKeyProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/submitEpochKeyProof.ts)
+source: [core/cli/verifyEpochKeyProof.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/verifyEpochKeyProof.ts)
 :::

@@ -9,9 +9,7 @@ description: Attester gives reputation to an epoch key
 ```
 npx ts-node cli/index.ts attest
                   [-h] 
-                  [-e ETH_PROVIDER] 
-                  -toi TO_PROOF_INDEX 
-                  [-fromi FROM_PROOF_INDEX] 
+                  [-e ETH_PROVIDER]
                   -epk EPOCH_KEY 
                   [-pr POS_REP] 
                   [-nr NEG_REP] 
@@ -26,10 +24,6 @@ npx ts-node cli/index.ts attest
 ```
   -e ETH_PROVIDER, --eth-provider ETH_PROVIDER
                         A connection string to an Ethereum provider. Default: http://localhost:8545
-  -toi TO_PROOF_INDEX, --to-proof-index TO_PROOF_INDEX
-                        The proof index of the receiver's epoch key
-  -fromi FROM_PROOF_INDEX, --from-proof-index FROM_PROOF_INDEX
-                        The proof index of the sender's epoch key
   -epk EPOCH_KEY, --epoch-key EPOCH_KEY
                         The user's epoch key to attest to (in hex representation)
   -pr POS_REP, --pos-rep POS_REP
@@ -53,5 +47,5 @@ npx ts-node cli/index.ts attest
 ```
 
 :::info
-source: [core/cli/attest.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/attest.ts)
+source: [core/cli/attest.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/attest.ts)
 :::

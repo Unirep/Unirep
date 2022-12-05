@@ -4,43 +4,6 @@ description: Attester sets airdrop amount and users can get airdrop reputation
 
 # Airdrop Reputation
 
-## `setAirdropAmount`
-
-```
-npx ts-node cli/index.ts setAirdropAmount
-                  [-h] 
-                  [-e ETH_PROVIDER] 
-                  -x CONTRACT 
-                  -a AIRDROP 
-                  -d ETH_PRIVKEY
-```
-
-* The attester that has registered in UniRep can set the airdrop amount and give it to users that register through the attester's account/smart contract.
-* UniRep contract will also set the sign up flag to `1`.
-
-### Options
-
-```
-  -e ETH_PROVIDER, --eth-provider ETH_PROVIDER
-                        A connection string to an Ethereum provider. Default: http://localhost:8545
-  -x CONTRACT, --contract CONTRACT
-                        The Unirep contract address
-  -a AIRDROP, --airdrop AIRDROP
-                        The amount of airdrop positive reputation given by the attester
-  -d ETH_PRIVKEY, --eth-privkey ETH_PRIVKEY
-                        The attester's Ethereum private key
-```
-
-#### Options inherited from parent commands <a href="#options-inherited-from-parent-commands" id="options-inherited-from-parent-commands"></a>
-
-```
-  -h, --help            Show this help message and exit.
-```
-
-:::info
-source: [core/cli/setAirdropAmount.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/setAirdropAmount.ts)
-:::
-
 ## `genUserSignUpProof`
 
 ```
@@ -76,7 +39,7 @@ npx ts-node cli/index.ts genUserSignUpProof
 ```
 
 :::info
-source: [core/cli/genUserSignUpProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genUserSignUpProof.ts)
+source: [core/cli/genUserSignUpProof.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/genUserSignUpProof.ts)
 :::
 
 ## `verifyUserSignUpProof`
@@ -113,44 +76,5 @@ npx ts-node cli/index.ts verifyUserSignUpProof
 ```
 
 :::info
-source: [core/cli/verifyUserSignUpProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/verifyUserSignUpProof.ts)
-:::
-
-## `giveAirdrop`
-
-```
-npx ts-node cli/index.ts giveAirdrop
-                  [-h] 
-                  [-e ETH_PROVIDER] 
-                  -p PUBLIC_SIGNALS 
-                  -pf PROOF 
-                  -x CONTRACT 
-                  -d ETH_PRIVKEY
-```
-
-* After receiving the user sign up proof, the attester knows that the user has been authenticated before and the attester can give the attester the airdrop reputation to let the user spend the reputation.
-
-### Options
-
-```
-  -e ETH_PROVIDER, --eth-provider ETH_PROVIDER
-                        A connection string to an Ethereum provider. Default: http://localhost:8545
-  -p PUBLIC_SIGNALS, --public-signals PUBLIC_SIGNALS
-                        The snark public signals of the user's epoch key
-  -pf PROOF, --proof PROOF
-                        The snark proof of the user's epoch key
-  -x CONTRACT, --contract CONTRACT
-                        The Unirep contract address
-  -d ETH_PRIVKEY, --eth-privkey ETH_PRIVKEY
-                        The attester's Ethereum private key
-```
-
-#### Options inherited from parent commands <a href="#options-inherited-from-parent-commands" id="options-inherited-from-parent-commands"></a>
-
-```
-  -h, --help            Show this help message and exit.
-```
-
-:::info
-source: [core/cli/giveAirdrop.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/giveAirdrop.ts)
+source: [core/cli/verifyUserSignUpProof.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/verifyUserSignUpProof.ts)
 :::

@@ -29,5 +29,5 @@ npx ts-node cli/index.ts genUnirepIdentity [-h]
 ```
 
 :::info
-source: [core/cli/genUnirepIdentity.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genUnirepIdentity.ts)
+source: [core/cli/genUnirepIdentity.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/genUnirepIdentity.ts)
 :::

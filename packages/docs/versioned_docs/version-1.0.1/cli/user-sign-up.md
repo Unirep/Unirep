@@ -17,6 +17,7 @@ npx ts-node cli/index.ts userSignUp
                   -c IDENTITY_COMMITMENT 
                   -x CONTRACT 
                   -d ETH_PRIVKEY
+                  [-a AIRDROP]
 ```
 
 ### Options
@@ -30,6 +31,8 @@ npx ts-node cli/index.ts userSignUp
                         The Unirep contract address
   -d ETH_PRIVKEY, --eth-privkey ETH_PRIVKEY
                         The user's Ethereum private key
+  -a AIRDROP, --airdrop AIRDROP
+                        The requested airdrop amount
 ```
 
 #### Options inherited from parent commands <a href="#options-inherited-from-parent-commands" id="options-inherited-from-parent-commands"></a>
@@ -39,7 +42,7 @@ npx ts-node cli/index.ts userSignUp
 ```
 
 :::info
-source: [core/cli/userSignUp.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/userSignUp.ts)
+source: [core/cli/userSignUp.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/userSignUp.ts)
 :::
 
 ## `attesterSignUp`
@@ -73,5 +76,5 @@ npx ts-node cli/index.ts attesterSignUp
 ```
 
 :::info
-source: [core/cli/attesterSignUp.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/attesterSignUp.ts)
+source: [core/cli/attesterSignUp.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/attesterSignUp.ts)
 :::

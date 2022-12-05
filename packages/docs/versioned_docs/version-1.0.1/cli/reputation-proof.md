@@ -47,7 +47,7 @@ npx ts-node cli/index.ts genReputationProof
 ```
 
 :::info
-source: [core/cli/genReputationProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/genReputationProof.ts)
+source: [core/cli/genReputationProof.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/genReputationProof.ts)
 :::
 
 ## `verifyReputationProof`
@@ -86,5 +86,5 @@ npx ts-node cli/index.ts verifyReputationProof
 ```
 
 :::info
-source: [core/cli/verifyReputationProof.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/verifyReputationProof.ts)
+source: [core/cli/verifyReputationProof.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/verifyReputationProof.ts)
 :::

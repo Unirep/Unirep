@@ -12,7 +12,7 @@ npx hardhat node
 ```
 
 :::info
-By default it runs at [http://localhost:8545](http://localhost:8545)\
+By default it runs at [http://localhost:8545](http://localhost:8545)<br/>
 And it will list 20 accounts including their private keys
 :::
 
@@ -50,5 +50,5 @@ npx ts-node cli/index.ts deploy
 ```
 
 :::info
-source: [core/cli/deploy.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/deploy.ts)
+source: [core/cli/deploy.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/deploy.ts)
 :::

@@ -15,7 +15,7 @@ npx ts-node cli/index.ts userStateTransition
                   -d ETH_PRIVKEY
 ```
 
-* It will generate [start transition proof](../protocol/circuits/user-state-transition-proof.md#1.-start-transition-proof), [process attestations proof](../protocol/circuits/user-state-transition-proof.md#2.-process-attestations-proof)s, and the [user state transition proof](../protocol/circuits/user-state-transition-proof.md#3.-user-state-transition-proof).
+* It will generate [start transition proof](../protocol/circuits/user-state-transition-proof.md#1-start-transition-proof), [process attestations proof](../protocol/circuits/user-state-transition-proof.md#2-process-attestations-proof)s, and the [user state transition proof](../protocol/circuits/user-state-transition-proof.md#3-user-state-transition-proof).
 
 ### Options
 
@@ -37,5 +37,5 @@ npx ts-node cli/index.ts userStateTransition
 ```
 
 :::info
-source: [core/cli/userStateTransition.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/userStateTransition.ts)
+source: [core/cli/userStateTransition.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/userStateTransition.ts)
 :::

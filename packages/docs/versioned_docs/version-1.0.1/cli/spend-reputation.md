@@ -43,5 +43,5 @@ npx ts-node cli/index.ts spendReputation
 ```
 
 :::info
-source: [core/cli/spendReputation.ts](https://github.com/Unirep/Unirep/blob/main/packages/core/cli/spendReputation.ts)
+source: [core/cli/spendReputation.ts](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/core/cli/spendReputation.ts)
 :::
