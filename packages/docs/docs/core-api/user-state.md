@@ -132,7 +132,7 @@ TODO: See the epoch tree section for more info
 
 :::
 
-:::caution
+:::warning
 
 Users shouldn't be generating this proof.
 
