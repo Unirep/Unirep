@@ -242,7 +242,7 @@ describe('Epoch key lite proof verifier', function () {
 describe('Epoch key proof verifier', function () {
     this.timeout(500000)
     let unirepContract
-    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -253,6 +253,14 @@ describe('Epoch key proof verifier', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should verify an epoch key proof', async () => {
@@ -266,6 +274,7 @@ describe('Epoch key proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
@@ -322,6 +331,7 @@ describe('Epoch key proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
@@ -390,6 +400,7 @@ describe('Epoch key proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
@@ -446,6 +457,7 @@ describe('Epoch key proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
@@ -513,11 +525,7 @@ describe('Epoch key proof verifier', function () {
             attester.address,
             attester
         )
-        const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        _stateTree.insert(genRandomSalt())
 
-        const index = 0
-        const merkleProof = _stateTree.createProof(index)
         const posRep = 0
         const negRep = 0
         const graffiti = 0
@@ -527,8 +535,8 @@ describe('Epoch key proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
             stringifyBigInts({
-                state_tree_elements: merkleProof.siblings,
-                state_tree_indexes: merkleProof.pathIndices,
+                state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
                 identity_nullifier: id.identityNullifier,
                 pos_rep: posRep,
                 neg_rep: negRep,
@@ -563,7 +571,7 @@ describe('Epoch key proof verifier', function () {
 describe('Reputation proof verifier', function () {
     this.timeout(120000)
     let unirepContract
-    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -574,6 +582,14 @@ describe('Reputation proof verifier', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should verify a reputation proof', async () => {
@@ -587,6 +603,7 @@ describe('Reputation proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
@@ -648,6 +665,7 @@ describe('Reputation proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
@@ -740,6 +758,7 @@ describe('Reputation proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const invalidEpoch = 3333
@@ -801,6 +820,7 @@ describe('Reputation proof verifier', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
         const nonce = 0
@@ -867,12 +887,8 @@ describe('Reputation proof verifier', function () {
             attester.address,
             attester
         )
-        const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        _stateTree.insert(genRandomSalt())
 
         const nonce = 0
-        const index = 0
-        const merkleProof = _stateTree.createProof(index)
         const posRep = 0
         const negRep = 0
         const graffiti = 0
@@ -884,8 +900,8 @@ describe('Reputation proof verifier', function () {
             Circuit.proveReputation,
             stringifyBigInts({
                 identity_nullifier: id.identityNullifier,
-                state_tree_indexes: merkleProof.pathIndices,
-                state_tree_elements: merkleProof.siblings,
+                state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti: graffiti,

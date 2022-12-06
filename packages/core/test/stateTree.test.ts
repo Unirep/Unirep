@@ -17,19 +17,25 @@ describe('State tree', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-    let stateTree
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
 
         unirepContract = await deployUnirep(accounts[0])
-        const config = await unirepContract.config()
-        stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
         const attester = accounts[1]
         await unirepContract
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('initialization', async () => {
@@ -42,6 +48,8 @@ describe('State tree', function () {
         )
         const epoch = await unirepState.calcCurrentEpoch()
 
+        const config = await unirepContract.config()
+        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
         const stateRootExists =
             await unirepContract.attesterStateTreeRootExists(
                 attester.address,
@@ -68,6 +76,8 @@ describe('State tree', function () {
     it('sign up users should update state tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const config = await unirepContract.config()
+        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
         for (let i = 0; i < 3; i++) {
             const id = new ZkIdentity()
             const userState = await genUserState(
@@ -99,6 +109,7 @@ describe('State tree', function () {
                 0,
                 0
             )
+
             stateTree.insert(leaf)
 
             const stateRootExists =
@@ -158,7 +169,7 @@ describe('State tree', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         const config = await unirepContract.config()
-        stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
+        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 
         for (let i = 0; i < 3; i++) {
             const userState = await genUserState(
@@ -304,7 +315,7 @@ describe('State tree', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         const config = await unirepContract.config()
-        stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
+        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 
         for (let i = 0; i < 3; i++) {
             const userState = await genUserState(
@@ -367,6 +378,8 @@ describe('State tree', function () {
         const prevEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
+        const config = await unirepContract.config()
+        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 
         for (let i = 0; i < 3; i++) {
             const id = new ZkIdentity()

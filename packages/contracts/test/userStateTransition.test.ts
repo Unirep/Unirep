@@ -8,6 +8,7 @@ import {
     ZkIdentity,
     stringifyBigInts,
     genEpochKey,
+    genRandomSalt,
 } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
@@ -55,6 +56,7 @@ describe('User State Transition', function () {
     this.timeout(500000)
 
     let unirepContract
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -67,7 +69,13 @@ describe('User State Transition', function () {
             .then((t) => t.wait())
     })
 
-    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
+    })
 
     it('should fail to transition with invalid proof', async () => {
         const accounts = await ethers.getSigners()
@@ -79,6 +87,7 @@ describe('User State Transition', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -161,6 +170,8 @@ describe('User State Transition', function () {
             EPOCH_TREE_ARITY
         )
         const index = 0
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        stateTree.insert(genRandomSalt())
         const stateTreeProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -205,6 +216,7 @@ describe('User State Transition', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -269,7 +281,6 @@ describe('User State Transition', function () {
             attester
         )
 
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         // submit attestations
         {
             const epoch = await unirepContract.attesterCurrentEpoch(
@@ -285,6 +296,7 @@ describe('User State Transition', function () {
                 .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
                 .then((t) => t.wait())
         }
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -337,20 +349,19 @@ describe('User State Transition', function () {
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'HashchainNotProcessed')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to transition from wrong epoch tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new ZkIdentity()
-        const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -398,30 +409,27 @@ describe('User State Transition', function () {
             r.proof,
             defaultProver
         )
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await expect(
             unirepContract
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochTreeRoot')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to transition from wrong state tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new ZkIdentity()
-        const _stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
             attester.address,
             attester
         )
+        stateTree.insert(0) // wrong leaf
         stateTree.insert(leaf)
-        _stateTree.insert(0)
-        _stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
@@ -438,7 +446,7 @@ describe('User State Transition', function () {
             defaultEpochTreeLeaf,
             EPOCH_TREE_ARITY
         )
-        const stateTreeProof = _stateTree.createProof(1)
+        const stateTreeProof = stateTree.createProof(1)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
@@ -467,14 +475,12 @@ describe('User State Transition', function () {
             r.proof,
             defaultProver
         )
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await expect(
             unirepContract
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidStateTreeRoot')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to double user state transition', async () => {
@@ -487,6 +493,7 @@ describe('User State Transition', function () {
             attester.address,
             attester
         )
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -533,7 +540,6 @@ describe('User State Transition', function () {
             r.proof,
             defaultProver
         )
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await unirepContract
             .connect(attester)
@@ -544,7 +550,6 @@ describe('User State Transition', function () {
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should do user state transition', async () => {
@@ -559,6 +564,7 @@ describe('User State Transition', function () {
         )
         const fromEpoch = 0
         const toEpoch = fromEpoch + 1
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -605,7 +611,6 @@ describe('User State Transition', function () {
             r.proof,
             defaultProver
         )
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         const tx = await unirepContract
             .connect(attester)
@@ -625,7 +630,6 @@ describe('User State Transition', function () {
                 publicSignals[1],
                 publicSignals[2]
             )
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should do multiple user state transitions', async () => {
@@ -634,11 +638,10 @@ describe('User State Transition', function () {
 
         const users = 3
         const epochs = 3
-        let _stateTree = {}
         let fromEpoch = (
             await unirepContract.attesterCurrentEpoch(attester.address)
         ).toNumber()
-        _stateTree[fromEpoch] = stateTree
+        let fromEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const userState = Array(users)
             .fill(null)
             .map(() => {
@@ -654,18 +657,17 @@ describe('User State Transition', function () {
                 attester.address,
                 attester
             )
-            _stateTree[fromEpoch].insert(leaf)
+            fromEpochStateTree.insert(leaf)
             userState[i].index = index
         }
 
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         const startEpoch = (
             await unirepContract.attesterCurrentEpoch(attester.address)
         ).toNumber()
         for (let epoch = startEpoch; epoch < startEpoch + epochs; epoch++) {
-            _stateTree[epoch] = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+            const toEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(null)
@@ -683,7 +685,7 @@ describe('User State Transition', function () {
                     defaultEpochTreeLeaf,
                     EPOCH_TREE_ARITY
                 )
-                const stateTreeProof = _stateTree[fromEpoch].createProof(
+                const stateTreeProof = fromEpochStateTree.createProof(
                     userState[i].index
                 )
                 const r = await defaultProver.genProofAndPublicSignals(
@@ -720,18 +722,18 @@ describe('User State Transition', function () {
                     .userStateTransition(publicSignals, proof)
                     .then((t) => t.wait())
                 userState[i].index = i
-                _stateTree[epoch].insert(stateTreeLeaf)
+                toEpochStateTree.insert(stateTreeLeaf)
 
                 const exist = await unirepContract.attesterStateTreeRootExists(
                     attester.address,
                     epoch,
-                    _stateTree[epoch].root
+                    toEpochStateTree.root
                 )
                 expect(exist).to.be.true
             }
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            fromEpochStateTree = toEpochStateTree
             fromEpoch = epoch
         }
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 })
