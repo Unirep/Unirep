@@ -66,19 +66,19 @@ const blinded_hash_chain = hash(
 
 In the **start transition proof**, the circuit will compute the initial `blinded_user_state` and `blinded_hash_chain`, the `user_tree_root` is the latest transitioned user state tree and the `hash(identity_commitment, updated_user_state_root)` should be in a global state tree. The `current_hash_chain` is start with `0` as the definition of hash chain.
 
-![How blinded user states and blinded hash chains are computed.](<../../.gitbook/assets/截圖 2022-07-22 下午1.27.59.png>)
+<img src="/img/v1/blind.png" alt="How blinded user states and blinded hash chains are computed."/>
 
 After `blinded_user_state` and `blinded_hash_chain` are submitted, the user can take them as public inputs and start to **process attestations** according to the `user_tree_root` and `current_hash_chain`. When the attestations limit reaches (e.g. a `processAttestations` circuit can process only 10 attestations per proof) or all attestations to the epoch key are processed, the circuit will output another `blinded_user_state` and `blinded_hash_chain` to continue processing attestations.
 
-![How hash chain is processed in process attestations proofs.](<../../.gitbook/assets/截圖 2022-07-23 下午3.55.55.png>)
+<img src="/img/v1/process-attestations.png" alt="How hash chain is processed in process attestations proofs."/>
 
-![How user state tree is processed in process attestation proofs.](<../../.gitbook/assets/截圖 2022-07-23 下午4.06.07.png>)
+<img src="/img/v1/update-trees.png" alt="How user state tree is processed in process attestation proofs."/>
 
 The `epoch_key_nonce` is used in the blinded user state and blinded hash chain to indicate the attestations of which epoch key is processed. In the final **`userStateTransition`** proof, it checks all epoch key with different `epoch_key_nonce` are processed and the hash chain result matches the [epoch tree](../glossary/trees.md#epoch-tree).
 
 There are only one user state tree result after all attestations are processed, so in the final proof it only takes the initial `blinded_user_state` and the final one and computes the new global state tree leaf. On the other hand, there are `numEpochKeyNoncePerEpoch` hash chains after processing attestations, so the final circuit will take `numEpochKeyNoncePerEpoch` `blinded_hash_chain` to check the epoch tree root.
 
-![How the final user state transition proof verifies hash chains and user states.](<../../.gitbook/assets/截圖 2022-07-23 下午11.10.10.png>)
+<img src="/img/v1/check-epoch-tree-root.png" alt="How the final user state transition proof verifies hash chains and user states."/>
 
 The user state tree root is continuously updated: the output should be the input of another proof, so the `processAttestation` proof takes `blinded_user_state` as public input and output another `blinded_user_state`. The hash chain results might not be continuously. When all attestations of one epoch key is processed, the hash chain of the next epoch key should be `0` but not the previous hash chain. Therefore, `processAttestation` proof does not take `blinded_hash_chain` as input.
 

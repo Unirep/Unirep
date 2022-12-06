@@ -9,7 +9,7 @@ description: The tree structures that are used in UniRep protocol.
 * A user state tree is a **sparse merkle tree** with it's leaves storing reputation received from each attester, e.g.,
   * a user state tree leaf = hash of the reputation
 
-![An example of user state tree with only reputation from attester 3.](../../.gitbook/assets/2.png)
+<img src="/img/v1/user-state-tree.png" alt="An example of user state tree with only reputation from attester 3."/>
 
 * Hash of the reputation:
 
@@ -41,7 +41,7 @@ The index `0` is reserved to have no reputation (default reputation) since the a
   * a global state tree leaf: `hash(identityCommitment, userStateTreeRoot)`
   * The default leaf is `0`
 
-![An example of global state tree](../../.gitbook/assets/3.png)
+<img src="/img/v1/global-state-tree.png" alt="An example of global state tree"/>
 
 :::info
 **NOTE:** this is an incremental merkle tree so leaves are inserted from left (leaf index 0) to right, one by one, instead of inserted directly into the specified leaf index.
@@ -67,7 +67,7 @@ The hash chain is **sealed** because it prevents epoch keys from receiving attes
 See: [Epoch Transition](epoch-transition.md)
 :::
 
-![An example of epoch tree with epoch key 1 and epoch key 3 has non-zero attestations.](<../../.gitbook/assets/epoch tree (1).png>)
+<img src="/img/v1/epoch-tree.png" alt="An example of epoch tree with epoch key 1 and epoch key 3 has non-zero attestations."/>
 
 An attestation includes the following data:
 

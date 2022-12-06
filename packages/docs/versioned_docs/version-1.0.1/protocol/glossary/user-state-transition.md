@@ -20,17 +20,17 @@ After user performs user state transition, he can&#x20;
 
 #### 1. User computes epoch key of the latest transition (or sign up) epoch
 
-![Epoch keys are iterated computed in the circuits.](<../../.gitbook/assets/截圖 2022-07-21 下午3.40.29.png>)
+<img src="/img/v1/UST-0.png" alt="Epoch keys are iterated computed in the circuits."/>
 
 #### 2. Update user state tree
 
-![Step 1: update leaf index 3](../../.gitbook/assets/8.png)
+<img src="/img/v1/UST-1.png" alt="Step 1: update leaf index 3"/>
 
-![Step 2: update leaf index 1](../../.gitbook/assets/9.png)
+<img src="/img/v1/UST-2.png" alt="Step 2: update leaf index 1"/>
 
 #### 3. Check if epoch tree root matches computed hashchains and epoch keys
 
-![](<../../.gitbook/assets/epoch tree (1).png>)
+<img src="/img/v1/epoch-tree.png" alt=""/>
 
 #### 4. Compute a new global state tree leaf
 
@@ -38,7 +38,7 @@ After user performs user state transition, he can&#x20;
 const newLeaf = hash(idCommitment, userStateTreeRoot)
 ```
 
-![How a new global state tree is computed.](<../../.gitbook/assets/截圖 2022-07-22 下午12.15.52.png>)
+<img src="/img/v1/UST-3.png" alt="How a new global state tree is computed."/>
 
 #### 5. Call unirep smart contract to insert a new global state tree leaf
 
