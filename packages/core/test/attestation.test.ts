@@ -12,6 +12,7 @@ describe('Attester signs up and gives attestation', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -21,6 +22,14 @@ describe('Attester signs up and gives attestation', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('user sign up and receive attestation', async () => {
@@ -114,7 +123,7 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         {
             const { posRep, negRep, graffiti, timestamp } =
-                await userState.getRepByAttester()
+                await userState.getRep()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)

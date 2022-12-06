@@ -2,7 +2,9 @@
 title: UserStateTransitionProof
 ---
 
-A class representing a user state transition proof. Each of the following properties are public signals for the proof.
+Inherits: [`BaseProof`](base-proof)
+
+A class representing a [user state transition proof](circuits#user-state-transition-proof). Each of the following properties are public signals for the proof.
 
 ```ts
 import { UserStateTransitionProof } from '@unirep/circuits'

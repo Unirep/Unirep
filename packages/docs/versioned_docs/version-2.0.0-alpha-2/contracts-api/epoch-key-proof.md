@@ -2,6 +2,8 @@
 title: EpochKeyProof
 ---
 
+Inherits: [`BaseProof`](/docs/contracts-api/base-proof)
+
 A class representing an epoch key proof. Each of the following properties are public signals for the proof.
 
 ## epochKey

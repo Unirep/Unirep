@@ -10,6 +10,7 @@ import { genUserState } from './utils'
 describe('User state', function () {
     this.timeout(0)
     let unirepContract
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -19,6 +20,14 @@ describe('User state', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('user sign up proof', async () => {
@@ -264,8 +273,10 @@ describe('User state', function () {
         }
         await userState.waitForSync()
         {
-            const { posRep, negRep, graffiti } =
-                await userState.getRepByAttester()
+            const currentEpoch = await userState.loadCurrentEpoch()
+            const { posRep, negRep, graffiti } = await userState.getRep(
+                Number(currentEpoch)
+            )
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)

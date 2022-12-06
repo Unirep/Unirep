@@ -105,7 +105,7 @@ function attesterEpochRemainingTime(
 
 ## decodeReputationSignals
 
-Decode the public signals from a reputation proof into named variables.
+Decode the public signals from a [reputation proof](../circuits-api/circuits#prove-reputation-proof) into named variables.
 
 ```sol
 function decodeReputationSignals(uint256[] memory publicSignals)
@@ -134,7 +134,7 @@ struct ReputationSignals {
 
 ## verifyReputationProof
 
-Verify a reputation proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
+Verify a [reputation proof](../circuits-api/circuits#prove-reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
 This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
@@ -144,12 +144,12 @@ This function does not require the epoch for the proof to be the current epoch. 
 function verifyReputationProof(
     uint256[] memory publicSignals,
     uint256[8] memory proof
-) public returns (bool);
+) public;
 ```
 
 ## decodeEpochKeySignals
 
-Decode the public signals from an epoch key proof into named variables.
+Decode the public signals from an [epoch key proof](../circuits-api/circuits#epoch-key-proof) into named variables.
 
 ```sol
 function decodeEpochKeySignals(uint256[] memory publicSignals)
@@ -172,7 +172,7 @@ struct EpochKeySignals {
 
 ## verifyEpochKeyProof
 
-Verify an epoch key proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
+Verify an [epoch key proof](../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
 This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
@@ -182,12 +182,54 @@ This function does not require the epoch for the proof to be the current epoch. 
 function verifyEpochKeyProof(
     uint256[] memory publicSignals,
     uint256[8] memory proof
-) public returns (bool);
+) public;
+```
+
+## decodeEpochKeyLiteSignals
+
+Decode the public signals from an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) info named variables.
+
+```sol
+function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
+    public
+    pure
+    returns (EpochKeySignals memory)
+```
+
+:::tip
+The `stateTreeRoot` variable in this struct is unused for epoch key lite proofs.
+:::
+
+```sol
+struct EpochKeySignals {
+    uint256 revealNonce;
+    uint256 stateTreeRoot;
+    uint256 epochKey;
+    uint256 data;
+    uint256 nonce;
+    uint256 epoch;
+    uint256 attesterId;
+}
+```
+
+## verifyEpochKeyLiteProof
+
+Verify an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
+
+:::caution
+This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+:::
+
+```sol
+function verifyEpochKeyLiteProof(
+    uint256[] memory publicSignals,
+    uint256[8] memory proof
+) public;
 ```
 
 ## epochKeyVerifier
 
-A contract address for an epoch key proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an epoch key proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::danger
 Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
@@ -203,9 +245,27 @@ Example use:
 bool valid = unirep.epochKeyVerifier.verifyProof(publicSignals, proof);
 ```
 
+## epochKeyLiteVerifier
+
+A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+
+:::warning
+Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
+:::
+
+```sol
+IVerifier public immutable epochKeyLiteVerifier;
+```
+
+Example use:
+
+```sol
+bool valid = unirep.epochKeyLiteVerifier.verifyProof(publicSignals, proof);
+```
+
 ## signupVerifier
 
-A contract address for a signup proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for a signup proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable signupVerifier;
@@ -213,7 +273,7 @@ IVerifier public immutable signupVerifier;
 
 ## reputationVerifier
 
-A contract address for a reputation proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for a reputation proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::danger
 Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyReputationProof`](#verifyreputationproof) function unless you know what you are doing.
@@ -225,7 +285,7 @@ IVerifier public immutable reputationVerifier;
 
 ## userStateTransitionVerifier
 
-A contract address for a user state transition proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for a user state transition proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable userStateTransitionVerifier;
@@ -233,7 +293,7 @@ IVerifier public immutable userStateTransitionVerifier;
 
 ## aggregateEpochKeysVerifier
 
-A contract address for an aggregate epoch keys proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an aggregate epoch keys proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable aggregateEpochKeysVerifier;

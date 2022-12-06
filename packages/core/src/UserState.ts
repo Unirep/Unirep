@@ -133,11 +133,9 @@ export default class UserState extends Synchronizer {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(
-                this.attesterId.toString(),
-                latestTransitionedEpoch
-            )
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            latestTransitionedEpoch - 1
+        )
         const leaf = genStateTreeLeaf(
             this.id.identityNullifier,
             this.attesterId.toString(),
@@ -190,23 +188,21 @@ export default class UserState extends Synchronizer {
     }
 
     /**
-     * Get the reputation object from a given attester
-     * @param _attesterId The attester ID that the user queries
+     * Get the reputation object from the attester
      * @param toEpoch The latest epoch that the reputation is accumulated
      * @returns The reputation object
      */
-    public getRepByAttester = async (
-        _attesterId?: bigint | string,
-        toEpoch?: number
+    public getRep = async (
+        _toEpoch?: number
     ): Promise<{ posRep; negRep; graffiti; timestamp }> => {
         let posRep = BigInt(0)
         let negRep = BigInt(0)
         let graffiti = BigInt(0)
         let timestamp = BigInt(0)
-        const attesterId = _attesterId ?? this.attesterId
         const orClauses = [] as any[]
-        const latestTransitionedEpoch = await this.latestTransitionedEpoch()
-        for (let x = 0; x < (toEpoch ?? latestTransitionedEpoch); x++) {
+        const attesterId = this.attesterId
+        const toEpoch = _toEpoch ?? this.calcCurrentEpoch()
+        for (let x = 0; x <= toEpoch; x++) {
             const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -244,6 +240,16 @@ export default class UserState extends Synchronizer {
             }
         }
         return { posRep, negRep, graffiti, timestamp }
+    }
+
+    public async getProvableRep(): Promise<{
+        posRep
+        negRep
+        graffiti
+        timestamp
+    }> {
+        const epoch = await this.latestTransitionedEpoch()
+        return this.getRep(epoch - 1)
     }
 
     public getRepByEpochKey = async (
@@ -296,9 +302,10 @@ export default class UserState extends Synchronizer {
         options: { toEpoch?: bigint | number } = {}
     ): Promise<UserStateTransitionProof> => {
         const { toEpoch: _toEpoch } = options
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester()
         const fromEpoch = await this.latestTransitionedEpoch()
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            fromEpoch - 1
+        )
         const toEpoch = _toEpoch ?? this.calcCurrentEpoch()
         if (fromEpoch.toString() === toEpoch.toString()) {
             throw new Error('Cannot transition to same epoch')
@@ -370,8 +377,9 @@ export default class UserState extends Synchronizer {
         this._checkEpkNonce(epkNonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester()
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            epoch - 1
+        )
         const stateTree = await this.genStateTree(epoch)
         const stateTreeProof = stateTree.createProof(leafIndex)
 
@@ -444,8 +452,9 @@ export default class UserState extends Synchronizer {
         const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
         const tree = await this.genStateTree(epoch)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
-        const { posRep, negRep, graffiti, timestamp } =
-            await this.getRepByAttester(this.attesterId, epoch)
+        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
+            epoch - 1
+        )
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
             identity_nullifier: this.id.identityNullifier,

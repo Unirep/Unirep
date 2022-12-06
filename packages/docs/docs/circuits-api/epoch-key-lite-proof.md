@@ -1,15 +1,15 @@
 ---
-title: EpochKeyProof
+title: EpochKeyLiteProof
 ---
 
-Inherits: [`BaseProof`](base-proof)
+A class representing an [epoch key lite proof](circuits#epoch-key-lite-proof). Each of the following properties are public signals for the proof.
 
-A class representing an [epoch key proof](circuits#epoch-key-proof). Each of the following properties are public signals for the proof.
+Unlike the epoch key proof the lite proof does not prove membership in a state tree.
 
 ```ts
-import { EpochKeyProof } from '@unirep/circuits'
+import { EpochKeyLiteProof } from '@unirep/circuits'
 
-const data = new EpochKeyProof(publicSignals, proof)
+const data = new EpochKeyLiteProof(publicSignals, proof)
 ```
 
 ## epochKey
@@ -18,14 +18,6 @@ The epoch key being proved.
 
 ```ts
 this.epochKey
-```
-
-## stateTreeRoot
-
-The state tree root the proof was made against. This should be verified to exist onchain. When verifying the proof.
-
-```ts
-this.stateTreeRoot
 ```
 
 ## epoch

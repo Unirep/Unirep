@@ -17,6 +17,7 @@ describe('User Signup', function () {
     this.timeout(120000)
 
     let unirepContract
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -27,6 +28,14 @@ describe('User Signup', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to signup with invalid proof', async () => {

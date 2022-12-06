@@ -8,7 +8,7 @@ The prover interface is used to write custom implementations for creating and ve
 
 :::info
 
-See the `defaultProver` for an example implementation.
+See the [`defaultProver`](default-prover) for an example implementation.
 
 :::
 

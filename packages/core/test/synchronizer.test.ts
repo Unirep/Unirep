@@ -14,18 +14,23 @@ let synchronizer: Synchronizer
 
 describe('Synchronizer process events', function () {
     this.timeout(0)
+    let unirepContract
     let attester
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
         attester = accounts[1]
-        const unirepContract = await deployUnirep(accounts[0])
+        unirepContract = await deployUnirep(accounts[0])
         // now create an attester
         await unirepContract
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
 
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
         const db = await SQLiteConnector.create(schema, ':memory:')
         synchronizer = new Synchronizer({
             db,
@@ -47,6 +52,8 @@ describe('Synchronizer process events', function () {
         )
         await compareDB((state as any)._db, (synchronizer as any)._db)
         await state.stop()
+
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should process sign up event', async () => {
@@ -289,7 +296,7 @@ describe('Synchronizer process events', function () {
         const hashchain = await synchronizer.unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            1
+            0
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({
@@ -352,8 +359,7 @@ describe('Synchronizer process events', function () {
         await epochEndedEvent
 
         {
-            const { posRep, negRep, graffiti } =
-                await userState.getRepByAttester()
+            const { posRep, negRep, graffiti } = await userState.getRep()
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)

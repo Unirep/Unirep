@@ -18,6 +18,7 @@ describe('Epoch tree', function () {
 
     let unirepContract
     const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -27,6 +28,14 @@ describe('Epoch tree', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('initialization', async () => {
@@ -68,7 +77,6 @@ describe('Epoch tree', function () {
     })
 
     it('attestations should update epoch tree', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
@@ -166,11 +174,9 @@ describe('Epoch tree', function () {
             epochTree.root.toString()
         )
         await userState.stop()
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should generate epoch tree after epoch transition', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
@@ -280,6 +286,5 @@ describe('Epoch tree', function () {
             epochTree.root.toString()
         )
         await userState.stop()
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 })

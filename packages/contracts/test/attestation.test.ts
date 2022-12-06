@@ -92,6 +92,7 @@ function genAggregateEpochKeysCircuitInputs(
 describe('Attestations', function () {
     this.timeout(120000)
     let unirepContract
+    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -102,6 +103,14 @@ describe('Attestations', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
+    })
+
+    beforeEach(async () => {
+        snapshot = await ethers.provider.send('evm_snapshot', [])
+    })
+
+    afterEach(async () => {
+        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to submit attestation with wrong epoch', async () => {
@@ -168,7 +177,6 @@ describe('Attestations', function () {
     })
 
     it('should submit attestation with graffiti', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const epoch = await unirepContract.attesterCurrentEpoch(
@@ -196,11 +204,9 @@ describe('Attestations', function () {
                 graffiti,
                 timestamp
             )
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should submit attestation without graffiti', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -229,11 +235,9 @@ describe('Attestations', function () {
                 graffiti,
                 timestamp
             )
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to build hashchain without attestation', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -242,11 +246,9 @@ describe('Attestations', function () {
         )
         await expect(unirepContract.buildHashchain(attester.address, epoch)).to
             .be.reverted
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should build correct hash chain with different epoch keys', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -348,11 +350,9 @@ describe('Attestations', function () {
             epoch
         )
         expect(count).to.equal(index + 1)
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should build correct hash chain with the same epoch key', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -439,11 +439,9 @@ describe('Attestations', function () {
         expect(hashchain.epochKeyBalances[0].timestamp.toNumber()).to.equal(
             timestamp
         )
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should build multiple hash chains with correct balances', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -530,11 +528,9 @@ describe('Attestations', function () {
                 timestamp
             )
         }
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should process hash chain', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -614,11 +610,9 @@ describe('Attestations', function () {
         await unirepContract
             .processHashchain(publicSignals, proof)
             .then((t) => t.wait())
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with invalid proof', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -649,11 +643,9 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with wrong hashchain', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -715,11 +707,9 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWith('value is 0')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with processed hashchain', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -784,11 +774,9 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWith('value is 0')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 
     it('should fail to process hash chain with invalid epoch tree', async () => {
-        const snapshot = await ethers.provider.send('evm_snapshot', [])
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -857,6 +845,5 @@ describe('Attestations', function () {
         await expect(
             unirepContract.processHashchain(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochTreeRoot')
-        await ethers.provider.send('evm_revert', [snapshot])
     })
 })

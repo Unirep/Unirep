@@ -2,6 +2,8 @@
 title: UserStateTransitionProof
 ---
 
+Inherits: [`BaseProof`](/docs/contracts-api/base-proof)
+
 A class representing a user state transition proof. Each of the following properties are public signals for the proof.
 
 ## fromStateTreeRoot
