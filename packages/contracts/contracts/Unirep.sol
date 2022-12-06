@@ -621,6 +621,15 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.semaphoreGroup.root;
     }
 
+    function attesterMemberCount(uint160 attesterId)
+        public
+        view
+        returns (uint256)
+    {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.semaphoreGroup.numberOfLeaves;
+    }
+
     function attesterEpochRoot(uint160 attesterId, uint256 epoch)
         public
         view
