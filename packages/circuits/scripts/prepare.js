@@ -37,19 +37,25 @@ copy(
 )
 
 // copy files from contracts recursively
-function copy(currentDir, outPath) {
+function copy(currentDir, outDir) {
     if (!path.isAbsolute(currentDir)) throw new Error('Path is not absolute')
     try {
-        fs.mkdirSync(outPath)
+        fs.mkdirSync(outDir)
     } catch (_) {}
     const contents = fs.readdirSync(currentDir)
     for (const c of contents) {
         const contentPath = path.join(currentDir, c)
         const stat = fs.statSync(contentPath)
+        const outPath = path.join(outDir, c)
         if (stat.isDirectory()) {
-            copy(path.join(currentDir, c), path.join(outPath, c))
+            copy(path.join(currentDir, c), outPath)
         } else {
-            fs.copyFileSync(contentPath, path.join(outPath, c))
+            const content = fs.readFileSync(contentPath, 'utf8')
+            const newContent = content.replaceAll(
+                '../../../node_modules/circomlib',
+                '../../../circomlib'
+            )
+            fs.writeFileSync(outPath, newContent)
         }
     }
 }
