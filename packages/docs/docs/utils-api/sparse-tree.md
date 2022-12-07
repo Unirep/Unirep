@@ -42,6 +42,14 @@ Update a leaf in the tree.
 tree.update(index: bigint, value: bigint)
 ```
 
+## getLeaf
+
+Retrieve a leaf from the tree by index.
+
+```ts
+tree.getLeaf(index: bigint): bigint
+```
+
 ## createProof
 
 Create a merkle inclusion proof for a leaf.

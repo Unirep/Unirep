@@ -258,6 +258,7 @@ contract Unirep is IUnirep, VerifySignature {
             hashchain.epochKeyBalances.push(balance);
         }
         hashchainMapping[hashchain.head] = [attesterId, epoch, index];
+        emit HashchainBuilt(epoch, attesterId, index);
     }
 
     function processHashchain(
@@ -303,6 +304,11 @@ contract Unirep is IUnirep, VerifySignature {
         attester.epochKeyState[epoch].processedHashchains++;
         attester.epochTreeRoots[epoch] = publicSignals[0];
         hashchainMapping[hashchainHead] = [0, 0, 0];
+        emit HashchainProcessed(
+            epoch,
+            uint160(attesterId),
+            attesterEpochSealed(uint160(attesterId), epoch)
+        );
     }
 
     /**
@@ -329,11 +335,8 @@ contract Unirep is IUnirep, VerifySignature {
 
         uint256 fromEpoch = publicSignals[3];
         // check for attestation processing
-        if (
-            attester.epochKeyState[fromEpoch].owedKeys.length != 0 ||
-            attester.epochKeyState[fromEpoch].totalHashchains !=
-            attester.epochKeyState[fromEpoch].processedHashchains
-        ) revert HashchainNotProcessed();
+        if (!attesterEpochSealed(attesterId, fromEpoch))
+            revert HashchainNotProcessed();
         // make sure from epoch tree root is valid
         if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
             revert InvalidEpochTreeRoot(publicSignals[6]);
@@ -583,6 +586,21 @@ contract Unirep is IUnirep, VerifySignature {
     {
         AttesterData storage attester = attesters[attesterId];
         return attester.epochLength;
+    }
+
+    function attesterEpochSealed(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (bool)
+    {
+        EpochKeyState storage state = attesters[attesterId].epochKeyState[
+            epoch
+        ];
+        uint256 currentEpoch = attesterCurrentEpoch(attesterId);
+        return
+            currentEpoch > epoch &&
+            state.owedKeys.length == 0 &&
+            state.totalHashchains == state.processedHashchains;
     }
 
     function attesterStateTreeRootExists(

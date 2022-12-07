@@ -310,6 +310,17 @@ function attesterStartTimestamp(uint160 attesterId)
   returns (uint256)
 ```
 
+## attesterEpochSealed
+
+Get a boolean indicating whether or not an epoch for an attester is sealed. Once the epoch is sealed users may execute user state transitions from the epoch.
+
+```sol
+function attesterEpochSealed(uint160 attesterId, uint256 epoch)
+  public
+  view
+  returns (bool)
+```
+
 ## attesterOwedEpochKeys
 
 Get the number of epoch keys that are owed a balance for an attester in an epoch.
@@ -529,4 +540,28 @@ Emitted when an attester epoch ends.
 
 ```sol
 event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
+```
+
+### HashchainBuilt
+
+Emitted when a hashchain is built for an attester.
+
+```sol
+event HashchainBuilt(
+  uint256 indexed epoch,
+  uint160 indexed attesterId,
+  uint256 index
+);
+```
+
+### HashchainProcessed
+
+Emitted when a hashchain has been processed.
+
+```sol
+event HashchainProcessed(
+  uint256 indexed epoch,
+  uint160 indexed attesterId,
+  bool isEpochSealed
+);
 ```
