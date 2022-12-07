@@ -420,6 +420,17 @@ function attesterSemaphoreGroupRoot(uint160 attesterId)
   returns (uint256)
 ```
 
+## attesterMemberCount
+
+Get the number of members in the attester semaphore group.
+
+```sol
+function attesterMemberCount(uint160 attesterId)
+  public
+  view
+  returns (uint256)
+```
+
 ## attesterEpochRoot
 
 Get the epoch tree root for an attester for a certain epoch.
