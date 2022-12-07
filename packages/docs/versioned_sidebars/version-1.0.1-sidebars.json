@@ -1,0 +1,286 @@
+{
+    "apiSidebar": [
+        {
+            "type": "doc",
+            "label": "👏 Welcome",
+            "id": "welcome"
+        },
+        {
+            "type": "doc",
+            "label": "🧩 Introduction",
+            "id": "introduction"
+        },
+        {
+            "type": "category",
+            "label": "🎮 Getting Started",
+            "items": [
+                {
+                    "type": "doc",
+                    "label": "Install & build 🛠",
+                    "id": "getting-started/install-and-build"
+                },
+                {
+                    "type": "category",
+                    "label": "Start with cli commands 🔌",
+                    "items": [
+                        {
+                            "type": "doc",
+                            "label": "0. Install and build",
+                            "id": "getting-started/start-with-cli-commands/install-and-build"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "1. Spin up the testing chain",
+                            "id": "getting-started/start-with-cli-commands/spin-up-the-testing-chain"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "2. Deploy Unirep contract",
+                            "id": "getting-started/start-with-cli-commands/deploy-unirep-contract"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "3. User generates semaphore identity",
+                            "id": "getting-started/start-with-cli-commands/user-generates-semaphore-identity"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "4. User signs up",
+                            "id": "getting-started/start-with-cli-commands/user-signs-up"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "5. Attester signs up",
+                            "id": "getting-started/start-with-cli-commands/attester-signs-up"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "6. User generates epoch key and epoch key proof",
+                            "id": "getting-started/start-with-cli-commands/user-generates-epoch-key-and-epoch-key-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "7. Attesters/Users verify epoch key proof",
+                            "id": "getting-started/start-with-cli-commands/attesters-users-verify-epoch-key-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "8. Attester attest to epoch key",
+                            "id": "getting-started/start-with-cli-commands/attester-attest-to-epoch-key"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "9. Epoch transition",
+                            "id": "getting-started/start-with-cli-commands/epoch-transition"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "10. User state transition",
+                            "id": "getting-started/start-with-cli-commands/user-state-transition"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "11. User generates reputation proof",
+                            "id": "getting-started/start-with-cli-commands/user-generates-reputation-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "12. Attesters/ Users verify the reputation proof",
+                            "id": "getting-started/start-with-cli-commands/attesters-users-verify-the-reputation-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "13. User generates sign up proof",
+                            "id": "getting-started/start-with-cli-commands/user-generates-sign-up-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "14. Attesters/ Users verify the sign up proof",
+                            "id": "getting-started/start-with-cli-commands/attesters-users-verify-the-sign-up-proof"
+                        }
+                    ]
+                },
+                {
+                    "type": "category",
+                    "label": "Start with Typescript 📠",
+                    "items": [
+                        {
+                            "type": "doc",
+                            "label": "0. Install and build",
+                            "id": "getting-started/start-with-typescript/install-packages"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "1. deploy",
+                            "id": "getting-started/start-with-typescript/deploy"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "2. User signs up",
+                            "id": "getting-started/start-with-typescript/user-signs-up"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "3. Attester signs up",
+                            "id": "getting-started/start-with-typescript/attester-signs-up"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "4. Epoch key proof",
+                            "id": "getting-started/start-with-typescript/epoch-key-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "5. Attest",
+                            "id": "getting-started/start-with-typescript/attest"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "6. Epoch transition",
+                            "id": "getting-started/start-with-typescript/epoch-transition"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "7. User state transition",
+                            "id": "getting-started/start-with-typescript/user-state-transition"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "8. Reputation proof",
+                            "id": "getting-started/start-with-typescript/reputation-proof"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "category",
+            "label": "📘 Protocol",
+            "items": [
+                {
+                    "type": "category",
+                    "label": "Glossary",
+                    "items": [
+                        {
+                            "type": "autogenerated",
+                            "dirName": "protocol/glossary"
+                        }
+                    ]
+                },
+                {
+                    "type": "category",
+                    "label": "Circuits",
+                    "items": [
+                        {
+                            "type": "autogenerated",
+                            "dirName": "protocol/circuits"
+                        }
+                    ]
+                },
+                {
+                    "type": "category",
+                    "label": "Contracts",
+                    "items": [
+                        {
+                            "type": "autogenerated",
+                            "dirName": "protocol/contract"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "category",
+            "label": "🌈 Package usage",
+            "items": [
+                {
+                    "type": "doc",
+                    "label": "@unirep/crypto",
+                    "id": "package/crypto"
+                },
+                {
+                    "type": "doc",
+                    "label": "@unirep/circuits",
+                    "id": "package/circuits"
+                },
+                {
+                    "type": "doc",
+                    "label": "@unirep/contracts",
+                    "id": "package/contracts"
+                },
+                {
+                    "type": "doc",
+                    "label": "@unirep/core",
+                    "id": "package/core"
+                },
+                {
+                    "type": "category",
+                    "label": "cli",
+                    "items": [
+                        {
+                            "type": "doc",
+                            "label": "Deploy Unirep Contract",
+                            "id": "cli/deploy-unirep-contract"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "User Identity",
+                            "id": "cli/user-identity"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "User Sign Up",
+                            "id": "cli/user-sign-up"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Epoch Key And Proof",
+                            "id": "cli/epoch-key-and-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Attestation",
+                            "id": "cli/attestation"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Epoch transition",
+                            "id": "cli/epoch-transition"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "User state transition",
+                            "id": "cli/user-state-transition"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Reputation Proof",
+                            "id": "cli/reputation-proof"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Airdrop Reputation",
+                            "id": "cli/airdrop-reputation"
+                        },
+                        {
+                            "type": "doc",
+                            "label": "Spend Reputation",
+                            "id": "cli/spend-reputation"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "category",
+            "label": "🌻 Applications",
+            "items": [
+                {
+                    "type": "doc",
+                    "label": "Unirep Social",
+                    "id": "applications/unirep-social"
+                }
+            ]
+        }
+    ]
+}
