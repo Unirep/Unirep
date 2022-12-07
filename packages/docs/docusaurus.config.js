@@ -76,6 +76,10 @@ const config = {
                         position: 'left',
                         label: 'API',
                     },
+                    {
+                        type: 'docsVersionDropdown',
+                        dropdownActiveClassDisabled: true,
+                    },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         href: 'https://github.com/unirep/unirep',
