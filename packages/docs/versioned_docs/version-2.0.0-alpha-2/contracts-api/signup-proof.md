@@ -2,7 +2,7 @@
 title: SignupProof
 ---
 
-Inherits: [`BaseProof`](/docs/contracts-api/base-proof)
+Inherits: [`BaseProof`](base-proof)
 
 A class representing a signup proof. Each of the following properties are public signals for the proof.
 

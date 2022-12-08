@@ -129,7 +129,7 @@ state.genUserSignUpProof(options: {
 
 ## genEpochKeyProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyProof`](/docs/contracts-api/epoch-key-proof).
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyProof`](../circuits-api/epoch-key-proof).
 
 ```ts
 state.genEpochKeyProof(options: {
