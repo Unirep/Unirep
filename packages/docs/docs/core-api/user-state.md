@@ -133,6 +133,7 @@ Generate a proof that a user controls an epoch key in a certain epoch. Optionall
 
 ```ts
 state.genEpochKeyProof(options: {
+  revealNonce?: boolean,
   nonce?: number,
   epoch?: number,
   data?: bigint,
