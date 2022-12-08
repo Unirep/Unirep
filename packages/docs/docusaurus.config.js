@@ -38,10 +38,10 @@ const config = {
                     // Remove this to remove the "edit this page" links.
                     editUrl:
                         'https://github.com/Unirep/Unirep/tree/main/packages/docs',
-                    lastVersion: '2.0.0-alpha-2',
+                    lastVersion: '2.0.0-alpha-3',
                     versions: {
                         current: {
-                            label: '2.0.0-alpha-3',
+                            label: '2.0.0-alpha-4',
                             path: 'next',
                         },
                     },
