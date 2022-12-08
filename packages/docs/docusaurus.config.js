@@ -76,11 +76,12 @@ const config = {
                         position: 'left',
                         label: 'API',
                     },
+                    { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         type: 'docsVersionDropdown',
                         dropdownActiveClassDisabled: true,
+                        position:'right'
                     },
-                    { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         href: 'https://github.com/unirep/unirep',
                         label: 'GitHub',
