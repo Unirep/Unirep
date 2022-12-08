@@ -80,7 +80,7 @@ const config = {
                     {
                         type: 'docsVersionDropdown',
                         dropdownActiveClassDisabled: true,
-                        position:'right'
+                        position: 'right',
                     },
                     {
                         href: 'https://github.com/unirep/unirep',
