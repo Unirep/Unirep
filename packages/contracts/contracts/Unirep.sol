@@ -406,9 +406,9 @@ contract Unirep is IUnirep, VerifySignature {
         signals.data = publicSignals[3];
         // now decode the control values
         signals.revealNonce = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
+        signals.nonce = publicSignals[2] & ((1 << 8) - 1);
         return signals;
     }
 
@@ -442,9 +442,9 @@ contract Unirep is IUnirep, VerifySignature {
         signals.data = publicSignals[2];
         // now decode the control values
         signals.revealNonce = (publicSignals[0] >> 232) & 1;
-        signals.attesterId = (publicSignals[0] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[0] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[0] & ((2 << 8) - 1);
+        signals.attesterId = (publicSignals[0] >> 72) & ((1 << 160) - 1);
+        signals.epoch = (publicSignals[0] >> 8) & ((1 << 64) - 1);
+        signals.nonce = publicSignals[0] & ((1 << 8) - 1);
         return signals;
     }
 
@@ -479,14 +479,14 @@ contract Unirep is IUnirep, VerifySignature {
         // now decode the control values
         signals.revealNonce = (publicSignals[2] >> 233) & 1;
         signals.proveGraffiti = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
+        signals.nonce = publicSignals[2] & ((1 << 8) - 1);
         signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
         signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
         signals.proveMinRep = (publicSignals[3] >> 128) & 1;
-        signals.maxRep = (publicSignals[3] >> 64) & ((2 << 64) - 1);
-        signals.minRep = publicSignals[3] & ((2 << 64) - 1);
+        signals.maxRep = (publicSignals[3] >> 64) & ((1 << 64) - 1);
+        signals.minRep = publicSignals[3] & ((1 << 64) - 1);
         return signals;
     }
 
