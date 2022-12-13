@@ -18,7 +18,7 @@
     ],
     "scripts": {
         "pre": "node scripts/prepare",
-        "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc",
+        "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc && cp -r deploy/template build/deploy/template",
         "abi": "node ./scripts/abi",
         "compile": "hardhat compile",
         "test": "DEPLOY_DELAY=0 hardhat test ./test/*.test.ts",

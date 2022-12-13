@@ -11,7 +11,7 @@ import { Circuit } from '@unirep/circuits'
 import { SnarkPublicSignals, SnarkProof } from '@unirep/utils'
 
 // The keys built for unirep 2.0.0-alpha-2
-const KEY_SERVER = 'https://keys.unirep.io/2-alpha-2'
+const KEY_SERVER = 'https://keys.unirep.io/2-alpha-3/'
 
 export default {
     verifyProof: async (
@@ -46,5 +46,14 @@ export default {
         )
         return { proof, publicSignals }
     },
+    getVKey: async (circuitName) => {
+      const keyUrl = new URL(`${circuitName}.vkey.json`, KEY_SERVER)
+      const response = await fetch(keyUrl.toString())
+      if (!response.ok) {
+        throw new Error(`Bad response from VKey url for key "${circuitName}": ${keyUrl.toString()}`)
+      }
+      const key = await response.json()
+      return key
+    }
 }
 ```
