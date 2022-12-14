@@ -21,9 +21,13 @@ template UpdateSparseTree(TREE_DEPTH, TREE_ARITY) {
     // if this is true output the from_root
     signal input should_ignore;
 
+    // if the ignore check is 0 we output new_tree.root
+    // if it is 1 we output the from_root
+    component should_not_ignore = IsZero();
+    should_not_ignore.in <== should_ignore;
+
     // verify membership of old rep
     // calculate new root
-
     /** 1. Verify old_leaf membership in from_root **/
 
     component tree_membership = SMTInclusionProof(TREE_DEPTH, TREE_ARITY);
@@ -34,7 +38,11 @@ template UpdateSparseTree(TREE_DEPTH, TREE_ARITY) {
             tree_membership.path_elements[i][j] <== leaf_elements[i][j];
         }
     }
-    from_root === tree_membership.root;
+    component from_root_selector = Mux1();
+    from_root_selector.c[0] <== from_root;
+    from_root_selector.c[1] <== tree_membership.root;
+    from_root_selector.s <== should_not_ignore.out;
+    from_root === from_root_selector.out;
 
     /** End of check 1 **/
 
@@ -56,10 +64,6 @@ template UpdateSparseTree(TREE_DEPTH, TREE_ARITY) {
         }
     }
 
-    // if the ignore check is 0 we output new_tree.root
-    // if it is 1 we output the from_root
-    component should_not_ignore = IsZero();
-    should_not_ignore.in <== should_ignore;
 
     component root_selector = Mux1();
     root_selector.c[0] <== from_root;

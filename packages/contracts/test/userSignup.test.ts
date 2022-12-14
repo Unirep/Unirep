@@ -14,7 +14,7 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
 describe('User Signup', function () {
-    this.timeout(120000)
+    this.timeout(200000)
 
     let unirepContract
     let snapshot

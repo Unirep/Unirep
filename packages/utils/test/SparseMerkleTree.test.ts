@@ -16,6 +16,28 @@ describe('SparseMerkleTree', function () {
         expect(tree.root).not.equal(rootBeforeInsert)
     })
 
+    it('getLeaf', async () => {
+        const depth = 32
+        const zero = BigInt(1280789)
+        const arity = 12
+        const tree = new SparseMerkleTree(depth, zero, arity)
+        const valuesByIndex = {} as any
+        for (let x = 0; x < 200; x++) {
+            if (x % 2 === 0) {
+                const v = BigInt(Math.floor(Math.random() * 10000000000))
+                valuesByIndex[x] = v
+                tree.update(BigInt(x), v)
+            }
+        }
+        for (let x = 0; x < 200; x++) {
+            if (x % 2 === 0) {
+                expect(tree.getLeaf(BigInt(x))).to.equal(valuesByIndex[x])
+            } else {
+                expect(tree.getLeaf(BigInt(x))).to.equal(zero)
+            }
+        }
+    })
+
     it('genProof/verifyProof', () => {
         const depth = 32
         const zeroHash = BigInt(0)
