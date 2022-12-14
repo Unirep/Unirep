@@ -171,7 +171,8 @@ export default class UserState extends Synchronizer {
                 this.attesterId.toString(),
                 epoch,
                 nonce,
-                this.settings.epochTreeArity ** this.settings.epochTreeDepth
+                BigInt(this.settings.epochTreeArity) **
+                    BigInt(this.settings.epochTreeDepth)
             )
         }
         return Array(this.settings.numEpochKeyNoncePerEpoch)
@@ -182,7 +183,8 @@ export default class UserState extends Synchronizer {
                     this.attesterId.toString(),
                     epoch,
                     i,
-                    this.settings.epochTreeArity ** this.settings.epochTreeDepth
+                    BigInt(this.settings.epochTreeArity) **
+                        BigInt(this.settings.epochTreeDepth)
                 )
             )
     }
@@ -211,8 +213,8 @@ export default class UserState extends Synchronizer {
                         attesterId.toString(),
                         x,
                         i,
-                        this.settings.epochTreeArity **
-                            this.settings.epochTreeDepth
+                        BigInt(this.settings.epochTreeArity) **
+                            BigInt(this.settings.epochTreeDepth)
                     ).toString()
                 )
             orClauses.push({
@@ -319,7 +321,8 @@ export default class UserState extends Synchronizer {
                     this.attesterId.toString(),
                     fromEpoch,
                     i,
-                    this.settings.epochTreeArity ** this.settings.epochTreeDepth
+                    BigInt(this.settings.epochTreeArity) **
+                        BigInt(this.settings.epochTreeDepth)
                 ).toString()
             )
             .map(async (epochKey) => {
