@@ -258,6 +258,7 @@ contract Unirep is IUnirep, VerifySignature {
             hashchain.epochKeyBalances.push(balance);
         }
         hashchainMapping[hashchain.head] = [attesterId, epoch, index];
+        emit HashchainBuilt(epoch, attesterId, index);
     }
 
     function processHashchain(
@@ -303,6 +304,11 @@ contract Unirep is IUnirep, VerifySignature {
         attester.epochKeyState[epoch].processedHashchains++;
         attester.epochTreeRoots[epoch] = publicSignals[0];
         hashchainMapping[hashchainHead] = [0, 0, 0];
+        emit HashchainProcessed(
+            epoch,
+            uint160(attesterId),
+            attesterEpochSealed(uint160(attesterId), epoch)
+        );
     }
 
     /**
@@ -329,11 +335,8 @@ contract Unirep is IUnirep, VerifySignature {
 
         uint256 fromEpoch = publicSignals[3];
         // check for attestation processing
-        if (
-            attester.epochKeyState[fromEpoch].owedKeys.length != 0 ||
-            attester.epochKeyState[fromEpoch].totalHashchains !=
-            attester.epochKeyState[fromEpoch].processedHashchains
-        ) revert HashchainNotProcessed();
+        if (!attesterEpochSealed(attesterId, fromEpoch))
+            revert HashchainNotProcessed();
         // make sure from epoch tree root is valid
         if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
             revert InvalidEpochTreeRoot(publicSignals[6]);
@@ -403,9 +406,9 @@ contract Unirep is IUnirep, VerifySignature {
         signals.data = publicSignals[3];
         // now decode the control values
         signals.revealNonce = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
+        signals.nonce = publicSignals[2] & ((1 << 8) - 1);
         return signals;
     }
 
@@ -439,9 +442,9 @@ contract Unirep is IUnirep, VerifySignature {
         signals.data = publicSignals[2];
         // now decode the control values
         signals.revealNonce = (publicSignals[0] >> 232) & 1;
-        signals.attesterId = (publicSignals[0] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[0] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[0] & ((2 << 8) - 1);
+        signals.attesterId = (publicSignals[0] >> 72) & ((1 << 160) - 1);
+        signals.epoch = (publicSignals[0] >> 8) & ((1 << 64) - 1);
+        signals.nonce = publicSignals[0] & ((1 << 8) - 1);
         return signals;
     }
 
@@ -476,14 +479,14 @@ contract Unirep is IUnirep, VerifySignature {
         // now decode the control values
         signals.revealNonce = (publicSignals[2] >> 233) & 1;
         signals.proveGraffiti = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((2 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((2 << 64) - 1);
-        signals.nonce = publicSignals[2] & ((2 << 8) - 1);
+        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
+        signals.nonce = publicSignals[2] & ((1 << 8) - 1);
         signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
         signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
         signals.proveMinRep = (publicSignals[3] >> 128) & 1;
-        signals.maxRep = (publicSignals[3] >> 64) & ((2 << 64) - 1);
-        signals.minRep = publicSignals[3] & ((2 << 64) - 1);
+        signals.maxRep = (publicSignals[3] >> 64) & ((1 << 64) - 1);
+        signals.minRep = publicSignals[3] & ((1 << 64) - 1);
         return signals;
     }
 
@@ -585,6 +588,21 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.epochLength;
     }
 
+    function attesterEpochSealed(uint160 attesterId, uint256 epoch)
+        public
+        view
+        returns (bool)
+    {
+        EpochKeyState storage state = attesters[attesterId].epochKeyState[
+            epoch
+        ];
+        uint256 currentEpoch = attesterCurrentEpoch(attesterId);
+        return
+            currentEpoch > epoch &&
+            state.owedKeys.length == 0 &&
+            state.totalHashchains == state.processedHashchains;
+    }
+
     function attesterStateTreeRootExists(
         uint160 attesterId,
         uint256 epoch,
@@ -619,6 +637,15 @@ contract Unirep is IUnirep, VerifySignature {
     {
         AttesterData storage attester = attesters[attesterId];
         return attester.semaphoreGroup.root;
+    }
+
+    function attesterMemberCount(uint160 attesterId)
+        public
+        view
+        returns (uint256)
+    {
+        AttesterData storage attester = attesters[attesterId];
+        return attester.semaphoreGroup.numberOfLeaves;
     }
 
     function attesterEpochRoot(uint160 attesterId, uint256 epoch)
