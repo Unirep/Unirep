@@ -20,6 +20,6 @@ const hashReputation = hash(posRep, negRep, graffiti, timestamp)
 :::info
 Reputation is hashed like this when it is inserted into the epoch tree. See also:
 
-* [Trees](trees.md)
-* [User State Transition](user-state-transition.md)
+* [Trees](06-trees.md)
+* [User State Transition](05-user-state-transition.md)
 :::

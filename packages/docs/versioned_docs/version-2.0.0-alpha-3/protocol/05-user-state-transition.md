@@ -47,6 +47,6 @@ User performs user state transition by calling [`userStateTransition()`](https:/
 :::info
 See also:
 
-* [Trees](trees.md)
+* [Trees](06-trees.md)
 * [User State Transition Proof](../circuits-api/circuits#user-state-transition-proof)
 :::

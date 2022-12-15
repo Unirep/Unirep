@@ -8,7 +8,7 @@ Each attester has a separate version of these trees each epoch.
 
 ## **State tree**
 
-* A state tree stores the updated user state after a user signs up and a user performs the [user state transition](user-state-transition.md).
+* A state tree stores the updated user state after a user signs up and a user performs the [user state transition](05-user-state-transition.md).
 * It is an **incremental merkle tree** with it's leaves storing users' `identityNullifier`s and starting reputation, e.g.
   * a state tree leaf: `hash(identityNullifier, attesterId, epoch, posRep, negRep, graffiti, timestamp)`
   * The default leaf is `0`
@@ -28,5 +28,5 @@ Each attester has a separate version of these trees each epoch.
   * leaf value: `H(posRep, negRep, graffiti, timestamp)`
 
 :::info
-See also: [Reputation](reputation.md)
+See also: [Reputation](04-reputation.md)
 :::

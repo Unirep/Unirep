@@ -20,7 +20,7 @@ where `nonce` and be any value between `0` and `numEpochKeyNoncePerEpoch - 1`, s
 :::info
 See also
 
-* [Epoch](epoch.md)
-* [User State Transition](user-state-transition.md)
+* [Epoch](02-epoch.md)
+* [User State Transition](05-user-state-transition.md)
 * [Epoch Key Proof](../circuits-api/circuits.md#epoch-key-proof)
 :::
