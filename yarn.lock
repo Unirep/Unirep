@@ -4537,7 +4537,6 @@ __metadata:
   dependencies:
     "@ethersproject/solidity": ^5.7.0
     "@unirep/utils": 2.0.0-alpha-4
-    circomlib: 2.0.5
     mocha: ^10.0.0
     snarkjs: ^0.5.0
     typescript: ^4.7.3
@@ -6575,13 +6574,6 @@ __metadata:
     ffjavascript: 0.1.0
     web3-utils: ^1.3.0
   checksum: 8a98c009515928a73f92b3881f68e40883739e634a057c274aed2262af3a8275010ec8cacccf3a810a218a5ec4610d809c55e337a18225c80af1812ccc5d186f
-  languageName: node
-  linkType: hard
-
-"circomlib@npm:2.0.5":
-  version: 2.0.5
-  resolution: "circomlib@npm:2.0.5"
-  checksum: df8c3e0d51007758e30bb7ebad059ce692836420c85179088a20581c0adbf8f969d8cf901f9047adfcb80d45741eef4abe4d0d5e4c46748ace06e04256b5bfe7
   languageName: node
   linkType: hard
 
