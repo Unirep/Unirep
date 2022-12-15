@@ -2,8 +2,8 @@
 // https://github.com/peppersec/tornado-mixer/blob/master/circuits/merkleTree.circom
 // https://github.com/appliedzkp/semaphore/blob/master/circuits/circom/semaphore-base.circom
 
-include "../../../node_modules/circomlib/circuits/mux1.circom";
-include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/mux1.circom";
+include "./circomlib/circuits/poseidon.circom";
 
 template MerkleTreeInclusionProof(n_levels) {
     signal input leaf;

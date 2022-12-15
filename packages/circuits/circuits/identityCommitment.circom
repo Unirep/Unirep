@@ -1,4 +1,4 @@
-include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/poseidon.circom";
 
 template CalculateSecret() {
     signal input identity_nullifier;
