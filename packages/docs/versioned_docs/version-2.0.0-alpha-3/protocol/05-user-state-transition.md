@@ -34,7 +34,7 @@ The summed rep values are added to the values proved from the state tree leaf.
 
 #### 4. Compute a new state tree leaf
 
-A new state tree leaf is computed using the summed `posRep`, `negRep`, 'graffiti', and `timestamp values`. See the [State Tree](trees.md) documentation for the full state tree structure.
+A new state tree leaf is computed using the summed `posRep`, `negRep`, 'graffiti', and `timestamp values`. See the [State Tree](06-trees.md) documentation for the full state tree structure.
 
 #### 5. Call unirep smart contract to insert a new state tree leaf
 
