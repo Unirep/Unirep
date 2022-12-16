@@ -38,4 +38,4 @@ These keys have not had a secure phase 2 trusted setup. **Use these keys at your
 
 TODO: explain this warning
 
-Read more about trusted setups [here](https://vitalik.ca/general/2022/03/14/trustedsetup.html)
+Read more about trusted setups here [(https://vitalik.ca/general/2022/03/14/trustedsetup.html)]
