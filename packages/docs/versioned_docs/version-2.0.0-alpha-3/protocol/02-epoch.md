@@ -13,7 +13,7 @@ Epoch transitions happen automatically whenever an attester calls functions in t
 (block.timestamp - attester.startTimestamp) / attester.epochLength;
 ```
 
-This allows epochs to be updated automatically and precisely. When an epoch ends all, epoch keys with owed balances must be committed by updating the epoch tree root.
+This allows epochs to be updated automatically and precisely. When an epoch ends, all epoch keys with owed balances must be committed by updating the epoch tree root.
 
 :::info
 See also
