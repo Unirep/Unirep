@@ -11,6 +11,7 @@ Attesters define the reputation system for their application on top of the UniRe
   * `posRep` is the positive reputation given by the attester
   * `negRep` is the negative reputation given by the attester
   * `graffiti` is the message given by the attester
+    * TODO: give examples of graffiti usage
   * `timestamp` is the timestamp the last graffiti was received
 * A user can not prove reputation until they have performed a User State Tranistion for the epoch in which the reputaion was received.
 * The hash of the reputation is computed by the [Poseidon hash](https://www.poseidon-hash.info/) function.
