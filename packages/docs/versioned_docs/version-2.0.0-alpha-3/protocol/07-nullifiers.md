@@ -1,13 +1,13 @@
 # Nullifiers
 
-* Nullifiers are used to prevent things from happening more than once
-* UniRep uses two different nullifiers
+Nullifiers are used to prevent things from happening more than once. UniRep uses two different nullifiers:
 
 ## Epoch key nullifiers
 
-* Epoch key nullifiers are used to prevent users from using the same epoch key twice and prevent users from double [user state transition](05-user-state-transition.md).
-* If an epoch key nullifier is seen before, then drop the second user state transition proof.
-* Nullifier of an epoch key is computed by
+* Ensure a user's epoch keys are unique from any previous epoch
+* Prevent users from performing double [user state transitions](05-user-state-transition.md).
+* If an epoch key nullifier has been seen before, the second user state transition proof is dropped.
+* Nullifier of an epoch key is computed by:
 
 ```typescript
 hash(
@@ -19,9 +19,9 @@ hash(
 
 ## Reputation nullifiers
 
-* Reputation nullifiers are used to prevent users from double spending the reputation if an action requires users to spend reputation.
-* If a reputation nullifier is seen before, then the second reputation proof is recognized invalid.
-* Nullifier of a reputation spent is computed by
+* Prevent users from double spending reputation
+* If a reputation nullifier has been seen before, the second reputation proof will not be valid.
+* Nullifier of a reputation spent is computed by:
 
 ```typescript
 hash(
