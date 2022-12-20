@@ -25,7 +25,7 @@ After a user performs user state transition, they can:
 
 #### 3. Iterate over epoch keys
 
-* The pre-image of the epoch key leaves controlled by the user are verified. `posRep` and `negRep` are summed and `graffiti` is combined by taking the graffiti with the latest `timestamp`.
+* The pre-image of the epoch key leaves controlled by the user are verified. `posRep` and `negRep` are summed;  `graffiti` is the graffiti with the latest `timestamp`.
 * The summed rep values are added to the values proved from the state tree leaf.
 
 #### 4. Compute a new state tree leaf

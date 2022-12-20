@@ -4,7 +4,7 @@ description: The tree structures that are used in UniRep protocol.
 
 # Trees
 
-Each attester has an updated version of each tree for each epoch.
+Each attester has a separate version of each tree for each epoch.
 
 ## **State tree**
 
