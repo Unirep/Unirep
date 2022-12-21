@@ -8,7 +8,6 @@ Attesters define the reputation system for their application on top of the UniRe
 
 Storing positive and negative reputation separately, we can represent net negative reputation values without using signed integers in contracts/circuits. E.g. if a user has -10 reputation, we can represent this using positive values only by saying they have 100 positive reputation and 110 negative reputation.
 
-* TODO: describe purpose of using + and - rep values
 * Reputation in UniRep protocol includes:
   * `posRep` is the positive reputation given by the attester
   * `negRep` is the negative reputation given by the attester
@@ -25,6 +24,6 @@ const hashReputation = hash(posRep, negRep, graffiti, timestamp)
 :::info
 Reputation is hashed like this when it is inserted into the epoch tree. See also:
 
-* [Trees](06-trees.md)
-* [User State Transition](05-user-state-transition.md)
+* [Trees](trees.md)
+* [User State Transition](user-state-transition.md)
 :::

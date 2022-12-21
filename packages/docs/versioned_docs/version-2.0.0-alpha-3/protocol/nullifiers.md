@@ -4,8 +4,7 @@ Nullifiers are used to prevent things from happening more than once. UniRep uses
 
 ## Epoch key nullifiers
 
-* Ensure a user's epoch keys are unique from any previous epoch
-* Prevent users from performing double [user state transitions](05-user-state-transition.md).
+* Prevent users from using an epoch key to perform the same [user state transitions](user-state-transition.md) twice
 * If an epoch key nullifier has been seen before, the second user state transition proof is dropped.
 * Nullifier of an epoch key is computed by:
 

@@ -18,8 +18,8 @@ This allows epochs to be updated automatically and precisely. When an epoch ends
 :::info
 See also
 
-* [Trees](06-trees.md)
-* [Epoch Key](03-epoch-key.md)
-* [User State Transition](05-user-state-transition.md)
+* [Trees](trees.md)
+* [Epoch Key](epoch-key.md)
+* [User State Transition](user-state-transition.md)
 * [Aggregate Epoch Keys Proof](../circuits-api/circuits.md#aggregate-epoch-keys)
 :::
