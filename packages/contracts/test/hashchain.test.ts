@@ -137,6 +137,7 @@ describe('Hashchain tests', function () {
                 attester.address,
                 epoch
             )
+        expect(hashchainIndex.toNumber()).to.equal(0)
         await expect(unirepContract.buildHashchain(attester.address, epoch))
             .to.emit(unirepContract, 'HashchainBuilt')
             .withArgs(epoch, attester.address, hashchainIndex)
@@ -203,6 +204,7 @@ describe('Hashchain tests', function () {
                 attester.address,
                 epoch
             )
+        expect(hashchainIndex.toNumber()).to.equal(0)
         await expect(unirepContract.buildHashchain(attester.address, epoch))
             .to.emit(unirepContract, 'HashchainBuilt')
             .withArgs(epoch, attester.address, hashchainIndex)
@@ -282,6 +284,7 @@ describe('Hashchain tests', function () {
                     attester.address,
                     epoch
                 )
+            expect(hashchainIndex.toNumber()).to.equal(0)
             await unirepContract
                 .buildHashchain(attester.address, epoch)
                 .then((t) => t.wait())
@@ -335,6 +338,7 @@ describe('Hashchain tests', function () {
                     attester.address,
                     epoch
                 )
+            expect(hashchainIndex.toNumber()).to.equal(1)
             await unirepContract
                 .buildHashchain(attester.address, epoch)
                 .then((t) => t.wait())
