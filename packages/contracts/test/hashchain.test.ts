@@ -132,7 +132,12 @@ describe('Hashchain tests', function () {
             .connect(attester)
             .submitAttestation(epoch, epochKey, 1, 0, 0)
             .then((t) => t.wait())
-        const hashchainIndex = 0
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
+        expect(hashchainIndex.toNumber()).to.equal(0)
         await expect(unirepContract.buildHashchain(attester.address, epoch))
             .to.emit(unirepContract, 'HashchainBuilt')
             .withArgs(epoch, attester.address, hashchainIndex)
@@ -194,7 +199,12 @@ describe('Hashchain tests', function () {
                 .submitAttestation(epoch, epochKey, 1, 100, 0)
                 .then((t) => t.wait())
         }
-        const hashchainIndex = 0
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
+        expect(hashchainIndex.toNumber()).to.equal(0)
         await expect(unirepContract.buildHashchain(attester.address, epoch))
             .to.emit(unirepContract, 'HashchainBuilt')
             .withArgs(epoch, attester.address, hashchainIndex)
@@ -269,7 +279,12 @@ describe('Hashchain tests', function () {
             EPOCH_TREE_ARITY
         )
         {
-            const hashchainIndex = 0
+            const hashchainIndex =
+                await unirepContract.attesterHashchainProcessedCount(
+                    attester.address,
+                    epoch
+                )
+            expect(hashchainIndex.toNumber()).to.equal(0)
             await unirepContract
                 .buildHashchain(attester.address, epoch)
                 .then((t) => t.wait())
@@ -318,7 +333,12 @@ describe('Hashchain tests', function () {
             expect(sealed).to.be.false
         }
         {
-            const hashchainIndex = 1
+            const hashchainIndex =
+                await unirepContract.attesterHashchainProcessedCount(
+                    attester.address,
+                    epoch
+                )
+            expect(hashchainIndex.toNumber()).to.equal(1)
             await unirepContract
                 .buildHashchain(attester.address, epoch)
                 .then((t) => t.wait())
