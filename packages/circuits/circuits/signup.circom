@@ -2,7 +2,7 @@ pragma circom 2.0.0;
 
 // Output identity commitment and starting state tree leaf
 
-include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/poseidon.circom";
 include "./identityCommitment.circom";
 
 template Signup() {

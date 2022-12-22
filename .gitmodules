@@ -1,0 +1,5 @@
+[submodule "circomlib"]
+	path = packages/circuits/circuits/circomlib
+	url = https://github.com/iden3/circomlib.git
+        shallow = true
+        active = true

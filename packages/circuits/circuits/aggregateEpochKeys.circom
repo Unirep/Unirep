@@ -4,9 +4,9 @@ pragma circom 2.0.0;
  * Output a hashchain and update the epoch tree root.
  **/
 
-include "../../../node_modules/circomlib/circuits/poseidon.circom";
-include "../../../node_modules/circomlib/circuits/comparators.circom";
-include "../../../node_modules/circomlib/circuits/mux1.circom";
+include "./circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/comparators.circom";
+include "./circomlib/circuits/mux1.circom";
 include "./updateSparseTree.circom";
 
 template AggregateEpochKeys(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, KEY_COUNT) {
