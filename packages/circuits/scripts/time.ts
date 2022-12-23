@@ -5,11 +5,7 @@ import * as snarkjs from 'snarkjs'
 import * as utils from '@unirep/utils'
 import * as fastFile from 'fastfile'
 import { performance } from 'perf_hooks'
-import {
-    EPOCH_TREE_DEPTH,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '../config'
+import { EPOCH_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 
 const dirpath = fs.mkdtempSync('/tmp/unirep')
 

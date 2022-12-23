@@ -5,7 +5,6 @@ import { Prover, Circuit, AggregateEpochKeysProof } from '@unirep/circuits'
 import {
     IncrementalMerkleTree,
     SparseMerkleTree,
-    hash2,
     hash4,
     stringifyBigInts,
 } from '@unirep/utils'
