@@ -4,7 +4,7 @@ description: How are attestations managed
 
 # Attestation
 
-Attestations happen onchain. Each attestation gose to an epoch key and should update the leaf in the epoch tree. Only the root of the epoch tree is stored onchain so a ZK proof must be submitted in order to update this root. Attesters are responsible for either updating this root, or incentivizing others to do so.
+Attestations happen onchain. Each attestation goes to an epoch key and should update the leaf in the epoch tree. Only the root of the epoch tree is stored onchain so a ZK proof must be submitted in order to update this root. Attesters are responsible for either updating this root, or incentivizing others to do so.
 
 UniRep uses a system to batch updates of the epoch tree. This system allows the tree to be updated on a per-epoch key basis. e.g. if epoch key X receives 100 attestations, only a single proof must be made.
 
