@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { SparseMerkleTree, hash2, hash3, hash4, hash6 } from '@unirep/utils'
+import { SparseMerkleTree, hash3, hash4, hash6 } from '@unirep/utils'
 import { Circuit } from '../src'
 import { defaultEpochTreeLeaf, genProofAndVerify } from './utils'
 import {

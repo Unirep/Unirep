@@ -2,19 +2,11 @@
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
 import { expect } from 'chai'
-import { BigNumber, BigNumberish, ethers } from 'ethers'
-import {
-    IncrementalMerkleTree,
-    genRandomSalt,
-    stringifyBigInts,
-    ZkIdentity,
-    genEpochKey,
-} from '@unirep/utils'
+import { ethers } from 'ethers'
+import { ZkIdentity } from '@unirep/utils'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { UserState } from '../src'
-import { getUnirepContract } from '@unirep/contracts'
-import { Unirep } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
 import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
