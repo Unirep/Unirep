@@ -19,7 +19,7 @@ One of the fascinating learning was on the demo app (attester), we realized that
 
 We head down 100% between April and October to make it happen. During this time, we also iterated on how to work as a team and started using GitHub issues to manage our workflow and set up a two weeks sprint.
 
-Right now, the team is focused on protocol v2. We have been releasing small pieces since December, along with "create-unirep-app", the idea is to enable everyone to build their own app (attester) easily. Protocol v2 comes with many optimizations, and we also break up the packages to be easily imported, etc.
+Right now, the team is focused on protocol v2. We have been releasing small pieces since December, along with [create-unirep-app](https://github.com/Unirep/create-unirep-app), the idea is to enable everyone to build their own app (attester) easily. Protocol v2 comes with many optimizations, and we also break up the packages to be easily imported, etc.
 
 We hope that we will be able to test this developer experience with you soon. Please keep an eye on our updates.
 
