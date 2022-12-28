@@ -1,4 +1,4 @@
-include "../../../node_modules/circomlib/circuits/comparators.circom";
+include "./circomlib/circuits/comparators.circom";
 
 template Modulo() {
     signal input divisor;

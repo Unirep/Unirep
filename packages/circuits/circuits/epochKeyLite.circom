@@ -1,6 +1,6 @@
 pragma circom 2.0.0;
 
-include "../../../node_modules/circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/poseidon.circom";
 include "./modulo.circom";
 
 template EpochKeyLite(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH) {

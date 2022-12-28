@@ -1,13 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    hash7,
-    IncrementalMerkleTree,
-    ZkIdentity,
-    stringifyBigInts,
-} from '@unirep/utils'
-import { STATE_TREE_DEPTH, Circuit, SignupProof } from '@unirep/circuits'
+import { ZkIdentity, stringifyBigInts } from '@unirep/utils'
+import { Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH } from '../src'

@@ -108,6 +108,11 @@ const sidebars = {
                     label: 'IVerifier.sol',
                     id: 'contracts-api/iverifier-sol',
                 },
+                {
+                    type: 'doc',
+                    label: 'Error codes',
+                    id: 'contracts-api/errors',
+                },
             ],
         },
         {

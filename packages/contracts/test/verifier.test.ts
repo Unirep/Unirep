@@ -2,7 +2,6 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
     IncrementalMerkleTree,
     stringifyBigInts,
     ZkIdentity,

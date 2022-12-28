@@ -11,6 +11,7 @@
     "author": "Unirep Team",
     "repository": "https://github.com/Unirep/Unirep",
     "scripts": {
+        "install": "git submodule init && git submodule update",
         "contracts": "yarn workspace @unirep/contracts run",
         "core": "yarn workspace @unirep/core run",
         "circuits": "yarn workspace @unirep/circuits run",

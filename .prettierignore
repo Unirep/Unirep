@@ -13,3 +13,5 @@ yarn.lock
 .yarn
 packages/contracts/coverage
 abi/
+
+packages/circuits/circuits/circomlib
