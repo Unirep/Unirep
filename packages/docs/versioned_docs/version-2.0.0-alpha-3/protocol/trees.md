@@ -31,4 +31,6 @@ Each attester has a separate version of each tree for each epoch.
 See also: [Reputation](reputation.md)
 :::
 
-Read more about Merkle Trees here [(https://medium.com/@kelvinfichter/whats-a-sparse-merkle-tree-acda70aeb837)]
+Read more about Merkle Trees:
+
+[https://medium.com/@kelvinfichter/whats-a-sparse-merkle-tree-acda70aeb837](https://medium.com/@kelvinfichter/whats-a-sparse-merkle-tree-acda70aeb837)
