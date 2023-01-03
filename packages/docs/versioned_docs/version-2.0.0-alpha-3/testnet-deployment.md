@@ -33,5 +33,11 @@ Proving keys for this contract can accessed at the following url:
 This URL can be directly used in a [network prover](circuits-api/network-prover) implementation.
 
 :::danger
-These keys have not had a secure phase 2 trusted setup. **Use these keys at your own risk.**
+These keys have not had a secure phase 2 trusted setup. 
+
+**Use these keys at your own risk.**
 :::
+
+Read more about trusted setups:
+
+[https://vitalik.ca/general/2022/03/14/trustedsetup.html](https://vitalik.ca/general/2022/03/14/trustedsetup.html)
