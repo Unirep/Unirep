@@ -7,7 +7,13 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { Synchronizer, schema } from '../src'
-import { genUserState, compareDB } from './utils'
+import {
+    genUserState,
+    compareDB,
+    bootstrapUsers,
+    bootstrapAttestations,
+    processAttestations,
+} from './utils'
 import { SQLiteConnector } from 'anondb/node'
 
 let synchronizer: Synchronizer
@@ -31,6 +37,13 @@ describe('Synchronizer process events', function () {
 
     beforeEach(async () => {
         snapshot = await ethers.provider.send('evm_snapshot', [])
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await bootstrapUsers(attester, epoch.toNumber(), unirepContract)
+        await bootstrapAttestations(attester, epoch.toNumber(), unirepContract)
         const db = await SQLiteConnector.create(schema, ':memory:')
         synchronizer = new Synchronizer({
             db,
@@ -40,6 +53,8 @@ describe('Synchronizer process events', function () {
             attesterId: BigInt(attester.address),
         })
         await synchronizer.start()
+        await synchronizer.waitForSync()
+        await processAttestations(synchronizer, unirepContract, attester)
     })
 
     afterEach(async () => {
@@ -52,6 +67,7 @@ describe('Synchronizer process events', function () {
         )
         await compareDB((state as any)._db, (synchronizer as any)._db)
         await state.stop()
+        await synchronizer.stop()
 
         await ethers.provider.send('evm_revert', [snapshot])
     })
@@ -203,10 +219,15 @@ describe('Synchronizer process events', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await synchronizer.unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({
@@ -293,10 +314,15 @@ describe('Synchronizer process events', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await synchronizer.unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({

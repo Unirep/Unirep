@@ -1,16 +1,31 @@
 // The reason for the ts-ignore below is that if we are executing the code via `ts-node` instead of `hardhat`,
 // it can not read the hardhat config and error ts-2503 will be reported.
 // @ts-ignore
+import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ethers } from 'ethers'
-import { ZkIdentity } from '@unirep/utils'
+import {
+    genRandomSalt,
+    hash4,
+    IncrementalMerkleTree,
+    SparseMerkleTree,
+    stringifyBigInts,
+    ZkIdentity,
+} from '@unirep/utils'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { Unirep } from '@unirep/contracts'
 
 import { UserState } from '../src'
 import { DB, SQLiteConnector } from 'anondb/node'
 import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
 import { schema } from '../src/schema'
+import {
+    Circuit,
+    EPOCH_TREE_ARITY,
+    EPOCH_TREE_DEPTH,
+    SignupProof,
+    STATE_TREE_DEPTH,
+} from '@unirep/circuits'
 
 export const computeEpochKeyProofHash = (epochKeyProof: any) => {
     const abiEncoder = ethers.utils.defaultAbiCoder.encode(
@@ -95,60 +110,6 @@ export const snapshotDB = async (db: DB) => {
     }, {})
 }
 
-// export const compareStates = async (
-//     provider: ethers.providers.Provider,
-//     address: string,
-//     userId: ZkIdentity,
-//     db: Promise<SQLiteConnector>
-// ) => {
-//     const unirepContract: Unirep = await getUnirepContract(address, provider)
-//     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
-
-//     const usWithNoStorage = await genUserState(provider, address, userId)
-//     const usWithStorage = await genUserState(
-//         provider,
-//         address,
-//         userId,
-//         await db
-//     )
-//     expect(await usWithNoStorage.latestGSTLeafIndex()).equal(
-//         await usWithStorage.latestGSTLeafIndex()
-//     )
-
-//     expect(await usWithNoStorage.latestTransitionedEpoch()).equal(
-//         await usWithStorage.latestTransitionedEpoch()
-//     )
-
-//     for (let epoch = 1; epoch <= currentEpoch; epoch++) {
-//         for (
-//             let nonce = 0;
-//             nonce < usWithNoStorage.settings.numEpochKeyNoncePerEpoch;
-//             nonce++
-//         ) {
-//             const epk = genEpochKey(
-//                 userId.identityNullifier,
-//                 epoch,
-//                 nonce,
-//                 usWithNoStorage.settings.epochTreeDepth
-//             ).toString()
-//             expect((await usWithNoStorage.getAttestations(epk)).length).equal(
-//                 (await usWithStorage.getAttestations(epk)).length
-//             )
-//         }
-//         expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
-//             await usWithStorage.genGSTree(epoch)
-//         )
-//     }
-
-//     for (let epoch = 1; epoch < currentEpoch; epoch++) {
-//         const [root1, root2] = await Promise.all([
-//             usWithNoStorage.epochTreeRoot(epoch),
-//             usWithStorage.epochTreeRoot(epoch),
-//         ])
-//         expect(root1).to.equal(root2)
-//     }
-// }
-
 export const compareAttestations = (attestDB: any, attestObj: any) => {
     expect(attestDB.attesterId.toString()).equal(
         attestObj.attesterId.toString()
@@ -213,4 +174,127 @@ export const genUserState = async (
     await userState.start()
     await userState.waitForSync()
     return userState
+}
+
+export const bootstrapUsers = async (
+    attester: any,
+    epoch: number,
+    unirepContract: Unirep
+) => {
+    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const randomUserNum = Math.ceil(Math.random() * 5)
+    for (let i = 0; i < randomUserNum; i++) {
+        const id = new ZkIdentity()
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch,
+                identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
+        )
+        const { publicSignals, proof, stateTreeLeaf } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        await unirepContract
+            .connect(attester)
+            .userSignUp(publicSignals, proof)
+            .then((t) => t.wait())
+        stateTree.insert(stateTreeLeaf)
+    }
+
+    return stateTree
+}
+
+export const bootstrapAttestations = async (
+    attester: any,
+    epoch: number,
+    unirepContract: Unirep
+) => {
+    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
+    const epochTree = new SparseMerkleTree(
+        EPOCH_TREE_DEPTH,
+        defaultEpochTreeLeaf,
+        EPOCH_TREE_ARITY
+    )
+    const randomEpkNum = Math.ceil(Math.random() * 10)
+    for (let i = 0; i < randomEpkNum; i++) {
+        const epochKey =
+            genRandomSalt() %
+            (BigInt(EPOCH_TREE_ARITY) ** BigInt(EPOCH_TREE_DEPTH) - BigInt(1))
+        const randomAttestNum = Math.ceil(Math.random() * 3)
+        let totalPosRep = 0
+        let totalNegRep = 0
+        let finalGraffiti = BigInt(0)
+        let finalTimestamp = 0
+        for (let j = 0; j < randomAttestNum; j++) {
+            const posRep = Math.floor(Math.random() * 10)
+            const negRep = Math.floor(Math.random() * 10)
+            const graffiti = Math.random() > 0.5 ? genRandomSalt() : BigInt(0)
+
+            const tx = await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            const { timestamp } = await tx
+                .wait()
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
+            totalPosRep += posRep
+            totalNegRep += negRep
+            finalGraffiti = graffiti > 0 ? graffiti : finalGraffiti
+            finalTimestamp = graffiti > 0 ? timestamp : finalTimestamp
+        }
+        epochTree.update(
+            epochKey,
+            hash4([totalPosRep, totalNegRep, finalGraffiti, finalTimestamp])
+        )
+    }
+    return epochTree
+}
+
+export const processAttestations = async (
+    synchronizer: Synchronizer,
+    unirepContract: Unirep,
+    attester: any
+) => {
+    let success = true
+    const epoch = await unirepContract.attesterCurrentEpoch(attester.address)
+    while (success) {
+        try {
+            await synchronizer.waitForSync()
+            await unirepContract
+                .buildHashchain(attester.address, epoch)
+                .then((t) => t.wait())
+
+            const hashchainIndex =
+                await unirepContract.attesterHashchainProcessedCount(
+                    attester.address,
+                    epoch
+                )
+            const hashchain = await unirepContract.attesterHashchain(
+                attester.address,
+                epoch,
+                hashchainIndex
+            )
+
+            const { publicSignals, proof } =
+                await synchronizer.genAggregateEpochKeysProof({
+                    epochKeys: hashchain.epochKeys as any,
+                    newBalances: hashchain.epochKeyBalances as any,
+                    hashchainIndex: hashchainIndex as any,
+                    epoch: epoch.toNumber(),
+                })
+            await unirepContract
+                .connect(attester)
+                .processHashchain(publicSignals, proof)
+                .then((t) => t.wait())
+        } catch (error) {
+            success = false
+        }
+    }
 }
