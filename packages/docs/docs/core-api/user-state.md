@@ -21,7 +21,7 @@ const state = new UserState({
 ```
 
 :::info
-The `UserState` class is a superclass of [`Synchronizer`](./synchronizer).
+The `UserState` class is a subclass of [`Synchronizer`](./synchronizer).
 :::
 
 ## constructor
