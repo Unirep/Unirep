@@ -50,7 +50,7 @@ describe('User state', function () {
         await synchronizer.start()
         await synchronizer.waitForSync()
         await processAttestations(synchronizer, unirepContract, attester)
-        await synchronizer.stop
+        await synchronizer.stop()
     })
 
     afterEach(async () => {
