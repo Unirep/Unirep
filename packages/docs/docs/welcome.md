@@ -16,7 +16,7 @@ title: What is UniRep?
 
 The high-level goal for **UniRep** is to be a base layer on top of which anyone can easily build _custom_, yet _interoperable_, reputation systems. For instance, users could create combined zero-knowledge proofs of reputation across different social media platforms, consumer apps, or financial applications in order to provide holistic, private, and trustworthy information about themselves to others.
 
-TODO: link to new Medium article from Althea and Ki Chong [here]
+Read the latest UniRep blog post [here](https://mirror.xyz/privacy-scaling-explorations.eth/FCVVfy-TQ6R7_wavKj1lCr5dd1zqRvwjnDOYRM5NtsE)
 
 UniRep is originally proposed by BarryWhiteHat in [this ethresear.ch post](https://ethresear.ch/t/anonymous-reputation-risking-and-burning/3926)
 
