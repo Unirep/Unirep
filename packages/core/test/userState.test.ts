@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/utils'
+import { genRandomSalt, ZkIdentity } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
@@ -209,14 +209,30 @@ describe('User state', function () {
         // we're signed up, now run an attestation
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
-        const newPosRep = 10
-        const newNegRep = 5
-        const newGraffiti = 1294194
-        // now submit the attestation from the attester
-        await unirepContract
-            .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
-            .then((t) => t.wait())
+        let newPosRep = 0
+        let newNegRep = 0
+        let newGraffiti = BigInt(0)
+        let newTimestamp = 0
+        for (let i = 0; i < 5; i++) {
+            const posRep = 10
+            const negRep = 5
+            const graffiti = Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
+            // now submit the attestation from the attester
+            const timestamp = await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epk, posRep, negRep, graffiti)
+                .then((t) => t.wait())
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
+                .then(({ timestamp }) => {
+                    return timestamp
+                })
+            newPosRep += posRep
+            newNegRep += negRep
+            newGraffiti = graffiti > BigInt(0) ? graffiti : newGraffiti
+            newTimestamp = graffiti > BigInt(0) ? timestamp : newTimestamp
+        }
         await userState.waitForSync()
         // now commit the attetstations
         await unirepContract
@@ -245,16 +261,18 @@ describe('User state', function () {
 
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep, graffiti } =
+            const { posRep, negRep, graffiti, timestamp } =
                 await userState.getRepByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
                 expect(posRep).to.equal(newPosRep)
                 expect(negRep).to.equal(newNegRep)
                 expect(graffiti).to.equal(newGraffiti)
+                expect(timestamp).to.equal(newTimestamp)
             } else {
                 expect(posRep).to.equal(0)
                 expect(negRep).to.equal(0)
                 expect(graffiti).to.equal(0)
+                expect(timestamp).to.equal(0)
             }
         })
         await Promise.all(checkPromises)

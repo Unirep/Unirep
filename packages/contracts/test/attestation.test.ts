@@ -268,9 +268,9 @@ describe('Attestations', function () {
             epochKeys[epochKey] = true
             const posRep = Math.floor(Math.random() * 10)
             const negRep = Math.floor(Math.random() * 10)
-            const graffiti = genRandomSalt()
+            const graffiti = Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
-            const { timestamp } = await unirepContract
+            const { timestamp: contractTimestamp } = await unirepContract
                 .connect(attester)
                 .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
                 .then((t) => t.wait())
@@ -278,6 +278,7 @@ describe('Attestations', function () {
                     ethers.provider.getBlock(blockNumber)
                 )
 
+            const timestamp = graffiti > BigInt(0) ? contractTimestamp : 0
             attestations.push({
                 posRep,
                 negRep,
@@ -368,7 +369,8 @@ describe('Attestations', function () {
         for (let i = 0; i < 5; i++) {
             const newPosRep = Math.floor(Math.random() * 10)
             const newNegRep = Math.floor(Math.random() * 10)
-            const newGraffiti = genRandomSalt()
+            const newGraffiti =
+                Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
             timestamp = await unirepContract
                 .connect(attester)
@@ -389,7 +391,7 @@ describe('Attestations', function () {
 
             posRep += newPosRep
             negRep += newNegRep
-            graffiti = newGraffiti
+            graffiti = newGraffiti > BigInt(0) ? newGraffiti : graffiti
         }
 
         await unirepContract
@@ -456,9 +458,10 @@ describe('Attestations', function () {
         for (let i = 0; i < 5; i++) {
             const newPosRep = Math.floor(Math.random() * 10)
             const newNegRep = Math.floor(Math.random() * 10)
-            const newGraffiti = genRandomSalt()
+            const newGraffiti =
+                Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
-            timestamp = await unirepContract
+            const contractTimestamp = await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     epoch,
@@ -477,7 +480,8 @@ describe('Attestations', function () {
 
             posRep += newPosRep
             negRep += newNegRep
-            graffiti = newGraffiti
+            graffiti = newGraffiti > BigInt(0) ? newGraffiti : graffiti
+            timestamp = newGraffiti > BigInt(0) ? contractTimestamp : timestamp
 
             await unirepContract
                 .buildHashchain(attester.address, epoch)
@@ -553,7 +557,8 @@ describe('Attestations', function () {
             for (let j = 0; j < attestationsCount; j++) {
                 const posRep = Math.floor(Math.random() * 10)
                 const negRep = Math.floor(Math.random() * 10)
-                const graffiti = genRandomSalt()
+                const graffiti =
+                    Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
                 await unirepContract
                     .connect(attester)
@@ -625,7 +630,7 @@ describe('Attestations', function () {
             genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
-        const graffiti = genRandomSalt()
+        const graffiti = Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
         await unirepContract
             .connect(attester)
@@ -658,7 +663,7 @@ describe('Attestations', function () {
             genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
-        const graffiti = genRandomSalt()
+        const graffiti = Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
         await unirepContract
             .connect(attester)
@@ -722,7 +727,7 @@ describe('Attestations', function () {
             genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
-        const graffiti = genRandomSalt()
+        const graffiti = Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
         await unirepContract
             .connect(attester)
@@ -789,7 +794,7 @@ describe('Attestations', function () {
             genRandomSalt() % BigInt(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const posRep = Math.floor(Math.random() * 10)
         const negRep = Math.floor(Math.random() * 10)
-        const graffiti = genRandomSalt()
+        const graffiti = Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
         await unirepContract
             .connect(attester)
