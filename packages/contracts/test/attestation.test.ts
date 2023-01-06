@@ -365,14 +365,14 @@ describe('Attestations', function () {
         let posRep = 0
         let negRep = 0
         let graffiti = BigInt(0)
-        let timestamp
+        let timestamp = 0
         for (let i = 0; i < 5; i++) {
             const newPosRep = Math.floor(Math.random() * 10)
             const newNegRep = Math.floor(Math.random() * 10)
             const newGraffiti =
                 Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
-            timestamp = await unirepContract
+            const newTimestamp = await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     epoch,
@@ -392,6 +392,7 @@ describe('Attestations', function () {
             posRep += newPosRep
             negRep += newNegRep
             graffiti = newGraffiti > BigInt(0) ? newGraffiti : graffiti
+            timestamp = newGraffiti > BigInt(0) ? newTimestamp : timestamp
         }
 
         await unirepContract
@@ -454,14 +455,14 @@ describe('Attestations', function () {
         let posRep = 0
         let negRep = 0
         let graffiti = BigInt(0)
-        let timestamp
+        let timestamp = 0
         for (let i = 0; i < 5; i++) {
             const newPosRep = Math.floor(Math.random() * 10)
             const newNegRep = Math.floor(Math.random() * 10)
             const newGraffiti =
                 Math.random() < 0.5 ? genRandomSalt() : BigInt(0)
 
-            const contractTimestamp = await unirepContract
+            const newTimestamp = await unirepContract
                 .connect(attester)
                 .submitAttestation(
                     epoch,
@@ -481,7 +482,7 @@ describe('Attestations', function () {
             posRep += newPosRep
             negRep += newNegRep
             graffiti = newGraffiti > BigInt(0) ? newGraffiti : graffiti
-            timestamp = newGraffiti > BigInt(0) ? contractTimestamp : timestamp
+            timestamp = newGraffiti > BigInt(0) ? newTimestamp : timestamp
 
             await unirepContract
                 .buildHashchain(attester.address, epoch)
