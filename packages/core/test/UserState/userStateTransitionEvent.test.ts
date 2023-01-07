@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from 'hardhat'
 import { ethers } from 'ethers'
 import { expect } from 'chai'
-import { genRandomSalt, ZkIdentity } from '@unirep/crypto'
+import { ZkIdentity } from '@unirep/crypto'
 import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '@unirep/circuits'
@@ -264,12 +264,12 @@ describe('User state transition events in Unirep User State', function () {
                 epkNonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH;
                 epkNonce++
             ) {
+                const formattedProof = await userState.genVerifyEpochKeyProof(
+                    epkNonce
+                )
+                const isValid = await formattedProof.verify()
+                expect(isValid).to.be.true
                 for (let i = 0; i < 5; i++) {
-                    const formattedProof =
-                        await userState.genVerifyEpochKeyProof(epkNonce)
-                    const isValid = await formattedProof.verify()
-                    expect(isValid).to.be.true
-
                     const epochKey = formattedProof.epochKey
                     const attestation = genRandomAttestation()
                     const attesterId = await unirepContract.attesters(

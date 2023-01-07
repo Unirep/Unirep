@@ -45,7 +45,7 @@ const genRandomAttestation = (): Attestation => {
         BigInt(attesterId),
         BigInt(Math.floor(Math.random() * 100)),
         BigInt(Math.floor(Math.random() * 100)),
-        BigNumber.from(genRandomSalt()),
+        Math.random() < 0.5 ? genRandomSalt() : BigInt(0),
         BigInt(Math.floor(Math.random() * 2))
     )
     return attestation

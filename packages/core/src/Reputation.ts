@@ -60,7 +60,7 @@ export default class Reputation implements IReputation {
     ): IReputation => {
         this.posRep = this.posRep.add(_posRep)
         this.negRep = this.negRep.add(_negRep)
-        if (_graffiti !== BigNumber.from(0)) {
+        if (!_graffiti.isZero()) {
             this.graffiti = _graffiti
         }
         this.signUp = this.signUp.or(_signUp)

@@ -217,7 +217,12 @@ export default class UserState extends Synchronizer {
             const _attestations = attestationsByAttesterId[attesterId]
             const r = Reputation.default()
             for (const a of _attestations) {
-                r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
+                r.update(
+                    BigNumber.from(a.posRep),
+                    BigNumber.from(a.negRep),
+                    BigNumber.from(a.graffiti),
+                    BigNumber.from(a.signUp)
+                )
             }
             USTree.update(BigInt(attesterId), r.hash())
         }
@@ -328,7 +333,12 @@ export default class UserState extends Synchronizer {
             },
         })
         for (const a of attestations) {
-            r.update(a.posRep, a.negRep, a.graffiti, a.signUp)
+            r.update(
+                BigNumber.from(a.posRep),
+                BigNumber.from(a.negRep),
+                BigNumber.from(a.graffiti),
+                BigNumber.from(a.signUp)
+            )
         }
         return r
     }
@@ -591,10 +601,10 @@ export default class UserState extends Synchronizer {
 
                 // Update attestation record
                 reputationRecords[attesterId.toString()].update(
-                    attestation.posRep,
-                    attestation.negRep,
-                    attestation.graffiti,
-                    attestation.signUp
+                    BigNumber.from(attestation.posRep),
+                    BigNumber.from(attestation.negRep),
+                    BigNumber.from(attestation.graffiti),
+                    BigNumber.from(attestation.signUp)
                 )
 
                 // Update UST
