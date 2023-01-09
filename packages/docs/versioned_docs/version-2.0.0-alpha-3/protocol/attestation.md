@@ -12,6 +12,12 @@ UniRep offers an [`AggregateEpochKeys`](../circuits-api/circuits#aggregate-epoch
 
 ## Hashchain
 
-When an attestation is made it is stored in an on-chain mapping. When it is time to update the epoch tree root the `buildHashchain` function can be used to make a hashchain of epoch keys that need to be updated. This hashchain is output by the ZK proof and compared when it is processed.
+In the Unirep contract, a Hashchain is a data structure that is used to store a sequence of epoch keys and their corresponding reputation balances. It is used to transition user reputation between epochs in a verifiable manner. The Hashchain data structure is composed of three fields:
 
-TODO: more detailed descriptions
+* `head`: This is a reference to the first element in the Hashchain. It is used to identify the Hashchain, and is included in the zk proof generated when the Hashchain is processed.
+
+* `epochKeys`: This is an array of epoch keys that are included in the Hashchain.
+
+* `epochKeyBalances`: This is an array of reputation balances corresponding to the epoch keys in the epochKeys array.
+
+The process of transitioning user reputation between epochs involves generating a Hashchain, and submitting it to the Unirep contract for processing. The contract verifies the Hashchain by checking the provided zk proof, and then updates the user's reputation based on the data in the Hashchain. Once a Hashchain has been processed, it is marked as "processed" to prevent it from being processed again.
