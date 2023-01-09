@@ -106,7 +106,7 @@ template Pow(MAX_DEGREE) {
     iszero[x] = IsZero();
     iszero[x].in <== x - degree;
     i[x] <== i[x-1] * b[x - 1];
-    b[x] <== base - (base - 1) * iszero[0].out;
+    b[x] <== base - (base - 1) * iszero[x].out;
   }
   out <== i[MAX_DEGREE-1];
 }
