@@ -105,8 +105,8 @@ template Pow(MAX_DEGREE) {
   for (var x = 1; x < MAX_DEGREE; x++) {
     iszero[x] = IsZero();
     iszero[x].in <== x - degree;
-    i[x] <== i[x-1] * b[x - 1];
-    b[x] <== base - (base - 1) * iszero[x].out;
+    i[x] <== i[x - 1] * b[x - 1];
+    b[x] <== b[x - 1] - (b[x - 1] - 1) * iszero[x].out;
   }
   out <== i[MAX_DEGREE-1];
 }
