@@ -1,4 +1,4 @@
-import { SparseMerkleTree, hash4, hash1 } from '@unirep/utils'
+import { SparseMerkleTree, hash4 } from '@unirep/utils'
 
 export const NUM_EPOCH_KEY_NONCE_PER_EPOCH = 3
 

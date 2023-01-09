@@ -23,15 +23,22 @@ template BuildSortedTree(TREE_DEPTH) {
     lt_comp[x-1].out === 1;
   }
 
-  // TODO: make sure each degree is seen exactly once
-
   /**
    * Step 2: Calculate the polynomial hash of the leaves
    **/
   signal terms[2**TREE_DEPTH];
   var polyhash = 0;
   component rpow[2**TREE_DEPTH];
+  var seen[2**TREE_DEPTH];
+  component iszero[2**TREE_DEPTH**2];
   for (var x = 0; x < 2**TREE_DEPTH; x++) {
+    for (var y = 0; y < 2**TREE_DEPTH; y++) {
+      var i = x*2**TREE_DEPTH+y;
+      iszero[i] = IsZero();
+      iszero[i].in <== y - leaf_r[x];
+      seen[y] += iszero[i].out;
+    }
+
     rpow[x] = Pow(2**TREE_DEPTH);
     rpow[x].degree <== leaf_r[x];
     rpow[x].base <== R;
@@ -40,6 +47,10 @@ template BuildSortedTree(TREE_DEPTH) {
   }
   checksum <== polyhash;
 
+  // check that each index was seen exactly once
+  for (var x = 0; x < 2**TREE_DEPTH; x++) {
+    seen[x] === 1;
+  }
 
   /**
    * Step 3: Calculate the tree root
