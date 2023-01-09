@@ -4,6 +4,7 @@ import {
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     AGGREGATE_KEY_COUNT,
+    CHANGE_TREE_DEPTH,
 } from '../dist/config/index.js'
 
 export const ptauName = 'powersOfTau28_hez_final_17.ptau'
@@ -15,4 +16,5 @@ export const circuitContents = {
     epochKeyLite: `pragma circom 2.0.0; include "../circuits/epochKeyLite.circom"; \n\ncomponent main { public [ data ] } = EpochKeyLite(${EPOCH_TREE_DEPTH}, ${EPOCH_TREE_ARITY}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH});`,
     signup: `pragma circom 2.0.0; include "../circuits/signup.circom"; \n\ncomponent main { public [ attester_id, epoch ] } = Signup();`,
     aggregateEpochKeys: `pragma circom 2.0.0; include "../circuits/aggregateEpochKeys.circom"; \n\ncomponent main { public [ start_root ] } = AggregateEpochKeys(${EPOCH_TREE_DEPTH}, ${EPOCH_TREE_ARITY}, ${AGGREGATE_KEY_COUNT});`,
+    buildSortedTree: `pragma circom 2.0.0; include "../circuits/buildSortedTree.circom"; \n\ncomponent main = BuildSortedTree(${CHANGE_TREE_DEPTH});`,
 }
