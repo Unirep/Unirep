@@ -1,13 +1,13 @@
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 
-template BuildSortedTree(TREE_DEPTH) {
+template BuildSortedTree(TREE_DEPTH, TREE_ARITY) {
   signal output root;
   signal output checksum;
 
   // leaf and original index
-  signal input leaves[2**TREE_DEPTH];
-  signal input leaf_r[2**TREE_DEPTH];
+  signal input leaves[TREE_ARITY**TREE_DEPTH];
+  signal input leaf_r[TREE_ARITY**TREE_DEPTH];
   signal input R;
 
   /**
@@ -15,9 +15,9 @@ template BuildSortedTree(TREE_DEPTH) {
    * TODO: find a way to not use a LessThan component
    * can use value differences/subtraction for this?
    **/
-  component lt_comp[2**TREE_DEPTH - 1];
+  component lt_comp[TREE_ARITY**TREE_DEPTH - 1];
   leaves[0] \ 2**252 === 0;
-  for (var x = 1; x < 2**TREE_DEPTH; x++) {
+  for (var x = 1; x < TREE_ARITY**TREE_DEPTH; x++) {
     leaves[x] \ 2**252 === 0;
     lt_comp[x-1] = LessThan(252);
     lt_comp[x-1].in[0] <== leaves[x-1];
@@ -28,29 +28,28 @@ template BuildSortedTree(TREE_DEPTH) {
   /**
    * Step 2: Calculate the polynomial hash of the leaves
    **/
-  signal terms[2**TREE_DEPTH];
+  signal terms[TREE_ARITY**TREE_DEPTH];
   var polyhash = 0;
-  component rpow[2**TREE_DEPTH];
-  var seen[2**TREE_DEPTH];
-  component iszero[2**TREE_DEPTH**2];
-  for (var x = 0; x < 2**TREE_DEPTH; x++) {
-    for (var y = 0; y < 2**TREE_DEPTH; y++) {
-      var i = x*2**TREE_DEPTH+y;
+  component rpow[TREE_ARITY**TREE_DEPTH];
+  var seen[TREE_ARITY**TREE_DEPTH];
+  component iszero[TREE_ARITY**TREE_DEPTH**2];
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
+    for (var y = 0; y < TREE_ARITY**TREE_DEPTH; y++) {
+      var i = x*TREE_ARITY**TREE_DEPTH+y;
       iszero[i] = IsZero();
       iszero[i].in <== y - leaf_r[x];
       seen[y] += iszero[i].out;
     }
 
-    rpow[x] = Pow(2**TREE_DEPTH);
+    rpow[x] = Pow(TREE_ARITY**TREE_DEPTH);
     rpow[x].degree <== leaf_r[x];
     rpow[x].base <== R;
     terms[x] <== leaves[x] * rpow[x].out;
     polyhash += terms[x];
   }
   checksum <== polyhash;
-
   // check that each index was seen exactly once
-  for (var x = 0; x < 2**TREE_DEPTH; x++) {
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
     seen[x] === 1;
   }
 
@@ -63,40 +62,61 @@ template BuildSortedTree(TREE_DEPTH) {
       x x x
    xxx xxx xxx
   */
+  // 3^0 + 3^1 + 3^2 + 3^3
+  /*
+        x
+      x   x
+     x x x x
+  */
 
   // The total number of hashes to calculate the root
-  component hashers[2 ** TREE_DEPTH - 1];
+  // This will get reduced to a constant by the compiler
+  var total_hashers = 0;
+  for (var x = 0; x < TREE_DEPTH; x++) {
+    total_hashers += TREE_ARITY ** x;
+  }
+  component hashers[total_hashers];
+
+  var total_values = 0;
+  for (var x = 0; x < TREE_DEPTH + 1; x++) {
+    total_values += TREE_ARITY ** x;
+  }
 
   // The total number of hash outputs we need to store
-  var total_hashes = 2 ** (TREE_DEPTH + 1) - 1;
-  signal hashes[total_hashes];
+  signal values[total_values];
 
   // first do the input leaves
-  // index in hash arr = 2**(level-1) + index
+  // index in hash arr = TREE_ARITY**(level-1) + index
   for (var level = TREE_DEPTH; level > 0; level--) {
-    for (var index = 0; index < 2**level; index += 2) {
+    for (var index = 0; index < TREE_ARITY**level; index += TREE_ARITY) {
 
       // index in the hashes array where the parent goes
-      var i = 2 ** (level - 1) - 1 + index \ 2;
+      var _i = 0;
+      for (var z = 0; z < level - 1; z++) {
+        _i += TREE_ARITY ** z;
+      }
+      var i = _i + index \ TREE_ARITY;
 
       // can use the same indexing for hashers
       var hasher_index = i;
-      hashers[hasher_index] = Poseidon(2);
+      hashers[hasher_index] = Poseidon(TREE_ARITY);
 
       if (level == TREE_DEPTH) {
-        hashers[hasher_index].inputs[0] <== leaves[index];
-        hashers[hasher_index].inputs[1] <== leaves[index + 1];
-        hashes[i] <== hashers[hasher_index].out;
+        for (var z = 0; z < TREE_ARITY; z++) {
+          hashers[hasher_index].inputs[z] <== leaves[index + z];
+        }
+        values[i] <== hashers[hasher_index].out;
       } else {
         // index of the child leaves in the array
-        var t = 2 ** (level) - 1 + index;
-        hashers[hasher_index].inputs[0] <== hashes[t];
-        hashers[hasher_index].inputs[1] <== hashes[t + 1];
-        hashes[i] <== hashers[hasher_index].out;
+        var t = _i + TREE_ARITY ** (level - 1) + index;
+        for (var z = 0; z < TREE_ARITY; z++) {
+          hashers[hasher_index].inputs[z] <== values[t + z];
+        }
+        values[i] <== hashers[hasher_index].out;
       }
     }
   }
-  root <== hashes[0];
+  root <== values[0];
 }
 
 template Pow(MAX_DEGREE) {
