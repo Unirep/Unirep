@@ -16,7 +16,9 @@ template BuildSortedTree(TREE_DEPTH) {
    * can use value differences/subtraction for this?
    **/
   component lt_comp[2**TREE_DEPTH - 1];
+  leaves[0] \ 2**252 === 0;
   for (var x = 1; x < 2**TREE_DEPTH; x++) {
+    leaves[x] \ 2**252 === 0;
     lt_comp[x-1] = LessThan(252);
     lt_comp[x-1].in[0] <== leaves[x-1];
     lt_comp[x-1].in[1] <== leaves[x];
