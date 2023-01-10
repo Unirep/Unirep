@@ -11,6 +11,9 @@ import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 import {Poseidon6, Poseidon4, Poseidon3} from './Hash.sol';
+import {Polyhash, PolyhashData} from './libraries/Polyhash.sol';
+
+import 'hardhat/console.sol';
 
 /**
  * @title Unirep
@@ -69,6 +72,18 @@ contract Unirep is IUnirep, VerifySignature {
 
         // for initializing other trees without using poseidon function
         IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
+        buildHash();
+    }
+
+    function buildHash() public {
+        PolyhashData memory data = PolyhashData({
+            hash: 0,
+            degree: 0,
+            R: 28948022309329048855892746252171976963317496166410141009864396001978282409984
+        });
+        for (uint x = 0; x < 20; x++) {
+            console.log(Polyhash.modexp(data.R, x));
+        }
     }
 
     /**

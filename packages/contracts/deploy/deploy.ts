@@ -100,6 +100,18 @@ export const deployUnirep = async (
     await incrementalMerkleTreeLib.deployed()
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
+    const polyPath = 'contracts/libraries/Polyhash.sol/Polyhash.json'
+    const polyArtifacts = tryPath(polyPath)
+    const polyFactory = new ethers.ContractFactory(
+        polyArtifacts.abi,
+        polyArtifacts.bytecode,
+        deployer
+    )
+    const polyContract = await polyFactory.deploy()
+    await polyContract.deployed()
+
+    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
+
     const verifiers = {}
     for (const circuit in Circuit) {
         await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
@@ -136,6 +148,7 @@ export const deployUnirep = async (
             ['contracts/Hash.sol:Poseidon3']: libraries['Poseidon3'],
             ['contracts/Hash.sol:Poseidon4']: libraries['Poseidon4'],
             ['contracts/Hash.sol:Poseidon6']: libraries['Poseidon6'],
+            ['contracts/libraries/Polyhash.sol:Polyhash']: polyContract.address,
         },
         deployer
     ).deploy(
