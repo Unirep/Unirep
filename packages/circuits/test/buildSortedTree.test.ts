@@ -10,13 +10,9 @@ describe('Build sorted merkle tree', function () {
         const leaves = Array(CHANGE_TREE_ARITY ** CHANGE_TREE_DEPTH)
             .fill(null)
             .map(() => BigInt(Math.floor(Math.random() * 1000000000000)))
-        const checksumIndexByLeaf = leaves.reduce((acc, leaf, i) => {
-            return {
-                [leaf.toString()]: i,
-                ...acc,
-            }
-        }, {})
         const sortedLeaves = [...leaves].sort((a, b) => (a > b ? 1 : -1))
+        const indexes = sortedLeaves.map((l) => leaves.indexOf(l))
+        console.log(indexes)
         const tree = new IncrementalMerkleTree(
             CHANGE_TREE_DEPTH,
             0,
@@ -26,11 +22,8 @@ describe('Build sorted merkle tree', function () {
             tree.insert(BigInt(leaf))
         }
         const circuitInputs = {
-            leaves: sortedLeaves,
-            leaf_r: sortedLeaves.map(
-                (leaf) => checksumIndexByLeaf[leaf.toString()]
-            ),
-            R: BigInt(2) ** BigInt(254),
+            sorted_leaves: sortedLeaves,
+            leaf_degree: indexes,
         }
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.buildSortedTree,

@@ -1,14 +1,13 @@
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 
-template BuildSortedTree(TREE_DEPTH, TREE_ARITY) {
+template BuildSortedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal output root;
   signal output checksum;
 
   // leaf and original index
-  signal input leaves[TREE_ARITY**TREE_DEPTH];
-  signal input leaf_r[TREE_ARITY**TREE_DEPTH];
-  signal input R;
+  signal input sorted_leaves[TREE_ARITY**TREE_DEPTH];
+  signal input leaf_degree[TREE_ARITY**TREE_DEPTH];
 
   /**
    * Step 1: Make sure leaf values are ascending
@@ -16,12 +15,12 @@ template BuildSortedTree(TREE_DEPTH, TREE_ARITY) {
    * can use value differences/subtraction for this?
    **/
   component lt_comp[TREE_ARITY**TREE_DEPTH - 1];
-  leaves[0] \ 2**252 === 0;
+  sorted_leaves[0] \ 2**252 === 0;
   for (var x = 1; x < TREE_ARITY**TREE_DEPTH; x++) {
-    leaves[x] \ 2**252 === 0;
+    sorted_leaves[x] \ 2**252 === 0;
     lt_comp[x-1] = LessThan(252);
-    lt_comp[x-1].in[0] <== leaves[x-1];
-    lt_comp[x-1].in[1] <== leaves[x];
+    lt_comp[x-1].in[0] <== sorted_leaves[x-1];
+    lt_comp[x-1].in[1] <== sorted_leaves[x];
     lt_comp[x-1].out === 1;
   }
 
@@ -31,27 +30,33 @@ template BuildSortedTree(TREE_DEPTH, TREE_ARITY) {
   signal terms[TREE_ARITY**TREE_DEPTH];
   var polyhash = 0;
   component rpow[TREE_ARITY**TREE_DEPTH];
-  var seen[TREE_ARITY**TREE_DEPTH];
-  component iszero[TREE_ARITY**TREE_DEPTH**2];
+  signal sum_terms[TREE_ARITY**TREE_DEPTH];
+  var SUM_INCREMENT = 2**252 \ (TREE_ARITY ** TREE_DEPTH);
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    for (var y = 0; y < TREE_ARITY**TREE_DEPTH; y++) {
-      var i = x*TREE_ARITY**TREE_DEPTH+y;
-      iszero[i] = IsZero();
-      iszero[i].in <== y - leaf_r[x];
-      seen[y] += iszero[i].out;
-    }
-
-    rpow[x] = Pow(TREE_ARITY**TREE_DEPTH);
-    rpow[x].degree <== leaf_r[x];
-    rpow[x].base <== R;
-    terms[x] <== leaves[x] * rpow[x].out;
+    rpow[x] = PowC(TREE_ARITY**TREE_DEPTH, R);
+    rpow[x].degree <== leaf_degree[x];
+    terms[x] <== sorted_leaves[x] * rpow[x].out;
     polyhash += terms[x];
+
+    // Form a polyhash of the indexes, then check it below
+    // e.g. 0*R + 1*R^2 + 2*R^3 ...
+    // each index should be present exactly once
+    // Use the SUM_INCREMENT to evenly distribute values over
+    // the fiel d
+    sum_terms[x] <== leaf_degree[x] * SUM_INCREMENT * rpow[x].out;
   }
   checksum <== polyhash;
-  // check that each index was seen exactly once
+
+  var actual_sum = 0;
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    seen[x] === 1;
+    actual_sum += sum_terms[x];
   }
+
+  var expected_sum = 0;
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
+    expected_sum += x * SUM_INCREMENT * R ** x;
+  }
+  expected_sum === actual_sum;
 
   /**
    * Step 3: Calculate the tree root
@@ -103,7 +108,7 @@ template BuildSortedTree(TREE_DEPTH, TREE_ARITY) {
 
       if (level == TREE_DEPTH) {
         for (var z = 0; z < TREE_ARITY; z++) {
-          hashers[hasher_index].inputs[z] <== leaves[index + z];
+          hashers[hasher_index].inputs[z] <== sorted_leaves[index + z];
         }
         values[i] <== hashers[hasher_index].out;
       } else {
@@ -117,6 +122,27 @@ template BuildSortedTree(TREE_DEPTH, TREE_ARITY) {
     }
   }
   root <== values[0];
+}
+
+template PowC(MAX_DEGREE, C) {
+  signal input degree;
+  signal output out;
+
+  degree \ MAX_DEGREE === 0;
+
+  component iszero[MAX_DEGREE];
+
+  var pow = 0;
+  iszero[0] = IsZero();
+  iszero[0].in <== degree;
+  pow += iszero[0].out;
+
+  for (var x = 1; x < MAX_DEGREE; x++) {
+    iszero[x] = IsZero();
+    iszero[x].in <== x - degree;
+    pow += iszero[x].out * C ** x;
+  }
+  out <== pow;
 }
 
 template Pow(MAX_DEGREE) {
