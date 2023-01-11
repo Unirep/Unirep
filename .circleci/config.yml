@@ -60,8 +60,13 @@ jobs:
     build:
         machine:
             image: ubuntu-2204:2022.04.1
+        environment:
+            ABI_ORIGIN: packages/contracts/abi/Unirep.json
+            ABI_COPY: packages/contracts/abi/Unirep_temp.json
         steps:
             - checkout
+            - attach_workspace:
+                  at: ~/project
             - run: *node_version
             - run: *check_version
             - run: *install_circom
@@ -70,7 +75,14 @@ jobs:
                   command: yarn
             - run:
                   name: Build
-                  command: yarn build
+                  command: |
+                      cp $ABI_ORIGIN $ABI_COPY
+                      yarn build
+            - run:
+                  name: Check ABI
+                  command: |
+                      diff $ABI_ORIGIN $ABI_COPY
+                      rm $ABI_COPY
             - persist_to_workspace:
                   root: ~/project
                   paths:
