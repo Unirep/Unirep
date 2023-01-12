@@ -145,9 +145,7 @@ export const deployUnirep = async (
         {
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
-            ['contracts/Hash.sol:Poseidon3']: libraries['Poseidon3'],
-            ['contracts/Hash.sol:Poseidon4']: libraries['Poseidon4'],
-            ['contracts/Hash.sol:Poseidon6']: libraries['Poseidon6'],
+            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
             ['contracts/libraries/Polyhash.sol:Polyhash']: polyContract.address,
         },
         deployer
@@ -158,7 +156,8 @@ export const deployUnirep = async (
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation],
         verifiers[Circuit.verifyEpochKey],
-        verifiers[Circuit.epochKeyLite]
+        verifiers[Circuit.epochKeyLite],
+        verifiers[Circuit.buildSortedTree]
     )
 
     await c.deployTransaction.wait()

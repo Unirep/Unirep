@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
 /**
  * From circom using BN128
  * FF exp test values
@@ -35,13 +38,18 @@ struct PolyhashData {
 library Polyhash {
     uint256 internal constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    uint256 internal constant R =
+        13541932071940953975015828784917163839116271756887677686605888470260307083494;
 
-    function add(PolyhashData storage self, uint val) public {
+    // TODO: add R exp cache?
+
+    function add(PolyhashData storage self, uint val) public returns (uint degree) {
         require(val < SNARK_SCALAR_FIELD);
-        self.degree++;
-        uint coef = modexp(self.R, self.degree);
+        degree = self.degree + 1;
+        uint coef = modexp(degree);
         uint term = mulmod(coef, val, SNARK_SCALAR_FIELD);
         self.hash = addmod(self.hash, term, SNARK_SCALAR_FIELD);
+        self.degree++;
     }
 
     /**
@@ -55,9 +63,8 @@ library Polyhash {
     ) public {
         require(oldval < SNARK_SCALAR_FIELD);
         require(newval < SNARK_SCALAR_FIELD);
-        // TODO: double check the edge of this
-        require(self.degree >= degree);
-        uint coef = modexp(self.R, degree);
+        require(self.degree > degree);
+        uint coef = modexp(degree);
         uint oldterm = mulmod(coef, oldval, SNARK_SCALAR_FIELD);
         uint newterm = mulmod(coef, newval, SNARK_SCALAR_FIELD);
         uint diff = oldterm > newterm ? oldterm - newterm : newterm - oldterm;
@@ -76,7 +83,8 @@ library Polyhash {
     /**
      * Calculate R ** degree % SNARK_SCALAR_FIELD
      **/
-    function modexp(uint R, uint degree) public returns (uint xx) {
+    function modexp(uint degree) public view returns (uint xx) {
+        if (degree == 0) return 1;
         if (degree == 1) return R;
         // modular exponentiation
         assembly {

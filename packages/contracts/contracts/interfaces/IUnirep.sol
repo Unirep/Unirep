@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
+import {PolyhashData} from '../libraries/Polyhash.sol';
 
 interface IUnirep {
     event AttesterSignedUp(
@@ -62,6 +63,8 @@ interface IUnirep {
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
+    event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
+
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error AttesterAlreadySignUp(uint160 attester);
@@ -116,22 +119,14 @@ interface IUnirep {
         uint256 timestamp;
     }
 
-    struct EpochKeyHashchain {
-        uint256 index;
-        uint256 head;
-        uint256[] epochKeys;
-        Reputation[] epochKeyBalances;
-        bool processed;
-    }
-
     struct EpochKeyState {
-        // key the head to the struct?
-        mapping(uint256 => EpochKeyHashchain) hashchain;
-        uint256 totalHashchains;
-        uint256 processedHashchains;
+        // latest epoch key balances
         mapping(uint256 => Reputation) balances;
-        mapping(uint256 => bool) isKeyOwed;
-        uint256[] owedKeys;
+        // epoch key => polyhash degree
+        mapping(uint256 => uint256) epochKeyDegree;
+        // epoch key => latest leaf (0 if no attestation in epoch)
+        mapping(uint256 => uint256) epochKeyLeaves;
+        PolyhashData polyhash;
     }
 
     struct AttesterData {

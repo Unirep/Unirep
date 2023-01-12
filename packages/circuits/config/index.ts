@@ -7,8 +7,8 @@ export const STATE_TREE_DEPTH = 9
 export const EPOCH_TREE_DEPTH = 9
 export const EPOCH_TREE_ARITY = 14
 
-export const CHANGE_TREE_DEPTH = 3
-export const CHANGE_TREE_ARITY = 5
+export const CHANGE_TREE_DEPTH = 2
+export const CHANGE_TREE_ARITY = 12
 
 export const AGGREGATE_KEY_COUNT = 7
 
