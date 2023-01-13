@@ -30,7 +30,7 @@ contract Unirep is IUnirep, VerifySignature {
     IVerifier public immutable reputationVerifier;
     IVerifier public immutable epochKeyVerifier;
     IVerifier public immutable epochKeyLiteVerifier;
-    IVerifier public immutable buildSortedTreeVerifier;
+    IVerifier public immutable buildOrderedTreeVerifier;
 
     // Circuits configurations and contracts configurations
     Config public config;
@@ -55,7 +55,7 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _reputationVerifier,
         IVerifier _epochKeyVerifier,
         IVerifier _epochKeyLiteVerifier,
-        IVerifier _buildSortedTreeVerifier
+        IVerifier _buildOrderedTreeVerifier
     ) {
         config = _config;
 
@@ -66,7 +66,7 @@ contract Unirep is IUnirep, VerifySignature {
         reputationVerifier = _reputationVerifier;
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
-        buildSortedTreeVerifier = _buildSortedTreeVerifier;
+        buildOrderedTreeVerifier = _buildOrderedTreeVerifier;
 
         maxEpochKey = uint256(config.epochTreeArity)**config.epochTreeDepth - 1;
 
@@ -220,13 +220,15 @@ contract Unirep is IUnirep, VerifySignature {
             balance.graffiti = graffiti;
             balance.timestamp = timestamp;
         }
-        uint256 newLeaf = Poseidon5.poseidon([
-            epochKey,
-            balance.posRep,
-            balance.negRep,
-            balance.graffiti,
-            balance.timestamp
-        ]);
+        uint256 newLeaf = Poseidon5.poseidon(
+            [
+                epochKey,
+                balance.posRep,
+                balance.negRep,
+                balance.graffiti,
+                balance.timestamp
+            ]
+        );
 
         if (epkState.epochKeyLeaves[epochKey] == 0) {
             // this epoch key has received no attestations
@@ -252,7 +254,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        if (!buildSortedTreeVerifier.verifyProof(publicSignals, proof))
+        if (!buildOrderedTreeVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
         AttesterData storage attester = attesters[attesterId];
         updateEpochIfNeeded(attesterId);
@@ -338,8 +340,7 @@ contract Unirep is IUnirep, VerifySignature {
 
     function updateEpochIfNeeded(uint160 attesterId) public {
         AttesterData storage attester = attesters[attesterId];
-        if (attester.startTimestamp == 0)
-            revert AttesterNotSignUp(attesterId);
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
         uint256 newEpoch = attesterCurrentEpoch(attesterId);
         if (newEpoch == attester.currentEpoch) return;
 
@@ -529,10 +530,8 @@ contract Unirep is IUnirep, VerifySignature {
         // either the attestations were processed, or no
         // attestations were received
         return
-            (
-                attester.epochTreeRoots[epoch] != config.emptyEpochTreeRoot &&
-                attester.epochTreeRoots[epoch] != 0
-            ) ||
+            (attester.epochTreeRoots[epoch] != config.emptyEpochTreeRoot &&
+                attester.epochTreeRoots[epoch] != 0) ||
             attester.epochKeyState[epoch].polyhash.hash == 0;
     }
 

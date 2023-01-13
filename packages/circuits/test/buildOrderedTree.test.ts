@@ -26,7 +26,7 @@ describe('Build sorted merkle tree', function () {
             leaf_degree: indexes,
         }
         const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.buildSortedTree,
+            Circuit.buildOrderedTree,
             circuitInputs
         )
         console.log(JSON.stringify(publicSignals))

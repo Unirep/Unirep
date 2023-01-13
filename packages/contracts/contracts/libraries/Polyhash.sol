@@ -43,7 +43,10 @@ library Polyhash {
 
     // TODO: add R exp cache?
 
-    function add(PolyhashData storage self, uint val) public returns (uint degree) {
+    function add(PolyhashData storage self, uint val)
+        public
+        returns (uint degree)
+    {
         require(val < SNARK_SCALAR_FIELD);
         degree = self.degree + 1;
         uint coef = modexp(degree);

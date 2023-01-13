@@ -1,7 +1,7 @@
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 
-template BuildSortedTree(TREE_DEPTH, TREE_ARITY, R) {
+template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal output root;
   signal output checksum;
 
