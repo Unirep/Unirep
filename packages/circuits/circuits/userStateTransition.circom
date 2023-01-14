@@ -3,9 +3,11 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/mux1.circom";
+include "./circomlib/circuits/gates.circom";
 include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
+include "./orderedMerkleTree.circom";
 
 template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input from_epoch;
@@ -25,10 +27,6 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input neg_rep;
     signal input graffiti;
     signal input timestamp;
-    // signal input graffiti;
-    // Graffiti - todo?
-    // signal input prove_graffiti;
-    // signal input graffiti_pre_image;
 
     // prove what we've received in from epoch
     signal input epoch_tree_root;
@@ -36,7 +34,14 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
+
     signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY];
+    signal input epoch_tree_indexes[EPOCH_KEY_NONCE_PER_EPOCH];
+
+    signal input noninclusion_siblings[EPOCH_KEY_NONCE_PER_EPOCH][2];
+    signal input noninclusion_sibling_index[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input noninclusion_elements[2*EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY];
+
     signal output transition_nullifier;
 
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
@@ -68,7 +73,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     /* 2. Verify new reputation for the from epoch */
 
     component epoch_key_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
-    component epoch_key_mods[EPOCH_KEY_NONCE_PER_EPOCH];
+    component leaf_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
         epoch_key_hashers[i] = Poseidon(4);
         epoch_key_hashers[i].inputs[0] <== identity_nullifier;
@@ -76,12 +81,65 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i;
 
-        epoch_key_mods[i] = Modulo();
-        epoch_key_mods[i].divisor <== EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH;
-        epoch_key_mods[i].dividend <== epoch_key_hashers[i].out;
+        leaf_hashers[i] = Poseidon(5);
+        leaf_hashers[i].inputs[0] <== epoch_key_hashers[i].out;
+        leaf_hashers[i].inputs[1] <== new_pos_rep[i];
+        leaf_hashers[i].inputs[2] <== new_neg_rep[i];
+        leaf_hashers[i].inputs[3] <== new_graffiti[i];
+        leaf_hashers[i].inputs[4] <== new_timestamp[i];
     }
 
-    component epoch_tree_membership[EPOCH_KEY_NONCE_PER_EPOCH];
+    // if the leaf balance is 0 we do a non-inclusion
+    // else we do an inclusion
+
+    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH];
+    component not_zero[EPOCH_KEY_NONCE_PER_EPOCH];
+    component inclusion[EPOCH_KEY_NONCE_PER_EPOCH];
+    component noninclusion[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal int1[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal int2[EPOCH_KEY_NONCE_PER_EPOCH];
+    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+        zero_check[i] = IsZero();
+        zero_check[i].in <== new_pos_rep[i] + new_neg_rep[i] + new_graffiti[i] + new_timestamp[i];
+        not_zero[i] = NOT();
+        not_zero[i].in <== zero_check[i].out;
+
+        inclusion[i] = SMTInclusionProof(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
+        inclusion[i].leaf_index <== epoch_tree_indexes[i];
+        inclusion[i].leaf <== leaf_hashers[i].out;
+        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
+            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
+                inclusion[i].path_elements[j][k] <== epoch_tree_elements[i][j][k];
+            }
+        }
+
+        noninclusion[i] = OMTNoninclusionProof(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
+
+        noninclusion[i].leaf <== leaf_hashers[i].out;
+
+        noninclusion[i].sibling_leaves[0] <== noninclusion_siblings[i][0];
+        noninclusion[i].sibling_leaves[1] <== noninclusion_siblings[i][1];
+        noninclusion[i].sibling_index <== noninclusion_sibling_index[i];
+        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
+            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
+                noninclusion[i].path_elements[0][j][k] <== noninclusion_elements[2*i][j][k];
+            }
+        }
+        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
+            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
+                noninclusion[i].path_elements[1][j][k] <== noninclusion_elements[2*i+1][j][k];
+            }
+        }
+
+        // check root
+        int1[i] <== not_zero[i].out * inclusion[i].root;
+        int2[i] <== zero_check[i].out * noninclusion[i].root;
+        epoch_tree_root === int1[i] + int2[i];
+    }
+
+
+    /*
+
     component new_leaf_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
 
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
@@ -102,6 +160,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         // check root
         epoch_tree_root === epoch_tree_membership[i].root;
     }
+    */
 
     /* End of check 2 */
 

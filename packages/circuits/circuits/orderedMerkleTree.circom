@@ -30,23 +30,23 @@ template OMTNoninclusionProof(TREE_DEPTH, TREE_ARITY) {
 
   component inclusion[2];
 
-  inclusion[0] = SMTLeafExists(TREE_DEPTH, TREE_ARITY);
+  inclusion[0] = SMTInclusionProof(TREE_DEPTH, TREE_ARITY);
   inclusion[0].leaf <== sibling_leaves[0];
   inclusion[0].leaf_index <== sibling_index;
 
   for (var x = 0; x < TREE_DEPTH; x++) {
     for (var y = 0; y < TREE_ARITY; y++) {
-      inclusion[0].path_elements[x] <== path_elements[0][x][y];
+      inclusion[0].path_elements[x][y] <== path_elements[0][x][y];
     }
   }
 
-  inclusion[1] = SMTLeafExists(TREE_DEPTH, TREE_ARITY);
+  inclusion[1] = SMTInclusionProof(TREE_DEPTH, TREE_ARITY);
   inclusion[1].leaf <== sibling_leaves[1];
   inclusion[1].leaf_index <== sibling_index + 1;
 
   for (var x = 0; x < TREE_DEPTH; x++) {
     for (var y = 0; y < TREE_ARITY; y++) {
-      inclusion[1].path_elements[x] <== path_elements[1][x][y];
+      inclusion[1].path_elements[x][y] <== path_elements[1][x][y];
     }
   }
 

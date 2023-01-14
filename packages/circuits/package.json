@@ -20,8 +20,8 @@
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "yarn buildTs && yarn buildParallel && yarn copyCircom",
-        "buildSnarks": "node scripts/buildSnarks.mjs",
-        "buildParallel": "node scripts/buildParallel.mjs",
+        "buildSnarks": "node --max-old-space-size=8192 scripts/buildSnarks.mjs",
+        "buildParallel": "node --max-old-space-size=8192 scripts/buildParallel.mjs",
         "buildVerifyEpochKeySnark": "yarn buildSnarks verifyEpochKey",
         "buildUserStateTransitionSnark": "yarn buildParallel startTransition userStateTransition processAttestations",
         "buildProveReputationSnark": "yarn buildSnarks proveReputation",
