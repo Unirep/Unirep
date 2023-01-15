@@ -4,10 +4,9 @@ include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/mux1.circom";
 include "./circomlib/circuits/gates.circom";
-include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
-include "./orderedMerkleTree.circom";
+include "./inclusionNoninclusion.circom";
 
 template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input from_epoch;
@@ -35,12 +34,18 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
 
-    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY];
-    signal input epoch_tree_indexes[EPOCH_KEY_NONCE_PER_EPOCH];
+    // the common subtree
+    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1][EPOCH_TREE_ARITY];
+    signal input epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1];
 
-    signal input noninclusion_siblings[EPOCH_KEY_NONCE_PER_EPOCH][2];
-    signal input noninclusion_sibling_index[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input noninclusion_elements[2*EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY];
+    signal input noninclusion_leaf[EPOCH_KEY_NONCE_PER_EPOCH][2];
+    signal input noninclusion_leaf_index[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input noninclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][2][EPOCH_TREE_ARITY];
+
+    // The index of the epoch tree leaf in the set of elements
+    signal input inclusion_leaf_index[EPOCH_KEY_NONCE_PER_EPOCH];
+    // The sibling elements for the epoch tree leaf
+    signal input inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY];
 
     signal output transition_nullifier;
 
@@ -91,76 +96,73 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     // if the leaf balance is 0 we do a non-inclusion
     // else we do an inclusion
-
-    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH];
-    component not_zero[EPOCH_KEY_NONCE_PER_EPOCH];
-    component inclusion[EPOCH_KEY_NONCE_PER_EPOCH];
-    component noninclusion[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal int1[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal int2[EPOCH_KEY_NONCE_PER_EPOCH];
-    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        zero_check[i] = IsZero();
-        zero_check[i].in <== new_pos_rep[i] + new_neg_rep[i] + new_graffiti[i] + new_timestamp[i];
-        not_zero[i] = NOT();
-        not_zero[i].in <== zero_check[i].out;
-
-        inclusion[i] = SMTInclusionProof(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
-        inclusion[i].leaf_index <== epoch_tree_indexes[i];
-        inclusion[i].leaf <== leaf_hashers[i].out;
-        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
-            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
-                inclusion[i].path_elements[j][k] <== epoch_tree_elements[i][j][k];
-            }
-        }
-
-        noninclusion[i] = OMTNoninclusionProof(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
-
-        noninclusion[i].leaf <== leaf_hashers[i].out;
-
-        noninclusion[i].sibling_leaves[0] <== noninclusion_siblings[i][0];
-        noninclusion[i].sibling_leaves[1] <== noninclusion_siblings[i][1];
-        noninclusion[i].sibling_index <== noninclusion_sibling_index[i];
-        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
-            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
-                noninclusion[i].path_elements[0][j][k] <== noninclusion_elements[2*i][j][k];
-            }
-        }
-        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
-            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
-                noninclusion[i].path_elements[1][j][k] <== noninclusion_elements[2*i+1][j][k];
-            }
-        }
-
-        // check root
-        int1[i] <== not_zero[i].out * inclusion[i].root;
-        int2[i] <== zero_check[i].out * noninclusion[i].root;
-        epoch_tree_root === int1[i] + int2[i];
-    }
-
-
-    /*
-
-    component new_leaf_hasher[EPOCH_KEY_NONCE_PER_EPOCH];
+    component inc_noninc[EPOCH_KEY_NONCE_PER_EPOCH];
+    component or[EPOCH_KEY_NONCE_PER_EPOCH][3];
+    component not[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal has_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
+    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH][2];
 
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        epoch_tree_membership[i] = SMTInclusionProof(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
-        epoch_tree_membership[i].leaf_index <== epoch_key_mods[i].remainder;
-        for (var j = 0; j < EPOCH_TREE_DEPTH; j++) {
+        inc_noninc[i] = ProveInclusionOrNoninclusion(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
+        inc_noninc[i].leaf <== leaf_hashers[i].out;
+
+        //~~ multiple levels of elements of the parent tree'
+
+        for (var j = 0; j < EPOCH_TREE_DEPTH - 1; j++) {
+            inc_noninc[i].parent_indices[j] <== epoch_tree_indices[i][j];
             for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
-                epoch_tree_membership[i].path_elements[j][k] <== epoch_tree_elements[i][j][k];
+                inc_noninc[i].parent_elements[j][k] <== epoch_tree_elements[i][j][k];
             }
         }
-        // calculate leaf
-        new_leaf_hasher[i] = Poseidon(4);
-        new_leaf_hasher[i].inputs[0] <== new_pos_rep[i];
-        new_leaf_hasher[i].inputs[1] <== new_neg_rep[i];
-        new_leaf_hasher[i].inputs[2] <== new_graffiti[i];
-        new_leaf_hasher[i].inputs[3] <== new_timestamp[i];
-        epoch_tree_membership[i].leaf <== new_leaf_hasher[i].out;
-        // check root
-        epoch_tree_root === epoch_tree_membership[i].root;
+
+        inc_noninc[i].inclusion_leaf_index <== inclusion_leaf_index[i];
+        inc_noninc[i].noninclusion_leaf_index <== inclusion_leaf_index[i];
+        inc_noninc[i].noninclusion_leaf[0] <== noninclusion_leaf[i][0];
+        inc_noninc[i].noninclusion_leaf[1] <== noninclusion_leaf[i][1];
+        for (var j = 0; j < EPOCH_TREE_ARITY; j++) {
+            inc_noninc[i].inclusion_elements[j] <== inclusion_elements[i][j];
+            inc_noninc[i].noninclusion_elements[0][j] <== noninclusion_elements[i][0][j];
+            inc_noninc[i].noninclusion_elements[1][j] <== noninclusion_elements[i][1][j];
+        }
+
+
+        //~~ inc_noninc.inclusion
+        //~~ inc_noninc.noninclusion
+
+        /*~~~~
+
+        Now check if the epoch key has attestations. If they do we expect
+        inclusion === 1 && noninclusion === 0.
+
+        Otherwise we expect inclusion === 0 && noninclusion === 1.
+        */
+
+        zero_check[i][0] = IsZero();
+        zero_check[i][1] = IsZero();
+
+        or[i][0] = OR();
+        or[i][0].a <== new_pos_rep[i];
+        or[i][0].b <== new_neg_rep[i];
+
+        or[i][1] = OR();
+        or[i][1].a <== new_graffiti[i];
+        or[i][1].b <== new_timestamp[i];
+
+        or[i][2] = OR();
+        or[i][2].a <== or[i][0].out;
+        or[i][2].b <== or[i][1].out;
+
+        has_attestations[i] <== or[i][2].out;
+
+        not[i] = NOT();
+        not[i].in <== has_attestations[i];
+
+        1 === has_attestations[i] * inc_noninc[i].inclusion;
+        0 === has_attestations[i] * inc_noninc[i].noninclusion;
+
+        1 === not[i].out * inc_noninc[i].noninclusion;
+        0 === not[i].out * inc_noninc[i].inclusion;
     }
-    */
 
     /* End of check 2 */
 
@@ -214,3 +216,4 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     /* End of check 4 */
 }
+

@@ -1,11 +1,11 @@
 import { SparseMerkleTree, hash4, hash1 } from '@unirep/utils'
 
-export const NUM_EPOCH_KEY_NONCE_PER_EPOCH = 3
+export const NUM_EPOCH_KEY_NONCE_PER_EPOCH = 5
 
 export const STATE_TREE_DEPTH = 7
 
-export const EPOCH_TREE_DEPTH = 3
-export const EPOCH_TREE_ARITY = 6
+export const EPOCH_TREE_DEPTH = 5
+export const EPOCH_TREE_ARITY = 3
 
 export const AGGREGATE_KEY_COUNT = 7
 
