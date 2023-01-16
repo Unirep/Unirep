@@ -1,9 +1,8 @@
 pragma circom 2.0.0;
 
 include "./circomlib/circuits/poseidon.circom";
-include "./modulo.circom";
 
-template EpochKeyLite(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH) {
+template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input identity_nullifier;
     signal input control;
     signal input data;
@@ -43,8 +42,5 @@ template EpochKeyLite(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EP
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;
 
-    component epoch_key_mod = Modulo();
-    epoch_key_mod.divisor <== EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH;
-    epoch_key_mod.dividend <== epoch_key_hasher.out;
-    epoch_key <== epoch_key_mod.remainder;
+    epoch_key <== epoch_key_hasher.out;
 }

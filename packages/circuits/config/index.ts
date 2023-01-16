@@ -7,8 +7,6 @@ export const STATE_TREE_DEPTH = 12
 export const EPOCH_TREE_DEPTH = 5
 export const EPOCH_TREE_ARITY = 6
 
-export const AGGREGATE_KEY_COUNT = 7
-
 export const R = hash1([
     `0x${Buffer.from('unirep_polyhash_constant', 'utf8').toString('hex')}`,
 ])
