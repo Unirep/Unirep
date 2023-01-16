@@ -32,18 +32,9 @@ export const genEpochKey = (
     identityNullifier: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
-    nonce: bigint | number,
-    maxEpochKey: bigint | number
+    nonce: bigint | number
 ): bigint => {
-    const epochKey = hash4([
-        identityNullifier,
-        BigInt(attesterId),
-        epoch,
-        BigInt(nonce),
-    ])
-    // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = epochKey % BigInt(maxEpochKey)
-    return epochKeyModed
+    return hash4([identityNullifier, BigInt(attesterId), epoch, BigInt(nonce)])
 }
 
 export const genEpochNullifier = (
