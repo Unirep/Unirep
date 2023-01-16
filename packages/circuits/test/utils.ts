@@ -11,17 +11,17 @@ import {
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
-const defaultEpochTreeLeaf = utils.hash4([0, 0, 0, 0])
-
 const genNewEpochTree = (
     _epochTreeDepth: number = EPOCH_TREE_DEPTH,
     _epochTreeArity = EPOCH_TREE_ARITY
 ) => {
-    return new utils.SparseMerkleTree(
+    const tree = new utils.IncrementalMerkleTree(
         _epochTreeDepth,
-        defaultEpochTreeLeaf,
+        0,
         _epochTreeArity
     )
+    tree.insert(0)
+    return tree
 }
 
 // TODO: needs to be updated
@@ -125,33 +125,42 @@ const genUserStateTransitionCircuitInput = (config: {
         },
         config
     )
-    const epochTree = genNewEpochTree(EPOCH_TREE_DEPTH)
+    const epochTree = genNewEpochTree()
+    let index = 0
+    const epochTreeIndices = {} as any
     for (const [key, val] of Object.entries(epochKeyBalances)) {
         const { posRep, negRep, graffiti, timestamp } = val
-        epochTree.update(
-            BigInt(key),
+        epochTreeIndices[key] = ++index
+        epochTree.insert(
             utils.hash4([posRep, negRep, graffiti ?? 0, timestamp ?? 0])
         )
     }
+    epochTree.insert(BigInt(2) ** BigInt(252) - BigInt(1))
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
-            genEpochKey(
-                id.identityNullifier,
-                attesterId,
-                fromEpoch,
-                i,
-                EPOCH_TREE_DEPTH
-            )
+            genEpochKey(id.identityNullifier, attesterId, fromEpoch, i)
         )
 
-    const stateTreeProof = tree.createProof(leafIndex)
+    const epochKeyLeaves = epochKeys.map((k) =>
+        utils.hash5([
+            k,
+            epochKeyBalances[k.toString()]?.posRep ?? BigInt(0),
+            epochKeyBalances[k.toString()]?.negRep ?? BigInt(0),
+            epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0),
+            epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0),
+        ])
+    )
+
+    const stateTreeProof = tree._createProof(leafIndex)
     const circuitInputs = {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
         identity_nullifier: id.identityNullifier,
         state_tree_indexes: stateTreeProof.pathIndices,
-        state_tree_elements: stateTreeProof.siblings,
+        state_tree_elements: stateTreeProof.siblings.map((s, i) => {
+            return s[1 - stateTreeProof.pathIndices[i]]
+        }),
         attester_id: attesterId,
         pos_rep: startBalance.posRep,
         neg_rep: startBalance.negRep,
@@ -169,8 +178,65 @@ const genUserStateTransitionCircuitInput = (config: {
         new_timestamp: epochKeys.map(
             (k) => epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0)
         ),
-        epoch_tree_elements: epochKeys.map((k) => epochTree.createProof(k)),
-        epoch_tree_root: epochTree.root,
+        epoch_tree_elements: epochKeys.map((k) => {
+            if (epochTreeIndices[k.toString()]) {
+                const { siblings } = epochTree.createProof(
+                    epochTreeIndices[k.toString()]
+                )
+                return siblings.slice(1)
+            }
+            const index =
+                epochTree.leaves.findIndex((leaf) => BigInt(leaf) > BigInt(k)) -
+                1
+            const { siblings } = epochTree.createProof(index)
+            return siblings.slice(1)
+        }),
+        epoch_tree_indices: epochKeys.map((k) => {
+            if (epochTreeIndices[k.toString()]) {
+                const { pathIndices } = epochTree.createProof(
+                    epochTreeIndices[k.toString()]
+                )
+                return pathIndices.slice(1)
+            }
+            const index =
+                epochTree.leaves.findIndex((leaf) => BigInt(leaf) > BigInt(k)) -
+                1
+            const { pathIndices } = epochTree.createProof(index)
+            return pathIndices.slice(1)
+        }),
+        noninclusion_leaf: epochKeys.map((k) => {
+            // find a leaf gt and lt
+            if (epochTreeIndices[k.toString()]) return [0, 1]
+            const gtIndex = epochTree.leaves.findIndex(
+                (leaf) => BigInt(leaf) > BigInt(k)
+            )
+            return [epochTree.leaves[gtIndex - 1], epochTree.leaves[gtIndex]]
+        }),
+        noninclusion_leaf_index: epochKeys.map((k) => {
+            return (
+                epochTree.leaves.findIndex((leaf) => BigInt(leaf) > BigInt(k)) -
+                1
+            )
+        }),
+        noninclusion_elements: epochKeys.map((k) => {
+            let gtIndex = epochTree.leaves.findIndex(
+                (leaf) => BigInt(leaf) > BigInt(k)
+            )
+            if (gtIndex === -1) gtIndex = 1
+            return [
+                epochTree.createProof(gtIndex - 1).siblings[0],
+                epochTree.createProof(gtIndex).siblings[0],
+            ]
+        }),
+        inclusion_leaf_index: epochKeys.map((k) => {
+            return epochTreeIndices[k.toString()] ?? 0
+        }),
+        inclusion_elements: epochKeys.map((k) => {
+            const { siblings } = epochTree.createProof(
+                epochTreeIndices[k.toString()] ?? 0
+            )
+            return siblings[0]
+        }),
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -279,7 +345,6 @@ const genUserStateTransitionNullifier = (
 }
 
 export {
-    defaultEpochTreeLeaf,
     genNewEpochTree,
     genEpochKey,
     genEpochKeyCircuitInput,

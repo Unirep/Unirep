@@ -46,7 +46,7 @@ describe('User state transition', function () {
             Circuit.userStateTransition,
             circuitInputs
         )
-        expect(isValid).to.be.true
+        expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = hash7([
             id.identityNullifier,

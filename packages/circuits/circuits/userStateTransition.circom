@@ -28,7 +28,6 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input timestamp;
 
     // prove what we've received in from epoch
-    signal input epoch_tree_root;
     signal input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
     signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
@@ -48,6 +47,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY];
 
     signal output transition_nullifier;
+    signal output root;
 
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     epoch_check.in[0] <== to_epoch;
@@ -97,10 +97,12 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     // if the leaf balance is 0 we do a non-inclusion
     // else we do an inclusion
     component inc_noninc[EPOCH_KEY_NONCE_PER_EPOCH];
-    component or[EPOCH_KEY_NONCE_PER_EPOCH][3];
-    component not[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal has_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
-    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH][2];
+    component inc_mux[EPOCH_KEY_NONCE_PER_EPOCH];
+    component ands[EPOCH_KEY_NONCE_PER_EPOCH][3];
+    signal has_no_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
+    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH][4];
+
+    signal roots[EPOCH_KEY_NONCE_PER_EPOCH];
 
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
         inc_noninc[i] = ProveInclusionOrNoninclusion(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
@@ -132,37 +134,57 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         /*~~~~
 
         Now check if the epoch key has attestations. If they do we expect
-        inclusion === 1 && noninclusion === 0.
+        inclusion === 1.
 
-        Otherwise we expect inclusion === 0 && noninclusion === 1.
+        Otherwise we expect noninclusion === 1.
         */
 
         zero_check[i][0] = IsZero();
+        zero_check[i][0].in <== new_pos_rep[i];
         zero_check[i][1] = IsZero();
+        zero_check[i][1].in <== new_neg_rep[i];
+        zero_check[i][2] = IsZero();
+        zero_check[i][2].in <== new_graffiti[i];
+        zero_check[i][3] = IsZero();
+        zero_check[i][3].in <== new_timestamp[i];
 
-        or[i][0] = OR();
-        or[i][0].a <== new_pos_rep[i];
-        or[i][0].b <== new_neg_rep[i];
+        ands[i][0] = AND();
+        ands[i][0].a <== zero_check[i][0].out;
+        ands[i][0].b <== zero_check[i][1].out;
 
-        or[i][1] = OR();
-        or[i][1].a <== new_graffiti[i];
-        or[i][1].b <== new_timestamp[i];
+        ands[i][1] = AND();
+        ands[i][1].a <== zero_check[i][2].out;
+        ands[i][1].b <== zero_check[i][3].out;
 
-        or[i][2] = OR();
-        or[i][2].a <== or[i][0].out;
-        or[i][2].b <== or[i][1].out;
+        ands[i][2] = AND();
+        ands[i][2].a <== ands[i][0].out;
+        ands[i][2].b <== ands[i][1].out;
 
-        has_attestations[i] <== or[i][2].out;
+        has_no_attestations[i] <== ands[i][2].out;
 
-        not[i] = NOT();
-        not[i].in <== has_attestations[i];
+        /*~~~~~
 
-        1 === has_attestations[i] * inc_noninc[i].inclusion;
-        0 === has_attestations[i] * inc_noninc[i].noninclusion;
+        if (has_no_attestations) {
+          require(noninclusion)
+        } else {
+          require(inclusion)
+        }
+        */
 
-        1 === not[i].out * inc_noninc[i].noninclusion;
-        0 === not[i].out * inc_noninc[i].inclusion;
+        inc_mux[i] = Mux1();
+
+        inc_mux[i].s <== has_no_attestations[i];
+        inc_mux[i].c[0] <== inc_noninc[i].inclusion;
+        inc_mux[i].c[1] <== inc_noninc[i].noninclusion;
+
+        inc_mux[i].out === 1;
+
+        //~~ check that all roots are equal
+        roots[i] <== inc_noninc[i].root;
+        roots[0] === roots[i];
     }
+
+    root <== roots[0];
 
     /* End of check 2 */
 
