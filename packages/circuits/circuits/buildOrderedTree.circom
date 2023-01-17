@@ -2,34 +2,7 @@ include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/bitify.circom";
 
-template CoefficientFrom(R_V) {
-
-  //~~ generate a coefficient for a R**x value
-  //~~ used when fingerprinting the R**x set itself
-
-  // TODO: check that this is safe
-
-  //~~ we get a new random number by applying a rotation
-  //~~ and a multiplication with a constant random
-  // https://en.wikipedia.org/wiki/Algebra_of_random_variables#Elementary_symbolic_algebra_of_random_variables
-
-  signal input value;
-
-  signal output out;
-
-  //~~ Do a circular rotation
-  signal first <-- value & (2**128 - 1);
-  signal second <-- (value \ 2**128) & (2**128 - 1);
-
-  signal inter <== first + second * 2**128;
-
-  value === inter;
-
-  var rotated = second + first * 2**128;
-  out <== R_V * rotated;
-}
-
-template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_V) {
+template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_CHECKSUM) {
   signal output root;
   signal output checksum;
 
@@ -56,8 +29,6 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_V) {
    * Step 2: Calculate the polynomial hash of the leaves
    **/
 
-  //~~ generate R_V value by applying some number of rounds
-  //~~ each round is xor + bit rotation
 
   signal terms[TREE_ARITY**TREE_DEPTH];
   var polyhash = 0;
@@ -67,26 +38,17 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_V) {
   }
   checksum <== polyhash;
 
-  var actual_sum = 0;
-  component actual_coeff[TREE_ARITY**TREE_DEPTH];
-  signal actual_inter[TREE_ARITY**TREE_DEPTH];
+  var r_sum = 0;
+  component r_hasher[TREE_ARITY**TREE_DEPTH];
+  signal r_sum_inter[TREE_ARITY**TREE_DEPTH];
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    actual_coeff[x] = CoefficientFrom(R_V);
-    actual_coeff[x].value <== leaf_r_values[x];
-    actual_inter[x] <== actual_coeff[x].out * leaf_r_values[x];
-    actual_sum += actual_inter[x];
+    r_hasher[x] = Poseidon(1);
+    r_hasher[x].inputs[0] <== leaf_r_values[x];
+    r_sum_inter[x] <== r_hasher[x].out * leaf_r_values[x];
+    r_sum += r_sum_inter[x];
   }
 
-  var expected_sum = 0;
-  component expected_coeff[TREE_ARITY**TREE_DEPTH];
-  signal expected_inter[TREE_ARITY**TREE_DEPTH];
-  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    expected_coeff[x] = CoefficientFrom(R_V);
-    expected_coeff[x].value <== R**x;
-    expected_inter[x] <== expected_coeff[x].out * R ** x;
-    expected_sum += expected_inter[x];
-  }
-  expected_sum === actual_sum;
+  r_sum === R_CHECKSUM;
 
   /**
    * Step 3: Calculate the tree root
