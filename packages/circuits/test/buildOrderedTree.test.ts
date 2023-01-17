@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/utils'
-import { EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } from '../config'
+import { EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, Rx } from '../config'
 import { genProofAndVerify } from './utils'
 import { Circuit } from '../src'
 
@@ -11,8 +11,7 @@ describe('Build sorted merkle tree', function () {
             .fill(null)
             .map(() => BigInt(Math.floor(Math.random() * 1000000000000)))
         const sortedLeaves = [...leaves].sort((a, b) => (a > b ? 1 : -1))
-        const indexes = sortedLeaves.map((l) => leaves.indexOf(l))
-        console.log(indexes)
+        const rVals = sortedLeaves.map((l) => Rx[leaves.indexOf(l)])
         const tree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
             0,
@@ -23,7 +22,7 @@ describe('Build sorted merkle tree', function () {
         }
         const circuitInputs = {
             sorted_leaves: sortedLeaves,
-            leaf_degree: indexes,
+            leaf_r_values: rVals,
         }
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.buildOrderedTree,

@@ -1,13 +1,41 @@
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
+include "./circomlib/circuits/bitify.circom";
 
-template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
+template CoefficientFrom(R_V) {
+
+  //~~ generate a coefficient for a R**x value
+  //~~ used when fingerprinting the R**x set itself
+
+  // TODO: check that this is safe
+
+  //~~ we get a new random number by applying a rotation
+  //~~ and a multiplication with a constant random
+  // https://en.wikipedia.org/wiki/Algebra_of_random_variables#Elementary_symbolic_algebra_of_random_variables
+
+  signal input value;
+
+  signal output out;
+
+  //~~ Do a circular rotation
+  signal first <-- value & (2**128 - 1);
+  signal second <-- (value \ 2**128) & (2**128 - 1);
+
+  signal inter <== first + second * 2**128;
+
+  value === inter;
+
+  var rotated = second + first * 2**128;
+  out <== R_V * rotated;
+}
+
+template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_V) {
   signal output root;
   signal output checksum;
 
   // leaf and original index
   signal input sorted_leaves[TREE_ARITY**TREE_DEPTH];
-  signal input leaf_degree[TREE_ARITY**TREE_DEPTH];
+  signal input leaf_r_values[TREE_ARITY**TREE_DEPTH];
 
   /**
    * Step 1: Make sure leaf values are ascending
@@ -27,34 +55,36 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   /**
    * Step 2: Calculate the polynomial hash of the leaves
    **/
+
+  //~~ generate R_V value by applying some number of rounds
+  //~~ each round is xor + bit rotation
+
   signal terms[TREE_ARITY**TREE_DEPTH];
   var polyhash = 0;
-  component rpow[TREE_ARITY**TREE_DEPTH];
-  signal sum_terms[TREE_ARITY**TREE_DEPTH];
-  var SUM_INCREMENT = 2**252 \ (TREE_ARITY ** TREE_DEPTH);
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    rpow[x] = PowC(TREE_ARITY**TREE_DEPTH, R);
-    rpow[x].degree <== leaf_degree[x];
-    terms[x] <== sorted_leaves[x] * rpow[x].out;
+    terms[x] <== sorted_leaves[x] * leaf_r_values[x];
     polyhash += terms[x];
-
-    // Form a polyhash of the indexes, then check it below
-    // e.g. 0*R + 1*R^2 + 2*R^3 ...
-    // each index should be present exactly once
-    // Use the SUM_INCREMENT to evenly distribute values over
-    // the fiel d
-    sum_terms[x] <== leaf_degree[x] * SUM_INCREMENT * rpow[x].out;
   }
   checksum <== polyhash;
 
   var actual_sum = 0;
+  component actual_coeff[TREE_ARITY**TREE_DEPTH];
+  signal actual_inter[TREE_ARITY**TREE_DEPTH];
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    actual_sum += sum_terms[x];
+    actual_coeff[x] = CoefficientFrom(R_V);
+    actual_coeff[x].value <== leaf_r_values[x];
+    actual_inter[x] <== actual_coeff[x].out * leaf_r_values[x];
+    actual_sum += actual_inter[x];
   }
 
   var expected_sum = 0;
+  component expected_coeff[TREE_ARITY**TREE_DEPTH];
+  signal expected_inter[TREE_ARITY**TREE_DEPTH];
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
-    expected_sum += x * SUM_INCREMENT * R ** x;
+    expected_coeff[x] = CoefficientFrom(R_V);
+    expected_coeff[x].value <== R**x;
+    expected_inter[x] <== expected_coeff[x].out * R ** x;
+    expected_sum += expected_inter[x];
   }
   expected_sum === actual_sum;
 
