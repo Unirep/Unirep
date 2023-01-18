@@ -4615,6 +4615,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@unirep/test@workspace:packages/test":
+  version: 0.0.0-use.local
+  resolution: "@unirep/test@workspace:packages/test"
+  dependencies:
+    "@unirep/circuits": 2.0.0-alpha-4
+    "@unirep/utils": 2.0.0-alpha-4
+  languageName: unknown
+  linkType: soft
+
 "@unirep/utils@2.0.0-alpha-4, @unirep/utils@workspace:packages/utils":
   version: 0.0.0-use.local
   resolution: "@unirep/utils@workspace:packages/utils"
