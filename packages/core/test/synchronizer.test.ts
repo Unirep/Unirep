@@ -46,7 +46,8 @@ describe('Synchronizer process events', function () {
             unirepContract.address,
             BigInt(attester.address)
         )
-        await processAttestations(synchronizer, unirepContract, attester)
+        const epochTree = await synchronizer.genEpochTree(epoch)
+        await processAttestations(attester, epoch, unirepContract, epochTree)
     })
 
     afterEach(async () => {
