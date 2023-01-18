@@ -1,6 +1,22 @@
-import { AggregateEpochKeysProof, AGGREGATE_KEY_COUNT, Circuit, defaultEpochTreeLeaf, EPOCH_TREE_ARITY, EPOCH_TREE_DEPTH, SignupProof, STATE_TREE_DEPTH } from "@unirep/circuits"
-import { defaultProver } from "@unirep/circuits/provers/defaultProver"
-import { genRandomSalt, hash4, IncrementalMerkleTree, SparseMerkleTree, stringifyBigInts, ZkIdentity } from "@unirep/utils"
+import {
+    AggregateEpochKeysProof,
+    AGGREGATE_KEY_COUNT,
+    Circuit,
+    defaultEpochTreeLeaf,
+    EPOCH_TREE_ARITY,
+    EPOCH_TREE_DEPTH,
+    SignupProof,
+    STATE_TREE_DEPTH,
+} from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import {
+    genRandomSalt,
+    hash4,
+    IncrementalMerkleTree,
+    SparseMerkleTree,
+    stringifyBigInts,
+    ZkIdentity,
+} from '@unirep/utils'
 
 // users
 export async function bootstrapUsers(attester, epoch, unirepContract) {

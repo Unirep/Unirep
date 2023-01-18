@@ -1,12 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    SparseMerkleTree,
-    genRandomSalt,
-    hash3,
-    hash6,
-} from '@unirep/utils'
+import { SparseMerkleTree, genRandomSalt, hash3, hash6 } from '@unirep/utils'
 import {
     Circuit,
     EPOCH_TREE_DEPTH,
