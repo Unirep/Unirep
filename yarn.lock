@@ -4556,6 +4556,7 @@ __metadata:
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
     "@unirep/circuits": 2.0.0-alpha-4
+    "@unirep/test": 1.0.0
     "@unirep/utils": 2.0.0-alpha-4
     "@zk-kit/incremental-merkle-tree.sol": ^1.2.0
     circomlibjs: 0.0.8
@@ -4615,7 +4616,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/test@workspace:packages/test":
+"@unirep/test@1.0.0, @unirep/test@workspace:packages/test":
   version: 0.0.0-use.local
   resolution: "@unirep/test@workspace:packages/test"
   dependencies:

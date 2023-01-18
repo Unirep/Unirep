@@ -12,76 +12,8 @@ import {
     AGGREGATE_KEY_COUNT,
     AggregateEpochKeysProof,
 } from '@unirep/circuits'
-import { SparseMerkleTree, hash4, stringifyBigInts } from '@unirep/utils'
-
-function genAggregateEpochKeysCircuitInputs(
-    epoch,
-    attester,
-    hashchainIndex,
-    hashchain,
-    epochTree?
-) {
-    const tree =
-        epochTree ??
-        new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf,
-            EPOCH_TREE_ARITY
-        )
-    const startRoot = tree.root
-    const dummyEpochKeys = Array(
-        AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
-    )
-        .fill(null)
-        .map(() => '0x0000000')
-    const dummyBalances = Array(
-        AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
-    )
-        .fill(null)
-        .map(() => [0, 0, 0, 0])
-    const allEpochKeys = [hashchain.epochKeys, dummyEpochKeys].flat()
-    const allBalances = [
-        hashchain.epochKeyBalances.map(
-            ({ posRep, negRep, graffiti, timestamp }) => {
-                return [
-                    posRep.toString(),
-                    negRep.toString(),
-                    graffiti.toString(),
-                    timestamp.toString(),
-                ]
-            }
-        ),
-        dummyBalances,
-    ].flat()
-    const oldEpochKeysLeaves = [
-        hashchain.epochKeys.map((epk) => tree.getLeaf(epk.toBigInt())),
-        dummyBalances.map(() => defaultEpochTreeLeaf),
-    ].flat()
-    const circuitInputs = {
-        start_root: startRoot,
-        epoch_keys: allEpochKeys.map((k) => k.toString()),
-        epoch_key_balances: allBalances,
-        old_epoch_key_hashes: oldEpochKeysLeaves,
-        path_elements: allEpochKeys.map((key, i) => {
-            const p = tree.createProof(BigInt(key))
-            if (i < hashchain.epochKeys.length) {
-                const { posRep, negRep, graffiti, timestamp } =
-                    hashchain.epochKeyBalances[i]
-                tree.update(
-                    BigInt(key),
-                    hash4([posRep, negRep, graffiti, timestamp])
-                )
-            }
-            return p
-        }),
-        epoch: epoch.toString(),
-        attester_id: attester.address,
-        hashchain_index: hashchainIndex.toString(),
-        epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
-    }
-
-    return stringifyBigInts(circuitInputs)
-}
+import { SparseMerkleTree, hash4 } from '@unirep/utils'
+import { genAggregateEpochKeysCircuitInputs } from '@unirep/test'
 
 describe('Hashchain tests', function () {
     this.timeout(300000)

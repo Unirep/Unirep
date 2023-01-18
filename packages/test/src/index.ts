@@ -57,7 +57,7 @@ export async function signupUser(id, unirepContract, attesterId, account) {
         .connect(account)
         .userSignUp(publicSignals, proof)
         .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber() }
+    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
 }
 
 // attestations

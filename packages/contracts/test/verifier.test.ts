@@ -13,39 +13,12 @@ import {
     EpochKeyProof,
     EpochKeyLiteProof,
     ReputationProof,
-    SignupProof,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-
-const signupUser = async (id, unirepContract, attesterId, account) => {
-    const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
-    const r = await defaultProver.genProofAndPublicSignals(
-        Circuit.signup,
-        stringifyBigInts({
-            epoch: epoch.toString(),
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
-            attester_id: attesterId,
-        })
-    )
-    const { publicSignals, proof } = new SignupProof(
-        r.publicSignals,
-        r.proof,
-        defaultProver
-    )
-    const leafIndex = await unirepContract.attesterStateTreeLeafCount(
-        attesterId,
-        epoch
-    )
-    await unirepContract
-        .connect(account)
-        .userSignUp(publicSignals, proof)
-        .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
-}
+import { signupUser } from '@unirep/test'
 
 describe('Epoch key lite proof verifier', function () {
     this.timeout(300000)

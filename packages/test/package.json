@@ -1,11 +1,13 @@
 {
-  "name": "@unirep/test",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "tsc"
-  },
-  "dependencies": {
-    "@unirep/circuits": "2.0.0-alpha-4",
-    "@unirep/utils": "2.0.0-alpha-4"
-  }
+    "name": "@unirep/test",
+    "version": "1.0.0",
+    "main": "build/index.js",
+    "types": "build/index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@unirep/circuits": "2.0.0-alpha-4",
+        "@unirep/utils": "2.0.0-alpha-4"
+    }
 }
