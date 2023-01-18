@@ -4,8 +4,13 @@ import { expect } from 'chai'
 import { ZkIdentity } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
+import {
+    bootstrapAttestations,
+    bootstrapUsers,
+    processAttestations,
+} from '@unirep/test'
 
-import { genUserState } from './utils'
+import { genUnirepState, genUserState } from './utils'
 
 describe('User state', function () {
     this.timeout(0)
@@ -24,6 +29,21 @@ describe('User state', function () {
 
     beforeEach(async () => {
         snapshot = await ethers.provider.send('evm_snapshot', [])
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await bootstrapUsers(attester, epoch.toNumber(), unirepContract)
+        await bootstrapAttestations(attester, epoch.toNumber(), unirepContract)
+        const synchronizer = await genUnirepState(
+            ethers.provider,
+            unirepContract.address,
+            BigInt(attester.address)
+        )
+        const epochTree = await synchronizer.genEpochTree(epoch)
+        await processAttestations(attester, epoch, unirepContract, epochTree)
+        await synchronizer.stop()
     })
 
     afterEach(async () => {
@@ -124,10 +144,15 @@ describe('User state', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({
@@ -223,10 +248,15 @@ describe('User state', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         {
             const { publicSignals, proof } =
@@ -262,6 +292,7 @@ describe('User state', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         {
+            await userState.waitForSync()
             const toEpoch = await userState.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({ toEpoch })

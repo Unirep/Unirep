@@ -183,17 +183,27 @@ export function genAggregateEpochKeysCircuitInputs(
         epoch_key_count: hashchain.epochKeys.length, // process epoch keys with attestations
     }
 
-    return stringifyBigInts(circuitInputs)
+    return {
+        circuitInputs: stringifyBigInts(circuitInputs),
+        epochTree: tree,
+    }
 }
 
-export async function processAttestations(attester, epoch, unirepContract) {
+export async function processAttestations(
+    attester,
+    epoch,
+    unirepContract,
+    epochTree?
+) {
     let success = true
     const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
-    let currentEpochTree = new SparseMerkleTree(
-        EPOCH_TREE_DEPTH,
-        defaultEpochTreeLeaf,
-        EPOCH_TREE_ARITY
-    )
+    let currentEpochTree =
+        epochTree ??
+        new SparseMerkleTree(
+            EPOCH_TREE_DEPTH,
+            defaultEpochTreeLeaf,
+            EPOCH_TREE_ARITY
+        )
     while (success) {
         try {
             await unirepContract

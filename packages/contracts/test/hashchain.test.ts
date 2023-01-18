@@ -87,7 +87,7 @@ describe('Hashchain tests', function () {
             epoch
         )
         expect(owedKeys.toNumber()).to.equal(0)
-        const inputs = genAggregateEpochKeysCircuitInputs(
+        const { circuitInputs: inputs } = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
@@ -239,12 +239,13 @@ describe('Hashchain tests', function () {
                     hash4(hashchain.epochKeyBalances[x])
                 )
             }
-            const inputs = genAggregateEpochKeysCircuitInputs(
-                epoch,
-                attester,
-                hashchainIndex,
-                hashchain
-            )
+            const { circuitInputs: inputs } =
+                genAggregateEpochKeysCircuitInputs(
+                    epoch,
+                    attester,
+                    hashchainIndex,
+                    hashchain
+                )
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.aggregateEpochKeys,
                 inputs
@@ -287,13 +288,14 @@ describe('Hashchain tests', function () {
                 epoch,
                 hashchainIndex
             )
-            const inputs = genAggregateEpochKeysCircuitInputs(
-                epoch,
-                attester,
-                hashchainIndex,
-                hashchain,
-                epochTree
-            )
+            const { circuitInputs: inputs } =
+                genAggregateEpochKeysCircuitInputs(
+                    epoch,
+                    attester,
+                    hashchainIndex,
+                    hashchain,
+                    epochTree
+                )
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.aggregateEpochKeys,
                 inputs

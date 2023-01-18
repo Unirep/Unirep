@@ -3,12 +3,15 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, genStateTreeLeaf } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
+import {
+    bootstrapAttestations,
+    bootstrapUsers,
+    processAttestations,
+} from '@unirep/test'
 
-import { Synchronizer, schema } from '../src'
-import { genUserState, compareDB } from './utils'
-import { SQLiteConnector } from 'anondb/node'
+import { Synchronizer } from '../src'
+import { genUserState, compareDB, genUnirepState } from './utils'
 
 let synchronizer: Synchronizer
 
@@ -31,15 +34,19 @@ describe('Synchronizer process events', function () {
 
     beforeEach(async () => {
         snapshot = await ethers.provider.send('evm_snapshot', [])
-        const db = await SQLiteConnector.create(schema, ':memory:')
-        synchronizer = new Synchronizer({
-            db,
-            prover: defaultProver,
-            provider: ethers.provider,
-            unirepAddress: unirepContract.address,
-            attesterId: BigInt(attester.address),
-        })
-        await synchronizer.start()
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await bootstrapUsers(attester, epoch.toNumber(), unirepContract)
+        await bootstrapAttestations(attester, epoch.toNumber(), unirepContract)
+        synchronizer = await genUnirepState(
+            ethers.provider,
+            unirepContract.address,
+            BigInt(attester.address)
+        )
+        await processAttestations(synchronizer, unirepContract, attester)
     })
 
     afterEach(async () => {
@@ -52,6 +59,7 @@ describe('Synchronizer process events', function () {
         )
         await compareDB((state as any)._db, (synchronizer as any)._db)
         await state.stop()
+        await synchronizer.stop()
 
         await ethers.provider.send('evm_revert', [snapshot])
     })
@@ -203,10 +211,15 @@ describe('Synchronizer process events', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await synchronizer.unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({
@@ -293,10 +306,15 @@ describe('Synchronizer process events', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await synchronizer.unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({

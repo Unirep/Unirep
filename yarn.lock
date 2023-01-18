@@ -4580,6 +4580,7 @@ __metadata:
     "@nomiclabs/hardhat-waffle": ^2.0.3
     "@unirep/circuits": 2.0.0-alpha-4
     "@unirep/contracts": 2.0.0-alpha-3
+    "@unirep/test": 1.0.0
     "@unirep/utils": 2.0.0-alpha-4
     anondb: ^0.0.16
     ethers: ^5.6.8

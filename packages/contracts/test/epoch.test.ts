@@ -11,9 +11,14 @@ import {
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
+import {
+    bootstrapAttestations,
+    bootstrapUsers,
+    processAttestations,
+} from '@unirep/test'
 
 describe('Epoch', function () {
-    this.timeout(120000)
+    this.timeout(0)
 
     let unirepContract
     let snapshot
@@ -50,9 +55,35 @@ describe('Epoch', function () {
             defaultEpochTreeLeaf,
             EPOCH_TREE_ARITY
         )
-        for (let x = startEpoch.toNumber(); x < 10; x++) {
+        for (let x = startEpoch.toNumber(); x < 6; x++) {
             const prevEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
+            )
+            const stateTree = await bootstrapUsers(
+                attester,
+                prevEpoch.toNumber(),
+                unirepContract
+            )
+            const epochTree = await bootstrapAttestations(
+                attester,
+                prevEpoch.toNumber(),
+                unirepContract
+            )
+            const prevStateTreeRoot =
+                await unirepContract.attesterStateTreeRoot(
+                    attester.address,
+                    prevEpoch
+                )
+            await processAttestations(attester, prevEpoch, unirepContract)
+            const prevEpochTreeRoot = await unirepContract.attesterEpochRoot(
+                attester.address,
+                prevEpoch
+            )
+            expect(prevStateTreeRoot.toString()).to.equal(
+                stateTree.root.toString()
+            )
+            expect(prevEpochTreeRoot.toString()).to.equal(
+                epochTree.root.toString()
             )
 
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])

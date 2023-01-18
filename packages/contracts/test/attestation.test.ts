@@ -511,7 +511,7 @@ describe('Attestations', function () {
             hashchainIndex
         )
 
-        const circuitInputs = genAggregateEpochKeysCircuitInputs(
+        const { circuitInputs } = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
@@ -608,7 +608,7 @@ describe('Attestations', function () {
             hashchainIndex
         )
         const wrongHashIndex = 1
-        const circuitInputs = genAggregateEpochKeysCircuitInputs(
+        const { circuitInputs } = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             wrongHashIndex,
@@ -671,7 +671,7 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const circuitInputs = genAggregateEpochKeysCircuitInputs(
+        const { circuitInputs } = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
@@ -745,7 +745,7 @@ describe('Attestations', function () {
             epoch,
             hashchainIndex
         )
-        const circuitInputs = genAggregateEpochKeysCircuitInputs(
+        const { circuitInputs } = genAggregateEpochKeysCircuitInputs(
             epoch,
             attester,
             hashchainIndex,
