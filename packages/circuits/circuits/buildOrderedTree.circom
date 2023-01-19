@@ -2,7 +2,7 @@ include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/bitify.circom";
 
-template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_CHECKSUM) {
+template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal output root;
   signal output checksum;
 
@@ -48,7 +48,18 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R_CHECKSUM) {
     r_sum += r_sum_inter[x];
   }
 
-  r_sum === R_CHECKSUM;
+  var r_checksum = 0;
+  component r_hasher_check[TREE_ARITY**TREE_DEPTH];
+  signal r_checksum_inter[TREE_ARITY**TREE_DEPTH];
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
+    r_hasher_check[x] = Poseidon(1);
+    r_hasher_check[x].inputs[0] <== R**x;
+    log(R**x);
+    r_checksum_inter[x] <== r_hasher_check[x].out * R**x;
+    r_checksum += r_checksum_inter[x];
+  }
+
+  r_sum === r_checksum;
 
   /**
    * Step 3: Calculate the tree root
