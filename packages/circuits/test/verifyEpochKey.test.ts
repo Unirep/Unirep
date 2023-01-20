@@ -1,22 +1,23 @@
 import { expect } from 'chai'
-import { IncrementalMerkleTree, ZkIdentity, hash7 } from '@unirep/utils'
+import {
+    IncrementalMerkleTree,
+    ZkIdentity,
+    hash7,
+    genEpochKey,
+} from '@unirep/utils'
 import { Circuit, EpochKeyProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
 import { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 
-import {
-    genEpochKeyCircuitInput,
-    genProofAndVerify,
-    genEpochKey,
-} from './utils'
+import { genEpochKeyCircuitInput, genProofAndVerify } from './utils'
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)
 
     it('should prove epoch key membership', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = 10210
+            const attesterId = BigInt(10210)
             const epoch = 120958
             const posRep = 2988
             const negRep = 987
@@ -76,7 +77,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('should reveal nonce value', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = 10210
+            const attesterId = BigInt(10210)
             const epoch = 120958
             const posRep = 2988
             const negRep = 987
@@ -140,7 +141,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('should prove a data value', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = 10210
+            const attesterId = BigInt(10210)
             const epoch = 120958
             const posRep = 2988
             const negRep = 987
@@ -197,7 +198,7 @@ describe('Verify Epoch Key circuits', function () {
 
     it('data value should be verified in proof', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = 10210
+            const attesterId = BigInt(10210)
             const epoch = 120958
             const posRep = 2988
             const negRep = 987
@@ -255,7 +256,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('should prove wrong gst root for wrong rep', async () => {
-        const attesterId = 10210
+        const attesterId = BigInt(10210)
         const epoch = 120958
         const posRep = 2988
         const negRep = 987
@@ -304,7 +305,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('should prove wrong gst root/epoch key for wrong attester id', async () => {
-        const attesterId = 10210
+        const attesterId = BigInt(10210)
         const epoch = 120958
         const posRep = 2988
         const negRep = 987
@@ -357,7 +358,7 @@ describe('Verify Epoch Key circuits', function () {
     })
 
     it('should fail to prove invalid nonce', async () => {
-        const attesterId = 10210
+        const attesterId = BigInt(10210)
         const epoch = 120958
         const posRep = 2988
         const negRep = 987

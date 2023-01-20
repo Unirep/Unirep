@@ -1,12 +1,13 @@
 import { expect } from 'chai'
-import { ZkIdentity, IncrementalMerkleTree, hash7 } from '@unirep/utils'
-import { Circuit } from '../src'
 import {
-    genProofAndVerify,
+    ZkIdentity,
+    IncrementalMerkleTree,
+    hash7,
     genEpochKey,
-    genUserStateTransitionCircuitInput,
     genUserStateTransitionNullifier,
-} from './utils'
+} from '@unirep/utils'
+import { Circuit } from '../src'
+import { genProofAndVerify, genUserStateTransitionCircuitInput } from './utils'
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH, STATE_TREE_DEPTH } from '../config'
 
 describe('User state transition', function () {
@@ -16,7 +17,7 @@ describe('User state transition', function () {
         const id = new ZkIdentity()
         const fromEpoch = 1
         const toEpoch = 5
-        const attesterId = 290
+        const attesterId = BigInt(1249021895182290)
         const posRep = 10
         const negRep = 108
         const graffiti = 190129
@@ -60,8 +61,8 @@ describe('User state transition', function () {
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.identityNullifier,
-            fromEpoch,
-            attesterId
+            attesterId,
+            fromEpoch
         )
         expect(publicSignals[2]).to.equal(transitionNullifier.toString())
     })
@@ -70,7 +71,7 @@ describe('User state transition', function () {
         const id = new ZkIdentity()
         const fromEpoch = 1
         const toEpoch = 5
-        const attesterId = 290
+        const attesterId = BigInt(124185915945829581290)
         const posRep = 10
         const negRep = 108
         const graffiti = 1241
@@ -126,8 +127,8 @@ describe('User state transition', function () {
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.identityNullifier,
-            fromEpoch,
-            attesterId
+            attesterId,
+            fromEpoch
         )
         expect(publicSignals[2]).to.equal(transitionNullifier.toString())
     })
@@ -136,7 +137,7 @@ describe('User state transition', function () {
         const id = new ZkIdentity()
         const fromEpoch = 1
         const toEpoch = 5
-        const attesterId = 290
+        const attesterId = BigInt(2140158589239525290)
         const posRep = 10
         const negRep = 108
         const graffiti = 1241
@@ -192,8 +193,8 @@ describe('User state transition', function () {
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.identityNullifier,
-            fromEpoch,
-            attesterId
+            attesterId,
+            fromEpoch
         )
         expect(publicSignals[2]).to.equal(transitionNullifier.toString())
     })

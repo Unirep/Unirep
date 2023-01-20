@@ -37,12 +37,24 @@ export const genEpochKey = (
     return hash4([identityNullifier, BigInt(attesterId), epoch, BigInt(nonce)])
 }
 
-export const genEpochNullifier = (
+export const genUserStateTransitionNullifier = (
     identityNullifier: bigint,
     attesterId: bigint | string,
-    epoch: number | bigint
+    epoch: number | bigint | number
 ): bigint => {
     return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
+}
+
+export const genEpochNullifier = (
+    ...args: [
+        identityNullifier: bigint,
+        attesterId: bigint | string,
+        epoch: number | bigint | number
+    ]
+) => {
+    console.warn('@unirep/utils:genEpochNullifier is deprecated')
+    console.warn('Use @unirep/utils:genUserStateTransitionNullifier instead')
+    return genUserStateTransitionNullifier(...args)
 }
 
 export const genStateTreeLeaf = (

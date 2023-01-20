@@ -25,31 +25,13 @@ const genNewEpochTree = (
     return tree
 }
 
-const genEpochKey = (
-    identityNullifier: bigint,
-    attesterId: number,
-    epoch: number,
-    nonce: number,
-    _epochTreeDepth: number = EPOCH_TREE_DEPTH,
-    _epochTreeArity: number = EPOCH_TREE_ARITY
-): bigint => {
-    const epochKey = utils.hash4([
-        identityNullifier,
-        BigInt(attesterId),
-        epoch,
-        nonce,
-    ])
-    // Adjust epoch key size according to epoch tree depth
-    return epochKey
-}
-
 const genEpochKeyCircuitInput = (config: {
     id: utils.ZkIdentity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
     epoch: number
     nonce: number
-    attesterId: number
+    attesterId: number | bigint
     posRep: number
     negRep: number
     graffiti: number | bigint
@@ -97,7 +79,7 @@ const genUserStateTransitionCircuitInput = (config: {
     toEpoch: number
     tree: utils.IncrementalMerkleTree
     leafIndex: number
-    attesterId: number
+    attesterId: number | bigint
     startBalance: { posRep: any; negRep: any; graffiti: any; timestamp: any }
     epochKeyBalances?: {
         [key: string]: {
@@ -137,7 +119,12 @@ const genUserStateTransitionCircuitInput = (config: {
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
-            genEpochKey(id.identityNullifier, attesterId, fromEpoch, i)
+            utils.genEpochKey(
+                id.identityNullifier,
+                BigInt(attesterId),
+                fromEpoch,
+                i
+            )
         )
 
     const epochKeyLeaves = epochKeys.map((k) =>
@@ -190,7 +177,7 @@ const genUserStateTransitionCircuitInput = (config: {
         ),
         epoch_tree_elements: epochKeys.map((k) => {
             if (epochTreeIndices[k.toString()]) {
-                const { siblings } = epochTree.createProof(
+                const { siblings } = epochTree._createProof(
                     epochTreeIndices[k.toString()]
                 )
                 return siblings.slice(1)
@@ -198,12 +185,12 @@ const genUserStateTransitionCircuitInput = (config: {
             const leaf = epochLeavesByKey[k.toString()]
             const index =
                 epochTree.leaves.findIndex((l) => BigInt(l) > BigInt(leaf)) - 1
-            const { siblings } = epochTree.createProof(index)
+            const { siblings } = epochTree._createProof(index)
             return siblings.slice(1)
         }),
         epoch_tree_indices: epochKeys.map((k) => {
             if (epochTreeIndices[k.toString()]) {
-                const { pathIndices } = epochTree.createProof(
+                const { pathIndices } = epochTree._createProof(
                     epochTreeIndices[k.toString()]
                 )
                 return pathIndices.slice(1)
@@ -211,7 +198,7 @@ const genUserStateTransitionCircuitInput = (config: {
             const leaf = epochLeavesByKey[k.toString()]
             const index =
                 epochTree.leaves.findIndex((l) => BigInt(l) > BigInt(leaf)) - 1
-            const { pathIndices } = epochTree.createProof(index)
+            const { pathIndices } = epochTree._createProof(index)
             return pathIndices.slice(1)
         }),
         noninclusion_leaf: epochKeys.map((k) => {
@@ -236,15 +223,15 @@ const genUserStateTransitionCircuitInput = (config: {
             )
             if (gtIndex === -1) gtIndex = 1
             return [
-                epochTree.createProof(gtIndex - 1).siblings[0],
-                epochTree.createProof(gtIndex).siblings[0],
+                epochTree._createProof(gtIndex - 1).siblings[0],
+                epochTree._createProof(gtIndex).siblings[0],
             ]
         }),
         inclusion_leaf_index: epochKeys.map((k) => {
             return epochTreeIndices[k.toString()] ?? 0
         }),
         inclusion_elements: epochKeys.map((k) => {
-            const { siblings } = epochTree.createProof(
+            const { siblings } = epochTree._createProof(
                 epochTreeIndices[k.toString()] ?? 0
             )
             return siblings[0]
@@ -348,20 +335,10 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     return { isValid, proof, publicSignals }
 }
 
-const genUserStateTransitionNullifier = (
-    identityNullifier: bigint,
-    epoch: number,
-    attesterId: number
-): bigint => {
-    return utils.hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
-}
-
 export {
     genNewEpochTree,
-    genEpochKey,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genUserStateTransitionCircuitInput,
-    genUserStateTransitionNullifier,
     genProofAndVerify,
 }
