@@ -71,10 +71,14 @@ template ProveInclusionOrNoninclusion(TREE_DEPTH, TREE_ARITY) {
     */
 
     //~~~~~ Check that leaf exists in inclusion_elements
+    component inclusion_leaf_mod = Modulo();
+    inclusion_leaf_mod.divisor <== TREE_ARITY;
+    inclusion_leaf_mod.dividend <== inclusion_leaf_index;
+
     component inclusion_leaf_exists = Exists(TREE_ARITY);
 
     inclusion_leaf_exists.value <== leaf;
-    inclusion_leaf_exists.index <== inclusion_leaf_index;
+    inclusion_leaf_exists.index <== inclusion_leaf_mod.remainder;
     for (var j = 0; j < TREE_ARITY; j++) {
         inclusion_leaf_exists.values[j] <== inclusion_elements[j];
     }
@@ -91,9 +95,9 @@ template ProveInclusionOrNoninclusion(TREE_DEPTH, TREE_ARITY) {
     component inclusion_parent_exists = Exists(TREE_ARITY);
 
     inclusion_parent_exists.value <== inclusion_parent_hasher.out;
-    inclusion_parent_exists.index <== inclusion_leaf_index \ TREE_ARITY;
+    inclusion_parent_exists.index <== inclusion_leaf_mod.quotient;
     for (var j = 0; j < TREE_ARITY; j++) {
-        inclusion_parent_exists.values[j] <== inclusion_elements[j];
+        inclusion_parent_exists.values[j] <== parent_elements[0][j];
     }
 
     //~~ (leaf_exists && parent_exists)
@@ -107,17 +111,22 @@ template ProveInclusionOrNoninclusion(TREE_DEPTH, TREE_ARITY) {
     component noninclusion_leaf_exists[2];
     component noninclusion_parent_exists[2];
     component noninclusion_parent_hasher[2];
+    component noninclusion_leaf_mod[2];
 
     signal leaf_exists[2];
 
     for (var x = 0; x < 2; x++) {
+
+        noninclusion_leaf_mod[x] = Modulo();
+        noninclusion_leaf_mod[x].divisor <== TREE_ARITY;
+        noninclusion_leaf_mod[x].dividend <== noninclusion_leaf_index + x;
 
         //~~~~~ Check that noninclusion_leaf exists in noninclusion_elements
 
         noninclusion_leaf_exists[x] = Exists(TREE_ARITY);
 
         noninclusion_leaf_exists[x].value <== noninclusion_leaf[x];
-        noninclusion_leaf_exists[x].index <== noninclusion_leaf_index + x;
+        noninclusion_leaf_exists[x].index <== noninclusion_leaf_mod[x].remainder;
         for (var j = 0; j < TREE_ARITY; j++) {
             noninclusion_leaf_exists[x].values[j] <== noninclusion_elements[x][j];
         }
@@ -134,7 +143,7 @@ template ProveInclusionOrNoninclusion(TREE_DEPTH, TREE_ARITY) {
         noninclusion_parent_exists[x] = Exists(TREE_ARITY);
 
         noninclusion_parent_exists[x].value <== noninclusion_parent_hasher[x].out;
-        noninclusion_parent_exists[x].index <== (noninclusion_leaf_index + x) \ TREE_ARITY;
+        noninclusion_parent_exists[x].index <== noninclusion_leaf_mod[x].quotient;
         for (var j = 0; j < TREE_ARITY; j++) {
             noninclusion_parent_exists[x].values[j] <== parent_elements[0][j];
         }
