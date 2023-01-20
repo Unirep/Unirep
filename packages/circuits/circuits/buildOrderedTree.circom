@@ -3,6 +3,7 @@ include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/mux1.circom";
+include "./bigComparators.circom";
 
 template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal output root;
@@ -33,7 +34,7 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   //~~ at the smart contract level
   for (var x = 1; x < TREE_ARITY**TREE_DEPTH; x++) {
     // sorted_leaves[x] \ 2**252 === 0;
-    lt_comp[x-1] = LessThan(252);
+    lt_comp[x-1] = BigLessThan();
     lt_comp[x-1].in[0] <== sorted_leaves[x-1];
     lt_comp[x-1].in[1] <== sorted_leaves[x];
 

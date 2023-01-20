@@ -2,6 +2,7 @@ include "./circomlib/circuits/bitify.circom";
 include "./exists.circom";
 include "./sparseMerkleTree.circom";
 include "./modulo.circom";
+include "./bigComparators.circom";
 
 /*~~~~~
 
@@ -27,28 +28,6 @@ leaves[1...n] = elements of the tree
 n <= TREE_ARITY ** TREE_DEPTH - 2
 */
 
-//~~ Copy of template with assert(n <= 252) removed
-template _LessThan(n) {
-    signal input in[2];
-    signal output out;
-
-    component n2b = Num2Bits(n+1);
-
-    n2b.in <== in[0]+ (1<<n) - in[1];
-
-    out <== 1-n2b.out[n];
-}
-
-template _GreaterThan(n) {
-    signal input in[2];
-    signal output out;
-
-    component lt = _LessThan(n);
-
-    lt.in[0] <== in[1];
-    lt.in[1] <== in[0];
-    lt.out ==> out;
-}
 
 template ProveInclusionOrNoninclusion(TREE_DEPTH, TREE_ARITY) {
 
@@ -168,12 +147,12 @@ template ProveInclusionOrNoninclusion(TREE_DEPTH, TREE_ARITY) {
 
     //~~~ noninclusion_leaf[0] < leaf < noninclusion_leaf[1]
 
-    component lt = _LessThan(254);
+    component lt = BigLessThan();
 
     lt.in[0] <== noninclusion_leaf[0];
     lt.in[1] <== leaf;
 
-    component gt = _GreaterThan(254);
+    component gt = BigGreaterThan();
     gt.in[0] <== noninclusion_leaf[1];
     gt.in[1] <== leaf;
 
