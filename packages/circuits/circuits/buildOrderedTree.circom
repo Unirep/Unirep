@@ -1,6 +1,8 @@
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/bitify.circom";
+include "./circomlib/circuits/gates.circom";
+include "./circomlib/circuits/mux1.circom";
 
 template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal output root;
@@ -10,19 +12,52 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal input sorted_leaves[TREE_ARITY**TREE_DEPTH];
   signal input leaf_r_values[TREE_ARITY**TREE_DEPTH];
 
+  // number of leaves in the working tree, including
+  // the 0 leaf and (SNARK_SCALAR_FIELD - 1)
+  signal input leaf_count;
+
   /**
    * Step 1: Make sure leaf values are ascending
    * TODO: find a way to not use a LessThan component
    * can use value differences/subtraction for this?
    **/
   component lt_comp[TREE_ARITY**TREE_DEPTH - 1];
-  sorted_leaves[0] \ 2**252 === 0;
+  component leaf_zero[TREE_ARITY**TREE_DEPTH - 1];
+  component gt_comp[TREE_ARITY**TREE_DEPTH - 1];
+  component leaf_mux[TREE_ARITY**TREE_DEPTH - 1];
+  //~~~ first leaf must be 0
+  sorted_leaves[0] === 0;
+  //~~ working section of the tree must start with 0 and end with
+  //~~ SNARK_SCALAR_CONSTANT - 1
+  //~~ the last value being SNARK_SCALAR_CONSTANT -1 is enforced
+  //~~ at the smart contract level
   for (var x = 1; x < TREE_ARITY**TREE_DEPTH; x++) {
-    sorted_leaves[x] \ 2**252 === 0;
+    // sorted_leaves[x] \ 2**252 === 0;
     lt_comp[x-1] = LessThan(252);
     lt_comp[x-1].in[0] <== sorted_leaves[x-1];
     lt_comp[x-1].in[1] <== sorted_leaves[x];
-    lt_comp[x-1].out === 1;
+
+    //~~ if x > leaf_count, require(leaf === 0)
+
+    leaf_zero[x-1] = IsZero();
+    leaf_zero[x-1].in <== sorted_leaves[x];
+
+    //~~~ supports up to 32k leaves
+    gt_comp[x-1] = GreaterEqThan(15);
+    gt_comp[x-1].in[0] <== x;
+    gt_comp[x-1].in[1] <== leaf_count;
+
+    // if gt_comp
+    //   then leaf_zero == true
+    // else
+    //   then lt_comp == true
+    leaf_mux[x-1] = Mux1();
+    leaf_mux[x-1].s <== gt_comp[x-1].out;
+
+    leaf_mux[x-1].c[0] <== lt_comp[x-1].out;
+    leaf_mux[x-1].c[1] <== leaf_zero[x-1].out;
+
+    leaf_mux[x-1].out === 1;
   }
 
   /**
@@ -54,7 +89,6 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
     r_hasher_check[x] = Poseidon(1);
     r_hasher_check[x].inputs[0] <== R**x;
-    log(R**x);
     r_checksum_inter[x] <== r_hasher_check[x].out * R**x;
     r_checksum += r_checksum_inter[x];
   }

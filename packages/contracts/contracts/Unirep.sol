@@ -257,14 +257,20 @@ contract Unirep is IUnirep, VerifySignature {
         if (!buildOrderedTreeVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
         AttesterData storage attester = attesters[attesterId];
+        EpochKeyState storage epkState = attester.epochKeyState[epoch];
         updateEpochIfNeeded(attesterId);
         if (attester.currentEpoch <= epoch) revert EpochNotMatch();
         // build the epoch tree root
         uint256 root = publicSignals[0];
         uint256 polyhash = publicSignals[1];
+        //~~ if the hash is 0, don't allow the epoch to be manually sealed
+        //~~ no attestations happened
+        require(epkState.polyhash.hash != 0);
+        //~~ we seal the polyhash by adding the largest value possible to
+        //~~ hashchain
+        Polyhash.add(epkState.polyhash, SNARK_SCALAR_FIELD - 1);
         // otherwise the root was already set
         require(attester.epochTreeRoots[epoch] == 0);
-        EpochKeyState storage epkState = attester.epochKeyState[epoch];
         // otherwise it's bad data in the proof
         require(polyhash == epkState.polyhash.hash);
         attester.epochTreeRoots[epoch] = root;

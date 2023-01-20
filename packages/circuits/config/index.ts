@@ -21,7 +21,7 @@ export const SNARK_SCALAR_FIELD =
 
 //~~ Calculate the R values and export
 const _R = new BN(R.toString(), 10)
-const _N = new BN(SNARK_SCALAR_FIELD, 10)
+export const _N = new BN(SNARK_SCALAR_FIELD, 10)
 
 let _Rx = new BN(_R)
 
