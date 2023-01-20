@@ -118,7 +118,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         }
 
         inc_noninc[i].inclusion_leaf_index <== inclusion_leaf_index[i];
-        inc_noninc[i].noninclusion_leaf_index <== inclusion_leaf_index[i];
+        inc_noninc[i].noninclusion_leaf_index <== noninclusion_leaf_index[i];
         inc_noninc[i].noninclusion_leaf[0] <== noninclusion_leaf[i][0];
         inc_noninc[i].noninclusion_leaf[1] <== noninclusion_leaf[i][1];
         for (var j = 0; j < EPOCH_TREE_ARITY; j++) {

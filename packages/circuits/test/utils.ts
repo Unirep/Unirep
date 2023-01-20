@@ -10,6 +10,7 @@ import {
     EpochKeyProof,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
+import { SNARK_SCALAR_FIELD } from '../config'
 
 const genNewEpochTree = (
     _epochTreeDepth: number = EPOCH_TREE_DEPTH,
@@ -24,7 +25,6 @@ const genNewEpochTree = (
     return tree
 }
 
-// TODO: needs to be updated
 const genEpochKey = (
     identityNullifier: bigint,
     attesterId: number,
@@ -40,9 +40,7 @@ const genEpochKey = (
         nonce,
     ])
     // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed =
-        epochKey % BigInt(_epochTreeArity) ** BigInt(_epochTreeDepth)
-    return epochKeyModed
+    return epochKey
 }
 
 const genEpochKeyCircuitInput = (config: {
@@ -132,10 +130,10 @@ const genUserStateTransitionCircuitInput = (config: {
         const { posRep, negRep, graffiti, timestamp } = val
         epochTreeIndices[key] = ++index
         epochTree.insert(
-            utils.hash4([posRep, negRep, graffiti ?? 0, timestamp ?? 0])
+            utils.hash5([key, posRep, negRep, graffiti ?? 0, timestamp ?? 0])
         )
     }
-    epochTree.insert(BigInt(2) ** BigInt(252) - BigInt(1))
+    epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
@@ -151,6 +149,18 @@ const genUserStateTransitionCircuitInput = (config: {
             epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0),
         ])
     )
+    const epochLeavesByKey = epochKeys.reduce((acc, epk) => {
+        return {
+            [epk.toString()]: utils.hash5([
+                epk,
+                epochKeyBalances[epk.toString()]?.posRep ?? BigInt(0),
+                epochKeyBalances[epk.toString()]?.negRep ?? BigInt(0),
+                epochKeyBalances[epk.toString()]?.graffiti ?? BigInt(0),
+                epochKeyBalances[epk.toString()]?.timestamp ?? BigInt(0),
+            ]),
+            ...acc,
+        }
+    }, {})
 
     const stateTreeProof = tree._createProof(leafIndex)
     const circuitInputs = {
@@ -185,9 +195,9 @@ const genUserStateTransitionCircuitInput = (config: {
                 )
                 return siblings.slice(1)
             }
+            const leaf = epochLeavesByKey[k.toString()]
             const index =
-                epochTree.leaves.findIndex((leaf) => BigInt(leaf) > BigInt(k)) -
-                1
+                epochTree.leaves.findIndex((l) => BigInt(l) > BigInt(leaf)) - 1
             const { siblings } = epochTree.createProof(index)
             return siblings.slice(1)
         }),
@@ -198,29 +208,31 @@ const genUserStateTransitionCircuitInput = (config: {
                 )
                 return pathIndices.slice(1)
             }
+            const leaf = epochLeavesByKey[k.toString()]
             const index =
-                epochTree.leaves.findIndex((leaf) => BigInt(leaf) > BigInt(k)) -
-                1
+                epochTree.leaves.findIndex((l) => BigInt(l) > BigInt(leaf)) - 1
             const { pathIndices } = epochTree.createProof(index)
             return pathIndices.slice(1)
         }),
         noninclusion_leaf: epochKeys.map((k) => {
             // find a leaf gt and lt
             if (epochTreeIndices[k.toString()]) return [0, 1]
+            const leaf = epochLeavesByKey[k.toString()]
             const gtIndex = epochTree.leaves.findIndex(
-                (leaf) => BigInt(leaf) > BigInt(k)
+                (l) => BigInt(l) > BigInt(leaf)
             )
             return [epochTree.leaves[gtIndex - 1], epochTree.leaves[gtIndex]]
         }),
         noninclusion_leaf_index: epochKeys.map((k) => {
+            const leaf = epochLeavesByKey[k.toString()]
             return (
-                epochTree.leaves.findIndex((leaf) => BigInt(leaf) > BigInt(k)) -
-                1
+                epochTree.leaves.findIndex((l) => BigInt(l) > BigInt(leaf)) - 1
             )
         }),
         noninclusion_elements: epochKeys.map((k) => {
+            const leaf = epochLeavesByKey[k.toString()]
             let gtIndex = epochTree.leaves.findIndex(
-                (leaf) => BigInt(leaf) > BigInt(k)
+                (l) => BigInt(l) > BigInt(leaf)
             )
             if (gtIndex === -1) gtIndex = 1
             return [
