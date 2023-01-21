@@ -53,6 +53,7 @@ step_defs:
               cd /tmp
               git clone https://github.com/iden3/circom.git
               cd circom
+              git checkout v2.1.2
               cargo build --release
               cargo install --path circom
 
