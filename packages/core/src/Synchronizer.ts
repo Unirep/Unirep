@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover, Circuit, AggregateEpochKeysProof } from '@unirep/circuits'
+import { Prover, Circuit } from '@unirep/circuits'
 import {
     IncrementalMerkleTree,
     SparseMerkleTree,
@@ -375,84 +375,6 @@ export class Synchronizer extends EventEmitter {
             if (state && state.latestCompleteBlock >= latestBlock) return
             await new Promise((r) => setTimeout(r, 250))
         }
-    }
-
-    public genAggregateEpochKeysProof = async (options: {
-        epochKeys: bigint[]
-        newBalances: {
-            posRep: bigint
-            negRep: bigint
-            graffiti: bigint
-            timestamp: bigint
-        }[]
-        hashchainIndex: number | bigint
-        epoch?: bigint | number
-    }) => {
-        const { epochKeys, newBalances, hashchainIndex, epoch } = options
-        if (epochKeys.length > this.settings.aggregateKeyCount) {
-            throw new Error(`Too many keys for circuit`)
-        }
-        const targetEpoch = epoch ?? BigInt(this.calcCurrentEpoch())
-        const leaves = await this._db.findMany('EpochTreeLeaf', {
-            where: {
-                epoch: Number(targetEpoch),
-                index: epochKeys.map((k) => k.toString()),
-                attesterId: this.attesterId.toString(),
-            },
-        })
-        const leavesByEpochKey = leaves.reduce((acc, obj) => {
-            return {
-                ...acc,
-                [obj.index]: obj,
-            }
-        }, {})
-        const dummyEpochKeys = Array(
-            this.settings.aggregateKeyCount - epochKeys.length
-        )
-            .fill(null)
-            .map(() => '0x0000000')
-        const dummyBalances = Array(
-            this.settings.aggregateKeyCount - newBalances.length
-        )
-            .fill(null)
-            .map(() => [0, 0, 0, 0])
-        const allEpochKeys = [epochKeys, dummyEpochKeys].flat()
-        const allBalances = [newBalances, dummyBalances].flat()
-        const epochTree = await this.genEpochTree(targetEpoch)
-        const circuitInputs = {
-            start_root: epochTree.root,
-            epoch: targetEpoch,
-            attester_id: this.attesterId.toString(),
-            epoch_keys: allEpochKeys.map((k) => k.toString()),
-            epoch_key_balances: allBalances,
-            old_epoch_key_hashes: allEpochKeys.map((key) => {
-                const leaf = leavesByEpochKey[key.toString()]
-                return leaf?.hash ?? this.defaultEpochTreeLeaf
-            }),
-            path_elements: allEpochKeys.map((key, i) => {
-                const p = epochTree.createProof(BigInt(key))
-                if (i < epochKeys.length) {
-                    const { posRep, negRep, graffiti, timestamp } =
-                        newBalances[i]
-                    epochTree.update(
-                        BigInt(key),
-                        hash4([posRep, negRep, graffiti, timestamp])
-                    )
-                }
-                return p
-            }),
-            hashchain_index: hashchainIndex,
-            epoch_key_count: epochKeys.length,
-        }
-        const results = await this.prover.genProofAndPublicSignals(
-            Circuit.aggregateEpochKeys,
-            stringifyBigInts(circuitInputs)
-        )
-        return new AggregateEpochKeysProof(
-            results.publicSignals,
-            results.proof,
-            this.prover
-        )
     }
 
     async readCurrentEpoch() {

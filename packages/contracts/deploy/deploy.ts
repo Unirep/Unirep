@@ -5,7 +5,6 @@ import {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    AGGREGATE_KEY_COUNT,
     Prover,
 } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
@@ -43,7 +42,6 @@ export const deployUnirep = async (
         epochTreeArity: EPOCH_TREE_ARITY,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         defaultEpochTreeLeaf: hash4([0, 0, 0, 0]),
-        aggregateKeyCount: AGGREGATE_KEY_COUNT,
         ..._settings,
     } as any
     const emptyEpochTree = new SparseMerkleTree(
@@ -152,12 +150,11 @@ export const deployUnirep = async (
     ).deploy(
         settings,
         verifiers[Circuit.signup],
-        verifiers[Circuit.aggregateEpochKeys],
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation],
         verifiers[Circuit.verifyEpochKey],
         verifiers[Circuit.epochKeyLite],
-        verifiers[Circuit.buildSortedTree]
+        verifiers[Circuit.buildOrderedTree]
     )
 
     await c.deployTransaction.wait()

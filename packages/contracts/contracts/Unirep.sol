@@ -25,7 +25,6 @@ contract Unirep is IUnirep, VerifySignature {
 
     // All verifier contracts
     IVerifier public immutable signupVerifier;
-    IVerifier public immutable aggregateEpochKeysVerifier;
     IVerifier public immutable userStateTransitionVerifier;
     IVerifier public immutable reputationVerifier;
     IVerifier public immutable epochKeyVerifier;
@@ -50,7 +49,6 @@ contract Unirep is IUnirep, VerifySignature {
     constructor(
         Config memory _config,
         IVerifier _signupVerifier,
-        IVerifier _aggregateEpochKeysVerifier,
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier,
         IVerifier _epochKeyVerifier,
@@ -61,7 +59,6 @@ contract Unirep is IUnirep, VerifySignature {
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
-        aggregateEpochKeysVerifier = _aggregateEpochKeysVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
         reputationVerifier = _reputationVerifier;
         epochKeyVerifier = _epochKeyVerifier;
@@ -268,7 +265,7 @@ contract Unirep is IUnirep, VerifySignature {
         require(epkState.polyhash.hash != 0);
         //~~ we seal the polyhash by adding the largest value possible to
         //~~ hashchain
-        Polyhash.add(epkState.polyhash, SNARK_SCALAR_FIELD - 1);
+        Polyhash.seal(epkState.polyhash);
         // otherwise the root was already set
         require(attester.epochTreeRoots[epoch] == 0);
         // otherwise it's bad data in the proof

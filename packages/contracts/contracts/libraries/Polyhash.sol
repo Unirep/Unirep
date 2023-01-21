@@ -83,6 +83,10 @@ library Polyhash {
         }
     }
 
+    function seal(PolyhashData storage self) public {
+        add(self, SNARK_SCALAR_FIELD - 1);
+    }
+
     /**
      * Calculate R ** degree % SNARK_SCALAR_FIELD
      **/
