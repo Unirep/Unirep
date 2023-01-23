@@ -55,14 +55,16 @@ describe('Epoch', function () {
             defaultEpochTreeLeaf,
             EPOCH_TREE_ARITY
         )
-        for (let x = startEpoch.toNumber(); x < 6; x++) {
+        for (let x = startEpoch.toNumber(); x < 5; x++) {
             const prevEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
             )
-            const stateTree = await bootstrapUsers(
+            const { stateTree } = await bootstrapUsers(
                 attester,
-                prevEpoch.toNumber(),
-                unirepContract
+                unirepContract,
+                {
+                    epoch: prevEpoch.toNumber(),
+                }
             )
             const epochTree = await bootstrapAttestations(
                 attester,

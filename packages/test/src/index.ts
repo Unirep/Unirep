@@ -1,3 +1,4 @@
+import { BigNumberish } from '@ethersproject/bignumber'
 import {
     AggregateEpochKeysProof,
     AGGREGATE_KEY_COUNT,
@@ -19,38 +20,53 @@ import {
 } from '@unirep/utils'
 
 // users
-export async function bootstrapUsers(attester, epoch, unirepContract) {
-    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-    const randomUserNum = Math.ceil(Math.random() * 5)
+export async function bootstrapUsers(
+    attester,
+    unirepContract,
+    {
+        epoch = undefined,
+        userNum = 5,
+        stateTreeDepth = STATE_TREE_DEPTH,
+        stateTree = undefined,
+    }: {
+        epoch?: BigNumberish
+        userNum?: number
+        stateTreeDepth?: number
+        stateTree?: IncrementalMerkleTree
+    } = {}
+) {
+    const currentStateTree =
+        stateTree ?? new IncrementalMerkleTree(stateTreeDepth)
+    const randomUserNum = userNum
+    const ids: ZkIdentity[] = []
     for (let i = 0; i < randomUserNum; i++) {
         const id = new ZkIdentity()
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.signup,
-            stringifyBigInts({
-                epoch,
-                identity_nullifier: id.identityNullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
-            })
+        const { leaf } = await signupUser(
+            id,
+            unirepContract,
+            attester.address,
+            attester,
+            epoch
         )
-        const { publicSignals, proof, stateTreeLeaf } = new SignupProof(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-
-        await unirepContract
-            .connect(attester)
-            .userSignUp(publicSignals, proof)
-            .then((t) => t.wait())
-        stateTree.insert(stateTreeLeaf)
+        currentStateTree.insert(leaf)
+        ids.push(id)
     }
 
-    return stateTree
+    return {
+        stateTree: currentStateTree,
+        ids,
+    }
 }
 
-export async function signupUser(id, unirepContract, attesterId, account) {
-    const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
+export async function signupUser(
+    id,
+    unirepContract,
+    attesterId,
+    account,
+    _epoch?
+) {
+    const epoch =
+        _epoch ?? (await unirepContract.attesterCurrentEpoch(attesterId))
     const r = await defaultProver.genProofAndPublicSignals(
         Circuit.signup,
         stringifyBigInts({
@@ -77,24 +93,38 @@ export async function signupUser(id, unirepContract, attesterId, account) {
 }
 
 // attestations
-export async function bootstrapAttestations(attester, epoch, unirepContract) {
-    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
-    const epochTree = new SparseMerkleTree(
-        EPOCH_TREE_DEPTH,
-        defaultEpochTreeLeaf,
-        EPOCH_TREE_ARITY
-    )
-    const randomEpkNum = Math.ceil(Math.random() * 10)
-    for (let i = 0; i < randomEpkNum; i++) {
+export async function bootstrapAttestations(
+    attester,
+    epoch,
+    unirepContract,
+    {
+        epkNum = 10,
+        attestNum = 10,
+        epochTree = undefined,
+        epochTreeLeaf = defaultEpochTreeLeaf,
+        epochTreeDepth = EPOCH_TREE_DEPTH,
+        epochTreeArity = EPOCH_TREE_ARITY,
+    }: {
+        epkNum?: number
+        attestNum?: number
+        epochTree?: SparseMerkleTree
+        epochTreeLeaf?: bigint
+        epochTreeDepth?: number
+        epochTreeArity?: number
+    } = {}
+) {
+    const currentEpochTree =
+        epochTree ??
+        new SparseMerkleTree(epochTreeDepth, epochTreeLeaf, epochTreeArity)
+    for (let i = 0; i < epkNum; i++) {
         const epochKey =
             genRandomSalt() %
-            (BigInt(EPOCH_TREE_ARITY) ** BigInt(EPOCH_TREE_DEPTH) - BigInt(1))
-        const randomAttestNum = Math.ceil(Math.random() * 10)
+            (BigInt(epochTreeArity) ** BigInt(epochTreeDepth) - BigInt(1))
         let totalPosRep = 0
         let totalNegRep = 0
         let finalGraffiti = BigInt(0)
         let finalTimestamp = 0
-        for (let j = 0; j < randomAttestNum; j++) {
+        for (let j = 0; j < attestNum; j++) {
             const posRep = Math.floor(Math.random() * 10)
             const negRep = Math.floor(Math.random() * 10)
             const graffiti = Math.random() > 0.5 ? genRandomSalt() : BigInt(0)
@@ -112,12 +142,12 @@ export async function bootstrapAttestations(attester, epoch, unirepContract) {
             finalGraffiti = graffiti > 0 ? graffiti : finalGraffiti
             finalTimestamp = graffiti > 0 ? timestamp : finalTimestamp
         }
-        epochTree.update(
+        currentEpochTree.update(
             epochKey,
             hash4([totalPosRep, totalNegRep, finalGraffiti, finalTimestamp])
         )
     }
-    return epochTree
+    return currentEpochTree
 }
 
 export function genAggregateEpochKeysCircuitInputs(
@@ -125,23 +155,29 @@ export function genAggregateEpochKeysCircuitInputs(
     attester,
     hashchainIndex,
     hashchain,
-    epochTree?
+    {
+        epochTree = undefined,
+        epochTreeLeaf = defaultEpochTreeLeaf,
+        epochTreeDepth = EPOCH_TREE_DEPTH,
+        epochTreeArity = EPOCH_TREE_ARITY,
+        aggregateKeyCount = AGGREGATE_KEY_COUNT,
+    }: {
+        epochTree?: SparseMerkleTree
+        epochTreeLeaf?: bigint
+        epochTreeDepth?: number
+        epochTreeArity?: number
+        aggregateKeyCount?: number
+    } = {}
 ) {
     const tree =
         epochTree ??
-        new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf,
-            EPOCH_TREE_ARITY
-        )
+        new SparseMerkleTree(epochTreeDepth, epochTreeLeaf, epochTreeArity)
     const startRoot = tree.root
-    const dummyEpochKeys = Array(
-        AGGREGATE_KEY_COUNT - hashchain.epochKeys.length
-    )
+    const dummyEpochKeys = Array(aggregateKeyCount - hashchain.epochKeys.length)
         .fill(null)
         .map(() => '0x0000000')
     const dummyBalances = Array(
-        AGGREGATE_KEY_COUNT - hashchain.epochKeyBalances.length
+        aggregateKeyCount - hashchain.epochKeyBalances.length
     )
         .fill(null)
         .map(() => [0, 0, 0, 0])
@@ -163,8 +199,7 @@ export function genAggregateEpochKeysCircuitInputs(
         start_root: startRoot,
         epoch_keys: allEpochKeys.map((k) => k.toString()),
         epoch_key_balances: allBalances,
-        old_epoch_key_hashes:
-            Array(AGGREGATE_KEY_COUNT).fill(defaultEpochTreeLeaf),
+        old_epoch_key_hashes: Array(aggregateKeyCount).fill(epochTreeLeaf),
         path_elements: allEpochKeys.map((key, i) => {
             const p = tree.createProof(BigInt(key))
             if (i < hashchain.epochKeys.length) {
@@ -190,20 +225,25 @@ export function genAggregateEpochKeysCircuitInputs(
 }
 
 export async function processAttestations(
-    attester,
-    epoch,
-    unirepContract,
-    epochTree?
+    attester: any,
+    epoch: BigNumberish,
+    unirepContract: any,
+    {
+        epochTree = undefined,
+        epochTreeLeaf = defaultEpochTreeLeaf,
+        epochTreeDepth = EPOCH_TREE_DEPTH,
+        epochTreeArity = EPOCH_TREE_ARITY,
+    }: {
+        epochTree?: SparseMerkleTree
+        epochTreeLeaf?: bigint
+        epochTreeDepth?: number
+        epochTreeArity?: number
+    } = {}
 ) {
     let success = true
-    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
     let currentEpochTree =
         epochTree ??
-        new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf,
-            EPOCH_TREE_ARITY
-        )
+        new SparseMerkleTree(epochTreeDepth, epochTreeLeaf, epochTreeArity)
     while (success) {
         try {
             await unirepContract
@@ -227,7 +267,7 @@ export async function processAttestations(
                     attester,
                     hashchainIndex,
                     hashchain,
-                    currentEpochTree
+                    { epochTree: currentEpochTree }
                 )
             currentEpochTree = epochTree
             const r = await defaultProver.genProofAndPublicSignals(

@@ -39,7 +39,9 @@ describe('Synchronizer process events', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        await bootstrapUsers(attester, epoch.toNumber(), unirepContract)
+        await bootstrapUsers(attester, unirepContract, {
+            epoch: epoch.toNumber(),
+        })
         await bootstrapAttestations(attester, epoch.toNumber(), unirepContract)
         synchronizer = await genUnirepState(
             ethers.provider,
@@ -47,7 +49,9 @@ describe('Synchronizer process events', function () {
             BigInt(attester.address)
         )
         const epochTree = await synchronizer.genEpochTree(epoch)
-        await processAttestations(attester, epoch, unirepContract, epochTree)
+        await processAttestations(attester, epoch, unirepContract, {
+            epochTree,
+        })
     })
 
     afterEach(async () => {

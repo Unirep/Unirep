@@ -750,7 +750,7 @@ describe('Attestations', function () {
             attester,
             hashchainIndex,
             hashchain,
-            invalidTree
+            { epochTree: invalidTree }
         )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.aggregateEpochKeys,
