@@ -294,7 +294,9 @@ describe('Hashchain tests', function () {
                     attester,
                     hashchainIndex,
                     hashchain,
-                    epochTree
+                    {
+                        epochTree,
+                    }
                 )
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.aggregateEpochKeys,

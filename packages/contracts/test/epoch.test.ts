@@ -63,13 +63,18 @@ describe('Epoch', function () {
                 attester,
                 unirepContract,
                 {
+                    userNum: 3,
                     epoch: prevEpoch.toNumber(),
                 }
             )
             const epochTree = await bootstrapAttestations(
                 attester,
                 prevEpoch.toNumber(),
-                unirepContract
+                unirepContract,
+                {
+                    epkNum: 3,
+                    attestNum: 5,
+                }
             )
             const prevStateTreeRoot =
                 await unirepContract.attesterStateTreeRoot(
