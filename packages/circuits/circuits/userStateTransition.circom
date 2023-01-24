@@ -104,6 +104,8 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     signal roots[EPOCH_KEY_NONCE_PER_EPOCH];
 
+    var proven_inc_or_noninc = 0;
+
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
         inc_noninc[i] = ProveInclusionOrNoninclusion(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
         inc_noninc[i].leaf <== leaf_hashers[i].out;
@@ -177,14 +179,19 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         inc_mux[i].c[0] <== inc_noninc[i].inclusion;
         inc_mux[i].c[1] <== inc_noninc[i].noninclusion;
 
-        inc_mux[i].out === 1;
+        proven_inc_or_noninc += inc_mux[i].out;
 
         //~~ check that all roots are equal
         roots[i] <== inc_noninc[i].root;
         roots[0] === roots[i];
     }
 
-    root <== roots[0];
+    component has_proven_inc_or_noninc = IsZero();
+    has_proven_inc_or_noninc.in <== proven_inc_or_noninc - EPOCH_KEY_NONCE_PER_EPOCH;
+
+
+    //~~ output the root, or 0 if we haven't proven membership (no attestations)
+    root <== has_proven_inc_or_noninc.out * roots[0];
 
     /* End of check 2 */
 
