@@ -116,6 +116,9 @@ const genUserStateTransitionCircuitInput = (config: {
         )
     }
     epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
+    if (epochTree.leaves.length === 2) {
+        // we don't
+    }
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>

@@ -193,6 +193,17 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     //~~ output the root, or 0 if we haven't proven membership (no attestations)
     root <== has_proven_inc_or_noninc.out * roots[0];
 
+    //~~ if root is 0 no new reputation must be supplied
+    var no_attestations_sum = 0;
+    for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
+        no_attestations_sum += has_no_attestations[x];
+    }
+    component zero_rep_check = Mux1();
+    zero_rep_check.s <== has_proven_inc_or_noninc.out;
+    zero_rep_check.c[0] <== no_attestations_sum;
+    zero_rep_check.c[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
+    zero_rep_check.out === EPOCH_KEY_NONCE_PER_EPOCH;
+
     /* End of check 2 */
 
     /* 3. Calculate the new gst leaf */
