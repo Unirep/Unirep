@@ -488,6 +488,7 @@ export class Synchronizer extends EventEmitter {
         for (const hash of leafInts) {
             tree.insert(hash)
         }
+        tree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
         return tree
     }
 

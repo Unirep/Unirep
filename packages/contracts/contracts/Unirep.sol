@@ -290,17 +290,6 @@ contract Unirep is IUnirep, VerifySignature {
         //~~ we seal the polyhash by adding the largest value possible to
         //~~ tree
         uint index = Polyhash.seal(epkState.polyhash);
-        emit EpochTreeLeaf(
-            epoch,
-            attesterId,
-            index,
-            SNARK_SCALAR_FIELD - 1,
-            1,
-            0,
-            0,
-            0,
-            0
-        );
         // otherwise the root was already set
         require(attester.epochTreeRoots[epoch] == 0, 'doubleroot');
         // otherwise it's bad data in the proof

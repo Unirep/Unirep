@@ -73,6 +73,7 @@ describe('Epoch tree', function () {
             config.epochTreeArity
         )
         epochTree.insert(BigInt(0))
+        epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
         )

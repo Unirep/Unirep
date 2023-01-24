@@ -6,8 +6,12 @@ import {
     genStateTreeLeaf,
     IncrementalMerkleTree,
     genRandomSalt,
+    hash5,
+    stringifyBigInts,
 } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
+import { Circuit, BuildOrderedTree, SNARK_SCALAR_FIELD } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genUnirepState, genUserState } from './utils'
 
@@ -286,34 +290,41 @@ describe('State tree', function () {
                     ethers.provider.getBlock(blockNumber)
                 )
             attestations[i].timestamp = timestamp
-            // now commit the attetstations
-            await unirepContract
-                .connect(accounts[5])
-                .buildHashchain(attester.address, epoch)
-                .then((t) => t.wait())
-            const hashchain = await unirepContract.attesterHashchain(
-                attester.address,
-                epoch,
-                i
-            )
-            await userState.waitForSync()
-            const { publicSignals, proof } =
-                await userState.genAggregateEpochKeysProof({
-                    epochKeys: hashchain.epochKeys,
-                    newBalances: hashchain.epochKeyBalances,
-                    hashchainIndex: hashchain.index,
-                    epoch,
-                })
-            await unirepContract
-                .connect(accounts[5])
-                .processHashchain(publicSignals, proof)
-                .then((t) => t.wait())
             await userState.stop()
         }
 
-        // epoch transition
+        const unirepState = await genUnirepState(
+            ethers.provider,
+            unirepContract.address,
+            BigInt(attester.address)
+        )
+
+        const fromEpoch = await unirepState.loadCurrentEpoch()
+
+        // now commit the attetstations
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
+
+        const preimages = await unirepState.genEpochTreePreimages(fromEpoch)
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
+        )
+        const { publicSignals, proof } = new BuildOrderedTree(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        await unirepContract
+            .connect(accounts[5])
+            .sealEpoch(fromEpoch, attester.address, publicSignals, proof)
+            .then((t) => t.wait())
+
+        await unirepState.stop()
+
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 

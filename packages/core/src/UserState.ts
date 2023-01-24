@@ -6,7 +6,7 @@ import {
     ZkIdentity,
     genEpochKey,
     genStateTreeLeaf,
-    genEpochNullifier,
+    genUserStateTransitionNullifier,
     hash5,
 } from '@unirep/utils'
 import {
@@ -65,7 +65,7 @@ export default class UserState extends Synchronizer {
         const currentEpoch = await this.loadCurrentEpoch()
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
-            const epkNullifier = genEpochNullifier(
+            const epkNullifier = genUserStateTransitionNullifier(
                 this.id.identityNullifier,
                 this.attesterId.toString(),
                 x
@@ -341,6 +341,7 @@ export default class UserState extends Synchronizer {
                 ...acc,
             }
         }, {})
+        const leaves = await this.genEpochTreePreimages(fromEpoch)
         const epochKeyProofs = epochKeys.map((key) => {
             const { posRep, negRep, graffiti, timestamp } =
                 repByEpochKey[key.toString()]
@@ -354,7 +355,12 @@ export default class UserState extends Synchronizer {
             let inclusionIndex = 0
             let inclusionElements = Array(this.settings.epochTreeArity).fill(0)
             let treeElements, treeIndices
-            if (
+            if (leaves.length === 0) {
+                // no attestation in the epoch
+                // we don't do inclusion or noninclusion
+                treeElements = epochTree._createProof(0).siblings.slice(1)
+                treeIndices = epochTree._createProof(0).pathIndices.slice(1)
+            } else if (
                 posRep === BigInt(0) &&
                 negRep === BigInt(0) &&
                 graffiti === BigInt(0) &&
