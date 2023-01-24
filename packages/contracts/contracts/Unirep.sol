@@ -225,7 +225,8 @@ contract Unirep is IUnirep, VerifySignature {
         // check that we're not at max capacity
         require(
             epkState.polyhash.degree <
-                config.epochTreeArity**config.epochTreeDepth - 2
+                config.epochTreeArity**config.epochTreeDepth - 2,
+            'pfull'
         );
 
         if (epkState.epochKeyLeaves[epochKey] == 0) {
@@ -237,7 +238,12 @@ contract Unirep is IUnirep, VerifySignature {
                 targetEpoch,
                 uint160(msg.sender),
                 degree,
-                newLeaf
+                newLeaf,
+                epochKey,
+                balance.posRep,
+                balance.negRep,
+                balance.graffiti,
+                balance.timestamp
             );
         } else {
             // we need to update the value in the polyhash
@@ -253,7 +259,12 @@ contract Unirep is IUnirep, VerifySignature {
                 targetEpoch,
                 uint160(msg.sender),
                 degree,
-                newLeaf
+                newLeaf,
+                epochKey,
+                balance.posRep,
+                balance.negRep,
+                balance.graffiti,
+                balance.timestamp
             );
         }
     }
@@ -279,7 +290,17 @@ contract Unirep is IUnirep, VerifySignature {
         //~~ we seal the polyhash by adding the largest value possible to
         //~~ tree
         uint index = Polyhash.seal(epkState.polyhash);
-        emit EpochTreeLeaf(epoch, attesterId, index, SNARK_SCALAR_FIELD - 1);
+        emit EpochTreeLeaf(
+            epoch,
+            attesterId,
+            index,
+            SNARK_SCALAR_FIELD - 1,
+            1,
+            0,
+            0,
+            0,
+            0
+        );
         // otherwise the root was already set
         require(attester.epochTreeRoots[epoch] == 0, 'doubleroot');
         // otherwise it's bad data in the proof

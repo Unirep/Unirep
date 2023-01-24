@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover, Circuit } from '@unirep/circuits'
+import { Prover, Circuit, SNARK_SCALAR_FIELD } from '@unirep/circuits'
 import {
     IncrementalMerkleTree,
     SparseMerkleTree,
@@ -71,8 +71,6 @@ export class Synchronizer extends EventEmitter {
             epochTreeArity: 2,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
-            emptyEpochTreeRoot: BigInt(0),
-            aggregateKeyCount: 0,
         }
         const allEventNames = {} as any
 
@@ -153,8 +151,6 @@ export class Synchronizer extends EventEmitter {
         this.settings.epochLength = (
             await this.unirepContract.attesterEpochLength(this.attesterId)
         ).toNumber()
-        this.settings.aggregateKeyCount = config.aggregateKeyCount.toNumber()
-        this.settings.emptyEpochTreeRoot = config.emptyEpochTreeRoot
         this.settings.startTimestamp = (
             await this.unirepContract.attesterStartTimestamp(this.attesterId)
         ).toNumber()
@@ -421,18 +417,6 @@ export class Synchronizer extends EventEmitter {
         return BigInt(epoch.toString())
     }
 
-    protected async _checkEpochKeyRange(epochKey: string) {
-        if (
-            BigInt(epochKey) >=
-            BigInt(this.settings.epochTreeArity) **
-                BigInt(this.settings.epochTreeDepth)
-        ) {
-            throw new Error(
-                `Synchronizer: Epoch key (${epochKey}) greater than max leaf value(epochTreeArity**epochTreeDepth)`
-            )
-        }
-    }
-
     async epochTreeRoot(epoch: number) {
         return this.unirepContract.attesterEpochRoot(this.attesterId, epoch)
     }
@@ -474,9 +458,6 @@ export class Synchronizer extends EventEmitter {
                 epoch: Number(epoch),
                 attesterId: this.attesterId.toString(),
             },
-            orderBy: {
-                index: 'asc',
-            },
         })
         for (const leaf of leaves) {
             tree.insert(leaf.hash)
@@ -488,9 +469,9 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<SparseMerkleTree> {
         const epoch = Number(_epoch)
-        const tree = new SparseMerkleTree(
+        const tree = new IncrementalMerkleTree(
             this.settings.epochTreeDepth,
-            this.defaultEpochTreeLeaf,
+            0,
             this.settings.epochTreeArity
         )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
@@ -499,10 +480,39 @@ export class Synchronizer extends EventEmitter {
                 attesterId: this.attesterId.toString(),
             },
         })
-        for (const { index, hash } of leaves) {
-            tree.update(BigInt(index), BigInt(hash))
+        const leafInts = leaves
+            .map(({ hash }) => BigInt(hash))
+            .sort((a, b) => (a > b ? 1 : -1))
+        // Epoch trees always start with a 0 leaf
+        tree.insert(0)
+        for (const hash of leafInts) {
+            tree.insert(hash)
         }
         return tree
+    }
+
+    async genEpochTreePreimages(
+        _epoch: number | ethers.BigNumberish
+    ): Promise<any[]> {
+        const epoch = Number(_epoch)
+        const leaves = await this._db.findMany('EpochTreeLeaf', {
+            where: {
+                epoch,
+                attesterId: this.attesterId.toString(),
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        return leaves.map(
+            ({ epochKey, posRep, negRep, graffiti, timestamp }) => [
+                epochKey,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
+            ]
+        )
     }
 
     /**
@@ -566,6 +576,11 @@ export class Synchronizer extends EventEmitter {
         const epoch = Number(decodedData.epoch)
         const index = BigInt(decodedData.index).toString()
         const attesterId = BigInt(decodedData.attesterId).toString()
+        const epochKey = BigInt(decodedData.epochKey).toString()
+        const posRep = BigInt(decodedData.posRep).toString()
+        const negRep = BigInt(decodedData.negRep).toString()
+        const graffiti = BigInt(decodedData.graffiti).toString()
+        const timestamp = BigInt(decodedData.timestamp).toString()
         const leaf = BigInt(decodedData.leaf).toString()
         if (attesterId !== this.attesterId.toString()) return
         const id = `${epoch}-${index}-${attesterId}`
@@ -575,6 +590,10 @@ export class Synchronizer extends EventEmitter {
             },
             update: {
                 hash: leaf,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
             },
             create: {
                 id,
@@ -582,6 +601,11 @@ export class Synchronizer extends EventEmitter {
                 index,
                 attesterId,
                 hash: leaf,
+                epochKey,
+                posRep,
+                negRep,
+                graffiti,
+                timestamp,
             },
         })
         return true
@@ -627,7 +651,6 @@ export class Synchronizer extends EventEmitter {
                 `Synchronizer: Epoch (${epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
             )
         }
-        await this._checkEpochKeyRange(epochKey)
 
         db.create('Attestation', {
             epoch,

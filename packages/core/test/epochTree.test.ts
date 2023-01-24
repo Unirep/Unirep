@@ -5,8 +5,13 @@ import {
     genRandomSalt,
     ZkIdentity,
     hash4,
+    hash5,
     SparseMerkleTree,
+    IncrementalMerkleTree,
+    stringifyBigInts,
 } from '@unirep/utils'
+import { Circuit, SNARK_SCALAR_FIELD, BuildOrderedTree } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUnirepState, genUserState } from './utils'
@@ -57,123 +62,22 @@ describe('Epoch tree', function () {
             attester.address,
             unirepEpoch
         )
-        const userEpochRoot = await unirepState.genEpochTree(unirepEpoch)
-        expect(contractEpochRoot.toString()).to.equal(
-            userEpochRoot.root.toString()
-        )
+        expect(contractEpochRoot.toString()).to.equal('0')
 
         // offchain epoch tree
         const config = await unirepContract.config()
-        const epochTree = new SparseMerkleTree(
+        const userEpochRoot = await unirepState.genEpochTree(unirepEpoch)
+        const epochTree = new IncrementalMerkleTree(
             config.epochTreeDepth,
-            defaultEpochTreeLeaf,
+            0,
             config.epochTreeArity
         )
+        epochTree.insert(BigInt(0))
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
         )
 
         await unirepState.stop()
-    })
-
-    it('attestations should update epoch tree', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
-        const userState = await genUserState(
-            ethers.provider,
-            unirepContract.address,
-            id,
-            attesterId
-        )
-        {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
-            await unirepContract
-                .connect(attester)
-                .userSignUp(publicSignals, proof)
-                .then((t) => t.wait())
-        }
-        await userState.waitForSync()
-        // we're signed up, now run an attestation
-        const epoch = await userState.loadCurrentEpoch()
-        const epochKeys = await userState.getEpochKeys(epoch)
-        const config = await unirepContract.config()
-        const epochTree = new SparseMerkleTree(
-            config.epochTreeDepth,
-            defaultEpochTreeLeaf,
-            config.epochTreeArity
-        )
-
-        for (const epk of epochKeys) {
-            let posRep = 0
-            let negRep = 0
-            let graffiti = BigInt(0)
-            let timestamp = 0
-            for (let i = 0; i < 5; i++) {
-                const newPosRep = Math.floor(Math.random() * 10)
-                const newNegRep = Math.floor(Math.random() * 10)
-                const newGraffiti = genRandomSalt()
-                // now submit the attestation from the attester
-                const { timestamp: newTimestamp } = await unirepContract
-                    .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epk,
-                        newPosRep,
-                        newNegRep,
-                        newGraffiti
-                    )
-                    .then((t) => t.wait())
-                    .then(({ blockNumber }) =>
-                        ethers.provider.getBlock(blockNumber)
-                    )
-                posRep += newPosRep
-                negRep += newNegRep
-                graffiti = newGraffiti
-                timestamp = newTimestamp
-            }
-            epochTree.update(epk, hash4([posRep, negRep, graffiti, timestamp]))
-        }
-
-        await userState.waitForSync()
-        // now commit the attetstations
-        await unirepContract
-            .connect(accounts[5])
-            .buildHashchain(attester.address, epoch)
-            .then((t) => t.wait())
-
-        const hashchain = await unirepContract.attesterHashchain(
-            attester.address,
-            epoch,
-            0
-        )
-        const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof({
-                epochKeys: hashchain.epochKeys,
-                newBalances: hashchain.epochKeyBalances,
-                hashchainIndex: hashchain.index,
-                epoch,
-            })
-        await unirepContract
-            .connect(accounts[5])
-            .processHashchain(publicSignals, proof)
-            .then((t) => t.wait())
-        await userState.waitForSync()
-
-        const onchainEpochRoot = await unirepContract.attesterEpochRoot(
-            attester.address,
-            epoch
-        )
-        const userEpochRoot = await userState.genEpochTree(epoch)
-        expect(onchainEpochRoot.toString()).to.equal(
-            userEpochRoot.root.toString()
-        )
-        expect(userEpochRoot.root.toString()).to.equal(
-            epochTree.root.toString()
-        )
-        await userState.stop()
     })
 
     it('should generate epoch tree after epoch transition', async () => {
@@ -200,11 +104,12 @@ describe('Epoch tree', function () {
         const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const config = await unirepContract.config()
-        const epochTree = new SparseMerkleTree(
+        const epochTree = new IncrementalMerkleTree(
             config.epochTreeDepth,
-            defaultEpochTreeLeaf,
+            0,
             config.epochTreeArity
         )
+        const leaves = [] as any
 
         for (const epk of epochKeys) {
             let posRep = 0
@@ -223,7 +128,10 @@ describe('Epoch tree', function () {
                         epk,
                         newPosRep,
                         newNegRep,
-                        newGraffiti
+                        newGraffiti,
+                        {
+                            gasLimit: 1000000,
+                        }
                     )
                     .then((t) => t.wait())
                     .then(({ blockNumber }) =>
@@ -234,54 +142,48 @@ describe('Epoch tree', function () {
                 graffiti = newGraffiti
                 timestamp = newTimestamp
             }
-            epochTree.update(epk, hash4([posRep, negRep, graffiti, timestamp]))
+            leaves.push(hash5([epk, posRep, negRep, graffiti, timestamp]))
         }
+        leaves.sort((a, b) => (a > b ? 1 : -1))
+        epochTree.insert(0)
+        for (const leaf of leaves) {
+            epochTree.insert(leaf)
+        }
+        epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
 
         await userState.waitForSync()
-        // now commit the attetstations
-        await unirepContract
-            .connect(accounts[5])
-            .buildHashchain(attester.address, epoch)
-            .then((t) => t.wait())
 
-        const hashchain = await unirepContract.attesterHashchain(
-            attester.address,
-            epoch,
-            0
-        )
-        const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof({
-                epochKeys: hashchain.epochKeys,
-                newBalances: hashchain.epochKeyBalances,
-                hashchainIndex: hashchain.index,
-                epoch,
-            })
-        await unirepContract
-            .connect(accounts[5])
-            .processHashchain(publicSignals, proof)
-            .then((t) => t.wait())
-        await userState.waitForSync()
-
-        const prevEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const newEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
 
-        // onchain epoch tree
-        const contractEpochRoot = await unirepContract.attesterEpochRoot(
-            attester.address,
-            prevEpoch
+        const preimages = await userState.genEpochTreePreimages(epoch)
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
         )
-        const userEpochRoot = await userState.genEpochTree(prevEpoch)
-        expect(contractEpochRoot.toString()).to.equal(
+        const { publicSignals, proof } = new BuildOrderedTree(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        await unirepContract
+            .connect(accounts[5])
+            .sealEpoch(epoch, attester.address, publicSignals, proof)
+            .then((t) => t.wait())
+
+        await userState.waitForSync()
+
+        const onchainEpochRoot = await unirepContract.attesterEpochRoot(
+            attester.address,
+            epoch
+        )
+        const userEpochRoot = await userState.genEpochTree(epoch)
+        expect(onchainEpochRoot.toString()).to.equal(
             userEpochRoot.root.toString()
         )
-
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
         )

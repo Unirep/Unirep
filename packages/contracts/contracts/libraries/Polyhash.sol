@@ -34,6 +34,8 @@ struct PolyhashData {
     uint R;
 }
 
+import 'hardhat/console.sol';
+
 // Calculate a hash of elements using a polynomial equation
 library Polyhash {
     uint256 internal constant SNARK_SCALAR_FIELD =
@@ -47,7 +49,7 @@ library Polyhash {
         public
         returns (uint degree)
     {
-        require(val < SNARK_SCALAR_FIELD);
+        require(val < SNARK_SCALAR_FIELD, 'vlarge');
         degree = self.degree + 1;
         uint coef = modexp(degree);
         uint term = mulmod(coef, val, SNARK_SCALAR_FIELD);
@@ -66,7 +68,7 @@ library Polyhash {
     ) public {
         require(oldval < SNARK_SCALAR_FIELD);
         require(newval < SNARK_SCALAR_FIELD);
-        require(self.degree > degree);
+        require(self.degree >= degree);
         uint coef = modexp(degree);
         uint oldterm = mulmod(coef, oldval, SNARK_SCALAR_FIELD);
         uint newterm = mulmod(coef, newval, SNARK_SCALAR_FIELD);
@@ -93,6 +95,8 @@ library Polyhash {
     function modexp(uint degree) public view returns (uint xx) {
         if (degree == 0) return 1;
         if (degree == 1) return R;
+        uint _R = R;
+        uint _F = SNARK_SCALAR_FIELD;
         // modular exponentiation
         assembly {
             let freemem := mload(0x40)
@@ -103,11 +107,11 @@ library Polyhash {
             // length_of_MODULUS: 32 bytes
             mstore(add(freemem, 0x40), 0x20)
             // BASE
-            mstore(add(freemem, 0x60), R)
+            mstore(add(freemem, 0x60), _R)
             // EXPONENT
             mstore(add(freemem, 0x80), degree)
             // MODULUS
-            mstore(add(freemem, 0xA0), SNARK_SCALAR_FIELD)
+            mstore(add(freemem, 0xA0), _F)
             let success := staticcall(
                 sub(gas(), 2000),
                 // call the address 0x00......05

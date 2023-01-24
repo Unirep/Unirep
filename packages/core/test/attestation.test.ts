@@ -1,8 +1,10 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/utils'
+import { ZkIdentity, stringifyBigInts } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
+import { Circuit, BuildOrderedTree, SNARK_SCALAR_FIELD } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genUserState } from './utils'
 
@@ -12,7 +14,6 @@ describe('Attester signs up and gives attestation', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -24,13 +25,16 @@ describe('Attester signs up and gives attestation', function () {
             .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(async () => {
+            await ethers.provider.send('evm_revert', [snapshot])
+        })
+    }
 
     it('user sign up and receive attestation', async () => {
         const accounts = await ethers.getSigners()
@@ -68,31 +72,27 @@ describe('Attester signs up and gives attestation', function () {
 
         await userState.waitForSync()
         // now commit the attetstations
-        await unirepContract
-            .connect(accounts[5])
-            .buildHashchain(attester.address, epoch)
-            .then((t) => t.wait())
-        const hashchainIndex =
-            await unirepContract.attesterHashchainProcessedCount(
-                attester.address,
-                epoch
-            )
-        const hashchain = await unirepContract.attesterHashchain(
-            attester.address,
-            epoch,
-            hashchainIndex
+        //
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        const preimages = await userState.genEpochTreePreimages(epoch)
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
         )
-        const { publicSignals, proof } =
-            await userState.genAggregateEpochKeysProof({
-                epochKeys: hashchain.epochKeys,
-                newBalances: hashchain.epochKeyBalances,
-                hashchainIndex: hashchain.index,
-                epoch,
-            })
+        const { publicSignals, proof } = new BuildOrderedTree(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
         await unirepContract
             .connect(accounts[5])
-            .processHashchain(publicSignals, proof)
+            .sealEpoch(epoch, attester.address, publicSignals, proof)
             .then((t) => t.wait())
+
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
@@ -112,8 +112,6 @@ describe('Attester signs up and gives attestation', function () {
         })
         await Promise.all(checkPromises)
         // then run an epoch transition and check the rep
-        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await ethers.provider.send('evm_mine', [])
         {
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({

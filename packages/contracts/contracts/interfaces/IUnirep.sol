@@ -46,19 +46,12 @@ interface IUnirep {
         uint256 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
-        uint256 leaf
-    );
-
-    event HashchainBuilt(
-        uint256 indexed epoch,
-        uint160 indexed attesterId,
-        uint256 index
-    );
-
-    event HashchainProcessed(
-        uint256 indexed epoch,
-        uint160 indexed attesterId,
-        bool isEpochSealed
+        uint256 leaf,
+        uint256 epochKey,
+        uint256 posRep,
+        uint256 negRep,
+        uint256 graffiti,
+        uint256 timestamp
     );
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
