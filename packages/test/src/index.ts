@@ -6,6 +6,7 @@ import {
     defaultEpochTreeLeaf,
     EPOCH_TREE_ARITY,
     EPOCH_TREE_DEPTH,
+    Prover,
     SignupProof,
     STATE_TREE_DEPTH,
 } from '@unirep/circuits'
@@ -28,11 +29,13 @@ export async function bootstrapUsers(
         userNum = 5,
         stateTreeDepth = STATE_TREE_DEPTH,
         stateTree = undefined,
+        prover = defaultProver,
     }: {
-        epoch?: BigNumberish
+        epoch?: number
         userNum?: number
         stateTreeDepth?: number
         stateTree?: IncrementalMerkleTree
+        prover?: Prover
     } = {}
 ) {
     const currentStateTree =
@@ -46,7 +49,10 @@ export async function bootstrapUsers(
             unirepContract,
             attester.address,
             attester,
-            epoch
+            {
+                prover,
+                epoch,
+            }
         )
         currentStateTree.insert(leaf)
         ids.push(id)
@@ -63,14 +69,21 @@ export async function signupUser(
     unirepContract,
     attesterId,
     account,
-    _epoch?
+    {
+        prover = defaultProver,
+        epoch = undefined,
+    }: {
+        prover?: Prover
+        epoch?: number
+    } = {}
 ) {
-    const epoch =
-        _epoch ?? (await unirepContract.attesterCurrentEpoch(attesterId))
-    const r = await defaultProver.genProofAndPublicSignals(
+    const currentEpoch =
+        epoch ??
+        (await unirepContract.attesterCurrentEpoch(attesterId)).toNumber()
+    const r = await prover.genProofAndPublicSignals(
         Circuit.signup,
         stringifyBigInts({
-            epoch: epoch.toString(),
+            epoch: currentEpoch,
             identity_nullifier: id.identityNullifier,
             identity_trapdoor: id.trapdoor,
             attester_id: attesterId,
@@ -79,17 +92,21 @@ export async function signupUser(
     const { publicSignals, proof } = new SignupProof(
         r.publicSignals,
         r.proof,
-        defaultProver
+        prover
     )
     const leafIndex = await unirepContract.attesterStateTreeLeafCount(
         attesterId,
-        epoch
+        currentEpoch
     )
     await unirepContract
         .connect(account)
         .userSignUp(publicSignals, proof)
         .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
+    return {
+        leaf: publicSignals[1],
+        index: leafIndex.toNumber(),
+        epoch: currentEpoch,
+    }
 }
 
 // attestations
@@ -233,11 +250,13 @@ export async function processAttestations(
         epochTreeLeaf = defaultEpochTreeLeaf,
         epochTreeDepth = EPOCH_TREE_DEPTH,
         epochTreeArity = EPOCH_TREE_ARITY,
+        prover = defaultProver,
     }: {
         epochTree?: SparseMerkleTree
         epochTreeLeaf?: bigint
         epochTreeDepth?: number
         epochTreeArity?: number
+        prover?: Prover
     } = {}
 ) {
     let success = true
@@ -270,14 +289,14 @@ export async function processAttestations(
                     { epochTree: currentEpochTree }
                 )
             currentEpochTree = epochTree
-            const r = await defaultProver.genProofAndPublicSignals(
+            const r = await prover.genProofAndPublicSignals(
                 Circuit.aggregateEpochKeys,
                 circuitInputs
             )
             const { publicSignals, proof } = new AggregateEpochKeysProof(
                 r.publicSignals,
                 r.proof,
-                defaultProver
+                prover
             )
             await unirepContract
                 .connect(attester)
