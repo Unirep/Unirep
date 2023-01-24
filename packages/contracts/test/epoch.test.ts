@@ -121,9 +121,7 @@ describe('Epoch', function () {
                 attester.address,
                 newEpoch
             )
-            expect(epochRoot.toString()).to.equal(
-                emptyEpochTree.root.toString()
-            )
+            expect(epochRoot.toString()).to.equal('0')
         }
     })
 

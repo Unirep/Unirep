@@ -8,13 +8,15 @@ import {
     EPOCH_TREE_ARITY,
     defaultEpochTreeLeaf,
     AggregateEpochKeysProof,
-    SNARK_FIELD_SIZE,
+    SNARK_SCALAR_FIELD,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { genAggregateEpochKeysCircuitInputs } from '@unirep/test'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
+
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -59,7 +61,7 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, SNARK_FIELD_SIZE, 1, 1, 0)
+                .submitAttestation(epoch, SNARK_SCALAR_FIELD, 1, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 
