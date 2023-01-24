@@ -2,12 +2,7 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { Prover, Circuit, SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import {
-    IncrementalMerkleTree,
-    SparseMerkleTree,
-    hash4,
-    stringifyBigInts,
-} from '@unirep/utils'
+import { IncrementalMerkleTree, hash4, stringifyBigInts } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 
 type EventHandlerArgs = {
@@ -422,20 +417,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async epochTreeProof(epoch: number, leafIndex: any) {
-        const leaves = await this._db.findMany('EpochTreeLeaf', {
-            where: {
-                epoch,
-                attesterId: this.attesterId.toString(),
-            },
-        })
-        const tree = new SparseMerkleTree(
-            this.settings.epochTreeDepth,
-            this.defaultEpochTreeLeaf,
-            this.settings.epochTreeArity
-        )
-        for (const leaf of leaves) {
-            tree.update(leaf.index, leaf.hash)
-        }
+        const tree = await this.genEpochTree(epoch)
         const proof = tree.createProof(leafIndex)
         return proof
     }
@@ -467,7 +449,7 @@ export class Synchronizer extends EventEmitter {
 
     async genEpochTree(
         _epoch: number | ethers.BigNumberish
-    ): Promise<SparseMerkleTree> {
+    ): Promise<IncrementalMerkleTree> {
         const epoch = Number(_epoch)
         const tree = new IncrementalMerkleTree(
             this.settings.epochTreeDepth,
