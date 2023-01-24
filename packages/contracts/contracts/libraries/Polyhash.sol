@@ -83,8 +83,8 @@ library Polyhash {
         }
     }
 
-    function seal(PolyhashData storage self) public {
-        add(self, SNARK_SCALAR_FIELD - 1);
+    function seal(PolyhashData storage self) public returns (uint) {
+        return add(self, SNARK_SCALAR_FIELD - 1);
     }
 
     /**

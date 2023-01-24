@@ -32,7 +32,6 @@ export const deployUnirep = async (
         epochTreeDepth?: BigNumberish
         epochTreeArity?: BigNumberish
         numEpochKeyNoncePerEpoch?: BigNumberish
-        defaultEpochTreeLeaf?: bigint
     } = {},
     prover?: Prover
 ): Promise<Unirep> => {
@@ -41,15 +40,8 @@ export const deployUnirep = async (
         epochTreeDepth: EPOCH_TREE_DEPTH,
         epochTreeArity: EPOCH_TREE_ARITY,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        defaultEpochTreeLeaf: hash4([0, 0, 0, 0]),
         ..._settings,
     } as any
-    const emptyEpochTree = new SparseMerkleTree(
-        Number(settings.epochTreeDepth.toString()),
-        settings.defaultEpochTreeLeaf,
-        settings.epochTreeArity
-    )
-    settings.emptyEpochTreeRoot = emptyEpochTree.root.toString()
 
     console.log(
         '-----------------------------------------------------------------'
@@ -57,10 +49,6 @@ export const deployUnirep = async (
     console.log(`Epoch tree depth: ${settings.epochTreeDepth}`)
     console.log(`Epoch tree arity: ${settings.epochTreeArity}`)
     console.log(`State tree depth: ${settings.stateTreeDepth}`)
-    console.log(`Empty epoch tree root: ${settings.emptyEpochTreeRoot}`)
-    console.log(
-        `Number of epoch keys per aggregate proof: ${settings.aggregateKeyCount}`
-    )
     console.log(
         `Number of epoch keys per epoch: ${settings.numEpochKeyNoncePerEpoch}`
     )

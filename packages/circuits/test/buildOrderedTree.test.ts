@@ -8,56 +8,8 @@ import {
     SNARK_SCALAR_FIELD,
 } from '../config'
 import { genProofAndVerify } from './utils'
-import { Circuit } from '../src'
+import { Circuit, BuildOrderedTree } from '../src'
 import BN from 'bn.js'
-
-const buildInputsForLeaves = (leaves: any[]) => {
-    const sortedLeaves = [...leaves].sort((a, b) => {
-        const leafA = hash5(a)
-        const leafB = hash5(b)
-        return leafA > leafB ? 1 : -1
-    })
-    sortedLeaves.unshift([0, 0, 0, 0, 0])
-    sortedLeaves.push([1, 0, 0, 0, 0])
-    const rVals = sortedLeaves.map((l, i) => {
-        if (l[0] === 0) {
-            return Rx[0]
-        } else if (l[0] === 1) {
-            return Rx[leaves.length + 1]
-        }
-        return Rx[1 + leaves.indexOf(l)]
-    })
-
-    const leafCount = sortedLeaves.length
-    const targetLength = EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH
-    for (let x = 0; x < targetLength - leafCount; x++) {
-        sortedLeaves.push([0, 0, 0, 0, 0])
-        rVals.push(Rx[leafCount + x])
-    }
-    return {
-        circuitInputs: {
-            sorted_leaf_preimages: sortedLeaves,
-            leaf_r_values: rVals,
-        },
-        // the unordered leaves
-        leaves: [[0, 0, 0, 0, 0], ...leaves, [1, 0, 0, 0, 0]].map((l) => {
-            if (l[0] === 0) {
-                return BigInt(0)
-            } else if (l[0] === 1) {
-                return BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
-            }
-            return hash5(l)
-        }),
-        sortedLeaves: sortedLeaves.map((l) => {
-            if (l[0] === 0) {
-                return BigInt(0)
-            } else if (l[0] === 1) {
-                return BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
-            }
-            return hash5(l)
-        }),
-    }
-}
 
 const random = () => hash1([BigInt(Math.floor(Math.random() * 1000000000000))])
 const randomPreimage = () => Array(5).fill(null).map(random)
@@ -68,7 +20,8 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } = buildInputsForLeaves(_leaves)
+        const { leaves, circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(_leaves)
         const { sorted_leaf_preimages: sortedLeaves } = circuitInputs
         const tree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
@@ -106,7 +59,7 @@ describe('Build sorted merkle tree', function () {
             .fill(null)
             .map(() => randomPreimage())
         const { sortedLeaves, leaves, circuitInputs } =
-            buildInputsForLeaves(_leaves)
+            BuildOrderedTree.buildInputsForLeaves(_leaves)
         const tree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
             0,
@@ -137,7 +90,7 @@ describe('Build sorted merkle tree', function () {
             .fill(null)
             .map(() => randomPreimage())
         const { sortedLeaves, leaves, circuitInputs } =
-            buildInputsForLeaves(_leaves)
+            BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[3] =
             circuitInputs.sorted_leaf_preimages[6]
@@ -152,7 +105,8 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } = buildInputsForLeaves(_leaves)
+        const { leaves, circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[3] =
             circuitInputs.sorted_leaf_preimages[4]
@@ -167,7 +121,8 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } = buildInputsForLeaves(_leaves)
+        const { leaves, circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.leaf_r_values[20] -= BigInt(1)
         await new Promise<void>((rs, rj) => {
@@ -181,7 +136,8 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } = buildInputsForLeaves(_leaves)
+        const { leaves, circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[12] = [BigInt('4'), 0, 0, 0, 0]
         await new Promise<void>((rs, rj) => {

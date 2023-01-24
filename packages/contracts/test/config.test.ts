@@ -38,9 +38,6 @@ describe('Config', function () {
     })
 
     it('helper functions', async () => {
-        const maxEpochKey = await unirepContract.maxEpochKey()
-        expect(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 1).equal(maxEpochKey)
-
         const stateTreeDepth = await unirepContract.stateTreeDepth()
         expect(STATE_TREE_DEPTH).equal(stateTreeDepth)
 

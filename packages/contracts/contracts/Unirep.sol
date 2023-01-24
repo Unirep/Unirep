@@ -10,7 +10,7 @@ import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
-import {Poseidon6, Poseidon5, Poseidon4, Poseidon3} from './Hash.sol';
+import {Poseidon5} from './Hash.sol';
 import {Polyhash, PolyhashData} from './libraries/Polyhash.sol';
 
 import 'hardhat/console.sol';
@@ -34,8 +34,8 @@ contract Unirep is IUnirep, VerifySignature {
     // Circuits configurations and contracts configurations
     Config public config;
 
-    // The max epoch key can be computed by 2 ** config.epochTreeDepth - 1
-    uint256 public immutable maxEpochKey;
+    uint256 public immutable SNARK_SCALAR_FIELD =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // Attester id == address
     mapping(uint160 => AttesterData) attesters;
@@ -64,8 +64,6 @@ contract Unirep is IUnirep, VerifySignature {
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
         buildOrderedTreeVerifier = _buildOrderedTreeVerifier;
-
-        maxEpochKey = uint256(config.epochTreeArity)**config.epochTreeDepth - 1;
 
         // for initializing other trees without using poseidon function
         IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
@@ -147,9 +145,6 @@ contract Unirep is IUnirep, VerifySignature {
         attester.semaphoreGroup.root = emptyTree.root;
         attester.semaphoreGroup.depth = config.stateTreeDepth;
 
-        // set the first epoch tree root
-        attester.epochTreeRoots[0] = config.emptyEpochTreeRoot;
-
         // set the epoch length
         attester.epochLength = epochLength;
 
@@ -195,7 +190,7 @@ contract Unirep is IUnirep, VerifySignature {
         AttesterData storage attester = attesters[uint160(msg.sender)];
         if (attester.currentEpoch != targetEpoch) revert EpochNotMatch();
 
-        if (epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
 
         uint256 timestamp = block.timestamp;
 
@@ -227,11 +222,23 @@ contract Unirep is IUnirep, VerifySignature {
             ]
         );
 
+        // check that we're not at max capacity
+        require(
+            epkState.polyhash.degree <
+                config.epochTreeArity**config.epochTreeDepth - 2
+        );
+
         if (epkState.epochKeyLeaves[epochKey] == 0) {
             // this epoch key has received no attestations
             uint256 degree = Polyhash.add(epkState.polyhash, newLeaf);
             epkState.epochKeyDegree[epochKey] = degree;
             epkState.epochKeyLeaves[epochKey] = newLeaf;
+            emit EpochTreeLeaf(
+                targetEpoch,
+                uint160(msg.sender),
+                degree,
+                newLeaf
+            );
         } else {
             // we need to update the value in the polyhash
             uint256 degree = epkState.epochKeyDegree[epochKey];
@@ -242,6 +249,12 @@ contract Unirep is IUnirep, VerifySignature {
                 degree
             );
             epkState.epochKeyLeaves[epochKey] = newLeaf;
+            emit EpochTreeLeaf(
+                targetEpoch,
+                uint160(msg.sender),
+                degree,
+                newLeaf
+            );
         }
     }
 
@@ -262,14 +275,15 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 polyhash = publicSignals[1];
         //~~ if the hash is 0, don't allow the epoch to be manually sealed
         //~~ no attestations happened
-        require(epkState.polyhash.hash != 0);
+        require(epkState.polyhash.hash != 0, 'zerohash');
         //~~ we seal the polyhash by adding the largest value possible to
-        //~~ hashchain
-        Polyhash.seal(epkState.polyhash);
+        //~~ tree
+        uint index = Polyhash.seal(epkState.polyhash);
+        emit EpochTreeLeaf(epoch, attesterId, index, SNARK_SCALAR_FIELD - 1);
         // otherwise the root was already set
-        require(attester.epochTreeRoots[epoch] == 0);
+        require(attester.epochTreeRoots[epoch] == 0, 'doubleroot');
         // otherwise it's bad data in the proof
-        require(polyhash == epkState.polyhash.hash);
+        require(polyhash == epkState.polyhash.hash, 'wronghash');
         attester.epochTreeRoots[epoch] = root;
         // emit an event sealing the epoch
         emit EpochSealed(epoch, attesterId);
@@ -285,8 +299,8 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
-        if (publicSignals[5] >= type(uint160).max) revert AttesterInvalid();
-        uint160 attesterId = uint160(publicSignals[5]);
+        if (publicSignals[6] >= type(uint160).max) revert AttesterInvalid();
+        uint160 attesterId = uint160(publicSignals[6]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
         // verify that the transition nullifier hasn't been used
@@ -295,19 +309,20 @@ contract Unirep is IUnirep, VerifySignature {
         usedNullifiers[publicSignals[2]] = true;
 
         // verify that we're transition to the current epoch
-        if (attester.currentEpoch != publicSignals[4]) revert EpochNotMatch();
+        if (attester.currentEpoch != publicSignals[5]) revert EpochNotMatch();
 
-        uint256 fromEpoch = publicSignals[3];
+        uint256 fromEpoch = publicSignals[4];
         // check for attestation processing
         if (!attesterEpochSealed(attesterId, fromEpoch))
             revert HashchainNotProcessed();
-        // make sure from epoch tree root is valid
-        if (attester.epochTreeRoots[fromEpoch] != publicSignals[6])
-            revert InvalidEpochTreeRoot(publicSignals[6]);
 
         // make sure from state tree root is valid
         if (!attester.stateTreeRoots[fromEpoch][publicSignals[0]])
             revert InvalidStateTreeRoot(publicSignals[0]);
+
+        // make sure from epoch tree root is valid
+        if (attester.epochTreeRoots[fromEpoch] != publicSignals[3])
+            revert InvalidEpochTreeRoot(publicSignals[3]);
 
         // update the current state tree
         emit StateTreeLeaf(
@@ -356,8 +371,6 @@ contract Unirep is IUnirep, VerifySignature {
         attester.stateTrees[newEpoch].depth = config.stateTreeDepth;
         attester.stateTreeRoots[newEpoch][emptyTree.root] = true;
 
-        attester.epochTreeRoots[newEpoch] = config.emptyEpochTreeRoot;
-
         emit EpochEnded(newEpoch - 1, attesterId);
 
         attester.currentEpoch = newEpoch;
@@ -388,7 +401,7 @@ contract Unirep is IUnirep, VerifySignature {
         bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
         // short circuit if the proof is invalid
         if (!valid) revert InvalidProof();
-        if (signals.epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
         _updateEpochIfNeeded(signals.attesterId);
         AttesterData storage attester = attesters[uint160(signals.attesterId)];
         // epoch check
@@ -425,7 +438,7 @@ contract Unirep is IUnirep, VerifySignature {
         bool valid = epochKeyLiteVerifier.verifyProof(publicSignals, proof);
         // short circuit if the proof is invalid
         if (!valid) revert InvalidProof();
-        if (signals.epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
         _updateEpochIfNeeded(signals.attesterId);
         AttesterData storage attester = attesters[uint160(signals.attesterId)];
         // epoch check
@@ -465,7 +478,7 @@ contract Unirep is IUnirep, VerifySignature {
         ReputationSignals memory signals = decodeReputationSignals(
             publicSignals
         );
-        if (signals.epochKey >= maxEpochKey) revert InvalidEpochKey();
+        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
         if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
         _updateEpochIfNeeded(signals.attesterId);
         AttesterData storage attester = attesters[uint160(signals.attesterId)];
@@ -533,8 +546,7 @@ contract Unirep is IUnirep, VerifySignature {
         // either the attestations were processed, or no
         // attestations were received
         return
-            (attester.epochTreeRoots[epoch] != config.emptyEpochTreeRoot &&
-                attester.epochTreeRoots[epoch] != 0) ||
+            attester.epochTreeRoots[epoch] != 0 ||
             attester.epochKeyState[epoch].polyhash.hash == 0;
     }
 
