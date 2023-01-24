@@ -10,61 +10,94 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
   signal output checksum;
 
   // leaf and original index
-  signal input sorted_leaves[TREE_ARITY**TREE_DEPTH];
+  signal input sorted_leaf_preimages[TREE_ARITY**TREE_DEPTH][5];
+  // signal input sorted_leaves[TREE_ARITY**TREE_DEPTH];
   signal input leaf_r_values[TREE_ARITY**TREE_DEPTH];
 
-  // number of leaves in the working tree, including
-  // the 0 leaf and (SNARK_SCALAR_FIELD - 1)
-  signal input leaf_count;
+  /**
+   * Step 0: hash the leaves to prevent a chosen input attack
+   **/
+  component sorted_leaf_hashers[TREE_ARITY**TREE_DEPTH];
+  component sorted_leaf_iszero[TREE_ARITY**TREE_DEPTH];
+  component sorted_leaf_isone[TREE_ARITY**TREE_DEPTH];
+  component sorted_leaf_ors[TREE_ARITY**TREE_DEPTH];
+  component sorted_leaf_mux[TREE_ARITY**TREE_DEPTH];
+  signal sorted_leaves[TREE_ARITY**TREE_DEPTH];
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
+    sorted_leaf_isone[x] = IsEqual();
+    sorted_leaf_isone[x].in[0] <== sorted_leaf_preimages[x][0];
+    sorted_leaf_isone[x].in[1] <== 1;
+
+    sorted_leaf_iszero[x] = IsZero();
+    // check if the epoch key is 0
+    sorted_leaf_iszero[x].in <== sorted_leaf_preimages[x][0];
+
+    sorted_leaf_hashers[x] = Poseidon(5);
+    for (var y = 0; y < 5; y++) {
+      sorted_leaf_hashers[x].inputs[y] <== sorted_leaf_preimages[x][y];
+    }
+
+    // If the leaf preimage is 0, we insert a 0
+    // If it's 1 we insert SNARK_SCALAR_FIELD-1
+    // Otherwise we take the hash
+
+    sorted_leaf_ors[x] = OR();
+    sorted_leaf_ors[x].a <== sorted_leaf_iszero[x].out;
+    sorted_leaf_ors[x].b <== sorted_leaf_isone[x].out;
+
+    sorted_leaf_mux[x] = Mux1();
+    sorted_leaf_mux[x].s <== sorted_leaf_ors[x].out;
+    sorted_leaf_mux[x].c[0] <== sorted_leaf_hashers[x].out;
+    sorted_leaf_mux[x].c[1] <== sorted_leaf_isone[x].out*-1;
+    sorted_leaves[x] <== sorted_leaf_mux[x].out;
+  }
 
   /**
    * Step 1: Make sure leaf values are ascending
    * TODO: find a way to not use a LessThan component
    * can use value differences/subtraction for this?
    **/
-  component lt_comp[TREE_ARITY**TREE_DEPTH - 1];
-  component leaf_zero[TREE_ARITY**TREE_DEPTH - 1];
-  component gt_comp[TREE_ARITY**TREE_DEPTH - 1];
-  component leaf_mux[TREE_ARITY**TREE_DEPTH - 1];
+  component lt_comp[TREE_ARITY**TREE_DEPTH];
+  component gt_comp[TREE_ARITY**TREE_DEPTH];
+  component leaf_mux[TREE_ARITY**TREE_DEPTH];
+  component leaf_max[TREE_ARITY**TREE_DEPTH];
+  component leaf_zero[TREE_ARITY**TREE_DEPTH];
+  component leaf_ors[TREE_ARITY**TREE_DEPTH];
   //~~~ first leaf must be 0
   sorted_leaves[0] === 0;
-  //~~ working section of the tree must start with 0 and end with
-  //~~ SNARK_SCALAR_CONSTANT - 1
-  //~~ the last value being SNARK_SCALAR_CONSTANT -1 is enforced
-  //~~ at the smart contract level
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
+    leaf_max[x] = IsEqual();
+    leaf_max[x].in[0] <== -1;
+    leaf_max[x].in[1] <== sorted_leaves[x];
+
+    leaf_zero[x] = IsZero();
+    leaf_zero[x].in <== sorted_leaves[x];
+
+    leaf_ors[x] = OR();
+    leaf_ors[x].a <== leaf_max[x].out;
+    leaf_ors[x].b <== leaf_zero[x].out;
+  }
   for (var x = 1; x < TREE_ARITY**TREE_DEPTH; x++) {
     // sorted_leaves[x] \ 2**252 === 0;
-    lt_comp[x-1] = BigLessThan();
-    lt_comp[x-1].in[0] <== sorted_leaves[x-1];
-    lt_comp[x-1].in[1] <== sorted_leaves[x];
+    lt_comp[x] = BigLessThan();
+    lt_comp[x].in[0] <== sorted_leaves[x-1];
+    lt_comp[x].in[1] <== sorted_leaves[x];
 
-    //~~ if x > leaf_count, require(leaf === 0)
+    // If the leaf is zero require that the previous leaf was
+    // SNARK_SCALAR_FIELD-1 or 0
 
-    leaf_zero[x-1] = IsZero();
-    leaf_zero[x-1].in <== sorted_leaves[x];
+    leaf_mux[x] = Mux1();
+    leaf_mux[x].s <== leaf_zero[x].out;
 
-    //~~~ supports up to 32k leaves
-    gt_comp[x-1] = GreaterEqThan(15);
-    gt_comp[x-1].in[0] <== x;
-    gt_comp[x-1].in[1] <== leaf_count;
+    leaf_mux[x].c[0] <== lt_comp[x].out;
+    leaf_mux[x].c[1] <== leaf_ors[x-1].out;
 
-    // if gt_comp
-    //   then leaf_zero == true
-    // else
-    //   then lt_comp == true
-    leaf_mux[x-1] = Mux1();
-    leaf_mux[x-1].s <== gt_comp[x-1].out;
-
-    leaf_mux[x-1].c[0] <== lt_comp[x-1].out;
-    leaf_mux[x-1].c[1] <== leaf_zero[x-1].out;
-
-    leaf_mux[x-1].out === 1;
+    leaf_mux[x].out === 1;
   }
 
   /**
    * Step 2: Calculate the polynomial hash of the leaves
    **/
-
 
   signal terms[TREE_ARITY**TREE_DEPTH];
   var polyhash = 0;
