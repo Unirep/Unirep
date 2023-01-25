@@ -27,7 +27,7 @@ Epoch key nonce count: 3
 
 ## Keys
 
-Proving keys for this contract can accessed at the following url:
+Proving keys for this contract can be accessed at the following url:
 - [https://keys.unirep.io/2-alpha-2/](https://keys.unirep.io/2-alpha-2/)
 
 This URL can be directly used in a [network prover](circuits-api/network-prover) implementation.
