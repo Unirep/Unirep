@@ -66,7 +66,7 @@ Please make sure the signature is signed through the correct attester.
 
 ## 0x53d3ff53
 - `EpochNotMatch()` <br/>
-    Current [epoch](../protocol/epoch.md) doesn not match the epoch in the proof or the target epoch. <br/>
+    Current [epoch](../protocol/epoch.md) does not match the epoch in the proof or the target epoch. <br/>
     Please check the current epoch and generate a corresponding proof.
 
 ## 0xa225656d
@@ -85,14 +85,14 @@ Please make sure the signature is signed through the correct attester.
     The [state tree](../protocol/trees.md#state-tree) root of given epoch does not exist in the current Unirep contract. <br/>
     There are several reasons:
     1. The user does not sign up successfully
-    2. The user does not perform user state transition succesfully
+    2. The user does not perform user state transition successfully
     3. `userSignUp` transaction or `userStateTransition` transaction is pending
     4. Epoch and state tree root does not match
 
 ## 0xfa2e644d
 - `InvalidEpochTreeRoot(uint256 epochTreeRoot)`<br/>
     The [epoch tree](../protocol/trees.md#epoch-tree) root of given epoch does not match the current Unirep contract. <br/>
-    Please check if all attestations are proccessed correctly and succesfully.
+    Please check if all attestations are processed correctly and successfully.
 
 ## 0x17643148
 - `HashchainInvalid()`<br/>
