@@ -42,6 +42,32 @@ describe('Attestations', function () {
         await ethers.provider.send('evm_revert', [snapshot])
     })
 
+    it('should fail to submit too many attestations', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const posRep = 1
+        const negRep = 5
+        const graffiti = 0
+        const timestamp = 0
+
+        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
+            const epochKey = BigInt(x + 100000)
+            await unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .then((t) => t.wait())
+        }
+        await expect(
+            unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, 2, posRep, negRep, graffiti)
+        ).to.be.revertedWithCustomError(unirepContract, 'MaxAttestations')
+    })
+
     it('should fail to submit attestation with wrong epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]

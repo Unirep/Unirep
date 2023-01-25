@@ -71,6 +71,10 @@ interface IUnirep {
     error InvalidEpochKey();
     error EpochNotMatch();
     error InvalidEpoch(uint256 epoch);
+    error MaxAttestations();
+    error NoAttestations();
+    error DoubleSeal();
+    error IncorrectHash();
 
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);

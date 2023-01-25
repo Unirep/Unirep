@@ -20,7 +20,6 @@ import {
     UserStateTransitionProof,
     SignupProof,
     SNARK_SCALAR_FIELD,
-    BuildOrderedTree,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { signupUser } from '@unirep/test'

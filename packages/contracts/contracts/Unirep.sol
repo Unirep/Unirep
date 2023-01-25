@@ -223,11 +223,12 @@ contract Unirep is IUnirep, VerifySignature {
         );
 
         // check that we're not at max capacity
-        require(
-            epkState.polyhash.degree <
-                config.epochTreeArity**config.epochTreeDepth - 2,
-            'pfull'
-        );
+        if (
+            epkState.polyhash.degree >=
+            config.epochTreeArity**config.epochTreeDepth - 2
+        ) {
+            revert MaxAttestations();
+        }
 
         if (epkState.epochKeyLeaves[epochKey] == 0) {
             // this epoch key has received no attestations
@@ -286,14 +287,20 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 polyhash = publicSignals[1];
         //~~ if the hash is 0, don't allow the epoch to be manually sealed
         //~~ no attestations happened
-        require(epkState.polyhash.hash != 0, 'zerohash');
+        if (epkState.polyhash.hash == 0) {
+            revert NoAttestations();
+        }
         //~~ we seal the polyhash by adding the largest value possible to
         //~~ tree
         uint index = Polyhash.seal(epkState.polyhash);
         // otherwise the root was already set
-        require(attester.epochTreeRoots[epoch] == 0, 'doubleroot');
+        if (attester.epochTreeRoots[epoch] != 0) {
+            revert DoubleSeal();
+        }
         // otherwise it's bad data in the proof
-        require(polyhash == epkState.polyhash.hash, 'wronghash');
+        if (polyhash != epkState.polyhash.hash) {
+            revert IncorrectHash();
+        }
         attester.epochTreeRoots[epoch] = root;
         // emit an event sealing the epoch
         emit EpochSealed(epoch, attesterId);
