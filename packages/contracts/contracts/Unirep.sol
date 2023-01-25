@@ -13,8 +13,6 @@ import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-me
 import {Poseidon5} from './Hash.sol';
 import {Polyhash, PolyhashData} from './libraries/Polyhash.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @title Unirep
  * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.
@@ -223,14 +221,14 @@ contract Unirep is IUnirep, VerifySignature {
         );
 
         // check that we're not at max capacity
-        if (
-            epkState.polyhash.degree >=
-            config.epochTreeArity**config.epochTreeDepth - 2
-        ) {
-            revert MaxAttestations();
-        }
 
         if (epkState.epochKeyLeaves[epochKey] == 0) {
+            if (
+                epkState.polyhash.degree >=
+                config.epochTreeArity**config.epochTreeDepth - 2
+            ) {
+                revert MaxAttestations();
+            }
             // this epoch key has received no attestations
             uint256 degree = Polyhash.add(epkState.polyhash, newLeaf);
             epkState.epochKeyDegree[epochKey] = degree;
@@ -292,7 +290,7 @@ contract Unirep is IUnirep, VerifySignature {
         }
         //~~ we seal the polyhash by adding the largest value possible to
         //~~ tree
-        uint index = Polyhash.seal(epkState.polyhash);
+        Polyhash.add(epkState.polyhash, SNARK_SCALAR_FIELD - 1);
         // otherwise the root was already set
         if (attester.epochTreeRoots[epoch] != 0) {
             revert DoubleSeal();

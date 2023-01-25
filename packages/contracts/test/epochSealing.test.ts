@@ -180,6 +180,48 @@ describe('Epoch sealing', function () {
             .then((t) => t.wait())
     })
 
+    it('should seal with attestations to same user', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const preimages = []
+        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
+            const epochKey = BigInt(x + 1000)
+            let totalRep = 3
+            for (let y = 0; y < totalRep; y++) {
+                await unirepContract
+                    .connect(attester)
+                    .submitAttestation(epoch, epochKey, 1, 0, 0)
+                    .then((t) => t.wait())
+            }
+            preimages.push([epochKey, totalRep, 0, 0, 0])
+        }
+        await expect(
+            unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, 2194124, 1, 0, 0)
+        ).to.be.revertedWithCustomError(unirepContract, 'MaxAttestations')
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
+        )
+        const { publicSignals, proof } = new BuildOrderedTree(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await unirepContract
+            .connect(accounts[5])
+            .sealEpoch(epoch, attester.address, publicSignals, proof)
+            .then((t) => t.wait())
+    })
+
     it('should fail to seal with invalid epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]

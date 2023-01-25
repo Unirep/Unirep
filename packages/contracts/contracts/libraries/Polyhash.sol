@@ -34,8 +34,6 @@ struct PolyhashData {
     uint R;
 }
 
-import 'hardhat/console.sol';
-
 // Calculate a hash of elements using a polynomial equation
 library Polyhash {
     uint256 internal constant SNARK_SCALAR_FIELD =
@@ -83,10 +81,6 @@ library Polyhash {
             // we need to wrap, we're guaranteed that self.hash < diff < SNARK_SCALAR_FIELD
             self.hash = SNARK_SCALAR_FIELD - (diff - self.hash);
         }
-    }
-
-    function seal(PolyhashData storage self) public returns (uint) {
-        return add(self, SNARK_SCALAR_FIELD - 1);
     }
 
     /**
