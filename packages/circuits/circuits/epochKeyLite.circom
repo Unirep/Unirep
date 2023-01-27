@@ -1,4 +1,4 @@
-pragma circom 2.0.0;
+pragma circom 2.1.3;
 
 include "./circomlib/circuits/poseidon.circom";
 
@@ -19,21 +19,27 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
      * 1 bit reveal nonce
      **/
 
-    control \ (2 ** 233) === 0;
+    signal control_divided <-- control \ (2 ** 233);
+    control_divided === 0;
     signal reveal_nonce <-- (control \ 2 ** 232) & 1;
     signal attester_id <-- (control \ 2 ** 72) & (2 ** 160 - 1);
     signal epoch <-- (control \ 2 ** 8) & (2 ** 64 - 1);
     signal nonce <-- control & (2 ** 8 - 1);
 
-    reveal_nonce \ 2 === 0;
-    attester_id \ 2**160 === 0;
-    epoch \ 2**64 === 0;
-    nonce \ 2**8 === 0;
+    signal reveal_nonce_divided <-- reveal_nonce \ 2;
+    signal attester_id_divided <-- attester_id \ 2**160;
+    signal epoch_divided <-- epoch \ 2**64;
+    signal nonce_divided <-- nonce \ 2**8;
+    reveal_nonce_divided === 0;
+    attester_id_divided === 0;
+    epoch_divided === 0;
+    nonce_divided === 0;
 
     control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
 
     // check the epoch key range using a single constraint
-    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
+    signal epknonce_divided <-- nonce \ EPOCH_KEY_NONCE_PER_EPOCH;
+    epknonce_divided === 0;
 
     control_output <== reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 

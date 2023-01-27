@@ -1,4 +1,4 @@
-pragma circom 2.0.0;
+pragma circom 2.1.3;
 
 /*
     Prove:
@@ -48,33 +48,45 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
      * 1 bit prove zero rep
      **/
 
-    control[0] \ (2 ** 234) === 0;
+    signal control_divided_0 <-- control[0] \ (2 ** 234);
+    control_divided_0 === 0;
     signal prove_graffiti <-- (control[0] \ 2 ** 233) & 1;
     signal reveal_nonce <-- (control[0] \ 2 ** 232) & 1;
     signal attester_id <-- (control[0] \ 2 ** 72) & (2 ** 160 - 1);
     signal epoch <-- (control[0] \ 2 ** 8) & (2 ** 64 - 1);
     signal nonce <-- control[0] & (2 ** 8 - 1);
 
-    prove_graffiti \ 2 === 0;
-    reveal_nonce \ 2 === 0;
-    attester_id \ 2**160 === 0;
-    epoch \ 2**64 === 0;
-    nonce \ 2**8 === 0;
+    signal prove_graffiti_divided <-- prove_graffiti \ 2;
+    signal reveal_nonce_divided <-- reveal_nonce \ 2;
+    signal attester_id_divided <-- attester_id \ 2**160;
+    signal epoch_divided <-- epoch \ 2**64;
+    signal nonce_divided <-- nonce \ 2**8;
+    prove_graffiti_divided === 0;
+    reveal_nonce_divided === 0;
+    attester_id_divided === 0;
+    epoch_divided === 0;
+    nonce_divided === 0;
 
     control[0] === prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
 
-    control[1] \ (2 ** 131) === 0;
+    signal control_divided_1 <--  control[1] \ (2 ** 131);
+    control_divided_1 === 0;
     signal prove_zero_rep <-- (control[1] \ 2 ** 130) & 1;
     signal prove_max_rep <-- (control[1] \ 2 ** 129) & 1;
     signal prove_min_rep <-- (control[1] \ 2 ** 128) & 1;
     signal max_rep <-- (control[1] \ 2 ** 64) & (2 ** 64 - 1);
     signal min_rep <-- control[1] & (2 ** 64 - 1);
 
-    prove_zero_rep \ 2 === 0;
-    prove_max_rep \ 2 === 0;
-    prove_min_rep \ 2 === 0;
-    min_rep \ 2**64 === 0;
-    max_rep \ 2**64 === 0;
+    signal prove_zero_rep_divided <-- prove_zero_rep \ 2;
+    signal prove_max_rep_divided <-- prove_max_rep \ 2;
+    signal prove_min_rep_divided <-- prove_min_rep \ 2;
+    signal min_rep_divided <-- min_rep \ 2**64;
+    signal max_rep_divided <-- max_rep \ 2**64;
+    prove_zero_rep_divided === 0;
+    prove_max_rep_divided === 0;
+    prove_min_rep_divided === 0;
+    min_rep_divided === 0;
+    max_rep_divided === 0;
 
     control[1] === prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
 
@@ -177,7 +189,8 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
 
     /* 4. Check nonce and output epoch key */
 
-    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
+    signal epknonce_divided <-- nonce \ EPOCH_KEY_NONCE_PER_EPOCH;
+    epknonce_divided === 0;
 
     component epoch_key_hasher = Poseidon(4);
     epoch_key_hasher.inputs[0] <== identity_secret;

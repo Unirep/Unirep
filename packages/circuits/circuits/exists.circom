@@ -1,3 +1,4 @@
+pragma circom 2.1.3;
 
 //~~~~~ Check if a value exists in an array
 

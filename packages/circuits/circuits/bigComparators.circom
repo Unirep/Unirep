@@ -1,3 +1,5 @@
+pragma circom 2.1.3;
+
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/mux1.circom";

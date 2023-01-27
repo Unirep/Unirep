@@ -1,4 +1,4 @@
-pragma circom 2.0.0;
+pragma circom 2.1.3;
 
 /*
     Verify that an epoch key exists in a state tree
@@ -40,7 +40,8 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input control;
 
     // no bits above 233 should be set
-    control \ (2 ** 233) === 0;
+    signal control_divided <-- control \ (2 ** 233);
+    control_divided === 0;
 
     signal reveal_nonce <-- control \ 2 ** 232;
     signal attester_id <-- (control \ 2 ** 72) & (2**160 - 1);
@@ -48,10 +49,14 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     signal nonce <-- control & (2 ** 8 - 1);
 
     // individual range check
-    reveal_nonce \ 2 === 0;
-    attester_id \ 2**160 === 0;
-    epoch \ 2**64 === 0;
-    nonce \ 2**8 === 0;
+    signal reveal_nonce_divided <-- reveal_nonce \ 2;
+    signal attester_id_divided <-- attester_id \ 2**160;
+    signal epoch_divided <-- epoch \ 2**64;
+    signal nonce_divided <-- nonce \ 2**8;
+    reveal_nonce_divided === 0;
+    attester_id_divided === 0;
+    epoch_divided === 0;
+    nonce_divided === 0;
 
     // check extracted value
     control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
@@ -83,7 +88,8 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
 
     /* 2. Check nonce validity */
 
-    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
+    signal epknonce_divided <-- nonce \ EPOCH_KEY_NONCE_PER_EPOCH;
+    epknonce_divided === 0;
 
     /* End of check 2*/
 

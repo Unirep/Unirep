@@ -1,3 +1,5 @@
+pragma circom 2.1.3;
+
 // Refer to:
 // https://github.com/peppersec/tornado-mixer/blob/master/circuits/merkleTree.circom
 // https://github.com/appliedzkp/semaphore/blob/master/circuits/circom/semaphore-base.circom
