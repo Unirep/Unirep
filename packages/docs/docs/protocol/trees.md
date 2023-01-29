@@ -23,14 +23,11 @@ Each attester has a separate version of each tree for each epoch.
 
 * An epoch tree is used to **track the reputation received by epoch keys**. Non-repudiability is enforced at the circuit and smart contract level.
 
-* This is a **sparse merkle tree**, with its leaves storing the hash of reputation received by the epoch key, e.g.,
-  * leaf index: epoch key
-  * leaf value: `H(posRep, negRep, graffiti, timestamp)`
+* This is an **ordered merkle tree**, with its leaves storing the hash of epoch key and reputation received, e.g.,
+  * leaf value: `H(epochKey, posRep, negRep, graffiti, timestamp)`
+
+The ordered merkle tree is constructed in ZK.
 
 :::info
 See also: [Reputation](reputation.md)
 :::
-
-Read more about Merkle Trees:
-
-[https://medium.com/@kelvinfichter/whats-a-sparse-merkle-tree-acda70aeb837](https://medium.com/@kelvinfichter/whats-a-sparse-merkle-tree-acda70aeb837)

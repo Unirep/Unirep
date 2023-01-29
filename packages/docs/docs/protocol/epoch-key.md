@@ -10,7 +10,7 @@ description: Definition of epoch key in UniRep
 * An epoch key is computed by:
 
 ```typescript
-hash(identityNullifier, attesterId, epoch, nonce) % 2^epochTreeDepth
+hash(identityNullifier, attesterId, epoch, nonce)
 ```
 
 where `nonce` can be any value between `0` and `numEpochKeyNoncePerEpoch - 1`, so that a user can have `numEpochKeyNoncePerEpoch` epoch keys per epoch.
