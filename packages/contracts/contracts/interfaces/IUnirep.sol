@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 
 interface IUnirep {
+    event AttesterSignedUp(
+        uint160 indexed attesterId,
+        uint256 indexed epochLength
+    );
+
     event UserSignedUp(
         uint256 indexed epoch,
         uint256 indexed identityCommitment,
