@@ -10,8 +10,8 @@ enum Circuit {
   proveReputation,
   userStateTransition,
   signup,
-  aggregateEpochKeys,
   epochKeyLite,
+  buildOrderedTree
 }
 ```
 

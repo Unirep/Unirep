@@ -3,11 +3,8 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { SparseMerkleTree, genRandomSalt, hash3, hash6 } from '@unirep/utils'
 import {
-    Circuit,
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
-    defaultEpochTreeLeaf,
-    AggregateEpochKeysProof,
     SNARK_SCALAR_FIELD,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -15,8 +12,6 @@ import { genAggregateEpochKeysCircuitInputs } from '@unirep/test'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 describe('Attestations', function () {
     this.timeout(120000)
