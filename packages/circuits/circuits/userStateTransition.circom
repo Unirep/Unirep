@@ -47,7 +47,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY];
 
     signal output transition_nullifier;
-    signal output root;
+    signal output epoch_tree_root;
 
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     epoch_check.in[0] <== to_epoch;
@@ -191,7 +191,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
 
     //~~ output the root, or 0 if we haven't proven membership (no attestations)
-    root <== has_proven_inc_or_noninc.out * roots[0];
+    epoch_tree_root <== has_proven_inc_or_noninc.out * roots[0];
 
     //~~ if root is 0 no new reputation must be supplied
     var no_attestations_sum = 0;
@@ -256,4 +256,3 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     /* End of check 4 */
 }
-
