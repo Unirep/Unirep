@@ -26,7 +26,7 @@ Each attester has a separate version of each tree for each epoch.
 * This is an **ordered merkle tree**, with its leaves storing the hash of epoch key and reputation received, e.g.,
   * leaf value: `H(epochKey, posRep, negRep, graffiti, timestamp)`
 
-The ordered merkle tree is constructed in ZK.
+The ordered merkle tree is constructed in ZK at the end of each epoch. For more info see the [ordered merkle tree proof](../circuits-api/circuits#build-ordered-tree).
 
 :::info
 See also: [Reputation](reputation.md)

@@ -8,4 +8,4 @@ Attestations happen on-chain. Each attestation is given to an epoch key and shou
 
 ## Ordered Merkle Tree
 
-At the end of each epoch all the new epoch tree leaves must be sorted and put into an ordered merkle tree. This happens in a ZK proof that may be computed and submitted by anyone. The ordered merkle tree allows users to prove inclusion _and_ noninclusion.
+At the end of each epoch all the new epoch tree leaves must be sorted and put into an [ordered merkle tree](../circuits-api/circuits#build-ordered-tree). This happens in a ZK proof that may be computed and submitted by anyone. The ordered merkle tree allows users to prove inclusion _and_ noninclusion.

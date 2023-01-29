@@ -134,7 +134,15 @@ synchronizer.genStateTree(epoch: bigint): Promise<IncrementalMerkleTree>
 Build the latest epoch tree for a certain epoch.
 
 ```ts
-synchronizer.genEpochTree(epoch: bigint): Promise<SparseMerkleTree>
+synchronizer.genEpochTree(epoch: bigint): Promise<IncrementalMerkleTree>
+```
+
+## genEpochTreePreimages
+
+Get the pre-images for the leaves in an epoch tree.
+
+```ts
+synchronizer.genEpochTreePreimages(epoch: bigint): Promise<bigint[][]>
 ```
 
 ## stateRootExists
