@@ -412,6 +412,14 @@ export class Synchronizer extends EventEmitter {
         return BigInt(epoch.toString())
     }
 
+    async isEpochSealed(epoch: number) {
+        const sealed = await this.unirepContract.attesterEpochSealed(
+            this.attesterId,
+            epoch
+        )
+        return sealed
+    }
+
     async epochTreeRoot(epoch: number) {
         return this.unirepContract.attesterEpochRoot(this.attesterId, epoch)
     }
