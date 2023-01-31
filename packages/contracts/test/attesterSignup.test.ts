@@ -43,10 +43,14 @@ describe('Attester Signup', function () {
         for (let i = 2; i < 10; i++) {
             const attester = accounts[i]
             const attesterEpochLength = EPOCH_LENGTH * i
-            await unirepContract
+            const tx = await unirepContract
                 .connect(attester)
                 .attesterSignUp(attesterEpochLength)
-                .then((t) => t.wait())
+
+            expect(tx)
+                .to.emit(unirepContract, 'AttesterSignedUp')
+                .withArgs(attester.address, attesterEpochLength)
+            await tx.wait()
 
             const currentEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
@@ -114,10 +118,14 @@ describe('Attester Signup', function () {
         const signature = await attester.signMessage(
             ethers.utils.arrayify(message)
         )
-        await unirepContract
+        const tx = await unirepContract
             .connect(relayer)
             .attesterSignUpViaRelayer(attester.address, EPOCH_LENGTH, signature)
-            .then((t) => t.wait())
+
+        expect(tx)
+            .to.emit(unirepContract, 'AttesterSignedUp')
+            .withArgs(attester.address, EPOCH_LENGTH)
+        await tx.wait()
 
         const currentEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address

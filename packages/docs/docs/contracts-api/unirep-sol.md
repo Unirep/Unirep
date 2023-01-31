@@ -478,6 +478,17 @@ function numEpochKeyNoncePerEpoch() public view returns (uint256)
 
 The UniRep contract emits a number of events to help offchain observers track state.
 
+### AttesterSignedUp
+
+Emitted when an attester registers with the unirep contract.
+
+```sol
+event AttesterSignedUp(
+  uint160 indexed attesterId,
+  uint256 indexed epochLength
+);
+```
+
 ### UserSignUp
 
 Emitted when a user joins an attester.

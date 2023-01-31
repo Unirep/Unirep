@@ -152,6 +152,8 @@ contract Unirep is IUnirep, VerifySignature {
 
         // set the epoch length
         attester.epochLength = epochLength;
+
+        emit AttesterSignedUp(uint160(attesterId), epochLength);
     }
 
     /**
