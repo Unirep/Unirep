@@ -2,7 +2,6 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    hash4,
     IncrementalMerkleTree,
     SparseMerkleTree,
     ZkIdentity,
@@ -122,7 +121,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -202,7 +201,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: address,
@@ -276,7 +275,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 1,
                 to_epoch: 2,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -368,7 +367,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -446,7 +445,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -524,7 +523,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -601,7 +600,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -679,7 +678,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: fromEpoch,
                 to_epoch: toEpoch,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -791,7 +790,7 @@ describe('User State Transition', function () {
                     stringifyBigInts({
                         from_epoch: fromEpoch,
                         to_epoch: epoch,
-                        identity_nullifier: userState[i].id.identityNullifier,
+                        identity_secret: userState[i].id.secretHash,
                         state_tree_indexes: stateTreeProof.pathIndices,
                         state_tree_elements: stateTreeProof.siblings,
                         attester_id: attester.address,

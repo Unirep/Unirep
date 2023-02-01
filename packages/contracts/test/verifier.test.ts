@@ -47,7 +47,7 @@ describe('Epoch key lite proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.epochKeyLite,
                 stringifyBigInts({
-                    identity_nullifier: id.identityNullifier,
+                    identity_secret: id.secretHash,
                     data,
                     control: EpochKeyLiteProof.buildControlInput({
                         epoch,
@@ -86,7 +86,7 @@ describe('Epoch key lite proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.epochKeyLite,
                 stringifyBigInts({
-                    identity_nullifier: id.identityNullifier,
+                    identity_secret: id.secretHash,
                     control: EpochKeyLiteProof.buildControlInput({
                         epoch,
                         nonce,
@@ -135,7 +135,7 @@ describe('Epoch key lite proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts({
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 data,
                 control: EpochKeyLiteProof.buildControlInput({
                     epoch: invalidEpoch,
@@ -172,7 +172,7 @@ describe('Epoch key lite proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts({
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 data,
                 control: EpochKeyLiteProof.buildControlInput({
                     epoch,
@@ -261,7 +261,7 @@ describe('Epoch key proof verifier', function () {
                 stringifyBigInts({
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
-                    identity_nullifier: id.identityNullifier,
+                    identity_secret: id.secretHash,
                     pos_rep: posRep,
                     neg_rep: negRep,
                     graffiti,
@@ -318,7 +318,7 @@ describe('Epoch key proof verifier', function () {
                 stringifyBigInts({
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
-                    identity_nullifier: id.identityNullifier,
+                    identity_secret: id.secretHash,
                     pos_rep: posRep,
                     neg_rep: negRep,
                     graffiti,
@@ -388,7 +388,7 @@ describe('Epoch key proof verifier', function () {
             stringifyBigInts({
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
@@ -444,7 +444,7 @@ describe('Epoch key proof verifier', function () {
             stringifyBigInts({
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
@@ -509,7 +509,7 @@ describe('Epoch key proof verifier', function () {
             stringifyBigInts({
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 pos_rep: posRep,
                 neg_rep: negRep,
                 graffiti,
@@ -590,7 +590,7 @@ describe('Reputation proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.proveReputation,
                 stringifyBigInts({
-                    identity_nullifier: id.identityNullifier,
+                    identity_secret: id.secretHash,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
                     pos_rep: posRep,
@@ -652,7 +652,7 @@ describe('Reputation proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.proveReputation,
                 stringifyBigInts({
-                    identity_nullifier: id.identityNullifier,
+                    identity_secret: id.secretHash,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
                     pos_rep: posRep,
@@ -746,7 +746,7 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
                 pos_rep: posRep,
@@ -807,7 +807,7 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
                 pos_rep: posRep,
@@ -871,7 +871,7 @@ describe('Reputation proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
-                identity_nullifier: id.identityNullifier,
+                identity_secret: id.secretHash,
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
                 pos_rep: posRep,
