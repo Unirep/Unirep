@@ -17,14 +17,17 @@ template IdentityCommitment() {
   signal input nullifier;
   signal input trapdoor;
 
+  signal output secret;
   signal output out;
 
-  component secret = IdentitySecret();
-  secret.nullifier <== nullifier;
-  secret.trapdoor <== trapdoor;
+  component _secret = IdentitySecret();
+  _secret.nullifier <== nullifier;
+  _secret.trapdoor <== trapdoor;
+
+  secret <== _secret.out;
 
   component hasher = Poseidon(1);
-  hasher.inputs[0] <== secret.out;
+  hasher.inputs[0] <== _secret.out;
 
   out <== hasher.out;
 }
