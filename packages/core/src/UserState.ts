@@ -416,6 +416,7 @@ export default class UserState extends Synchronizer {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
             identity_nullifier: this.id.identityNullifier,
+            identity_trapdoor: this.id.trapdoor,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: this.attesterId.toString(),
@@ -484,6 +485,7 @@ export default class UserState extends Synchronizer {
 
         const circuitInputs = {
             identity_nullifier: this.id.identityNullifier,
+            identity_trapdoor: this.id.trapdoor,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             pos_rep: posRep,
@@ -557,6 +559,7 @@ export default class UserState extends Synchronizer {
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
             identity_nullifier: this.id.identityNullifier,
+            identity_trapdoor: this.id.trapdoor,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,
