@@ -7,15 +7,13 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
-include "./identity.circom";
 
 template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
-    signal input identity_nullifier;
-    signal input identity_trapdoor;
+    signal input identity_secret;
 
     signal output epoch_key;
     signal output state_tree_root;
@@ -41,10 +39,6 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
      **/
     signal input control;
 
-    component identity_secret = IdentitySecret();
-    identity_secret.nullifier <== identity_nullifier;
-    identity_secret.trapdoor <== identity_trapdoor;
-
     // no bits above 233 should be set
     control \ (2 ** 233) === 0;
 
@@ -69,7 +63,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
 
     // Compute user state tree root
     component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_secret.out;
+    leaf_hasher.inputs[0] <== identity_secret;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== epoch;
     leaf_hasher.inputs[3] <== pos_rep;
@@ -96,7 +90,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     /* 3. Output an epoch key */
 
     component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_secret.out;
+    epoch_key_hasher.inputs[0] <== identity_secret;
     epoch_key_hasher.inputs[1] <== attester_id;
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;

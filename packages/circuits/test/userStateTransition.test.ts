@@ -230,8 +230,7 @@ describe('User state transition', function () {
             stringifyBigInts({
                 from_epoch: fromEpoch,
                 to_epoch: toEpoch,
-                identity_nullifier: id.identityNullifier,
-                identity_trapdoor: id.trapdoor,
+                identity_secret: id.secretHash,
                 state_tree_indexes: tree.createProof(0).pathIndices,
                 state_tree_elements: tree.createProof(0).siblings,
                 attester_id: attesterId,
@@ -322,8 +321,7 @@ describe('User state transition', function () {
         const inputs = stringifyBigInts({
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
+            identity_secret: id.secretHash,
             state_tree_indexes: tree.createProof(0).pathIndices,
             state_tree_elements: tree.createProof(0).siblings,
             attester_id: attesterId,

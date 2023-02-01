@@ -16,8 +16,7 @@ describe('Epoch key lite circuits', function () {
             const epoch = 120958
             const id = new ZkIdentity()
             const circuitInputs = {
-                identity_nullifier: id.identityNullifier,
-                identity_trapdoor: id.trapdoor,
+                identity_secret: id.secretHash,
                 control: EpochKeyLiteProof.buildControlInput({
                     epoch,
                     attesterId,
@@ -54,8 +53,7 @@ describe('Epoch key lite circuits', function () {
             const epoch = 120958
             const id = new ZkIdentity()
             const circuitInputs = {
-                identity_nullifier: id.identityNullifier,
-                identity_trapdoor: id.trapdoor,
+                identity_secret: id.secretHash,
                 control: EpochKeyLiteProof.buildControlInput({
                     epoch,
                     attesterId,
@@ -96,8 +94,7 @@ describe('Epoch key lite circuits', function () {
         const id = new ZkIdentity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
+            identity_secret: id.secretHash,
             control: EpochKeyLiteProof.buildControlInput({
                 epoch,
                 attesterId,
@@ -137,8 +134,7 @@ describe('Epoch key lite circuits', function () {
         const id = new ZkIdentity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
+            identity_secret: id.secretHash,
             control: EpochKeyLiteProof.buildControlInput({
                 epoch,
                 attesterId,
@@ -160,8 +156,7 @@ describe('Epoch key lite circuits', function () {
         const id = new ZkIdentity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
+            identity_secret: id.secretHash,
             control:
                 EpochKeyLiteProof.buildControlInput({
                     epoch,
