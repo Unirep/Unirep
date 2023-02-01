@@ -66,7 +66,7 @@ export default class UserState extends Synchronizer {
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
             const epkNullifier = genUserStateTransitionNullifier(
-                this.id.identityNullifier,
+                this.id.secretHash,
                 this.attesterId.toString(),
                 x
             )
@@ -117,7 +117,7 @@ export default class UserState extends Synchronizer {
                 return 0
             }
             const leaf = genStateTreeLeaf(
-                this.id.identityNullifier,
+                this.id.secretHash,
                 this.attesterId.toString(),
                 signup.epoch,
                 0,
@@ -137,7 +137,7 @@ export default class UserState extends Synchronizer {
             latestTransitionedEpoch - 1
         )
         const leaf = genStateTreeLeaf(
-            this.id.identityNullifier,
+            this.id.secretHash,
             this.attesterId.toString(),
             latestTransitionedEpoch,
             posRep,

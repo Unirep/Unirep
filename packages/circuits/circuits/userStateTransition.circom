@@ -7,6 +7,7 @@ include "./circomlib/circuits/gates.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 include "./inclusionNoninclusion.circom";
+include "./identity.circom";
 
 template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal input from_epoch;
@@ -14,6 +15,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
+    signal input identity_trapdoor;
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
@@ -49,6 +51,10 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal output transition_nullifier;
     signal output epoch_tree_root;
 
+    component identity_secret = IdentitySecret();
+    identity_secret.nullifier <== identity_nullifier;
+    identity_secret.trapdoor <== identity_trapdoor;
+
     component epoch_check = GreaterThan(MAX_REPUTATION_SCORE_BITS);
     epoch_check.in[0] <== to_epoch;
     epoch_check.in[1] <== from_epoch;
@@ -57,7 +63,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     /* 1. Check if user exists in the Global State Tree */
 
     component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_nullifier;
+    leaf_hasher.inputs[0] <== identity_secret.out;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== from_epoch;
     leaf_hasher.inputs[3] <== pos_rep;
@@ -81,7 +87,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     component leaf_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
         epoch_key_hashers[i] = Poseidon(4);
-        epoch_key_hashers[i].inputs[0] <== identity_nullifier;
+        epoch_key_hashers[i].inputs[0] <== identity_secret.out;
         epoch_key_hashers[i].inputs[1] <== attester_id;
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i;
@@ -235,7 +241,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     }
 
     component out_leaf_hasher = Poseidon(7);
-    out_leaf_hasher.inputs[0] <== identity_nullifier;
+    out_leaf_hasher.inputs[0] <== identity_secret.out;
     out_leaf_hasher.inputs[1] <== attester_id;
     out_leaf_hasher.inputs[2] <== to_epoch;
     out_leaf_hasher.inputs[3] <== final_pos_rep;
@@ -251,7 +257,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     component nullifier_hasher = Poseidon(3);
     nullifier_hasher.inputs[0] <== attester_id;
     nullifier_hasher.inputs[1] <== from_epoch;
-    nullifier_hasher.inputs[2] <== identity_nullifier;
+    nullifier_hasher.inputs[2] <== identity_secret.out;
     transition_nullifier <== nullifier_hasher.out;
 
     /* End of check 4 */

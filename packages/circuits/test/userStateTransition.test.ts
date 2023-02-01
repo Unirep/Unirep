@@ -31,7 +31,7 @@ describe('User state transition', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 fromEpoch,
                 posRep,
@@ -56,7 +56,7 @@ describe('User state transition', function () {
         expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             toEpoch,
             posRep,
@@ -66,7 +66,7 @@ describe('User state transition', function () {
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             fromEpoch
         )
@@ -85,7 +85,7 @@ describe('User state transition', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 fromEpoch,
                 posRep,
@@ -117,7 +117,7 @@ describe('User state transition', function () {
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             toEpoch,
             posRep + 10,
@@ -127,7 +127,7 @@ describe('User state transition', function () {
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             fromEpoch
         )
@@ -146,7 +146,7 @@ describe('User state transition', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 fromEpoch,
                 posRep,
@@ -181,7 +181,7 @@ describe('User state transition', function () {
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             toEpoch,
             posRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 10,
@@ -191,7 +191,7 @@ describe('User state transition', function () {
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             fromEpoch
         )
@@ -210,7 +210,7 @@ describe('User state transition', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 fromEpoch,
                 posRep,
@@ -231,6 +231,7 @@ describe('User state transition', function () {
                 from_epoch: fromEpoch,
                 to_epoch: toEpoch,
                 identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
                 state_tree_indexes: tree.createProof(0).pathIndices,
                 state_tree_elements: tree.createProof(0).siblings,
                 attester_id: attesterId,
@@ -272,7 +273,7 @@ describe('User state transition', function () {
         expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             toEpoch,
             posRep,
@@ -282,7 +283,7 @@ describe('User state transition', function () {
         ])
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             fromEpoch
         )
@@ -303,7 +304,7 @@ describe('User state transition', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
             hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 fromEpoch,
                 posRep,
@@ -322,6 +323,7 @@ describe('User state transition', function () {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
             identity_nullifier: id.identityNullifier,
+            identity_trapdoor: id.trapdoor,
             state_tree_indexes: tree.createProof(0).pathIndices,
             state_tree_elements: tree.createProof(0).siblings,
             attester_id: attesterId,

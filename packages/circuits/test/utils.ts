@@ -153,6 +153,7 @@ const genUserStateTransitionCircuitInput = (config: {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
         identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings.map((s, i) => {
             return s[1 - stateTreeProof.pathIndices[i]]

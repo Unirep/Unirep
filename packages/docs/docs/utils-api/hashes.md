@@ -37,7 +37,7 @@ Calculate a user state transition nullifier.
 import { genUserStateTransitionNullifier } from '@unirep/utils'
 
 genUserStateTransitionNullifier(
-    identityNullifier: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: number | bigint
 ): bigint
@@ -50,7 +50,7 @@ Calculate a state tree leaf for a user.
 import { genStateTreeLeaf } from '@unirep/utils'
 
 genStateTreeLeaf(
-    idNullifier: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     posRep: bigint | number,

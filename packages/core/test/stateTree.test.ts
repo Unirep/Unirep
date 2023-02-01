@@ -105,7 +105,7 @@ describe('State tree', function () {
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
-                id.identityNullifier,
+                id.secretHash,
                 attester.address,
                 contractEpoch.toNumber(),
                 0,
@@ -193,7 +193,7 @@ describe('State tree', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                users[i].identityNullifier,
+                users[i].secretHash,
                 attester.address,
                 toEpoch,
                 0,
@@ -346,7 +346,7 @@ describe('State tree', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                users[i].identityNullifier,
+                users[i].secretHash,
                 attester.address,
                 toEpoch,
                 attestations[i].posRep,
@@ -410,7 +410,7 @@ describe('State tree', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                id.identityNullifier,
+                id.secretHash,
                 attester.address,
                 prevEpoch,
                 0,
