@@ -58,6 +58,7 @@ const genEpochKeyCircuitInput = (config: {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
         identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         pos_rep: posRep,
         neg_rep: negRep,
         graffiti,

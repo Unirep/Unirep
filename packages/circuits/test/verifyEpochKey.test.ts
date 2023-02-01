@@ -26,7 +26,7 @@ describe('Verify Epoch Key circuits', function () {
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 epoch,
                 posRep,
@@ -82,7 +82,7 @@ describe('Verify Epoch Key circuits', function () {
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 epoch,
                 posRep,
@@ -141,7 +141,7 @@ describe('Verify Epoch Key circuits', function () {
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 epoch,
                 posRep,
@@ -193,7 +193,7 @@ describe('Verify Epoch Key circuits', function () {
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = hash7([
-                id.identityNullifier,
+                id.secretHash,
                 attesterId,
                 epoch,
                 posRep,
@@ -246,7 +246,7 @@ describe('Verify Epoch Key circuits', function () {
         const id = new ZkIdentity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             epoch,
             posRep,
@@ -290,7 +290,7 @@ describe('Verify Epoch Key circuits', function () {
         const id = new ZkIdentity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             epoch,
             posRep,
@@ -338,7 +338,7 @@ describe('Verify Epoch Key circuits', function () {
         const id = new ZkIdentity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = hash7([
-            id.identityNullifier,
+            id.secretHash,
             attesterId,
             epoch,
             posRep,
