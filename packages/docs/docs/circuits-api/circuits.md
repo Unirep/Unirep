@@ -57,6 +57,7 @@ Inputs:
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `identity_nullifier`
+- `identity_trapdoor`
 
 Outputs:
 - `epoch_key`
@@ -89,6 +90,7 @@ Inputs:
 - `control`
 - `data` (public)
 - `identity_nullifier`
+- `identity_trapdoor`
 
 Outputs:
 - `epoch_key`
@@ -119,6 +121,8 @@ Control field 1:
 - 1 bit `prove_zero_rep`
 
 Inputs:
+- `identity_nullifier`
+- `identity_trapdoor`
 - `control[2]`
 - `graffiti_pre_image` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
@@ -148,11 +152,12 @@ This proof makes multiple inclusion proofs in the same tree path for inclusion/n
 TODO: add a graphic for this
 
 Inputs:
+- `identity_nullifier`
+- `identity_trapdoor`
 - `from_epoch` (public)
 - `to_epoch` (public)
 - `attester_id` (public)
 - `epoch_tree_root` (public)
-- `identity_nullifier`
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `pos_rep`

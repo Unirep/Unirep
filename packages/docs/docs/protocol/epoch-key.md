@@ -10,12 +10,12 @@ description: Definition of epoch key in UniRep
 * An epoch key is computed by:
 
 ```typescript
-hash(identityNullifier, attesterId, epoch, nonce)
+hash(identitySecret, attesterId, epoch, nonce)
 ```
 
 where `nonce` can be any value between `0` and `numEpochKeyNoncePerEpoch - 1`, so that a user can have `numEpochKeyNoncePerEpoch` epoch keys per epoch.
 
-* Only a user knows their `identityNullifier`, so only they know if they have received an attestation; others see an attestation given to a random value.
+* Only a user knows their `identitySecret`, so only they know if they have received an attestation; others see an attestation given to a random value.
 * In the [epoch key proof](../circuits-api/circuits#epoch-key-proof) circuit, a user can prove that they own an `epochKey`, and so are able to receive and process attestations given to that `epochKey`.
 
 :::info

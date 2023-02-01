@@ -11,6 +11,6 @@ Nullifiers are used to prevent things from happening more than once. UniRep uses
 hash(
     attesterId,
     fromEpoch,
-    identityNullifier
+    identitySecret
 )
 ```
