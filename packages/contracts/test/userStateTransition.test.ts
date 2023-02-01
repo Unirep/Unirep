@@ -109,7 +109,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -186,7 +186,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     address,
                     0, // from epoch
                     i
@@ -263,7 +263,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     1, // from epoch
                     i
@@ -355,7 +355,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -432,7 +432,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -511,7 +511,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -588,7 +588,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -666,7 +666,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.identityNullifier,
+                    id.secretHash,
                     BigInt(attester.address),
                     fromEpoch, // from epoch
                     i
@@ -776,7 +776,7 @@ describe('User State Transition', function () {
                     .fill(null)
                     .map((_, n) =>
                         genEpochKey(
-                            userState[i].id.identityNullifier,
+                            userState[i].id.secretHash,
                             BigInt(attester.address),
                             fromEpoch, // from epoch
                             n

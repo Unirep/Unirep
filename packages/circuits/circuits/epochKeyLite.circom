@@ -1,14 +1,21 @@
 pragma circom 2.0.0;
 
 include "./circomlib/circuits/poseidon.circom";
+include "./identity.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input identity_nullifier;
+    signal input identity_trapdoor;
+
     signal input control;
     signal input data;
 
     signal output control_output;
     signal output epoch_key;
+
+    component identity_secret = IdentitySecret();
+    identity_secret.nullifier <== identity_nullifier;
+    identity_secret.trapdoor <== identity_trapdoor;
 
     /**
      * Control structure
@@ -37,7 +44,7 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     control_output <== reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
     component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_nullifier;
+    epoch_key_hasher.inputs[0] <== identity_secret.out;
     epoch_key_hasher.inputs[1] <== attester_id;
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;

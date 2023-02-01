@@ -23,7 +23,7 @@ Calculate an epoch key.
 import { genEpochKey } from '@unirep/utils'
 
 genEpochKey(
-    identityNullifier: bigint,
+    identitySecret: bigint,
     attesterId: bigint,
     epoch: bigint | number,
     nonce: bigint | number,

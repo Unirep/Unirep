@@ -29,12 +29,12 @@ export const genRandomSalt = () => _genRandomSalt() as bigint
 export { SNARK_FIELD_SIZE, stringifyBigInts, unstringifyBigInts }
 
 export const genEpochKey = (
-    identityNullifier: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     nonce: bigint | number
 ): bigint => {
-    return hash4([identityNullifier, BigInt(attesterId), epoch, BigInt(nonce)])
+    return hash4([identitySecret, BigInt(attesterId), epoch, BigInt(nonce)])
 }
 
 export const genUserStateTransitionNullifier = (

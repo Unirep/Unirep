@@ -167,7 +167,7 @@ export default class UserState extends Synchronizer {
         }
         if (typeof nonce === 'number') {
             return genEpochKey(
-                this.id.identityNullifier,
+                this.id.secretHash,
                 this.attesterId.toString(),
                 epoch,
                 nonce
@@ -177,7 +177,7 @@ export default class UserState extends Synchronizer {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    this.id.identityNullifier,
+                    this.id.secretHash,
                     this.attesterId.toString(),
                     epoch,
                     i
@@ -205,7 +205,7 @@ export default class UserState extends Synchronizer {
                 .fill(null)
                 .map((_, i) =>
                     genEpochKey(
-                        this.id.identityNullifier,
+                        this.id.secretHash,
                         attesterId.toString(),
                         x,
                         i
@@ -311,7 +311,7 @@ export default class UserState extends Synchronizer {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    this.id.identityNullifier,
+                    this.id.secretHash,
                     this.attesterId.toString(),
                     fromEpoch,
                     i

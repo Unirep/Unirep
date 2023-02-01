@@ -17,6 +17,7 @@ describe('Epoch key lite circuits', function () {
             const id = new ZkIdentity()
             const circuitInputs = {
                 identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
                 control: EpochKeyLiteProof.buildControlInput({
                     epoch,
                     attesterId,
@@ -31,12 +32,7 @@ describe('Epoch key lite circuits', function () {
             expect(isValid).to.be.true
             const data = new EpochKeyLiteProof(publicSignals, proof)
             expect(data.epochKey.toString()).to.equal(
-                genEpochKey(
-                    id.identityNullifier,
-                    attesterId,
-                    epoch,
-                    nonce
-                ).toString()
+                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(data.control).to.equal(
                 (
@@ -59,6 +55,7 @@ describe('Epoch key lite circuits', function () {
             const id = new ZkIdentity()
             const circuitInputs = {
                 identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
                 control: EpochKeyLiteProof.buildControlInput({
                     epoch,
                     attesterId,
@@ -74,12 +71,7 @@ describe('Epoch key lite circuits', function () {
             expect(isValid).to.be.true
             const data = new EpochKeyLiteProof(publicSignals, proof)
             expect(data.epochKey.toString()).to.equal(
-                genEpochKey(
-                    id.identityNullifier,
-                    attesterId,
-                    epoch,
-                    nonce
-                ).toString()
+                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(data.control).to.equal(
                 (
@@ -105,6 +97,7 @@ describe('Epoch key lite circuits', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_nullifier: id.identityNullifier,
+            identity_trapdoor: id.trapdoor,
             control: EpochKeyLiteProof.buildControlInput({
                 epoch,
                 attesterId,
@@ -119,12 +112,7 @@ describe('Epoch key lite circuits', function () {
         expect(isValid).to.be.true
         const data = new EpochKeyLiteProof(publicSignals, proof)
         expect(data.epochKey.toString()).to.equal(
-            genEpochKey(
-                id.identityNullifier,
-                attesterId,
-                epoch,
-                nonce
-            ).toString()
+            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
         )
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -150,6 +138,7 @@ describe('Epoch key lite circuits', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_nullifier: id.identityNullifier,
+            identity_trapdoor: id.trapdoor,
             control: EpochKeyLiteProof.buildControlInput({
                 epoch,
                 attesterId,
@@ -172,6 +161,7 @@ describe('Epoch key lite circuits', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_nullifier: id.identityNullifier,
+            identity_trapdoor: id.trapdoor,
             control:
                 EpochKeyLiteProof.buildControlInput({
                     epoch,

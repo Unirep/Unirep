@@ -94,12 +94,7 @@ describe('User state transition', function () {
                 timestamp,
             ])
         )
-        const epochKey = genEpochKey(
-            id.identityNullifier,
-            attesterId,
-            fromEpoch,
-            0
-        )
+        const epochKey = genEpochKey(id.secretHash, attesterId, fromEpoch, 0)
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
@@ -162,9 +157,7 @@ describe('User state transition', function () {
         )
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
-            .map((_, i) =>
-                genEpochKey(id.identityNullifier, attesterId, fromEpoch, i)
-            )
+            .map((_, i) => genEpochKey(id.secretHash, attesterId, fromEpoch, i))
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,

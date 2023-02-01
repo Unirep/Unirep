@@ -138,7 +138,7 @@ const nonce = 0
 const epochTreeDepth = 64
 
 const epk = genEpochKey(
-    identity.identityNullifier,
+    identity.secretHash,
     epoch,
     nonce,
     epochTreeDepth

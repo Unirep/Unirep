@@ -122,12 +122,7 @@ const genUserStateTransitionCircuitInput = (config: {
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
-            utils.genEpochKey(
-                id.identityNullifier,
-                BigInt(attesterId),
-                fromEpoch,
-                i
-            )
+            utils.genEpochKey(id.secretHash, BigInt(attesterId), fromEpoch, i)
         )
 
     const epochKeyLeaves = epochKeys.map((k) =>
