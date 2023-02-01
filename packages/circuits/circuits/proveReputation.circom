@@ -12,12 +12,14 @@ include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/poseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
+include "./identity.circom";
 
 template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
     signal input identity_nullifier;
+    signal input identity_trapdoor;
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
@@ -32,6 +34,10 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
 
     signal input control[2];
     signal output control_output[2];
+
+    component identity_secret = IdentitySecret();
+    identity_secret.nullifier <== identity_nullifier;
+    identity_secret.trapdoor <== identity_trapdoor;
 
     /**
      * control[0]:
@@ -84,7 +90,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
     /* 1a. Check if user exists in the Global State Tree */
 
     component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_nullifier;
+    leaf_hasher.inputs[0] <== identity_secret.out;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== epoch;
     leaf_hasher.inputs[3] <== pos_rep;
@@ -180,7 +186,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
     nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
 
     component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_nullifier;
+    epoch_key_hasher.inputs[0] <== identity_secret.out;
     epoch_key_hasher.inputs[1] <== attester_id;
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;

@@ -292,6 +292,7 @@ const genReputationCircuitInput = (config: {
 
     const circuitInputs = {
         identity_nullifier: id.identityNullifier,
+        identity_trapdoor: id.trapdoor,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
         pos_rep: startBalance.posRep,
