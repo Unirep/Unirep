@@ -1,5 +1,3 @@
-pragma circom 2.1.3;
-
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/mux1.circom";
@@ -9,7 +7,7 @@ include "./modulo.circom";
 //~~ support comparisons of numbers up to the field size
 
 template BigLessThan() {
-    // take the number mod 252
+    // take the number mod 250
     // check the quotient and mod
 
     signal input in[2];
@@ -19,27 +17,27 @@ template BigLessThan() {
 
     for (var x = 0; x < 2; x++) {
         mod[x] = Modulo();
-        mod[x].divisor <== 2**252;
+        mod[x].divisor <== 2**250;
         mod[x].dividend <== in[x];
     }
 
     // check that
     // mod[0].quotient < mod[1].quotient && mod[0].remainder < mod[1].remainder
 
-    // the max quotient is 4 = SNARK_SCALAR_FIELD / 2**252
-    // so use 2 bits
-    component quotient_lt = LessThan(2);
+    // the max quotient is 16 = SNARK_SCALAR_FIELD / 2**250
+    // so use 5 bits
+    component quotient_lt = LessThan(5);
     quotient_lt.in[0] <== mod[0].quotient;
     quotient_lt.in[1] <== mod[1].quotient;
 
-    component quotient_gt = GreaterThan(2);
+    component quotient_gt = GreaterThan(5);
     quotient_gt.in[0] <== mod[0].quotient;
     quotient_gt.in[1] <== mod[1].quotient;
 
     component quotient_gt_zero = IsZero();
     quotient_gt_zero.in <== quotient_gt.out;
 
-    component remainder_lt = LessThan(252);
+    component remainder_lt = LessThan(250);
     remainder_lt.in[0] <== mod[0].remainder;
     remainder_lt.in[1] <== mod[1].remainder;
 
