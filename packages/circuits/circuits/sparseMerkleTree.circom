@@ -15,6 +15,7 @@ template SMTRootCalc(HEIGHT, ARITY) {
     component hashers[HEIGHT];
     component leaf_equals[(HEIGHT - 1) * ARITY];
     component index_equals[(HEIGHT - 1) * ARITY];
+    component mod[HEIGHT];
     signal path_indices_divided[HEIGHT];
 
     for (var i = 0; i < HEIGHT; i++) {
@@ -25,8 +26,12 @@ template SMTRootCalc(HEIGHT, ARITY) {
         // start doing checks
         if (i > 0) {
             // range check
-            path_indices_divided[i] <-- path_indices[i] \ ARITY;
-            path_indices_divided[i] === 0;
+            mod[i] = Modulo();
+            mod[i].divisor <== ARITY;
+            mod[i].dividend <== path_indices[i];
+
+            path_indices_divided[i] <== mod[i].quotient;
+
             // check that if we're looking at the target index
             // the previous level output matches
             for (var j = 0; j < ARITY; j++) {

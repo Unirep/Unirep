@@ -84,7 +84,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         epoch_key_hashers[i].inputs[0] <== identity_secret;
         epoch_key_hashers[i].inputs[1] <== attester_id;
         epoch_key_hashers[i].inputs[2] <== from_epoch;
-        epoch_key_hashers[i].inputs[3] <== i;
+        epoch_key_hashers[i].inputs[3] <== i; // nonce
 
         leaf_hashers[i] = Poseidon(5);
         leaf_hashers[i].inputs[0] <== epoch_key_hashers[i].out;
