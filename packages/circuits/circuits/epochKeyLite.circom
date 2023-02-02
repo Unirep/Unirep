@@ -1,14 +1,20 @@
 pragma circom 2.1.3;
 
+include "./circomlib/circuits/bitify.circom";
+include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/poseidon.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input identity_secret;
 
-    signal input control;
+    signal input reveal_nonce;
+    signal input attester_id;
+    signal input epoch;
+    signal input nonce;
+
     signal input data;
 
-    signal output control_output;
+    signal output control;
     signal output epoch_key;
 
     /**
@@ -19,29 +25,35 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
      * 1 bit reveal nonce
      **/
 
-    signal control_divided <-- control \ (2 ** 233);
-    control_divided === 0;
-    signal reveal_nonce <-- (control \ 2 ** 232) & 1;
-    signal attester_id <-- (control \ 2 ** 72) & (2 ** 160 - 1);
-    signal epoch <-- (control \ 2 ** 8) & (2 ** 64 - 1);
-    signal nonce <-- control & (2 ** 8 - 1);
+    // check that reveal_nonce is 0 or 1
+    reveal_nonce * (reveal_nonce - 1) === 0;
 
-    signal reveal_nonce_divided <-- reveal_nonce \ 2;
-    signal attester_id_divided <-- attester_id \ 2**160;
-    signal epoch_divided <-- epoch \ 2**64;
-    signal nonce_divided <-- nonce \ 2**8;
-    reveal_nonce_divided === 0;
-    attester_id_divided === 0;
-    epoch_divided === 0;
-    nonce_divided === 0;
+    // then range check the others
 
-    control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
+    component attester_id_bits = Num2Bits(254);
+    attester_id_bits.in <== attester_id;
+    for (var x = 160; x < 254; x++) {
+        attester_id_bits.out[x] === 0;
+    }
 
-    // check the epoch key range using a single constraint
-    signal epknonce_divided <-- nonce \ EPOCH_KEY_NONCE_PER_EPOCH;
-    epknonce_divided === 0;
+    component epoch_bits = Num2Bits(254);
+    epoch_bits.in <== epoch;
+    for (var x = 64; x < 254; x++) {
+        epoch_bits.out[x] === 0;
+    }
 
-    control_output <== reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
+    component nonce_bits = Num2Bits(254);
+    nonce_bits.in <== nonce;
+    for (var x = 8; x < 254; x++) {
+        nonce_bits.out[x] === 0;
+    }
+
+    component nonce_range = LessThan(8);
+    nonce_range.in[0] <== nonce;
+    nonce_range.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
+    nonce_range.out === 1;
+
+    control <== reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
     component epoch_key_hasher = Poseidon(4);
     epoch_key_hasher.inputs[0] <== identity_secret;

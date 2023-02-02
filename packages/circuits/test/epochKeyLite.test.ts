@@ -17,11 +17,10 @@ describe('Epoch key lite circuits', function () {
             const id = new ZkIdentity()
             const circuitInputs = {
                 identity_secret: id.secretHash,
-                control: EpochKeyLiteProof.buildControlInput({
-                    epoch,
-                    attesterId,
-                    nonce,
-                }),
+                epoch,
+                attester_id: attesterId,
+                nonce,
+                reveal_nonce: 0,
                 data: 0,
             }
             const { isValid, publicSignals, proof } = await genProofAndVerify(
@@ -54,12 +53,10 @@ describe('Epoch key lite circuits', function () {
             const id = new ZkIdentity()
             const circuitInputs = {
                 identity_secret: id.secretHash,
-                control: EpochKeyLiteProof.buildControlInput({
-                    epoch,
-                    attesterId,
-                    nonce,
-                    revealNonce: 1,
-                }),
+                epoch,
+                attester_id: attesterId,
+                nonce,
+                reveal_nonce: 1,
                 data: 0,
             }
             const { isValid, publicSignals, proof } = await genProofAndVerify(
@@ -95,11 +92,10 @@ describe('Epoch key lite circuits', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_secret: id.secretHash,
-            control: EpochKeyLiteProof.buildControlInput({
-                epoch,
-                attesterId,
-                nonce,
-            }),
+            epoch,
+            attester_id: attesterId,
+            nonce,
+            reveal_nonce: 0,
             data: _data,
         }
         const { isValid, publicSignals, proof } = await genProofAndVerify(
@@ -135,11 +131,10 @@ describe('Epoch key lite circuits', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_secret: id.secretHash,
-            control: EpochKeyLiteProof.buildControlInput({
-                epoch,
-                attesterId,
-                nonce,
-            }),
+            epoch,
+            attester_id: attesterId,
+            nonce,
+            reveal_nonce: 0,
             data: _data,
         }
         await new Promise<void>((rs, rj) => {
@@ -149,21 +144,60 @@ describe('Epoch key lite circuits', function () {
         })
     })
 
-    it('should fail to prove a control with too many bits', async () => {
+    it('should fail to prove an out of range epoch', async () => {
         const attesterId = BigInt(10210)
-        const epoch = 120958
-        const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        const epoch = BigInt(2) ** BigInt(64)
+        const nonce = 0
         const id = new ZkIdentity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_secret: id.secretHash,
-            control:
-                EpochKeyLiteProof.buildControlInput({
-                    epoch,
-                    attesterId,
-                    nonce,
-                }) +
-                (BigInt(1) << BigInt(233)),
+            epoch,
+            attester_id: attesterId,
+            nonce,
+            reveal_nonce: 0,
+            data: _data,
+        }
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range attesterId', async () => {
+        const attesterId = BigInt(2) ** BigInt(160)
+        const epoch = 18241924
+        const nonce = 0
+        const id = new ZkIdentity()
+        const _data = BigInt(210128912581953498913)
+        const circuitInputs = {
+            identity_secret: id.secretHash,
+            epoch,
+            attester_id: attesterId,
+            nonce,
+            reveal_nonce: 0,
+            data: _data,
+        }
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range revealNonce', async () => {
+        const attesterId = 479187498124
+        const epoch = 18241924
+        const nonce = 0
+        const id = new ZkIdentity()
+        const _data = BigInt(210128912581953498913)
+        const circuitInputs = {
+            identity_secret: id.secretHash,
+            epoch,
+            attester_id: attesterId,
+            nonce,
+            reveal_nonce: 2,
             data: _data,
         }
         await new Promise<void>((rs, rj) => {
