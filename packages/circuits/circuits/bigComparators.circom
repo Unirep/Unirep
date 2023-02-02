@@ -24,13 +24,13 @@ template BigLessThan() {
     // check that
     // mod[0].quotient < mod[1].quotient && mod[0].remainder < mod[1].remainder
 
-    // the max quotient is 16 = SNARK_SCALAR_FIELD / 2**250
+    // the max quotient is 15 = SNARK_SCALAR_FIELD / 2**250
     // so use 5 bits
-    component quotient_lt = LessThan(5);
+    component quotient_lt = LessThan(4);
     quotient_lt.in[0] <== mod[0].quotient;
     quotient_lt.in[1] <== mod[1].quotient;
 
-    component quotient_gt = GreaterThan(5);
+    component quotient_gt = GreaterThan(4);
     quotient_gt.in[0] <== mod[0].quotient;
     quotient_gt.in[1] <== mod[1].quotient;
 
