@@ -1,4 +1,4 @@
-pragma circom 2.1.3;
+pragma circom 2.0.0;
 
 include "./circomlib/circuits/bitify.circom";
 include "./exists.circom";

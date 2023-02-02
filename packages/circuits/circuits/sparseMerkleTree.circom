@@ -1,5 +1,3 @@
-pragma circom 2.1.3;
-
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
