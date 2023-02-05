@@ -4572,7 +4572,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/core@workspace:packages/core":
+"@unirep/core@2.0.0-alpha-3, @unirep/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@unirep/core@workspace:packages/core"
   dependencies:
@@ -4581,7 +4581,6 @@ __metadata:
     "@nomiclabs/hardhat-waffle": ^2.0.3
     "@unirep/circuits": 2.0.0-alpha-4
     "@unirep/contracts": 2.0.0-alpha-3
-    "@unirep/test": 1.0.0
     "@unirep/utils": 2.0.0-alpha-4
     anondb: ^0.0.16
     ethers: ^5.6.8
@@ -4623,6 +4622,7 @@ __metadata:
   resolution: "@unirep/test@workspace:packages/test"
   dependencies:
     "@unirep/circuits": 2.0.0-alpha-4
+    "@unirep/core": 2.0.0-alpha-3
     "@unirep/utils": 2.0.0-alpha-4
   languageName: unknown
   linkType: soft
