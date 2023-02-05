@@ -609,7 +609,11 @@ export class Synchronizer extends EventEmitter {
         const index = Number(decodedData.index)
         const attesterId = BigInt(decodedData.attesterId).toString()
         const hash = BigInt(decodedData.leaf).toString()
-        if (attesterId !== this.attesterId.toString()) return
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
         db.create('StateTreeLeaf', {
             epoch,
             hash,
@@ -629,7 +633,11 @@ export class Synchronizer extends EventEmitter {
         const graffiti = BigInt(decodedData.graffiti).toString()
         const timestamp = BigInt(decodedData.timestamp).toString()
         const leaf = BigInt(decodedData.leaf).toString()
-        if (attesterId !== this.attesterId.toString()) return
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
         const id = `${epoch}-${index}-${attesterId}`
         db.upsert('EpochTreeLeaf', {
             where: {
@@ -664,7 +672,12 @@ export class Synchronizer extends EventEmitter {
             decodedData.identityCommitment.toString()
         ).toString()
         const attesterId = BigInt(decodedData.attesterId.toString()).toString()
-        if (attesterId !== this.attesterId.toString()) return
+        const leafIndex = Number(decodedData.leafIndex)
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
         db.create('UserSignUp', {
             commitment,
             epoch,
@@ -683,7 +696,11 @@ export class Synchronizer extends EventEmitter {
         const attesterId = BigInt(decodedData.attesterId).toString()
         const posRep = Number(decodedData.posRep)
         const negRep = Number(decodedData.negRep)
-        if (attesterId !== this.attesterId.toString()) return
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
 
         const index = `${event.blockNumber
             .toString()
@@ -742,7 +759,11 @@ export class Synchronizer extends EventEmitter {
         const epoch = Number(decodedData.epoch)
         const attesterId = BigInt(decodedData.attesterId).toString()
         console.log(`Epoch ${epoch} ended`)
-        if (attesterId !== this.attesterId.toString()) return
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
         db.upsert('Epoch', {
             where: {
                 number: epoch,
