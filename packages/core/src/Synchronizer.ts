@@ -4,6 +4,11 @@ import { ethers } from 'ethers'
 import { Prover, SNARK_SCALAR_FIELD } from '@unirep/circuits'
 import { IncrementalMerkleTree, hash4 } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
+import { schema } from './schema'
+import { nanoid } from 'nanoid'
+// TODO: consolidate these into 'anondb' index
+import { constructSchema } from 'anondb/types'
+import { MemoryConnector } from 'anondb/web'
 
 type EventHandlerArgs = {
     event: ethers.Event
@@ -16,11 +21,11 @@ type EventHandlerArgs = {
  * the synchronizer will verify the events and then save the states.
  */
 export class Synchronizer extends EventEmitter {
-    protected _db: DB
+    public _db: DB
     prover: Prover
     provider: any
     unirepContract: ethers.Contract
-    attesterId: bigint
+    private _attesterId: bigint
     public settings: any
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
@@ -29,6 +34,11 @@ export class Synchronizer extends EventEmitter {
 
     private _eventHandlers: any
     private _eventFilters: any
+
+    private pollId: string | null = null
+    public pollRate: number = 5000
+
+    private setupComplete = false
 
     private get _stateTree() {
         if (!this.stateTree) {
@@ -43,16 +53,17 @@ export class Synchronizer extends EventEmitter {
      * to persist things?
      **/
     constructor(config: {
-        db: DB
+        db?: DB
+        attesterId?: bigint
         prover: Prover
         provider: ethers.providers.Provider
         unirepAddress: string
-        attesterId: bigint
     }) {
         super()
         const { db, prover, unirepAddress, provider, attesterId } = config
-        this.attesterId = BigInt(attesterId)
-        this._db = db
+
+        this._attesterId = BigInt(attesterId ?? 1)
+        this._db = db ?? new MemoryConnector(constructSchema(schema))
         this.unirepContract = new ethers.Contract(
             unirepAddress,
             UNIREP_ABI,
@@ -134,6 +145,11 @@ export class Synchronizer extends EventEmitter {
             },
             {}
         )
+        this.setup().then(() => (this.setupComplete = true))
+    }
+
+    get attesterId() {
+        return this._attesterId
     }
 
     async setup() {
@@ -143,6 +159,9 @@ export class Synchronizer extends EventEmitter {
         this.settings.epochTreeArity = config.epochTreeArity
         this.settings.numEpochKeyNoncePerEpoch =
             config.numEpochKeyNoncePerEpoch.toNumber()
+
+        await this.findStartBlock()
+
         this.settings.epochLength = (
             await this.unirepContract.attesterEpochLength(this.attesterId)
         ).toNumber()
@@ -181,6 +200,42 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
+    async findStartBlock() {
+        // look for the first attesterSignUp event
+        // no events could be emitted before this
+        const filter = this.unirepContract.filters.AttesterSignedUp(
+            this.attesterId
+        )
+        const events = await this.unirepContract.queryFilter(filter)
+        if (events.length === 0) {
+            throw new Error('failed to fetch genesis event')
+        }
+        if (events.length > 1) {
+            throw new Error('multiple genesis events')
+        }
+        const [event] = events
+        const decodedData = this.unirepContract.interface.decodeEventLog(
+            'AttesterSignedUp',
+            event.data,
+            event.topics
+        )
+        const { timestamp, epochLength } = decodedData
+        this.settings.startTimestamp = Number(timestamp)
+        this.settings.epochLength = Number(epochLength)
+        const syncStartBlock = event.blockNumber - 1
+
+        await this._db.upsert('SynchronizerState', {
+            where: {
+                attesterId: this.attesterId.toString(),
+            },
+            create: {
+                attesterId: this.attesterId.toString(),
+                latestCompleteBlock: syncStartBlock,
+            },
+            update: {},
+        })
+    }
+
     /**
      * Start synchronize the events with Unirep contract util a `stop()` is called.
      * The synchronizer will check the database first to check if
@@ -188,94 +243,95 @@ export class Synchronizer extends EventEmitter {
      */
     async start() {
         await this.setup()
-        const state = await this._db.findOne('SynchronizerState', {
-            where: {},
-        })
-        if (!state) {
-            await this._db.create('SynchronizerState', {
-                attesterId: this.attesterId.toString(),
-                latestProcessedBlock: 0,
-                latestProcessedTransactionIndex: 0,
-                latestProcessedEventIndex: 0,
-                latestCompleteBlock: 0,
-            })
-        }
-        this.startDaemon()
+        ;(async () => {
+            const pollId = nanoid()
+            this.pollId = pollId
+            const minBackoff = 128
+            let backoff = minBackoff
+            for (;;) {
+                // poll repeatedly until we're up to date
+                try {
+                    const { complete } = await this.poll()
+                    if (complete) break
+                    backoff = Math.max(backoff / 2, minBackoff)
+                } catch (err) {
+                    backoff *= 2
+                    console.error(`--- unirep poll failed`)
+                    console.error(err)
+                    console.error(`---`)
+                }
+                await new Promise((r) => setTimeout(r, backoff))
+                if (pollId != this.pollId) break
+            }
+            for (;;) {
+                await new Promise((r) => setTimeout(r, this.pollRate))
+                if (pollId != this.pollId) break
+                await this.poll().catch((err) => {
+                    console.error(`--- unirep poll failed`)
+                    console.error(err)
+                    console.error(`---`)
+                })
+            }
+        })()
     }
 
     /**
      * Stop synchronizing with Unirep contract.
      */
     async stop() {
-        const waitForStopped = new Promise((rs) => this.once('__stopped', rs))
-        if (!this.emit('__stop')) {
-            this.removeAllListeners('__stopped')
-            throw new Error('No daemon is listening')
-        }
-        await waitForStopped
+        this.pollId = null
     }
 
-    private async startDaemon() {
-        const stoppedPromise = new Promise((rs) =>
-            this.once('__stop', () => rs(null))
-        )
-        const waitForNewBlock = (afterBlock: number) =>
-            new Promise(async (rs) => {
-                const _latestBlock = await this.provider.getBlockNumber()
-                if (_latestBlock > afterBlock) return rs(_latestBlock)
-                this.provider.once('block', rs)
-            })
-        const startState = await this._db.findOne('SynchronizerState', {
+    // Poll for any new changes from the blockchain
+    // need a lock for this
+    async poll(): Promise<{ complete: boolean }> {
+        if (!this.setupComplete) {
+            console.warn('polled before setup, nooping')
+            return { complete: false }
+        }
+        this.emit('pollStart')
+        const state = await this._db.findOne('SynchronizerState', {
             where: {
                 attesterId: this.attesterId.toString(),
             },
         })
-        let latestProcessed = startState?.latestCompleteBlock ?? 0
-        for (;;) {
-            const newBlockNumber = await Promise.race([
-                waitForNewBlock(latestProcessed),
-                stoppedPromise,
-            ])
-            // if newBlockNumber is null the daemon has been stopped
-            if (newBlockNumber === null) break
-            const allEvents = await this.loadNewEvents(
-                latestProcessed + 1,
-                newBlockNumber as number
-            )
-            const state = await this._db.findOne('SynchronizerState', {
-                where: {
-                    attesterId: this.attesterId.toString(),
-                },
-            })
-            if (!state) throw new Error('State not initialized')
-            const unprocessedEvents = allEvents.filter((e) => {
-                if (e.blockNumber === state.latestProcessedBlock) {
-                    if (
-                        e.transactionIndex ===
-                        state.latestProcessedTransactionIndex
-                    ) {
-                        return e.logIndex > state.latestProcessedEventIndex
-                    }
-                    return (
-                        e.transactionIndex >
-                        state.latestProcessedTransactionIndex
-                    )
+
+        const latestProcessed = state.latestCompleteBlock
+        const latestBlock = await this.provider.getBlockNumber()
+        const blockStart = latestProcessed + 1
+        const blockEnd = Math.min(+latestBlock, blockStart + 1000)
+
+        const newEvents = await this.loadNewEvents(
+            latestProcessed + 1,
+            blockEnd
+        )
+
+        // filter out the events that have already been seen
+        const unprocessedEvents = newEvents.filter((e) => {
+            if (e.blockNumber === state.latestProcessedBlock) {
+                if (
+                    e.transactionIndex === state.latestProcessedTransactionIndex
+                ) {
+                    return e.logIndex > state.latestProcessedEventIndex
                 }
-                return e.blockNumber > state.latestProcessedBlock
-            })
-            await this.processEvents(unprocessedEvents)
-            await this._db.update('SynchronizerState', {
-                where: {
-                    attesterId: this.attesterId.toString(),
-                },
-                update: {
-                    latestCompleteBlock: newBlockNumber,
-                },
-            })
-            latestProcessed = newBlockNumber
+                return (
+                    e.transactionIndex > state.latestProcessedTransactionIndex
+                )
+            }
+            return e.blockNumber > state.latestProcessedBlock
+        })
+        await this.processEvents(unprocessedEvents)
+        await this._db.update('SynchronizerState', {
+            where: {
+                attesterId: this.attesterId.toString(),
+            },
+            update: {
+                latestCompleteBlock: blockEnd,
+            },
+        })
+        return {
+            complete: latestBlock === blockEnd,
         }
-        this.removeAllListeners('__stop')
-        this.emit('__stopped')
     }
 
     // Overridden in subclasses

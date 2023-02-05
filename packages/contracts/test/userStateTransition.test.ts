@@ -9,19 +9,21 @@ import {
     genRandomSalt,
 } from '@unirep/utils'
 import {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
     UserStateTransitionProof,
     SNARK_SCALAR_FIELD,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { signupUser } from '@unirep/test'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
+import defaultConfig from '@unirep/circuits/config'
+const {
+    EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
+    STATE_TREE_DEPTH,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} = defaultConfig
 
 const emptyEpochTree = () => {
     const epochTree = new IncrementalMerkleTree(

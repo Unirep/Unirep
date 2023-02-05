@@ -1,4 +1,8 @@
 import { SnarkProof } from '@unirep/utils'
+import { CircuitConfig } from './CircuitConfig'
+
+export const SNARK_SCALAR_FIELD =
+    '21888242871839275222246405745257275088548364400416034343698204186575808495617'
 
 /**
  * Name of the circuits that are used in Unirep protocol
@@ -49,6 +53,8 @@ export interface Prover {
      * @returns vkey of the circuit
      */
     getVKey: (name: string | Circuit) => Promise<any>
+
+    getConfig?: () => CircuitConfig
 }
 
 /**

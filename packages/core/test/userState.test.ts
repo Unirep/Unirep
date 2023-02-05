@@ -8,11 +8,7 @@ import { Circuit, BuildOrderedTree } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genUnirepState, genUserState } from './utils'
-import {
-    bootstrapAttestations,
-    bootstrapUsers,
-    processAttestations,
-} from '@unirep/test'
+import { bootstrapUsers, bootstrapAttestations } from './test'
 
 describe('User state', function () {
     this.timeout(0)
@@ -45,10 +41,31 @@ describe('User state', function () {
             unirepContract.address,
             BigInt(attester.address)
         )
-        const epochTree = await synchronizer.genEpochTree(epoch)
-        await processAttestations(attester, epoch, unirepContract, {
-            epochTree,
-        })
+        // const epochTree = await synchronizer.genEpochTree(epoch)
+        // await processAttestations(attester, epoch, unirepContract, {
+        //     epochTree,
+        // })
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        const preimages = await synchronizer.genEpochTreePreimages(epoch)
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
+        )
+        const { publicSignals, proof } = new BuildOrderedTree(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        await unirepContract
+            .connect(accounts[5])
+            .sealEpoch(epoch, attester.address, publicSignals, proof)
+            .then((t) => t.wait())
+
+        await synchronizer.waitForSync()
         await synchronizer.stop()
     })
 
@@ -74,7 +91,7 @@ describe('User state', function () {
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
         expect(r.status).equal(1)
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     it('epoch key proof', async () => {
@@ -102,7 +119,7 @@ describe('User state', function () {
         const proof = await userState.genEpochKeyProof()
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     it.skip('ust proof', async () => {
@@ -125,13 +142,14 @@ describe('User state', function () {
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
         }
+        await userState.waitForSync()
         const oldEpoch = await userState.latestTransitionedEpoch()
         // epoch transition
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         {
             await userState.waitForSync()
-            const toEpoch = await userState.loadCurrentEpoch()
+            const toEpoch = await userState.sync.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
@@ -141,9 +159,9 @@ describe('User state', function () {
                 .then((t) => t.wait())
         }
         await userState.waitForSync()
-        const newEpoch = await userState.latestTransitionedEpoch()
+        const newEpoch = await userState.sync.latestTransitionedEpoch()
         expect(newEpoch).equal(oldEpoch + 1)
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     it.skip('reputation proof', async () => {
@@ -157,7 +175,7 @@ describe('User state', function () {
             id,
             attesterId
         )
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
                 { epoch }
@@ -186,7 +204,7 @@ describe('User state', function () {
         await ethers.provider.send('evm_mine', [])
 
         {
-            const preimages = await userState.genEpochTreePreimages(epoch)
+            const preimages = await userState.sync.genEpochTreePreimages(epoch)
             const { circuitInputs } =
                 BuildOrderedTree.buildInputsForLeaves(preimages)
             const r = await defaultProver.genProofAndPublicSignals(
@@ -224,7 +242,7 @@ describe('User state', function () {
         // then run an epoch transition and check the rep
         {
             await userState.waitForSync()
-            const toEpoch = await userState.loadCurrentEpoch()
+            const toEpoch = await userState.sync.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
@@ -235,7 +253,7 @@ describe('User state', function () {
         }
         await userState.waitForSync()
         {
-            const currentEpoch = await userState.loadCurrentEpoch()
+            const currentEpoch = await userState.sync.loadCurrentEpoch()
             const { posRep, negRep, graffiti } = await userState.getRep(
                 Number(currentEpoch)
             )
@@ -252,6 +270,6 @@ describe('User state', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.stop()
+        await userState.sync.stop()
     })
 })

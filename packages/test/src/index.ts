@@ -6,6 +6,7 @@ import {
     Prover,
     SignupProof,
     STATE_TREE_DEPTH,
+    CircuitConfig,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import {
@@ -14,48 +15,54 @@ import {
     stringifyBigInts,
     ZkIdentity,
 } from '@unirep/utils'
+import { Synchronizer } from '@unirep/core'
+import { deployUnirep } from '@unirep/contracts/deploy'
+import { ethers } from 'ethers'
+import defaultConfig from '@unirep/circuits/config'
+import defaultProver from '@unirep/circuits/provers/defaultProver'
+import { MemoryConnector } from 'anondb/web'
+
+export async function bootstrapUnirep(
+    provider: any, // ethers provider, only required arg
+    privateKey: string = '0x361545477f7cee758a6215ad55780d978b4b4d56fdff971f3dfc8cc10a33d9f7',
+    config: CircuitConfig = defaultConfig,
+    prover: Prover = defaultProver
+) {
+    const wallet = new ethers.Wallet(privateKey, provider)
+    const unirepContract = await deployUnirep(wallet, config, prover)
+    const synchronizer = new Synchronizer({
+        attesterId: wallet.address,
+        unirepAddress: unirepContract.address,
+        provider,
+    })
+    return synchronizer
+}
+
+export async function bootstrapAttester(
+    provider: any, // ethers provider
+    epochLength,
+    privateKey: string = '0x361545477f7cee758a6215ad55780d978b4b4d56fdff971f3dfc8cc10a33d9f7'
+) {
+    const wallet = new ethers.Wallet(privateKey)
+    const { unirepContract } = synchronizer.unirepContract
+    const attester = ethers.Wallet.createRandom()
+    await unirepContract.attesterSignUp()
+}
 
 // users
 export async function bootstrapUsers(
-    attester,
-    unirepContract,
-    {
-        epoch = undefined,
-        userNum = 5,
-        stateTreeDepth = STATE_TREE_DEPTH,
-        stateTree = undefined,
-        prover = defaultProver,
-    }: {
-        epoch?: number
-        userNum?: number
-        stateTreeDepth?: number
-        stateTree?: IncrementalMerkleTree
-        prover?: Prover
-    } = {}
+    synchronizer: Synchronizer,
+    userCount = 5,
+    key = ''
 ) {
-    const currentStateTree =
-        stateTree ?? new IncrementalMerkleTree(stateTreeDepth)
-    const randomUserNum = userNum
-    const ids: ZkIdentity[] = []
-    for (let i = 0; i < randomUserNum; i++) {
-        const id = new ZkIdentity()
-        const { leaf } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester,
-            {
-                prover,
-                epoch,
-            }
-        )
-        currentStateTree.insert(leaf)
-        ids.push(id)
-    }
-
-    return {
-        stateTree: currentStateTree,
-        ids,
+    const { unirepContract } = synchronizer.unirepContract
+    // synchronizer should be authed to send transactions
+    for (let x = 0; x < userCount; x++) {
+        const userState = new UserState(synchronizer, new ZkIdentity())
+        const r = await userState.genUserSignUpProof()
+        await unirepContract
+            .userSignUp(r.publicSignals, r.proof)
+            .then((t) => t.wait())
     }
 }
 

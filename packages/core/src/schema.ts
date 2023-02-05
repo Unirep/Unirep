@@ -6,10 +6,26 @@ const _schema = [
         name: 'SynchronizerState',
         rows: [
             ['attesterId', 'String', { unique: true }],
-            ['latestProcessedBlock', 'Int'],
-            ['latestProcessedTransactionIndex', 'Int'],
-            ['latestProcessedEventIndex', 'Int'],
-            ['latestCompleteBlock', 'Int'],
+            {
+                name: 'latestProcessedBlock',
+                type: 'Int',
+                default: 0,
+            },
+            {
+                name: 'latestProcessedTransactionIndex',
+                type: 'Int',
+                default: 0,
+            },
+            {
+                name: 'latestProcessedEventIndex',
+                type: 'Int',
+                default: 0,
+            },
+            {
+                name: 'latestCompleteBlock',
+                type: 'Int',
+                default: 0,
+            },
         ],
     },
     {
