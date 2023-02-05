@@ -62,7 +62,7 @@ export class Synchronizer extends EventEmitter {
         super()
         const { db, prover, unirepAddress, provider, attesterId } = config
 
-        this._attesterId = BigInt(attesterId ?? 1)
+        this._attesterId = BigInt(attesterId ?? 0)
         this._db = db ?? new MemoryConnector(constructSchema(schema))
         this.unirepContract = new ethers.Contract(
             unirepAddress,
@@ -465,7 +465,7 @@ export class Synchronizer extends EventEmitter {
         const epoch = await this.unirepContract.attesterCurrentEpoch(
             this.attesterId
         )
-        return BigInt(epoch.toString())
+        return epoch.toNumber()
     }
 
     async isEpochSealed(epoch: number) {

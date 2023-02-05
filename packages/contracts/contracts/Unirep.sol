@@ -65,7 +65,7 @@ contract Unirep is IUnirep, VerifySignature {
 
         // for initializing other trees without using poseidon function
         IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
-        emit AttesterSignedUp(1, type(uint64).max, block.timestamp);
+        emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
     }
 
     /**

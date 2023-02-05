@@ -59,7 +59,7 @@ export default class UserState {
         }
     }
 
-    async waitForSync(n) {
+    async waitForSync(n?: number) {
         await this.sync.waitForSync(n)
     }
 

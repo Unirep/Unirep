@@ -13,7 +13,6 @@ import { bootstrapUsers, bootstrapAttestations } from './test'
 describe('User state', function () {
     this.timeout(0)
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -23,55 +22,26 @@ describe('User state', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
-    })
-
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        await bootstrapUsers(attester, unirepContract, {
-            epoch: epoch.toNumber(),
-        })
-        await bootstrapAttestations(attester, epoch.toNumber(), unirepContract)
         const synchronizer = await genUnirepState(
             ethers.provider,
             unirepContract.address,
             BigInt(attester.address)
         )
-        // const epochTree = await synchronizer.genEpochTree(epoch)
-        // await processAttestations(attester, epoch, unirepContract, {
-        //     epochTree,
-        // })
-        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await ethers.provider.send('evm_mine', [])
-        const preimages = await synchronizer.genEpochTreePreimages(epoch)
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-        const { publicSignals, proof } = new BuildOrderedTree(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-
-        await unirepContract
-            .connect(accounts[5])
-            .sealEpoch(epoch, attester.address, publicSignals, proof)
-            .then((t) => t.wait())
-
-        await synchronizer.waitForSync()
+        await bootstrapUsers(synchronizer, attester)
+        await bootstrapAttestations(synchronizer, attester)
         await synchronizer.stop()
     })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+        })
+
+        afterEach(async () => {
+            await ethers.provider.send('evm_revert', [snapshot])
+        })
+    }
 
     it('user sign up proof', async () => {
         const accounts = await ethers.getSigners()
@@ -85,7 +55,11 @@ describe('User state', function () {
             attesterId
         )
 
-        const { publicSignals, proof } = await userState.genUserSignUpProof()
+        const epoch = await userState.sync.loadCurrentEpoch()
+
+        const { publicSignals, proof } = await userState.genUserSignUpProof({
+            epoch,
+        })
         const r = await unirepContract
             .connect(attester)
             .userSignUp(publicSignals, proof)
@@ -105,10 +79,12 @@ describe('User state', function () {
             id,
             attesterId
         )
+        const epoch = await userState.sync.loadCurrentEpoch()
 
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -116,7 +92,7 @@ describe('User state', function () {
         }
 
         await userState.waitForSync()
-        const proof = await userState.genEpochKeyProof()
+        const proof = await userState.genEpochKeyProof({ epoch })
         const valid = await proof.verify()
         expect(valid).to.be.true
         await userState.sync.stop()
@@ -133,10 +109,12 @@ describe('User state', function () {
             id,
             attesterId
         )
+        const epoch = await userState.sync.loadCurrentEpoch()
 
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -147,6 +125,25 @@ describe('User state', function () {
         // epoch transition
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
+        {
+            const preimages = await userState.sync.genEpochTreePreimages(epoch)
+            const { circuitInputs } =
+                BuildOrderedTree.buildInputsForLeaves(preimages)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.buildOrderedTree,
+                stringifyBigInts(circuitInputs)
+            )
+            const { publicSignals, proof } = new BuildOrderedTree(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
+
+            await unirepContract
+                .connect(accounts[5])
+                .sealEpoch(epoch, attester.address, publicSignals, proof)
+                .then((t) => t.wait())
+        }
         {
             await userState.waitForSync()
             const toEpoch = await userState.sync.loadCurrentEpoch()
@@ -159,7 +156,7 @@ describe('User state', function () {
                 .then((t) => t.wait())
         }
         await userState.waitForSync()
-        const newEpoch = await userState.sync.latestTransitionedEpoch()
+        const newEpoch = await userState.latestTransitionedEpoch()
         expect(newEpoch).equal(oldEpoch + 1)
         await userState.sync.stop()
     })
