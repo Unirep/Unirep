@@ -108,12 +108,17 @@ export class Synchronizer extends EventEmitter {
                             event.topics
                         )
                         // call the handler with the event and decodedData
-                        return handler({ decodedData, event, ...args }).catch(
-                            (err) => {
+                        return handler({ decodedData, event, ...args })
+                            .then((r) => {
+                                if (r) {
+                                    this.emit(name, { decodedData, event })
+                                }
+                                return r
+                            })
+                            .catch((err) => {
                                 console.log(`${name} handler error`)
                                 throw err
-                            }
-                        )
+                            })
                         // uncomment this to debug
                         // console.log(name, decodedData)
                     }
@@ -162,12 +167,8 @@ export class Synchronizer extends EventEmitter {
 
         await this.findStartBlock()
 
-        this.settings.epochLength = (
-            await this.unirepContract.attesterEpochLength(this.attesterId)
-        ).toNumber()
-        this.settings.startTimestamp = (
-            await this.unirepContract.attesterStartTimestamp(this.attesterId)
-        ).toNumber()
+        if (this.attesterId === BigInt(0)) return
+
         // load the GST for the current epoch
         // assume we're resuming a sync using the same database
         const epochs = await this._db.findMany('Epoch', {
@@ -357,6 +358,7 @@ export class Synchronizer extends EventEmitter {
                     'EpochEnded',
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
+                    'AttesterSignedUp',
                 ],
             },
         }
@@ -619,6 +621,7 @@ export class Synchronizer extends EventEmitter {
             hash,
             index,
             attesterId,
+            blockNumber: event.blockNumber,
         })
         return true
     }
@@ -649,6 +652,7 @@ export class Synchronizer extends EventEmitter {
                 negRep,
                 graffiti,
                 timestamp,
+                blockNumber: event.blockNumber,
             },
             create: {
                 id,
@@ -661,6 +665,7 @@ export class Synchronizer extends EventEmitter {
                 negRep,
                 graffiti,
                 timestamp,
+                blockNumber: event.blockNumber,
             },
         })
         return true
@@ -682,6 +687,7 @@ export class Synchronizer extends EventEmitter {
             commitment,
             epoch,
             attesterId,
+            blockNumber: event.blockNumber,
         })
         return true
     }
@@ -709,7 +715,10 @@ export class Synchronizer extends EventEmitter {
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
         const currentEpoch = await this.readCurrentEpoch()
-        if (epoch !== Number(currentEpoch.number)) {
+        if (
+            epoch !== Number(currentEpoch.number) &&
+            this.attesterId !== BigInt(0)
+        ) {
             throw new Error(
                 `Synchronizer: Epoch (${epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
             )
@@ -730,6 +739,7 @@ export class Synchronizer extends EventEmitter {
                 decodedData.graffiti,
                 decodedData.timestamp,
             ]).toString(),
+            blockNumber: event.blockNumber,
         })
         return true
     }
@@ -750,6 +760,7 @@ export class Synchronizer extends EventEmitter {
             attesterId,
             nullifier,
             transactionHash,
+            blockNumber: event.blockNumber,
         })
 
         return true
@@ -783,6 +794,23 @@ export class Synchronizer extends EventEmitter {
             number: epoch + 1,
             attesterId,
             sealed: false,
+        })
+        return true
+    }
+
+    async handleAttesterSignedUp({ decodedData, event, db }: EventHandlerArgs) {
+        const attesterId = BigInt(decodedData.attesterId).toString()
+        const epochLength = Number(decodedData.epochLength)
+        const startTimestamp = Number(decodedData.timestamp)
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
+        db.create('Attester', {
+            _id: attesterId,
+            epochLength,
+            startTimestamp,
         })
         return true
     }

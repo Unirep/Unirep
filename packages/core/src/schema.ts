@@ -45,6 +45,7 @@ const _schema = [
             ['graffiti', 'String', { optional: true }],
             ['timestamp', 'String', { optional: true }],
             ['hash', 'String'],
+            ['blockNumber', 'Int'],
         ],
     },
     {
@@ -55,6 +56,7 @@ const _schema = [
             ['hash', 'String'],
             ['index', 'Int'],
             ['attesterId', 'String'],
+            ['blockNumber', 'Int'],
         ],
     },
     {
@@ -71,6 +73,7 @@ const _schema = [
             ['negRep', 'String'],
             ['graffiti', 'String'],
             ['timestamp', 'String'],
+            ['blockNumber', 'Int'],
         ],
     },
     {
@@ -89,6 +92,7 @@ const _schema = [
             ['attesterId', 'String'],
             ['nullifier', 'String', { unique: true }],
             ['transactionHash', 'String', { optional: true }],
+            ['blockNumber', 'Int'],
         ],
     },
     {
@@ -98,6 +102,15 @@ const _schema = [
             ['commitment', 'String', { index: true }],
             ['epoch', 'Int'],
             ['attesterId', 'String'],
+            ['blockNumber', 'Int'],
+        ],
+    },
+    {
+        name: 'Attester',
+        primaryKey: '_id',
+        rows: [
+            ['startTimestamp', 'Int'],
+            ['epochLength', 'Int'],
         ],
     },
 ]
