@@ -72,10 +72,15 @@ describe('Attester signs up and gives attestation', function () {
             .connect(accounts[5])
             .buildHashchain(attester.address, epoch)
             .then((t) => t.wait())
+        const hashchainIndex =
+            await unirepContract.attesterHashchainProcessedCount(
+                attester.address,
+                epoch
+            )
         const hashchain = await unirepContract.attesterHashchain(
             attester.address,
             epoch,
-            0
+            hashchainIndex
         )
         const { publicSignals, proof } =
             await userState.genAggregateEpochKeysProof({

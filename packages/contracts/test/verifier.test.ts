@@ -13,39 +13,12 @@ import {
     EpochKeyProof,
     EpochKeyLiteProof,
     ReputationProof,
-    SignupProof,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-
-const signupUser = async (id, unirepContract, attesterId, account) => {
-    const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
-    const r = await defaultProver.genProofAndPublicSignals(
-        Circuit.signup,
-        stringifyBigInts({
-            epoch: epoch.toString(),
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
-            attester_id: attesterId,
-        })
-    )
-    const { publicSignals, proof } = new SignupProof(
-        r.publicSignals,
-        r.proof,
-        defaultProver
-    )
-    const leafIndex = await unirepContract.attesterStateTreeLeafCount(
-        attesterId,
-        epoch
-    )
-    await unirepContract
-        .connect(account)
-        .userSignUp(publicSignals, proof)
-        .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
-}
+import { signupUser } from '@unirep/test'
 
 describe('Epoch key lite proof verifier', function () {
     this.timeout(300000)
@@ -77,7 +50,7 @@ describe('Epoch key lite proof verifier', function () {
                     identity_nullifier: id.identityNullifier,
                     data,
                     control: EpochKeyLiteProof.buildControlInput({
-                        epoch: epoch.toNumber(),
+                        epoch,
                         nonce,
                         attesterId: attester.address,
                         revealNonce: 0,
@@ -115,7 +88,7 @@ describe('Epoch key lite proof verifier', function () {
                 stringifyBigInts({
                     identity_nullifier: id.identityNullifier,
                     control: EpochKeyLiteProof.buildControlInput({
-                        epoch: epoch.toNumber(),
+                        epoch,
                         nonce,
                         attesterId: attester.address,
                         revealNonce: 0,
@@ -202,7 +175,7 @@ describe('Epoch key lite proof verifier', function () {
                 identity_nullifier: id.identityNullifier,
                 data,
                 control: EpochKeyLiteProof.buildControlInput({
-                    epoch: epoch.toNumber(),
+                    epoch,
                     nonce,
                     attesterId: attester.address,
                     revealNonce: 0,
@@ -295,7 +268,7 @@ describe('Epoch key proof verifier', function () {
                     timestamp,
                     data,
                     control: EpochKeyProof.buildControlInput({
-                        epoch: epoch.toNumber(),
+                        epoch,
                         nonce,
                         attesterId: attester.address,
                         revealNonce: 0,
@@ -352,7 +325,7 @@ describe('Epoch key proof verifier', function () {
                     timestamp,
                     data,
                     control: EpochKeyProof.buildControlInput({
-                        epoch: epoch.toNumber(),
+                        epoch,
                         nonce,
                         attesterId: attester.address,
                         revealNonce: 0,
@@ -478,7 +451,7 @@ describe('Epoch key proof verifier', function () {
                 timestamp,
                 data,
                 control: EpochKeyProof.buildControlInput({
-                    epoch: epoch.toNumber(),
+                    epoch,
                     nonce,
                     attesterId: attester.address,
                     revealNonce: 0,
@@ -543,7 +516,7 @@ describe('Epoch key proof verifier', function () {
                 timestamp,
                 data,
                 control: EpochKeyProof.buildControlInput({
-                    epoch: epoch.toNumber(),
+                    epoch,
                     nonce,
                     attesterId: attester.address,
                     revealNonce: 0,
@@ -627,7 +600,7 @@ describe('Reputation proof verifier', function () {
                     graffiti_pre_image: graffitiPreImage,
                     control: ReputationProof.buildControlInput({
                         attesterId: attester.address,
-                        epoch: epoch.toNumber(),
+                        epoch,
                         nonce,
                         minRep,
                         maxRep: 0,
@@ -689,7 +662,7 @@ describe('Reputation proof verifier', function () {
                     graffiti_pre_image: graffitiPreImage,
                     control: ReputationProof.buildControlInput({
                         attesterId: attester.address,
-                        epoch: epoch.toNumber(),
+                        epoch,
                         nonce,
                         minRep,
                         maxRep: 0,
@@ -844,7 +817,7 @@ describe('Reputation proof verifier', function () {
                 graffiti_pre_image: graffitiPreImage,
                 control: ReputationProof.buildControlInput({
                     attesterId: attester.address,
-                    epoch: epoch.toNumber(),
+                    epoch,
                     nonce,
                     minRep,
                     maxRep: 0,
@@ -908,7 +881,7 @@ describe('Reputation proof verifier', function () {
                 graffiti_pre_image: graffitiPreImage,
                 control: ReputationProof.buildControlInput({
                     attesterId: attester.address,
-                    epoch: epoch.toNumber(),
+                    epoch,
                     nonce,
                     minRep,
                     maxRep: 0,

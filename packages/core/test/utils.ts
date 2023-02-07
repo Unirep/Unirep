@@ -95,60 +95,6 @@ export const snapshotDB = async (db: DB) => {
     }, {})
 }
 
-// export const compareStates = async (
-//     provider: ethers.providers.Provider,
-//     address: string,
-//     userId: ZkIdentity,
-//     db: Promise<SQLiteConnector>
-// ) => {
-//     const unirepContract: Unirep = await getUnirepContract(address, provider)
-//     const currentEpoch = (await unirepContract.currentEpoch()).toNumber()
-
-//     const usWithNoStorage = await genUserState(provider, address, userId)
-//     const usWithStorage = await genUserState(
-//         provider,
-//         address,
-//         userId,
-//         await db
-//     )
-//     expect(await usWithNoStorage.latestGSTLeafIndex()).equal(
-//         await usWithStorage.latestGSTLeafIndex()
-//     )
-
-//     expect(await usWithNoStorage.latestTransitionedEpoch()).equal(
-//         await usWithStorage.latestTransitionedEpoch()
-//     )
-
-//     for (let epoch = 1; epoch <= currentEpoch; epoch++) {
-//         for (
-//             let nonce = 0;
-//             nonce < usWithNoStorage.settings.numEpochKeyNoncePerEpoch;
-//             nonce++
-//         ) {
-//             const epk = genEpochKey(
-//                 userId.identityNullifier,
-//                 epoch,
-//                 nonce,
-//                 usWithNoStorage.settings.epochTreeDepth
-//             ).toString()
-//             expect((await usWithNoStorage.getAttestations(epk)).length).equal(
-//                 (await usWithStorage.getAttestations(epk)).length
-//             )
-//         }
-//         expect(await usWithNoStorage.genGSTree(epoch)).deep.equal(
-//             await usWithStorage.genGSTree(epoch)
-//         )
-//     }
-
-//     for (let epoch = 1; epoch < currentEpoch; epoch++) {
-//         const [root1, root2] = await Promise.all([
-//             usWithNoStorage.epochTreeRoot(epoch),
-//             usWithStorage.epochTreeRoot(epoch),
-//         ])
-//         expect(root1).to.equal(root2)
-//     }
-// }
-
 export const compareAttestations = (attestDB: any, attestObj: any) => {
     expect(attestDB.attesterId.toString()).equal(
         attestObj.attesterId.toString()
