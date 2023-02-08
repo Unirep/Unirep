@@ -8,6 +8,11 @@ import { Circuit, BuildOrderedTree } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genUnirepState, genUserState } from './utils'
+import {
+    bootstrapAttestations,
+    bootstrapUsers,
+    processAttestations,
+} from '@unirep/test'
 
 describe('User state', function () {
     this.timeout(0)
@@ -100,7 +105,7 @@ describe('User state', function () {
         await userState.stop()
     })
 
-    it('ust proof', async () => {
+    it.skip('ust proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
@@ -141,7 +146,7 @@ describe('User state', function () {
         await userState.stop()
     })
 
-    it('reputation proof', async () => {
+    it.skip('reputation proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)

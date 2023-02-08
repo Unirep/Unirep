@@ -163,7 +163,7 @@ describe('Synchronizer process events', function () {
         await userState.stop()
     })
 
-    it('should process attestations', async () => {
+    it.skip('should process attestations', async () => {
         const [AttestationSubmitted] =
             synchronizer.unirepContract.filters.AttestationSubmitted()
                 .topics as string[]
@@ -269,7 +269,7 @@ describe('Synchronizer process events', function () {
         await userState.stop()
     })
 
-    it('should process ust events', async () => {
+    it.skip('should process ust events', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)

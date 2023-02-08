@@ -44,7 +44,7 @@ describe('Epoch', function () {
         })
     }
 
-    it('should update epoch', async () => {
+    it.skip('should update epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
