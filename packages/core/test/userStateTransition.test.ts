@@ -89,7 +89,7 @@ describe('User state transition', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                users[i].identityNullifier,
+                users[i].secretHash,
                 attester.address,
                 toEpoch,
                 0,

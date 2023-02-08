@@ -57,7 +57,7 @@ const genEpochKeyCircuitInput = (config: {
     const circuitInputs = {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
-        identity_nullifier: id.identityNullifier,
+        identity_secret: id.secretHash,
         pos_rep: posRep,
         neg_rep: negRep,
         graffiti,
@@ -122,12 +122,7 @@ const genUserStateTransitionCircuitInput = (config: {
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
-            utils.genEpochKey(
-                id.identityNullifier,
-                BigInt(attesterId),
-                fromEpoch,
-                i
-            )
+            utils.genEpochKey(id.secretHash, BigInt(attesterId), fromEpoch, i)
         )
 
     const epochKeyLeaves = epochKeys.map((k) =>
@@ -156,7 +151,7 @@ const genUserStateTransitionCircuitInput = (config: {
     const circuitInputs = {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
-        identity_nullifier: id.identityNullifier,
+        identity_secret: id.secretHash,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings.map((s, i) => {
             return s[1 - stateTreeProof.pathIndices[i]]
@@ -284,7 +279,7 @@ const genReputationCircuitInput = (config: {
     // Global state tree
     const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
     const hashedLeaf = utils.hash7([
-        id.identityNullifier,
+        id.secretHash,
         attesterId,
         epoch,
         startBalance.posRep,
@@ -296,7 +291,7 @@ const genReputationCircuitInput = (config: {
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
-        identity_nullifier: id.identityNullifier,
+        identity_secret: id.secretHash,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
         pos_rep: startBalance.posRep,

@@ -13,7 +13,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
-    signal input identity_nullifier;
+    signal input identity_secret;
 
     signal output epoch_key;
     signal output state_tree_root;
@@ -63,7 +63,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
 
     // Compute user state tree root
     component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_nullifier;
+    leaf_hasher.inputs[0] <== identity_secret;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== epoch;
     leaf_hasher.inputs[3] <== pos_rep;
@@ -90,7 +90,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     /* 3. Output an epoch key */
 
     component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_nullifier;
+    epoch_key_hasher.inputs[0] <== identity_secret;
     epoch_key_hasher.inputs[1] <== attester_id;
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;

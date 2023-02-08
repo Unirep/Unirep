@@ -29,25 +29,25 @@ export const genRandomSalt = () => _genRandomSalt() as bigint
 export { SNARK_FIELD_SIZE, stringifyBigInts, unstringifyBigInts }
 
 export const genEpochKey = (
-    identityNullifier: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     nonce: bigint | number
 ): bigint => {
-    return hash4([identityNullifier, BigInt(attesterId), epoch, BigInt(nonce)])
+    return hash4([identitySecret, BigInt(attesterId), epoch, BigInt(nonce)])
 }
 
 export const genUserStateTransitionNullifier = (
-    identityNullifier: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: number | bigint | number
 ): bigint => {
-    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
+    return hash3([BigInt(attesterId), BigInt(epoch), identitySecret])
 }
 
 export const genEpochNullifier = (
     ...args: [
-        identityNullifier: bigint,
+        identitySecret: bigint,
         attesterId: bigint | string,
         epoch: number | bigint | number
     ]
@@ -58,7 +58,7 @@ export const genEpochNullifier = (
 }
 
 export const genStateTreeLeaf = (
-    idNullifier: bigint,
+    idSecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     posRep: bigint | number,
@@ -67,7 +67,7 @@ export const genStateTreeLeaf = (
     timestamp: bigint | number
 ): bigint => {
     return hash7([
-        idNullifier,
+        idSecret,
         BigInt(attesterId),
         BigInt(epoch),
         BigInt(posRep),

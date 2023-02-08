@@ -66,7 +66,7 @@ describe('User Signup', function () {
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
-                id.identityNullifier,
+                id.secretHash,
                 attester.address,
                 contractEpoch.toNumber(),
                 0,

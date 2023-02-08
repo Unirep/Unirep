@@ -127,7 +127,7 @@ describe('Synchronizer process events', function () {
                 attester.address
             )
         const leaf = genStateTreeLeaf(
-            id.identityNullifier,
+            id.secretHash,
             BigInt(attester.address),
             contractEpoch.toNumber(),
             0,

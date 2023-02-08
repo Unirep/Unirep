@@ -13,7 +13,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     signal input to_epoch;
 
     // Global state tree leaf: Identity & user state root
-    signal input identity_nullifier;
+    signal input identity_secret;
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
@@ -57,7 +57,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     /* 1. Check if user exists in the Global State Tree */
 
     component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_nullifier;
+    leaf_hasher.inputs[0] <== identity_secret;
     leaf_hasher.inputs[1] <== attester_id;
     leaf_hasher.inputs[2] <== from_epoch;
     leaf_hasher.inputs[3] <== pos_rep;
@@ -81,7 +81,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     component leaf_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
         epoch_key_hashers[i] = Poseidon(4);
-        epoch_key_hashers[i].inputs[0] <== identity_nullifier;
+        epoch_key_hashers[i].inputs[0] <== identity_secret;
         epoch_key_hashers[i].inputs[1] <== attester_id;
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i;
@@ -235,7 +235,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     }
 
     component out_leaf_hasher = Poseidon(7);
-    out_leaf_hasher.inputs[0] <== identity_nullifier;
+    out_leaf_hasher.inputs[0] <== identity_secret;
     out_leaf_hasher.inputs[1] <== attester_id;
     out_leaf_hasher.inputs[2] <== to_epoch;
     out_leaf_hasher.inputs[3] <== final_pos_rep;
@@ -251,7 +251,7 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     component nullifier_hasher = Poseidon(3);
     nullifier_hasher.inputs[0] <== attester_id;
     nullifier_hasher.inputs[1] <== from_epoch;
-    nullifier_hasher.inputs[2] <== identity_nullifier;
+    nullifier_hasher.inputs[2] <== identity_secret;
     transition_nullifier <== nullifier_hasher.out;
 
     /* End of check 4 */

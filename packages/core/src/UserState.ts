@@ -66,7 +66,7 @@ export default class UserState extends Synchronizer {
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
             const epkNullifier = genUserStateTransitionNullifier(
-                this.id.identityNullifier,
+                this.id.secretHash,
                 this.attesterId.toString(),
                 x
             )
@@ -117,7 +117,7 @@ export default class UserState extends Synchronizer {
                 return 0
             }
             const leaf = genStateTreeLeaf(
-                this.id.identityNullifier,
+                this.id.secretHash,
                 this.attesterId.toString(),
                 signup.epoch,
                 0,
@@ -137,7 +137,7 @@ export default class UserState extends Synchronizer {
             latestTransitionedEpoch - 1
         )
         const leaf = genStateTreeLeaf(
-            this.id.identityNullifier,
+            this.id.secretHash,
             this.attesterId.toString(),
             latestTransitionedEpoch,
             posRep,
@@ -167,7 +167,7 @@ export default class UserState extends Synchronizer {
         }
         if (typeof nonce === 'number') {
             return genEpochKey(
-                this.id.identityNullifier,
+                this.id.secretHash,
                 this.attesterId.toString(),
                 epoch,
                 nonce
@@ -177,7 +177,7 @@ export default class UserState extends Synchronizer {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    this.id.identityNullifier,
+                    this.id.secretHash,
                     this.attesterId.toString(),
                     epoch,
                     i
@@ -205,7 +205,7 @@ export default class UserState extends Synchronizer {
                 .fill(null)
                 .map((_, i) =>
                     genEpochKey(
-                        this.id.identityNullifier,
+                        this.id.secretHash,
                         attesterId.toString(),
                         x,
                         i
@@ -311,7 +311,7 @@ export default class UserState extends Synchronizer {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    this.id.identityNullifier,
+                    this.id.secretHash,
                     this.attesterId.toString(),
                     fromEpoch,
                     i
@@ -415,7 +415,7 @@ export default class UserState extends Synchronizer {
         const circuitInputs = {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
-            identity_nullifier: this.id.identityNullifier,
+            identity_secret: this.id.secretHash,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: this.attesterId.toString(),
@@ -483,7 +483,7 @@ export default class UserState extends Synchronizer {
         const stateTreeProof = stateTree.createProof(leafIndex)
 
         const circuitInputs = {
-            identity_nullifier: this.id.identityNullifier,
+            identity_secret: this.id.secretHash,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             pos_rep: posRep,
@@ -556,7 +556,7 @@ export default class UserState extends Synchronizer {
         )
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
-            identity_nullifier: this.id.identityNullifier,
+            identity_secret: this.id.secretHash,
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,

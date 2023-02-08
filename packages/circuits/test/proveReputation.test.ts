@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ZkIdentity, hash1 } from '@unirep/utils'
+import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
 import { Circuit, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
@@ -474,5 +474,48 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.maxRep.toString()).to.equal('0')
         expect(data.proveGraffiti.toString()).to.equal('0')
         expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('should output an epoch key', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const preImage = 124914219
+        const revealNonce = 1
+        const graffiti = hash1([preImage])
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            revealNonce,
+        })
+        const { isValid, proof, publicSignals } = await genProofAndVerify(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new ReputationProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal(nonce.toString())
+        expect(data.revealNonce.toString()).to.equal(revealNonce.toString())
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+        expect(data.epochKey.toString()).to.equal(
+            genEpochKey(
+                id.secretHash,
+                attesterId.toString(),
+                epoch,
+                nonce
+            ).toString()
+        )
     })
 })

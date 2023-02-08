@@ -2,10 +2,10 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    hash7,
     IncrementalMerkleTree,
     ZkIdentity,
     stringifyBigInts,
+    genStateTreeLeaf,
 } from '@unirep/utils'
 import { STATE_TREE_DEPTH, Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -100,15 +100,15 @@ describe('User Signup', function () {
                     .userSignUp(publicSignals, proof)
                     .then((t) => t.wait())
 
-                const gstLeaf = hash7([
-                    id.identityNullifier,
+                const gstLeaf = genStateTreeLeaf(
+                    id.secretHash,
                     BigInt(attester.address),
                     epoch,
                     0,
                     0,
                     0,
-                    0,
-                ])
+                    0
+                )
 
                 stateTree.insert(gstLeaf)
                 const currentRoot = await unirepContract.attesterStateTreeRoot(
