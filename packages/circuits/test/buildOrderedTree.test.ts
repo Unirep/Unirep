@@ -107,8 +107,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(_leaves)
+        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[3] =
             circuitInputs.sorted_leaf_preimages[4]
@@ -123,8 +122,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(_leaves)
+        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.leaf_r_values[20] -= BigInt(1)
         await new Promise<void>((rs, rj) => {
@@ -138,8 +136,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(_leaves)
+        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[12] = [BigInt('4'), 0, 0, 0, 0]
         await new Promise<void>((rs, rj) => {

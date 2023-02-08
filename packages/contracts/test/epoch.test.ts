@@ -2,9 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/utils'
-import {
-    STATE_TREE_DEPTH,
-} from '@unirep/circuits'
+import { STATE_TREE_DEPTH } from '@unirep/circuits'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
