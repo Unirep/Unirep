@@ -14,6 +14,7 @@ workflows:
                   requires:
                       - build
             - contracts-coverage:
+                  context: cloudflare
                   requires:
                       - contracts-test
                   filters:
