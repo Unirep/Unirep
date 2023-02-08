@@ -40,7 +40,7 @@ export class BuildOrderedTree extends BaseProof {
         })
         sortedLeaves.unshift([0, 0, 0, 0, 0])
         sortedLeaves.push([1, 0, 0, 0, 0])
-        const rVals = sortedLeaves.map((l, i) => {
+        const rVals = sortedLeaves.map((l) => {
             if (l[0] === 0) {
                 return Rx[0]
             } else if (l[0] === 1) {

@@ -1,6 +1,6 @@
 import { poseidon_gencontract } from 'circomlibjs'
 
-const poseidons = [2, 3, 4, 5, 6]
+const poseidons = [2, 5]
 
 export default poseidons.reduce((acc, inputCount) => {
     return {

@@ -1,7 +1,6 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { hash4, SparseMerkleTree } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
@@ -14,7 +13,6 @@ import { deployUnirep } from '../deploy'
 describe('Config', function () {
     this.timeout(120000)
     let unirepContract
-    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     before(async () => {
         const accounts = await ethers.getSigners()

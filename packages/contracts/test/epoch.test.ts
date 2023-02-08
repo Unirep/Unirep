@@ -1,12 +1,9 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { IncrementalMerkleTree, SparseMerkleTree } from '@unirep/utils'
+import { IncrementalMerkleTree } from '@unirep/utils'
 import {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
-    defaultEpochTreeLeaf,
 } from '@unirep/circuits'
 
 import { EPOCH_LENGTH } from '../src'
@@ -52,11 +49,6 @@ describe('Epoch', function () {
             attester.address
         )
         const emptyStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const emptyEpochTree = new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf,
-            EPOCH_TREE_ARITY
-        )
         for (let x = startEpoch.toNumber(); x < 5; x++) {
             const prevEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address

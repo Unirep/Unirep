@@ -97,7 +97,7 @@ describe('Synchronizer process events', function () {
         )
         const { publicSignals, proof } = await userState.genUserSignUpProof()
 
-        const tx = await synchronizer.unirepContract
+        await synchronizer.unirepContract
             .connect(attester)
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())

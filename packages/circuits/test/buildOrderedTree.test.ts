@@ -52,6 +52,7 @@ describe('Build sorted merkle tree', function () {
         expect(publicSignals[1].toString(), 'polyhash').to.equal(
             expectedPolyhash.toString()
         )
+        expect(isValid).to.be.true
     })
 
     it('should build a partial tree', async () => {
@@ -83,6 +84,7 @@ describe('Build sorted merkle tree', function () {
         expect(publicSignals[1].toString(), 'polyhash').to.equal(
             expectedPolyhash.toString()
         )
+        expect(isValid).to.be.true
     })
 
     it('should fail if leaves are not ordered', async () => {
@@ -105,7 +107,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } =
+        const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[3] =
@@ -121,7 +123,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } =
+        const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.leaf_r_values[20] -= BigInt(1)
@@ -136,7 +138,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } =
+        const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[12] = [BigInt('4'), 0, 0, 0, 0]

@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover, Circuit, SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { IncrementalMerkleTree, hash4, stringifyBigInts } from '@unirep/utils'
+import { Prover, SNARK_SCALAR_FIELD } from '@unirep/circuits'
+import { IncrementalMerkleTree, hash4 } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 
 type EventHandlerArgs = {
@@ -608,7 +608,6 @@ export class Synchronizer extends EventEmitter {
             decodedData.identityCommitment.toString()
         ).toString()
         const attesterId = BigInt(decodedData.attesterId.toString()).toString()
-        const leafIndex = Number(decodedData.leafIndex)
         if (attesterId !== this.attesterId.toString()) return
         db.create('UserSignUp', {
             commitment,
@@ -670,9 +669,7 @@ export class Synchronizer extends EventEmitter {
         const transactionHash = event.transactionHash
         const epoch = Number(decodedData.epoch)
         const attesterId = BigInt(decodedData.attesterId).toString()
-        const leafIndex = BigInt(decodedData.leafIndex).toString()
         const nullifier = BigInt(decodedData.nullifier).toString()
-        const hashedLeaf = BigInt(decodedData.hashedLeaf).toString()
         if (attesterId.toString() !== this.attesterId.toString()) return
 
         db.create('Nullifier', {

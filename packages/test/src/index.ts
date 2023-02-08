@@ -10,7 +10,6 @@ import {
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import {
     genRandomSalt,
-    hash4,
     IncrementalMerkleTree,
     stringifyBigInts,
     ZkIdentity,
