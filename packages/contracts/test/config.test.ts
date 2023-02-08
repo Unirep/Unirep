@@ -29,18 +29,9 @@ describe('Config', function () {
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
         expect(EPOCH_TREE_ARITY).equal(config.epochTreeArity)
         expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
-        const tree = new SparseMerkleTree(
-            EPOCH_TREE_DEPTH,
-            defaultEpochTreeLeaf,
-            EPOCH_TREE_ARITY
-        )
-        expect(tree.root.toString()).equal(config.emptyEpochTreeRoot.toString())
     })
 
     it('helper functions', async () => {
-        const maxEpochKey = await unirepContract.maxEpochKey()
-        expect(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 1).equal(maxEpochKey)
-
         const stateTreeDepth = await unirepContract.stateTreeDepth()
         expect(STATE_TREE_DEPTH).equal(stateTreeDepth)
 

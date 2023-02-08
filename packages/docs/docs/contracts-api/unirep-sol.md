@@ -53,22 +53,16 @@ function submitAttestation(
 ) public
 ```
 
-## buildHashchain
+## sealEpoch
 
-Create a hashchain of epoch key balance updates that can be used to update the epoch root.
-
-```sol
-function buildHashchain(uint160 attesterId) public
-```
-
-## processHashchain
-
-Update the epoch tree root using a ZK proof and a hashchain.
+Finalize an epoch by submitting a [build ordered tree](../circuits-api/circuits#build-ordered-tree) proof. This will set the epoch tree root for the epoch. This must be called _after_ an epoch ends. If no attestations occur in an epoch this _must not_ be called.
 
 ```sol
-function processHashchain(
-  uint[] memory publicSignals,
-  uint[8] memory proof
+function sealEpoch(
+  uint256 epoch,
+  uint160 attesterId,
+  uint256[] memory publicSignals,
+  uint256[8] memory proof
 ) public
 ```
 
@@ -291,12 +285,12 @@ A contract address for a user state transition proof verifier. See [IVerifier](i
 IVerifier public immutable userStateTransitionVerifier;
 ```
 
-## aggregateEpochKeysVerifier
+## buildOrderedTreeVerifier
 
-A contract address for an aggregate epoch keys proof verifier. See [IVerifier](iverifier-sol) for more info.
+A contract address for an build ordered tree proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
-IVerifier public immutable aggregateEpochKeysVerifier;
+IVerifier public immutable buildOrderedTreeVerifier;
 ```
 
 ## attesterStartTimestamp
@@ -319,50 +313,6 @@ function attesterEpochSealed(uint160 attesterId, uint256 epoch)
   public
   view
   returns (bool)
-```
-
-## attesterOwedEpochKeys
-
-Get the number of epoch keys that are owed a balance for an attester in an epoch.
-
-```sol
-function attesterOwedEpochKeys(uint160 attesterId, uint256 epoch)
-  public
-  view
-  returns (uint256)
-```
-
-## attesterHashchainTotalCount
-
-Get the total number of hashchains for an attester in an epoch.
-
-```sol
-function attesterHashchainTotalCount(uint160 attesterId, uint256 epoch)
-  public
-  view
-  returns (uint256)
-```
-
-## attesterHashchainProcessedCount
-
-Get the number of processed hashchains for an attester in an epoch.
-
-```sol
-function attesterHashchainProcessedCount(uint160 attesterId, uint256 epoch)
-  public
-  view
-  returns (uint256)
-```
-
-## attesterHashchain
-
-Get a hashchain for an attester.
-
-```sol
-function attesterHashchain(uint160 attesterId, uint256 epoch, uint256 index)
-  public
-  view
-  returns (EpochKeyHashchain)
 ```
 
 ## attesterEpochLength
@@ -552,7 +502,12 @@ event EpochTreeLeaf(
     uint256 indexed epoch,
     uint160 indexed attesterId,
     uint256 indexed index,
-    uint256 leaf
+    uint256 leaf,
+    uint256 epochKey,
+    uint256 posRep,
+    uint256 negRep,
+    uint256 graffiti,
+    uint256 timestamp
 );
 ```
 
@@ -564,26 +519,10 @@ Emitted when an attester epoch ends.
 event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 ```
 
-### HashchainBuilt
+### EpochSealed
 
-Emitted when a hashchain is built for an attester.
-
-```sol
-event HashchainBuilt(
-  uint256 indexed epoch,
-  uint160 indexed attesterId,
-  uint256 index
-);
-```
-
-### HashchainProcessed
-
-Emitted when a hashchain has been processed.
+Emitted when an epoch is sealed.
 
 ```sol
-event HashchainProcessed(
-  uint256 indexed epoch,
-  uint160 indexed attesterId,
-  bool isEpochSealed
-);
+event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
 ```

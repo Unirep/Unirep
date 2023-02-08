@@ -32,26 +32,29 @@ export const genEpochKey = (
     identityNullifier: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
-    nonce: bigint | number,
-    maxEpochKey: bigint | number
+    nonce: bigint | number
 ): bigint => {
-    const epochKey = hash4([
-        identityNullifier,
-        BigInt(attesterId),
-        epoch,
-        BigInt(nonce),
-    ])
-    // Adjust epoch key size according to epoch tree depth
-    const epochKeyModed = epochKey % BigInt(maxEpochKey)
-    return epochKeyModed
+    return hash4([identityNullifier, BigInt(attesterId), epoch, BigInt(nonce)])
+}
+
+export const genUserStateTransitionNullifier = (
+    identityNullifier: bigint,
+    attesterId: bigint | string,
+    epoch: number | bigint | number
+): bigint => {
+    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
 }
 
 export const genEpochNullifier = (
-    identityNullifier: bigint,
-    attesterId: bigint | string,
-    epoch: number | bigint
-): bigint => {
-    return hash3([BigInt(attesterId), BigInt(epoch), identityNullifier])
+    ...args: [
+        identityNullifier: bigint,
+        attesterId: bigint | string,
+        epoch: number | bigint | number
+    ]
+) => {
+    console.warn('@unirep/utils:genEpochNullifier is deprecated')
+    console.warn('Use @unirep/utils:genUserStateTransitionNullifier instead')
+    return genUserStateTransitionNullifier(...args)
 }
 
 export const genStateTreeLeaf = (

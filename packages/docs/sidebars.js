@@ -71,6 +71,11 @@ const sidebars = {
                     label: 'Attestation',
                     id: 'protocol/attestation',
                 },
+                {
+                    type: 'doc',
+                    label: 'Polysum',
+                    id: 'protocol/polysum',
+                },
             ],
         },
         {

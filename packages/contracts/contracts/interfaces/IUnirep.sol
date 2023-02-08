@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
+import {PolyhashData} from '../libraries/Polyhash.sol';
 
 interface IUnirep {
     event AttesterSignedUp(
@@ -45,22 +46,17 @@ interface IUnirep {
         uint256 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
-        uint256 leaf
-    );
-
-    event HashchainBuilt(
-        uint256 indexed epoch,
-        uint160 indexed attesterId,
-        uint256 index
-    );
-
-    event HashchainProcessed(
-        uint256 indexed epoch,
-        uint160 indexed attesterId,
-        bool isEpochSealed
+        uint256 leaf,
+        uint256 epochKey,
+        uint256 posRep,
+        uint256 negRep,
+        uint256 graffiti,
+        uint256 timestamp
     );
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
+
+    event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
 
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
@@ -75,6 +71,10 @@ interface IUnirep {
     error InvalidEpochKey();
     error EpochNotMatch();
     error InvalidEpoch(uint256 epoch);
+    error MaxAttestations();
+    error NoAttestations();
+    error DoubleSeal();
+    error IncorrectHash();
 
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
@@ -116,22 +116,14 @@ interface IUnirep {
         uint256 timestamp;
     }
 
-    struct EpochKeyHashchain {
-        uint256 index;
-        uint256 head;
-        uint256[] epochKeys;
-        Reputation[] epochKeyBalances;
-        bool processed;
-    }
-
     struct EpochKeyState {
-        // key the head to the struct?
-        mapping(uint256 => EpochKeyHashchain) hashchain;
-        uint256 totalHashchains;
-        uint256 processedHashchains;
+        // latest epoch key balances
         mapping(uint256 => Reputation) balances;
-        mapping(uint256 => bool) isKeyOwed;
-        uint256[] owedKeys;
+        // epoch key => polyhash degree
+        mapping(uint256 => uint256) epochKeyDegree;
+        // epoch key => latest leaf (0 if no attestation in epoch)
+        mapping(uint256 => uint256) epochKeyLeaves;
+        PolyhashData polyhash;
     }
 
     struct AttesterData {
@@ -156,8 +148,5 @@ interface IUnirep {
         uint8 epochTreeDepth;
         uint8 epochTreeArity;
         uint256 numEpochKeyNoncePerEpoch;
-        // contract config
-        uint256 emptyEpochTreeRoot;
-        uint256 aggregateKeyCount;
     }
 }

@@ -6,7 +6,8 @@ import {
     ZkIdentity,
     genEpochKey,
     genStateTreeLeaf,
-    genEpochNullifier,
+    genUserStateTransitionNullifier,
+    hash5,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -64,7 +65,7 @@ export default class UserState extends Synchronizer {
         const currentEpoch = await this.loadCurrentEpoch()
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
-            const epkNullifier = genEpochNullifier(
+            const epkNullifier = genUserStateTransitionNullifier(
                 this.id.identityNullifier,
                 this.attesterId.toString(),
                 x
@@ -169,9 +170,7 @@ export default class UserState extends Synchronizer {
                 this.id.identityNullifier,
                 this.attesterId.toString(),
                 epoch,
-                nonce,
-                BigInt(this.settings.epochTreeArity) **
-                    BigInt(this.settings.epochTreeDepth)
+                nonce
             )
         }
         return Array(this.settings.numEpochKeyNoncePerEpoch)
@@ -181,9 +180,7 @@ export default class UserState extends Synchronizer {
                     this.id.identityNullifier,
                     this.attesterId.toString(),
                     epoch,
-                    i,
-                    BigInt(this.settings.epochTreeArity) **
-                        BigInt(this.settings.epochTreeDepth)
+                    i
                 )
             )
     }
@@ -211,9 +208,7 @@ export default class UserState extends Synchronizer {
                         this.id.identityNullifier,
                         attesterId.toString(),
                         x,
-                        i,
-                        BigInt(this.settings.epochTreeArity) **
-                            BigInt(this.settings.epochTreeDepth)
+                        i
                     ).toString()
                 )
             orClauses.push({
@@ -312,25 +307,108 @@ export default class UserState extends Synchronizer {
             throw new Error('Cannot transition to same epoch')
         }
         const epochTree = await this.genEpochTree(fromEpoch)
-        const epochKeyPromises = Array(this.settings.numEpochKeyNoncePerEpoch)
+        const epochKeys = Array(this.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
                     this.id.identityNullifier,
                     this.attesterId.toString(),
                     fromEpoch,
-                    i,
-                    BigInt(this.settings.epochTreeArity) **
-                        BigInt(this.settings.epochTreeDepth)
-                ).toString()
+                    i
+                )
             )
-            .map(async (epochKey) => {
+        const epochKeyLeafIndices = await Promise.all(
+            epochKeys.map(async (epk) => {
+                const leaf = await this._db.findOne('EpochTreeLeaf', {
+                    where: {
+                        epochKey: epk.toString(),
+                    },
+                })
+                return leaf?.index ?? 0
+            })
+        )
+        const epochKeyRep = await Promise.all(
+            epochKeys.map(async (epochKey, i) => {
                 const { posRep, negRep, graffiti, timestamp } =
                     await this.getRepByEpochKey(epochKey, fromEpoch)
-                const proof = epochTree.createProof(BigInt(epochKey))
-                return { posRep, negRep, graffiti, timestamp, proof }
+                const proof = epochTree._createProof(epochKeyLeafIndices[i])
+                return { epochKey, posRep, negRep, graffiti, timestamp, proof }
             })
-        const epochKeyData = await Promise.all(epochKeyPromises)
+        )
+        const repByEpochKey = epochKeyRep.reduce((acc, obj) => {
+            return {
+                [obj.epochKey.toString()]: obj,
+                ...acc,
+            }
+        }, {})
+        const leaves = await this.genEpochTreePreimages(fromEpoch)
+        const epochKeyProofs = epochKeys.map((key) => {
+            const { posRep, negRep, graffiti, timestamp } =
+                repByEpochKey[key.toString()]
+            const leaf = hash5([key, posRep, negRep, graffiti, timestamp])
+            let noninclusionLeaves = [0, 1]
+            let noninclusionIndex = 0
+            let noninclusionElements = [
+                Array(this.settings.epochTreeArity).fill(0),
+                Array(this.settings.epochTreeArity).fill(0),
+            ]
+            let inclusionIndex = 0
+            let inclusionElements = Array(this.settings.epochTreeArity).fill(0)
+            let treeElements, treeIndices
+            if (leaves.length === 0) {
+                // no attestation in the epoch
+                // we don't do inclusion or noninclusion
+                treeElements = epochTree._createProof(0).siblings.slice(1)
+                treeIndices = epochTree._createProof(0).pathIndices.slice(1)
+            } else if (
+                posRep === BigInt(0) &&
+                negRep === BigInt(0) &&
+                graffiti === BigInt(0) &&
+                timestamp === BigInt(0)
+            ) {
+                // we do a non-inclusion proof
+                const gtIndex = epochTree.leaves.findIndex(
+                    (l) => BigInt(l) > BigInt(leaf)
+                )
+                noninclusionIndex = gtIndex - 1
+                noninclusionLeaves = [
+                    epochTree.leaves[gtIndex - 1],
+                    epochTree.leaves[gtIndex],
+                ]
+                noninclusionElements = [
+                    epochTree._createProof(gtIndex - 1).siblings[0],
+                    epochTree._createProof(gtIndex).siblings[0],
+                ]
+                treeElements = epochTree
+                    ._createProof(gtIndex - 1)
+                    .siblings.slice(1)
+                treeIndices = epochTree
+                    ._createProof(gtIndex - 1)
+                    .pathIndices.slice(1)
+            } else {
+                inclusionIndex = epochTree.leaves.findIndex(
+                    (l) => BigInt(l) === BigInt(leaf)
+                )
+                inclusionElements =
+                    epochTree._createProof(inclusionIndex).siblings[0]
+                treeElements = epochTree
+                    ._createProof(inclusionIndex)
+                    .siblings.slice(1)
+                treeIndices = epochTree
+                    ._createProof(inclusionIndex)
+                    .pathIndices.slice(1)
+            }
+
+            return {
+                treeElements,
+                treeIndices,
+                noninclusionLeaves,
+                noninclusionIndex,
+                noninclusionElements,
+                inclusionIndex,
+                inclusionElements,
+            }
+        })
         const latestLeafIndex = await this.latestStateTreeLeafIndex(fromEpoch)
         const stateTree = await this.genStateTree(fromEpoch)
         const stateTreeProof = stateTree.createProof(latestLeafIndex)
@@ -345,12 +423,31 @@ export default class UserState extends Synchronizer {
             neg_rep: negRep,
             graffiti,
             timestamp,
-            new_pos_rep: epochKeyData.map(({ posRep }) => posRep),
-            new_neg_rep: epochKeyData.map(({ negRep }) => negRep),
-            new_graffiti: epochKeyData.map(({ graffiti }) => graffiti),
-            new_timestamp: epochKeyData.map(({ timestamp }) => timestamp),
-            epoch_tree_elements: epochKeyData.map(({ proof }) => proof),
-            epoch_tree_root: epochTree.root,
+            new_pos_rep: epochKeyRep.map(({ posRep }) => posRep),
+            new_neg_rep: epochKeyRep.map(({ negRep }) => negRep),
+            new_graffiti: epochKeyRep.map(({ graffiti }) => graffiti),
+            new_timestamp: epochKeyRep.map(({ timestamp }) => timestamp),
+            epoch_tree_elements: epochKeyProofs.map(
+                ({ treeElements }) => treeElements
+            ),
+            epoch_tree_indices: epochKeyProofs.map(
+                ({ treeIndices }) => treeIndices
+            ),
+            noninclusion_leaf: epochKeyProofs.map(
+                ({ noninclusionLeaves }) => noninclusionLeaves
+            ),
+            noninclusion_leaf_index: epochKeyProofs.map(
+                ({ noninclusionIndex }) => noninclusionIndex
+            ),
+            noninclusion_elements: epochKeyProofs.map(
+                ({ noninclusionElements }) => noninclusionElements
+            ),
+            inclusion_leaf_index: epochKeyProofs.map(
+                ({ inclusionIndex }) => inclusionIndex
+            ),
+            inclusion_elements: epochKeyProofs.map(
+                ({ inclusionElements }) => inclusionElements
+            ),
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.userStateTransition,

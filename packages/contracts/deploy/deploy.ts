@@ -5,7 +5,6 @@ import {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    AGGREGATE_KEY_COUNT,
     Prover,
 } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
@@ -33,7 +32,6 @@ export const deployUnirep = async (
         epochTreeDepth?: BigNumberish
         epochTreeArity?: BigNumberish
         numEpochKeyNoncePerEpoch?: BigNumberish
-        defaultEpochTreeLeaf?: bigint
     } = {},
     prover?: Prover
 ): Promise<Unirep> => {
@@ -42,16 +40,8 @@ export const deployUnirep = async (
         epochTreeDepth: EPOCH_TREE_DEPTH,
         epochTreeArity: EPOCH_TREE_ARITY,
         numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        defaultEpochTreeLeaf: hash4([0, 0, 0, 0]),
-        aggregateKeyCount: AGGREGATE_KEY_COUNT,
         ..._settings,
     } as any
-    const emptyEpochTree = new SparseMerkleTree(
-        Number(settings.epochTreeDepth.toString()),
-        settings.defaultEpochTreeLeaf,
-        settings.epochTreeArity
-    )
-    settings.emptyEpochTreeRoot = emptyEpochTree.root.toString()
 
     console.log(
         '-----------------------------------------------------------------'
@@ -59,10 +49,6 @@ export const deployUnirep = async (
     console.log(`Epoch tree depth: ${settings.epochTreeDepth}`)
     console.log(`Epoch tree arity: ${settings.epochTreeArity}`)
     console.log(`State tree depth: ${settings.stateTreeDepth}`)
-    console.log(`Empty epoch tree root: ${settings.emptyEpochTreeRoot}`)
-    console.log(
-        `Number of epoch keys per aggregate proof: ${settings.aggregateKeyCount}`
-    )
     console.log(
         `Number of epoch keys per epoch: ${settings.numEpochKeyNoncePerEpoch}`
     )
@@ -100,6 +86,18 @@ export const deployUnirep = async (
     await incrementalMerkleTreeLib.deployed()
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
+    const polyPath = 'contracts/libraries/Polyhash.sol/Polyhash.json'
+    const polyArtifacts = tryPath(polyPath)
+    const polyFactory = new ethers.ContractFactory(
+        polyArtifacts.abi,
+        polyArtifacts.bytecode,
+        deployer
+    )
+    const polyContract = await polyFactory.deploy()
+    await polyContract.deployed()
+
+    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
+
     const verifiers = {}
     for (const circuit in Circuit) {
         await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
@@ -133,19 +131,18 @@ export const deployUnirep = async (
         {
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
-            ['contracts/Hash.sol:Poseidon3']: libraries['Poseidon3'],
-            ['contracts/Hash.sol:Poseidon4']: libraries['Poseidon4'],
-            ['contracts/Hash.sol:Poseidon6']: libraries['Poseidon6'],
+            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
+            ['contracts/libraries/Polyhash.sol:Polyhash']: polyContract.address,
         },
         deployer
     ).deploy(
         settings,
         verifiers[Circuit.signup],
-        verifiers[Circuit.aggregateEpochKeys],
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation],
         verifiers[Circuit.verifyEpochKey],
-        verifiers[Circuit.epochKeyLite]
+        verifiers[Circuit.epochKeyLite],
+        verifiers[Circuit.buildOrderedTree]
     )
 
     await c.deployTransaction.wait()

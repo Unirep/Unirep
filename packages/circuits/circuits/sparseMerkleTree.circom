@@ -1,8 +1,44 @@
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
+include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/mux1.circom";
 include "./modulo.circom";
+
+template SMTRootCalc(HEIGHT, ARITY) {
+    signal input path_elements[HEIGHT][ARITY];
+    signal input path_indices[HEIGHT];
+    signal output root;
+
+    component hashers[HEIGHT];
+    component leaf_equals[(HEIGHT - 1) * ARITY];
+    component index_equals[(HEIGHT - 1) * ARITY];
+
+    for (var i = 0; i < HEIGHT; i++) {
+        hashers[i] = Poseidon(ARITY);
+        for (var j = 0; j < ARITY; j++) {
+            hashers[i].inputs[j] <== path_elements[i][j];
+        }
+        // start doing checks
+        if (i > 0) {
+            // range check
+            path_indices[i] \ ARITY === 0;
+            // check that if we're looking at the target index
+            // the previous level output matches
+            for (var j = 0; j < ARITY; j++) {
+                var index = (i - 1) * ARITY + j;
+                leaf_equals[index] = IsEqual();
+                leaf_equals[index].in[0] <== hashers[i-1].out;
+                leaf_equals[index].in[1] <== path_elements[i][j];
+                index_equals[index] = IsEqual();
+                index_equals[index].in[0] <== j;
+                index_equals[index].in[1] <== path_indices[i];
+                index_equals[index].out === leaf_equals[index].out;
+            }
+        }
+    }
+    root <== hashers[HEIGHT - 1].out;
+}
 
 template SMTInclusionProof(HEIGHT, ARITY) {
     signal input leaf;

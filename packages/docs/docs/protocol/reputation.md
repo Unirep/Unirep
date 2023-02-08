@@ -18,7 +18,7 @@ Storing positive and negative reputation separately, we can represent net negati
 * The hash of the reputation is computed by the [Poseidon hash](https://www.poseidon-hash.info/) function.
 
 ```typescript
-const hashReputation = hash(posRep, negRep, graffiti, timestamp)
+const hashReputation = hash(epochKey, posRep, negRep, graffiti, timestamp)
 ```
 
 :::info

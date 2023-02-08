@@ -80,7 +80,7 @@ for (const name of circuits) {
             `Generated ${zkey.split('/').pop()} and ${vkOut.split('/').pop()}`
         )
         await fs.promises.rename(wasmOut, wasmOutFinal)
-        await fs.promises.rm(wasmOutDir, { recursive: true, force: true })
+        // await fs.promises.rm(wasmOutDir, { recursive: true, force: true })
     }
 }
 

@@ -50,6 +50,11 @@ const _schema = [
             ['hash', 'String'],
             ['index', 'String'],
             ['attesterId', 'String'],
+            ['epochKey', 'String'],
+            ['posRep', 'String'],
+            ['negRep', 'String'],
+            ['graffiti', 'String'],
+            ['timestamp', 'String'],
         ],
     },
     {

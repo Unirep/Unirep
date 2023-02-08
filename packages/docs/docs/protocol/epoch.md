@@ -3,7 +3,7 @@ description: Definition of epoch in UniRep
 ---
 
 # Epoch
-An epoch is a cycle in the UniRep system, each with an updated state tree and epoch tree. Each attester determines their own epoch length, in seconds. User epoch keys are valid for 1 epoch. With each transition, the reputation balances of all users are finalized and carried over into the next epoch.
+An epoch is a cycle in the UniRep system, each with an updated state tree and epoch tree. Each attester determines their own epoch length, in seconds. User epoch keys can receive attestations during 1 epoch. With each transition, the reputation balances of all users are finalized and carried over into the next epoch.
 
 ## Epoch Transition
 
@@ -21,5 +21,5 @@ See also
 * [Trees](trees.md)
 * [Epoch Key](epoch-key.md)
 * [User State Transition](user-state-transition.md)
-* [Aggregate Epoch Keys Proof](../circuits-api/circuits.md#aggregate-epoch-keys)
+* [Build Ordered Tree Proof](../circuits-api/circuits.md#build-ordered-tree)
 :::

@@ -17,7 +17,8 @@ hash8(items: any[]): bigint
 
 ## genEpochKey
 
-Calculate an epoch key. `maxEpochKey` is the maximum value for a key. The hash will be modded by this value, e.g. `H(...) % maxEpochKey`. For a binary tree this should be `2**depth`.
+Calculate an epoch key.
+
 ```ts
 import { genEpochKey } from '@unirep/utils'
 
@@ -26,17 +27,16 @@ genEpochKey(
     attesterId: bigint,
     epoch: bigint | number,
     nonce: bigint | number,
-    maxEpochKey: bigint | number
 ): bigint
 ```
 
-## genEpochNullifier
+## genUserStateTransitionNullifier
 
-Calculate a user state transition nullifier. TODO: update name
+Calculate a user state transition nullifier.
 ```ts
-import { genEpochNullifier } from '@unirep/utils'
+import { genUserStateTransitionNullifier } from '@unirep/utils'
 
-genEpochNullifier(
+genUserStateTransitionNullifier(
     identityNullifier: bigint,
     attesterId: bigint | string,
     epoch: number | bigint

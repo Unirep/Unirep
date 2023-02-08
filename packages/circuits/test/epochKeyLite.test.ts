@@ -1,18 +1,18 @@
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/utils'
+import { ZkIdentity, genEpochKey } from '@unirep/utils'
 import { Circuit, EpochKeyLiteProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
 
-import { genProofAndVerify, genEpochKey } from './utils'
+import { genProofAndVerify } from './utils'
 
 describe('Epoch key lite circuits', function () {
     this.timeout(300000)
 
     it('should prove an epoch key', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = 10210
+            const attesterId = BigInt(10210)
             const epoch = 120958
             const id = new ZkIdentity()
             const circuitInputs = {
@@ -54,7 +54,7 @@ describe('Epoch key lite circuits', function () {
 
     it('should reveal nonce', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = 10210
+            const attesterId = BigInt(10210)
             const epoch = 120958
             const id = new ZkIdentity()
             const circuitInputs = {
@@ -98,7 +98,7 @@ describe('Epoch key lite circuits', function () {
     })
 
     it('should prove a data value', async () => {
-        const attesterId = 10210
+        const attesterId = BigInt(10210)
         const epoch = 120958
         const nonce = 1
         const id = new ZkIdentity()
@@ -143,7 +143,7 @@ describe('Epoch key lite circuits', function () {
     })
 
     it('should fail to prove a nonce that is above max nonce', async () => {
-        const attesterId = 10210
+        const attesterId = BigInt(10210)
         const epoch = 120958
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
         const id = new ZkIdentity()
@@ -165,7 +165,7 @@ describe('Epoch key lite circuits', function () {
     })
 
     it('should fail to prove a control with too many bits', async () => {
-        const attesterId = 10210
+        const attesterId = BigInt(10210)
         const epoch = 120958
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
         const id = new ZkIdentity()

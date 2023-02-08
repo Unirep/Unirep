@@ -7,9 +7,8 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
-include "./modulo.circom";
 
-template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH) {
+template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
@@ -96,10 +95,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EP
     epoch_key_hasher.inputs[2] <== epoch;
     epoch_key_hasher.inputs[3] <== nonce;
 
-    component epoch_key_mod = Modulo();
-    epoch_key_mod.divisor <== EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH;
-    epoch_key_mod.dividend <== epoch_key_hasher.out;
-    epoch_key <== epoch_key_mod.remainder;
+    epoch_key <== epoch_key_hasher.out;
 
     /* End of check 3 */
 }

@@ -11,10 +11,10 @@ export class UserStateTransitionProof extends BaseProof {
         fromStateTreeRoot: 0,
         stateTreeLeaf: 1,
         transitionNullifier: 2,
-        fromEpoch: 3,
-        toEpoch: 4,
-        attesterId: 5,
-        epochTreeRoot: 6,
+        epochTreeRoot: 3,
+        fromEpoch: 4,
+        toEpoch: 5,
+        attesterId: 6,
     }
     public fromStateTreeRoot: BigNumberish
     public stateTreeLeaf: BigNumberish

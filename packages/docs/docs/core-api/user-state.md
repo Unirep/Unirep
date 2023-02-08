@@ -139,28 +139,3 @@ state.genEpochKeyProof(options: {
   data?: bigint,
 }): Promise<EpochKeyProof>
 ```
-
-## genAggregateEpochKeysProof
-
-Generate a proof that can be used to update the epoch tree root on chain.
-
-:::info
-
-TODO: See the epoch tree section for more info
-
-:::
-
-:::warning
-
-Users shouldn't be generating this proof.
-
-:::
-
-```ts
-state.genAggregateEpochKeysProof(options: {
-    epochKeys: bigint[],
-    newBalances: Reputation[],
-    hashchainIndex: bigint,
-    epoch?: number
-}): Promise<AggregateEpochKeysProof>
-```
