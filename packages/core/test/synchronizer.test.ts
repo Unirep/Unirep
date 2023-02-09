@@ -6,11 +6,7 @@ import { EPOCH_LENGTH } from '@unirep/contracts'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit, BuildOrderedTree } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import {
-    bootstrapAttestations,
-    bootstrapUsers,
-    processAttestations,
-} from './test'
+import { bootstrapAttestations, bootstrapUsers } from './test'
 
 import { Synchronizer } from '../src'
 import { genUserState, compareDB, genUnirepState } from './utils'

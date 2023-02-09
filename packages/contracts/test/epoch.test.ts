@@ -4,20 +4,10 @@ import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/utils'
 import defaultConfig from '@unirep/circuits/config'
 
-const {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} = defaultConfig
+const { STATE_TREE_DEPTH } = defaultConfig
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-// import {
-//     bootstrapAttestations,
-//     bootstrapUsers,
-//     processAttestations,
-// } from '@unirep/test'
 
 describe('Epoch', function () {
     this.timeout(0)
@@ -46,83 +36,50 @@ describe('Epoch', function () {
         })
     }
 
-    // it('should update epoch', async () => {
-    //     const accounts = await ethers.getSigners()
-    //     const attester = accounts[1]
+    it('should update epoch', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
 
-    //     const startEpoch = await unirepContract.attesterCurrentEpoch(
-    //         attester.address
-    //     )
-    //     const emptyStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-    //     for (let x = startEpoch.toNumber(); x < 5; x++) {
-    //         const prevEpoch = await unirepContract.attesterCurrentEpoch(
-    //             attester.address
-    //         )
-    //         const { stateTree } = await bootstrapUsers(
-    //             attester,
-    //             unirepContract,
-    //             {
-    //                 userNum: 3,
-    //                 epoch: prevEpoch.toNumber(),
-    //             }
-    //         )
-    //         const epochTree = await bootstrapAttestations(
-    //             attester,
-    //             prevEpoch.toNumber(),
-    //             unirepContract,
-    //             {
-    //                 epkNum: 3,
-    //                 attestNum: 5,
-    //             }
-    //         )
-    //         const prevStateTreeRoot =
-    //             await unirepContract.attesterStateTreeRoot(
-    //                 attester.address,
-    //                 prevEpoch
-    //             )
-    //         await processAttestations(attester, prevEpoch, unirepContract)
-    //         const prevEpochTreeRoot = await unirepContract.attesterEpochRoot(
-    //             attester.address,
-    //             prevEpoch
-    //         )
-    //         expect(prevStateTreeRoot.toString()).to.equal(
-    //             stateTree.root.toString()
-    //         )
-    //         expect(prevEpochTreeRoot.toString()).to.equal(
-    //             epochTree.root.toString()
-    //         )
+        const startEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const emptyStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        for (let x = startEpoch.toNumber(); x < 5; x++) {
+            const prevEpoch = await unirepContract.attesterCurrentEpoch(
+                attester.address
+            )
 
-    //         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-    //         await unirepContract.updateEpochIfNeeded(attester.address)
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            await unirepContract.updateEpochIfNeeded(attester.address)
 
-    //         // attester should have the current data
-    //         const newEpoch = await unirepContract.attesterCurrentEpoch(
-    //             attester.address
-    //         )
-    //         expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
+            // attester should have the current data
+            const newEpoch = await unirepContract.attesterCurrentEpoch(
+                attester.address
+            )
+            expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
 
-    //         const stateTreeRoot = await unirepContract.attesterStateTreeRoot(
-    //             attester.address,
-    //             newEpoch
-    //         )
-    //         expect(stateTreeRoot.toString()).to.equal(
-    //             emptyStateTree.root.toString()
-    //         )
+            const stateTreeRoot = await unirepContract.attesterStateTreeRoot(
+                attester.address,
+                newEpoch
+            )
+            expect(stateTreeRoot.toString()).to.equal(
+                emptyStateTree.root.toString()
+            )
 
-    //         const exist = await unirepContract.attesterStateTreeRootExists(
-    //             attester.address,
-    //             newEpoch,
-    //             stateTreeRoot
-    //         )
-    //         expect(exist).to.be.true
+            const exist = await unirepContract.attesterStateTreeRootExists(
+                attester.address,
+                newEpoch,
+                stateTreeRoot
+            )
+            expect(exist).to.be.true
 
-    //         const epochRoot = await unirepContract.attesterEpochRoot(
-    //             attester.address,
-    //             newEpoch
-    //         )
-    //         expect(epochRoot.toString()).to.equal('0')
-    //     }
-    // })
+            const epochRoot = await unirepContract.attesterEpochRoot(
+                attester.address,
+                newEpoch
+            )
+            expect(epochRoot.toString()).to.equal('0')
+        }
+    })
 
     it('should fail to update epoch with non-signup attester', async () => {
         const address = 12345 // non-signup attester

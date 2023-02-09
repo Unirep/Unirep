@@ -1,23 +1,15 @@
-import { BigNumberish } from '@ethersproject/bignumber'
+import { ethers } from 'ethers'
 import {
     Circuit,
     Prover,
-    SignupProof,
     CircuitConfig,
     BuildOrderedTree,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import {
-    genRandomSalt,
-    IncrementalMerkleTree,
-    stringifyBigInts,
-    ZkIdentity,
-} from '@unirep/utils'
+import { genRandomSalt, stringifyBigInts, ZkIdentity } from '@unirep/utils'
 import { Synchronizer, UserState } from '@unirep/core'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import { ethers } from 'ethers'
 import defaultConfig from '@unirep/circuits/config'
-import { MemoryConnector } from 'anondb/web'
 
 export async function bootstrapUnirep(
     provider: any, // ethers provider, only required arg
@@ -71,7 +63,6 @@ export async function bootstrapUsers(
 export async function bootstrapAttestations(
     synchronizer: Synchronizer,
     account: any,
-    userCount = 10,
     attestationCount = 10
 ) {
     const { unirepContract } = synchronizer

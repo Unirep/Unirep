@@ -186,7 +186,7 @@ describe('User state', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epochKeys = await userState.getEpochKeys(epoch)
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const [epk] = epochKeys
         const newPosRep = 10
         const newNegRep = 5
