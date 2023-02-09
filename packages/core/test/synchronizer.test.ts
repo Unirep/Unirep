@@ -43,8 +43,10 @@ describe('Synchronizer process events', function () {
                 unirepContract.address,
                 BigInt(attester.address)
             )
+            const epoch = await synchronizer.loadCurrentEpoch()
             await bootstrapUsers(synchronizer, attester)
             await bootstrapAttestations(synchronizer, attester)
+            await synchronizer.waitForSync()
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
             const preimages = await synchronizer.genEpochTreePreimages(epoch)
@@ -60,6 +62,7 @@ describe('Synchronizer process events', function () {
                 defaultProver
             )
 
+            const accounts = await ethers.getSigners()
             await unirepContract
                 .connect(accounts[5])
                 .sealEpoch(epoch, attester.address, publicSignals, proof)
@@ -106,14 +109,16 @@ describe('Synchronizer process events', function () {
             id,
             BigInt(attester.address)
         )
-        const { publicSignals, proof } = await userState.genUserSignUpProof()
+        const epoch = await synchronizer.loadCurrentEpoch()
+        const { publicSignals, proof } = await userState.genUserSignUpProof({
+            epoch,
+        })
 
-        const tx = await synchronizer.unirepContract
+        await synchronizer.unirepContract
             .connect(attester)
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
 
-        const epoch = await synchronizer.loadCurrentEpoch()
         const attesterId = BigInt(attester.address).toString()
         await synchronizer.waitForSync()
         const tree = await synchronizer.genStateTree(epoch)
@@ -201,9 +206,11 @@ describe('Synchronizer process events', function () {
             id,
             attesterId
         )
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await synchronizer.unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -211,7 +218,6 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.sync.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -291,9 +297,11 @@ describe('Synchronizer process events', function () {
             id,
             attesterId
         )
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await synchronizer.unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -301,7 +309,6 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.sync.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -387,7 +394,7 @@ describe('Synchronizer process events', function () {
         await epochEndedEvent
 
         {
-            const { posRep, negRep, graffiti } = await userState.getRep()
+            const { posRep, negRep, graffiti } = await userState.getRep(epoch)
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)
