@@ -1,6 +1,9 @@
 import BN from 'bn.js'
 import { hash1 } from '@unirep/utils'
 
+export const SNARK_SCALAR_FIELD =
+    '21888242871839275222246405745257275088548364400416034343698204186575808495617'
+
 const defaultConfig = {
     STATE_TREE_DEPTH: 12,
     EPOCH_TREE_DEPTH: 4,
@@ -46,8 +49,7 @@ export class CircuitConfig {
         this.EPOCH_TREE_ARITY = config.EPOCH_TREE_ARITY
         this.NUM_EPOCH_KEY_NONCE_PER_EPOCH =
             config.NUM_EPOCH_KEY_NONCE_PER_EPOCH
-        this.SNARK_SCALAR_FIELD =
-            '21888242871839275222246405745257275088548364400416034343698204186575808495617'
+        this.SNARK_SCALAR_FIELD = SNARK_SCALAR_FIELD
         this._N = new BN(this.SNARK_SCALAR_FIELD, 10)
         this.R = BigInt(_R)
         this.Rx = this.buildRx()
