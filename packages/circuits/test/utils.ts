@@ -63,12 +63,10 @@ const genEpochKeyCircuitInput = (config: {
         graffiti,
         timestamp,
         data: data ?? BigInt(0),
-        control: EpochKeyProof.buildControlInput({
-            nonce,
-            epoch,
-            attesterId,
-            revealNonce,
-        }),
+        nonce,
+        epoch,
+        attester_id: attesterId,
+        reveal_nonce: revealNonce ?? 0,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -299,18 +297,16 @@ const genReputationCircuitInput = (config: {
         graffiti: startBalance.graffiti ?? 0,
         timestamp: startBalance.timestamp ?? 0,
         graffiti_pre_image: graffitiPreImage,
-        control: ReputationProof.buildControlInput({
-            epoch,
-            nonce,
-            attesterId,
-            proveGraffiti: proveGraffiti ? 1 : 0,
-            minRep,
-            maxRep,
-            proveMaxRep,
-            proveMinRep,
-            proveZeroRep,
-            revealNonce,
-        }),
+        epoch,
+        nonce,
+        attester_id: attesterId,
+        prove_graffiti: proveGraffiti ? 1 : 0,
+        min_rep: minRep,
+        max_rep: maxRep,
+        prove_max_rep: proveMaxRep ?? 0,
+        prove_min_rep: proveMinRep ?? 0,
+        prove_zero_rep: proveZeroRep ?? 0,
+        reveal_nonce: revealNonce ?? 0,
     }
     return utils.stringifyBigInts(circuitInputs)
 }

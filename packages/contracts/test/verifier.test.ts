@@ -49,12 +49,10 @@ describe('Epoch key lite proof verifier', function () {
                 stringifyBigInts({
                     identity_secret: id.secretHash,
                     data,
-                    control: EpochKeyLiteProof.buildControlInput({
-                        epoch,
-                        nonce,
-                        attesterId: attester.address,
-                        revealNonce: 0,
-                    }),
+                    epoch,
+                    nonce,
+                    attester_id: attester.address,
+                    reveal_nonce: 0,
                 })
             )
 
@@ -87,12 +85,10 @@ describe('Epoch key lite proof verifier', function () {
                 Circuit.epochKeyLite,
                 stringifyBigInts({
                     identity_secret: id.secretHash,
-                    control: EpochKeyLiteProof.buildControlInput({
-                        epoch,
-                        nonce,
-                        attesterId: attester.address,
-                        revealNonce: 0,
-                    }),
+                    epoch,
+                    nonce,
+                    attester_id: attester.address,
+                    reveal_nonce: 0,
                     data,
                 })
             )
@@ -137,12 +133,10 @@ describe('Epoch key lite proof verifier', function () {
             stringifyBigInts({
                 identity_secret: id.secretHash,
                 data,
-                control: EpochKeyLiteProof.buildControlInput({
-                    epoch: invalidEpoch,
-                    nonce,
-                    attesterId: attester.address,
-                    revealNonce: 0,
-                }),
+                epoch: invalidEpoch,
+                nonce,
+                attester_id: attester.address,
+                reveal_nonce: 0,
             })
         )
 
@@ -174,12 +168,11 @@ describe('Epoch key lite proof verifier', function () {
             stringifyBigInts({
                 identity_secret: id.secretHash,
                 data,
-                control: EpochKeyLiteProof.buildControlInput({
-                    epoch,
-                    nonce,
-                    attesterId: attester.address,
-                    revealNonce: 0,
-                }),
+                epoch,
+                nonce,
+                attester_id: attester.address,
+                reveal_nonce: 0,
+
             })
         )
 
@@ -267,12 +260,10 @@ describe('Epoch key proof verifier', function () {
                     graffiti,
                     timestamp,
                     data,
-                    control: EpochKeyProof.buildControlInput({
-                        epoch,
-                        nonce,
-                        attesterId: attester.address,
-                        revealNonce: 0,
-                    }),
+                    epoch,
+                    nonce,
+                    attester_id: attester.address,
+                    reveal_nonce: 0,
                 })
             )
 
@@ -324,12 +315,10 @@ describe('Epoch key proof verifier', function () {
                     graffiti,
                     timestamp,
                     data,
-                    control: EpochKeyProof.buildControlInput({
-                        epoch,
-                        nonce,
-                        attesterId: attester.address,
-                        revealNonce: 0,
-                    }),
+                    epoch,
+                    nonce,
+                    attester_id: attester.address,
+                    reveal_nonce: 0,
                 })
             )
 
@@ -394,12 +383,10 @@ describe('Epoch key proof verifier', function () {
                 graffiti,
                 timestamp,
                 data,
-                control: EpochKeyProof.buildControlInput({
-                    epoch: invalidEpoch,
-                    nonce,
-                    attesterId: attester.address,
-                    revealNonce: 0,
-                }),
+                epoch: invalidEpoch,
+                nonce,
+                attester_id: attester.address,
+                reveal_nonce: 0,
             })
         )
 
@@ -450,12 +437,10 @@ describe('Epoch key proof verifier', function () {
                 graffiti,
                 timestamp,
                 data,
-                control: EpochKeyProof.buildControlInput({
-                    epoch,
-                    nonce,
-                    attesterId: attester.address,
-                    revealNonce: 0,
-                }),
+                epoch,
+                nonce,
+                attester_id: attester.address,
+                reveal_nonce: 0,
             })
         )
 
@@ -515,12 +500,10 @@ describe('Epoch key proof verifier', function () {
                 graffiti,
                 timestamp,
                 data,
-                control: EpochKeyProof.buildControlInput({
-                    epoch,
-                    nonce,
-                    attesterId: attester.address,
-                    revealNonce: 0,
-                }),
+                epoch,
+                nonce,
+                attester_id: attester.address,
+                reveal_nonce: 0,
             })
         )
 
@@ -544,6 +527,26 @@ describe('Reputation proof verifier', function () {
     this.timeout(120000)
     let unirepContract
     let snapshot
+    const zeroCircuitInputs = {
+        identity_secret: 0,
+        state_tree_indexes: 0,
+        state_tree_elements: 0,
+        pos_rep: 0,
+        neg_rep: 0,
+        graffiti: 0,
+        timestamp: 0,
+        prove_graffiti: 0,
+        graffiti_pre_image: 0,
+        reveal_nonce: 0,
+        attester_id: 0,
+        epoch: 0,
+        nonce: 0,
+        min_rep: 0,
+        max_rep: 0,
+        prove_min_rep: 0,
+        prove_max_rep: 0,
+        prove_zero_rep: 0,
+    }
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -579,34 +582,17 @@ describe('Reputation proof verifier', function () {
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
-        const minRep = 0
-        const proveGraffiti = 0
-        const graffitiPreImage = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.proveReputation,
                 stringifyBigInts({
+                    ...zeroCircuitInputs,
                     identity_secret: id.secretHash,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
-                    pos_rep: posRep,
-                    neg_rep: negRep,
-                    graffiti: graffiti,
-                    timestamp: timestamp,
-                    graffiti_pre_image: graffitiPreImage,
-                    control: ReputationProof.buildControlInput({
-                        attesterId: attester.address,
-                        epoch,
-                        nonce,
-                        minRep,
-                        maxRep: 0,
-                        proveGraffiti,
-                        proveMinRep: !!minRep ? 1 : 0,
-                    }),
+                    attester_id: attester.address,
+                    epoch,
+                    nonce,
                 })
             )
 
@@ -641,34 +627,17 @@ describe('Reputation proof verifier', function () {
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
-        const minRep = 0
-        const proveGraffiti = 0
-        const graffitiPreImage = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.proveReputation,
                 stringifyBigInts({
+                    ...zeroCircuitInputs,
                     identity_secret: id.secretHash,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
-                    pos_rep: posRep,
-                    neg_rep: negRep,
-                    graffiti: graffiti,
-                    timestamp: timestamp,
-                    graffiti_pre_image: graffitiPreImage,
-                    control: ReputationProof.buildControlInput({
-                        attesterId: attester.address,
-                        epoch,
-                        nonce,
-                        minRep,
-                        maxRep: 0,
-                        proveGraffiti,
-                        proveMinRep: !!minRep ? 1 : 0,
-                    }),
+                    attester_id: attester.address,
+                    epoch,
+                    nonce,
                 })
             )
 
@@ -734,35 +703,16 @@ describe('Reputation proof verifier', function () {
         stateTree.insert(leaf)
 
         const invalidEpoch = 3333
-        const nonce = 0
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
-        const minRep = 0
-        const proveGraffiti = 0
-        const graffitiPreImage = 0
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
+                ...zeroCircuitInputs,
                 identity_secret: id.secretHash,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti: graffiti,
-                timestamp: timestamp,
-                graffiti_pre_image: graffitiPreImage,
-                control: ReputationProof.buildControlInput({
-                    attesterId: attester.address,
-                    epoch: invalidEpoch,
-                    nonce,
-                    minRep,
-                    maxRep: 0,
-                    proveGraffiti,
-                    proveMinRep: !!minRep ? 1 : 0,
-                }),
+                attester_id: attester.address,
+                epoch: invalidEpoch,
             })
         )
 
@@ -795,35 +745,16 @@ describe('Reputation proof verifier', function () {
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
-        const nonce = 0
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
-        const minRep = 0
-        const proveGraffiti = 0
-        const graffitiPreImage = 0
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
+                ...zeroCircuitInputs,
                 identity_secret: id.secretHash,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti: graffiti,
-                timestamp: timestamp,
-                graffiti_pre_image: graffitiPreImage,
-                control: ReputationProof.buildControlInput({
-                    attesterId: attester.address,
-                    epoch,
-                    nonce,
-                    minRep,
-                    maxRep: 0,
-                    proveGraffiti,
-                    proveMinRep: !!minRep ? 1 : 0,
-                }),
+                attester_id: attester.address,
+                epoch,
             })
         )
 
@@ -860,34 +791,15 @@ describe('Reputation proof verifier', function () {
             attester
         )
 
-        const nonce = 0
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
-        const minRep = 0
-        const proveGraffiti = 0
-        const graffitiPreImage = 0
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts({
+                ...zeroCircuitInputs,
                 identity_secret: id.secretHash,
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti: graffiti,
-                timestamp: timestamp,
-                graffiti_pre_image: graffitiPreImage,
-                control: ReputationProof.buildControlInput({
-                    attesterId: attester.address,
-                    epoch,
-                    nonce,
-                    minRep,
-                    maxRep: 0,
-                    proveGraffiti,
-                    proveMinRep: !!minRep ? 1 : 0,
-                }),
+                attester_id: attester.address,
+                epoch,
             })
         )
 

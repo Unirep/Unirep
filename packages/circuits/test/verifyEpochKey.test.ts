@@ -311,11 +311,7 @@ describe('Verify Epoch Key circuits', function () {
             graffiti,
             timestamp,
         })
-        circuitInputs.control = EpochKeyProof.buildControlInput({
-            epoch,
-            nonce,
-            attesterId: 2171828,
-        })
+        circuitInputs.attester_id = 2171828
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.verifyEpochKey,
             circuitInputs

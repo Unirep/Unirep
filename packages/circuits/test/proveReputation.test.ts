@@ -176,7 +176,7 @@ describe('Prove reputation from attester circuit', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[2].toString()).to.equal(
-            ReputationProof.buildControlInput({
+            ReputationProof.buildControl({
                 epoch,
                 nonce,
                 attesterId,
