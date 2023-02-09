@@ -56,7 +56,7 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
         const proveZeroRep = true
         const proof = await userState.genProveReputationProof({
-            proveZeroRep
+            proveZeroRep,
         })
 
         const valid = await proof.verify()
@@ -90,7 +90,7 @@ describe('Reputation proof', function () {
         const revealNonce = true
         const proof = await userState.genProveReputationProof({
             epkNonce,
-            revealNonce
+            revealNonce,
         })
 
         const valid = await proof.verify()
@@ -125,7 +125,7 @@ describe('Reputation proof', function () {
         const revealNonce = false
         const proof = await userState.genProveReputationProof({
             epkNonce,
-            revealNonce
+            revealNonce,
         })
 
         const valid = await proof.verify()

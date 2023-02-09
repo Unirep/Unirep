@@ -477,7 +477,8 @@ export default class UserState extends Synchronizer {
         proveZeroRep?: boolean
         revealNonce?: boolean
     }): Promise<ReputationProof> => {
-        const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } = options
+        const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } =
+            options
         const nonce = options.epkNonce ?? 0
         this._checkEpkNonce(nonce)
         const epoch = await this.latestTransitionedEpoch()

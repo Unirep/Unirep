@@ -86,7 +86,7 @@ describe('Epoch key proof', function () {
         const nonce = 1
         const proof = await userState.genEpochKeyProof({
             revealNonce,
-            nonce
+            nonce,
         })
         const valid = await proof.verify()
         expect(valid).to.be.true
@@ -120,7 +120,7 @@ describe('Epoch key proof', function () {
         const nonce = 1
         const proof = await userState.genEpochKeyProof({
             revealNonce,
-            nonce
+            nonce,
         })
         const valid = await proof.verify()
         expect(valid).to.be.true
@@ -152,7 +152,7 @@ describe('Epoch key proof', function () {
         await userState.waitForSync()
         const data = BigInt(100)
         const proof = await userState.genEpochKeyProof({
-            data
+            data,
         })
         const valid = await proof.verify()
         expect(valid).to.be.true

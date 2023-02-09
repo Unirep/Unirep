@@ -127,7 +127,7 @@ describe('Verify Epoch Key circuits', function () {
                     attesterId,
                     epoch,
                     nonce,
-                    revealNonce
+                    revealNonce,
                 }).toString()
             )
             const data = new EpochKeyProof(publicSignals, proof)
