@@ -127,7 +127,6 @@ describe('Epoch key lite proof verifier', function () {
         const attester = accounts[1]
         const id = new ZkIdentity()
         const attesterId = attester.address
-        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 
         const data = 0
         const invalidEpoch = 3333

@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { ZkIdentity, stringifyBigInts } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import { Circuit, BuildOrderedTree, SNARK_SCALAR_FIELD } from '@unirep/circuits'
+import { Circuit, BuildOrderedTree } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genUserState } from './utils'

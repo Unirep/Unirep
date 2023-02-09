@@ -1,14 +1,11 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { SparseMerkleTree, genRandomSalt, hash3, hash6 } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
     SNARK_SCALAR_FIELD,
 } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { genAggregateEpochKeysCircuitInputs } from '@unirep/test'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -47,7 +44,6 @@ describe('Attestations', function () {
         const posRep = 1
         const negRep = 5
         const graffiti = 0
-        const timestamp = 0
 
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
@@ -73,7 +69,6 @@ describe('Attestations', function () {
         const posRep = 1
         const negRep = 5
         const graffiti = 0
-        const timestamp = 0
 
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)

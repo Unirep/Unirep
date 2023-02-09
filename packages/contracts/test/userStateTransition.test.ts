@@ -3,7 +3,6 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
     IncrementalMerkleTree,
-    SparseMerkleTree,
     ZkIdentity,
     stringifyBigInts,
     genEpochKey,
@@ -15,9 +14,7 @@ import {
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     Circuit,
-    defaultEpochTreeLeaf,
     UserStateTransitionProof,
-    SignupProof,
     SNARK_SCALAR_FIELD,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -25,33 +22,6 @@ import { signupUser } from '@unirep/test'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-
-const signupUser = async (id, unirepContract, attesterId, account) => {
-    const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
-    const r = await defaultProver.genProofAndPublicSignals(
-        Circuit.signup,
-        stringifyBigInts({
-            epoch: epoch.toString(),
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
-            attester_id: attesterId,
-        })
-    )
-    const { publicSignals, proof } = new SignupProof(
-        r.publicSignals,
-        r.proof,
-        defaultProver
-    )
-    const leafIndex = await unirepContract.attesterStateTreeLeafCount(
-        attesterId,
-        epoch
-    )
-    await unirepContract
-        .connect(account)
-        .userSignUp(publicSignals, proof)
-        .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber() }
-}
 
 const emptyEpochTree = () => {
     const epochTree = new IncrementalMerkleTree(
@@ -498,7 +468,7 @@ describe('User State Transition', function () {
         const attester = accounts[1]
         const id = new ZkIdentity()
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const { leaf, index } = await signupUser(
+        const { leaf } = await signupUser(
             id,
             unirepContract,
             attester.address,

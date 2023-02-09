@@ -275,16 +275,6 @@ export default class UserState extends Synchronizer {
     }
 
     /**
-     * Check if user has signed up in Unirep
-     */
-    private _checkUserSignUp = async () => {
-        assert(
-            await this.hasSignedUp(),
-            'UserState: User has not signed up yet'
-        )
-    }
-
-    /**
      * Check if epoch key nonce is valid
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {

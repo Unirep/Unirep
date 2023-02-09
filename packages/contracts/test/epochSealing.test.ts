@@ -2,19 +2,16 @@
 
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { IncrementalMerkleTree, stringifyBigInts } from '@unirep/utils'
+import { stringifyBigInts } from '@unirep/utils'
 import {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    defaultEpochTreeLeaf,
     BuildOrderedTree,
     Circuit,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-import { genUnirepState } from './utils'
 
 describe('Epoch sealing', function () {
     this.timeout(120000)

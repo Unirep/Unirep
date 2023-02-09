@@ -1,5 +1,4 @@
 import {
-    SNARK_FIELD_SIZE,
     genRandomSalt as _genRandomSalt,
     stringifyBigInts,
     unstringifyBigInts,
@@ -26,7 +25,7 @@ export const hashLeftRight = (input1: any, input2: any) =>
 export const hashOne = (input: any) => hash1([input])
 export const genRandomSalt = () => _genRandomSalt() as bigint
 
-export { SNARK_FIELD_SIZE, stringifyBigInts, unstringifyBigInts }
+export { stringifyBigInts, unstringifyBigInts }
 
 export const genEpochKey = (
     identitySecret: bigint,

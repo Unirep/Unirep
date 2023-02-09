@@ -4,9 +4,7 @@ import { expect } from 'chai'
 import {
     genRandomSalt,
     ZkIdentity,
-    hash4,
     hash5,
-    SparseMerkleTree,
     IncrementalMerkleTree,
     stringifyBigInts,
 } from '@unirep/utils'
@@ -22,7 +20,6 @@ describe('Epoch tree', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-    const defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
     let snapshot
 
     before(async () => {
