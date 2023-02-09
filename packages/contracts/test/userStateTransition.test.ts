@@ -12,6 +12,7 @@ import {
     Circuit,
     UserStateTransitionProof,
     SNARK_SCALAR_FIELD,
+    SignupProof,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
@@ -37,6 +38,33 @@ const emptyEpochTree = () => {
         epochTree.insert(BigInt(0))
     }
     return epochTree
+}
+
+const signupUser = async (id, unirepContract, attesterId, account) => {
+    const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
+    const r = await defaultProver.genProofAndPublicSignals(
+        Circuit.signup,
+        stringifyBigInts({
+            epoch: epoch.toString(),
+            identity_nullifier: id.identityNullifier,
+            identity_trapdoor: id.trapdoor,
+            attester_id: attesterId,
+        })
+    )
+    const { publicSignals, proof } = new SignupProof(
+        r.publicSignals,
+        r.proof,
+        defaultProver
+    )
+    const leafIndex = await unirepContract.attesterStateTreeLeafCount(
+        attesterId,
+        epoch
+    )
+    await unirepContract
+        .connect(account)
+        .userSignUp(publicSignals, proof)
+        .then((t) => t.wait())
+    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
 }
 
 describe('User State Transition', function () {
