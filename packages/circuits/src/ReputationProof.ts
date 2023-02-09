@@ -84,13 +84,13 @@ export class ReputationProof extends BaseProof {
         control0 += BigInt(revealNonce ?? 0) << BigInt(232)
         control0 += BigInt(attesterId) << BigInt(72)
         control0 += BigInt(epoch) << BigInt(8)
-        control0 += BigInt(nonce)
+        control0 += BigInt(nonce) * BigInt(revealNonce ?? 0)
         let control1 = BigInt(0)
         control1 += BigInt(proveZeroRep ?? 0) << BigInt(130)
         control1 += BigInt(proveMaxRep ?? 0) << BigInt(129)
         control1 += BigInt(proveMinRep ?? 0) << BigInt(128)
-        control1 += BigInt(maxRep) << BigInt(64)
-        control1 += BigInt(minRep)
+        control1 += BigInt(maxRep ?? 0) << BigInt(64)
+        control1 += BigInt(minRep ?? 0)
         return [control0, control1]
     }
 }

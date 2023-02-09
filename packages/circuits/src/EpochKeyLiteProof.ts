@@ -43,7 +43,7 @@ export class EpochKeyLiteProof extends BaseProof {
         control += BigInt(revealNonce ?? 0) << BigInt(232)
         control += BigInt(attesterId) << BigInt(72)
         control += BigInt(epoch) << BigInt(8)
-        control += BigInt(nonce)
+        control += BigInt(nonce) * BigInt(revealNonce ?? 0)
         return control
     }
 }
