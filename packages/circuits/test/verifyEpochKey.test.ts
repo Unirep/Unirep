@@ -57,10 +57,11 @@ describe('Verify Epoch Key circuits', function () {
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
-                (
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8))
-                ).toString()
+                EpochKeyProof.buildControl({
+                    attesterId,
+                    epoch,
+                    nonce,
+                }).toString()
             )
             const data = new EpochKeyProof(publicSignals, proof)
             expect(data.epoch.toString()).to.equal(epoch.toString())
@@ -109,17 +110,25 @@ describe('Verify Epoch Key circuits', function () {
                 circuitInputs
             )
             expect(isValid).to.be.true
+            expect(publicSignals[2]).to.equal(
+                EpochKeyProof.buildControl({
+                    attesterId,
+                    epoch,
+                    nonce,
+                    revealNonce,
+                }).toString()
+            )
             expect(publicSignals[0]).to.equal(
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
-                (
-                    (BigInt(1) << BigInt(232)) +
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8)) +
-                    BigInt(nonce)
-                ).toString()
+                EpochKeyProof.buildControl({
+                    attesterId,
+                    epoch,
+                    nonce,
+                    revealNonce
+                }).toString()
             )
             const data = new EpochKeyProof(publicSignals, proof)
             expect(data.epoch.toString()).to.equal(epoch.toString())
@@ -168,6 +177,13 @@ describe('Verify Epoch Key circuits', function () {
                 circuitInputs
             )
             expect(isValid).to.be.true
+            expect(publicSignals[2]).to.equal(
+                EpochKeyProof.buildControl({
+                    attesterId,
+                    epoch,
+                    nonce,
+                }).toString()
+            )
             expect(publicSignals[0]).to.equal(
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )

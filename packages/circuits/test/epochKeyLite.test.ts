@@ -33,10 +33,11 @@ describe('Epoch key lite circuits', function () {
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(data.control).to.equal(
-                (
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8))
-                ).toString()
+                EpochKeyLiteProof.buildControl({
+                    attesterId,
+                    epoch,
+                    nonce,
+                }).toString()
             )
             expect(data.epoch.toString()).to.equal(epoch.toString())
             expect(data.nonce.toString()).to.equal('0')
@@ -51,12 +52,13 @@ describe('Epoch key lite circuits', function () {
             const attesterId = BigInt(10210)
             const epoch = 120958
             const id = new ZkIdentity()
+            const revealNonce = 1
             const circuitInputs = {
                 identity_secret: id.secretHash,
                 epoch,
                 attester_id: attesterId,
                 nonce,
-                reveal_nonce: 1,
+                reveal_nonce: revealNonce,
                 data: 0,
             }
             const { isValid, publicSignals, proof } = await genProofAndVerify(
@@ -69,12 +71,12 @@ describe('Epoch key lite circuits', function () {
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(data.control).to.equal(
-                (
-                    (BigInt(1) << BigInt(232)) +
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8)) +
-                    BigInt(nonce)
-                ).toString()
+                EpochKeyLiteProof.buildControl({
+                    attesterId,
+                    epoch,
+                    nonce,
+                    revealNonce,
+                }).toString()
             )
             expect(data.epoch.toString()).to.equal(epoch.toString())
             expect(data.nonce.toString()).to.equal(nonce.toString())

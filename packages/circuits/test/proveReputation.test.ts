@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
-import { Circuit, ReputationProof } from '../src'
+import { Circuit, NUM_EPOCH_KEY_NONCE_PER_EPOCH, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
 describe('Prove reputation from attester circuit', function () {
@@ -23,6 +23,16 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -58,6 +68,18 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    minRep,
+                    proveMinRep,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -93,6 +115,18 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    maxRep,
+                    proveMaxRep,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -132,6 +166,20 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    minRep,
+                    maxRep,
+                    proveMinRep,
+                    proveMaxRep,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -175,20 +223,22 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
-        expect(publicSignals[2].toString()).to.equal(
-            ReputationProof.buildControl({
-                epoch,
-                nonce,
-                attesterId,
-                revealNonce,
-                proveGraffiti: 0,
-                minRep,
-                maxRep,
-                proveMaxRep,
-                proveMinRep,
-                proveZeroRep,
-            })[0].toString()
-        )
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    minRep,
+                    maxRep,
+                    proveMaxRep,
+                    proveMinRep,
+                    proveZeroRep,
+                    revealNonce,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal(nonce.toString())
@@ -291,6 +341,17 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    minRep,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -311,13 +372,14 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = 10210
         const nonce = 0
         const graffitiPreImage = 124124021
+        const proveGraffiti = false
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
-            proveGraffiti: false,
+            proveGraffiti,
             graffitiPreImage,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
@@ -325,6 +387,17 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    proveGraffiti,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -378,13 +451,14 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const graffitiPreImage = 124914219
         const graffiti = hash1([graffitiPreImage])
+        const proveGraffiti = true
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
             nonce,
             attesterId,
             startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
-            proveGraffiti: true,
+            proveGraffiti,
             graffitiPreImage,
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
@@ -392,6 +466,17 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    proveGraffiti,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -427,6 +512,16 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -462,6 +557,17 @@ describe('Prove reputation from attester circuit', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    revealNonce,
+                })[i].toString()
+            )
+        }
         const data = new ReputationProof(publicSignals, proof)
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal(nonce.toString())
@@ -517,5 +623,190 @@ describe('Prove reputation from attester circuit', function () {
                 nonce
             ).toString()
         )
+    })
+
+    it('should fail to prove a nonce that is above max nonce', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range attesterId', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = BigInt(2) ** BigInt(160)
+        const nonce = 0
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range revealNonce', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const revealNonce = 2
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            revealNonce,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range proveGraffiti', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const proveGraffiti = 2
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            proveGraffiti,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range proveMinRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const proveMinRep = 2
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            proveMinRep,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range proveMaxRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const proveMaxRep = 2
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            proveMaxRep,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range proveZeroRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const proveZeroRep = 2
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            proveZeroRep,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range minRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const minRep = BigInt(2) ** BigInt(64)
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            minRep,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range maxRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const maxRep = BigInt(2) ** BigInt(64)
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            maxRep,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.proveReputation, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 })

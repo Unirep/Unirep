@@ -6,8 +6,6 @@ import {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    ReputationProof,
-    EpochKeyProof,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { SNARK_SCALAR_FIELD } from '../config'
@@ -240,14 +238,14 @@ const genReputationCircuitInput = (config: {
     id: utils.ZkIdentity
     epoch: number
     nonce: number
-    attesterId: number
+    attesterId: number | bigint
     startBalance: { posRep: any; negRep: any; graffiti?: any; timestamp?: any }
-    minRep?: number
-    maxRep?: number
+    minRep?: number | bigint
+    maxRep?: number | bigint
     proveMinRep?: number
     proveMaxRep?: number
     proveZeroRep?: number
-    proveGraffiti?: boolean
+    proveGraffiti?: boolean | number
     graffitiPreImage?: any
     revealNonce?: number
 }) => {
