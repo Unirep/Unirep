@@ -1,10 +1,15 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, genStateTreeLeaf, stringifyBigInts } from '@unirep/utils'
+import {
+    IncrementalMerkleTree,
+    ZkIdentity,
+    genStateTreeLeaf,
+    stringifyBigInts,
+} from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Circuit, BuildOrderedTree } from '@unirep/circuits'
+import { Circuit, CircuitConfig, BuildOrderedTree } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { bootstrapAttestations, bootstrapUsers } from './test'
 
@@ -27,14 +32,6 @@ describe('Synchronizer process events', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
-        synchronizer = await genUnirepState(
-            ethers.provider,
-            unirepContract.address,
-            BigInt(attester.address)
-        )
-        await bootstrapUsers(synchronizer, attester)
-        await bootstrapAttestations(synchronizer, attester)
-        await synchronizer.stop()
     })
 
     {
@@ -46,6 +43,8 @@ describe('Synchronizer process events', function () {
                 unirepContract.address,
                 BigInt(attester.address)
             )
+            await bootstrapUsers(synchronizer, attester)
+            await bootstrapAttestations(synchronizer, attester)
         })
 
         afterEach(async () => {
@@ -97,8 +96,8 @@ describe('Synchronizer process events', function () {
 
         const epoch = await synchronizer.loadCurrentEpoch()
         const attesterId = BigInt(attester.address).toString()
-        const tree = await synchronizer.genStateTree(epoch)
         await synchronizer.waitForSync()
+        const tree = await synchronizer.genStateTree(epoch)
         await signUpEvent
         await stateLeafEvent
         const docs = await (synchronizer as any)._db.findMany('UserSignUp', {
@@ -146,7 +145,6 @@ describe('Synchronizer process events', function () {
         expect(storedLeaves[0].epoch).to.equal(Number(epoch))
         expect(storedLeaves[0].index).to.equal(leafIndex - 1)
         // now look for a new GSTRoot
-        tree.insert(leaf)
         expect(
             await synchronizer.stateTreeRootExists(
                 tree.root.toString(),
