@@ -22,20 +22,22 @@ describe('User state', function () {
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
-        const synchronizer = await genUnirepState(
-            ethers.provider,
-            unirepContract.address,
-            BigInt(attester.address)
-        )
-        await bootstrapUsers(synchronizer, attester)
-        await bootstrapAttestations(synchronizer, attester)
-        await synchronizer.stop()
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            const synchronizer = await genUnirepState(
+                ethers.provider,
+                unirepContract.address,
+                BigInt(attester.address)
+            )
+            await bootstrapUsers(synchronizer, attester)
+            await bootstrapAttestations(synchronizer, attester)
+            await synchronizer.stop()
         })
 
         afterEach(async () => {
@@ -98,7 +100,7 @@ describe('User state', function () {
         await userState.sync.stop()
     })
 
-    it.skip('ust proof', async () => {
+    it('ust proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
@@ -161,7 +163,7 @@ describe('User state', function () {
         await userState.sync.stop()
     })
 
-    it.skip('reputation proof', async () => {
+    it('reputation proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
