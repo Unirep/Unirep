@@ -45,6 +45,12 @@ synchronizer.stop(): void
 
 ## poll
 
+Manually poll for new events. Returns a boolean indicating whether the synchronizer has synced to the head of the blockchain.
+
+```ts
+synchronizer.poll(): Promise<{ complete: boolean }>
+```
+
 ## waitForSync
 
 Wait for the synchronizer to sync up to a certain block. By default this will wait until the current latest known block (according to the provider).
