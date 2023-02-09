@@ -50,13 +50,16 @@ export async function bootstrapUsers(
 ) {
     const { unirepContract } = synchronizer.unirepContract
     // synchronizer should be authed to send transactions
+    const ids = [] as ZkIdentity[]
     for (let x = 0; x < userCount; x++) {
         const userState = new UserState(synchronizer, new ZkIdentity())
+        ids.push(userState.id)
         const r = await userState.genUserSignUpProof()
         await unirepContract
             .userSignUp(r.publicSignals, r.proof)
             .then((t) => t.wait())
     }
+    return ids
 }
 
 // attestations
@@ -67,8 +70,10 @@ export async function bootstrapAttestations(
 ) {
     const { unirepContract } = synchronizer
     const epoch = synchronizer.calcCurrentEpoch()
+    const ids = [] as ZkIdentity[]
     for (let i = 0; i < attestationCount; i++) {
         const userState = new UserState(synchronizer, new ZkIdentity())
+        ids.push(userState.id)
         const r = await userState.genUserSignUpProof()
         await unirepContract
             .userSignUp(r.publicSignals, r.proof)
@@ -86,6 +91,7 @@ export async function bootstrapAttestations(
                 .then((t) => t.wait())
         }
     }
+    return ids
 }
 
 export async function sealEpoch(
