@@ -28,10 +28,21 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
     signal input graffiti;
     signal input timestamp;
     // Graffiti
+    signal input prove_graffiti;
     signal input graffiti_pre_image;
+    // Epoch key
+    signal input reveal_nonce;
+    signal input attester_id;
+    signal input epoch;
+    signal input nonce;
+    // Reputation
+    signal input min_rep;
+    signal input max_rep;
+    signal input prove_min_rep;
+    signal input prove_max_rep;
+    signal input prove_zero_rep;
 
-    signal input control[2];
-    signal output control_output[2];
+    signal output control[2];
 
     /**
      * control[0]:
@@ -48,50 +59,46 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
      * 1 bit prove zero rep
      **/
 
-    signal control_divided_0 <-- control[0] \ (2 ** 234);
-    control_divided_0 === 0;
-    signal prove_graffiti <-- (control[0] \ 2 ** 233) & 1;
-    signal reveal_nonce <-- (control[0] \ 2 ** 232) & 1;
-    signal attester_id <-- (control[0] \ 2 ** 72) & (2 ** 160 - 1);
-    signal epoch <-- (control[0] \ 2 ** 8) & (2 ** 64 - 1);
-    signal nonce <-- control[0] & (2 ** 8 - 1);
+    // check that one bit signal is 0 or 1
+    reveal_nonce * (reveal_nonce - 1) === 0;
+    prove_graffiti * (prove_graffiti - 1) === 0;
+    prove_min_rep * (prove_min_rep - 1) === 0;
+    prove_max_rep * (prove_max_rep - 1) === 0;
+    prove_zero_rep * (prove_zero_rep - 1) === 0;
 
-    signal prove_graffiti_divided <-- prove_graffiti \ 2;
-    signal reveal_nonce_divided <-- reveal_nonce \ 2;
-    signal attester_id_divided <-- attester_id \ 2**160;
-    signal epoch_divided <-- epoch \ 2**64;
-    signal nonce_divided <-- nonce \ 2**8;
-    prove_graffiti_divided === 0;
-    reveal_nonce_divided === 0;
-    attester_id_divided === 0;
-    epoch_divided === 0;
-    nonce_divided === 0;
+    // then range check the others
+    component attester_id_bits = Num2Bits(254);
+    attester_id_bits.in <== attester_id;
+    for (var x = 160; x < 254; x++) {
+        attester_id_bits.out[x] === 0;
+    }
 
-    control[0] === prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
+    component epoch_bits = Num2Bits(254);
+    epoch_bits.in <== epoch;
+    for (var x = 64; x < 254; x++) {
+        epoch_bits.out[x] === 0;
+    }
 
-    signal control_divided_1 <--  control[1] \ (2 ** 131);
-    control_divided_1 === 0;
-    signal prove_zero_rep <-- (control[1] \ 2 ** 130) & 1;
-    signal prove_max_rep <-- (control[1] \ 2 ** 129) & 1;
-    signal prove_min_rep <-- (control[1] \ 2 ** 128) & 1;
-    signal max_rep <-- (control[1] \ 2 ** 64) & (2 ** 64 - 1);
-    signal min_rep <-- control[1] & (2 ** 64 - 1);
+    component nonce_bits = Num2Bits(254);
+    nonce_bits.in <== nonce;
+    for (var x = 8; x < 254; x++) {
+        nonce_bits.out[x] === 0;
+    }
 
-    signal prove_zero_rep_divided <-- prove_zero_rep \ 2;
-    signal prove_max_rep_divided <-- prove_max_rep \ 2;
-    signal prove_min_rep_divided <-- prove_min_rep \ 2;
-    signal min_rep_divided <-- min_rep \ 2**64;
-    signal max_rep_divided <-- max_rep \ 2**64;
-    prove_zero_rep_divided === 0;
-    prove_max_rep_divided === 0;
-    prove_min_rep_divided === 0;
-    min_rep_divided === 0;
-    max_rep_divided === 0;
+    component min_rep_bits = Num2Bits(254);
+    min_rep_bits.in <== min_rep;
+    for (var x = 64; x < 254; x++) {
+        min_rep_bits.out[x] === 0;
+    }
 
-    control[1] === prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
+    component max_rep_bits = Num2Bits(254);
+    max_rep_bits.in <== max_rep;
+    for (var x = 64; x < 254; x++) {
+        max_rep_bits.out[x] === 0;
+    }
 
-    control_output[0] <== prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
-    control_output[1] <== control[1];
+    control[0] <== prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
+    control[1] <== prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
 
     /* 1a. Check if user exists in the Global State Tree */
 

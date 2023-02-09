@@ -48,10 +48,8 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
         nonce_bits.out[x] === 0;
     }
 
-    component nonce_range = LessThan(8);
-    nonce_range.in[0] <== nonce;
-    nonce_range.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
-    nonce_range.out === 1;
+    signal epknonce_divided <-- nonce \ EPOCH_KEY_NONCE_PER_EPOCH;
+    epknonce_divided === 0;
 
     control <== reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
