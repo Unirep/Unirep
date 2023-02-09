@@ -281,7 +281,7 @@ export class Synchronizer extends EventEmitter {
     /**
      * Stop synchronizing with Unirep contract.
      */
-    async stop() {
+    stop() {
         this.pollId = null
     }
 

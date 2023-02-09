@@ -34,11 +34,11 @@ export default class UserState {
     constructor(
         config:
             | {
-                  db: DB
-                  prover: Prover
+                  db?: DB
+                  attesterId?: bigint
                   unirepAddress: string
+                  prover: Prover
                   provider: ethers.providers.Provider
-                  attesterId: bigint
                   _id?: ZkIdentity // TODO: remove this and only accept as second arg
               }
             | Synchronizer,

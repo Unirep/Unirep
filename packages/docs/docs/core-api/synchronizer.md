@@ -6,16 +6,12 @@ Used to retrieve and manage state information for a UniRep attester. Each instan
 
 ```ts
 import { Synchronizer, schema } from '@unirep/core'
-import { SQLiteConnector } from 'anondb/node'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-const db = new SQLiteConnector(schema, ':memory:')
 const state = new Synchronizer({
-  db,
   prover: defaultProver, // a circuit prover
   unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
   provider, // an ethers.js provider
-  attesterId: ATTESTER_ADDRESS,
 })
 ```
 
@@ -23,10 +19,11 @@ const state = new Synchronizer({
 
 ```ts
 constructor(config: {
-    db: DB
     prover: Prover
+    provider: ethers.Provider
     unirepContract: ethers.Contract
-    attesterId: bigint
+    attesterId?: bigint
+    db?: DB
 })
 ```
 
@@ -43,8 +40,10 @@ synchronizer.start(): Promise<void>
 Stop the synchronizer daemon.
 
 ```ts
-synchronizer.stop(): Promise<void>
+synchronizer.stop(): void
 ```
+
+## poll
 
 ## waitForSync
 
@@ -142,7 +141,7 @@ synchronizer.genEpochTree(epoch: bigint): Promise<IncrementalMerkleTree>
 Get the pre-images for the leaves in an epoch tree.
 
 ```ts
-synchronizer.genEpochTreePreimages(epoch: bigint): Promise<bigint[][]>
+synchronizer.genEpochTreePreimages(epoch: bigint | number): Promise<bigint[][]>
 ```
 
 ## stateRootExists
@@ -161,10 +160,10 @@ Determine if an epoch tree root exists for a certain epoch.
 synchronizer.epochTreeRootExists(root: bigint, epoch: bigint): Promise<boolean>
 ```
 
-## getNumStateTreeLeaves
+## numStateTreeLeaves
 
 Get the number of state tree leaves in a certain epoch.
 
 ```ts
-synchronizer.getNumStateTreeLeaves(epoch: number): Promise<number>
+synchronizer.numStateTreeLeaves(epoch: number): Promise<number>
 ```
