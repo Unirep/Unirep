@@ -9,6 +9,7 @@ import { nanoid } from 'nanoid'
 // TODO: consolidate these into 'anondb' index
 import { constructSchema } from 'anondb/types'
 import { MemoryConnector } from 'anondb/web'
+import AsyncLock from 'async-lock'
 
 type EventHandlerArgs = {
     event: ethers.Event
@@ -39,6 +40,8 @@ export class Synchronizer extends EventEmitter {
     public pollRate: number = 5000
 
     private setupComplete = false
+
+    private lock = new AsyncLock()
 
     private get _stateTree() {
         if (!this.stateTree) {
@@ -238,9 +241,8 @@ export class Synchronizer extends EventEmitter {
     }
 
     /**
-     * Start synchronize the events with Unirep contract util a `stop()` is called.
-     * The synchronizer will check the database first to check if
-     * there is some states stored in database
+     * Start polling the blockchain for new events. If we're behind the HEAD
+     * block we'll poll many times quickly
      */
     async start() {
         await this.setup()
@@ -284,8 +286,11 @@ export class Synchronizer extends EventEmitter {
     }
 
     // Poll for any new changes from the blockchain
-    // need a lock for this
     async poll(): Promise<{ complete: boolean }> {
+        return this.lock.acquire('poll', () => this._poll())
+    }
+
+    private async _poll(): Promise<{ complete: boolean }> {
         if (!this.setupComplete) {
             console.warn('polled before setup, nooping')
             return { complete: false }
@@ -300,7 +305,7 @@ export class Synchronizer extends EventEmitter {
         const latestProcessed = state.latestCompleteBlock
         const latestBlock = await this.provider.getBlockNumber()
         const blockStart = latestProcessed + 1
-        const blockEnd = Math.min(+latestBlock, blockStart + 1000)
+        const blockEnd = Math.min(+latestBlock, blockStart + 10000)
 
         const newEvents = await this.loadNewEvents(
             latestProcessed + 1,
@@ -364,7 +369,7 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async processEvents(events: ethers.Event[]) {
+    private async processEvents(events: ethers.Event[]) {
         if (events.length === 0) return
         events.sort((a: any, b: any) => {
             if (a.blockNumber !== b.blockNumber) {
