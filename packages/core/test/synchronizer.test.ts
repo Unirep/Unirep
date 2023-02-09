@@ -45,6 +45,25 @@ describe('Synchronizer process events', function () {
             )
             await bootstrapUsers(synchronizer, attester)
             await bootstrapAttestations(synchronizer, attester)
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            await ethers.provider.send('evm_mine', [])
+            const preimages = await userState.sync.genEpochTreePreimages(epoch)
+            const { circuitInputs } =
+                BuildOrderedTree.buildInputsForLeaves(preimages)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.buildOrderedTree,
+                stringifyBigInts(circuitInputs)
+            )
+            const { publicSignals, proof } = new BuildOrderedTree(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
+
+            await unirepContract
+                .connect(accounts[5])
+                .sealEpoch(epoch, attester.address, publicSignals, proof)
+                .then((t) => t.wait())
         })
 
         afterEach(async () => {
