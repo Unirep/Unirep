@@ -172,7 +172,6 @@ describe('Epoch key lite proof verifier', function () {
                 nonce,
                 attester_id: attester.address,
                 reveal_nonce: 0,
-
             })
         )
 
