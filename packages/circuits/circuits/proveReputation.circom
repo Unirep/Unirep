@@ -12,6 +12,7 @@ include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/poseidon.circom";
 include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
+include "./epochKeyLite.circom";
 
 template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
     signal output epoch_key;
@@ -50,8 +51,8 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
      * 64 bits epoch
      * 160 bits attester_id
      * 1 bit reveal_nonce
-     * 1 bit prove_graffiti
      * control[1]:
+     * 1 bit prove_graffiti
      * 64 bits min_rep
      * 64 bits max_rep
      * 1 bit prove min_rep
@@ -60,31 +61,12 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
      **/
 
     // check that one bit signal is 0 or 1
-    reveal_nonce * (reveal_nonce - 1) === 0;
     prove_graffiti * (prove_graffiti - 1) === 0;
     prove_min_rep * (prove_min_rep - 1) === 0;
     prove_max_rep * (prove_max_rep - 1) === 0;
     prove_zero_rep * (prove_zero_rep - 1) === 0;
 
     // then range check the others
-    component attester_id_bits = Num2Bits(254);
-    attester_id_bits.in <== attester_id;
-    for (var x = 160; x < 254; x++) {
-        attester_id_bits.out[x] === 0;
-    }
-
-    component epoch_bits = Num2Bits(254);
-    epoch_bits.in <== epoch;
-    for (var x = 64; x < 254; x++) {
-        epoch_bits.out[x] === 0;
-    }
-
-    component nonce_bits = Num2Bits(254);
-    nonce_bits.in <== nonce;
-    for (var x = 8; x < 254; x++) {
-        nonce_bits.out[x] === 0;
-    }
-
     component min_rep_bits = Num2Bits(254);
     min_rep_bits.in <== min_rep;
     for (var x = 64; x < 254; x++) {
@@ -97,8 +79,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
         max_rep_bits.out[x] === 0;
     }
 
-    control[0] <== prove_graffiti * 2 ** 233 + reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
-    control[1] <== prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
+    control[1] <== prove_graffiti * 2 ** 131 + prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
 
     /* 1a. Check if user exists in the Global State Tree */
 
@@ -196,16 +177,16 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
 
     /* 4. Check nonce and output epoch key */
 
-    signal epknonce_divided <-- nonce \ EPOCH_KEY_NONCE_PER_EPOCH;
-    epknonce_divided === 0;
+    component epk_lite = EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH);
+    epk_lite.identity_secret <== identity_secret;
+    epk_lite.reveal_nonce <== reveal_nonce;
+    epk_lite.attester_id <== attester_id;
+    epk_lite.epoch <== epoch;
+    epk_lite.nonce <== nonce;
+    epk_lite.data <== 0; 
 
-    component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_secret;
-    epoch_key_hasher.inputs[1] <== attester_id;
-    epoch_key_hasher.inputs[2] <== epoch;
-    epoch_key_hasher.inputs[3] <== nonce;
-
-    epoch_key <== epoch_key_hasher.out;
+    control[0] <== epk_lite.control;
+    epoch_key <== epk_lite.epoch_key;
 
     /* End of check 4 */
 }
