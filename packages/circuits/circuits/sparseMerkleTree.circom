@@ -13,8 +13,17 @@ template SMTRootCalc(HEIGHT, ARITY) {
     component hashers[HEIGHT];
     component leaf_equals[(HEIGHT - 1) * ARITY];
     component index_equals[(HEIGHT - 1) * ARITY];
-    component mod[HEIGHT];
-    signal path_indices_divided[HEIGHT];
+    component path_indices_comp[HEIGHT];
+
+    component path_indices_bits[HEIGHT];
+    // check the path_indices inputs
+    // max 4 bits (16)
+    for (var x = 4; x < 254; x++) {
+        // path indices should be < 16
+        path_indices_bits[x] = Num2Bits(254);
+        path_indices_bits[x].in <== path_indices[x];
+        path_indices_bits[x].out[x] === 0;
+    }
 
     for (var i = 0; i < HEIGHT; i++) {
         hashers[i] = Poseidon(ARITY);
@@ -23,12 +32,11 @@ template SMTRootCalc(HEIGHT, ARITY) {
         }
         // start doing checks
         if (i > 0) {
-            // range check
-            mod[i] = Modulo();
-            mod[i].divisor <== ARITY;
-            mod[i].dividend <== path_indices[i];
-
-            path_indices_divided[i] <== mod[i].quotient;
+            // range check path index
+            path_indices_comp[i] = LessThan(4);
+            path_indices_comp[i].in[0] <== path_indices[i];
+            path_indices_comp[i].in[1] <== ARITY;
+            path_indices_comp[i].out === 1;
 
             // check that if we're looking at the target index
             // the previous level output matches
