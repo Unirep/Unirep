@@ -637,6 +637,15 @@ describe('Reputation proof verifier', function () {
                     attester_id: attester.address,
                     epoch,
                     nonce,
+
+                    prove_graffiti: 0,
+                    graffiti_pre_image: 0,
+                    reveal_nonce: 1,
+                    min_rep: 0,
+                    max_rep: 0,
+                    prove_min_rep: 0,
+                    prove_max_rep: 1,
+                    prove_zero_rep: 0,
                 })
             )
 

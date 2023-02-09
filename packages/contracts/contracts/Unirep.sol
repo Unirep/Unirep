@@ -471,16 +471,18 @@ contract Unirep is IUnirep, VerifySignature {
         signals.stateTreeRoot = publicSignals[1];
         signals.graffitiPreImage = publicSignals[4];
         // now decode the control values
-        signals.revealNonce = (publicSignals[2] >> 233) & 1;
-        signals.proveGraffiti = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
+
         signals.nonce = publicSignals[2] & ((1 << 8) - 1);
-        signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
-        signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
-        signals.proveMinRep = (publicSignals[3] >> 128) & 1;
-        signals.maxRep = (publicSignals[3] >> 64) & ((1 << 64) - 1);
+        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
+        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
+        signals.revealNonce = (publicSignals[2] >> 232) & 1;
+
         signals.minRep = publicSignals[3] & ((1 << 64) - 1);
+        signals.maxRep = (publicSignals[3] >> 64) & ((1 << 64) - 1);
+        signals.proveMinRep = (publicSignals[3] >> 128) & 1;
+        signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
+        signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
+        signals.proveGraffiti = (publicSignals[3] >> 131) & 1;
         return signals;
     }
 

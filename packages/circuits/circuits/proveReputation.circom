@@ -52,12 +52,12 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
      * 160 bits attester_id
      * 1 bit reveal_nonce
      * control[1]:
-     * 1 bit prove_graffiti
      * 64 bits min_rep
      * 64 bits max_rep
      * 1 bit prove min_rep
      * 1 bit prove max_rep
      * 1 bit prove zero rep
+     * 1 bit prove_graffiti
      **/
 
     // check that one bit signal is 0 or 1
@@ -183,7 +183,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTA
     epk_lite.attester_id <== attester_id;
     epk_lite.epoch <== epoch;
     epk_lite.nonce <== nonce;
-    epk_lite.data <== 0; 
+    epk_lite.data <== 0;
 
     control[0] <== epk_lite.control;
     epoch_key <== epk_lite.epoch_key;
