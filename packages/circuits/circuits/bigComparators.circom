@@ -3,51 +3,47 @@ include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/mux1.circom";
 include "./modulo.circom";
 
-//~~ Copy of template with assert(n <= 252) removed
 //~~ support comparisons of numbers up to the field size
 
 template BigLessThan() {
-    // take the number mod 250
-    // check the quotient and mod
-
     signal input in[2];
     signal output out;
 
-    component mod[2];
+    component high_lt;
+    component low_lt;
 
+    component bits[2];
     for (var x = 0; x < 2; x++) {
-        mod[x] = Modulo();
-        mod[x].divisor <== 2**250;
-        mod[x].dividend <== in[x];
+        bits[x] = Num2Bits(254);
+        bits[x].in <== in[x];
     }
 
-    // check that
-    // mod[0].quotient < mod[1].quotient && mod[0].remainder < mod[1].remainder
+    component high[2];
+    component low[2];
+    for (var x = 0; x < 2; x++) {
+        high[x] = Bits2Num(127);
+        low[x] = Bits2Num(127);
+        for (var y = 0; y < 127; y++) {
+            high[x].in[y] <== bits[x].out[y+127];
+            low[x].in[y] <== bits[x].out[y];
+        }
+    }
 
-    // the max quotient is 15 = SNARK_SCALAR_FIELD / 2**250
-    // so use 5 bits
-    component quotient_lt = LessThan(4);
-    quotient_lt.in[0] <== mod[0].quotient;
-    quotient_lt.in[1] <== mod[1].quotient;
+    high_lt = LessThan(127);
+    high_lt.in[0] <== high[0].out;
+    high_lt.in[1] <== high[1].out;
 
-    component quotient_gt = GreaterThan(4);
-    quotient_gt.in[0] <== mod[0].quotient;
-    quotient_gt.in[1] <== mod[1].quotient;
-
-    component quotient_gt_zero = IsZero();
-    quotient_gt_zero.in <== quotient_gt.out;
-
-    component remainder_lt = LessThan(250);
-    remainder_lt.in[0] <== mod[0].remainder;
-    remainder_lt.in[1] <== mod[1].remainder;
+    low_lt = LessThan(127);
+    low_lt.in[0] <== low[0].out;
+    low_lt.in[1] <== low[1].out;
 
     component mux = Mux1();
-    mux.s <== quotient_lt.out;
+    mux.s <== high_lt.out;
 
-    mux.c[0] <== remainder_lt.out;
+    mux.c[0] <== low_lt.out;
     mux.c[1] <== 1;
 
-    out <== mux.out * quotient_gt_zero.out;
+    out <== mux.out;
 }
 
 template BigGreaterThan() {
