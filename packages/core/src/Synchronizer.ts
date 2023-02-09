@@ -212,10 +212,14 @@ export class Synchronizer extends EventEmitter {
         )
         const events = await this.unirepContract.queryFilter(filter)
         if (events.length === 0) {
-            throw new Error('failed to fetch genesis event')
+            throw new Error(
+                '@unirep/core:Synchronizer: failed to fetch genesis event'
+            )
         }
         if (events.length > 1) {
-            throw new Error('multiple genesis events')
+            throw new Error(
+                '@unirep/core:Synchronizer: multiple genesis events'
+            )
         }
         const [event] = events
         const decodedData = this.unirepContract.interface.decodeEventLog(

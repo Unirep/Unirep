@@ -47,7 +47,7 @@ export default class UserState {
         if (config instanceof Synchronizer) {
             if (!id) {
                 throw new Error(
-                    'id must be supplied as second argument when initialized with a sync'
+                    '@unirep/core:UserState: id must be supplied as second argument when initialized with a sync'
                 )
             }
             this.sync = config
