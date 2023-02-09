@@ -67,7 +67,7 @@ export class ReputationProof extends BaseProof {
         this.circuit = Circuit.proveReputation
     }
 
-    static buildControlInput({
+    static buildControl({
         attesterId,
         epoch,
         nonce,

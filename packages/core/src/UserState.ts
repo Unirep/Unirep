@@ -491,7 +491,7 @@ export default class UserState extends Synchronizer {
             graffiti,
             timestamp,
             graffiti_pre_image: graffitiPreImage ?? 0,
-            control: ReputationProof.buildControlInput({
+            control: ReputationProof.buildControl({
                 epoch,
                 nonce: epkNonce,
                 attesterId: this.attesterId.toString(),
@@ -564,7 +564,7 @@ export default class UserState extends Synchronizer {
             data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
-            control: EpochKeyProof.buildControlInput({
+            control: EpochKeyProof.buildControl({
                 epoch,
                 nonce,
                 attesterId: this.attesterId.toString(),
