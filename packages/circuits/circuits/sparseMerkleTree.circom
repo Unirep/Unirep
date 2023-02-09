@@ -17,12 +17,14 @@ template SMTRootCalc(HEIGHT, ARITY) {
 
     component path_indices_bits[HEIGHT];
     // check the path_indices inputs
-    // max 4 bits (16)
-    for (var x = 4; x < 254; x++) {
+    for (var x = 0; x < HEIGHT; x++) {
         // path indices should be < 16
         path_indices_bits[x] = Num2Bits(254);
         path_indices_bits[x].in <== path_indices[x];
-        path_indices_bits[x].out[x] === 0;
+        // max 4 bits (16)
+        for (var y = 4; y < 254; y++) {
+            path_indices_bits[x].out[y] === 0;
+        }
     }
 
     for (var i = 0; i < HEIGHT; i++) {
