@@ -31,6 +31,12 @@ try {
     )
 } catch (_) {}
 
+// remove test keys
+const zkPath = path.join(__dirname, '../dist/zksnarkBuild')
+fs.readdirSync(zkPath)
+    .filter((filename) => /^bigComparators/.test(filename))
+    .map((file) => fs.rmSync(path.join(zkPath, file), { recursive: true }))
+
 copy(
     path.join(__dirname, '../circuits'),
     path.join(__dirname, '../dist/circuits')
