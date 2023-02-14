@@ -178,6 +178,23 @@ describe('Attestations', function () {
             )
     })
 
+    it('should fail to submit attestation with out of range graffiti', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const epochKey = BigInt(24910)
+        const posRep = 1
+        const negRep = 5
+        const graffiti = SNARK_SCALAR_FIELD
+        expect(
+            unirepContract
+                .connect(attester)
+                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+        ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
+    })
+
     it('should submit attestation without graffiti', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
