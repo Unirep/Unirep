@@ -188,6 +188,7 @@ contract Unirep is IUnirep, VerifySignature {
         AttesterData storage attester = attesters[uint160(msg.sender)];
         if (attester.currentEpoch != targetEpoch) revert EpochNotMatch();
 
+        if (graffiti >= SNARK_SCALAR_FIELD) revert OutOfRange();
         if (epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
 
         uint256 timestamp = block.timestamp;
