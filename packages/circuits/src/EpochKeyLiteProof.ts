@@ -38,12 +38,12 @@ export class EpochKeyLiteProof extends BaseProof {
         this.circuit = Circuit.epochKeyLite
     }
 
-    static buildControlInput({ attesterId, epoch, nonce, revealNonce }: any) {
+    static buildControl({ attesterId, epoch, nonce, revealNonce }: any) {
         let control = BigInt(0)
         control += BigInt(revealNonce ?? 0) << BigInt(232)
         control += BigInt(attesterId) << BigInt(72)
         control += BigInt(epoch) << BigInt(8)
-        control += BigInt(nonce)
+        control += BigInt(nonce) * BigInt(revealNonce ?? 0)
         return control
     }
 }

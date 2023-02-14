@@ -45,7 +45,6 @@ export class ReputationProof extends BaseProof {
         this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot]
         this.control0 = _publicSignals[this.idx.control0].toString()
         this.control1 = _publicSignals[this.idx.control1].toString()
-        this.proveGraffiti = (BigInt(this.control0) >> BigInt(233)) & BigInt(1)
         this.revealNonce = (BigInt(this.control0) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control0) >> BigInt(72)) &
@@ -63,11 +62,12 @@ export class ReputationProof extends BaseProof {
         this.proveMinRep = (BigInt(this.control1) >> BigInt(128)) & BigInt(1)
         this.proveMaxRep = (BigInt(this.control1) >> BigInt(129)) & BigInt(1)
         this.proveZeroRep = (BigInt(this.control1) >> BigInt(130)) & BigInt(1)
+        this.proveGraffiti = (BigInt(this.control1) >> BigInt(131)) & BigInt(1)
         this.graffitiPreImage = _publicSignals[this.idx.graffitiPreImage]
         this.circuit = Circuit.proveReputation
     }
 
-    static buildControlInput({
+    static buildControl({
         attesterId,
         epoch,
         nonce,
@@ -80,17 +80,17 @@ export class ReputationProof extends BaseProof {
         proveZeroRep,
     }: any) {
         let control0 = BigInt(0)
-        control0 += BigInt(proveGraffiti ?? 0) << BigInt(233)
         control0 += BigInt(revealNonce ?? 0) << BigInt(232)
         control0 += BigInt(attesterId) << BigInt(72)
         control0 += BigInt(epoch) << BigInt(8)
-        control0 += BigInt(nonce)
+        control0 += BigInt(nonce) * BigInt(revealNonce ?? 0)
         let control1 = BigInt(0)
+        control1 += BigInt(proveGraffiti ?? 0) << BigInt(131)
         control1 += BigInt(proveZeroRep ?? 0) << BigInt(130)
         control1 += BigInt(proveMaxRep ?? 0) << BigInt(129)
         control1 += BigInt(proveMinRep ?? 0) << BigInt(128)
-        control1 += BigInt(maxRep) << BigInt(64)
-        control1 += BigInt(minRep)
+        control1 += BigInt(maxRep ?? 0) << BigInt(64)
+        control1 += BigInt(minRep ?? 0)
         return [control0, control1]
     }
 }

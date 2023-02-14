@@ -455,15 +455,22 @@ export default class UserState extends Synchronizer {
      * Generate a reputation proof of current user state and given conditions
      * @param epkNonce The nonce determines the output of the epoch key
      * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
+     * @param maxRep The amount of reputation that user wants to prove. It should satisfy: `negRep - posRep >= maxRep`
+     * @param graffitiPreImage The graffiti pre-image that user wants to prove. It should satisfy: `hash(graffitiPreImage) == graffiti`
      * @returns The reputation proof of type `ReputationProof`.
      */
     public genProveReputationProof = async (options: {
-        epkNonce: number
+        epkNonce?: number
         minRep?: number
+        maxRep?: number
         graffitiPreImage?: bigint | string
+        proveZeroRep?: boolean
+        revealNonce?: boolean
     }): Promise<ReputationProof> => {
-        const { epkNonce, minRep, graffitiPreImage } = options
-        this._checkEpkNonce(epkNonce)
+        const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } =
+            options
+        const nonce = options.epkNonce ?? 0
+        this._checkEpkNonce(nonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
         const { posRep, negRep, graffiti, timestamp } = await this.getRep(
@@ -480,16 +487,17 @@ export default class UserState extends Synchronizer {
             neg_rep: negRep,
             graffiti,
             timestamp,
+            prove_graffiti: graffitiPreImage ? 1 : 0,
             graffiti_pre_image: graffitiPreImage ?? 0,
-            control: ReputationProof.buildControlInput({
-                epoch,
-                nonce: epkNonce,
-                attesterId: this.attesterId.toString(),
-                proveGraffiti: graffitiPreImage ? 1 : 0,
-                minRep: minRep ?? 0,
-                maxRep: 0,
-                proveMinRep: !!(minRep ?? 0) ? 1 : 0,
-            }),
+            reveal_nonce: revealNonce ?? 0,
+            attester_id: this.attesterId.toString(),
+            epoch,
+            nonce,
+            min_rep: minRep ?? 0,
+            max_rep: maxRep ?? 0,
+            prove_min_rep: !!(minRep ?? 0) ? 1 : 0,
+            prove_max_rep: !!(maxRep ?? 0) ? 1 : 0,
+            prove_zero_rep: proveZeroRep ?? 0,
         }
 
         const results = await this.prover.genProofAndPublicSignals(
@@ -554,12 +562,10 @@ export default class UserState extends Synchronizer {
             data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
-            control: EpochKeyProof.buildControlInput({
-                epoch,
-                nonce,
-                attesterId: this.attesterId.toString(),
-                revealNonce: options.revealNonce ? 1 : 0,
-            }),
+            epoch,
+            nonce,
+            attester_id: this.attesterId.toString(),
+            reveal_nonce: options.revealNonce ? 1 : 0,
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,

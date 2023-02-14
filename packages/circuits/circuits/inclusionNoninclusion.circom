@@ -1,3 +1,5 @@
+pragma circom 2.0.0;
+
 include "./circomlib/circuits/bitify.circom";
 include "./exists.circom";
 include "./sparseMerkleTree.circom";

@@ -7,6 +7,7 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
+include "./epochKeyLite.circom";
 
 template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
@@ -17,6 +18,11 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
 
     signal output epoch_key;
     signal output state_tree_root;
+
+    signal input reveal_nonce;
+    signal input attester_id;
+    signal input epoch;
+    signal input nonce;
 
     signal input pos_rep;
     signal input neg_rep;
@@ -29,35 +35,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     /**
      * Optionally reveal nonce, epoch, attester_id
      **/
-    signal output control_output;
-
-    /**
-     * 8 bits nonce
-     * 64 bits epoch
-     * 160 bits attester_id
-     * 1 bit reveal nonce
-     **/
-    signal input control;
-
-    // no bits above 233 should be set
-    control \ (2 ** 233) === 0;
-
-    signal reveal_nonce <-- control \ 2 ** 232;
-    signal attester_id <-- (control \ 2 ** 72) & (2**160 - 1);
-    signal epoch <-- (control \ 2 ** 8) & (2**64 - 1);
-    signal nonce <-- control & (2 ** 8 - 1);
-
-    // individual range check
-    reveal_nonce \ 2 === 0;
-    attester_id \ 2**160 === 0;
-    epoch \ 2**64 === 0;
-    nonce \ 2**8 === 0;
-
-    // check extracted value
-    control === reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + nonce;
-
-    // generate the public params
-    control_output <== reveal_nonce * (2 ** 232) + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
+    signal output control;
 
     /* 1. Check if user exists in the Global State Tree */
 
@@ -81,21 +59,16 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
 
     /* End of check 1 */
 
-    /* 2. Check nonce validity */
+    /* 2. Check epoch key validity */
 
-    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
-
+    component epoch_key_lite = EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH);
+    epoch_key_lite.identity_secret <== identity_secret;
+    epoch_key_lite.reveal_nonce <== reveal_nonce;
+    epoch_key_lite.attester_id <== attester_id;
+    epoch_key_lite.epoch <== epoch;
+    epoch_key_lite.nonce <== nonce;
+    epoch_key_lite.data <== data;
+    control <== epoch_key_lite.control;
+    epoch_key <== epoch_key_lite.epoch_key;
     /* End of check 2*/
-
-    /* 3. Output an epoch key */
-
-    component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_secret;
-    epoch_key_hasher.inputs[1] <== attester_id;
-    epoch_key_hasher.inputs[2] <== epoch;
-    epoch_key_hasher.inputs[3] <== nonce;
-
-    epoch_key <== epoch_key_hasher.out;
-
-    /* End of check 3 */
 }
