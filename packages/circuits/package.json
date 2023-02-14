@@ -19,6 +19,7 @@
     ],
     "scripts": {
         "pre": "node scripts/prepare",
+        "buildTest": "TEST=1 yarn build",
         "build": "yarn buildTs && yarn buildParallel && yarn copyCircom",
         "buildSnarks": "node --max-old-space-size=8192 scripts/buildSnarks.mjs",
         "buildParallel": "node --max-old-space-size=8192 scripts/buildParallel.mjs",

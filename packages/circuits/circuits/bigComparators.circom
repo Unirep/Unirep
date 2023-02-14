@@ -37,11 +37,18 @@ template BigLessThan() {
     low_lt.in[0] <== low[0].out;
     low_lt.in[1] <== low[1].out;
 
-    component mux = Mux1();
-    mux.s <== high_lt.out;
+    // if high[0] == high[1] then out = low_lt
+    // else out = high_lt
 
-    mux.c[0] <== low_lt.out;
-    mux.c[1] <== 1;
+    component is_high_eq = IsEqual();
+    is_high_eq.in[0] <== high[0].out;
+    is_high_eq.in[1] <== high[1].out;
+
+    component mux = Mux1();
+    mux.s <== is_high_eq.out;
+
+    mux.c[0] <== high_lt.out;
+    mux.c[1] <== low_lt.out;
 
     out <== mux.out;
 }
