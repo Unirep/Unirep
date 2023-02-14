@@ -1,6 +1,5 @@
 import { expect } from 'chai'
 import { IncrementalMerkleTree, hash1, hash5 } from '@unirep/utils'
-import {} from '../config'
 import { genProofAndVerify } from './utils'
 import {
     Circuit,
