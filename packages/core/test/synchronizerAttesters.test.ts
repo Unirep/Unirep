@@ -23,6 +23,17 @@ describe('Synchronizer watch multiple attesters', function () {
         }
     })
 
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+        })
+
+        afterEach(async () => {
+            await ethers.provider.send('evm_revert', [snapshot])
+        })
+    }
+
     it('should load attestations from all', async () => {
         const accounts = await ethers.getSigners()
         for (let x = 0; x < 5; x++) {
@@ -50,6 +61,7 @@ describe('Synchronizer watch multiple attesters', function () {
             )
             expect(epochKey.toString()).to.equal(x.toString())
         }
+        await sync.stop()
     })
 
     it('should catch attester sign up event', async () => {
@@ -67,6 +79,7 @@ describe('Synchronizer watch multiple attesters', function () {
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
         await p
+        await sync.stop()
     })
 
     // TODO: test for other events
