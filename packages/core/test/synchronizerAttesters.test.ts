@@ -6,6 +6,8 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { Synchronizer } from '../src/Synchronizer'
 
+const ATTESTER_COUNT = 5
+
 describe('Synchronizer watch multiple attesters', function () {
     this.timeout(0)
 
@@ -14,7 +16,7 @@ describe('Synchronizer watch multiple attesters', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        for (let x = 0; x < 5; x++) {
+        for (let x = 0; x < ATTESTER_COUNT; x++) {
             const attester = accounts[x]
             await unirepContract
                 .connect(attester)
@@ -36,7 +38,7 @@ describe('Synchronizer watch multiple attesters', function () {
 
     it('should load attestations from all', async () => {
         const accounts = await ethers.getSigners()
-        for (let x = 0; x < 5; x++) {
+        for (let x = 0; x < ATTESTER_COUNT; x++) {
             await unirepContract
                 .connect(accounts[0])
                 .submitAttestation(0, x, x, 0, 0)
@@ -53,8 +55,8 @@ describe('Synchronizer watch multiple attesters', function () {
         })
         sync.start()
         await sync.waitForSync()
-        expect(seenAttestations.length).to.equal(5)
-        for (let x = 0; x < 5; x++) {
+        expect(seenAttestations.length).to.equal(ATTESTER_COUNT)
+        for (let x = 0; x < ATTESTER_COUNT; x++) {
             const { attesterId, epochKey } = seenAttestations[x]
             expect(attesterId.toString()).to.equal(
                 BigInt(accounts[0].address).toString()
