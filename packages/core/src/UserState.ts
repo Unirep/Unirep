@@ -16,6 +16,7 @@ import {
     EpochKeyProof,
     SignupProof,
     UserStateTransitionProof,
+    EpochKeyLiteProof,
 } from '@unirep/circuits'
 import { Synchronizer } from './Synchronizer'
 
@@ -572,6 +573,35 @@ export default class UserState extends Synchronizer {
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyProof(
+            results.publicSignals,
+            results.proof,
+            this.prover
+        )
+    }
+
+    public genEpochKeyLiteProof = async (
+        options: {
+            nonce?: number
+            epoch?: number
+            data?: bigint
+            revealNonce?: boolean
+        } = {}
+    ): Promise<EpochKeyLiteProof> => {
+        const nonce = options.nonce ?? 0
+        const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
+        const circuitInputs = {
+            identity_secret: this.id.secretHash,
+            data: options.data ?? BigInt(0),
+            epoch,
+            nonce,
+            attester_id: this.attesterId.toString(),
+            reveal_nonce: options.revealNonce ? 1 : 0,
+        }
+        const results = await this.prover.genProofAndPublicSignals(
+            Circuit.epochKeyLite,
+            stringifyBigInts(circuitInputs)
+        )
+        return new EpochKeyLiteProof(
             results.publicSignals,
             results.proof,
             this.prover
