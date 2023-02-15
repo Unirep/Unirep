@@ -2,12 +2,10 @@ import { Circuit, Prover } from './circuits'
 import { SnarkProof, hash5 } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
 import { BigNumberish } from '@ethersproject/bignumber'
-import {
-    EPOCH_TREE_ARITY,
-    EPOCH_TREE_DEPTH,
-    SNARK_SCALAR_FIELD,
-    Rx,
-} from '../config'
+import defaultConfig from '../config'
+
+const { EPOCH_TREE_ARITY, EPOCH_TREE_DEPTH, SNARK_SCALAR_FIELD, Rx } =
+    defaultConfig as any
 
 export class BuildOrderedTree extends BaseProof {
     readonly idx = {

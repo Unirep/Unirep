@@ -1,15 +1,15 @@
 import { expect } from 'chai'
 import { IncrementalMerkleTree, hash1, hash5 } from '@unirep/utils'
-import {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    Rx,
-    _N,
-    SNARK_SCALAR_FIELD,
-} from '../config'
 import { genProofAndVerify } from './utils'
-import { Circuit, BuildOrderedTree } from '../src'
+import {
+    Circuit,
+    BuildOrderedTree,
+    SNARK_SCALAR_FIELD,
+    CircuitConfig,
+} from '../src'
 import BN from 'bn.js'
+
+const { _N, Rx, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } = CircuitConfig.default
 
 const random = () => hash1([BigInt(Math.floor(Math.random() * 1000000000000))])
 const randomPreimage = () => Array(5).fill(null).map(random)

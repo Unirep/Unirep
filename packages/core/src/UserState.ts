@@ -23,23 +23,44 @@ import { Synchronizer } from './Synchronizer'
  * User state is used for a user to generate proofs and obtain the current user status.
  * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
  */
-export default class UserState extends Synchronizer {
+export default class UserState {
     public id: ZkIdentity
+    public sync: Synchronizer
 
     get commitment() {
         return this.id.genIdentityCommitment()
     }
 
-    constructor(config: {
-        db: DB
-        prover: Prover
-        unirepAddress: string
-        provider: ethers.providers.Provider
-        attesterId: bigint
-        _id: ZkIdentity
-    }) {
-        super(config)
-        this.id = config._id
+    constructor(
+        config:
+            | {
+                  db?: DB
+                  attesterId?: bigint
+                  unirepAddress: string
+                  prover: Prover
+                  provider: ethers.providers.Provider
+                  _id?: ZkIdentity // TODO: remove this and only accept as second arg
+              }
+            | Synchronizer,
+        id: ZkIdentity
+    ) {
+        if (config instanceof Synchronizer) {
+            if (!id) {
+                throw new Error(
+                    '@unirep/core:UserState: id must be supplied as second argument when initialized with a sync'
+                )
+            }
+            this.sync = config
+            this.id = id
+        } else {
+            this.id = config._id ?? id
+            delete config._id
+            this.sync = new Synchronizer(config)
+        }
+    }
+
+    async waitForSync(n?: number) {
+        await this.sync.waitForSync(n)
     }
 
     /**
@@ -47,10 +68,10 @@ export default class UserState extends Synchronizer {
      * @returns True if user has signed up in unirep contract, false otherwise.
      */
     async hasSignedUp(): Promise<boolean> {
-        const signup = await this._db.findOne('UserSignUp', {
+        const signup = await this.sync._db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
-                attesterId: this.attesterId.toString(),
+                attesterId: this.sync.attesterId.toString(),
             },
         })
         return !!signup
@@ -62,15 +83,15 @@ export default class UserState extends Synchronizer {
      * @returns The latest epoch where user performs user state transition.
      */
     async latestTransitionedEpoch(): Promise<number> {
-        const currentEpoch = await this.loadCurrentEpoch()
+        const currentEpoch = await this.sync.loadCurrentEpoch()
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
             const epkNullifier = genUserStateTransitionNullifier(
                 this.id.secretHash,
-                this.attesterId.toString(),
+                this.sync.attesterId.toString(),
                 x
             )
-            const n = await this._db.findOne('Nullifier', {
+            const n = await this.sync._db.findOne('Nullifier', {
                 where: {
                     nullifier: epkNullifier.toString(),
                 },
@@ -81,10 +102,10 @@ export default class UserState extends Synchronizer {
             }
         }
         if (latestTransitionedEpoch === 0) {
-            const signup = await this._db.findOne('UserSignUp', {
+            const signup = await this.sync._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
-                    attesterId: this.attesterId.toString(),
+                    attesterId: this.sync.attesterId.toString(),
                 },
             })
             if (!signup) return 0
@@ -100,14 +121,14 @@ export default class UserState extends Synchronizer {
      */
     async latestStateTreeLeafIndex(_epoch?: number): Promise<number> {
         if (!(await this.hasSignedUp())) return -1
-        const currentEpoch = _epoch ?? this.calcCurrentEpoch()
+        const currentEpoch = _epoch ?? this.sync.calcCurrentEpoch()
         const latestTransitionedEpoch = await this.latestTransitionedEpoch()
         if (latestTransitionedEpoch !== currentEpoch) return -1
         if (latestTransitionedEpoch === 0) {
-            const signup = await this._db.findOne('UserSignUp', {
+            const signup = await this.sync._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
-                    attesterId: this.attesterId.toString(),
+                    attesterId: this.sync.attesterId.toString(),
                 },
             })
             if (!signup) {
@@ -118,14 +139,14 @@ export default class UserState extends Synchronizer {
             }
             const leaf = genStateTreeLeaf(
                 this.id.secretHash,
-                this.attesterId.toString(),
+                this.sync.attesterId.toString(),
                 signup.epoch,
                 0,
                 0,
                 0,
                 0
             )
-            const foundLeaf = await this._db.findOne('StateTreeLeaf', {
+            const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
                 where: {
                     hash: leaf.toString(),
                 },
@@ -138,14 +159,14 @@ export default class UserState extends Synchronizer {
         )
         const leaf = genStateTreeLeaf(
             this.id.secretHash,
-            this.attesterId.toString(),
+            this.sync.attesterId.toString(),
             latestTransitionedEpoch,
             posRep,
             negRep,
             graffiti,
             timestamp
         )
-        const foundLeaf = await this._db.findOne('StateTreeLeaf', {
+        const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
             where: {
                 epoch: currentEpoch,
                 hash: leaf.toString(),
@@ -156,29 +177,29 @@ export default class UserState extends Synchronizer {
     }
 
     getEpochKeys(_epoch?: bigint | number, nonce?: number) {
-        const epoch = _epoch ?? this.calcCurrentEpoch()
+        const epoch = _epoch ?? this.sync.calcCurrentEpoch()
         if (
             typeof nonce === 'number' &&
-            nonce >= this.settings.numEpochKeyNoncePerEpoch
+            nonce >= this.sync.settings.numEpochKeyNoncePerEpoch
         ) {
             throw new Error(
-                `getEpochKeys nonce ${nonce} exceeds max nonce value ${this.settings.numEpochKeyNoncePerEpoch}`
+                `getEpochKeys nonce ${nonce} exceeds max nonce value ${this.sync.settings.numEpochKeyNoncePerEpoch}`
             )
         }
         if (typeof nonce === 'number') {
             return genEpochKey(
                 this.id.secretHash,
-                this.attesterId.toString(),
+                this.sync.attesterId.toString(),
                 epoch,
                 nonce
             )
         }
-        return Array(this.settings.numEpochKeyNoncePerEpoch)
+        return Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
                     this.id.secretHash,
-                    this.attesterId.toString(),
+                    this.sync.attesterId.toString(),
                     epoch,
                     i
                 )
@@ -198,10 +219,10 @@ export default class UserState extends Synchronizer {
         let graffiti = BigInt(0)
         let timestamp = BigInt(0)
         const orClauses = [] as any[]
-        const attesterId = this.attesterId
-        const toEpoch = _toEpoch ?? this.calcCurrentEpoch()
+        const attesterId = this.sync.attesterId
+        const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch()
         for (let x = 0; x <= toEpoch; x++) {
-            const epks = Array(this.settings.numEpochKeyNoncePerEpoch)
+            const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
                     genEpochKey(
@@ -218,7 +239,7 @@ export default class UserState extends Synchronizer {
         }
         if (orClauses.length === 0)
             return { posRep, negRep, graffiti, timestamp }
-        const attestations = await this._db.findMany('Attestation', {
+        const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 OR: orClauses,
                 attesterId: attesterId.toString(),
@@ -256,11 +277,11 @@ export default class UserState extends Synchronizer {
         let negRep = BigInt(0)
         let graffiti = BigInt(0)
         let timestamp = BigInt(0)
-        const attestations = await this._db.findMany('Attestation', {
+        const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 epoch: Number(epoch),
                 epochKey: epochKey.toString(),
-                attesterId: this.attesterId.toString(),
+                attesterId: this.sync.attesterId.toString(),
             },
         })
         for (const a of attestations) {
@@ -279,7 +300,7 @@ export default class UserState extends Synchronizer {
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
         assert(
-            epochKeyNonce < this.settings.numEpochKeyNoncePerEpoch,
+            epochKeyNonce < this.sync.settings.numEpochKeyNoncePerEpoch,
             `epochKeyNonce (${epochKeyNonce}) must be less than max epoch nonce`
         )
     }
@@ -292,24 +313,24 @@ export default class UserState extends Synchronizer {
         const { posRep, negRep, graffiti, timestamp } = await this.getRep(
             fromEpoch - 1
         )
-        const toEpoch = _toEpoch ?? this.calcCurrentEpoch()
+        const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch()
         if (fromEpoch.toString() === toEpoch.toString()) {
             throw new Error('Cannot transition to same epoch')
         }
-        const epochTree = await this.genEpochTree(fromEpoch)
-        const epochKeys = Array(this.settings.numEpochKeyNoncePerEpoch)
+        const epochTree = await this.sync.genEpochTree(fromEpoch)
+        const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
                     this.id.secretHash,
-                    this.attesterId.toString(),
+                    this.sync.attesterId.toString(),
                     fromEpoch,
                     i
                 )
             )
         const epochKeyLeafIndices = await Promise.all(
             epochKeys.map(async (epk) => {
-                const leaf = await this._db.findOne('EpochTreeLeaf', {
+                const leaf = await this.sync._db.findOne('EpochTreeLeaf', {
                     where: {
                         epochKey: epk.toString(),
                     },
@@ -331,7 +352,7 @@ export default class UserState extends Synchronizer {
                 ...acc,
             }
         }, {})
-        const leaves = await this.genEpochTreePreimages(fromEpoch)
+        const leaves = await this.sync.genEpochTreePreimages(fromEpoch)
         const epochKeyProofs = epochKeys.map((key) => {
             const { posRep, negRep, graffiti, timestamp } =
                 repByEpochKey[key.toString()]
@@ -339,11 +360,13 @@ export default class UserState extends Synchronizer {
             let noninclusionLeaves = [0, 1]
             let noninclusionIndex = 0
             let noninclusionElements = [
-                Array(this.settings.epochTreeArity).fill(0),
-                Array(this.settings.epochTreeArity).fill(0),
+                Array(this.sync.settings.epochTreeArity).fill(0),
+                Array(this.sync.settings.epochTreeArity).fill(0),
             ]
             let inclusionIndex = 0
-            let inclusionElements = Array(this.settings.epochTreeArity).fill(0)
+            let inclusionElements = Array(
+                this.sync.settings.epochTreeArity
+            ).fill(0)
             let treeElements, treeIndices
             if (leaves.length === 0) {
                 // no attestation in the epoch
@@ -400,7 +423,7 @@ export default class UserState extends Synchronizer {
             }
         })
         const latestLeafIndex = await this.latestStateTreeLeafIndex(fromEpoch)
-        const stateTree = await this.genStateTree(fromEpoch)
+        const stateTree = await this.sync.genStateTree(fromEpoch)
         const stateTreeProof = stateTree.createProof(latestLeafIndex)
         const circuitInputs = {
             from_epoch: fromEpoch,
@@ -408,7 +431,7 @@ export default class UserState extends Synchronizer {
             identity_secret: this.id.secretHash,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
-            attester_id: this.attesterId.toString(),
+            attester_id: this.sync.attesterId.toString(),
             pos_rep: posRep,
             neg_rep: negRep,
             graffiti,
@@ -439,7 +462,7 @@ export default class UserState extends Synchronizer {
                 ({ inclusionElements }) => inclusionElements
             ),
         }
-        const results = await this.prover.genProofAndPublicSignals(
+        const results = await this.sync.prover.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts(circuitInputs)
         )
@@ -447,7 +470,7 @@ export default class UserState extends Synchronizer {
         return new UserStateTransitionProof(
             results.publicSignals,
             results.proof,
-            this.prover
+            this.sync.prover
         )
     }
 
@@ -476,7 +499,7 @@ export default class UserState extends Synchronizer {
         const { posRep, negRep, graffiti, timestamp } = await this.getRep(
             epoch - 1
         )
-        const stateTree = await this.genStateTree(epoch)
+        const stateTree = await this.sync.genStateTree(epoch)
         const stateTreeProof = stateTree.createProof(leafIndex)
 
         const circuitInputs = {
@@ -490,7 +513,7 @@ export default class UserState extends Synchronizer {
             prove_graffiti: graffitiPreImage ? 1 : 0,
             graffiti_pre_image: graffitiPreImage ?? 0,
             reveal_nonce: revealNonce ?? 0,
-            attester_id: this.attesterId.toString(),
+            attester_id: this.sync.attesterId.toString(),
             epoch,
             nonce,
             min_rep: minRep ?? 0,
@@ -500,7 +523,7 @@ export default class UserState extends Synchronizer {
             prove_zero_rep: proveZeroRep ?? 0,
         }
 
-        const results = await this.prover.genProofAndPublicSignals(
+        const results = await this.sync.prover.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts(circuitInputs)
         )
@@ -508,7 +531,7 @@ export default class UserState extends Synchronizer {
         return new ReputationProof(
             results.publicSignals,
             results.proof,
-            this.prover
+            this.sync.prover
         )
     }
 
@@ -519,21 +542,21 @@ export default class UserState extends Synchronizer {
     public genUserSignUpProof = async (
         options: { epoch?: number | bigint } = {}
     ): Promise<SignupProof> => {
-        const epoch = options.epoch ?? this.calcCurrentEpoch()
+        const epoch = options.epoch ?? this.sync.calcCurrentEpoch()
         const circuitInputs = {
             epoch,
             identity_nullifier: this.id.identityNullifier,
             identity_trapdoor: this.id.trapdoor,
-            attester_id: this.attesterId.toString(),
+            attester_id: this.sync.attesterId.toString(),
         }
-        const results = await this.prover.genProofAndPublicSignals(
+        const results = await this.sync.prover.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts(circuitInputs)
         )
         return new SignupProof(
             results.publicSignals,
             results.proof,
-            this.prover
+            this.sync.prover
         )
     }
 
@@ -547,7 +570,7 @@ export default class UserState extends Synchronizer {
     ): Promise<EpochKeyProof> => {
         const nonce = options.nonce ?? 0
         const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
-        const tree = await this.genStateTree(epoch)
+        const tree = await this.sync.genStateTree(epoch)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
         const { posRep, negRep, graffiti, timestamp } = await this.getRep(
             epoch - 1
@@ -564,17 +587,17 @@ export default class UserState extends Synchronizer {
             state_tree_indexes: proof.pathIndices,
             epoch,
             nonce,
-            attester_id: this.attesterId.toString(),
+            attester_id: this.sync.attesterId.toString(),
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
-        const results = await this.prover.genProofAndPublicSignals(
+        const results = await this.sync.prover.genProofAndPublicSignals(
             Circuit.verifyEpochKey,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyProof(
             results.publicSignals,
             results.proof,
-            this.prover
+            this.sync.prover
         )
     }
 }

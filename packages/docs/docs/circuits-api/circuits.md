@@ -48,7 +48,10 @@ Control field:
 - 1 bit `reveal_nonce`
 
 Inputs:
-- `control`
+- `nonce`
+- `epoch`
+- `attester_id`
+- `reveal_nonce`
 - `data` (public)
 - `pos_rep`
 - `neg_rep`
@@ -61,7 +64,7 @@ Inputs:
 Outputs:
 - `epoch_key`
 - `state_tree_root`
-- `control_output`
+- `control`
 
 :::info
 Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
@@ -86,13 +89,16 @@ Control field:
 - 1 bit `reveal_nonce`
 
 Inputs:
-- `control`
+- `nonce`
+- `epoch`
+- `attester_id`
+- `reveal_nonce`
 - `data` (public)
 - `identity_secret`
 
 Outputs:
 - `epoch_key`
-- `control_output`
+- `control`
 
 :::info
 Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
@@ -109,7 +115,6 @@ Control field 0:
 - 64 bits `epoch`
 - 160 bits `attester_id`
 - 1 bit `reveal_nonce`
-- 1 bit `prove_graffiti`
 
 Control field 1:
 - 64 bits `min_rep`
@@ -117,10 +122,10 @@ Control field 1:
 - 1 bit `prove_min_rep`
 - 1 bit `prove_max_rep`
 - 1 bit `prove_zero_rep`
+- 1 bit `prove_graffiti`
 
 Inputs:
 - `identity_secret`
-- `control[2]`
 - `graffiti_pre_image` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
@@ -129,10 +134,14 @@ Inputs:
 - `graffiti`
 - `timestamp`
 - `nonce`
+- `epoch`
+- `attester_id`
+- `reveal_nonce`
 
 Outputs:
 - `epoch_key`
 - `state_tree_root`
+- `control[2]`
 
 :::info
 Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.

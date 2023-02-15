@@ -19,6 +19,7 @@
         "subgraph": "yarn workspace @unirep/subgraph run",
         "docs": "yarn workspace @unirep/docs run",
         "build": "yarn workspaces foreach -t run build",
+        "pre": "yarn workspaces foreach -t run pre",
         "test": "yarn workspaces foreach -t run test",
         "lint": "prettier .",
         "lint:fix": "prettier . --write",

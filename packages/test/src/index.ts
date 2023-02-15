@@ -1,161 +1,127 @@
-import { BigNumberish } from '@ethersproject/bignumber'
+import { ethers } from 'ethers'
 import {
     Circuit,
-    EPOCH_TREE_ARITY,
-    EPOCH_TREE_DEPTH,
     Prover,
-    SignupProof,
-    STATE_TREE_DEPTH,
+    CircuitConfig,
+    BuildOrderedTree,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import {
-    genRandomSalt,
-    IncrementalMerkleTree,
-    stringifyBigInts,
-    ZkIdentity,
-} from '@unirep/utils'
+import { genRandomSalt, stringifyBigInts, ZkIdentity } from '@unirep/utils'
+import { Synchronizer, UserState } from '@unirep/core'
+import { deployUnirep } from '@unirep/contracts/deploy'
+import defaultConfig from '@unirep/circuits/config'
+
+export async function bootstrapUnirep(
+    provider: any, // ethers provider, only required arg
+    config: CircuitConfig = defaultConfig,
+    prover: Prover = defaultProver
+) {
+    const unirepContract = await deployUnirep(provider, config, prover)
+    const synchronizer = new Synchronizer({
+        unirepAddress: unirepContract.address,
+        provider,
+        prover: defaultProver,
+    })
+    return synchronizer
+}
+
+export async function bootstrapAttester(
+    synchronizer: Synchronizer,
+    epochLength: number = 300,
+    provider?: any // ethers provider
+) {
+    const { unirepContract } = synchronizer.unirepContract
+    const attester = ethers.Wallet.createRandom()
+    const sigdata = ethers.utils.solidityKeccak256(
+        ['address', 'address'],
+        [attester.address, unirepContract.address]
+    )
+    const sig = attester.signMessage(sigdata)
+    await unirepContract
+        .attesterSignUpViaRelayer(attester.address, epochLength, sig)
+        .then((t) => t.wait())
+    return attester.address
+}
 
 // users
 export async function bootstrapUsers(
-    attester,
-    unirepContract,
-    {
-        epoch = undefined,
-        userNum = 5,
-        stateTreeDepth = STATE_TREE_DEPTH,
-        stateTree = undefined,
-        prover = defaultProver,
-    }: {
-        epoch?: number
-        userNum?: number
-        stateTreeDepth?: number
-        stateTree?: IncrementalMerkleTree
-        prover?: Prover
-    } = {}
+    synchronizer: Synchronizer,
+    userCount = 5
 ) {
-    const currentStateTree =
-        stateTree ?? new IncrementalMerkleTree(stateTreeDepth)
-    const randomUserNum = userNum
-    const ids: ZkIdentity[] = []
-    for (let i = 0; i < randomUserNum; i++) {
-        const id = new ZkIdentity()
-        const { leaf } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester,
-            {
-                prover,
-                epoch,
-            }
-        )
-        currentStateTree.insert(leaf)
-        ids.push(id)
+    const { unirepContract } = synchronizer.unirepContract
+    // synchronizer should be authed to send transactions
+    const ids = [] as ZkIdentity[]
+    for (let x = 0; x < userCount; x++) {
+        const userState = new UserState(synchronizer, new ZkIdentity())
+        ids.push(userState.id)
+        const r = await userState.genUserSignUpProof()
+        await unirepContract
+            .userSignUp(r.publicSignals, r.proof)
+            .then((t) => t.wait())
     }
-
-    return {
-        stateTree: currentStateTree,
-        ids,
-    }
-}
-
-export async function signupUser(
-    id,
-    unirepContract,
-    attesterId,
-    account,
-    {
-        prover = defaultProver,
-        epoch = undefined,
-    }: {
-        prover?: Prover
-        epoch?: number
-    } = {}
-) {
-    const currentEpoch =
-        epoch ??
-        (await unirepContract.attesterCurrentEpoch(attesterId)).toNumber()
-    const r = await prover.genProofAndPublicSignals(
-        Circuit.signup,
-        stringifyBigInts({
-            epoch: currentEpoch,
-            identity_nullifier: id.identityNullifier,
-            identity_trapdoor: id.trapdoor,
-            attester_id: attesterId,
-        })
-    )
-    const { publicSignals, proof } = new SignupProof(
-        r.publicSignals,
-        r.proof,
-        prover
-    )
-    const leafIndex = await unirepContract.attesterStateTreeLeafCount(
-        attesterId,
-        currentEpoch
-    )
-    await unirepContract
-        .connect(account)
-        .userSignUp(publicSignals, proof)
-        .then((t) => t.wait())
-    return {
-        leaf: publicSignals[1],
-        index: leafIndex.toNumber(),
-        epoch: currentEpoch,
-    }
+    return ids
 }
 
 // attestations
 export async function bootstrapAttestations(
-    attester,
-    epoch,
-    unirepContract,
-    {
-        epkNum = 10,
-        attestNum = 10,
-        epochTreeDepth = EPOCH_TREE_DEPTH,
-        epochTreeArity = EPOCH_TREE_ARITY,
-    }: {
-        epkNum?: number
-        attestNum?: number
-        epochTreeLeaf?: bigint
-        epochTreeDepth?: number
-        epochTreeArity?: number
-    } = {}
+    synchronizer: Synchronizer,
+    account: any,
+    attestationCount = 10
 ) {
-    for (let i = 0; i < epkNum; i++) {
-        const epochKey =
-            genRandomSalt() %
-            (BigInt(epochTreeArity) ** BigInt(epochTreeDepth) - BigInt(1))
-        for (let j = 0; j < attestNum; j++) {
-            const posRep = j * 50
-            const negRep = j * 100
-            const graffiti = genRandomSalt()
-            const tx = await unirepContract
-                .connect(attester)
+    const { unirepContract } = synchronizer
+    const epoch = synchronizer.calcCurrentEpoch()
+    const ids = [] as ZkIdentity[]
+    for (let i = 0; i < attestationCount; i++) {
+        const userState = new UserState(synchronizer, new ZkIdentity())
+        ids.push(userState.id)
+        const r = await userState.genUserSignUpProof()
+        await unirepContract
+            .userSignUp(r.publicSignals, r.proof)
+            .then((t) => t.wait())
+        await userState.waitForSync()
+        const epochKey = userState.getEpochKeys()
+        for (let j = 0; j < attestationCount; j++) {
+            const posRep = Math.floor(Math.random() * 10)
+            const negRep = Math.floor(Math.random() * 10)
+            const graffiti = Math.random() > 0.5 ? genRandomSalt() : BigInt(0)
+
+            await unirepContract
+                .connect(account)
                 .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
-            const { timestamp } = await tx
-                .wait()
-                .then(({ blockNumber }) =>
-                    unirepContract.provider.getBlock(blockNumber)
-                )
+                .then((t) => t.wait())
         }
     }
+    return ids
 }
 
-export async function processAttestations(
-    attester: any,
-    epoch: BigNumberish,
-    unirepContract: any,
-    {
-        epochTreeDepth = EPOCH_TREE_DEPTH,
-        epochTreeArity = EPOCH_TREE_ARITY,
-        prover = defaultProver,
-    }: {
-        epochTreeLeaf?: bigint
-        epochTreeDepth?: number
-        epochTreeArity?: number
-        prover?: Prover
-    } = {}
+export async function sealEpoch(
+    synchronizer: Synchronizer,
+    account: any,
+    epoch: number
 ) {
-    return
+    if (synchronizer.attesterId.toString() === '0') {
+        throw new Error('Synchronizer must have attesterId set')
+    }
+    const { unirepContract } = synchronizer
+    const preimages = await synchronizer.genEpochTreePreimages(epoch)
+    const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(preimages)
+    const r = await defaultProver.genProofAndPublicSignals(
+        Circuit.buildOrderedTree,
+        stringifyBigInts(circuitInputs)
+    )
+    const { publicSignals, proof } = new BuildOrderedTree(
+        r.publicSignals,
+        r.proof,
+        defaultProver
+    )
+
+    await unirepContract
+        .connect(account)
+        .sealEpoch(
+            epoch,
+            synchronizer.attesterId.toString(),
+            publicSignals,
+            proof
+        )
+        .then((t) => t.wait())
 }

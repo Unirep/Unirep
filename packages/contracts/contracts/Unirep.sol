@@ -65,6 +65,9 @@ contract Unirep is IUnirep, VerifySignature {
 
         // for initializing other trees without using poseidon function
         IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
+        emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
+        attesters[uint160(0)].epochLength = type(uint64).max;
+        attesters[uint160(0)].startTimestamp = block.timestamp;
     }
 
     /**
@@ -146,7 +149,11 @@ contract Unirep is IUnirep, VerifySignature {
         // set the epoch length
         attester.epochLength = epochLength;
 
-        emit AttesterSignedUp(uint160(attesterId), epochLength);
+        emit AttesterSignedUp(
+            uint160(attesterId),
+            epochLength,
+            attester.startTimestamp
+        );
     }
 
     /**
@@ -392,6 +399,51 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = newEpoch;
     }
 
+    function decodeEpochKeyControl(uint256 control)
+        public
+        pure
+        returns (
+            uint256 revealNonce,
+            uint256 attesterId,
+            uint256 epoch,
+            uint256 nonce
+        )
+    {
+        revealNonce = (control >> 232) & 1;
+        attesterId = (control >> 72) & ((1 << 160) - 1);
+        epoch = (control >> 8) & ((1 << 64) - 1);
+        nonce = control & ((1 << 8) - 1);
+        return (revealNonce, attesterId, epoch, nonce);
+    }
+
+    function decodeReputationControl(uint256 control)
+        public
+        pure
+        returns (
+            uint256 minRep,
+            uint256 maxRep,
+            uint256 proveMinRep,
+            uint256 proveMaxRep,
+            uint256 proveZeroRep,
+            uint256 proveGraffiti
+        )
+    {
+        minRep = control & ((1 << 64) - 1);
+        maxRep = (control >> 64) & ((1 << 64) - 1);
+        proveMinRep = (control >> 128) & 1;
+        proveMaxRep = (control >> 129) & 1;
+        proveZeroRep = (control >> 130) & 1;
+        proveGraffiti = (control >> 131) & 1;
+        return (
+            minRep,
+            maxRep,
+            proveMinRep,
+            proveMaxRep,
+            proveZeroRep,
+            proveGraffiti
+        );
+    }
+
     function decodeEpochKeySignals(uint256[] memory publicSignals)
         public
         pure
@@ -402,10 +454,12 @@ contract Unirep is IUnirep, VerifySignature {
         signals.stateTreeRoot = publicSignals[1];
         signals.data = publicSignals[3];
         // now decode the control values
-        signals.revealNonce = (publicSignals[2] >> 232) & 1;
-        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
-        signals.nonce = publicSignals[2] & ((1 << 8) - 1);
+        (
+            signals.revealNonce,
+            signals.attesterId,
+            signals.epoch,
+            signals.nonce
+        ) = decodeEpochKeyControl(publicSignals[2]);
         return signals;
     }
 
@@ -437,10 +491,12 @@ contract Unirep is IUnirep, VerifySignature {
         signals.epochKey = publicSignals[1];
         signals.data = publicSignals[2];
         // now decode the control values
-        signals.revealNonce = (publicSignals[0] >> 232) & 1;
-        signals.attesterId = (publicSignals[0] >> 72) & ((1 << 160) - 1);
-        signals.epoch = (publicSignals[0] >> 8) & ((1 << 64) - 1);
-        signals.nonce = publicSignals[0] & ((1 << 8) - 1);
+        (
+            signals.revealNonce,
+            signals.attesterId,
+            signals.epoch,
+            signals.nonce
+        ) = decodeEpochKeyControl(publicSignals[0]);
         return signals;
     }
 
@@ -472,18 +528,21 @@ contract Unirep is IUnirep, VerifySignature {
         signals.stateTreeRoot = publicSignals[1];
         signals.graffitiPreImage = publicSignals[4];
         // now decode the control values
+        (
+            signals.revealNonce,
+            signals.attesterId,
+            signals.epoch,
+            signals.nonce
+        ) = decodeEpochKeyControl(publicSignals[2]);
 
-        signals.nonce = publicSignals[2] & ((1 << 8) - 1);
-        signals.epoch = (publicSignals[2] >> 8) & ((1 << 64) - 1);
-        signals.attesterId = (publicSignals[2] >> 72) & ((1 << 160) - 1);
-        signals.revealNonce = (publicSignals[2] >> 232) & 1;
-
-        signals.minRep = publicSignals[3] & ((1 << 64) - 1);
-        signals.maxRep = (publicSignals[3] >> 64) & ((1 << 64) - 1);
-        signals.proveMinRep = (publicSignals[3] >> 128) & 1;
-        signals.proveMaxRep = (publicSignals[3] >> 129) & 1;
-        signals.proveZeroRep = (publicSignals[3] >> 130) & 1;
-        signals.proveGraffiti = (publicSignals[3] >> 131) & 1;
+        (
+            signals.minRep,
+            signals.maxRep,
+            signals.proveMinRep,
+            signals.proveMaxRep,
+            signals.proveZeroRep,
+            signals.proveGraffiti
+        ) = decodeReputationControl(publicSignals[3]);
         return signals;
     }
 

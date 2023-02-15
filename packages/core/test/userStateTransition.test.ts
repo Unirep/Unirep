@@ -64,7 +64,7 @@ describe('User state transition', function () {
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
 
-            await userState.stop()
+            await userState.sync.stop()
         }
 
         // epoch transition
@@ -79,7 +79,7 @@ describe('User state transition', function () {
                 BigInt(attester.address)
             )
             await userState.waitForSync()
-            const toEpoch = await userState.loadCurrentEpoch()
+            const toEpoch = await userState.sync.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
@@ -100,7 +100,7 @@ describe('User state transition', function () {
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
 
-            await userState.stop()
+            await userState.sync.stop()
         }
 
         // Check GST roots match Unirep state

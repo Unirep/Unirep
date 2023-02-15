@@ -1,7 +1,9 @@
 import { expect } from 'chai'
 import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
-import { Circuit, NUM_EPOCH_KEY_NONCE_PER_EPOCH, ReputationProof } from '../src'
+import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
+
+const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = CircuitConfig.default
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)

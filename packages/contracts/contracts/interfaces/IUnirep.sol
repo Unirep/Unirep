@@ -7,7 +7,8 @@ import {PolyhashData} from '../libraries/Polyhash.sol';
 interface IUnirep {
     event AttesterSignedUp(
         uint160 indexed attesterId,
-        uint256 indexed epochLength
+        uint256 epochLength,
+        uint256 timestamp
     );
 
     event UserSignedUp(
