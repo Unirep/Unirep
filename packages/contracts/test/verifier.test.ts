@@ -2,6 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
+    genRandomSalt,
     IncrementalMerkleTree,
     stringifyBigInts,
     ZkIdentity,
@@ -19,6 +20,10 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import { signupUser } from '@unirep/test'
+
+function randomBits(bit: number) {
+    return genRandomSalt() % (BigInt(2) ** BigInt(bit) - BigInt(1))
+}
 
 describe('Epoch key lite proof verifier', function () {
     this.timeout(300000)
@@ -73,48 +78,56 @@ describe('Epoch key lite proof verifier', function () {
     })
 
     it('should decode public signals', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new ZkIdentity()
-        const attesterId = attester.address
-        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
+        // should reveal nonce
+        {
+            const epoch = randomBits(64)
+            const nonce = randomBits(8)
+            const attesterId = randomBits(160)
+            const revealNonce = 1
 
-        const data = 0
-        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.epochKeyLite,
-                stringifyBigInts({
-                    identity_secret: id.secretHash,
-                    epoch,
-                    nonce,
-                    attester_id: attester.address,
-                    reveal_nonce: 0,
-                    data,
-                })
-            )
+            const control = EpochKeyLiteProof.buildControl({
+                attesterId,
+                epoch,
+                nonce,
+                revealNonce,
+            })
 
-            const v = await defaultProver.verifyProof(
-                Circuit.epochKeyLite,
-                r.publicSignals,
-                r.proof
+            const decodedControl = await unirepContract.decodeEpochKeyControl(
+                control
             )
-            expect(v).to.be.true
-            const proof = new EpochKeyLiteProof(r.publicSignals, r.proof)
-            const signals = await unirepContract.decodeEpochKeyLiteSignals(
-                proof.publicSignals
+            expect(decodedControl.epoch.toString()).to.equal(epoch.toString())
+            expect(decodedControl.nonce.toString()).to.equal(nonce.toString())
+            expect(decodedControl.attesterId.toString()).to.equal(
+                attesterId.toString()
             )
-            expect(signals.epochKey.toString()).to.equal(
-                proof.epochKey.toString()
+            expect(decodedControl.revealNonce.toString()).to.equal(
+                revealNonce.toString()
             )
-            expect(signals.data.toString()).to.equal(proof.data.toString())
-            expect(signals.attesterId.toString()).to.equal(
-                proof.attesterId.toString()
+        }
+
+        // should not reveal nonce
+        {
+            const epoch = randomBits(64)
+            const nonce = randomBits(8)
+            const attesterId = randomBits(160)
+            const revealNonce = 0
+
+            const control = EpochKeyLiteProof.buildControl({
+                attesterId,
+                epoch,
+                nonce,
+                revealNonce,
+            })
+
+            const decodedControl = await unirepContract.decodeEpochKeyControl(
+                control
             )
-            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
-            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
-            await unirepContract
-                .verifyEpochKeyLiteProof(proof.publicSignals, proof.proof)
-                .then((t) => t.wait())
+            expect(decodedControl.epoch.toString()).to.equal(epoch.toString())
+            expect(decodedControl.nonce.toString()).to.equal('0')
+            expect(decodedControl.attesterId.toString()).to.equal(
+                attesterId.toString()
+            )
+            expect(decodedControl.revealNonce.toString()).to.equal('0')
         }
     })
 
@@ -611,87 +624,58 @@ describe('Reputation proof verifier', function () {
     })
 
     it('should decode public signals', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new ZkIdentity()
-        // sign up a user
-        const { leaf, index, epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
+        const epoch = randomBits(64)
+        const nonce = randomBits(8)
+        const attesterId = randomBits(160)
+        const revealNonce = 0
 
-        const merkleProof = stateTree.createProof(index)
-        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.proveReputation,
-                stringifyBigInts({
-                    ...zeroCircuitInputs,
-                    identity_secret: id.secretHash,
-                    state_tree_indexes: merkleProof.pathIndices,
-                    state_tree_elements: merkleProof.siblings,
-                    attester_id: attester.address,
-                    epoch,
-                    nonce,
-
-                    prove_graffiti: 0,
-                    graffiti_pre_image: 0,
-                    reveal_nonce: 1,
-                    min_rep: 0,
-                    max_rep: 0,
-                    prove_min_rep: 0,
-                    prove_max_rep: 1,
-                    prove_zero_rep: 0,
-                })
-            )
-
-            const v = await defaultProver.verifyProof(
-                Circuit.proveReputation,
-                r.publicSignals,
-                r.proof
-            )
-            expect(v).to.be.true
-            const proof = new ReputationProof(r.publicSignals, r.proof)
-            const signals = await unirepContract.decodeReputationSignals(
-                proof.publicSignals
-            )
-            expect(signals.epochKey.toString()).to.equal(
-                proof.epochKey.toString()
-            )
-            expect(signals.stateTreeRoot.toString()).to.equal(
-                proof.stateTreeRoot.toString()
-            )
-            expect(signals.attesterId.toString()).to.equal(
-                proof.attesterId.toString()
-            )
-            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
-            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
-            expect(signals.graffitiPreImage.toString()).to.equal(
-                proof.graffitiPreImage.toString()
-            )
-            expect(signals.proveGraffiti.toString()).to.equal(
-                proof.proveGraffiti.toString()
-            )
-            expect(signals.revealNonce.toString()).to.equal(
-                proof.revealNonce.toString()
-            )
-            expect(signals.proveMinRep.toString()).to.equal(
-                proof.proveMinRep.toString()
-            )
-            expect(signals.proveMaxRep.toString()).to.equal(
-                proof.proveMaxRep.toString()
-            )
-            expect(signals.proveZeroRep.toString()).to.equal(
-                proof.proveZeroRep.toString()
-            )
-            expect(signals.minRep.toString()).to.equal(proof.minRep.toString())
-            expect(signals.maxRep.toString()).to.equal(proof.maxRep.toString())
-            await unirepContract
-                .verifyReputationProof(proof.publicSignals, proof.proof)
-                .then((t) => t.wait())
+        for (let proveMinRep = 0; proveMinRep < 2; proveMinRep++) {
+            for (let proveMaxRep = 0; proveMaxRep < 2; proveMaxRep++) {
+                for (let proveZeroRep = 0; proveZeroRep < 2; proveZeroRep++) {
+                    for (
+                        let proveGraffiti = 0;
+                        proveGraffiti < 2;
+                        proveGraffiti++
+                    ) {
+                        const maxRep = randomBits(64)
+                        const minRep = randomBits(64)
+                        const control = ReputationProof.buildControl({
+                            attesterId,
+                            epoch,
+                            nonce,
+                            revealNonce,
+                            proveGraffiti,
+                            minRep,
+                            maxRep,
+                            proveMinRep,
+                            proveMaxRep,
+                            proveZeroRep,
+                        })
+                        const decodedControl =
+                            await unirepContract.decodeReputationControl(
+                                control[1]
+                            )
+                        expect(decodedControl.minRep.toString()).to.equal(
+                            minRep.toString()
+                        )
+                        expect(decodedControl.maxRep.toString()).to.equal(
+                            maxRep.toString()
+                        )
+                        expect(decodedControl.proveMinRep.toString()).to.equal(
+                            proveMinRep.toString()
+                        )
+                        expect(decodedControl.proveMaxRep.toString()).to.equal(
+                            proveMaxRep.toString()
+                        )
+                        expect(decodedControl.proveZeroRep.toString()).to.equal(
+                            proveZeroRep.toString()
+                        )
+                        expect(
+                            decodedControl.proveGraffiti.toString()
+                        ).to.equal(proveGraffiti.toString())
+                    }
+                }
+            }
         }
     })
 
