@@ -62,7 +62,7 @@ describe('User Signup', function () {
             const contractEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
             )
-            const unirepEpoch = await userState.loadCurrentEpoch()
+            const unirepEpoch = await userState.sync.loadCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
@@ -85,7 +85,7 @@ describe('User Signup', function () {
                 )
             expect(stateRootExists).to.be.true
 
-            await userState.stop()
+            await userState.sync.stop()
         }
 
         // Check GST roots match Unirep state

@@ -1,11 +1,11 @@
 import { expect } from 'chai'
 import { ZkIdentity, genEpochKey } from '@unirep/utils'
-import { Circuit, EpochKeyLiteProof } from '../src'
+import { Circuit, CircuitConfig, EpochKeyLiteProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
-
 import { genProofAndVerify } from './utils'
+
+const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = CircuitConfig.default
 
 describe('Epoch key lite circuits', function () {
     this.timeout(300000)

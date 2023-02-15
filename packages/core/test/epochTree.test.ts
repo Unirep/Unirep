@@ -99,7 +99,7 @@ describe('Epoch tree', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const config = await unirepContract.config()
         const epochTree = new IncrementalMerkleTree(
@@ -154,7 +154,7 @@ describe('Epoch tree', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        const preimages = await userState.genEpochTreePreimages(epoch)
+        const preimages = await userState.sync.genEpochTreePreimages(epoch)
         const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -178,13 +178,13 @@ describe('Epoch tree', function () {
             attester.address,
             epoch
         )
-        const userEpochRoot = await userState.genEpochTree(epoch)
+        const userEpochRoot = await userState.sync.genEpochTree(epoch)
         expect(onchainEpochRoot.toString()).to.equal(
             userEpochRoot.root.toString()
         )
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
         )
-        await userState.stop()
+        await userState.sync.stop()
     })
 })

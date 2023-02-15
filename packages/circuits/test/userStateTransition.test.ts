@@ -7,14 +7,14 @@ import {
     genUserStateTransitionNullifier,
     stringifyBigInts,
 } from '@unirep/utils'
-import { Circuit } from '../src'
+import { Circuit, CircuitConfig } from '../src'
 import { genProofAndVerify, genUserStateTransitionCircuitInput } from './utils'
-import {
+const {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
-} from '../config'
+} = CircuitConfig.default
 
 describe('User state transition', function () {
     this.timeout(300000)

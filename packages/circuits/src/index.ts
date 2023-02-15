@@ -9,3 +9,5 @@ export * from './ReputationProof'
 export * from './SignupProof'
 export * from './UserStateTransitionProof'
 export * from './BuildOrderedTree'
+
+export * from './CircuitConfig'

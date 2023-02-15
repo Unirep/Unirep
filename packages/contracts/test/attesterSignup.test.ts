@@ -2,10 +2,12 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree, genRandomSalt } from '@unirep/utils'
-import { STATE_TREE_DEPTH } from '@unirep/circuits'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
+import defaultConfig from '@unirep/circuits/config'
+
+const { STATE_TREE_DEPTH } = defaultConfig
 
 describe('Attester Signup', function () {
     this.timeout(120000)
@@ -46,11 +48,14 @@ describe('Attester Signup', function () {
             const tx = await unirepContract
                 .connect(attester)
                 .attesterSignUp(attesterEpochLength)
-
+            const { timestamp } = await tx
+                .wait()
+                .then(({ blockNumber }) =>
+                    ethers.provider.getBlock(blockNumber)
+                )
             expect(tx)
                 .to.emit(unirepContract, 'AttesterSignedUp')
-                .withArgs(attester.address, attesterEpochLength)
-            await tx.wait()
+                .withArgs(attester.address, attesterEpochLength, timestamp)
 
             const currentEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
@@ -122,9 +127,12 @@ describe('Attester Signup', function () {
             .connect(relayer)
             .attesterSignUpViaRelayer(attester.address, EPOCH_LENGTH, signature)
 
+        const { timestamp } = await tx
+            .wait()
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         expect(tx)
             .to.emit(unirepContract, 'AttesterSignedUp')
-            .withArgs(attester.address, EPOCH_LENGTH)
+            .withArgs(attester.address, EPOCH_LENGTH, timestamp)
         await tx.wait()
 
         const currentEpoch = await unirepContract.attesterCurrentEpoch(

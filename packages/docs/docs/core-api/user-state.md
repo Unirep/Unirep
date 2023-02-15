@@ -6,34 +6,49 @@ The user state object is used to manage user state for an attester. The state is
 
 ```ts
 import { UserState, schema } from '@unirep/core'
-import { SQLiteConnector } from 'anondb/node'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-const db = new SQLiteConnector(schema, ':memory:')
 const state = new UserState({
-  db,
   prover: defaultProver, // a circuit prover
   unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
   provider, // an ethers.js provider
-  attesterId: ATTESTER_ADDRESS,
-  _id: identity, // a user identity that will be used for making proofs
-})
+}, identity)
+
+// or, initialize with an existing synchronizer object
+
+const state = new UserState(synchronizer, identity)
 ```
 
-:::info
-The `UserState` class is a subclass of [`Synchronizer`](./synchronizer).
-:::
 
 ## constructor
 
+Can be constructed using an existing synchronizer, or by initializing a new synchronizer.
+
 ```ts
-constructor(config: {
-    db: DB
-    prover: Prover
-    unirepContract: ethers.Contract
-    _id: ZkIdentity
+constructor(config: Synchronizer | {
+    db?: DB
     attesterId: bigint
-}) {
+    unirepAddress: string
+    prover: Prover
+    provider: ethers.Provider
+    _id?: ZkIdentity
+}, id?: ZkIdentity) {
+```
+
+## sync
+
+The underlying synchronizer object.
+
+```ts
+state.sync: Synchronizer
+```
+
+## waitForSync
+
+Convenience accessor for synchronizer `waitForSync`.
+
+```ts
+state.waitForSync(blockNumber?: number): Promise<void>
 ```
 
 ## hasSignedUp

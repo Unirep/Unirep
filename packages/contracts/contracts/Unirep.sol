@@ -65,6 +65,9 @@ contract Unirep is IUnirep, VerifySignature {
 
         // for initializing other trees without using poseidon function
         IncrementalBinaryTree.init(emptyTree, config.stateTreeDepth, 0);
+        emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
+        attesters[uint160(0)].epochLength = type(uint64).max;
+        attesters[uint160(0)].startTimestamp = block.timestamp;
     }
 
     /**
@@ -146,7 +149,11 @@ contract Unirep is IUnirep, VerifySignature {
         // set the epoch length
         attester.epochLength = epochLength;
 
-        emit AttesterSignedUp(uint160(attesterId), epochLength);
+        emit AttesterSignedUp(
+            uint160(attesterId),
+            epochLength,
+            attester.startTimestamp
+        );
     }
 
     /**

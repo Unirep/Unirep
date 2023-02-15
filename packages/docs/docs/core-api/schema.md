@@ -50,6 +50,7 @@ An attestation given to an epoch key.
   graffiti?: string,
   timestamp?: number,
   hash: string
+  blockNumber: number
 }
 ```
 
@@ -63,6 +64,7 @@ A leaf from a state tree.
   hash: string,
   index: number,
   attesterId: string
+  blockNumber: number
 }
 ```
 
@@ -76,6 +78,12 @@ A leaf from an epoch tree.
   hash: string,
   index: string,
   attesterId: string
+  epochKey: string
+  posRep: string
+  negRep: string
+  graffiti: string
+  timestamp: string
+  blockNumber: number
 }
 ```
 
@@ -99,6 +107,7 @@ An epoch entry.
   attesterId: string,
   nullifier: string,
   transactionHash: string,
+  blockNumber: number
 }
 ```
 
@@ -111,5 +120,18 @@ An object created when a user joins an attester.
   commitment: string,
   epoch: number,
   attesterId: string
+  blockNumber: number
+}
+```
+
+## Attester
+
+An object created when an attester registers with the Unirep instance.
+
+```ts
+{
+  _id: string // the contract address
+  startTimestamp: number
+  epochLength: number
 }
 ```
