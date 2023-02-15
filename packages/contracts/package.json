@@ -25,7 +25,8 @@
         "lint": "prettier --write .",
         "coverage": "hardhat coverage && yarn badge",
         "badge": "lcov-badge-generator ./coverage/lcov.info -o coverage/badge.svg",
-        "deploy": "hardhat run scripts/deploy.mjs"
+        "deploy": "hardhat run scripts/deploy.mjs",
+        "errorcode": "node ./scripts/errorCodes"
     },
     "dependencies": {
         "@unirep/circuits": "2.0.0-alpha-4",

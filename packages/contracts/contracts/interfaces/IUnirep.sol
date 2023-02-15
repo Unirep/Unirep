@@ -82,7 +82,6 @@ interface IUnirep {
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
-    error HashchainInvalid();
     error HashchainNotProcessed();
 
     struct EpochKeySignals {
