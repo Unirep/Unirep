@@ -97,6 +97,40 @@ function attesterEpochRemainingTime(
 ) public view returns (uint)
 ```
 
+## decodeEpochKeyControl
+
+Decode a epoch key related control from [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof), [epoch key proof](../circuits-api/circuits.md#epoch-key-proof), and [reputation proof](../circuits-api/circuits.md#prove-reputation-proof) into named variables.
+
+```sol
+function decodeEpochKeyControl(uint256 control)
+    public
+    pure
+    returns (
+      uint256 revealNonce,
+      uint256 attesterId,
+      uint256 epoch,
+      uint256 nonce
+    )
+```
+
+## decodeReputationControl
+
+Decode a reputation related control from [reputation proof](../circuits-api/circuits.md#prove-reputation-proof) into named variables.
+
+```sol
+function decodeReputationControl(uint256 control)
+    public
+    pure
+    returns (
+      uint256 minRep,
+      uint256 maxRep,
+      uint256 proveMinRep,
+      uint256 proveMaxRep,
+      uint256 proveZeroRep,
+      uint256 proveGraffiti
+    )
+```
+
 ## decodeReputationSignals
 
 Decode the public signals from a [reputation proof](../circuits-api/circuits#prove-reputation-proof) into named variables.
