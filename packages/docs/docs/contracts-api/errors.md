@@ -94,13 +94,30 @@ Please make sure the signature is signed through the correct attester.
     The [epoch tree](../protocol/trees.md#epoch-tree) root of given epoch does not match the current Unirep contract. <br/>
     Please check if all attestations are processed correctly and successfully.
 
-## 0x17643148
-- `HashchainInvalid()`<br/>
-    The [hashchain](../protocol/attestation.md#hashchain) which is going to be processed does not match the on-chain hashchain. <br/>
-    Please check if the previous hashchain has been processed.
-
-
 ## 0xac46def6
 - `HashchainNotProcessed()`<br/>
     [Hashchains](../protocol/attestation.md#hashchain) are not processed completely before a [user state transition](../protocol/user-state-transition.md). <br/>
     Please wait until all hashchains are processed by the attester.
+
+## 0x997bdc87
+- `DoubleSeal()`<br/>
+    The `sealEpoch` can only be called once. See [epoch transition](../protocol/epoch.md#epoch-transition).
+
+## 0x3fbcde72
+- `IncorrectHash`<br/>
+    The circuit should output the [polysum](../protocol/polysum.md#polysum) that matches the on-chain polysum. <br/>
+    If the error occurs, please check if the off-chain attestations matches the on-chain attestations.
+
+## 0x74d1bcdc
+- `MaxAttestations`<br/>
+    The [epoch tree](../protocol/trees.md#epoch-tree) can only store `tree_arity ** tree_degree - 3` epoch keys per attester per epoch. See also [build ordered tree](../circuits-api/circuits.md#build-ordered-tree).<br/>
+    There is no more new epoch keys that can receive attestations. Users should wait until the next epoch and then generate a new epoch key to receive attestations.
+
+## 0xef32b8ef
+- `NoAttestations`<br/>
+    If there is no attestations in an epoch, the `sealEpoch` cannot be executed. Users can perform user state transition without `sealEpoch` and then move on to the new epoch.
+
+## 0x7db3aba7
+- `OutOfRange`<br/>
+    A [graffiti](../protocol/reputation.md#reputation) cannot be out of `SNARK_SCALAR_FIELD`.<br/>
+    Please use a value which is less than `SNARK_SCALAR_FIELD`.
