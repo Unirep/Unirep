@@ -7,7 +7,6 @@
         "build": "tsc"
     },
     "dependencies": {
-        "@unirep/circuits": "2.0.0-alpha-4",
-        "@unirep/utils": "2.0.0-alpha-4"
+        "@unirep/core": "2.0.0-alpha-3"
     }
 }

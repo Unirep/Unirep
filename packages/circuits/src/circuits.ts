@@ -1,4 +1,5 @@
 import { SnarkProof } from '@unirep/utils'
+import { CircuitConfig } from './CircuitConfig'
 
 /**
  * Name of the circuits that are used in Unirep protocol
@@ -49,6 +50,8 @@ export interface Prover {
      * @returns vkey of the circuit
      */
     getVKey: (name: string | Circuit) => Promise<any>
+
+    getConfig?: () => CircuitConfig
 }
 
 /**

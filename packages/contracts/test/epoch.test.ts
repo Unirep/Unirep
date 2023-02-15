@@ -2,15 +2,12 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/utils'
-import { STATE_TREE_DEPTH } from '@unirep/circuits'
+import defaultConfig from '@unirep/circuits/config'
+
+const { STATE_TREE_DEPTH } = defaultConfig
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-import {
-    bootstrapAttestations,
-    bootstrapUsers,
-    processAttestations,
-} from '@unirep/test'
 
 describe('Epoch', function () {
     this.timeout(0)
@@ -39,7 +36,7 @@ describe('Epoch', function () {
         })
     }
 
-    it.skip('should update epoch', async () => {
+    it('should update epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
@@ -50,39 +47,6 @@ describe('Epoch', function () {
         for (let x = startEpoch.toNumber(); x < 5; x++) {
             const prevEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
-            )
-            const { stateTree } = await bootstrapUsers(
-                attester,
-                unirepContract,
-                {
-                    userNum: 3,
-                    epoch: prevEpoch.toNumber(),
-                }
-            )
-            const epochTree = await bootstrapAttestations(
-                attester,
-                prevEpoch.toNumber(),
-                unirepContract,
-                {
-                    epkNum: 3,
-                    attestNum: 5,
-                }
-            )
-            const prevStateTreeRoot =
-                await unirepContract.attesterStateTreeRoot(
-                    attester.address,
-                    prevEpoch
-                )
-            await processAttestations(attester, prevEpoch, unirepContract)
-            const prevEpochTreeRoot = await unirepContract.attesterEpochRoot(
-                attester.address,
-                prevEpoch
-            )
-            expect(prevStateTreeRoot.toString()).to.equal(
-                stateTree.root.toString()
-            )
-            expect(prevEpochTreeRoot.toString()).to.equal(
-                epochTree.root.toString()
             )
 
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])

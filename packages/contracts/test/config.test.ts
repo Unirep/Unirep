@@ -1,12 +1,15 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
+import { hash4, SparseMerkleTree } from '@unirep/utils'
+import defaultConfig from '@unirep/circuits/config'
+
+const {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} from '@unirep/circuits'
+} = defaultConfig
 
 import { deployUnirep } from '../deploy'
 

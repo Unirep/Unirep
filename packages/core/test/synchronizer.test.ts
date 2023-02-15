@@ -1,16 +1,17 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, genStateTreeLeaf, stringifyBigInts } from '@unirep/utils'
+import {
+    IncrementalMerkleTree,
+    ZkIdentity,
+    genStateTreeLeaf,
+    stringifyBigInts,
+} from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Circuit, BuildOrderedTree } from '@unirep/circuits'
+import { Circuit, CircuitConfig, BuildOrderedTree } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import {
-    bootstrapAttestations,
-    bootstrapUsers,
-    processAttestations,
-} from '@unirep/test'
+import { bootstrapAttestations, bootstrapUsers } from './test'
 
 import { Synchronizer } from '../src'
 import { genUserState, compareDB, genUnirepState } from './utils'
@@ -21,7 +22,6 @@ describe('Synchronizer process events', function () {
     this.timeout(0)
     let unirepContract
     let attester
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -34,42 +34,56 @@ describe('Synchronizer process events', function () {
             .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        await bootstrapUsers(attester, unirepContract, {
-            epoch: epoch.toNumber(),
-        })
-        await bootstrapAttestations(attester, epoch.toNumber(), unirepContract)
-        synchronizer = await genUnirepState(
-            ethers.provider,
-            unirepContract.address,
-            BigInt(attester.address)
-        )
-        const epochTree = await synchronizer.genEpochTree(epoch)
-        await processAttestations(attester, epoch, unirepContract, {
-            epochTree,
-        })
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            synchronizer = await genUnirepState(
+                ethers.provider,
+                unirepContract.address,
+                BigInt(attester.address)
+            )
+            const epoch = await synchronizer.loadCurrentEpoch()
+            await bootstrapUsers(synchronizer, attester)
+            await bootstrapAttestations(synchronizer, attester)
+            await synchronizer.waitForSync()
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            await ethers.provider.send('evm_mine', [])
+            const preimages = await synchronizer.genEpochTreePreimages(epoch)
+            const { circuitInputs } =
+                BuildOrderedTree.buildInputsForLeaves(preimages)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.buildOrderedTree,
+                stringifyBigInts(circuitInputs)
+            )
+            const { publicSignals, proof } = new BuildOrderedTree(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
 
-    afterEach(async () => {
-        await synchronizer.waitForSync()
-        const state = await genUserState(
-            synchronizer.unirepContract.provider,
-            synchronizer.unirepContract.address,
-            new ZkIdentity(),
-            BigInt(attester.address)
-        )
-        await compareDB((state as any)._db, (synchronizer as any)._db)
-        await state.stop()
-        await synchronizer.stop()
+            const accounts = await ethers.getSigners()
+            await unirepContract
+                .connect(accounts[5])
+                .sealEpoch(epoch, attester.address, publicSignals, proof)
+                .then((t) => t.wait())
+        })
 
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(async () => {
+            await synchronizer.waitForSync()
+            const state = await genUserState(
+                synchronizer.unirepContract.provider,
+                synchronizer.unirepContract.address,
+                new ZkIdentity(),
+                BigInt(attester.address)
+            )
+            await compareDB((state.sync as any)._db, (synchronizer as any)._db)
+            await state.sync.stop()
+            await synchronizer.stop()
+
+            await ethers.provider.send('evm_revert', [snapshot])
+        })
+    }
 
     it('should process sign up event', async () => {
         const [UserSignedUp] =
@@ -95,17 +109,19 @@ describe('Synchronizer process events', function () {
             id,
             BigInt(attester.address)
         )
-        const { publicSignals, proof } = await userState.genUserSignUpProof()
+        const epoch = await synchronizer.loadCurrentEpoch()
+        const { publicSignals, proof } = await userState.genUserSignUpProof({
+            epoch,
+        })
 
         await synchronizer.unirepContract
             .connect(attester)
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
 
-        const epoch = await synchronizer.loadCurrentEpoch()
         const attesterId = BigInt(attester.address).toString()
-        const tree = await synchronizer.genStateTree(epoch)
         await synchronizer.waitForSync()
+        const tree = await synchronizer.genStateTree(epoch)
         await signUpEvent
         await stateLeafEvent
         const docs = await (synchronizer as any)._db.findMany('UserSignUp', {
@@ -153,17 +169,16 @@ describe('Synchronizer process events', function () {
         expect(storedLeaves[0].epoch).to.equal(Number(epoch))
         expect(storedLeaves[0].index).to.equal(leafIndex - 1)
         // now look for a new GSTRoot
-        tree.insert(leaf)
         expect(
             await synchronizer.stateTreeRootExists(
                 tree.root.toString(),
                 Number(epoch)
             )
         ).to.be.true
-        await userState.stop()
+        await userState.sync.stop()
     })
 
-    it.skip('should process attestations', async () => {
+    it('should process attestations', async () => {
         const [AttestationSubmitted] =
             synchronizer.unirepContract.filters.AttestationSubmitted()
                 .topics as string[]
@@ -191,9 +206,11 @@ describe('Synchronizer process events', function () {
             id,
             attesterId
         )
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await synchronizer.unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -201,7 +218,6 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -216,7 +232,7 @@ describe('Synchronizer process events', function () {
         // now commit the attetstations
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimages = await userState.genEpochTreePreimages(epoch)
+        const preimages = await userState.sync.genEpochTreePreimages(epoch)
         const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -266,10 +282,10 @@ describe('Synchronizer process events', function () {
             {}
         )
         expect(finalAttestCount).to.equal(attestCount + 1)
-        await userState.stop()
+        await userState.sync.stop()
     })
 
-    it.skip('should process ust events', async () => {
+    it('should process ust events', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
@@ -281,9 +297,11 @@ describe('Synchronizer process events', function () {
             id,
             attesterId
         )
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
             await synchronizer.unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
@@ -291,7 +309,6 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -317,7 +334,7 @@ describe('Synchronizer process events', function () {
 
         // now commit the attetstations
         {
-            const preimages = await userState.genEpochTreePreimages(epoch)
+            const preimages = await userState.sync.genEpochTreePreimages(epoch)
             const { circuitInputs } =
                 BuildOrderedTree.buildInputsForLeaves(preimages)
             const r = await defaultProver.genProofAndPublicSignals(
@@ -334,7 +351,7 @@ describe('Synchronizer process events', function () {
                 .connect(accounts[5])
                 .sealEpoch(epoch, attester.address, publicSignals, proof)
                 .then((t) => t.wait())
-            await userState.waitForSync()
+            await userState.sync.waitForSync()
         }
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
@@ -359,7 +376,7 @@ describe('Synchronizer process events', function () {
             synchronizer.once(UserStateTransitioned, (event) => rs(event))
         )
         // then run an epoch transition and check the rep
-        const toEpoch = await userState.loadCurrentEpoch()
+        const toEpoch = await userState.sync.loadCurrentEpoch()
         {
             await userState.waitForSync()
             const { publicSignals, proof } =
@@ -377,11 +394,11 @@ describe('Synchronizer process events', function () {
         await epochEndedEvent
 
         {
-            const { posRep, negRep, graffiti } = await userState.getRep()
+            const { posRep, negRep, graffiti } = await userState.getRep(epoch)
             expect(posRep).to.equal(newPosRep)
             expect(negRep).to.equal(newNegRep)
             expect(graffiti).to.equal(newGraffiti)
         }
-        await userState.stop()
+        await userState.sync.stop()
     })
 })

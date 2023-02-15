@@ -1,14 +1,19 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    SNARK_SCALAR_FIELD,
-} from '@unirep/circuits'
+import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
+import defaultConfig from '@unirep/circuits/config'
+
+const {
+    EPOCH_TREE_DEPTH,
+    EPOCH_TREE_ARITY,
+    STATE_TREE_DEPTH,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+} = defaultConfig
 
 describe('Attestations', function () {
     this.timeout(120000)

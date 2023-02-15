@@ -118,18 +118,16 @@ export const genUnirepState = async (
     attesterId: bigint,
     _db?: DB
 ) => {
-    let synchronizer: Synchronizer
-    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    synchronizer = new Synchronizer({
-        db,
-        prover: defaultProver,
+    const unirep = new Synchronizer({
         unirepAddress: address,
         provider,
         attesterId,
+        prover: defaultProver,
     })
-    await synchronizer.start()
-    await synchronizer.waitForSync()
-    return synchronizer
+    unirep.pollRate = 150
+    await unirep.start()
+    await unirep.waitForSync()
+    return unirep
 }
 
 /**
@@ -147,16 +145,11 @@ export const genUserState = async (
     attesterId: bigint,
     _db?: DB
 ) => {
-    let db: DB = _db ?? (await SQLiteConnector.create(schema, ':memory:'))
-    const userState = new UserState({
-        db,
-        prover: defaultProver,
-        unirepAddress: address,
+    const synchronizer = await genUnirepState(
         provider,
+        address,
         attesterId,
-        _id: userIdentity,
-    })
-    await userState.start()
-    await userState.waitForSync()
-    return userState
+        _db
+    )
+    return new UserState(synchronizer, userIdentity)
 }

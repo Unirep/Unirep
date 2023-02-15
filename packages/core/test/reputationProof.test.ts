@@ -43,7 +43,7 @@ describe('Reputation proof', function () {
             id,
             attesterId
         )
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
                 { epoch }
@@ -61,7 +61,7 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     it('should reveal epoch key nonce', async () => {
@@ -75,7 +75,7 @@ describe('Reputation proof', function () {
             id,
             attesterId
         )
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
                 { epoch }
@@ -96,7 +96,7 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(epkNonce)
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     it('should not reveal epoch key nonce', async () => {
@@ -110,7 +110,7 @@ describe('Reputation proof', function () {
             id,
             attesterId
         )
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
                 { epoch }
@@ -131,7 +131,7 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     // TODO: should prove minRep, maxRep, graffiti

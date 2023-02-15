@@ -100,7 +100,7 @@ describe('State tree', function () {
             const contractEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
             )
-            const unirepEpoch = await userState.loadCurrentEpoch()
+            const unirepEpoch = await userState.sync.loadCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
@@ -124,12 +124,14 @@ describe('State tree', function () {
             expect(stateRootExists).to.be.true
 
             await userState.waitForSync()
-            const unirepStateTree = await userState.genStateTree(contractEpoch)
+            const unirepStateTree = await userState.sync.genStateTree(
+                contractEpoch
+            )
             expect(unirepStateTree.root.toString()).to.equal(
                 stateTree.root.toString()
             )
 
-            const numLeaves = await userState.numStateTreeLeaves(
+            const numLeaves = await userState.sync.numStateTreeLeaves(
                 Number(contractEpoch)
             )
             const contractLeaves =
@@ -139,7 +141,7 @@ describe('State tree', function () {
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
-            await userState.stop()
+            await userState.sync.stop()
         }
     })
 
@@ -165,7 +167,7 @@ describe('State tree', function () {
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
-            await userState.stop()
+            await userState.sync.stop()
         }
 
         // epoch transition
@@ -182,7 +184,7 @@ describe('State tree', function () {
                 BigInt(attester.address)
             )
             await userState.waitForSync()
-            const toEpoch = await userState.loadCurrentEpoch()
+            const toEpoch = await userState.sync.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
@@ -210,12 +212,12 @@ describe('State tree', function () {
             expect(stateRootExists).to.be.true
 
             await userState.waitForSync()
-            const unirepStateTree = await userState.genStateTree(toEpoch)
+            const unirepStateTree = await userState.sync.genStateTree(toEpoch)
             expect(unirepStateTree.root.toString()).to.equal(
                 stateTree.root.toString()
             )
 
-            const numLeaves = await userState.numStateTreeLeaves(
+            const numLeaves = await userState.sync.numStateTreeLeaves(
                 Number(toEpoch)
             )
             const contractLeaves =
@@ -225,7 +227,7 @@ describe('State tree', function () {
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
-            await userState.stop()
+            await userState.sync.stop()
         }
     })
 
@@ -271,7 +273,7 @@ describe('State tree', function () {
                     .then((t) => t.wait())
             }
 
-            const epoch = await userState.loadCurrentEpoch()
+            const epoch = await userState.sync.loadCurrentEpoch()
             const epochKeys = await userState.getEpochKeys(epoch)
             const [epk] = epochKeys
             // now submit the attestation from the attester
@@ -289,7 +291,7 @@ describe('State tree', function () {
                     ethers.provider.getBlock(blockNumber)
                 )
             attestations[i].timestamp = timestamp
-            await userState.stop()
+            await userState.sync.stop()
         }
 
         const unirepState = await genUnirepState(
@@ -335,7 +337,7 @@ describe('State tree', function () {
                 BigInt(attester.address)
             )
             await userState.waitForSync()
-            const toEpoch = await userState.loadCurrentEpoch()
+            const toEpoch = await userState.sync.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
@@ -363,12 +365,12 @@ describe('State tree', function () {
             expect(stateRootExists).to.be.true
 
             await userState.waitForSync()
-            const unirepStateTree = await userState.genStateTree(toEpoch)
+            const unirepStateTree = await userState.sync.genStateTree(toEpoch)
             expect(unirepStateTree.root.toString()).to.equal(
                 stateTree.root.toString()
             )
 
-            const numLeaves = await userState.numStateTreeLeaves(
+            const numLeaves = await userState.sync.numStateTreeLeaves(
                 Number(toEpoch)
             )
             const contractLeaves =
@@ -378,7 +380,7 @@ describe('State tree', function () {
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
-            await userState.stop()
+            await userState.sync.stop()
         }
     })
 
@@ -418,7 +420,7 @@ describe('State tree', function () {
                 0
             )
             stateTree.insert(leaf)
-            await userState.stop()
+            await userState.sync.stop()
         }
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])

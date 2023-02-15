@@ -5,12 +5,13 @@ import {
     hash7,
     genEpochKey,
 } from '@unirep/utils'
-import { Circuit, EpochKeyProof } from '../src'
+import { Circuit, EpochKeyProof, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
-import { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } from '../config'
-
 import { genEpochKeyCircuitInput, genProofAndVerify } from './utils'
+
+const { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } =
+    CircuitConfig.default
 
 describe('Verify Epoch Key circuits', function () {
     this.timeout(300000)

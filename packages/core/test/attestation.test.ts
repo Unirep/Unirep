@@ -57,7 +57,7 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         const epochKeys = await userState.getEpochKeys(epoch)
         const [epk] = epochKeys
         const newPosRep = 10
@@ -75,7 +75,7 @@ describe('Attester signs up and gives attestation', function () {
         //
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimages = await userState.genEpochTreePreimages(epoch)
+        const preimages = await userState.sync.genEpochTreePreimages(epoch)
         const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -115,7 +115,7 @@ describe('Attester signs up and gives attestation', function () {
         {
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({
-                    toEpoch: await userState.loadCurrentEpoch(),
+                    toEpoch: await userState.sync.loadCurrentEpoch(),
                 })
             // submit it
             await unirepContract
@@ -132,7 +132,7 @@ describe('Attester signs up and gives attestation', function () {
             expect(graffiti).to.equal(newGraffiti)
             expect(timestamp).to.equal(newTimestamp)
         }
-        await userState.stop()
+        await userState.sync.stop()
     })
 
     it('should skip multiple epochs', async () => {
@@ -150,12 +150,12 @@ describe('Attester signs up and gives attestation', function () {
 
         await ethers.provider.send('evm_increaseTime', [5 * EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const epoch = await userState.loadCurrentEpoch()
+        const epoch = await userState.sync.loadCurrentEpoch()
         await unirepContract
             .connect(attester)
             .submitAttestation(epoch, '0x01', 1, 0, 0)
             .then((t) => t.wait())
         await userState.waitForSync()
-        await userState.stop()
+        await userState.sync.stop()
     })
 })

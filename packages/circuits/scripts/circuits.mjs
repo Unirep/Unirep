@@ -1,10 +1,12 @@
-import {
+import config from '../dist/config/index.js'
+// TODO: better command line build options
+const {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     R,
-} from '../dist/config/index.js'
+} = config.default
 
 export const ptauName = 'powersOfTau28_hez_final_18.ptau'
 

@@ -1,12 +1,5 @@
 import { BigNumberish, ethers } from 'ethers'
-import {
-    Circuit,
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    Prover,
-} from '@unirep/circuits'
+import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import poseidon from './poseidon'
 import {
@@ -26,30 +19,24 @@ const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
  */
 export const deployUnirep = async (
     deployer: ethers.Signer,
-    _settings: {
-        stateTreeDepth?: BigNumberish
-        epochTreeDepth?: BigNumberish
-        epochTreeArity?: BigNumberish
-        numEpochKeyNoncePerEpoch?: BigNumberish
-    } = {},
+    _settings: CircuitConfig = CircuitConfig.default,
     prover?: Prover
 ): Promise<Unirep> => {
-    const settings = {
-        stateTreeDepth: STATE_TREE_DEPTH,
-        epochTreeDepth: EPOCH_TREE_DEPTH,
-        epochTreeArity: EPOCH_TREE_ARITY,
-        numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        ..._settings,
-    } as any
+    const {
+        EPOCH_TREE_DEPTH,
+        EPOCH_TREE_ARITY,
+        STATE_TREE_DEPTH,
+        NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    } = _settings
 
     console.log(
         '-----------------------------------------------------------------'
     )
-    console.log(`Epoch tree depth: ${settings.epochTreeDepth}`)
-    console.log(`Epoch tree arity: ${settings.epochTreeArity}`)
-    console.log(`State tree depth: ${settings.stateTreeDepth}`)
+    console.log(`Epoch tree depth: ${EPOCH_TREE_DEPTH}`)
+    console.log(`Epoch tree arity: ${EPOCH_TREE_ARITY}`)
+    console.log(`State tree depth: ${STATE_TREE_DEPTH}`)
     console.log(
-        `Number of epoch keys per epoch: ${settings.numEpochKeyNoncePerEpoch}`
+        `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
     )
     console.log(
         '-----------------------------------------------------------------'
@@ -135,7 +122,12 @@ export const deployUnirep = async (
         },
         deployer
     ).deploy(
-        settings,
+        {
+            stateTreeDepth: STATE_TREE_DEPTH,
+            epochTreeDepth: EPOCH_TREE_DEPTH,
+            epochTreeArity: EPOCH_TREE_ARITY,
+            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+        },
         verifiers[Circuit.signup],
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation],
