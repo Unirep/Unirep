@@ -1,5 +1,5 @@
-const ethers = require("ethers")
-const ABI = require("../abi/Unirep.json")
+const ethers = require('ethers')
+const ABI = require('../abi/Unirep.json')
 
 // print out all custom errors and its error codes
 const iface = new ethers.utils.Interface(ABI)
