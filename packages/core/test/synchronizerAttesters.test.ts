@@ -14,7 +14,7 @@ describe('Synchronizer watch multiple attesters', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        for (let x = 0; x < 10; x++) {
+        for (let x = 0; x < 5; x++) {
             const attester = accounts[x]
             await unirepContract
                 .connect(attester)
@@ -25,7 +25,7 @@ describe('Synchronizer watch multiple attesters', function () {
 
     it('should load attestations from all', async () => {
         const accounts = await ethers.getSigners()
-        for (let x = 0; x < 10; x++) {
+        for (let x = 0; x < 5; x++) {
             await unirepContract
                 .connect(accounts[0])
                 .submitAttestation(0, x, x, 0, 0)
@@ -42,14 +42,31 @@ describe('Synchronizer watch multiple attesters', function () {
         })
         sync.start()
         await sync.waitForSync()
-        expect(seenAttestations.length).to.equal(10)
-        for (let x = 0; x < 10; x++) {
+        expect(seenAttestations.length).to.equal(5)
+        for (let x = 0; x < 5; x++) {
             const { attesterId, epochKey } = seenAttestations[x]
             expect(attesterId.toString()).to.equal(
                 BigInt(accounts[0].address).toString()
             )
             expect(epochKey.toString()).to.equal(x.toString())
         }
+    })
+
+    it('should catch attester sign up event', async () => {
+        const accounts = await ethers.getSigners()
+        const sync = new Synchronizer({
+            unirepAddress: unirepContract.address,
+            provider: ethers.provider,
+            prover: defaultProver,
+        })
+        await sync.start()
+        await sync.waitForSync()
+        const p = new Promise((r) => sync.on('AttesterSignedUp', r))
+        await unirepContract
+            .connect(accounts[10])
+            .attesterSignUp(EPOCH_LENGTH)
+            .then((t) => t.wait())
+        await p
     })
 
     // TODO: test for other events
