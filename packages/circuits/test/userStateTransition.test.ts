@@ -6,6 +6,7 @@ import {
     genEpochKey,
     genUserStateTransitionNullifier,
     stringifyBigInts,
+    genStateTreeLeaf,
 } from '@unirep/utils'
 import { Circuit, CircuitConfig } from '../src'
 import { genProofAndVerify, genUserStateTransitionCircuitInput } from './utils'
@@ -30,15 +31,12 @@ describe('User state transition', function () {
         const timestamp = 9241
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash7([
+            genStateTreeLeaf(
                 id.secretHash,
                 attesterId,
                 fromEpoch,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ])
+                [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+            )
         )
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
@@ -55,15 +53,12 @@ describe('User state transition', function () {
         )
         expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash7([
+        const newLeaf = genStateTreeLeaf(
             id.secretHash,
             attesterId,
             toEpoch,
-            posRep,
-            negRep,
-            graffiti,
-            timestamp,
-        ])
+            [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+        )
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.secretHash,
@@ -84,15 +79,12 @@ describe('User state transition', function () {
         const timestamp = 124
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash7([
+            genStateTreeLeaf(
                 id.secretHash,
                 attesterId,
                 fromEpoch,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ])
+                [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+            )
         )
         const epochKey = genEpochKey(id.secretHash, attesterId, fromEpoch, 0)
         const circuitInputs = genUserStateTransitionCircuitInput({
@@ -116,15 +108,14 @@ describe('User state transition', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash7([
+        const newLeaf = genStateTreeLeaf(
             id.secretHash,
             attesterId,
             toEpoch,
-            posRep + 10,
-            negRep + 20,
-            graffiti,
-            timestamp,
-        ])
+            [posRep + 10, negRep + 20, graffiti, timestamp].map((i) =>
+                BigInt(i)
+            )
+        )
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.secretHash,
@@ -145,15 +136,12 @@ describe('User state transition', function () {
         const timestamp = 124
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash7([
+            genStateTreeLeaf(
                 id.secretHash,
                 attesterId,
                 fromEpoch,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ])
+                [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+            )
         )
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
@@ -180,15 +168,17 @@ describe('User state transition', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash7([
+        const newLeaf = genStateTreeLeaf(
             id.secretHash,
             attesterId,
             toEpoch,
-            posRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 10,
-            negRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 20,
-            graffiti,
-            timestamp,
-        ])
+            [
+                posRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 10,
+                negRep + NUM_EPOCH_KEY_NONCE_PER_EPOCH * 20,
+                graffiti,
+                timestamp,
+            ].map((i) => BigInt(i))
+        )
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.secretHash,
@@ -209,15 +199,12 @@ describe('User state transition', function () {
         const timestamp = 9241
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash7([
+            genStateTreeLeaf(
                 id.secretHash,
                 attesterId,
                 fromEpoch,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ])
+                [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+            )
         )
         const epochTree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
@@ -234,14 +221,10 @@ describe('User state transition', function () {
                 state_tree_indexes: tree.createProof(0).pathIndices,
                 state_tree_elements: tree.createProof(0).siblings,
                 attester_id: attesterId,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti: graffiti,
-                timestamp: timestamp,
-                new_pos_rep: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
-                new_neg_rep: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
-                new_graffiti: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
-                new_timestamp: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
+                data: [posRep, negRep, graffiti, timestamp],
+                new_data: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
+                    .fill(0)
+                    .map(() => Array(4).fill(0)),
                 epoch_tree_elements: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(0)
                     .map(() => epochTree._createProof(0).siblings.slice(1)),
@@ -271,15 +254,12 @@ describe('User state transition', function () {
         )
         expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = hash7([
+        const newLeaf = genStateTreeLeaf(
             id.secretHash,
             attesterId,
             toEpoch,
-            posRep,
-            negRep,
-            graffiti,
-            timestamp,
-        ])
+            [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+        )
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
             id.secretHash,
@@ -302,15 +282,12 @@ describe('User state transition', function () {
         const timestamp = 9241
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(
-            hash7([
+            genStateTreeLeaf(
                 id.secretHash,
                 attesterId,
                 fromEpoch,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ])
+                [posRep, negRep, graffiti, timestamp].map((i) => BigInt(i))
+            )
         )
         const epochTree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
@@ -325,14 +302,10 @@ describe('User state transition', function () {
             state_tree_indexes: tree.createProof(0).pathIndices,
             state_tree_elements: tree.createProof(0).siblings,
             attester_id: attesterId,
-            pos_rep: posRep,
-            neg_rep: negRep,
-            graffiti: graffiti,
-            timestamp: timestamp,
-            new_pos_rep: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
-            new_neg_rep: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(1),
-            new_graffiti: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
-            new_timestamp: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH).fill(0),
+            data: [posRep, negRep, graffiti, timestamp],
+            new_data: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
+                .fill(0)
+                .map(() => Array(4).fill(1)),
             epoch_tree_elements: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                 .fill(0)
                 .map(() => epochTree._createProof(0).siblings.slice(1)),

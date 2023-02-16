@@ -5,7 +5,7 @@ include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/mux1.circom";
 include "./bigComparators.circom";
 
-template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R) {
+template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R2) {
   signal output root;
   signal output checksum;
 

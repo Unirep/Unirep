@@ -7,8 +7,17 @@ include "./circomlib/circuits/gates.circom";
 include "./incrementalMerkleTree.circom";
 include "./modulo.circom";
 include "./inclusionNoninclusion.circom";
+include "./leafHasher.circom";
 
-template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, EPOCH_KEY_NONCE_PER_EPOCH, MAX_REPUTATION_SCORE_BITS) {
+template UserStateTransition(
+  STATE_TREE_DEPTH,
+  EPOCH_TREE_DEPTH,
+  EPOCH_TREE_ARITY,
+  EPOCH_KEY_NONCE_PER_EPOCH,
+  EPK_R,
+  FIELD_COUNT,
+  SUM_FIELD_COUNT
+) {
     signal input from_epoch;
     signal input to_epoch;
 
@@ -22,16 +31,10 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
-    signal input pos_rep;
-    signal input neg_rep;
-    signal input graffiti;
-    signal input timestamp;
+    signal input data[FIELD_COUNT];
 
     // prove what we've received in from epoch
-    signal input new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal input new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
 
     // the common subtree
     signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1][EPOCH_TREE_ARITY];
@@ -64,14 +67,13 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     /* 1. Check if user exists in the Global State Tree */
 
-    component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_secret;
-    leaf_hasher.inputs[1] <== attester_id;
-    leaf_hasher.inputs[2] <== from_epoch;
-    leaf_hasher.inputs[3] <== pos_rep;
-    leaf_hasher.inputs[4] <== neg_rep;
-    leaf_hasher.inputs[5] <== graffiti;
-    leaf_hasher.inputs[6] <== timestamp;
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    leaf_hasher.identity_secret <== identity_secret;
+    leaf_hasher.attester_id <== attester_id;
+    leaf_hasher.epoch <== from_epoch;
+    for (var x = 0; x < FIELD_COUNT; x++) {
+      leaf_hasher.data[x] <== data[x];
+    }
 
     component state_merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
     state_merkletree.leaf <== leaf_hasher.out;
@@ -94,21 +96,22 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i; // nonce
 
-        leaf_hashers[i] = Poseidon(5);
-        leaf_hashers[i].inputs[0] <== epoch_key_hashers[i].out;
-        leaf_hashers[i].inputs[1] <== new_pos_rep[i];
-        leaf_hashers[i].inputs[2] <== new_neg_rep[i];
-        leaf_hashers[i].inputs[3] <== new_graffiti[i];
-        leaf_hashers[i].inputs[4] <== new_timestamp[i];
+        leaf_hashers[i] = EpochTreeLeaf(FIELD_COUNT, EPK_R);
+        leaf_hashers[i].epoch_key <== epoch_key_hashers[i].out;
+        for (var x = 0; x < FIELD_COUNT; x++) {
+          leaf_hashers[i].data[x] <== new_data[i][x];
+        }
     }
 
     // if the leaf balance is 0 we do a non-inclusion
     // else we do an inclusion
     component inc_noninc[EPOCH_KEY_NONCE_PER_EPOCH];
     component inc_mux[EPOCH_KEY_NONCE_PER_EPOCH];
-    component ands[EPOCH_KEY_NONCE_PER_EPOCH][3];
     signal has_no_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
-    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH][4];
+    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
+    component not_check[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
+    component fin_zero_check[EPOCH_KEY_NONCE_PER_EPOCH];
+
 
     signal roots[EPOCH_KEY_NONCE_PER_EPOCH];
 
@@ -148,31 +151,23 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
         Otherwise we expect noninclusion === 1.
         */
+        var fields_nonzero = 0;
+        for (var x = 0; x < FIELD_COUNT; x++) {
+          zero_check[i][x] = IsZero();
+          zero_check[i][x].in <== new_data[i][x];
+          not_check[i][x] = NOT();
+          not_check[i][x].in <== zero_check[i][x].out;
+          fields_nonzero += not_check[i][x].out;
+        }
+        // if fields_zero is not 0 we have
+        fin_zero_check[i] = IsZero();
+        fin_zero_check[i].in <== fields_nonzero;
 
-        zero_check[i][0] = IsZero();
-        zero_check[i][0].in <== new_pos_rep[i];
-        zero_check[i][1] = IsZero();
-        zero_check[i][1].in <== new_neg_rep[i];
-        zero_check[i][2] = IsZero();
-        zero_check[i][2].in <== new_graffiti[i];
-        zero_check[i][3] = IsZero();
-        zero_check[i][3].in <== new_timestamp[i];
+        // we have no attestation if fin_zero_check is 1
+        // e.g. there are no fields with non-zero data
+        has_no_attestations[i] <== fin_zero_check[i].out;
 
-        ands[i][0] = AND();
-        ands[i][0].a <== zero_check[i][0].out;
-        ands[i][0].b <== zero_check[i][1].out;
-
-        ands[i][1] = AND();
-        ands[i][1].a <== zero_check[i][2].out;
-        ands[i][1].b <== zero_check[i][3].out;
-
-        ands[i][2] = AND();
-        ands[i][2].a <== ands[i][0].out;
-        ands[i][2].b <== ands[i][1].out;
-
-        has_no_attestations[i] <== ands[i][2].out;
-
-        /*~~~~~
+        /***~~~~~
 
         if (has_no_attestations) {
           require(noninclusion)
@@ -216,40 +211,48 @@ template UserStateTransition(STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARIT
 
     /* 3. Calculate the new gst leaf */
 
-    var final_pos_rep = pos_rep;
-    var final_neg_rep = neg_rep;
-    var final_graffiti = graffiti;
-    var final_timestamp = timestamp;
-
-    component timestamp_check[EPOCH_KEY_NONCE_PER_EPOCH];
-    component graffiti_select[EPOCH_KEY_NONCE_PER_EPOCH];
-
-    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        final_pos_rep += new_pos_rep[i];
-        final_neg_rep += new_neg_rep[i];
-        // if timestamp is > final_timestamp we take the graffiti
-        // timestamp must be smaller than 2^64
-        timestamp_check[i] = GreaterThan(64);
-        timestamp_check[i].in[0] <== new_timestamp[i];
-        timestamp_check[i].in[1] <== final_timestamp;
-        graffiti_select[i] = MultiMux1(2);
-        graffiti_select[i].c[0][0] <== final_timestamp;
-        graffiti_select[i].c[0][1] <== new_timestamp[i];
-        graffiti_select[i].c[1][0] <== final_graffiti;
-        graffiti_select[i].c[1][1] <== new_graffiti[i];
-        graffiti_select[i].s <== timestamp_check[i].out;
-        final_timestamp = graffiti_select[i].out[0];
-        final_graffiti = graffiti_select[i].out[1];
+    var final_data[FIELD_COUNT];
+    for (var x = 0; x < FIELD_COUNT; x++) {
+      final_data[x] = data[x];
     }
 
-    component out_leaf_hasher = Poseidon(7);
-    out_leaf_hasher.inputs[0] <== identity_secret;
-    out_leaf_hasher.inputs[1] <== attester_id;
-    out_leaf_hasher.inputs[2] <== to_epoch;
-    out_leaf_hasher.inputs[3] <== final_pos_rep;
-    out_leaf_hasher.inputs[4] <== final_neg_rep;
-    out_leaf_hasher.inputs[5] <== final_graffiti;
-    out_leaf_hasher.inputs[6] <== final_timestamp;
+    var REPL_FIELD_COUNT = FIELD_COUNT - SUM_FIELD_COUNT;
+
+    component timestamp_check[EPOCH_KEY_NONCE_PER_EPOCH][REPL_FIELD_COUNT];
+    component data_select[EPOCH_KEY_NONCE_PER_EPOCH][REPL_FIELD_COUNT];
+
+    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
+      // first combine the sum data
+      for (var x = 0; x < SUM_FIELD_COUNT; x++) {
+        final_data[x] += new_data[i][x];
+      }
+      // then combine the replacement data
+      for (var x = 0; x < REPL_FIELD_COUNT; x+=2) {
+        timestamp_check[i][x] = GreaterThan(64);
+        timestamp_check[i][x].in[0] <== new_data[i][x+SUM_FIELD_COUNT+1];
+        timestamp_check[i][x].in[1] <== final_data[x+SUM_FIELD_COUNT+1];
+        data_select[i][x] = MultiMux1(2);
+        // timestamp selection
+        data_select[i][x].c[0][0] <== final_data[x+SUM_FIELD_COUNT+1];
+        data_select[i][x].c[0][1] <== new_data[i][x+SUM_FIELD_COUNT+1];
+        // data selection
+        data_select[i][x].c[1][0] <== final_data[x+SUM_FIELD_COUNT];
+        data_select[i][x].c[1][1] <== new_data[i][x+SUM_FIELD_COUNT];
+        // select based on timestamp check
+        data_select[i][x].s <== timestamp_check[i][x].out;
+        // replace the old final data
+        final_data[x+SUM_FIELD_COUNT+1] = data_select[i][x].out[0];
+        final_data[x+SUM_FIELD_COUNT] = data_select[i][x].out[1];
+      }
+    }
+
+    component out_leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    out_leaf_hasher.identity_secret <== identity_secret;
+    out_leaf_hasher.attester_id <== attester_id;
+    out_leaf_hasher.epoch <== to_epoch;
+    for (var x = 0; x < FIELD_COUNT; x++) {
+      out_leaf_hasher.data[x] <== final_data[x];
+    }
     state_tree_leaf <== out_leaf_hasher.out;
 
     /* End of check 3 */

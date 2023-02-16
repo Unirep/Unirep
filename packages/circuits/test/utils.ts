@@ -1,18 +1,14 @@
 import * as utils from '@unirep/utils'
 
-import {
-    Circuit,
-    ReputationProof,
-    EpochKeyProof,
-    SNARK_SCALAR_FIELD,
-    CircuitConfig,
-} from '../src'
+import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 const {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    SUM_FIELDS,
+    DATA_FIELDS,
 } = CircuitConfig.default
 
 const genNewEpochTree = (
@@ -113,7 +109,12 @@ const genUserStateTransitionCircuitInput = (config: {
         const { posRep, negRep, graffiti, timestamp } = val
         epochTreeIndices[key] = ++index
         epochTree.insert(
-            utils.hash5([key, posRep, negRep, graffiti ?? 0, timestamp ?? 0])
+            utils.genEpochTreeLeaf(key, [
+                posRep,
+                negRep,
+                graffiti ?? 0,
+                timestamp ?? 0,
+            ])
         )
     }
     epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
@@ -158,22 +159,18 @@ const genUserStateTransitionCircuitInput = (config: {
             return s[1 - stateTreeProof.pathIndices[i]]
         }),
         attester_id: attesterId,
-        pos_rep: startBalance.posRep,
-        neg_rep: startBalance.negRep,
-        graffiti: startBalance.graffiti,
-        timestamp: startBalance.timestamp,
-        new_pos_rep: epochKeys.map(
-            (k) => epochKeyBalances[k.toString()]?.posRep ?? BigInt(0)
-        ),
-        new_neg_rep: epochKeys.map(
-            (k) => epochKeyBalances[k.toString()]?.negRep ?? BigInt(0)
-        ),
-        new_graffiti: epochKeys.map(
-            (k) => epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0)
-        ),
-        new_timestamp: epochKeys.map(
-            (k) => epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0)
-        ),
+        data: [
+            startBalance.posRep,
+            startBalance.negRep,
+            startBalance.graffiti,
+            startBalance.timestamp,
+        ],
+        new_data: epochKeys.map((k) => [
+            epochKeyBalances[k.toString()]?.posRep ?? BigInt(0),
+            epochKeyBalances[k.toString()]?.negRep ?? BigInt(0),
+            epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0),
+            epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0),
+        ]),
         epoch_tree_elements: epochKeys.map((k) => {
             if (epochTreeIndices[k.toString()]) {
                 const { siblings } = epochTree._createProof(
