@@ -4,8 +4,9 @@ pragma circom 2.0.0;
 
 include "./circomlib/circuits/poseidon.circom";
 include "./identity.circom";
+include "./leafHasher.circom";
 
-template Signup() {
+template Signup(FIELD_COUNT, EPK_R) {
 
     signal output identity_commitment;
     signal output state_tree_leaf;
@@ -21,14 +22,13 @@ template Signup() {
     commitment_calc.trapdoor <== identity_trapdoor;
     identity_commitment <== commitment_calc.out;
 
-    component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== commitment_calc.secret;
-    leaf_hasher.inputs[1] <== attester_id;
-    leaf_hasher.inputs[2] <== epoch;
-    leaf_hasher.inputs[3] <== 0; // posRep
-    leaf_hasher.inputs[4] <== 0; // negRep
-    leaf_hasher.inputs[5] <== 0; // graffiti
-    leaf_hasher.inputs[6] <== 0; // timestamp
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    leaf_hasher.identity_secret <== commitment_calc.secret;
+    leaf_hasher.attester_id <== attester_id;
+    leaf_hasher.epoch <== epoch;
+    for (var x = 0; x < FIELD_COUNT; x++) {
+      leaf_hasher.data[x] <== 0;
+    }
 
     state_tree_leaf <== leaf_hasher.out;
 }

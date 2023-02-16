@@ -293,7 +293,7 @@ describe('Epoch key proof verifier', function () {
         const data = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 stringifyBigInts({
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
@@ -311,7 +311,7 @@ describe('Epoch key proof verifier', function () {
             )
 
             const v = await defaultProver.verifyProof(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 r.publicSignals,
                 r.proof
             )
@@ -348,7 +348,7 @@ describe('Epoch key proof verifier', function () {
         const data = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 stringifyBigInts({
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
@@ -366,7 +366,7 @@ describe('Epoch key proof verifier', function () {
             )
 
             const v = await defaultProver.verifyProof(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 r.publicSignals,
                 r.proof
             )
@@ -416,7 +416,7 @@ describe('Epoch key proof verifier', function () {
         const invalidEpoch = 3333
         const nonce = 0
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             stringifyBigInts({
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
@@ -434,7 +434,7 @@ describe('Epoch key proof verifier', function () {
         )
 
         const v = await defaultProver.verifyProof(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             r.publicSignals,
             r.proof
         )
@@ -470,7 +470,7 @@ describe('Epoch key proof verifier', function () {
         const data = 0
         const nonce = 0
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             stringifyBigInts({
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
@@ -488,7 +488,7 @@ describe('Epoch key proof verifier', function () {
         )
 
         const v = await defaultProver.verifyProof(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             r.publicSignals,
             r.proof
         )
@@ -533,7 +533,7 @@ describe('Epoch key proof verifier', function () {
         const data = 0
         const nonce = 0
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             stringifyBigInts({
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
@@ -551,7 +551,7 @@ describe('Epoch key proof verifier', function () {
         )
 
         const v = await defaultProver.verifyProof(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             r.publicSignals,
             r.proof
         )

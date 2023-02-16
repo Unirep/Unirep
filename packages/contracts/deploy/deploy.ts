@@ -131,7 +131,7 @@ export const deployUnirep = async (
         verifiers[Circuit.signup],
         verifiers[Circuit.userStateTransition],
         verifiers[Circuit.proveReputation],
-        verifiers[Circuit.verifyEpochKey],
+        verifiers[Circuit.epochKey],
         verifiers[Circuit.epochKeyLite],
         verifiers[Circuit.buildOrderedTree]
     )

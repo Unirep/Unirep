@@ -592,7 +592,7 @@ export default class UserState {
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
         const results = await this.sync.prover.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyProof(

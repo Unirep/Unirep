@@ -57,11 +57,8 @@ const genEpochKeyCircuitInput = (config: {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
         identity_secret: id.secretHash,
-        pos_rep: posRep,
-        neg_rep: negRep,
-        graffiti,
-        timestamp,
-        data: data ?? BigInt(0),
+        data: [posRep, negRep, graffiti, timestamp],
+        sig_data: data ?? BigInt(0),
         nonce,
         epoch,
         attester_id: attesterId,
@@ -128,8 +125,7 @@ const genUserStateTransitionCircuitInput = (config: {
         )
 
     const epochKeyLeaves = epochKeys.map((k) =>
-        utils.hash5([
-            k,
+        utils.genEpochTreeLeaf(k, [
             epochKeyBalances[k.toString()]?.posRep ?? BigInt(0),
             epochKeyBalances[k.toString()]?.negRep ?? BigInt(0),
             epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0),
@@ -138,8 +134,7 @@ const genUserStateTransitionCircuitInput = (config: {
     )
     const epochLeavesByKey = epochKeys.reduce((acc, epk) => {
         return {
-            [epk.toString()]: utils.hash5([
-                epk,
+            [epk.toString()]: utils.genEpochTreeLeaf(epk, [
                 epochKeyBalances[epk.toString()]?.posRep ?? BigInt(0),
                 epochKeyBalances[epk.toString()]?.negRep ?? BigInt(0),
                 epochKeyBalances[epk.toString()]?.graffiti ?? BigInt(0),
@@ -276,15 +271,17 @@ const genReputationCircuitInput = (config: {
 
     // Global state tree
     const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
-    const hashedLeaf = utils.hash7([
+    const hashedLeaf = utils.genStateTreeLeaf(
         id.secretHash,
-        attesterId,
+        BigInt(attesterId),
         epoch,
-        startBalance.posRep,
-        startBalance.negRep,
-        startBalance.graffiti ?? 0,
-        startBalance.timestamp ?? 0,
-    ])
+        [
+            startBalance.posRep,
+            startBalance.negRep,
+            startBalance.graffiti ?? 0,
+            startBalance.timestamp ?? 0,
+        ]
+    )
     stateTree.insert(hashedLeaf)
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
@@ -292,10 +289,12 @@ const genReputationCircuitInput = (config: {
         identity_secret: id.secretHash,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
-        pos_rep: startBalance.posRep,
-        neg_rep: startBalance.negRep,
-        graffiti: startBalance.graffiti ?? 0,
-        timestamp: startBalance.timestamp ?? 0,
+        data: [
+            startBalance.posRep,
+            startBalance.negRep,
+            startBalance.graffiti ?? 0,
+            startBalance.timestamp ?? 0,
+        ],
         graffiti_pre_image: graffitiPreImage,
         epoch,
         nonce,
@@ -307,6 +306,7 @@ const genReputationCircuitInput = (config: {
         prove_min_rep: proveMinRep ?? 0,
         prove_zero_rep: proveZeroRep ?? 0,
         reveal_nonce: revealNonce ?? 0,
+        sig_data: 0,
     }
     return utils.stringifyBigInts(circuitInputs)
 }

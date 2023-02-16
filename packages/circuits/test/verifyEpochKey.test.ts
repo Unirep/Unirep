@@ -2,8 +2,8 @@ import { expect } from 'chai'
 import {
     IncrementalMerkleTree,
     ZkIdentity,
-    hash7,
     genEpochKey,
+    genStateTreeLeaf,
 } from '@unirep/utils'
 import { Circuit, EpochKeyProof, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
@@ -26,10 +26,7 @@ describe('Verify Epoch Key circuits', function () {
             const timestamp = 214
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = hash7([
-                id.secretHash,
-                attesterId,
-                epoch,
+            const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
                 posRep,
                 negRep,
                 graffiti,
@@ -49,7 +46,7 @@ describe('Verify Epoch Key circuits', function () {
                 timestamp,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 circuitInputs
             )
             expect(isValid).to.be.true
@@ -83,10 +80,7 @@ describe('Verify Epoch Key circuits', function () {
             const revealNonce = 1
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = hash7([
-                id.secretHash,
-                attesterId,
-                epoch,
+            const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
                 posRep,
                 negRep,
                 graffiti,
@@ -107,7 +101,7 @@ describe('Verify Epoch Key circuits', function () {
                 revealNonce,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 circuitInputs
             )
             expect(isValid).to.be.true
@@ -150,10 +144,7 @@ describe('Verify Epoch Key circuits', function () {
             const data = BigInt(1288972090)
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = hash7([
-                id.secretHash,
-                attesterId,
-                epoch,
+            const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
                 posRep,
                 negRep,
                 graffiti,
@@ -174,7 +165,7 @@ describe('Verify Epoch Key circuits', function () {
                 data,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 circuitInputs
             )
             expect(isValid).to.be.true
@@ -209,10 +200,7 @@ describe('Verify Epoch Key circuits', function () {
             const data = BigInt(1288972090)
             const id = new ZkIdentity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = hash7([
-                id.secretHash,
-                attesterId,
-                epoch,
+            const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
                 posRep,
                 negRep,
                 graffiti,
@@ -233,7 +221,7 @@ describe('Verify Epoch Key circuits', function () {
                 data,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 circuitInputs
             )
             expect(isValid).to.be.true
@@ -244,7 +232,7 @@ describe('Verify Epoch Key circuits', function () {
             expect(publicSignals[3].toString()).to.equal(data.toString())
             publicSignals[3] = '00000'
             const valid = await defaultProver.verifyProof(
-                Circuit.verifyEpochKey,
+                Circuit.epochKey,
                 publicSignals,
                 proof
             )
@@ -262,10 +250,7 @@ describe('Verify Epoch Key circuits', function () {
         const nonce = 0
         const id = new ZkIdentity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = hash7([
-            id.secretHash,
-            attesterId,
-            epoch,
+        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
             posRep,
             negRep,
             graffiti,
@@ -284,9 +269,9 @@ describe('Verify Epoch Key circuits', function () {
             graffiti,
             timestamp,
         })
-        circuitInputs.pos_rep = 21908
+        circuitInputs.data[0] = 21908
         const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -306,10 +291,7 @@ describe('Verify Epoch Key circuits', function () {
         const nonce = 0
         const id = new ZkIdentity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = hash7([
-            id.secretHash,
-            attesterId,
-            epoch,
+        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
             posRep,
             negRep,
             graffiti,
@@ -330,7 +312,7 @@ describe('Verify Epoch Key circuits', function () {
         })
         circuitInputs.attester_id = 2171828
         const { isValid, publicSignals } = await genProofAndVerify(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             circuitInputs
         )
         expect(isValid).to.be.true
@@ -350,10 +332,7 @@ describe('Verify Epoch Key circuits', function () {
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
         const id = new ZkIdentity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = hash7([
-            id.secretHash,
-            attesterId,
-            epoch,
+        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, [
             posRep,
             negRep,
             graffiti,
@@ -373,7 +352,7 @@ describe('Verify Epoch Key circuits', function () {
             timestamp,
         })
         await new Promise<void>((rs, rj) => {
-            genProofAndVerify(Circuit.verifyEpochKey, circuitInputs)
+            genProofAndVerify(Circuit.epochKey, circuitInputs)
                 .then(() => rj())
                 .catch(() => rs())
         })

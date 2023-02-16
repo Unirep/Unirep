@@ -260,7 +260,7 @@ function verifyEpochKeyLiteProof(
 A contract address for an epoch key proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::danger
-Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
+Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`EpochKeyProof`](#epochkeyproof) function unless you know what you are doing.
 :::
 
 ```sol

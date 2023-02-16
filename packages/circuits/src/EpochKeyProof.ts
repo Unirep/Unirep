@@ -46,7 +46,7 @@ export class EpochKeyProof extends BaseProof {
         this.nonce =
             BigInt(this.control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
         this.data = _publicSignals[this.idx.data].toString()
-        this.circuit = Circuit.verifyEpochKey
+        this.circuit = Circuit.epochKey
     }
 
     static buildControl({ attesterId, epoch, nonce, revealNonce }: any) {

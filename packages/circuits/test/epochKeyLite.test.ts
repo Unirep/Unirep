@@ -21,7 +21,7 @@ describe('Epoch key lite circuits', function () {
                 attester_id: attesterId,
                 nonce,
                 reveal_nonce: 0,
-                data: 0,
+                sig_data: 0,
             }
             const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.epochKeyLite,
@@ -59,7 +59,7 @@ describe('Epoch key lite circuits', function () {
                 attester_id: attesterId,
                 nonce,
                 reveal_nonce: revealNonce,
-                data: 0,
+                sig_data: 0,
             }
             const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.epochKeyLite,
@@ -98,7 +98,7 @@ describe('Epoch key lite circuits', function () {
             attester_id: attesterId,
             nonce,
             reveal_nonce: 0,
-            data: _data,
+            sig_data: _data,
         }
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.epochKeyLite,
@@ -137,7 +137,7 @@ describe('Epoch key lite circuits', function () {
             attester_id: attesterId,
             nonce,
             reveal_nonce: 0,
-            data: _data,
+            sig_data: _data,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
@@ -158,7 +158,7 @@ describe('Epoch key lite circuits', function () {
             attester_id: attesterId,
             nonce,
             reveal_nonce: 0,
-            data: _data,
+            sig_data: _data,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
@@ -179,7 +179,7 @@ describe('Epoch key lite circuits', function () {
             attester_id: attesterId,
             nonce,
             reveal_nonce: 0,
-            data: _data,
+            sig_data: _data,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
@@ -200,7 +200,7 @@ describe('Epoch key lite circuits', function () {
             attester_id: attesterId,
             nonce,
             reveal_nonce: 2,
-            data: _data,
+            sig_data: _data,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, circuitInputs)

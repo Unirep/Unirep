@@ -8,8 +8,9 @@ include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKeyLite.circom";
+include "./leafHasher.circom";
 
-template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
+template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT, EPK_R) {
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
@@ -24,13 +25,10 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input epoch;
     signal input nonce;
 
-    signal input pos_rep;
-    signal input neg_rep;
-    signal input graffiti;
-    signal input timestamp;
+    signal input data[FIELD_COUNT];
 
     // Some arbitrary data to endorse
-    signal input data;
+    signal input sig_data;
 
     /**
      * Optionally reveal nonce, epoch, attester_id
@@ -40,14 +38,13 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     /* 1. Check if user exists in the Global State Tree */
 
     // Compute user state tree root
-    component leaf_hasher = Poseidon(7);
-    leaf_hasher.inputs[0] <== identity_secret;
-    leaf_hasher.inputs[1] <== attester_id;
-    leaf_hasher.inputs[2] <== epoch;
-    leaf_hasher.inputs[3] <== pos_rep;
-    leaf_hasher.inputs[4] <== neg_rep;
-    leaf_hasher.inputs[5] <== graffiti;
-    leaf_hasher.inputs[6] <== timestamp;
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    leaf_hasher.identity_secret <== identity_secret;
+    leaf_hasher.attester_id <== attester_id;
+    leaf_hasher.epoch <== epoch;
+    for (var x = 0; x < FIELD_COUNT; x++) {
+      leaf_hasher.data[x] <== data[x];
+    }
 
     component merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
     merkletree.leaf <== leaf_hasher.out;
@@ -67,7 +64,7 @@ template VerifyEpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     epoch_key_lite.attester_id <== attester_id;
     epoch_key_lite.epoch <== epoch;
     epoch_key_lite.nonce <== nonce;
-    epoch_key_lite.data <== data;
+    epoch_key_lite.sig_data <== sig_data;
     control <== epoch_key_lite.control;
     epoch_key <== epoch_key_lite.epoch_key;
     /* End of check 2*/

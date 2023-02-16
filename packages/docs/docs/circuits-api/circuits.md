@@ -6,7 +6,7 @@ A circuits enum is exported from the package.
 
 ```ts
 enum Circuit {
-  verifyEpochKey,
+  epochKey,
   proveReputation,
   userStateTransition,
   signup,

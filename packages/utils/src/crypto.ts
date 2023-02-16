@@ -9,6 +9,7 @@ export { poseidon }
 export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
 
+// Ordered merkle tree polysum constant
 export const OMT_R = poseidon([
     BigInt(
         `0x${Buffer.from('unirep_omt_polysum_constant', 'utf8').toString(
@@ -17,6 +18,7 @@ export const OMT_R = poseidon([
     ),
 ])
 
+// Epoch tree leaf polysum constant
 export const EPK_R = poseidon([
     BigInt(
         `0x${Buffer.from('unirep_epk_polysum_constant', 'utf8').toString(
@@ -24,6 +26,25 @@ export const EPK_R = poseidon([
         )}`
     ),
 ])
+
+export const modexp = (v: bigint, p: number): bigint => {
+    let o = BigInt(1)
+    for (let x = 0; x < p; x++) {
+        o = (BigInt(o) * BigInt(v)) % BigInt(SNARK_SCALAR_FIELD)
+    }
+    return o
+}
+
+export const R_X = (R: bigint, n: number) => {
+    const Rx = [] as bigint[]
+    let _R = BigInt(1)
+    Rx.push(_R)
+    for (let x = 0; x < n; x++) {
+        _R = (_R * R) % BigInt(SNARK_SCALAR_FIELD)
+        Rx.push(_R)
+    }
+    return Rx
+}
 
 export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
     9
@@ -75,25 +96,17 @@ export const genEpochNullifier = (
     return genUserStateTransitionNullifier(...args)
 }
 
-export const modexp = (v: bigint, p: number): bigint => {
-    let o = BigInt(1)
-    for (let x = 0; x < p; x++) {
-        o = (BigInt(o) * BigInt(v)) % BigInt(SNARK_SCALAR_FIELD)
-    }
-    return o
-}
-
 export const genStateTreeLeaf = (
     idSecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
-    data: (bigint | string)[]
+    data: (bigint | string | number)[]
 ): bigint => {
     const hashedData = data.map((d) => hash1([d]))
     let polysum = BigInt(0)
     for (let x = 0; x < data.length; x++) {
         const term =
-            (BigInt(hashedData[x]) * modexp(EPK_R, x + 1)) %
+            (BigInt(hashedData[x]) * modexp(EPK_R, x)) %
             BigInt(SNARK_SCALAR_FIELD)
         polysum = (polysum + term) % BigInt(SNARK_SCALAR_FIELD)
     }
@@ -102,13 +115,13 @@ export const genStateTreeLeaf = (
 
 export const genEpochTreeLeaf = (
     epochKey: bigint | string,
-    data: (bigint | string)[]
+    data: (bigint | string | number)[]
 ) => {
     const hashedData = data.map((d) => hash1([d]))
     let polysum = (hash1([epochKey]) * EPK_R) % BigInt(SNARK_SCALAR_FIELD)
     for (let x = 0; x < data.length; x++) {
         const term =
-            (BigInt(hashedData[x]) * modexp(EPK_R, x + 2)) %
+            (BigInt(hashedData[x]) * modexp(EPK_R, x + 1)) %
             BigInt(SNARK_SCALAR_FIELD)
         polysum = (polysum + term) % BigInt(SNARK_SCALAR_FIELD)
     }
