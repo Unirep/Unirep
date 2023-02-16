@@ -8,6 +8,7 @@ export { poseidon }
 
 export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
+export const F = BigInt(SNARK_SCALAR_FIELD)
 
 // Ordered merkle tree polysum constant
 export const OMT_R = poseidon([
@@ -38,7 +39,6 @@ export const modexp = (v: bigint, p: number): bigint => {
 export const R_X = (R: bigint, n: number) => {
     const Rx = [] as bigint[]
     let _R = BigInt(1)
-    Rx.push(_R)
     for (let x = 0; x < n; x++) {
         _R = (_R * R) % BigInt(SNARK_SCALAR_FIELD)
         Rx.push(_R)
