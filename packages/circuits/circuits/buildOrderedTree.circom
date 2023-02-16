@@ -4,13 +4,14 @@ include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/mux1.circom";
 include "./bigComparators.circom";
+include "./leafHasher.circom";
 
-template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R2) {
+template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, FIELD_COUNT, OMT_R, EPK_R) {
   signal output root;
   signal output checksum;
 
   // leaf and original index
-  signal input sorted_leaf_preimages[TREE_ARITY**TREE_DEPTH][5];
+  signal input sorted_leaf_preimages[TREE_ARITY**TREE_DEPTH][1+FIELD_COUNT];
   // signal input sorted_leaves[TREE_ARITY**TREE_DEPTH];
   signal input leaf_r_values[TREE_ARITY**TREE_DEPTH];
 
@@ -32,9 +33,10 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R2) {
     // check if the epoch key is 0
     sorted_leaf_iszero[x].in <== sorted_leaf_preimages[x][0];
 
-    sorted_leaf_hashers[x] = Poseidon(5);
-    for (var y = 0; y < 5; y++) {
-      sorted_leaf_hashers[x].inputs[y] <== sorted_leaf_preimages[x][y];
+    sorted_leaf_hashers[x] = EpochTreeLeaf(FIELD_COUNT, EPK_R);
+    sorted_leaf_hashers[x].epoch_key <== sorted_leaf_preimages[x][0];
+    for (var y = 0; y < FIELD_COUNT; y++) {
+      sorted_leaf_hashers[x].data[y] <== sorted_leaf_preimages[x][y+1];
     }
 
     // If the leaf preimage is 0, we insert a 0
@@ -122,8 +124,8 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, R, R2) {
   signal r_checksum_inter[TREE_ARITY**TREE_DEPTH];
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
     r_hasher_check[x] = Poseidon(1);
-    r_hasher_check[x].inputs[0] <== R**x;
-    r_checksum_inter[x] <== r_hasher_check[x].out * R**x;
+    r_hasher_check[x].inputs[0] <== OMT_R**x;
+    r_checksum_inter[x] <== r_hasher_check[x].out * OMT_R**x;
     r_checksum += r_checksum_inter[x];
   }
 

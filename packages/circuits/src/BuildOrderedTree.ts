@@ -1,11 +1,19 @@
 import { Circuit, Prover } from './circuits'
-import { SnarkProof, hash5 } from '@unirep/utils'
+import {
+    F,
+    OMT_R,
+    R_X,
+    genEpochTreeLeaf,
+    SnarkProof,
+    hash5,
+} from '@unirep/utils'
 import { BaseProof } from './BaseProof'
 import { BigNumberish } from '@ethersproject/bignumber'
-import defaultConfig from '../config'
+import { CircuitConfig } from './CircuitConfig'
 
-const { EPOCH_TREE_ARITY, EPOCH_TREE_DEPTH, SNARK_SCALAR_FIELD, Rx } =
-    defaultConfig as any
+const { DATA_FIELDS, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
+    CircuitConfig.default
+const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
 
 export class BuildOrderedTree extends BaseProof {
     readonly idx = {
@@ -27,54 +35,53 @@ export class BuildOrderedTree extends BaseProof {
     }
 
     static buildInputsForLeaves(
-        leaves: any[],
+        preimages: any[],
         arity = EPOCH_TREE_ARITY,
         depth = EPOCH_TREE_DEPTH
     ) {
-        const sortedLeaves = [...leaves].sort((a, b) => {
-            const leafA = hash5(a)
-            const leafB = hash5(b)
-            return leafA > leafB ? 1 : -1
-        })
-        sortedLeaves.unshift([0, 0, 0, 0, 0])
-        sortedLeaves.push([1, 0, 0, 0, 0])
-        const rVals = sortedLeaves.map((l) => {
-            if (l[0] === 0) {
-                return Rx[0]
-            } else if (l[0] === 1) {
-                return Rx[leaves.length + 1]
+        const preimageByLeaf = {} as { [key: string]: bigint[] }
+        const leaves = [[0, 0, 0, 0, 0], ...preimages, [1, 0, 0, 0, 0]].map(
+            (i) => {
+                if (i[0] === 0) {
+                    preimageByLeaf['0'] = i
+                    return BigInt(0)
+                } else if (i[0] === 1) {
+                    preimageByLeaf[(F - BigInt(1)).toString()] = i
+                    return F - BigInt(1)
+                }
+                const leaf = genEpochTreeLeaf(i[0], i.slice(1))
+                preimageByLeaf[leaf.toString()] = [...i]
+                return leaf
             }
-            return Rx[1 + leaves.indexOf(l)]
-        })
+        ) as bigint[]
+        const sortedLeaves = [...leaves].sort((a: bigint, b: bigint) =>
+            a > b ? 1 : -1
+        )
+        const sortedPreimages = sortedLeaves.map(
+            (leaf) => preimageByLeaf[leaf.toString()]
+        )
+        const rVals = sortedLeaves.map((leaf) => Rx[leaves.indexOf(leaf)])
 
-        const leafCount = sortedLeaves.length
-        const targetLength = arity ** depth
-        for (let x = 0; x < targetLength - leafCount; x++) {
-            sortedLeaves.push([0, 0, 0, 0, 0])
-            rVals.push(Rx[leafCount + x])
-        }
+        const finalPreimages = [
+            ...sortedPreimages,
+            ...Array(Math.max(arity ** depth - sortedPreimages.length, 0))
+                .fill(null)
+                .map(() => Array(DATA_FIELDS + 1).fill(0)),
+        ]
+        const finalRVals = [
+            ...rVals,
+            ...Array(Math.max(arity ** depth - sortedPreimages.length, 0))
+                .fill(null)
+                .map((_, i) => Rx[sortedPreimages.length + i]),
+        ]
+
         return {
             circuitInputs: {
-                sorted_leaf_preimages: sortedLeaves,
-                leaf_r_values: rVals,
+                sorted_leaf_preimages: finalPreimages,
+                leaf_r_values: finalRVals,
             },
-            // the unordered leaf pre-images, including the padding leaves
-            leaves: [[0, 0, 0, 0, 0], ...leaves, [1, 0, 0, 0, 0]].map((l) => {
-                if (l[0] === 0) {
-                    return BigInt(0)
-                } else if (l[0] === 1) {
-                    return BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
-                }
-                return hash5(l)
-            }),
-            sortedLeaves: sortedLeaves.map((l) => {
-                if (l[0] === 0) {
-                    return BigInt(0)
-                } else if (l[0] === 1) {
-                    return BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
-                }
-                return hash5(l)
-            }),
+            leaves,
+            sortedLeaves,
         }
     }
 }

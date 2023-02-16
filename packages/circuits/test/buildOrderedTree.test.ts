@@ -1,20 +1,35 @@
 import { expect } from 'chai'
-import { R_X, OMT_R, IncrementalMerkleTree, hash1, hash5 } from '@unirep/utils'
-import { genProofAndVerify } from './utils'
 import {
-    Circuit,
-    BuildOrderedTree,
-    SNARK_SCALAR_FIELD,
-    CircuitConfig,
-} from '../src'
-import BN from 'bn.js'
+    F,
+    R_X,
+    OMT_R,
+    genEpochTreeLeaf,
+    IncrementalMerkleTree,
+    hash1,
+    hash5,
+} from '@unirep/utils'
+import { genProofAndVerify } from './utils'
+import { Circuit, BuildOrderedTree, CircuitConfig } from '../src'
 
-const { _N, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } = CircuitConfig.default
+const { DATA_FIELDS, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
+    CircuitConfig.default
 
 const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
 
 const random = () => hash1([BigInt(Math.floor(Math.random() * 1000000000000))])
-const randomPreimage = () => Array(5).fill(null).map(random)
+const randomPreimage = () =>
+    Array(1 + DATA_FIELDS)
+        .fill(null)
+        .map(random)
+
+const calcPolysum = (leaves: bigint[]) => {
+    let polysum = BigInt(0)
+    for (const [index, leaf] of Object.entries(leaves)) {
+        const term = (BigInt(leaf.toString()) * Rx[index]) % F
+        polysum = (polysum + term) % F
+    }
+    return polysum
+}
 
 describe('Build sorted merkle tree', function () {
     this.timeout(300000)
@@ -22,37 +37,25 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2)
             .fill(null)
             .map(() => randomPreimage())
-        const { leaves, circuitInputs } =
+        const { sortedLeaves, leaves, circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(_leaves)
-        const { sorted_leaf_preimages: sortedLeaves } = circuitInputs
         const tree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
             0,
             EPOCH_TREE_ARITY
         )
         for (const leaf of sortedLeaves) {
-            if (leaf[0] === 0) {
-                tree.insert(0)
-            } else if (leaf[0] === 1) {
-                tree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
-            } else {
-                tree.insert(hash5(leaf))
-            }
+            tree.insert(leaf)
         }
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.buildOrderedTree,
             circuitInputs
         )
-        let expectedPolyhash = new BN(0)
-        for (const [index, leaf] of Object.entries(leaves)) {
-            const term = new BN(leaf.toString()).mul(new BN(Rx[index])).mod(_N)
-            expectedPolyhash = expectedPolyhash.add(term).mod(_N)
-        }
         expect(publicSignals[0].toString(), 'root').to.equal(
             tree.root.toString()
         )
         expect(publicSignals[1].toString(), 'polyhash').to.equal(
-            expectedPolyhash.toString()
+            calcPolysum(leaves).toString()
         )
         expect(isValid).to.be.true
     })
@@ -69,22 +72,17 @@ describe('Build sorted merkle tree', function () {
             EPOCH_TREE_ARITY
         )
         for (const leaf of sortedLeaves) {
-            tree.insert(BigInt(leaf))
+            tree.insert(leaf)
         }
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.buildOrderedTree,
             circuitInputs
         )
-        let expectedPolyhash = new BN(0)
-        for (const [index, leaf] of Object.entries(leaves)) {
-            const term = new BN(leaf.toString()).mul(new BN(Rx[index])).mod(_N)
-            expectedPolyhash = expectedPolyhash.add(term).mod(_N)
-        }
         expect(publicSignals[0].toString(), 'root').to.equal(
             tree.root.toString()
         )
         expect(publicSignals[1].toString(), 'polyhash').to.equal(
-            expectedPolyhash.toString()
+            calcPolysum(leaves).toString()
         )
         expect(isValid).to.be.true
     })
@@ -140,7 +138,10 @@ describe('Build sorted merkle tree', function () {
             .map(() => randomPreimage())
         const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(_leaves)
 
-        circuitInputs.sorted_leaf_preimages[12] = [BigInt('4'), 0, 0, 0, 0]
+        circuitInputs.sorted_leaf_preimages[12] = [
+            BigInt('4'),
+            ...Array(DATA_FIELDS).fill(BigInt(0)),
+        ]
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.buildOrderedTree, circuitInputs)
                 .then(() => rj())
