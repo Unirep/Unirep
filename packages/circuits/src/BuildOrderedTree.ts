@@ -1,5 +1,5 @@
 import { Circuit, Prover } from './circuits'
-import { SnarkProof, hash5 } from '@unirep/utils'
+import { SnarkProof, hash5, stringifyBigInts } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
 import { BigNumberish } from '@ethersproject/bignumber'
 import defaultConfig from '../config'
@@ -36,12 +36,23 @@ export class BuildOrderedTree extends BaseProof {
             const leafB = hash5(b)
             return leafA > leafB ? 1 : -1
         })
-        sortedLeaves.unshift([0, 0, 0, 0, 0])
-        sortedLeaves.push([1, 0, 0, 0, 0])
+        const firstLeafPreImage = [0, 0, 0, 0, 0]
+        const lastLeafPreImage = [1, 0, 0, 0, 0]
+        const smallestLeafValue = BigInt(0)
+        const largestLeafValue = BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
+        const isArrayEqual = (array1, array2) => {
+            return (
+                JSON.stringify(stringifyBigInts(array1)) ===
+                JSON.stringify(stringifyBigInts(array2))
+            )
+        }
+
+        sortedLeaves.unshift(firstLeafPreImage)
+        sortedLeaves.push(lastLeafPreImage)
         const rVals = sortedLeaves.map((l) => {
-            if (l[0] === 0) {
+            if (isArrayEqual(l, firstLeafPreImage)) {
                 return Rx[0]
-            } else if (l[0] === 1) {
+            } else if (isArrayEqual(l, lastLeafPreImage)) {
                 return Rx[leaves.length + 1]
             }
             return Rx[1 + leaves.indexOf(l)]
@@ -50,7 +61,7 @@ export class BuildOrderedTree extends BaseProof {
         const leafCount = sortedLeaves.length
         const targetLength = arity ** depth
         for (let x = 0; x < targetLength - leafCount; x++) {
-            sortedLeaves.push([0, 0, 0, 0, 0])
+            sortedLeaves.push(firstLeafPreImage)
             rVals.push(Rx[leafCount + x])
         }
         return {
@@ -59,19 +70,21 @@ export class BuildOrderedTree extends BaseProof {
                 leaf_r_values: rVals,
             },
             // the unordered leaf pre-images, including the padding leaves
-            leaves: [[0, 0, 0, 0, 0], ...leaves, [1, 0, 0, 0, 0]].map((l) => {
-                if (l[0] === 0) {
-                    return BigInt(0)
-                } else if (l[0] === 1) {
-                    return BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
+            leaves: [firstLeafPreImage, ...leaves, lastLeafPreImage].map(
+                (l) => {
+                    if (isArrayEqual(l, firstLeafPreImage)) {
+                        return smallestLeafValue
+                    } else if (isArrayEqual(l, lastLeafPreImage)) {
+                        return largestLeafValue
+                    }
+                    return hash5(l)
                 }
-                return hash5(l)
-            }),
+            ),
             sortedLeaves: sortedLeaves.map((l) => {
-                if (l[0] === 0) {
-                    return BigInt(0)
-                } else if (l[0] === 1) {
-                    return BigInt(SNARK_SCALAR_FIELD) - BigInt(1)
+                if (isArrayEqual(l, firstLeafPreImage)) {
+                    return smallestLeafValue
+                } else if (isArrayEqual(l, lastLeafPreImage)) {
+                    return largestLeafValue
                 }
                 return hash5(l)
             }),
