@@ -78,9 +78,9 @@ const _schema = [
     },
     {
         name: 'Epoch',
-        indexes: [{ keys: ['number'] }],
+        indexes: [{ keys: ['attesterId', 'number'] }],
         rows: [
-            ['number', 'Int', { unique: true }],
+            ['number', 'Int'],
             ['attesterId', 'String'],
             ['sealed', 'Bool'],
         ],
