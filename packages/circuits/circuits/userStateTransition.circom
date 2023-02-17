@@ -223,26 +223,26 @@ template UserStateTransition(
 
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
       // first combine the sum data
-      for (var x = 0; x < SUM_FIELD_COUNT; x++) {
-        final_data[x] += new_data[i][x];
+      for (var j = 0; j < SUM_FIELD_COUNT; j++) {
+        final_data[j] += new_data[i][j];
       }
       // then combine the replacement data
-      for (var x = 0; x < REPL_FIELD_COUNT; x+=2) {
-        timestamp_check[i][x] = GreaterThan(64);
-        timestamp_check[i][x].in[0] <== new_data[i][x+SUM_FIELD_COUNT+1];
-        timestamp_check[i][x].in[1] <== final_data[x+SUM_FIELD_COUNT+1];
-        data_select[i][x] = MultiMux1(2);
+      for (var j = 0; j < REPL_FIELD_COUNT; j+=2) {
+        timestamp_check[i][j] = GreaterThan(64);
+        timestamp_check[i][j].in[0] <== new_data[i][j+SUM_FIELD_COUNT+1];
+        timestamp_check[i][j].in[1] <== final_data[j+SUM_FIELD_COUNT+1];
+        data_select[i][j] = MultiMux1(2);
         // timestamp selection
-        data_select[i][x].c[0][0] <== final_data[x+SUM_FIELD_COUNT+1];
-        data_select[i][x].c[0][1] <== new_data[i][x+SUM_FIELD_COUNT+1];
+        data_select[i][j].c[0][0] <== final_data[j+SUM_FIELD_COUNT+1];
+        data_select[i][j].c[0][1] <== new_data[i][j+SUM_FIELD_COUNT+1];
         // data selection
-        data_select[i][x].c[1][0] <== final_data[x+SUM_FIELD_COUNT];
-        data_select[i][x].c[1][1] <== new_data[i][x+SUM_FIELD_COUNT];
+        data_select[i][j].c[1][0] <== final_data[j+SUM_FIELD_COUNT];
+        data_select[i][j].c[1][1] <== new_data[i][j+SUM_FIELD_COUNT];
         // select based on timestamp check
-        data_select[i][x].s <== timestamp_check[i][x].out;
+        data_select[i][j].s <== timestamp_check[i][j].out;
         // replace the old final data
-        final_data[x+SUM_FIELD_COUNT+1] = data_select[i][x].out[0];
-        final_data[x+SUM_FIELD_COUNT] = data_select[i][x].out[1];
+        final_data[j+SUM_FIELD_COUNT+1] = data_select[i][j].out[0];
+        final_data[j+SUM_FIELD_COUNT] = data_select[i][j].out[1];
       }
     }
 
