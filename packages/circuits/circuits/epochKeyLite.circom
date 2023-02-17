@@ -62,6 +62,4 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     epoch_key_hasher.inputs[3] <== nonce;
 
     epoch_key <== epoch_key_hasher.out;
-
-    sig_data * 0 === 0;
 }
