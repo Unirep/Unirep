@@ -784,20 +784,29 @@ export class Synchronizer extends EventEmitter {
             this.attesterId !== BigInt(0)
         )
             return
-        db.upsert('Epoch', {
+        const existingDoc = await this._db.findOne('Epoch', {
             where: {
                 number: epoch,
                 attesterId,
             },
-            update: {
-                sealed: true,
-            },
-            create: {
+        })
+        if (existingDoc) {
+            db.update('Epoch', {
+                where: {
+                    number: epoch,
+                    attesterId,
+                },
+                update: {
+                    sealed: true,
+                },
+            })
+        } else {
+            db.create('Epoch', {
                 number: epoch,
                 attesterId,
                 sealed: true,
-            },
-        })
+            })
+        }
         // create the next stub entry
         db.create('Epoch', {
             number: epoch + 1,
