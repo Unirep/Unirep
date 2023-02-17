@@ -375,7 +375,7 @@ contract Unirep is IUnirep, VerifySignature {
      * https://github.com/ethereum/solidity/issues/13813
      */
     function _updateEpochIfNeeded(uint256 attesterId) public {
-        require(attesterId < type(uint160).max);
+        if (attesterId >= type(uint160).max) revert AttesterInvalid();
         updateEpochIfNeeded(uint160(attesterId));
     }
 
@@ -573,7 +573,7 @@ contract Unirep is IUnirep, VerifySignature {
         returns (uint256)
     {
         AttesterData storage attester = attesters[attesterId];
-        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
         return attester.startTimestamp;
     }
 
@@ -583,7 +583,7 @@ contract Unirep is IUnirep, VerifySignature {
         returns (uint256)
     {
         AttesterData storage attester = attesters[attesterId];
-        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
         return
             (block.timestamp - attester.startTimestamp) / attester.epochLength;
     }
@@ -594,7 +594,7 @@ contract Unirep is IUnirep, VerifySignature {
         returns (uint256)
     {
         AttesterData storage attester = attesters[attesterId];
-        require(attester.startTimestamp != 0); // indicates the attester is signed up
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
         uint256 _currentEpoch = (block.timestamp - attester.startTimestamp) /
             attester.epochLength;
         return

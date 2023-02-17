@@ -47,7 +47,7 @@ library Polyhash {
         public
         returns (uint degree)
     {
-        require(val < SNARK_SCALAR_FIELD, 'vlarge');
+        require(val < SNARK_SCALAR_FIELD, 'Polyhash: vlarge');
         degree = self.degree + 1;
         uint coef = modexp(degree);
         uint term = mulmod(coef, val, SNARK_SCALAR_FIELD);
@@ -64,9 +64,9 @@ library Polyhash {
         uint newval,
         uint degree
     ) public {
-        require(oldval < SNARK_SCALAR_FIELD);
-        require(newval < SNARK_SCALAR_FIELD);
-        require(self.degree >= degree);
+        require(oldval < SNARK_SCALAR_FIELD, 'Polyhash: oldval-large');
+        require(newval < SNARK_SCALAR_FIELD, 'Polyhash: newval-large');
+        require(self.degree >= degree, 'Polyhash: degree-large');
         uint coef = modexp(degree);
         uint oldterm = mulmod(coef, oldval, SNARK_SCALAR_FIELD);
         uint newterm = mulmod(coef, newval, SNARK_SCALAR_FIELD);
