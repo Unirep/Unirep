@@ -41,7 +41,7 @@ const config = {
                     lastVersion: '2.0.0-alpha-3',
                     versions: {
                         current: {
-                            label: '2.0.0-alpha-4',
+                            label: '2.0.0-beta-1',
                             path: 'next',
                         },
                     },

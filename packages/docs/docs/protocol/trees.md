@@ -24,7 +24,7 @@ Each attester has a separate version of each tree for each epoch.
 * An epoch tree is used to **track the reputation received by epoch keys**. Non-repudiability is enforced at the circuit and smart contract level.
 
 * This is an **ordered merkle tree**, with its leaves storing the hash of epoch key and reputation received, e.g.,
-  * leaf value: `H(epochKey, posRep, negRep, graffiti, timestamp)`
+  * leaf value: Polysum of `[H(epochKey), H(data[0]), H(data[1]), ... H(data[n]))` using [`EPK_R`](../utils-api/constants#epk_r)
 
 The ordered merkle tree is constructed in ZK at the end of each epoch. For more info see the [ordered merkle tree proof](../circuits-api/circuits#build-ordered-tree).
 

@@ -40,16 +40,13 @@ An attestation given to an epoch key.
 
 ```ts
 {
-  epoch?: number,
-  epochKey?: string, // base 10
+  epoch: number,
+  epochKey: string, // base 10
   index: string,
-  attester?: string,
-  attesterId?: string,
-  posRep?: number,
-  negRep?: number,
-  graffiti?: string,
-  timestamp?: number,
-  hash: string
+  attesterId: string,
+  fieldIndex: number,
+  change: number,
+  timestamp: number,
   blockNumber: number
 }
 ```
@@ -74,15 +71,11 @@ A leaf from an epoch tree.
 
 ```ts
 {
+  id: string,
   epoch: number,
   hash: string,
   index: string,
   attesterId: string
-  epochKey: string
-  posRep: string
-  negRep: string
-  graffiti: string
-  timestamp: string
   blockNumber: number
 }
 ```

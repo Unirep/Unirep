@@ -54,6 +54,14 @@ The attester id for the proof.
 this.attesterId
 ```
 
+## data
+
+The signature data included for the proof.
+
+```ts
+this.data
+```
+
 ## minRep
 
 A minimum amount of net positive reputation the user controls. This value is only used if `proveMinRep` is non-zero.

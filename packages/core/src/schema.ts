@@ -35,12 +35,12 @@ const _schema = [
             { keys: ['index', 'epochKey', 'epoch'] },
         ],
         rows: [
-            ['epoch', 'Int', { optional: true }],
-            ['epochKey', 'String', { optional: true }],
+            ['epoch', 'Int'],
+            ['epochKey', 'String'],
             ['index', 'String'], // event index, tx index, block index
-            ['attesterId', 'String', { optional: true }],
-            ['fieldIndex', 'Int', { optional: true }],
-            ['change', 'String', { optional: true }],
+            ['attesterId', 'String'],
+            ['fieldIndex', 'Int'],
+            ['change', 'String'],
             ['timestamp', 'Int'],
             ['blockNumber', 'Int'],
         ],
