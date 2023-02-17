@@ -243,37 +243,41 @@ contract Unirep is IUnirep, VerifySignature {
                     revert();
                 }
                 if (change >= SNARK_SCALAR_FIELD) revert OutOfRange();
-                uint oldVal = data[fieldIndex];
-                uint oldTimestamp = data[fieldIndex + 1];
+                {
+                    uint oldVal = data[fieldIndex];
 
-                uint newValHash = PoseidonT2.hash([change]);
-                uint oldValHash = oldVal == 0
-                    ? PoseidonT2_zero
-                    : dataHashes[fieldIndex];
-                data[fieldIndex] = change;
-                dataHashes[fieldIndex] = newValHash;
-                // update data
-                Polysum.update(
-                    epkPolysum,
-                    fieldIndex + 1,
-                    oldValHash,
-                    newValHash,
-                    EPK_R
-                );
-                // update timestamp
-                uint oldTimestampHash = oldTimestamp == 0
-                    ? PoseidonT2_zero
-                    : dataHashes[fieldIndex + 1];
-                uint newTimestampHash = PoseidonT2.hash([block.timestamp]);
-                data[fieldIndex + 1] = block.timestamp;
-                dataHashes[fieldIndex + 1] = newTimestampHash;
-                Polysum.update(
-                    epkPolysum,
-                    fieldIndex + 2,
-                    oldTimestampHash,
-                    newTimestampHash,
-                    EPK_R
-                );
+                    uint newValHash = PoseidonT2.hash([change]);
+                    uint oldValHash = oldVal == 0
+                        ? PoseidonT2_zero
+                        : dataHashes[fieldIndex];
+                    data[fieldIndex] = change;
+                    dataHashes[fieldIndex] = newValHash;
+                    // update data
+                    Polysum.update(
+                        epkPolysum,
+                        fieldIndex + 1,
+                        oldValHash,
+                        newValHash,
+                        EPK_R
+                    );
+                }
+                {
+                    // update timestamp
+                    uint oldTimestamp = data[fieldIndex + 1];
+                    uint oldTimestampHash = oldTimestamp == 0
+                        ? PoseidonT2_zero
+                        : dataHashes[fieldIndex + 1];
+                    uint newTimestampHash = PoseidonT2.hash([block.timestamp]);
+                    data[fieldIndex + 1] = block.timestamp;
+                    dataHashes[fieldIndex + 1] = newTimestampHash;
+                    Polysum.update(
+                        epkPolysum,
+                        fieldIndex + 2,
+                        oldTimestampHash,
+                        newTimestampHash,
+                        EPK_R
+                    );
+                }
             }
         }
 
