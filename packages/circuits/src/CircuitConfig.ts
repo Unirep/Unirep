@@ -1,5 +1,4 @@
-import BN from 'bn.js'
-import { SNARK_SCALAR_FIELD, hash1 } from '@unirep/utils'
+import { SNARK_SCALAR_FIELD } from '@unirep/utils'
 
 const defaultConfig = {
     STATE_TREE_DEPTH: 12,
@@ -18,7 +17,6 @@ export class CircuitConfig {
     FIELD_COUNT: number
     SUM_FIELD_COUNT: number
     SNARK_SCALAR_FIELD: string
-    _N: BN
 
     static get default() {
         return new CircuitConfig(defaultConfig)
@@ -40,28 +38,7 @@ export class CircuitConfig {
         this.FIELD_COUNT = config.FIELD_COUNT
         this.SUM_FIELD_COUNT = config.SUM_FIELD_COUNT
         this.SNARK_SCALAR_FIELD = SNARK_SCALAR_FIELD
-        this._N = new BN(this.SNARK_SCALAR_FIELD, 10)
-        // this.Rx = this.buildRx()
     }
-
-    // build array of EPOCH_TREE_DEPTH**EPOCH_TREE_ARITY R exponents
-    // buildRx() {
-    //     const _R = new BN(this.R.toString(), 10)
-    //
-    //     let _Rx = new BN(_R)
-    //
-    //     const Rx = [] as bigint[]
-    //     Rx.push(BigInt(1))
-    //     for (
-    //         let x = 1;
-    //         x < this.EPOCH_TREE_ARITY ** this.EPOCH_TREE_DEPTH;
-    //         x++
-    //     ) {
-    //         Rx.push(BigInt(_Rx.toString(10)))
-    //         _Rx = _Rx.mul(_R).mod(this._N)
-    //     }
-    //     return Rx
-    // }
 }
 
 export default new CircuitConfig(defaultConfig)
