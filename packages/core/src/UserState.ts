@@ -600,20 +600,20 @@ export default class UserState {
         const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
         const circuitInputs = {
             identity_secret: this.id.secretHash,
-            data: options.data ?? BigInt(0),
+            sig_data: options.data ?? BigInt(0),
             epoch,
             nonce,
-            attester_id: this.attesterId.toString(),
+            attester_id: this.sync.attesterId.toString(),
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
-        const results = await this.prover.genProofAndPublicSignals(
+        const results = await this.sync.prover.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyLiteProof(
             results.publicSignals,
             results.proof,
-            this.prover
+            this.sync.prover
         )
     }
 }
