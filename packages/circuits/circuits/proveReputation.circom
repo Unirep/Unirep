@@ -127,7 +127,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUN
     /* End of check 2 */
 
     /* 3. Check if user has reputation less than max_rep */
-    // if proving max_rep > 0, check if data[1] >= data[0] + min_rep
+    // if proving max_rep > 0, check if data[1] >= data[0] + max_rep
 
     component max_rep_check = GreaterEqThan(252);
     max_rep_check.in[0] <== data[1];
