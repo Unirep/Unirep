@@ -20,7 +20,7 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    DATA_FIELDS,
+    FIELD_COUNT,
 } = defaultConfig
 
 describe('Epoch sealing', function () {

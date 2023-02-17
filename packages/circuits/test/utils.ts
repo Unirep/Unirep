@@ -7,8 +7,8 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    SUM_FIELDS,
-    DATA_FIELDS,
+    SUM_FIELD_COUNT,
+    FIELD_COUNT,
 } = CircuitConfig.default
 
 const genNewEpochTree = (

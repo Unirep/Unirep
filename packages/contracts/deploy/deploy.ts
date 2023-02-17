@@ -27,8 +27,8 @@ export const deployUnirep = async (
         EPOCH_TREE_ARITY,
         STATE_TREE_DEPTH,
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        DATA_FIELDS,
-        SUM_FIELDS,
+        FIELD_COUNT,
+        SUM_FIELD_COUNT,
     } = _settings
 
     console.log(
@@ -40,8 +40,8 @@ export const deployUnirep = async (
     console.log(
         `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
     )
-    console.log(`Total fields per user: ${DATA_FIELDS}`)
-    console.log(`Sum fields per user: ${SUM_FIELDS}`)
+    console.log(`Total fields per user: ${FIELD_COUNT}`)
+    console.log(`Sum fields per user: ${SUM_FIELD_COUNT}`)
     console.log(
         '-----------------------------------------------------------------'
     )
@@ -142,8 +142,8 @@ export const deployUnirep = async (
             epochTreeDepth: EPOCH_TREE_DEPTH,
             epochTreeArity: EPOCH_TREE_ARITY,
             numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-            fieldCount: DATA_FIELDS,
-            sumFieldCount: SUM_FIELDS,
+            fieldCount: FIELD_COUNT,
+            sumFieldCount: SUM_FIELD_COUNT,
         },
         verifiers[Circuit.signup],
         verifiers[Circuit.userStateTransition],

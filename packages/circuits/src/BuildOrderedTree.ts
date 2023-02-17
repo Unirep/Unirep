@@ -11,7 +11,7 @@ import { BaseProof } from './BaseProof'
 import { BigNumberish } from '@ethersproject/bignumber'
 import { CircuitConfig } from './CircuitConfig'
 
-const { DATA_FIELDS, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
     CircuitConfig.default
 
 export class BuildOrderedTree extends BaseProof {
@@ -66,7 +66,7 @@ export class BuildOrderedTree extends BaseProof {
             ...sortedPreimages,
             ...Array(Math.max(arity ** depth - sortedPreimages.length, 0))
                 .fill(null)
-                .map(() => Array(DATA_FIELDS + 1).fill(0)),
+                .map(() => Array(FIELD_COUNT + 1).fill(0)),
         ]
         const finalRVals = [
             ...rVals,

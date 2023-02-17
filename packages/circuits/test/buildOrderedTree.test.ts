@@ -11,14 +11,14 @@ import {
 import { genProofAndVerify } from './utils'
 import { Circuit, BuildOrderedTree, CircuitConfig } from '../src'
 
-const { DATA_FIELDS, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
     CircuitConfig.default
 
 const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
 
 const random = () => hash1([BigInt(Math.floor(Math.random() * 1000000000000))])
 const randomPreimage = () =>
-    Array(1 + DATA_FIELDS)
+    Array(1 + FIELD_COUNT)
         .fill(null)
         .map(random)
 
@@ -140,7 +140,7 @@ describe('Build sorted merkle tree', function () {
 
         circuitInputs.sorted_leaf_preimages[12] = [
             BigInt('4'),
-            ...Array(DATA_FIELDS).fill(BigInt(0)),
+            ...Array(FIELD_COUNT).fill(BigInt(0)),
         ]
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.buildOrderedTree, circuitInputs)

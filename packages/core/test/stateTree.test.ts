@@ -243,7 +243,7 @@ describe('State tree', function () {
             .fill(null)
             .map(() => {
                 const fieldIndex = Math.floor(
-                    Math.random() * (_userState.sync.settings.sumFieldCount + 1)
+                    Math.random() * _userState.sync.settings.sumFieldCount
                 )
                 const val = Math.floor(Math.random() * 10000000000000)
                 return {
@@ -354,8 +354,10 @@ describe('State tree', function () {
                 Array(userState.sync.settings.fieldCount)
                     .fill(null)
                     .map((_, index) => {
-                        if (index !== attestations[i].fieldIndex) return 0
-                        return attestations[i].val
+                        if (index === attestations[i].fieldIndex) {
+                            return attestations[i].val
+                        }
+                        return BigInt(0)
                     })
             )
             stateTree.insert(leaf)

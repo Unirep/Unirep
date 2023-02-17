@@ -13,8 +13,8 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    DATA_FIELDS,
-    SUM_FIELDS,
+    FIELD_COUNT,
+    SUM_FIELD_COUNT,
 } = defaultConfig
 
 describe('Attestations', function () {
@@ -50,7 +50,7 @@ describe('Attestations', function () {
         )
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
-            const field = Math.floor(Math.random() * SUM_FIELDS + 1)
+            const field = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, field, 1)
@@ -71,7 +71,7 @@ describe('Attestations', function () {
 
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
-            const field = Math.floor(Math.random() * SUM_FIELDS)
+            const field = Math.floor(Math.random() * SUM_FIELD_COUNT)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, field, 1)
@@ -79,7 +79,7 @@ describe('Attestations', function () {
         }
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
-            const field = Math.floor(Math.random() * SUM_FIELDS)
+            const field = Math.floor(Math.random() * SUM_FIELD_COUNT)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, field, 1)
@@ -150,7 +150,7 @@ describe('Attestations', function () {
             attester.address
         )
         const epochKey = BigInt(24910)
-        const fieldIndex = SUM_FIELDS
+        const fieldIndex = SUM_FIELD_COUNT
         const tx = await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, 1)
@@ -180,7 +180,7 @@ describe('Attestations', function () {
         expect(
             unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, SUM_FIELDS, SNARK_SCALAR_FIELD)
+                .attest(epochKey, epoch, SUM_FIELD_COUNT, SNARK_SCALAR_FIELD)
         ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
     })
 

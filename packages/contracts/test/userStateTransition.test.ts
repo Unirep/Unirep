@@ -24,8 +24,8 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    DATA_FIELDS,
-    SUM_FIELDS,
+    FIELD_COUNT,
+    SUM_FIELD_COUNT,
 } = defaultConfig
 
 const emptyEpochTree = () => {
@@ -127,8 +127,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -201,8 +201,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -269,8 +269,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -331,7 +331,7 @@ describe('User State Transition', function () {
 
             await unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, SUM_FIELDS, 1)
+                .attest(epochKey, epoch, SUM_FIELD_COUNT, 1)
                 .then((t) => t.wait())
         }
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
@@ -357,8 +357,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -429,8 +429,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -501,8 +501,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -572,8 +572,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -644,8 +644,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                data: Array(DATA_FIELDS).fill(0),
-                new_data: epochKeys.map(() => Array(DATA_FIELDS).fill(0)),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -750,9 +750,9 @@ describe('User State Transition', function () {
                         state_tree_indexes: stateTreeProof.pathIndices,
                         state_tree_elements: stateTreeProof.siblings,
                         attester_id: attester.address,
-                        data: Array(DATA_FIELDS).fill(0),
+                        data: Array(FIELD_COUNT).fill(0),
                         new_data: epochKeys.map(() =>
-                            Array(DATA_FIELDS).fill(0)
+                            Array(FIELD_COUNT).fill(0)
                         ),
                         epoch_tree_elements: epochKeys.map(() =>
                             epochTree._createProof(0).siblings.slice(1)
