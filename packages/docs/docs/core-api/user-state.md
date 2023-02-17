@@ -154,3 +154,16 @@ state.genEpochKeyProof(options: {
   data?: bigint,
 }): Promise<EpochKeyProof>
 ```
+
+## genEpochKeyLiteProof
+
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyLiteProof`](../circuits-api/epoch-key-lite-proof). This proof will not include a merkle tree proof which makes the proof size smaller than an [`EpochKeyProof`](../circuits-api/epoch-key-proof). It can be used to prove a seen and valid epoch key.
+
+```ts
+state.genEpochKeyLiteProof(options: {
+  revealNonce?: boolean,
+  nonce?: number,
+  epoch?: number,
+  data?: bigint,
+}): Promise<EpochKeyLiteProof>
+```
