@@ -93,18 +93,16 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep, graffiti, timestamp } =
-                await userState.getRepByEpochKey(key, BigInt(epoch))
+            const data = await userState.getDataByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
-                expect(posRep).to.equal(newPosRep)
-                expect(negRep).to.equal(newNegRep)
-                expect(graffiti).to.equal(newGraffiti)
-                expect(timestamp).to.equal(newTimestamp)
+                expect(data[0]).to.equal(0)
+                expect(data[1]).to.equal(5)
+                expect(data[2]).to.equal(0)
+                expect(data[3]).to.equal(0)
             } else {
-                expect(posRep).to.equal(0)
-                expect(negRep).to.equal(0)
-                expect(graffiti).to.equal(0)
-                expect(timestamp).to.equal(0)
+                for (const d of data) {
+                    expect(d).to.equal(0)
+                }
             }
         })
         await Promise.all(checkPromises)
@@ -122,12 +120,11 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.waitForSync()
         {
-            const { posRep, negRep, graffiti, timestamp } =
-                await userState.getRep()
-            expect(posRep).to.equal(newPosRep)
-            expect(negRep).to.equal(newNegRep)
-            expect(graffiti).to.equal(newGraffiti)
-            expect(timestamp).to.equal(newTimestamp)
+            const data = await userState.getData()
+            expect(data[0]).to.equal(0)
+            expect(data[1]).to.equal(5)
+            expect(data[2]).to.equal(0)
+            expect(data[3]).to.equal(0)
         }
         await userState.sync.stop()
     })
@@ -150,7 +147,7 @@ describe('Attester signs up and gives attestation', function () {
         const epoch = await userState.sync.loadCurrentEpoch()
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, '0x01', 1, 0, 0)
+            .attest('0x01', epoch, 1, 1)
             .then((t) => t.wait())
         await userState.waitForSync()
         await userState.sync.stop()

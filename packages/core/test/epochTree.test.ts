@@ -7,6 +7,7 @@ import {
     hash5,
     IncrementalMerkleTree,
     stringifyBigInts,
+    genEpochTreeLeaf,
 } from '@unirep/utils'
 import { Circuit, SNARK_SCALAR_FIELD, BuildOrderedTree } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -100,7 +101,7 @@ describe('Epoch tree', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = await userState.getEpochKeys(epoch)
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const config = await unirepContract.config()
         const epochTree = new IncrementalMerkleTree(
             config.epochTreeDepth,
@@ -110,37 +111,32 @@ describe('Epoch tree', function () {
         const leaves = [] as any
 
         for (const epk of epochKeys) {
-            let posRep = 0
-            let negRep = 0
-            let graffiti = BigInt(0)
-            let timestamp = 0
+            const data = Array(userState.sync.settings.fieldCount).fill(
+                BigInt(0)
+            )
             for (let i = 0; i < 5; i++) {
-                const newPosRep = Math.floor(Math.random() * 10)
-                const newNegRep = Math.floor(Math.random() * 10)
-                const newGraffiti = genRandomSalt()
+                const fieldIndex = Math.floor(
+                    Math.random() * (userState.sync.settings.sumFieldCount + 1)
+                )
+                const val = Math.floor(Math.random() * 10000000000000)
                 // now submit the attestation from the attester
                 const { timestamp: newTimestamp } = await unirepContract
                     .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epk,
-                        newPosRep,
-                        newNegRep,
-                        newGraffiti,
-                        {
-                            gasLimit: 1000000,
-                        }
-                    )
+                    .attest(epk, epoch, fieldIndex, val, {
+                        gasLimit: 1000000,
+                    })
                     .then((t) => t.wait())
                     .then(({ blockNumber }) =>
                         ethers.provider.getBlock(blockNumber)
                     )
-                posRep += newPosRep
-                negRep += newNegRep
-                graffiti = newGraffiti
-                timestamp = newTimestamp
+                if (fieldIndex < userState.sync.settings.sumFieldCount) {
+                    data[fieldIndex] += BigInt(val)
+                } else {
+                    data[fieldIndex] = val
+                    data[fieldIndex + 1] = newTimestamp
+                }
             }
-            leaves.push(hash5([epk, posRep, negRep, graffiti, timestamp]))
+            leaves.push(genEpochTreeLeaf(epk, data))
         }
         leaves.sort((a, b) => (a > b ? 1 : -1))
         epochTree.insert(0)

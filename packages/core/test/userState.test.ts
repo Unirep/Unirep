@@ -188,13 +188,12 @@ describe('User state', function () {
         // we're signed up, now run an attestation
         const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const [epk] = epochKeys
-        const newPosRep = 10
-        const newNegRep = 5
-        const newGraffiti = 1294194
+        const fieldIndex = 0
+        const val = 1389
         // now submit the attestation from the attester
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
+            .attest(epk, epoch, fieldIndex, val)
             .then((t) => t.wait())
         await userState.waitForSync()
         // now commit the attetstations
@@ -225,16 +224,15 @@ describe('User state', function () {
 
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep, graffiti } =
-                await userState.getRepByEpochKey(key, BigInt(epoch))
+            const data = await userState.getDataByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
-                expect(posRep).to.equal(newPosRep)
-                expect(negRep).to.equal(newNegRep)
-                expect(graffiti).to.equal(newGraffiti)
+                expect(data[fieldIndex]).to.equal(val)
+                data.forEach((d, i) => {
+                    if (i === fieldIndex) return
+                    expect(d).to.equal(0)
+                })
             } else {
-                expect(posRep).to.equal(0)
-                expect(negRep).to.equal(0)
-                expect(graffiti).to.equal(0)
+                data.forEach((d) => expect(d).to.equal(0))
             }
         })
         await Promise.all(checkPromises)
@@ -253,12 +251,12 @@ describe('User state', function () {
         await userState.waitForSync()
         {
             const currentEpoch = await userState.sync.loadCurrentEpoch()
-            const { posRep, negRep, graffiti } = await userState.getRep(
-                Number(currentEpoch)
-            )
-            expect(posRep).to.equal(newPosRep)
-            expect(negRep).to.equal(newNegRep)
-            expect(graffiti).to.equal(newGraffiti)
+            const data = await userState.getData(Number(currentEpoch))
+            expect(data[fieldIndex]).to.equal(val)
+            data.forEach((d, i) => {
+                if (i === fieldIndex) return
+                expect(d).to.equal(0)
+            })
         }
 
         await userState.waitForSync()

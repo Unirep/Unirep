@@ -69,10 +69,7 @@ describe('User Signup', function () {
                 id.secretHash,
                 attester.address,
                 contractEpoch.toNumber(),
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
