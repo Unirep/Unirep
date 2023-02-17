@@ -166,8 +166,7 @@ export class Synchronizer extends EventEmitter {
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
         this.settings.epochTreeArity = config.epochTreeArity
-        this.settings.numEpochKeyNoncePerEpoch =
-            config.numEpochKeyNoncePerEpoch.toNumber()
+        this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
 

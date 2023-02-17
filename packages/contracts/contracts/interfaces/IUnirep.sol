@@ -141,6 +141,6 @@ interface IUnirep {
         uint8 epochTreeArity;
         uint8 fieldCount;
         uint8 sumFieldCount;
-        uint256 numEpochKeyNoncePerEpoch;
+        uint8 numEpochKeyNoncePerEpoch;
     }
 }
