@@ -32,13 +32,13 @@ contract Unirep is IUnirep, VerifySignature {
     IVerifier public immutable epochKeyLiteVerifier;
     IVerifier public immutable buildOrderedTreeVerifier;
 
-    uint256 public immutable SNARK_SCALAR_FIELD =
+    uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 public PoseidonT2_zero = PoseidonT2.hash([uint(0)]);
+    uint256 public immutable PoseidonT2_zero = PoseidonT2.hash([uint(0)]);
 
-    uint256 public OMT_R =
+    uint256 public constant OMT_R =
         19840472963655813647419884432877523255831900116552197704230384899846353674447;
-    uint256 public EPK_R =
+    uint256 public constant EPK_R =
         11105707062209303735980536775061420040143715723438319441848723820903914190159;
 
     // Attester id == address
