@@ -2,20 +2,13 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { hash1 } from '@unirep/utils'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    FIELD_COUNT,
-    SUM_FIELD_COUNT,
-} = defaultConfig
+const { EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, SUM_FIELD_COUNT } = defaultConfig
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -50,10 +43,11 @@ describe('Attestations', function () {
         )
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
-            const field = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
+            const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
+            const val = hash1([Math.floor(Math.random() * 10000000000)])
             await unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, field, 1)
+                .attest(epochKey, epoch, fieldIndex, val)
                 .then((t) => t.wait())
         }
         await expect(
@@ -71,18 +65,20 @@ describe('Attestations', function () {
 
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
-            const field = Math.floor(Math.random() * SUM_FIELD_COUNT)
+            const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
+            const val = hash1([Math.floor(Math.random() * 10000000000)])
             await unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, field, 1)
+                .attest(epochKey, epoch, fieldIndex, val)
                 .then((t) => t.wait())
         }
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
-            const field = Math.floor(Math.random() * SUM_FIELD_COUNT)
+            const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
+            const val = hash1([Math.floor(Math.random() * 10000000000)])
             await unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, field, 1)
+                .attest(epochKey, epoch, fieldIndex, val)
                 .then((t) => t.wait())
         }
     })
@@ -151,9 +147,10 @@ describe('Attestations', function () {
         )
         const epochKey = BigInt(24910)
         const fieldIndex = SUM_FIELD_COUNT
+        const val = 1
         const tx = await unirepContract
             .connect(attester)
-            .attest(epochKey, epoch, fieldIndex, 1)
+            .attest(epochKey, epoch, fieldIndex, val)
         const { timestamp } = await tx
             .wait()
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
@@ -165,7 +162,7 @@ describe('Attestations', function () {
                 epochKey,
                 attester.address,
                 fieldIndex,
-                1,
+                val,
                 timestamp
             )
     })
@@ -193,9 +190,11 @@ describe('Attestations', function () {
         )
         const epochKey = BigInt(24910)
 
+        const fieldIndex = 1
+        const val = 5
         const tx = await unirepContract
             .connect(attester)
-            .attest(epochKey, epoch, 1, 5)
+            .attest(epochKey, epoch, fieldIndex, val)
         await tx.wait()
         const { timestamp } = await tx
             .wait()
@@ -203,6 +202,13 @@ describe('Attestations', function () {
 
         expect(tx)
             .to.emit(unirepContract, 'Attestation')
-            .withArgs(epoch, epochKey, attester.address, 1, 5, timestamp)
+            .withArgs(
+                epoch,
+                epochKey,
+                attester.address,
+                fieldIndex,
+                val,
+                timestamp
+            )
     })
 })
