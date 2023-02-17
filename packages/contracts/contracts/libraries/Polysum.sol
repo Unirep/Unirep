@@ -50,6 +50,26 @@ library Polysum {
         return index;
     }
 
+    function add(PolysumData storage self, uint[] memory vals, uint R)
+        public
+        returns (uint)
+    {
+        require(vals.length < type(uint8).max);
+        require(vals.length > 0);
+        uint index = self.index;
+        uint hash = self.hash;
+
+        uint Rx = rForIndex(index, R);
+        for (uint8 x = 0; x < vals.length; x++) {
+            uint term = mulmod(Rx, vals[x], SNARK_SCALAR_FIELD);
+            hash = addmod(hash, term, SNARK_SCALAR_FIELD);
+            index++;
+            Rx = mulmod(Rx, R, SNARK_SCALAR_FIELD);
+        }
+        self.hash = hash;
+        self.index = index;
+    }
+
     /**
      * Update an element in the hash for a degree
      **/
@@ -67,15 +87,16 @@ library Polysum {
         uint oldterm = mulmod(coef, oldval, SNARK_SCALAR_FIELD);
         uint newterm = mulmod(coef, newval, SNARK_SCALAR_FIELD);
         uint diff = oldterm > newterm ? oldterm - newterm : newterm - oldterm;
+        uint hash = self.hash;
         if (newterm > oldterm) {
             // we are applying an addition
-            self.hash = addmod(self.hash, diff, SNARK_SCALAR_FIELD);
-        } else if (diff <= self.hash) {
+            self.hash = addmod(hash, diff, SNARK_SCALAR_FIELD);
+        } else if (diff <= hash) {
             // we can apply a normal subtraction (no mod)
             self.hash -= diff;
         } else {
             // we need to wrap, we're guaranteed that self.hash < diff < SNARK_SCALAR_FIELD
-            self.hash = SNARK_SCALAR_FIELD - (diff - self.hash);
+            self.hash = SNARK_SCALAR_FIELD - (diff - hash);
         }
     }
 

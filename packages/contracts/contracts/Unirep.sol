@@ -236,10 +236,12 @@ contract Unirep is IUnirep, VerifySignature {
             // lazily initialize the epk polysum state
             newKey = epkPolysum.hash == 0;
             if (newKey) {
-                Polysum.add(epkPolysum, PoseidonT2.hash([epochKey]), EPK_R);
+                uint[] memory vals = new uint[](fieldCount + 1);
+                vals[0] = PoseidonT2.hash([epochKey]);
                 for (uint8 x = 0; x < fieldCount; x++) {
-                    Polysum.add(epkPolysum, PoseidonT2_zero, EPK_R);
+                    vals[x + 1] = PoseidonT2_zero;
                 }
+                Polysum.add(epkPolysum, vals, EPK_R);
             }
             if (fieldIndex < sumFieldCount) {
                 // do a sum field change
