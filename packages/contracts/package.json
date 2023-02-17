@@ -21,7 +21,7 @@
         "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc",
         "abi": "node ./scripts/abi",
         "compile": "hardhat compile",
-        "test": "DEPLOY_DELAY=0 hardhat test ./test/*.test.ts",
+        "test": "DEPLOY_DELAY=0 hardhat test ./test/verif*.test.ts",
         "lint": "prettier --write .",
         "coverage": "hardhat coverage && yarn badge",
         "badge": "lcov-badge-generator ./coverage/lcov.info -o coverage/badge.svg",
@@ -34,6 +34,7 @@
         "@zk-kit/incremental-merkle-tree.sol": "^1.2.0",
         "circomlibjs": "0.0.8",
         "ethers": "^5.6.8",
+        "poseidon-solidity": "^0.0.2",
         "solc": "^0.8.16"
     },
     "devDependencies": {

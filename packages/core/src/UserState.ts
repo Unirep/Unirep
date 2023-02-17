@@ -142,10 +142,7 @@ export default class UserState {
                 this.id.secretHash,
                 this.sync.attesterId.toString(),
                 signup.epoch,
-                0,
-                0,
-                0,
-                0
+                [0, 0, 0, 0]
             )
             const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
                 where: {
@@ -162,10 +159,7 @@ export default class UserState {
             this.id.secretHash,
             this.sync.attesterId.toString(),
             latestTransitionedEpoch,
-            posRep,
-            negRep,
-            graffiti,
-            timestamp
+            [posRep, negRep, graffiti, timestamp]
         )
         const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
             where: {

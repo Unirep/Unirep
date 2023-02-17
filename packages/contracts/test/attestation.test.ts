@@ -13,6 +13,8 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    DATA_FIELDS,
+    SUM_FIELDS,
 } = defaultConfig
 
 describe('Attestations', function () {
@@ -46,21 +48,16 @@ describe('Attestations', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        const posRep = 1
-        const negRep = 5
-        const graffiti = 0
-
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
+            const field = Math.floor(Math.random() * SUM_FIELDS + 1)
             await unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epochKey, epoch, field, 1)
                 .then((t) => t.wait())
         }
         await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, 2, posRep, negRep, graffiti)
+            unirepContract.connect(attester).attest(2, epoch, 0, 1)
         ).to.be.revertedWithCustomError(unirepContract, 'MaxAttestations')
     })
 
@@ -71,22 +68,21 @@ describe('Attestations', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        const posRep = 1
-        const negRep = 5
-        const graffiti = 0
 
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
+            const field = Math.floor(Math.random() * SUM_FIELDS)
             await unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epochKey, epoch, field, 1)
                 .then((t) => t.wait())
         }
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 100000)
+            const field = Math.floor(Math.random() * SUM_FIELDS)
             await unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epochKey, epoch, field, 1)
                 .then((t) => t.wait())
         }
     })
@@ -97,9 +93,7 @@ describe('Attestations', function () {
         const wrongEpoch = 444444
         const epochKey = BigInt(24910)
         await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(wrongEpoch, epochKey, 1, 1, 0)
+            unirepContract.connect(attester).attest(epochKey, wrongEpoch, 1, 1)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -110,7 +104,7 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, SNARK_SCALAR_FIELD, 1, 1, 0)
+                .attest(SNARK_SCALAR_FIELD, epoch, 1, 0)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 
@@ -131,9 +125,7 @@ describe('Attestations', function () {
         expect(oldEpoch.toString()).not.equal(newEpoch.toString())
 
         await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(oldEpoch, epochKey, 1, 1, 0)
+            unirepContract.connect(attester).attest(epochKey, oldEpoch, 1, 1)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
     })
 
@@ -147,9 +139,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
 
         await expect(
-            unirepContract
-                .connect(wrongAttester)
-                .submitAttestation(epoch, epochKey, 1, 1, 0)
+            unirepContract.connect(wrongAttester).attest(epochKey, epoch, 1, 1)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
@@ -160,25 +150,22 @@ describe('Attestations', function () {
             attester.address
         )
         const epochKey = BigInt(24910)
-        const posRep = 1
-        const negRep = 5
-        const graffiti = 101910
+        const fieldIndex = SUM_FIELDS
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            .attest(epochKey, epoch, fieldIndex, 1)
         const { timestamp } = await tx
             .wait()
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         expect(tx)
-            .to.emit(unirepContract, 'AttestationSubmitted')
+            .to.emit(unirepContract, 'Attestation')
             .withArgs(
                 epoch,
                 epochKey,
                 attester.address,
-                posRep,
-                negRep,
-                graffiti,
+                fieldIndex,
+                1,
                 timestamp
             )
     })
@@ -190,13 +177,10 @@ describe('Attestations', function () {
             attester.address
         )
         const epochKey = BigInt(24910)
-        const posRep = 1
-        const negRep = 5
-        const graffiti = SNARK_SCALAR_FIELD
         expect(
             unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epochKey, epoch, SUM_FIELDS, SNARK_SCALAR_FIELD)
         ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
     })
 
@@ -208,26 +192,17 @@ describe('Attestations', function () {
             attester.address
         )
         const epochKey = BigInt(24910)
-        const posRep = 1
-        const negRep = 5
-        const graffiti = 0
-        const timestamp = 0
 
         const tx = await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+            .attest(epochKey, epoch, 1, 5)
         await tx.wait()
+        const { timestamp } = await tx
+            .wait()
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         expect(tx)
-            .to.emit(unirepContract, 'AttestationSubmitted')
-            .withArgs(
-                epoch,
-                epochKey,
-                attester.address,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp
-            )
+            .to.emit(unirepContract, 'Attestation')
+            .withArgs(epoch, epochKey, attester.address, 1, 5, timestamp)
     })
 })

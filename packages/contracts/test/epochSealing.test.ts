@@ -2,7 +2,12 @@
 
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { IncrementalMerkleTree, stringifyBigInts } from '@unirep/utils'
+import {
+    IncrementalMerkleTree,
+    stringifyBigInts,
+    OMT_R,
+    F,
+} from '@unirep/utils'
 import { BuildOrderedTree, Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
@@ -15,6 +20,7 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    DATA_FIELDS,
 } = defaultConfig
 
 describe('Epoch sealing', function () {
@@ -79,12 +85,12 @@ describe('Epoch sealing', function () {
         )
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, 5, 1, 0, 0)
+            .attest(5, epoch, 1, 3)
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimages = [[5, 1, 0, 0, 0]]
-        const { circuitInputs } =
+        const preimages = [[5, 0, 3, 0, 0]]
+        const { circuitInputs, leaves } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.buildOrderedTree,
@@ -115,7 +121,7 @@ describe('Epoch sealing', function () {
         )
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, 5, 1, 0, 0)
+            .attest(5, epoch, 1, 1)
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
@@ -151,16 +157,14 @@ describe('Epoch sealing', function () {
         const preimages = []
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 1000)
-            preimages.push([epochKey, 1, 0, 0, 0])
+            preimages.push([epochKey, 0, 1, 0, 0])
             await unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, epochKey, 1, 0, 0)
+                .attest(epochKey, epoch, 1, 1)
                 .then((t) => t.wait())
         }
         await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, 2194124, 1, 0, 0)
+            unirepContract.connect(attester).attest(2194124, epoch, 1, 1)
         ).to.be.revertedWithCustomError(unirepContract, 'MaxAttestations')
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
@@ -194,15 +198,13 @@ describe('Epoch sealing', function () {
             for (let y = 0; y < totalRep; y++) {
                 await unirepContract
                     .connect(attester)
-                    .submitAttestation(epoch, epochKey, 1, 0, 0)
+                    .attest(epochKey, epoch, 1, 1)
                     .then((t) => t.wait())
             }
-            preimages.push([epochKey, totalRep, 0, 0, 0])
+            preimages.push([epochKey, 0, totalRep, 0, 0])
         }
         await expect(
-            unirepContract
-                .connect(attester)
-                .submitAttestation(epoch, 2194124, 1, 0, 0)
+            unirepContract.connect(attester).attest(2194124, epoch, 1, 1)
         ).to.be.revertedWithCustomError(unirepContract, 'MaxAttestations')
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])

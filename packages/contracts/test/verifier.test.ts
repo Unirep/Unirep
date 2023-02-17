@@ -24,6 +24,7 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    DATA_FIELDS,
 } = defaultConfig
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
@@ -79,13 +80,13 @@ describe('Epoch key lite proof verifier', function () {
         const attesterId = attester.address
         const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 
-        const data = 0
+        const sig_data = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.epochKeyLite,
                 stringifyBigInts({
                     identity_secret: id.secretHash,
-                    data,
+                    sig_data,
                     epoch,
                     nonce,
                     attester_id: attester.address,
@@ -176,7 +177,7 @@ describe('Epoch key lite proof verifier', function () {
             Circuit.epochKeyLite,
             stringifyBigInts({
                 identity_secret: id.secretHash,
-                data,
+                sig_data: data,
                 epoch: invalidEpoch,
                 nonce,
                 attester_id: attester.address,
@@ -211,7 +212,7 @@ describe('Epoch key lite proof verifier', function () {
             Circuit.epochKeyLite,
             stringifyBigInts({
                 identity_secret: id.secretHash,
-                data,
+                sig_data: data,
                 epoch,
                 nonce,
                 attester_id: attester.address,
@@ -286,10 +287,6 @@ describe('Epoch key proof verifier', function () {
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
         const data = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
@@ -298,11 +295,8 @@ describe('Epoch key proof verifier', function () {
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
                     identity_secret: id.secretHash,
-                    pos_rep: posRep,
-                    neg_rep: negRep,
-                    graffiti,
-                    timestamp,
-                    data,
+                    data: Array(DATA_FIELDS).fill(0),
+                    sig_data: data,
                     epoch,
                     nonce,
                     attester_id: attester.address,
@@ -341,10 +335,6 @@ describe('Epoch key proof verifier', function () {
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
         const data = 0
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
@@ -353,11 +343,8 @@ describe('Epoch key proof verifier', function () {
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
                     identity_secret: id.secretHash,
-                    pos_rep: posRep,
-                    neg_rep: negRep,
-                    graffiti,
-                    timestamp,
-                    data,
+                    data: Array(DATA_FIELDS).fill(0),
+                    sig_data: data,
                     epoch,
                     nonce,
                     attester_id: attester.address,
@@ -408,10 +395,6 @@ describe('Epoch key proof verifier', function () {
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
         const data = 0
         const invalidEpoch = 3333
         const nonce = 0
@@ -421,11 +404,8 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_secret: id.secretHash,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti,
-                timestamp,
-                data,
+                data: Array(DATA_FIELDS).fill(0),
+                sig_data: data,
                 epoch: invalidEpoch,
                 nonce,
                 attester_id: attester.address,
@@ -463,10 +443,6 @@ describe('Epoch key proof verifier', function () {
         stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
         const data = 0
         const nonce = 0
         const r = await defaultProver.genProofAndPublicSignals(
@@ -475,11 +451,8 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
                 identity_secret: id.secretHash,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti,
-                timestamp,
-                data,
+                data: Array(DATA_FIELDS).fill(0),
+                sig_data: data,
                 epoch,
                 nonce,
                 attester_id: attester.address,
@@ -526,10 +499,6 @@ describe('Epoch key proof verifier', function () {
             attester
         )
 
-        const posRep = 0
-        const negRep = 0
-        const graffiti = 0
-        const timestamp = 0
         const data = 0
         const nonce = 0
         const r = await defaultProver.genProofAndPublicSignals(
@@ -538,11 +507,8 @@ describe('Epoch key proof verifier', function () {
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
                 identity_secret: id.secretHash,
-                pos_rep: posRep,
-                neg_rep: negRep,
-                graffiti,
-                timestamp,
-                data,
+                data: Array(DATA_FIELDS).fill(0),
+                sig_data: data,
                 epoch,
                 nonce,
                 attester_id: attester.address,
@@ -574,10 +540,7 @@ describe('Reputation proof verifier', function () {
         identity_secret: 0,
         state_tree_indexes: 0,
         state_tree_elements: 0,
-        pos_rep: 0,
-        neg_rep: 0,
-        graffiti: 0,
-        timestamp: 0,
+        data: Array(DATA_FIELDS).fill(0),
         prove_graffiti: 0,
         graffiti_pre_image: 0,
         reveal_nonce: 0,
@@ -589,6 +552,7 @@ describe('Reputation proof verifier', function () {
         prove_min_rep: 0,
         prove_max_rep: 0,
         prove_zero_rep: 0,
+        sig_data: 696969,
     }
 
     before(async () => {
@@ -638,7 +602,6 @@ describe('Reputation proof verifier', function () {
                     nonce,
                 })
             )
-
             const v = await defaultProver.verifyProof(
                 Circuit.proveReputation,
                 r.publicSignals,

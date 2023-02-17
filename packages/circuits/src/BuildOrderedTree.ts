@@ -13,7 +13,6 @@ import { CircuitConfig } from './CircuitConfig'
 
 const { DATA_FIELDS, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY } =
     CircuitConfig.default
-const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
 
 export class BuildOrderedTree extends BaseProof {
     readonly idx = {
@@ -39,6 +38,7 @@ export class BuildOrderedTree extends BaseProof {
         arity = EPOCH_TREE_ARITY,
         depth = EPOCH_TREE_DEPTH
     ) {
+        const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const preimageByLeaf = {} as { [key: string]: bigint[] }
         const leaves = [[0, 0, 0, 0, 0], ...preimages, [1, 0, 0, 0, 0]].map(
             (i) => {

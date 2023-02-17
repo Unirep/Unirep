@@ -124,8 +124,8 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, FIELD_COUNT, OMT_R, EPK_R) {
   signal r_checksum_inter[TREE_ARITY**TREE_DEPTH];
   for (var x = 0; x < TREE_ARITY**TREE_DEPTH; x++) {
     r_hasher_check[x] = Poseidon(1);
-    r_hasher_check[x].inputs[0] <== OMT_R**x;
-    r_checksum_inter[x] <== r_hasher_check[x].out * OMT_R**x;
+    r_hasher_check[x].inputs[0] <== OMT_R**(x + 1);
+    r_checksum_inter[x] <== r_hasher_check[x].out * OMT_R**(x+1);
     r_checksum += r_checksum_inter[x];
   }
 

@@ -18,6 +18,7 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    DATA_FIELDS,
 } = defaultConfig
 
 describe('User Signup', function () {
@@ -111,10 +112,7 @@ describe('User Signup', function () {
                     id.secretHash,
                     BigInt(attester.address),
                     epoch,
-                    0,
-                    0,
-                    0,
-                    0
+                    Array(DATA_FIELDS).fill(0)
                 )
 
                 stateTree.insert(gstLeaf)

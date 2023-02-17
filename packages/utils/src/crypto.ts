@@ -106,7 +106,7 @@ export const genStateTreeLeaf = (
     let polysum = BigInt(0)
     for (let x = 0; x < data.length; x++) {
         const term =
-            (BigInt(hashedData[x]) * modexp(EPK_R, x)) %
+            (BigInt(hashedData[x]) * modexp(EPK_R, x + 1)) %
             BigInt(SNARK_SCALAR_FIELD)
         polysum = (polysum + term) % BigInt(SNARK_SCALAR_FIELD)
     }
@@ -121,7 +121,7 @@ export const genEpochTreeLeaf = (
     let polysum = (hash1([epochKey]) * EPK_R) % BigInt(SNARK_SCALAR_FIELD)
     for (let x = 0; x < data.length; x++) {
         const term =
-            (BigInt(hashedData[x]) * modexp(EPK_R, x + 1)) %
+            (BigInt(hashedData[x]) * modexp(EPK_R, x + 2)) %
             BigInt(SNARK_SCALAR_FIELD)
         polysum = (polysum + term) % BigInt(SNARK_SCALAR_FIELD)
     }

@@ -27,6 +27,8 @@ export const deployUnirep = async (
         EPOCH_TREE_ARITY,
         STATE_TREE_DEPTH,
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+        DATA_FIELDS,
+        SUM_FIELDS,
     } = _settings
 
     console.log(
@@ -38,6 +40,8 @@ export const deployUnirep = async (
     console.log(
         `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
     )
+    console.log(`Total fields per user: ${DATA_FIELDS}`)
+    console.log(`Sum fields per user: ${SUM_FIELDS}`)
     console.log(
         '-----------------------------------------------------------------'
     )
@@ -56,6 +60,16 @@ export const deployUnirep = async (
         await c.deployed()
         libraries[`Poseidon${inputCount}`] = c.address
     }
+    const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
+    const poseidonArtifacts = tryPath(poseidonPath)
+    const poseidonFactory = new ethers.ContractFactory(
+        poseidonArtifacts.abi,
+        poseidonArtifacts.bytecode,
+        deployer
+    )
+    const PoseidonT2 = await poseidonFactory.deploy()
+    await PoseidonT2.deployed()
+
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
@@ -70,9 +84,10 @@ export const deployUnirep = async (
     )
     const incrementalMerkleTreeLib = await incrementalMerkleTreeFactory.deploy()
     await incrementalMerkleTreeLib.deployed()
+
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
-    const polyPath = 'contracts/libraries/Polyhash.sol/Polyhash.json'
+    const polyPath = 'contracts/libraries/Polysum.sol/Polysum.json'
     const polyArtifacts = tryPath(polyPath)
     const polyFactory = new ethers.ContractFactory(
         polyArtifacts.abi,
@@ -117,8 +132,8 @@ export const deployUnirep = async (
         {
             ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                 incrementalMerkleTreeLib.address,
-            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
-            ['contracts/libraries/Polyhash.sol:Polyhash']: polyContract.address,
+            ['contracts/libraries/Polysum.sol:Polysum']: polyContract.address,
+            ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']: PoseidonT2.address,
         },
         deployer
     ).deploy(
@@ -127,6 +142,8 @@ export const deployUnirep = async (
             epochTreeDepth: EPOCH_TREE_DEPTH,
             epochTreeArity: EPOCH_TREE_ARITY,
             numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            fieldCount: DATA_FIELDS,
+            sumFieldCount: SUM_FIELDS,
         },
         verifiers[Circuit.signup],
         verifiers[Circuit.userStateTransition],

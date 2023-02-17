@@ -58,15 +58,12 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = await userState.getEpochKeys(epoch)
-        const [epk] = epochKeys
-        const newPosRep = 10
-        const newNegRep = 5
-        const newGraffiti = 1294194
+        const epochKeys = userState.getEpochKeys(epoch)
+        const [epk] = epochKeys as bigint[]
         // now submit the attestation from the attester
         const { timestamp: newTimestamp } = await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
+            .attest(epk, epoch, 1, 5)
             .then((t) => t.wait())
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 

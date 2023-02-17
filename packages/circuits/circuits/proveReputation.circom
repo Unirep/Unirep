@@ -40,9 +40,9 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUN
     signal input prove_max_rep;
     signal input prove_zero_rep;
 
-    signal input sig_data;
-
     signal output control[2];
+
+    signal input sig_data;
 
     /**
      * control[0]:
@@ -104,6 +104,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUN
 
     control[0] <== epoch_key_prover.control;
     epoch_key <== epoch_key_prover.epoch_key;
+    state_tree_root <== epoch_key_prover.state_tree_root;
 
     /* End of check 1a */
 

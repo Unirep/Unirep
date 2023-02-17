@@ -16,7 +16,7 @@ template EpochTreeLeaf(FIELD_COUNT, R) {
   for (var x = 0; x < FIELD_COUNT; x++) {
     hasher[x] = Poseidon(1);
     hasher[x].inputs[0] <== data[x];
-    polysum += hasher[x].out * R**(x + 1);
+    polysum += hasher[x].out * R**(x + 2);
   }
 
   out <== polysum;
@@ -35,7 +35,7 @@ template StateTreeLeaf(FIELD_COUNT, R) {
   for (var x = 0; x < FIELD_COUNT; x++) {
     hasher[x] = Poseidon(1);
     hasher[x].inputs[0] <== data[x];
-    polysum += hasher[x].out * R**x;
+    polysum += hasher[x].out * R**(x + 1);
   }
 
   component final_hasher = Poseidon(4);
