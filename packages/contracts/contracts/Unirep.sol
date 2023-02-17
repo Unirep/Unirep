@@ -266,7 +266,7 @@ contract Unirep is IUnirep, VerifySignature {
                     : dataHashes[fieldIndex + 1];
                 uint newTimestampHash = PoseidonT2.hash([block.timestamp]);
                 data[fieldIndex + 1] = block.timestamp;
-                dataHashes[fieldIndex] = newTimestampHash;
+                dataHashes[fieldIndex + 1] = newTimestampHash;
                 Polysum.update(
                     epkPolysum,
                     fieldIndex + 2,
@@ -280,7 +280,6 @@ contract Unirep is IUnirep, VerifySignature {
         // now handle the epoch tree polysum
 
         uint256 newLeaf = epkPolysum.hash;
-        uint256 leafCount = state.epochKeyLeaves[epochKey];
 
         uint index;
         if (newKey) {
