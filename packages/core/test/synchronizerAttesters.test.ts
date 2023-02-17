@@ -84,5 +84,28 @@ describe('Synchronizer watch multiple attesters', function () {
         await sync.stop()
     })
 
+    it('should finish multiple epochs', async () => {
+        const accounts = await ethers.getSigners()
+        const synchronizer = new Synchronizer({
+            unirepAddress: unirepContract.address,
+            provider: ethers.provider,
+            prover: defaultProver,
+        })
+        await synchronizer.start()
+        for (let x = 0; x < 4; x++) {
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            await ethers.provider.send('evm_mine', [])
+            for (let y = 0; y < ATTESTER_COUNT; y++) {
+                const attester = accounts[y]
+                await unirepContract
+                    .connect(attester)
+                    .updateEpochIfNeeded(attester.address)
+                    .then((t) => t.wait())
+            }
+        }
+        await synchronizer.waitForSync()
+        synchronizer.stop()
+    })
+
     // TODO: test for other events
 })
