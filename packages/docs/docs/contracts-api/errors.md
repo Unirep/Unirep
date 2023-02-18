@@ -94,10 +94,9 @@ Please make sure the signature is signed through the correct attester.
     The [epoch tree](../protocol/trees.md#epoch-tree) root of given epoch does not match the current Unirep contract. <br/>
     Please check if all attestations are processed correctly and successfully.
 
-## 0xac46def6
-- `HashchainNotProcessed()`<br/>
-    [Hashchains](../protocol/attestation.md#hashchain) are not processed completely before a [user state transition](../protocol/user-state-transition.md). <br/>
-    Please wait until all hashchains are processed by the attester.
+## 0x39b6da94
+- `EpochNotSealed()`<br/>
+    The epoch a user is attempting to transition from has not been sealed.
 
 ## 0x997bdc87
 - `DoubleSeal()`<br/>

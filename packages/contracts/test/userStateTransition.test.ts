@@ -392,7 +392,7 @@ describe('User State Transition', function () {
             unirepContract
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'HashchainNotProcessed')
+        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotSealed')
     })
 
     it('should fail to transition from wrong epoch tree', async () => {

@@ -405,7 +405,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 fromEpoch = publicSignals[4];
         // check for attestation processing
         if (!attesterEpochSealed(attesterId, fromEpoch))
-            revert HashchainNotProcessed();
+            revert EpochNotSealed();
 
         // make sure from state tree root is valid
         if (!attester.stateTreeRoots[fromEpoch][publicSignals[0]])
