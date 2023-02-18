@@ -2,7 +2,7 @@
 title: Error codes
 ---
 
-This section contains a list of all possible errors that might occur while using 
+This section contains a list of all possible errors that might occur while using
 ```sol
 import { Unirep } from '@unirep/contracts/Unirep.sol';
 ```
@@ -10,7 +10,7 @@ import { Unirep } from '@unirep/contracts/Unirep.sol';
 :::info
 When developing with hardhat environment, these custom errors can be seen in the `_selector`:
 ```js
-Error: cannot estimate gas; transaction may fail or may require manual gas limit 
+Error: cannot estimate gas; transaction may fail or may require manual gas limit
 ...,
 {"type":18,"address":{"type":"Buffer","data":[183,248,188,99,187,202,209,129,85,32,19,8,200,243,84,11,7,248,79,94]},"message":{"value":{"type":"Buffer","data":[103,103,221,161,0,0,0,0,0,0,0,0,0,0,0,0,165,28,31,194,240,209,161,184,73,78,209,254,49,45,124,58,120,237,145,192]},"_selector":"6767dda1"},"isInvalidOpcodeError":false}],"data":"0x6767dda1000000000000000000000000a51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0"}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.7.2)
 ```
@@ -28,7 +28,7 @@ An attester cannot double sign-up in the Unirep protocol.
 
 ## 0xd724105a
 - `AttesterNotSignUp(uint160 attester)`<br/>
-The attester has not signed up in the current Unirep contract. <br/> 
+The attester has not signed up in the current Unirep contract. <br/>
 Please call [`attesterSignUp()`](unirep-sol#attestersignup)
 
 ## 0xd7aa5847
@@ -38,7 +38,7 @@ Please check if the attester address is correctly assigned while generating proo
 
 ## 0x4ae5505e
 - `ProofAlreadyUsed(bytes32 nullilier)`<br/>
-The proof is already used in Unirep contract. <br/> 
+The proof is already used in Unirep contract. <br/>
 A proof cannot be submitted twice in the Unirep protocol. This is used to prevent replay attack.
 
 ## 0xdc215c0a
@@ -48,7 +48,7 @@ A nullifier cannot be submitted twice in the Unirep protocol.
 
 ## 0xedc650d7
 - `AttesterIdNotMatch(uint160 attesterId)`<br/>
-The `msg.sender` does not match the claimed attester ID. <br/> 
+The `msg.sender` does not match the claimed attester ID. <br/>
 Please send the transaction through the attester.
 
 ## 0x8baa579f
@@ -77,7 +77,7 @@ Please make sure the signature is signed through the correct attester.
 ## 0x09bde339
 - `InvalidProof()`<br/>
     The proof is verified invalid through on-chain verifiers. <br/>
-    Please verify it with the off-chain [prover](../circuits-api/prover.md). <br/> 
+    Please verify it with the off-chain [prover](../circuits-api/prover.md). <br/>
     If it is valid off-chain but invalid through on-chain verifiers, please check the if the proving keys match the ones on-chain.
 
 ## 0xf1b8a45e
@@ -104,20 +104,24 @@ Please make sure the signature is signed through the correct attester.
     The `sealEpoch` can only be called once. See [epoch transition](../protocol/epoch.md#epoch-transition).
 
 ## 0x3fbcde72
-- `IncorrectHash`<br/>
+- `IncorrectHash()`<br/>
     The circuit should output the [polysum](../protocol/polysum.md#polysum) that matches the on-chain polysum. <br/>
     If the error occurs, please check if the off-chain attestations matches the on-chain attestations.
 
 ## 0x74d1bcdc
-- `MaxAttestations`<br/>
+- `MaxAttestations()`<br/>
     The [epoch tree](../protocol/trees.md#epoch-tree) can only store `tree_arity ** tree_degree - 3` epoch keys per attester per epoch. See also [build ordered tree](../circuits-api/circuits.md#build-ordered-tree).<br/>
     There is no more new epoch keys that can receive attestations. Users should wait until the next epoch and then generate a new epoch key to receive attestations.
 
 ## 0xef32b8ef
-- `NoAttestations`<br/>
+- `NoAttestations()`<br/>
     If there is no attestations in an epoch, the `sealEpoch` cannot be executed. Users can perform user state transition without `sealEpoch` and then move on to the new epoch.
 
 ## 0x7db3aba7
-- `OutOfRange`<br/>
+- `OutOfRange()`<br/>
     A [graffiti](../protocol/reputation.md#reputation) cannot be out of `SNARK_SCALAR_FIELD`.<br/>
     Please use a value which is less than `SNARK_SCALAR_FIELD`.
+
+## 0x7fa0b337
+- `InvalidField()`<br />
+    An attestation was made to a field that was either out of range, or not capable of receiving attestations.
