@@ -152,12 +152,12 @@ template UserStateTransition(
         Otherwise we expect noninclusion === 1.
         */
         var fields_nonzero = 0;
-        for (var x = 0; x < FIELD_COUNT; x++) {
-          zero_check[i][x] = IsZero();
-          zero_check[i][x].in <== new_data[i][x];
-          not_check[i][x] = NOT();
-          not_check[i][x].in <== zero_check[i][x].out;
-          fields_nonzero += not_check[i][x].out;
+        for (var j = 0; j < FIELD_COUNT; j++) {
+          zero_check[i][j] = IsZero();
+          zero_check[i][j].in <== new_data[i][j];
+          not_check[i][j] = NOT();
+          not_check[i][j].in <== zero_check[i][j].out;
+          fields_nonzero += not_check[i][j].out;
         }
         // if fields_zero is not 0 we have
         fin_zero_check[i] = IsZero();
