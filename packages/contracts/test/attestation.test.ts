@@ -74,7 +74,7 @@ describe('Attestations', function () {
         )
         const fieldIndex = 0
         const a1 = hash1([1])
-        const a2 = hash1([2])
+        const a2 = F-BigInt(1)
         const result = (a1 + a2) % F
         const data = [result, ...Array(FIELD_COUNT - 1).fill(BigInt(0))]
         const epochKey = BigInt(129014)
