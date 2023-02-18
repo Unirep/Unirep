@@ -92,15 +92,16 @@ describe('Epoch sealing', function () {
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimage = Array(1 + FIELD_COUNT)
-            .fill(0)
-            .map((_, i) => {
-                if (i === 0) {
-                    return epk
-                } else if (i === fieldIndex) {
-                    return val
-                } else return 0
-            })
+        const preimage = [
+            epk,
+            ...Array(FIELD_COUNT)
+                .fill(0)
+                .map((_, i) => {
+                    if (i === fieldIndex) {
+                        return val
+                    } else return 0
+                }),
+        ]
         const preimages = [preimage]
         const { circuitInputs, leaves } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
@@ -149,7 +150,8 @@ describe('Epoch sealing', function () {
                     return val
                 } else return 0
             })
-        const preimages = [preimage, [4, 1, 0, 0, 0]]
+        const wrongPreimage = Array(1 + FIELD_COUNT).fill(3)
+        const preimages = [preimage, wrongPreimage]
         const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -176,9 +178,20 @@ describe('Epoch sealing', function () {
             attester.address
         )
         const preimages = []
+        const fieldIndex = 1
+        const val = 1
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 1000)
-            preimages.push([epochKey, 0, 1, 0, 0])
+            preimages.push([
+                epochKey,
+                ...Array(FIELD_COUNT)
+                    .fill(0)
+                    .map((_, i) => {
+                        if (i === fieldIndex) {
+                            return val
+                        } else return 0
+                    }),
+            ])
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, 1, 1)
@@ -215,14 +228,27 @@ describe('Epoch sealing', function () {
         const preimages = []
         for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
             const epochKey = BigInt(x + 1000)
-            let totalRep = 3
-            for (let y = 0; y < totalRep; y++) {
+            const count = 3
+            let totalRep = 0
+            const fieldIndex = 1
+            for (let y = 0; y < count; y++) {
+                const amount = Math.floor(Math.random() * 10000)
                 await unirepContract
                     .connect(attester)
-                    .attest(epochKey, epoch, 1, 1)
+                    .attest(epochKey, epoch, fieldIndex, amount)
                     .then((t) => t.wait())
+                totalRep += amount
             }
-            preimages.push([epochKey, 0, totalRep, 0, 0])
+            preimages.push([
+                epochKey,
+                ...Array(FIELD_COUNT)
+                    .fill(0)
+                    .map((_, i) => {
+                        if (i === fieldIndex) {
+                            return totalRep
+                        } else return 0
+                    }),
+            ])
         }
         await expect(
             unirepContract.connect(attester).attest(2194124, epoch, 1, 1)

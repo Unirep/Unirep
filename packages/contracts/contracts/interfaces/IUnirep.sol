@@ -108,8 +108,8 @@ interface IUnirep {
         // latest epoch key balances
         ///// Needs to be manually set to FIELD_COUNT
         mapping(uint256 => PolysumData) epkPolysum;
-        mapping(uint256 => uint256[4]) data;
-        mapping(uint256 => uint256[4]) dataHashes;
+        mapping(uint256 => uint256[30]) data;
+        mapping(uint256 => uint256[30]) dataHashes;
         // epoch key => polyhash degree
         mapping(uint256 => uint256) epochKeyIndex;
         // epoch key => latest leaf (0 if no attestation in epoch)

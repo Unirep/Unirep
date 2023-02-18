@@ -229,8 +229,8 @@ contract Unirep is IUnirep, VerifySignature {
 
         bool newKey;
         {
-            uint[4] storage data = state.data[epochKey];
-            uint[4] storage dataHashes = state.dataHashes[epochKey];
+            uint[30] storage data = state.data[epochKey];
+            uint[30] storage dataHashes = state.dataHashes[epochKey];
 
             // First handle updating the epoch tree leaf polysum
             // lazily initialize the epk polysum state

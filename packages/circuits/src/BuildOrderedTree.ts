@@ -36,12 +36,13 @@ export class BuildOrderedTree extends BaseProof {
     static buildInputsForLeaves(
         preimages: any[],
         arity = EPOCH_TREE_ARITY,
-        depth = EPOCH_TREE_DEPTH
+        depth = EPOCH_TREE_DEPTH,
+        fieldCount = FIELD_COUNT
     ) {
-        const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
+        const Rx = R_X(OMT_R, arity ** depth)
         const preimageByLeaf = {} as { [key: string]: bigint[] }
-        const startPreimage = Array(FIELD_COUNT + 1).fill(0)
-        const endPreimage = [1, ...Array(FIELD_COUNT).fill(0)]
+        const startPreimage = Array(fieldCount + 1).fill(0)
+        const endPreimage = [1, ...Array(fieldCount).fill(0)]
         const leaves = [startPreimage, ...preimages, endPreimage].map((i) => {
             if (i[0] === 0) {
                 preimageByLeaf['0'] = i
@@ -66,7 +67,7 @@ export class BuildOrderedTree extends BaseProof {
             ...sortedPreimages,
             ...Array(Math.max(arity ** depth - sortedPreimages.length, 0))
                 .fill(null)
-                .map(() => Array(FIELD_COUNT + 1).fill(0)),
+                .map(() => Array(fieldCount + 1).fill(0)),
         ]
         const finalRVals = [
             ...rVals,

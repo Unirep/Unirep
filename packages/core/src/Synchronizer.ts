@@ -437,10 +437,10 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async readCurrentEpoch() {
+    async readCurrentEpoch(attesterId: bigint | string = this.attesterId) {
         const currentEpoch = await this._db.findOne('Epoch', {
             where: {
-                attesterId: this.attesterId.toString(),
+                attesterId: attesterId.toString(),
             },
             orderBy: {
                 number: 'desc',
@@ -722,7 +722,7 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
-        const currentEpoch = await this.readCurrentEpoch()
+        const currentEpoch = await this.readCurrentEpoch(attesterId)
         if (
             epoch !== Number(currentEpoch.number) &&
             this.attesterId !== BigInt(0)
