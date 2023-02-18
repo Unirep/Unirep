@@ -8,7 +8,8 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const { EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, SUM_FIELD_COUNT } = defaultConfig
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, SUM_FIELD_COUNT } =
+    defaultConfig
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -32,6 +33,36 @@ describe('Attestations', function () {
 
     afterEach(async () => {
         await ethers.provider.send('evm_revert', [snapshot])
+    })
+
+    it('should fail to attest to out of range field', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await expect(
+            unirepContract
+                .connect(attester)
+                .attest(190124, epoch, FIELD_COUNT, 1)
+                .then((t) => t.wait())
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
+    })
+
+    it('should fail to attest to timestamp field', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await expect(
+            unirepContract
+                .connect(attester)
+                .attest(190124, epoch, SUM_FIELD_COUNT + 1, 1)
+                .then((t) => t.wait())
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
     })
 
     it('should fail to submit too many attestations', async () => {
