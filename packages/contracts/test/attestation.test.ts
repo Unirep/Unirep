@@ -2,7 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { hash1 } from '@unirep/utils'
+import { F, hash1, genEpochTreeLeaf } from '@unirep/utils'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -63,6 +63,36 @@ describe('Attestations', function () {
                 .attest(190124, epoch, SUM_FIELD_COUNT + 1, 1)
                 .then((t) => t.wait())
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
+    })
+
+    it('should overflow in field', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const fieldIndex = 0
+        const a1 = hash1([1])
+        const a2 = hash1([2])
+        const result = (a1 + a2) % F
+        const data = [result, ...Array(FIELD_COUNT - 1).fill(BigInt(0))]
+        const epochKey = BigInt(129014)
+        await unirepContract
+            .connect(attester)
+            .attest(epochKey, epoch, fieldIndex, a1)
+            .then((t) => t.wait())
+
+        const tx = await unirepContract
+            .connect(attester)
+            .attest(epochKey, epoch, fieldIndex, a2)
+
+        expect(tx).to.emit(unirepContract, 'EpochTreeLeaf').withArgs(
+            epoch,
+            attester.address,
+            1, // first epoch tree leaf
+            genEpochTreeLeaf(epochKey, data)
+        )
     })
 
     it('should fail to submit too many attestations', async () => {
