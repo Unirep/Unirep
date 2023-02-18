@@ -50,10 +50,7 @@ library Polysum {
         return index;
     }
 
-    function add(PolysumData storage self, uint[] memory vals, uint R)
-        public
-        returns (uint)
-    {
+    function add(PolysumData storage self, uint[] memory vals, uint R) public {
         require(vals.length < type(uint8).max, 'alarge');
         require(vals.length > 0, 'asmall');
         uint index = self.index;
