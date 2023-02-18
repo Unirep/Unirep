@@ -4564,7 +4564,7 @@ __metadata:
     hardhat: ^2.12.3
     hardhat-gas-reporter: ^1.0.8
     lcov-badge-generator: ^1.0.5
-    poseidon-solidity: ^0.0.2
+    poseidon-solidity: ^0.0.3
     solc: ^0.8.16
     solidity-coverage: ^0.7.21
     typechain: ^8.1.0
@@ -14391,10 +14391,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"poseidon-solidity@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "poseidon-solidity@npm:0.0.2"
-  checksum: e17cf8b4a7a75d38e3d5db3e61e019fd20218671906c814f12083bbc61918266bfdedb6c95297188d502647c867faa1f2bc5eee5135690840934baa3588b24d5
+"poseidon-solidity@npm:^0.0.3":
+  version: 0.0.3
+  resolution: "poseidon-solidity@npm:0.0.3"
+  checksum: 489e392a382c015be361724fb772386fd856ec84897907621e0b46fe436ecb8ce935e1153071ca156fde25e961b5d15c795459ac40b141a074b41f92e4f07480
   languageName: node
   linkType: hard
 

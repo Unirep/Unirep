@@ -34,7 +34,7 @@
         "@zk-kit/incremental-merkle-tree.sol": "^1.2.0",
         "circomlibjs": "0.0.8",
         "ethers": "^5.6.8",
-        "poseidon-solidity": "^0.0.2",
+        "poseidon-solidity": "^0.0.3",
         "solc": "^0.8.16"
     },
     "devDependencies": {
