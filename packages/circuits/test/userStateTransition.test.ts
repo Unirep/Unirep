@@ -135,6 +135,10 @@ describe('User state transition', function () {
         const changes = Array(FIELD_COUNT)
             .fill(0)
             .map(() => BigInt(Math.floor(Math.random() * 100)))
+        const overwriteChanges = Array(FIELD_COUNT)
+            .fill(0)
+            .map(() => BigInt(Math.floor(Math.random() * 2 ** 50)))
+        const overwriteEpk = epochKeys[0]
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
@@ -146,7 +150,8 @@ describe('User state transition', function () {
             epochKeyBalances: epochKeys.reduce(
                 (acc, val) => ({
                     ...acc,
-                    [val.toString()]: [...changes],
+                    [val.toString()]:
+                        val === overwriteEpk ? overwriteChanges : changes,
                 }),
                 {}
             ),
@@ -164,10 +169,12 @@ describe('User state transition', function () {
             data.map((d, i) => {
                 if (i < SUM_FIELD_COUNT) {
                     return (
-                        d + changes[i] * BigInt(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
+                        d +
+                        changes[i] * BigInt(NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1) +
+                        overwriteChanges[i]
                     )
                 } else {
-                    return d
+                    return overwriteChanges[i]
                 }
             })
         )
