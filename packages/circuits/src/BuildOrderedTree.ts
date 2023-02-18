@@ -40,20 +40,20 @@ export class BuildOrderedTree extends BaseProof {
     ) {
         const Rx = R_X(OMT_R, EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH)
         const preimageByLeaf = {} as { [key: string]: bigint[] }
-        const leaves = [[0, 0, 0, 0, 0], ...preimages, [1, 0, 0, 0, 0]].map(
-            (i) => {
-                if (i[0] === 0) {
-                    preimageByLeaf['0'] = i
-                    return BigInt(0)
-                } else if (i[0] === 1) {
-                    preimageByLeaf[(F - BigInt(1)).toString()] = i
-                    return F - BigInt(1)
-                }
-                const leaf = genEpochTreeLeaf(i[0], i.slice(1))
-                preimageByLeaf[leaf.toString()] = [...i]
-                return leaf
+        const startPreimage = Array(FIELD_COUNT + 1).fill(0)
+        const endPreimage = [1, ...Array(FIELD_COUNT).fill(0)]
+        const leaves = [startPreimage, ...preimages, endPreimage].map((i) => {
+            if (i[0] === 0) {
+                preimageByLeaf['0'] = i
+                return BigInt(0)
+            } else if (i[0] === 1) {
+                preimageByLeaf[(F - BigInt(1)).toString()] = i
+                return F - BigInt(1)
             }
-        ) as bigint[]
+            const leaf = genEpochTreeLeaf(i[0], i.slice(1))
+            preimageByLeaf[leaf.toString()] = [...i]
+            return leaf
+        }) as bigint[]
         const sortedLeaves = [...leaves].sort((a: bigint, b: bigint) =>
             a > b ? 1 : -1
         )

@@ -14,7 +14,7 @@ include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKey.circom";
 
-template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT, EPK_R) {
+template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, EPK_R) {
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
@@ -171,7 +171,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUN
 
     component graffiti_eq = IsEqual();
     graffiti_eq.in[0] <== graffiti_hasher.out;
-    graffiti_eq.in[1] <== data[2];
+    graffiti_eq.in[1] <== data[SUM_FIELD_COUNT];
 
     component check_graffiti = OR();
     check_graffiti.a <== if_not_check_graffiti.out;

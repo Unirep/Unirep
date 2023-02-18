@@ -83,13 +83,25 @@ describe('Epoch sealing', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
+        const fieldIndex = 1
+        const val = 3
+        const epk = 39791313
         await unirepContract
             .connect(attester)
-            .attest(5, epoch, 1, 3)
+            .attest(epk, epoch, fieldIndex, val)
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimages = [[5, 0, 3, 0, 0]]
+        const preimage = Array(1 + FIELD_COUNT)
+            .fill(0)
+            .map((_, i) => {
+                if (i === 0) {
+                    return epk
+                } else if (i === fieldIndex) {
+                    return val
+                } else return 0
+            })
+        const preimages = [preimage]
         const { circuitInputs, leaves } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -119,16 +131,25 @@ describe('Epoch sealing', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
+        const fieldIndex = 1
+        const val = 3
+        const epk = 39791313
         await unirepContract
             .connect(attester)
-            .attest(5, epoch, 1, 1)
+            .attest(epk, epoch, fieldIndex, val)
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimages = [
-            [5, 1, 0, 0, 0],
-            [4, 1, 0, 0, 0],
-        ]
+        const preimage = Array(1 + FIELD_COUNT)
+            .fill(0)
+            .map((_, i) => {
+                if (i === 0) {
+                    return epk
+                } else if (i === fieldIndex) {
+                    return val
+                } else return 0
+            })
+        const preimages = [preimage, [4, 1, 0, 0, 0]]
         const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await defaultProver.genProofAndPublicSignals(

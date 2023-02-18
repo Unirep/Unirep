@@ -24,6 +24,21 @@ const genNewEpochTree = (
     return tree
 }
 
+export const randomData = () => [
+    ...Array(SUM_FIELD_COUNT)
+        .fill(0)
+        .map(() => utils.hash1([Math.floor(Math.random() * 199191919)])),
+    ...Array(FIELD_COUNT - SUM_FIELD_COUNT)
+        .fill(0)
+        .map((_, i) => {
+            if (i % 2 === SUM_FIELD_COUNT % 2) {
+                return utils.hash1([Math.floor(Math.random() * 128289928892)])
+            } else {
+                return BigInt(Math.floor(Math.random() * 2 ** 30))
+            }
+        }),
+]
+
 const genEpochKeyCircuitInput = (config: {
     id: utils.ZkIdentity
     tree: utils.IncrementalMerkleTree
@@ -31,11 +46,8 @@ const genEpochKeyCircuitInput = (config: {
     epoch: number
     nonce: number
     attesterId: number | bigint
-    posRep: number
-    negRep: number
-    graffiti: number | bigint
-    timestamp: number | bigint
-    data?: bigint
+    data?: bigint[]
+    sigData?: bigint
     revealNonce?: number
 }) => {
     const {
@@ -45,20 +57,23 @@ const genEpochKeyCircuitInput = (config: {
         epoch,
         nonce,
         attesterId,
-        posRep,
-        negRep,
-        graffiti,
-        timestamp,
-        data,
+        data: _data,
+        sigData,
         revealNonce,
-    } = config
+    } = Object.assign(
+        {
+            data: [],
+        },
+        config
+    )
+    const data = [..._data, ...Array(FIELD_COUNT - _data.length).fill(0)]
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
         identity_secret: id.secretHash,
-        data: [posRep, negRep, graffiti, timestamp],
-        sig_data: data ?? BigInt(0),
+        data,
+        sig_data: sigData ?? BigInt(0),
         nonce,
         epoch,
         attester_id: attesterId,
@@ -74,14 +89,9 @@ const genUserStateTransitionCircuitInput = (config: {
     tree: utils.IncrementalMerkleTree
     leafIndex: number
     attesterId: number | bigint
-    startBalance: { posRep: any; negRep: any; graffiti: any; timestamp: any }
+    startBalance?: (bigint | number)[]
     epochKeyBalances?: {
-        [key: string]: {
-            posRep: number
-            negRep: number
-            graffiti?: any
-            timestamp?: any
-        }
+        [key: string]: (bigint | number)[]
     }
 }) => {
     const {
@@ -89,57 +99,44 @@ const genUserStateTransitionCircuitInput = (config: {
         fromEpoch,
         toEpoch,
         attesterId,
-        startBalance,
+        startBalance: _startBalance,
         tree,
         leafIndex,
         epochKeyBalances,
     } = Object.assign(
         {
             epochKeyBalances: {},
+            startBalance: [],
         },
         config
     )
+    const startBalance = [
+        ..._startBalance,
+        ...Array(FIELD_COUNT - _startBalance.length).fill(0),
+    ]
     const epochTree = genNewEpochTree()
     let index = 0
     const epochTreeIndices = {} as any
     for (const [key, val] of Object.entries(epochKeyBalances)) {
-        const { posRep, negRep, graffiti, timestamp } = val
+        const b = [...val, ...Array(FIELD_COUNT - val.length).fill(0)]
+        epochKeyBalances[key] = b
         epochTreeIndices[key] = ++index
-        epochTree.insert(
-            utils.genEpochTreeLeaf(key, [
-                posRep,
-                negRep,
-                graffiti ?? 0,
-                timestamp ?? 0,
-            ])
-        )
+        epochTree.insert(utils.genEpochTreeLeaf(key, b))
     }
     epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
-    if (epochTree.leaves.length === 2) {
-        // we don't
-    }
+    const empty = () => Array(FIELD_COUNT).fill(0)
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
             utils.genEpochKey(id.secretHash, BigInt(attesterId), fromEpoch, i)
         )
 
-    const epochKeyLeaves = epochKeys.map((k) =>
-        utils.genEpochTreeLeaf(k, [
-            epochKeyBalances[k.toString()]?.posRep ?? BigInt(0),
-            epochKeyBalances[k.toString()]?.negRep ?? BigInt(0),
-            epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0),
-            epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0),
-        ])
-    )
     const epochLeavesByKey = epochKeys.reduce((acc, epk) => {
         return {
-            [epk.toString()]: utils.genEpochTreeLeaf(epk, [
-                epochKeyBalances[epk.toString()]?.posRep ?? BigInt(0),
-                epochKeyBalances[epk.toString()]?.negRep ?? BigInt(0),
-                epochKeyBalances[epk.toString()]?.graffiti ?? BigInt(0),
-                epochKeyBalances[epk.toString()]?.timestamp ?? BigInt(0),
-            ]),
+            [epk.toString()]: utils.genEpochTreeLeaf(
+                epk,
+                epochKeyBalances[epk.toString()] || empty()
+            ),
             ...acc,
         }
     }, {})
@@ -154,18 +151,10 @@ const genUserStateTransitionCircuitInput = (config: {
             return s[1 - stateTreeProof.pathIndices[i]]
         }),
         attester_id: attesterId,
-        data: [
-            startBalance.posRep,
-            startBalance.negRep,
-            startBalance.graffiti,
-            startBalance.timestamp,
-        ],
-        new_data: epochKeys.map((k) => [
-            epochKeyBalances[k.toString()]?.posRep ?? BigInt(0),
-            epochKeyBalances[k.toString()]?.negRep ?? BigInt(0),
-            epochKeyBalances[k.toString()]?.graffiti ?? BigInt(0),
-            epochKeyBalances[k.toString()]?.timestamp ?? BigInt(0),
-        ]),
+        data: startBalance,
+        new_data: epochKeys.map(
+            (k) => epochKeyBalances[k.toString()] || empty()
+        ),
         epoch_tree_elements: epochKeys.map((k) => {
             if (epochTreeIndices[k.toString()]) {
                 const { siblings } = epochTree._createProof(
@@ -236,7 +225,7 @@ const genReputationCircuitInput = (config: {
     epoch: number
     nonce: number
     attesterId: number | bigint
-    startBalance: { posRep: any; negRep: any; graffiti?: any; timestamp?: any }
+    startBalance?: (bigint | number)[]
     minRep?: number | bigint
     maxRep?: number | bigint
     proveMinRep?: number
@@ -251,7 +240,7 @@ const genReputationCircuitInput = (config: {
         epoch,
         nonce,
         attesterId,
-        startBalance,
+        startBalance: _startBalance,
         minRep,
         proveGraffiti,
         graffitiPreImage,
@@ -265,22 +254,22 @@ const genReputationCircuitInput = (config: {
             minRep: 0,
             maxRep: 0,
             graffitiPreImage: 0,
+            startBalance: [],
         },
         config
     )
 
+    const startBalance = [
+        ..._startBalance,
+        ...Array(FIELD_COUNT - _startBalance.length).fill(0),
+    ]
     // Global state tree
     const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
     const hashedLeaf = utils.genStateTreeLeaf(
         id.secretHash,
         BigInt(attesterId),
         epoch,
-        [
-            startBalance.posRep,
-            startBalance.negRep,
-            startBalance.graffiti ?? 0,
-            startBalance.timestamp ?? 0,
-        ]
+        startBalance as any
     )
     stateTree.insert(hashedLeaf)
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
@@ -289,12 +278,7 @@ const genReputationCircuitInput = (config: {
         identity_secret: id.secretHash,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
-        data: [
-            startBalance.posRep,
-            startBalance.negRep,
-            startBalance.graffiti ?? 0,
-            startBalance.timestamp ?? 0,
-        ],
+        data: startBalance,
         graffiti_pre_image: graffitiPreImage,
         epoch,
         nonce,

@@ -5,8 +5,8 @@ const defaultConfig = {
     EPOCH_TREE_DEPTH: 4,
     EPOCH_TREE_ARITY: 3,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH: 3,
-    FIELD_COUNT: 4, // total number of fields
-    SUM_FIELD_COUNT: 2, // number of fields combined using addition
+    FIELD_COUNT: 6, // total number of fields
+    SUM_FIELD_COUNT: 4, // number of fields combined using addition
 }
 
 export class CircuitConfig {
