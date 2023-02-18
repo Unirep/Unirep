@@ -50,9 +50,12 @@ library Polysum {
         return index;
     }
 
-    function add(PolysumData storage self, uint[] memory vals, uint R) public {
-        require(vals.length < type(uint8).max);
-        require(vals.length > 0);
+    function add(PolysumData storage self, uint[] memory vals, uint R)
+        public
+        returns (uint)
+    {
+        require(vals.length < type(uint8).max, 'alarge');
+        require(vals.length > 0, 'asmall');
         uint index = self.index;
         uint hash = self.hash;
 
@@ -77,9 +80,9 @@ library Polysum {
         uint newval,
         uint R
     ) public {
-        require(oldval < SNARK_SCALAR_FIELD);
-        require(newval < SNARK_SCALAR_FIELD);
-        require(index < self.index, 'index');
+        require(oldval < SNARK_SCALAR_FIELD, 'ofield');
+        require(newval < SNARK_SCALAR_FIELD, 'nfield');
+        require(index < self.index, 'uindex');
         uint coef = rForIndex(index, R);
         uint oldterm = mulmod(coef, oldval, SNARK_SCALAR_FIELD);
         uint newterm = mulmod(coef, newval, SNARK_SCALAR_FIELD);

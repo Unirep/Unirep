@@ -220,7 +220,7 @@ contract Unirep is IUnirep, VerifySignature {
         }
         if (epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
 
-        if (fieldIndex >= fieldCount) revert();
+        if (fieldIndex >= fieldCount) revert InvalidField();
 
         AttesterState storage state = attesters[uint160(msg.sender)].state[
             epoch
@@ -263,7 +263,7 @@ contract Unirep is IUnirep, VerifySignature {
             } else {
                 if (fieldIndex % 2 != sumFieldCount % 2) {
                     // cannot attest to a timestamp
-                    revert();
+                    revert InvalidField();
                 }
                 if (change >= SNARK_SCALAR_FIELD) revert OutOfRange();
                 {
