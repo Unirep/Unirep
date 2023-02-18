@@ -60,10 +60,12 @@ describe('Attester signs up and gives attestation', function () {
         const epoch = await userState.sync.loadCurrentEpoch()
         const epochKeys = userState.getEpochKeys(epoch)
         const [epk] = epochKeys as bigint[]
+        const fieldIndex = 1
+        const val = 5
         // now submit the attestation from the attester
         const { timestamp: newTimestamp } = await unirepContract
             .connect(attester)
-            .attest(epk, epoch, 1, 5)
+            .attest(epk, epoch, fieldIndex, val)
             .then((t) => t.wait())
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
@@ -95,10 +97,11 @@ describe('Attester signs up and gives attestation', function () {
         const checkPromises = epochKeys.map(async (key) => {
             const data = await userState.getDataByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
-                expect(data[0]).to.equal(0)
-                expect(data[1]).to.equal(5)
-                expect(data[2]).to.equal(0)
-                expect(data[3]).to.equal(0)
+                expect(data[fieldIndex]).to.equal(val)
+                data.forEach((d, i) => {
+                    if (i === fieldIndex) return
+                    expect(d).to.equal(0)
+                })
             } else {
                 for (const d of data) {
                     expect(d).to.equal(0)
@@ -121,10 +124,11 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         {
             const data = await userState.getData()
-            expect(data[0]).to.equal(0)
-            expect(data[1]).to.equal(5)
-            expect(data[2]).to.equal(0)
-            expect(data[3]).to.equal(0)
+            expect(data[fieldIndex]).to.equal(val)
+            data.forEach((d, i) => {
+                if (i === fieldIndex) return
+                expect(d).to.equal(0)
+            })
         }
         await userState.sync.stop()
     })
