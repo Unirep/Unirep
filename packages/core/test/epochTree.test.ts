@@ -8,6 +8,7 @@ import {
     IncrementalMerkleTree,
     stringifyBigInts,
     genEpochTreeLeaf,
+    F,
 } from '@unirep/utils'
 import { Circuit, SNARK_SCALAR_FIELD, BuildOrderedTree } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -114,23 +115,25 @@ describe('Epoch tree', function () {
             const data = Array(userState.sync.settings.fieldCount).fill(
                 BigInt(0)
             )
-            for (let i = 0; i < 5; i++) {
-                const fieldIndex = Math.floor(
+            for (let i = 0; i < 10; i++) {
+                let fieldIndex = Math.floor(
                     Math.random() * (userState.sync.settings.sumFieldCount + 1)
                 )
-                const val = Math.floor(Math.random() * 10000000000000)
+                let val = Math.floor(Math.random() * 10000000000000)
+                if (i === 0 || i === 1) {
+                    fieldIndex = 0
+                    val = F - BigInt(1)
+                }
                 // now submit the attestation from the attester
                 const { timestamp: newTimestamp } = await unirepContract
                     .connect(attester)
-                    .attest(epk, epoch, fieldIndex, val, {
-                        gasLimit: 1000000,
-                    })
+                    .attest(epk, epoch, fieldIndex, val)
                     .then((t) => t.wait())
                     .then(({ blockNumber }) =>
                         ethers.provider.getBlock(blockNumber)
                     )
                 if (fieldIndex < userState.sync.settings.sumFieldCount) {
-                    data[fieldIndex] += BigInt(val)
+                    data[fieldIndex] = (data[fieldIndex] + BigInt(val)) % F
                 } else {
                     data[fieldIndex] = val
                     data[fieldIndex + 1] = newTimestamp
