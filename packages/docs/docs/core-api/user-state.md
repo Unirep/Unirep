@@ -126,9 +126,13 @@ Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/re
 
 ```ts
 state.genProveReputationProof(options: {
-  epkNonce: number,
+  epkNonce?: number
   minRep?: number
+  maxRep?: number
   graffitiPreImage?: bigint | string
+  proveZeroRep?: boolean
+  revealNonce?: boolean
+  data?: bigint | string
 }): Promise<ReputationProof>
 ```
 

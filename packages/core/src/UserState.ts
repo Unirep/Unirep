@@ -485,6 +485,7 @@ export default class UserState {
         graffitiPreImage?: bigint | string
         proveZeroRep?: boolean
         revealNonce?: boolean
+        data?: bigint | string
     }): Promise<ReputationProof> => {
         const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } =
             options
@@ -512,7 +513,7 @@ export default class UserState {
             prove_min_rep: !!(minRep ?? 0) ? 1 : 0,
             prove_max_rep: !!(maxRep ?? 0) ? 1 : 0,
             prove_zero_rep: proveZeroRep ?? 0,
-            sig_data: 0,
+            sig_data: data ?? 0,
         }
 
         const results = await this.sync.prover.genProofAndPublicSignals(
