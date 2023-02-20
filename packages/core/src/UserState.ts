@@ -8,6 +8,8 @@ import {
     genStateTreeLeaf,
     genUserStateTransitionNullifier,
     hash5,
+    genEpochTreeLeaf,
+    F,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -142,10 +144,7 @@ export default class UserState {
                 this.id.secretHash,
                 this.sync.attesterId.toString(),
                 signup.epoch,
-                0,
-                0,
-                0,
-                0
+                Array(this.sync.settings.fieldCount).fill(0)
             )
             const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
                 where: {
@@ -155,17 +154,12 @@ export default class UserState {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
-            latestTransitionedEpoch - 1
-        )
+        const data = await this.getData(latestTransitionedEpoch - 1)
         const leaf = genStateTreeLeaf(
             this.id.secretHash,
             this.sync.attesterId.toString(),
             latestTransitionedEpoch,
-            posRep,
-            negRep,
-            graffiti,
-            timestamp
+            data
         )
         const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
             where: {
@@ -212,13 +206,10 @@ export default class UserState {
      * @param toEpoch The latest epoch that the reputation is accumulated
      * @returns The reputation object
      */
-    public getRep = async (
-        _toEpoch?: number
-    ): Promise<{ posRep; negRep; graffiti; timestamp }> => {
-        let posRep = BigInt(0)
-        let negRep = BigInt(0)
-        let graffiti = BigInt(0)
-        let timestamp = BigInt(0)
+    public getData = async (_toEpoch?: number): Promise<bigint[]> => {
+        if (!this.sync)
+            throw new Error('@unirep/core:UserState: no synchronizer is set')
+        const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         const orClauses = [] as any[]
         const attesterId = this.sync.attesterId
         const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch()
@@ -238,8 +229,7 @@ export default class UserState {
                 epoch: x,
             })
         }
-        if (orClauses.length === 0)
-            return { posRep, negRep, graffiti, timestamp }
+        if (orClauses.length === 0) return data
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 OR: orClauses,
@@ -250,34 +240,29 @@ export default class UserState {
             },
         })
         for (const a of attestations) {
-            posRep += BigInt(a.posRep)
-            negRep += BigInt(a.negRep)
-            if (a.timestamp && BigInt(a.timestamp) > timestamp) {
-                graffiti = BigInt(a.graffiti)
-                timestamp = BigInt(a.timestamp)
+            const { fieldIndex } = a
+            if (fieldIndex < this.sync.settings.sumFieldCount) {
+                data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
+            } else {
+                data[fieldIndex] = BigInt(a.change)
+                data[fieldIndex + 1] = BigInt(a.timestamp)
             }
         }
-        return { posRep, negRep, graffiti, timestamp }
+        return data
     }
 
-    public async getProvableRep(): Promise<{
-        posRep
-        negRep
-        graffiti
-        timestamp
-    }> {
+    public async getProvableData(): Promise<bigint[]> {
         const epoch = await this.latestTransitionedEpoch()
-        return this.getRep(epoch - 1)
+        return this.getData(epoch - 1)
     }
 
-    public getRepByEpochKey = async (
+    public getDataByEpochKey = async (
         epochKey: bigint | string,
         epoch: number | bigint | string
     ) => {
-        let posRep = BigInt(0)
-        let negRep = BigInt(0)
-        let graffiti = BigInt(0)
-        let timestamp = BigInt(0)
+        if (!this.sync)
+            throw new Error('@unirep/core:UserState: no synchronizer is set')
+        const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 epoch: Number(epoch),
@@ -286,14 +271,15 @@ export default class UserState {
             },
         })
         for (const a of attestations) {
-            posRep += BigInt(a.posRep)
-            negRep += BigInt(a.negRep)
-            if (a.timestamp && BigInt(a.timestamp) > timestamp) {
-                graffiti = BigInt(a.graffiti)
-                timestamp = BigInt(a.timestamp)
+            const { fieldIndex } = a
+            if (fieldIndex < this.sync.settings.sumFieldCount) {
+                data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
+            } else {
+                data[fieldIndex] = BigInt(a.change)
+                data[fieldIndex + 1] = BigInt(a.timestamp)
             }
         }
-        return { posRep, negRep, graffiti, timestamp }
+        return data
     }
 
     /**
@@ -306,14 +292,37 @@ export default class UserState {
         )
     }
 
+    public getEpochKeyIndex = async (
+        epoch: number,
+        _epochKey: bigint | string
+    ) => {
+        const attestations = await this.sync._db.findMany('Attestation', {
+            where: {
+                epoch,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        let index = 1
+        const seenEpochKeys = {} as any
+        for (const { epochKey } of attestations) {
+            if (seenEpochKeys[epochKey]) continue
+            if (BigInt(epochKey) === BigInt(_epochKey)) {
+                return index
+            }
+            seenEpochKeys[epochKey] = true
+            index++
+        }
+        return 0
+    }
+
     public genUserStateTransitionProof = async (
         options: { toEpoch?: bigint | number } = {}
     ): Promise<UserStateTransitionProof> => {
         const { toEpoch: _toEpoch } = options
         const fromEpoch = await this.latestTransitionedEpoch()
-        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
-            fromEpoch - 1
-        )
+        const data = await this.getData(fromEpoch - 1)
         const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch()
         if (fromEpoch.toString() === toEpoch.toString()) {
             throw new Error('Cannot transition to same epoch')
@@ -330,21 +339,19 @@ export default class UserState {
                 )
             )
         const epochKeyLeafIndices = await Promise.all(
-            epochKeys.map(async (epk) => {
-                const leaf = await this.sync._db.findOne('EpochTreeLeaf', {
-                    where: {
-                        epochKey: epk.toString(),
-                    },
-                })
-                return leaf?.index ?? 0
-            })
+            epochKeys.map(async (epk) => this.getEpochKeyIndex(fromEpoch, epk))
         )
         const epochKeyRep = await Promise.all(
             epochKeys.map(async (epochKey, i) => {
-                const { posRep, negRep, graffiti, timestamp } =
-                    await this.getRepByEpochKey(epochKey, fromEpoch)
+                const newData = await this.getDataByEpochKey(
+                    epochKey,
+                    fromEpoch
+                )
+                const hasChanges = newData.reduce((acc, obj) => {
+                    return acc || obj != BigInt(0)
+                }, false)
                 const proof = epochTree._createProof(epochKeyLeafIndices[i])
-                return { epochKey, posRep, negRep, graffiti, timestamp, proof }
+                return { epochKey, hasChanges, newData, proof }
             })
         )
         const repByEpochKey = epochKeyRep.reduce((acc, obj) => {
@@ -355,9 +362,8 @@ export default class UserState {
         }, {})
         const leaves = await this.sync.genEpochTreePreimages(fromEpoch)
         const epochKeyProofs = epochKeys.map((key) => {
-            const { posRep, negRep, graffiti, timestamp } =
-                repByEpochKey[key.toString()]
-            const leaf = hash5([key, posRep, negRep, graffiti, timestamp])
+            const { newData, hasChanges } = repByEpochKey[key.toString()]
+            const leaf = genEpochTreeLeaf(key, newData)
             let noninclusionLeaves = [0, 1]
             let noninclusionIndex = 0
             let noninclusionElements = [
@@ -374,12 +380,7 @@ export default class UserState {
                 // we don't do inclusion or noninclusion
                 treeElements = epochTree._createProof(0).siblings.slice(1)
                 treeIndices = epochTree._createProof(0).pathIndices.slice(1)
-            } else if (
-                posRep === BigInt(0) &&
-                negRep === BigInt(0) &&
-                graffiti === BigInt(0) &&
-                timestamp === BigInt(0)
-            ) {
+            } else if (!hasChanges) {
                 // we do a non-inclusion proof
                 const gtIndex = epochTree.leaves.findIndex(
                     (l) => BigInt(l) > BigInt(leaf)
@@ -433,14 +434,8 @@ export default class UserState {
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: this.sync.attesterId.toString(),
-            pos_rep: posRep,
-            neg_rep: negRep,
-            graffiti,
-            timestamp,
-            new_pos_rep: epochKeyRep.map(({ posRep }) => posRep),
-            new_neg_rep: epochKeyRep.map(({ negRep }) => negRep),
-            new_graffiti: epochKeyRep.map(({ graffiti }) => graffiti),
-            new_timestamp: epochKeyRep.map(({ timestamp }) => timestamp),
+            data,
+            new_data: epochKeyRep.map(({ newData }) => newData),
             epoch_tree_elements: epochKeyProofs.map(
                 ({ treeElements }) => treeElements
             ),
@@ -490,6 +485,7 @@ export default class UserState {
         graffitiPreImage?: bigint | string
         proveZeroRep?: boolean
         revealNonce?: boolean
+        data?: bigint | string
     }): Promise<ReputationProof> => {
         const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } =
             options
@@ -497,9 +493,7 @@ export default class UserState {
         this._checkEpkNonce(nonce)
         const epoch = await this.latestTransitionedEpoch()
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
-        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
-            epoch - 1
-        )
+        const data = await this.getData(epoch - 1)
         const stateTree = await this.sync.genStateTree(epoch)
         const stateTreeProof = stateTree.createProof(leafIndex)
 
@@ -507,10 +501,7 @@ export default class UserState {
             identity_secret: this.id.secretHash,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
-            pos_rep: posRep,
-            neg_rep: negRep,
-            graffiti,
-            timestamp,
+            data,
             prove_graffiti: graffitiPreImage ? 1 : 0,
             graffiti_pre_image: graffitiPreImage ?? 0,
             reveal_nonce: revealNonce ?? 0,
@@ -522,6 +513,7 @@ export default class UserState {
             prove_min_rep: !!(minRep ?? 0) ? 1 : 0,
             prove_max_rep: !!(maxRep ?? 0) ? 1 : 0,
             prove_zero_rep: proveZeroRep ?? 0,
+            sig_data: options.data ?? 0,
         }
 
         const results = await this.sync.prover.genProofAndPublicSignals(
@@ -573,17 +565,12 @@ export default class UserState {
         const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
         const tree = await this.sync.genStateTree(epoch)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch)
-        const { posRep, negRep, graffiti, timestamp } = await this.getRep(
-            epoch - 1
-        )
+        const data = await this.getData(epoch - 1)
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
             identity_secret: this.id.secretHash,
-            pos_rep: posRep,
-            neg_rep: negRep,
-            graffiti,
-            timestamp,
-            data: options.data ?? BigInt(0),
+            data,
+            sig_data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
             state_tree_indexes: proof.pathIndices,
             epoch,
@@ -592,7 +579,7 @@ export default class UserState {
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
         const results = await this.sync.prover.genProofAndPublicSignals(
-            Circuit.verifyEpochKey,
+            Circuit.epochKey,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyProof(
@@ -614,7 +601,7 @@ export default class UserState {
         const epoch = options.epoch ?? (await this.latestTransitionedEpoch())
         const circuitInputs = {
             identity_secret: this.id.secretHash,
-            data: options.data ?? BigInt(0),
+            sig_data: options.data ?? BigInt(0),
             epoch,
             nonce,
             attester_id: this.sync.attesterId.toString(),

@@ -6,7 +6,7 @@ A circuits enum is exported from the package.
 
 ```ts
 enum Circuit {
-  verifyEpochKey,
+  epochKey,
   proveReputation,
   userStateTransition,
   signup,
@@ -52,14 +52,11 @@ Inputs:
 - `epoch`
 - `attester_id`
 - `reveal_nonce`
-- `data` (public)
-- `pos_rep`
-- `neg_rep`
-- `graffiti`
-- `timestamp`
+- `data[FIELD_COUNT]`
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `identity_secret`
+- `sig_data` (public)
 
 Outputs:
 - `epoch_key`
@@ -93,7 +90,7 @@ Inputs:
 - `epoch`
 - `attester_id`
 - `reveal_nonce`
-- `data` (public)
+- `sig_data` (public)
 - `identity_secret`
 
 Outputs:
@@ -129,14 +126,12 @@ Inputs:
 - `graffiti_pre_image` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
-- `pos_rep`
-- `neg_rep`
-- `graffiti`
-- `timestamp`
+- `data[FIELD_COUNT]`
 - `nonce`
 - `epoch`
 - `attester_id`
 - `reveal_nonce`
+- `sig_data` (public)
 
 Outputs:
 - `epoch_key`
@@ -165,14 +160,8 @@ Inputs:
 - `epoch_tree_root` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
-- `pos_rep`
-- `neg_rep`
-- `graffiti`
-- `timestamp`
-- `new_pos_rep[EPOCH_KEY_NONCE_PER_EPOCH]`
-- `new_neg_rep[EPOCH_KEY_NONCE_PER_EPOCH]`
-- `new_graffiti[EPOCH_KEY_NONCE_PER_EPOCH]`
-- `new_timestamp[EPOCH_KEY_NONCE_PER_EPOCH]`
+- `data[FIELD_COUNT]`
+- `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
 - `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1][EPOCH_TREE_ARITY]`
 - `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1]`
 - `noninclusion_leaf[EPOCH_KEY_NONCE_PER_EPOCH][2]`
@@ -191,15 +180,15 @@ Outputs:
 
 The build ordered tree proof takes a list of leaf pre-images and asserts that the leaf hashes are sorted in ascending order. It then puts the leaves into a tree and outputs the root and a checksum using [polysum](../protocol/polysum).
 
-Each leaf of the tree is computed using `Poseidon5`. If the first element of the pre-image is `0` or `1` the value `0` or `SNARK_SCALAR_FIELD - 1` is used for the leaf respectively.
+Each leaf of the tree is computed using `Poseidon1` of each element combined using a polysum. If the first element of the pre-image is `0` or `1` the pre-image is ignore and the value `0` or `SNARK_SCALAR_FIELD - 1` is used for the leaf respectively.
 
 We can prove non-inclusion in an ordered tree by proving that for an element `e` there exist two elements `a` and `b` next to each other in the tree where `a < e < b`.
 
 Constants:
-- `R`: The constant used for polysum checksum calculation.
+- `OMT_R`: The constant used for ordered merkle tree polysum checksum calculation.
 
 Inputs:
-- `sorted_leaf_preimages[TREE_ARITY**TREE_DEPTH][5]`
+- `sorted_leaf_preimages[TREE_ARITY**TREE_DEPTH][FIELD_COUNT + 1]`
 - `leaf_r_values[TREE_ARITY**TREE_DEPTH]`
 
 Outputs:

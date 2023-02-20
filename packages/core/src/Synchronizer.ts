@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { Prover, SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { IncrementalMerkleTree, hash4 } from '@unirep/utils'
+import { F, IncrementalMerkleTree } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -31,7 +31,6 @@ export class Synchronizer extends EventEmitter {
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: bigint
-    protected defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     private _eventHandlers: any
     private _eventFilters: any
@@ -80,6 +79,8 @@ export class Synchronizer extends EventEmitter {
             epochTreeArity: 2,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
+            fieldCount: 0,
+            sumFieldCount: 0,
         }
         const allEventNames = {} as any
 
@@ -165,8 +166,9 @@ export class Synchronizer extends EventEmitter {
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
         this.settings.epochTreeArity = config.epochTreeArity
-        this.settings.numEpochKeyNoncePerEpoch =
-            config.numEpochKeyNoncePerEpoch.toNumber()
+        this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
+        this.settings.fieldCount = config.fieldCount
+        this.settings.sumFieldCount = config.sumFieldCount
 
         await this.findStartBlock()
 
@@ -363,7 +365,7 @@ export class Synchronizer extends EventEmitter {
                 eventNames: [
                     'UserSignedUp',
                     'UserStateTransitioned',
-                    'AttestationSubmitted',
+                    'Attestation',
                     'EpochEnded',
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
@@ -435,10 +437,10 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async readCurrentEpoch() {
+    async readCurrentEpoch(attesterId: bigint | string = this.attesterId) {
         const currentEpoch = await this._db.findOne('Epoch', {
             where: {
-                attesterId: this.attesterId.toString(),
+                attesterId: attesterId.toString(),
             },
             orderBy: {
                 number: 'desc',
@@ -550,27 +552,41 @@ export class Synchronizer extends EventEmitter {
     }
 
     async genEpochTreePreimages(
-        _epoch: number | ethers.BigNumberish
+        _epoch: number | ethers.BigNumberish,
+        attesterId: bigint | string = this.attesterId
     ): Promise<any[]> {
         const epoch = Number(_epoch)
-        const leaves = await this._db.findMany('EpochTreeLeaf', {
+        const attestations = await this._db.findMany('Attestation', {
             where: {
                 epoch,
-                attesterId: this.attesterId.toString(),
+                attesterId: attesterId.toString(),
             },
             orderBy: {
                 index: 'asc',
             },
         })
-        return leaves.map(
-            ({ epochKey, posRep, negRep, graffiti, timestamp }) => [
-                epochKey,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ]
-        )
+        let _index = 0
+        const indexByEpochKey = {} as any
+        const preimages = [] as bigint[][]
+        for (const a of attestations) {
+            const { epochKey, fieldIndex, change, timestamp } = a
+            if (indexByEpochKey[epochKey] === undefined) {
+                indexByEpochKey[epochKey] = _index++
+                preimages.push([
+                    BigInt(epochKey),
+                    ...Array(this.settings.fieldCount).fill(BigInt(0)),
+                ])
+            }
+            const index = indexByEpochKey[epochKey]
+            if (fieldIndex < this.settings.sumFieldCount) {
+                preimages[index][fieldIndex + 1] =
+                    (preimages[index][fieldIndex + 1] + BigInt(change)) % F
+            } else {
+                preimages[index][fieldIndex + 1] = BigInt(change)
+                preimages[index][fieldIndex + 2] = BigInt(timestamp)
+            }
+        }
+        return preimages
     }
 
     /**
@@ -639,11 +655,6 @@ export class Synchronizer extends EventEmitter {
         const epoch = Number(decodedData.epoch)
         const index = BigInt(decodedData.index).toString()
         const attesterId = BigInt(decodedData.attesterId).toString()
-        const epochKey = BigInt(decodedData.epochKey).toString()
-        const posRep = BigInt(decodedData.posRep).toString()
-        const negRep = BigInt(decodedData.negRep).toString()
-        const graffiti = BigInt(decodedData.graffiti).toString()
-        const timestamp = BigInt(decodedData.timestamp).toString()
         const leaf = BigInt(decodedData.leaf).toString()
         if (
             attesterId !== this.attesterId.toString() &&
@@ -657,10 +668,6 @@ export class Synchronizer extends EventEmitter {
             },
             update: {
                 hash: leaf,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
                 blockNumber: event.blockNumber,
             },
             create: {
@@ -669,11 +676,6 @@ export class Synchronizer extends EventEmitter {
                 index,
                 attesterId,
                 hash: leaf,
-                epochKey,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
                 blockNumber: event.blockNumber,
             },
         })
@@ -701,16 +703,13 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async handleAttestationSubmitted({
-        decodedData,
-        event,
-        db,
-    }: EventHandlerArgs) {
+    async handleAttestation({ decodedData, event, db }: EventHandlerArgs) {
         const epoch = Number(decodedData.epoch)
         const epochKey = BigInt(decodedData.epochKey).toString()
         const attesterId = BigInt(decodedData.attesterId).toString()
-        const posRep = Number(decodedData.posRep)
-        const negRep = Number(decodedData.negRep)
+        const fieldIndex = Number(decodedData.fieldIndex)
+        const change = BigInt(decodedData.change).toString()
+        const timestamp = Number(decodedData.timestamp)
         if (
             attesterId !== this.attesterId.toString() &&
             this.attesterId !== BigInt(0)
@@ -723,7 +722,7 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
-        const currentEpoch = await this.readCurrentEpoch()
+        const currentEpoch = await this.readCurrentEpoch(attesterId)
         if (
             epoch !== Number(currentEpoch.number) &&
             this.attesterId !== BigInt(0)
@@ -738,16 +737,9 @@ export class Synchronizer extends EventEmitter {
             epochKey,
             index,
             attesterId,
-            posRep,
-            negRep,
-            graffiti: decodedData.graffiti.toString(),
-            timestamp: decodedData.timestamp.toString(),
-            hash: hash4([
-                posRep,
-                negRep,
-                decodedData.graffiti,
-                decodedData.timestamp,
-            ]).toString(),
+            fieldIndex,
+            change,
+            timestamp,
             blockNumber: event.blockNumber,
         })
         return true

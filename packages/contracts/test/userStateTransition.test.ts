@@ -24,6 +24,8 @@ const {
     EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    FIELD_COUNT,
+    SUM_FIELD_COUNT,
 } = defaultConfig
 
 const emptyEpochTree = () => {
@@ -125,14 +127,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -205,14 +201,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -279,14 +269,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -339,13 +323,15 @@ describe('User State Transition', function () {
                 attester.address
             )
             const epochKey = BigInt(24391)
-            const posRep = 1
-            const negRep = 5
-            const graffiti = 0
 
             await unirepContract
                 .connect(attester)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epochKey, epoch, 1, 1)
+                .then((t) => t.wait())
+
+            await unirepContract
+                .connect(attester)
+                .attest(epochKey, epoch, SUM_FIELD_COUNT, 1)
                 .then((t) => t.wait())
         }
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
@@ -371,14 +357,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -412,7 +392,7 @@ describe('User State Transition', function () {
             unirepContract
                 .connect(attester)
                 .userStateTransition(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'HashchainNotProcessed')
+        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotSealed')
     })
 
     it('should fail to transition from wrong epoch tree', async () => {
@@ -449,14 +429,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -527,14 +501,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -604,14 +572,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -682,14 +644,8 @@ describe('User State Transition', function () {
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
-                pos_rep: 0,
-                neg_rep: 0,
-                graffiti: 0,
-                timestamp: 0,
-                new_pos_rep: epochKeys.map(() => 0),
-                new_neg_rep: epochKeys.map(() => 0),
-                new_graffiti: epochKeys.map(() => 0),
-                new_timestamp: epochKeys.map(() => 0),
+                data: Array(FIELD_COUNT).fill(0),
+                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
                 epoch_tree_elements: epochKeys.map(() =>
                     epochTree._createProof(0).siblings.slice(1)
                 ),
@@ -794,14 +750,10 @@ describe('User State Transition', function () {
                         state_tree_indexes: stateTreeProof.pathIndices,
                         state_tree_elements: stateTreeProof.siblings,
                         attester_id: attester.address,
-                        pos_rep: 0,
-                        neg_rep: 0,
-                        graffiti: 0,
-                        timestamp: 0,
-                        new_pos_rep: epochKeys.map(() => 0),
-                        new_neg_rep: epochKeys.map(() => 0),
-                        new_graffiti: epochKeys.map(() => 0),
-                        new_timestamp: epochKeys.map(() => 0),
+                        data: Array(FIELD_COUNT).fill(0),
+                        new_data: epochKeys.map(() =>
+                            Array(FIELD_COUNT).fill(0)
+                        ),
                         epoch_tree_elements: epochKeys.map(() =>
                             epochTree._createProof(0).siblings.slice(1)
                         ),

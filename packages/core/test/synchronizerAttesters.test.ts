@@ -41,7 +41,7 @@ describe('Synchronizer watch multiple attesters', function () {
         for (let x = 0; x < ATTESTER_COUNT; x++) {
             await unirepContract
                 .connect(accounts[0])
-                .submitAttestation(0, x, x, 0, 0)
+                .attest(x, 0, 1, x)
                 .then((t) => t.wait())
         }
         const sync = new Synchronizer({
@@ -50,7 +50,7 @@ describe('Synchronizer watch multiple attesters', function () {
             prover: defaultProver,
         })
         const seenAttestations = []
-        sync.on('AttestationSubmitted', ({ decodedData }) => {
+        sync.on('Attestation', ({ decodedData }) => {
             seenAttestations.push(decodedData)
         })
         sync.start()

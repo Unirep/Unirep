@@ -147,7 +147,10 @@ synchronizer.genEpochTree(epoch: bigint): Promise<IncrementalMerkleTree>
 Get the pre-images for the leaves in an epoch tree.
 
 ```ts
-synchronizer.genEpochTreePreimages(epoch: bigint | number): Promise<bigint[][]>
+synchronizer.genEpochTreePreimages(
+  epoch: bigint | number,
+  attesterId: bigint | string = this.attesterId
+): Promise<bigint[][]>
 ```
 
 ## stateRootExists

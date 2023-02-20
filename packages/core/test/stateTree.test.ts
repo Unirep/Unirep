@@ -107,10 +107,7 @@ describe('State tree', function () {
                 id.secretHash,
                 attester.address,
                 contractEpoch.toNumber(),
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
 
             stateTree.insert(leaf)
@@ -197,10 +194,7 @@ describe('State tree', function () {
                 users[i].secretHash,
                 attester.address,
                 toEpoch,
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
             const stateRootExists =
@@ -239,16 +233,25 @@ describe('State tree', function () {
             .map(() => {
                 return new ZkIdentity()
             })
+        const _userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            new ZkIdentity(),
+            BigInt(attester.address)
+        )
         const attestations = Array(3)
             .fill(null)
             .map(() => {
+                const fieldIndex = Math.floor(
+                    Math.random() * _userState.sync.settings.sumFieldCount
+                )
+                const val = Math.floor(Math.random() * 10000000000000)
                 return {
-                    posRep: Math.floor(Math.random() * 10),
-                    negRep: Math.floor(Math.random() * 10),
-                    graffiti: genRandomSalt(),
-                    timestamp: 0,
+                    fieldIndex,
+                    val,
                 }
             })
+        await _userState.sync.stop()
         for (let i = 0; i < 3; i++) {
             const userState = await genUserState(
                 ethers.provider,
@@ -274,23 +277,21 @@ describe('State tree', function () {
             }
 
             const epoch = await userState.sync.loadCurrentEpoch()
-            const epochKeys = await userState.getEpochKeys(epoch)
+            const epochKeys = userState.getEpochKeys(epoch) as bigint[]
             const [epk] = epochKeys
             // now submit the attestation from the attester
             const { timestamp } = await unirepContract
                 .connect(attester)
-                .submitAttestation(
-                    epoch,
+                .attest(
                     epk,
-                    attestations[i].posRep,
-                    attestations[i].negRep,
-                    attestations[i].graffiti
+                    epoch,
+                    attestations[i].fieldIndex,
+                    attestations[i].val
                 )
                 .then((t) => t.wait())
                 .then(({ blockNumber }) =>
                     ethers.provider.getBlock(blockNumber)
                 )
-            attestations[i].timestamp = timestamp
             await userState.sync.stop()
         }
 
@@ -350,10 +351,14 @@ describe('State tree', function () {
                 users[i].secretHash,
                 attester.address,
                 toEpoch,
-                attestations[i].posRep,
-                attestations[i].negRep,
-                attestations[i].graffiti,
-                attestations[i].timestamp
+                Array(userState.sync.settings.fieldCount)
+                    .fill(null)
+                    .map((_, index) => {
+                        if (index === attestations[i].fieldIndex) {
+                            return attestations[i].val
+                        }
+                        return BigInt(0)
+                    })
             )
             stateTree.insert(leaf)
             const stateRootExists =
@@ -414,10 +419,7 @@ describe('State tree', function () {
                 id.secretHash,
                 attester.address,
                 prevEpoch,
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
             await userState.sync.stop()

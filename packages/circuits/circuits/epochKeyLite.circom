@@ -12,7 +12,7 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input epoch;
     signal input nonce;
 
-    signal input data;
+    signal input sig_data;
 
     signal output control;
     signal output epoch_key;

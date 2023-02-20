@@ -102,12 +102,12 @@ const circuitInputs = {
     ...
 }
 const { proof, publicSignals } = await prover.genProofAndPublicSignals(
-    Circuit.verifyEpochKey,
+    Circuit.epochKey,
     circuitInputs
 )
 
 const isValid = await prover.verifyProof(
-    Circuit.verifyEpochKey,
+    Circuit.epochKey,
     publicSignals,
     proof
 )

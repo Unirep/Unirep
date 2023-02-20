@@ -58,15 +58,14 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = await userState.getEpochKeys(epoch)
-        const [epk] = epochKeys
-        const newPosRep = 10
-        const newNegRep = 5
-        const newGraffiti = 1294194
+        const epochKeys = userState.getEpochKeys(epoch)
+        const [epk] = epochKeys as bigint[]
+        const fieldIndex = 1
+        const val = 5
         // now submit the attestation from the attester
         const { timestamp: newTimestamp } = await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, epk, newPosRep, newNegRep, newGraffiti)
+            .attest(epk, epoch, fieldIndex, val)
             .then((t) => t.wait())
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
@@ -96,18 +95,17 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const { posRep, negRep, graffiti, timestamp } =
-                await userState.getRepByEpochKey(key, BigInt(epoch))
+            const data = await userState.getDataByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
-                expect(posRep).to.equal(newPosRep)
-                expect(negRep).to.equal(newNegRep)
-                expect(graffiti).to.equal(newGraffiti)
-                expect(timestamp).to.equal(newTimestamp)
+                expect(data[fieldIndex]).to.equal(val)
+                data.forEach((d, i) => {
+                    if (i === fieldIndex) return
+                    expect(d).to.equal(0)
+                })
             } else {
-                expect(posRep).to.equal(0)
-                expect(negRep).to.equal(0)
-                expect(graffiti).to.equal(0)
-                expect(timestamp).to.equal(0)
+                for (const d of data) {
+                    expect(d).to.equal(0)
+                }
             }
         })
         await Promise.all(checkPromises)
@@ -125,12 +123,12 @@ describe('Attester signs up and gives attestation', function () {
         }
         await userState.waitForSync()
         {
-            const { posRep, negRep, graffiti, timestamp } =
-                await userState.getRep()
-            expect(posRep).to.equal(newPosRep)
-            expect(negRep).to.equal(newNegRep)
-            expect(graffiti).to.equal(newGraffiti)
-            expect(timestamp).to.equal(newTimestamp)
+            const data = await userState.getData()
+            expect(data[fieldIndex]).to.equal(val)
+            data.forEach((d, i) => {
+                if (i === fieldIndex) return
+                expect(d).to.equal(0)
+            })
         }
         await userState.sync.stop()
     })
@@ -153,7 +151,7 @@ describe('Attester signs up and gives attestation', function () {
         const epoch = await userState.sync.loadCurrentEpoch()
         await unirepContract
             .connect(attester)
-            .submitAttestation(epoch, '0x01', 1, 0, 0)
+            .attest('0x01', epoch, 1, 1)
             .then((t) => t.wait())
         await userState.waitForSync()
         await userState.sync.stop()

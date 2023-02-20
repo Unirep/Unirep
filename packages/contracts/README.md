@@ -222,7 +222,7 @@ const circuitInputs = {
 }
 
 const { publicSignals, proof } = await prover.genProofAndPublicSignals(
-    Circuit.verifyEpochKey,
+    Circuit.epochKey,
     circuitInputs
 )
 

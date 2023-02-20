@@ -92,10 +92,7 @@ describe('User state transition', function () {
                 users[i].secretHash,
                 attester.address,
                 toEpoch,
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)

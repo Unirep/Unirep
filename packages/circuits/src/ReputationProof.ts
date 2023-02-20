@@ -13,6 +13,7 @@ export class ReputationProof extends BaseProof {
         control0: 2,
         control1: 3,
         graffitiPreImage: 4,
+        data: 5,
     }
     public epochKey: BigNumberish
     public stateTreeRoot: BigNumberish
@@ -29,6 +30,7 @@ export class ReputationProof extends BaseProof {
     public maxRep: BigNumberish
     public proveGraffiti: BigNumberish
     public graffitiPreImage: BigNumberish
+    public data: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the reputation proof that can be verified by the prover
@@ -64,6 +66,7 @@ export class ReputationProof extends BaseProof {
         this.proveZeroRep = (BigInt(this.control1) >> BigInt(130)) & BigInt(1)
         this.proveGraffiti = (BigInt(this.control1) >> BigInt(131)) & BigInt(1)
         this.graffitiPreImage = _publicSignals[this.idx.graffitiPreImage]
+        this.data = _publicSignals[this.idx.data]
         this.circuit = Circuit.proveReputation
     }
 

@@ -35,21 +35,22 @@ The `attesterId` is the address of the attester contract. In this case `msg.send
 function attesterSignUp(uint epochLength) public
 ```
 
-## submitAttestation
+## attest
 
 Create an attestation to an epoch key. If the current epoch is not the same as `targetEpoch` the transaction will revert.
+
+Apply a change to a user data field at index `fieldIndex`. Changes will be applied using either addition or replacement, depending on which field is selected.
 
 :::caution
 `msg.sender` must be the attester.
 :::
 
 ```sol
-function submitAttestation(
-  uint targetEpoch,
+function attest(
   uint epochKey,
-  uint posRep,
-  uint negRep,
-  uint graffiti
+  uint targetEpoch,
+  uint fieldIndex,
+  uint change
 ) public
 ```
 
@@ -260,7 +261,7 @@ function verifyEpochKeyLiteProof(
 A contract address for an epoch key proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::danger
-Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
+Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`EpochKeyProof`](#epochkeyproof) function unless you know what you are doing.
 :::
 
 ```sol
@@ -455,7 +456,23 @@ function epochTreeArity() public view returns (uint8)
 Get the maximum nonce value for an epoch key. This determines the number of epoch keys per epoch.
 
 ```sol
-function numEpochKeyNoncePerEpoch() public view returns (uint256)
+function numEpochKeyNoncePerEpoch() public view returns (uint8)
+```
+
+## fieldCount
+
+The number of data fields each user has in this Unirep deployment.
+
+```sol
+function fieldCount() public view returns (uint8)
+```
+
+## sumFieldCount
+
+How many of the data fields are combined with addition. The sum fields are the first `sumFieldCount` fields in the user data.
+
+```sol
+function sumFieldCount() public view returns (uint8)
 ```
 
 ## Events
@@ -500,17 +517,18 @@ event UserStateTransitioned(
 );
 ```
 
-### AttestationSubmitted
+### Attestation
 
 Emitted when an attester makes an attestation to an epoch key.
 
 ```sol
-event AttestationSubmitted(
+event Attestation(
     uint256 indexed epoch,
     uint256 indexed epochKey,
     uint160 indexed attesterId,
-    uint256 posRep,
-    uint256 negRep
+    uint256 fieldIndex,
+    uint256 change,
+    uint256 timestamp
 );
 ```
 
@@ -536,12 +554,7 @@ event EpochTreeLeaf(
     uint256 indexed epoch,
     uint160 indexed attesterId,
     uint256 indexed index,
-    uint256 leaf,
-    uint256 epochKey,
-    uint256 posRep,
-    uint256 negRep,
-    uint256 graffiti,
-    uint256 timestamp
+    uint256 leaf
 );
 ```
 

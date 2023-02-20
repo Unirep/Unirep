@@ -38,13 +38,14 @@ export async function bootstrapAttestations(
         await userState.waitForSync()
         const [epochKey] = userState.getEpochKeys(epoch) as bigint[]
         for (let j = 0; j < attestationCount; j++) {
-            const posRep = Math.floor(Math.random() * 10)
-            const negRep = Math.floor(Math.random() * 10)
-            const graffiti = Math.random() > 0.5 ? genRandomSalt() : BigInt(0)
+            const fieldIndex = Math.floor(
+                Math.random() * (synchronizer.settings.sumFieldCount + 1)
+            )
+            const val = Math.floor(Math.random() * 10000000000000)
 
             await unirepContract
                 .connect(account)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epochKey, epoch, fieldIndex, val)
                 .then((t) => t.wait())
         }
     }

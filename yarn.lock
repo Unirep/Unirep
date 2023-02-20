@@ -4537,7 +4537,6 @@ __metadata:
   dependencies:
     "@ethersproject/solidity": ^5.7.0
     "@unirep/utils": 2.0.0-alpha-4
-    bn.js: ^5.2.1
     mocha: ^10.0.0
     snarkjs: ^0.5.0
     typescript: ^4.7.3
@@ -4565,6 +4564,7 @@ __metadata:
     hardhat: ^2.12.3
     hardhat-gas-reporter: ^1.0.8
     lcov-badge-generator: ^1.0.5
+    poseidon-solidity: ^0.0.3
     solc: ^0.8.16
     solidity-coverage: ^0.7.21
     typechain: ^8.1.0
@@ -14388,6 +14388,13 @@ __metadata:
   version: 0.0.2
   resolution: "poseidon-lite@npm:0.0.2"
   checksum: b10a29ec8b84caa75dcbb323e7586f220ed5e2d338864484cbc735ee871aafcae599b1c98c521aebd9b82798d5d354328d7750d7dd4bd0c51f7f6d0b79cbe00e
+  languageName: node
+  linkType: hard
+
+"poseidon-solidity@npm:^0.0.3":
+  version: 0.0.3
+  resolution: "poseidon-solidity@npm:0.0.3"
+  checksum: 489e392a382c015be361724fb772386fd856ec84897907621e0b46fe436ecb8ce935e1153071ca156fde25e961b5d15c795459ac40b141a074b41f92e4f07480
   languageName: node
   linkType: hard
 

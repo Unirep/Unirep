@@ -82,32 +82,32 @@ If no `epoch` is supplied the current epoch will be used (as determined by [`cal
 state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
 ```
 
-## getRep
+## getData
 
-Get the reputation balance for the user up to and including the provided epoch. By default reputation up to and including the current epoch is returned.
+Get the data for a user up to and including the provided epoch. By default data up to and including the current epoch is returned.
 
 :::tip
-If you want to make a proof of reputation make sure to use [`getProvableRep`](#getprovablerep) to show the user balance. Reputation can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#prove-reputation-proof).
+If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#prove-reputation-proof).
 :::
 
 ```ts
-state.getRep(toEpoch?: number): Promise<Reputation>
+state.getData(toEpoch?: number): Promise<bigint[]>
 ```
 
-## getProvableRep
+## getProvableData
 
-Get the reputation balance that can be proven by the user in a [reputation proof](../circuits-api/circuits#prove-reputation-proof). This is the balance up to, but not including, the epoch the user has transitioned into.
+Get the data that can be proven by the user using a state tree leaf. This is the data up to, but not including, the epoch the user has transitioned into.
 
 ```ts
-state.getProvableRep(): Promise<Reputation>
+state.getProvableData(): Promise<bigint[]>
 ```
 
-## getRepByEpochKey
+## getDataByEpochKey
 
-Get the rep owed to an epoch key in a certain epoch.
+Get the pending changes to the data owned by an epoch key.
 
 ```ts
-state.getRepByEpochKey(epochKey: bigint, epoch: number): Promise<Reputation>
+state.getDataByEpochKey(epochKey: bigint, epoch: number): Promise<bigint[]>
 ```
 
 ## genUserStateTransitionProof
@@ -126,9 +126,13 @@ Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/re
 
 ```ts
 state.genProveReputationProof(options: {
-  epkNonce: number,
+  epkNonce?: number
   minRep?: number
+  maxRep?: number
   graffitiPreImage?: bigint | string
+  proveZeroRep?: boolean
+  revealNonce?: boolean
+  data?: bigint | string
 }): Promise<ReputationProof>
 ```
 

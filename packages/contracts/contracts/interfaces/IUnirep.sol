@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
-import {PolyhashData} from '../libraries/Polyhash.sol';
+import {PolysumData} from '../libraries/Polysum.sol';
 
 interface IUnirep {
     event AttesterSignedUp(
@@ -26,13 +26,12 @@ interface IUnirep {
         uint256 nullifier
     );
 
-    event AttestationSubmitted(
+    event Attestation(
         uint256 indexed epoch,
         uint256 indexed epochKey,
         uint160 indexed attesterId,
-        uint256 posRep,
-        uint256 negRep,
-        uint256 graffiti,
+        uint256 fieldIndex,
+        uint256 change,
         uint256 timestamp
     );
 
@@ -47,12 +46,7 @@ interface IUnirep {
         uint256 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
-        uint256 leaf,
-        uint256 epochKey,
-        uint256 posRep,
-        uint256 negRep,
-        uint256 graffiti,
-        uint256 timestamp
+        uint256 leaf
     );
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
@@ -68,6 +62,7 @@ interface IUnirep {
     error NullifierAlreadyUsed(uint256 nullilier);
     error AttesterIdNotMatch(uint160 attesterId);
     error OutOfRange();
+    error InvalidField();
 
     error InvalidSignature();
     error InvalidEpochKey();
@@ -82,7 +77,7 @@ interface IUnirep {
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
-    error HashchainNotProcessed();
+    error EpochNotSealed();
 
     struct EpochKeySignals {
         uint256 revealNonce;
@@ -110,21 +105,18 @@ interface IUnirep {
         uint256 maxRep;
     }
 
-    struct Reputation {
-        uint256 posRep;
-        uint256 negRep;
-        uint256 graffiti;
-        uint256 timestamp;
-    }
-
-    struct EpochKeyState {
+    struct AttesterState {
         // latest epoch key balances
-        mapping(uint256 => Reputation) balances;
+        ///// Needs to be manually set to FIELD_COUNT
+        mapping(uint256 => PolysumData) epkPolysum;
+        mapping(uint256 => uint256[30]) data;
+        mapping(uint256 => uint256[30]) dataHashes;
         // epoch key => polyhash degree
-        mapping(uint256 => uint256) epochKeyDegree;
+        mapping(uint256 => uint256) epochKeyIndex;
         // epoch key => latest leaf (0 if no attestation in epoch)
         mapping(uint256 => uint256) epochKeyLeaves;
-        PolyhashData polyhash;
+        // the attester polysum
+        PolysumData polysum;
     }
 
     struct AttesterData {
@@ -140,7 +132,7 @@ interface IUnirep {
         mapping(uint256 => bool) identityCommitments;
         IncrementalTreeData semaphoreGroup;
         // attestation management
-        mapping(uint256 => EpochKeyState) epochKeyState;
+        mapping(uint256 => AttesterState) state;
     }
 
     struct Config {
@@ -148,6 +140,8 @@ interface IUnirep {
         uint8 stateTreeDepth;
         uint8 epochTreeDepth;
         uint8 epochTreeArity;
-        uint256 numEpochKeyNoncePerEpoch;
+        uint8 fieldCount;
+        uint8 sumFieldCount;
+        uint8 numEpochKeyNoncePerEpoch;
     }
 }

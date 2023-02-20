@@ -5,7 +5,7 @@ import { CircuitConfig } from './CircuitConfig'
  * Name of the circuits that are used in Unirep protocol
  */
 export enum Circuit {
-    verifyEpochKey = 'verifyEpochKey',
+    epochKey = 'epochKey',
     proveReputation = 'proveReputation',
     userStateTransition = 'userStateTransition',
     signup = 'signup',
