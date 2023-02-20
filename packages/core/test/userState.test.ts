@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, stringifyBigInts } from '@unirep/utils'
+import { F, ZkIdentity, stringifyBigInts } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { Circuit, BuildOrderedTree } from '@unirep/circuits'
@@ -44,6 +44,52 @@ describe('User state', function () {
             await ethers.provider.send('evm_revert', [snapshot])
         })
     }
+
+    it('should correctly get overflowed data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new ZkIdentity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
+
+        const epoch = await userState.sync.loadCurrentEpoch()
+
+        const { publicSignals, proof } = await userState.genUserSignUpProof({
+            epoch,
+        })
+        const r = await unirepContract
+            .connect(attester)
+            .userSignUp(publicSignals, proof)
+            .then((t) => t.wait())
+        const epk = userState.getEpochKeys(epoch, 1)
+        const fieldIndex = 1
+        const v0 = F - BigInt(1)
+        const v1 = BigInt(12409124)
+        const final = (v0 + v1) % F
+        await unirepContract
+            .connect(attester)
+            .attest(epk, epoch, fieldIndex, v0)
+            .then((t) => t.wait())
+        await unirepContract
+            .connect(attester)
+            .attest(epk, epoch, fieldIndex, v1)
+            .then((t) => t.wait())
+        await userState.waitForSync()
+        {
+            const data = await userState.getData()
+            expect(data[fieldIndex]).to.equal(final)
+        }
+        {
+            const data = await userState.getDataByEpochKey(epk, epoch)
+            expect(data[fieldIndex]).to.equal(final)
+        }
+        await userState.sync.stop()
+    })
 
     it('user sign up proof', async () => {
         const accounts = await ethers.getSigners()

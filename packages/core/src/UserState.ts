@@ -242,7 +242,7 @@ export default class UserState {
         for (const a of attestations) {
             const { fieldIndex } = a
             if (fieldIndex < this.sync.settings.sumFieldCount) {
-                data[fieldIndex] = data[fieldIndex] + (BigInt(a.change) % F)
+                data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
                 data[fieldIndex] = BigInt(a.change)
                 data[fieldIndex + 1] = BigInt(a.timestamp)
@@ -273,7 +273,7 @@ export default class UserState {
         for (const a of attestations) {
             const { fieldIndex } = a
             if (fieldIndex < this.sync.settings.sumFieldCount) {
-                data[fieldIndex] = data[fieldIndex] + (BigInt(a.change) % F)
+                data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
                 data[fieldIndex] = BigInt(a.change)
                 data[fieldIndex + 1] = BigInt(a.timestamp)
