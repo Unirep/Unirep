@@ -513,7 +513,7 @@ export default class UserState {
             prove_min_rep: !!(minRep ?? 0) ? 1 : 0,
             prove_max_rep: !!(maxRep ?? 0) ? 1 : 0,
             prove_zero_rep: proveZeroRep ?? 0,
-            sig_data: data ?? 0,
+            sig_data: options.data ?? 0,
         }
 
         const results = await this.sync.prover.genProofAndPublicSignals(
