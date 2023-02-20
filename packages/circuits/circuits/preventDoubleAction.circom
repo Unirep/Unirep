@@ -1,8 +1,9 @@
 pragma circom 2.0.0;
 
 include "./circomlib/circuits/poseidon.circom";
+include "./incrementalMerkleTree.circom";
 
-template preventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
+template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
@@ -13,6 +14,11 @@ template preventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Optionally reveal nonce, epoch, attester_id
     signal output control_output;
     signal output epoch_key;
+
+    signal input pos_rep;
+    signal input neg_rep;
+    signal input graffiti;
+    signal input timestamp;
 
     /**
      * Control structure

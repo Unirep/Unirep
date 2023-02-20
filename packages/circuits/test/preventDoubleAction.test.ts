@@ -5,7 +5,7 @@ import {
     IncrementalMerkleTree,
     hash7,
 } from '@unirep/utils'
-import { Circuit, preventDoubleActionProof, EpochKeyProof } from '../src'
+import { Circuit, PreventDoubleActionProof, EpochKeyProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
 import { NUM_EPOCH_KEY_NONCE_PER_EPOCH, STATE_TREE_DEPTH } from '../config'
@@ -77,7 +77,7 @@ describe('Prevent double action', function () {
             const id = new ZkIdentity()
             const circuitInputs = {
                 identity_secret: id.secretHash,
-                control: preventDoubleActionProof.buildControlInput({
+                control: PreventDoubleActionProof.buildControlInput({
                     epoch,
                     attesterId,
                     nonce,
@@ -89,7 +89,7 @@ describe('Prevent double action', function () {
                 circuitInputs
             )
             expect(isValid).to.be.true
-            const data = new preventDoubleActionProof(publicSignals, proof)
+            const data = new PreventDoubleActionProof(publicSignals, proof)
             expect(data.epochKey.toString()).to.equal(
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
@@ -114,7 +114,7 @@ describe('Prevent double action', function () {
             const id = new ZkIdentity()
             const circuitInputs = {
                 identity_secret: id.secretHash,
-                control: preventDoubleActionProof.buildControlInput({
+                control: PreventDoubleActionProof.buildControlInput({
                     epoch,
                     attesterId,
                     nonce,
@@ -127,7 +127,7 @@ describe('Prevent double action', function () {
                 circuitInputs
             )
             expect(isValid).to.be.true
-            const data = new preventDoubleActionProof(publicSignals, proof)
+            const data = new PreventDoubleActionProof(publicSignals, proof)
             expect(data.epochKey.toString()).to.equal(
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
@@ -155,7 +155,7 @@ describe('Prevent double action', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_secret: id.secretHash,
-            control: preventDoubleActionProof.buildControlInput({
+            control: PreventDoubleActionProof.buildControlInput({
                 epoch,
                 attesterId,
                 nonce,
@@ -167,7 +167,7 @@ describe('Prevent double action', function () {
             circuitInputs
         )
         expect(isValid).to.be.true
-        const data = new preventDoubleActionProof(publicSignals, proof)
+        const data = new PreventDoubleActionProof(publicSignals, proof)
         expect(data.epochKey.toString()).to.equal(
             genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
         )
@@ -195,7 +195,7 @@ describe('Prevent double action', function () {
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
             identity_secret: id.secretHash,
-            control: preventDoubleActionProof.buildControlInput({
+            control: PreventDoubleActionProof.buildControlInput({
                 epoch,
                 attesterId,
                 nonce,
@@ -218,7 +218,7 @@ describe('Prevent double action', function () {
         const circuitInputs = {
             identity_secret: id.secretHash,
             control:
-                preventDoubleActionProof.buildControlInput({
+                PreventDoubleActionProof.buildControlInput({
                     epoch,
                     attesterId,
                     nonce,
