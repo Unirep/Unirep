@@ -1,12 +1,5 @@
 import { Circuit, Prover } from './circuits'
-import {
-    F,
-    OMT_R,
-    R_X,
-    genEpochTreeLeaf,
-    SnarkProof,
-    hash5,
-} from '@unirep/utils'
+import { F, OMT_R, R_X, genEpochTreeLeaf, SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
 import { BigNumberish } from '@ethersproject/bignumber'
 import { CircuitConfig } from './CircuitConfig'

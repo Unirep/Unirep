@@ -13,13 +13,7 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
-const {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    FIELD_COUNT,
-} = defaultConfig
+const { STATE_TREE_DEPTH, FIELD_COUNT } = defaultConfig
 
 describe('User Signup', function () {
     this.timeout(200000)

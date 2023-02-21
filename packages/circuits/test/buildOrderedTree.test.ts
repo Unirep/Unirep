@@ -1,13 +1,5 @@
 import { expect } from 'chai'
-import {
-    F,
-    R_X,
-    OMT_R,
-    genEpochTreeLeaf,
-    IncrementalMerkleTree,
-    hash1,
-    hash5,
-} from '@unirep/utils'
+import { F, R_X, OMT_R, IncrementalMerkleTree, hash1 } from '@unirep/utils'
 import { genProofAndVerify } from './utils'
 import { Circuit, BuildOrderedTree, CircuitConfig } from '../src'
 
@@ -91,8 +83,7 @@ describe('Build sorted merkle tree', function () {
         const _leaves = Array(10)
             .fill(null)
             .map(() => randomPreimage())
-        const { sortedLeaves, leaves, circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(_leaves)
+        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(_leaves)
 
         circuitInputs.sorted_leaf_preimages[3] =
             circuitInputs.sorted_leaf_preimages[6]

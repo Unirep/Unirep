@@ -54,7 +54,7 @@ describe('User Signup', function () {
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
 
-            const tx = await unirepContract
+            await unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
@@ -82,7 +82,7 @@ describe('User Signup', function () {
                 )
             expect(stateRootExists).to.be.true
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // Check GST roots match Unirep state
@@ -98,6 +98,6 @@ describe('User Signup', function () {
             )
             expect(exist).to.be.true
         }
-        await unirepState.stop()
+        unirepState.stop()
     })
 })

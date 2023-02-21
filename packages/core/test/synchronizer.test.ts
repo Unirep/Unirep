@@ -1,15 +1,10 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    IncrementalMerkleTree,
-    ZkIdentity,
-    genStateTreeLeaf,
-    stringifyBigInts,
-} from '@unirep/utils'
+import { ZkIdentity, genStateTreeLeaf, stringifyBigInts } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Circuit, CircuitConfig, BuildOrderedTree } from '@unirep/circuits'
+import { Circuit, BuildOrderedTree } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { bootstrapAttestations, bootstrapUsers } from './test'
 
@@ -78,8 +73,8 @@ describe('Synchronizer process events', function () {
                 BigInt(attester.address)
             )
             await compareDB((state.sync as any)._db, (synchronizer as any)._db)
-            await state.sync.stop()
-            await synchronizer.stop()
+            state.sync.stop()
+            synchronizer.stop()
 
             await ethers.provider.send('evm_revert', [snapshot])
         })
@@ -172,7 +167,7 @@ describe('Synchronizer process events', function () {
                 Number(epoch)
             )
         ).to.be.true
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should process attestations', async () => {
@@ -276,7 +271,7 @@ describe('Synchronizer process events', function () {
             {}
         )
         expect(finalAttestCount).to.equal(attestCount + 1)
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should process ust events', async () => {
@@ -393,6 +388,6 @@ describe('Synchronizer process events', function () {
                 expect(d).to.equal(0)
             })
         }
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })
