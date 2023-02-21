@@ -4531,19 +4531,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@unirep/circuits@2.0.0-alpha-4, @unirep/circuits@workspace:packages/circuits":
+"@unirep/circuits@2.0.0-beta-1, @unirep/circuits@workspace:packages/circuits":
   version: 0.0.0-use.local
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
     "@ethersproject/solidity": ^5.7.0
-    "@unirep/utils": 2.0.0-alpha-4
+    "@unirep/utils": 2.0.0-beta-1
     mocha: ^10.0.0
     snarkjs: ^0.5.0
     typescript: ^4.7.3
   languageName: unknown
   linkType: soft
 
-"@unirep/contracts@2.0.0-alpha-3, @unirep/contracts@workspace:packages/contracts":
+"@unirep/contracts@2.0.0-beta-1, @unirep/contracts@workspace:packages/contracts":
   version: 0.0.0-use.local
   resolution: "@unirep/contracts@workspace:packages/contracts"
   dependencies:
@@ -4555,9 +4555,9 @@ __metadata:
     "@openzeppelin/contracts": ^4.6.0
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
-    "@unirep/circuits": 2.0.0-alpha-4
+    "@unirep/circuits": 2.0.0-beta-1
     "@unirep/test": 1.0.0
-    "@unirep/utils": 2.0.0-alpha-4
+    "@unirep/utils": 2.0.0-beta-1
     "@zk-kit/incremental-merkle-tree.sol": ^1.2.0
     circomlibjs: 0.0.8
     ethers: ^5.6.8
@@ -4572,16 +4572,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/core@2.0.0-alpha-3, @unirep/core@workspace:packages/core":
+"@unirep/core@2.0.0-beta-1, @unirep/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@unirep/core@workspace:packages/core"
   dependencies:
     "@nomicfoundation/hardhat-chai-matchers": ^1.0.5
     "@nomiclabs/hardhat-ethers": ^2.0.6
     "@nomiclabs/hardhat-waffle": ^2.0.3
-    "@unirep/circuits": 2.0.0-alpha-4
-    "@unirep/contracts": 2.0.0-alpha-3
-    "@unirep/utils": 2.0.0-alpha-4
+    "@unirep/circuits": 2.0.0-beta-1
+    "@unirep/contracts": 2.0.0-beta-1
+    "@unirep/utils": 2.0.0-beta-1
     anondb: ^0.0.16
     async-lock: ^1.4.0
     ethers: ^5.6.8
@@ -4622,11 +4622,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@unirep/test@workspace:packages/test"
   dependencies:
-    "@unirep/core": 2.0.0-alpha-3
+    "@unirep/core": 2.0.0-beta-1
   languageName: unknown
   linkType: soft
 
-"@unirep/utils@2.0.0-alpha-4, @unirep/utils@workspace:packages/utils":
+"@unirep/utils@2.0.0-beta-1, @unirep/utils@workspace:packages/utils":
   version: 0.0.0-use.local
   resolution: "@unirep/utils@workspace:packages/utils"
   dependencies:
