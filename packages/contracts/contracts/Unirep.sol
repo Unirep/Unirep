@@ -14,8 +14,6 @@ import {Polysum, PolysumData} from './libraries/Polysum.sol';
 
 import 'poseidon-solidity/PoseidonT2.sol';
 
-import 'hardhat/console.sol';
-
 /**
  * @title Unirep
  * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.
@@ -311,7 +309,10 @@ contract Unirep is IUnirep, VerifySignature {
         uint index;
         if (newKey) {
             // check that we're not at max capacity
-            if (state.polysum.index == epochTreeArity**epochTreeDepth - 2 + 1) {
+            if (
+                state.polysum.index ==
+                uint(epochTreeArity)**uint(epochTreeDepth) - 2 + 1
+            ) {
                 revert MaxAttestations();
             }
             if (state.polysum.index == 0) {
