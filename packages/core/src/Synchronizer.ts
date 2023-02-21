@@ -1,8 +1,13 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover, SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { F, IncrementalMerkleTree } from '@unirep/utils'
+import {
+    BuildOrderedTree,
+    Circuit,
+    Prover,
+    SNARK_SCALAR_FIELD,
+} from '@unirep/circuits'
+import { F, IncrementalMerkleTree, stringifyBigInts } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -589,6 +594,36 @@ export class Synchronizer extends EventEmitter {
         return preimages
     }
 
+    async genSealedEpochProof(
+        options: {
+            epoch?: bigint
+            attesterId?: bigint
+            preimages?: bigint[]
+        } = {}
+    ): Promise<BuildOrderedTree> {
+        const epoch = await this._db.findOne('Epoch', {
+            where: {
+                sealed: false,
+                attest: true,
+            },
+            orderBy: {
+                epoch: 'asc',
+            },
+        })
+        const attesterId = options.attesterId ?? this.attesterId
+        const preimages =
+            options.preimages ??
+            (await this.genEpochTreePreimages(epoch.number, attesterId))
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await this.prover.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
+        )
+
+        return new BuildOrderedTree(r.publicSignals, r.proof, this.prover)
+    }
+
     /**
      * Check if the global state tree root is stored in the database
      * @param root The queried global state tree root
@@ -741,6 +776,23 @@ export class Synchronizer extends EventEmitter {
             change,
             timestamp,
             blockNumber: event.blockNumber,
+        })
+
+        db.upsert('Epoch', {
+            where: {
+                number: epoch,
+                attesterId,
+            },
+            update: {
+                attest: true,
+                sealed: false,
+            },
+            create: {
+                number: epoch,
+                attesterId,
+                attest: true,
+                sealed: false,
+            },
         })
         return true
     }
