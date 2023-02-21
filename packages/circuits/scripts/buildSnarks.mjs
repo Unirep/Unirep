@@ -38,8 +38,6 @@ for (const name of circuits) {
     const zkey = path.join(outDir, `${name}.zkey`)
     const vkOut = path.join(outDir, `${name}.vkey.json`)
 
-    console.log(circuitOut)
-
     // Check if the circuitOut file exists
     const circuitOutFileExists = await fs.promises
         .stat(circuitOut)
@@ -61,7 +59,6 @@ for (const name of circuits) {
                 }
             )
         )
-        console.log(circuitOut)
         console.log(
             'Generated',
             circuitOut.split('/').pop(),

@@ -7,11 +7,13 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
+    signal output state_tree_root;
 
     // Global state tree leaf: Identity & user state root
     signal input identity_secret;
 
     // Optionally reveal nonce, epoch, attester_id
+    signal input control;
     signal output control_output;
     signal output epoch_key;
 
@@ -27,11 +29,6 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
      * 160 bits attester_id
      * 1 bit reveal nonce
      **/
-    signal input control;
-
-    // Some arbitrary data to endorse
-    signal input data;
-
     // no bits above 233 should be set
     control \ (2 ** 233) === 0;
     signal reveal_nonce <-- (control \ 2 ** 232) & 1;
@@ -70,7 +67,7 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH) {
     /* 2. Check nonce validity */
     // check the epoch key range using a single constraint
     // quotient has to be 0 bc epoch key nonce per epoch has to be smaller than nonce
-    nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
+    // nonce \ EPOCH_KEY_NONCE_PER_EPOCH === 0;
 
     // generate the public params
     control_output <== reveal_nonce * (2 ** 232) + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
