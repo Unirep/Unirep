@@ -37,7 +37,7 @@ describe('User state', function () {
             )
             await bootstrapUsers(synchronizer, attester)
             await bootstrapAttestations(synchronizer, attester)
-            await synchronizer.stop()
+            synchronizer.stop()
         })
 
         afterEach(async () => {
@@ -62,7 +62,7 @@ describe('User state', function () {
         const { publicSignals, proof } = await userState.genUserSignUpProof({
             epoch,
         })
-        const r = await unirepContract
+        await unirepContract
             .connect(attester)
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
@@ -88,7 +88,7 @@ describe('User state', function () {
             const data = await userState.getDataByEpochKey(epk, epoch)
             expect(data[fieldIndex]).to.equal(final)
         }
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('user sign up proof', async () => {
@@ -113,7 +113,7 @@ describe('User state', function () {
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
         expect(r.status).equal(1)
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('epoch key proof', async () => {
@@ -143,7 +143,7 @@ describe('User state', function () {
         const proof = await userState.genEpochKeyProof({ epoch })
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('ust proof', async () => {
@@ -206,7 +206,7 @@ describe('User state', function () {
         await userState.waitForSync()
         const newEpoch = await userState.latestTransitionedEpoch()
         expect(newEpoch).equal(oldEpoch + 1)
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('reputation proof', async () => {
@@ -313,6 +313,6 @@ describe('User state', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })

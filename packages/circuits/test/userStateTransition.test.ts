@@ -2,7 +2,6 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     IncrementalMerkleTree,
-    hash1,
     genEpochKey,
     genUserStateTransitionNullifier,
     stringifyBigInts,

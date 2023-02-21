@@ -7,10 +7,9 @@ import { ZkIdentity } from '@unirep/utils'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { UserState } from '../src'
-import { DB, SQLiteConnector } from 'anondb/node'
+import { DB } from 'anondb/node'
 import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
-import { schema } from '../src/schema'
 
 export const computeEpochKeyProofHash = (epochKeyProof: any) => {
     const abiEncoder = ethers.utils.defaultAbiCoder.encode(

@@ -3,10 +3,7 @@ import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
-const { FIELD_COUNT, SUM_FIELD_COUNT, NUM_EPOCH_KEY_NONCE_PER_EPOCH } =
-    CircuitConfig.default
-
-const emptyBalance = Array(1 + FIELD_COUNT).fill(0)
+const { SUM_FIELD_COUNT, NUM_EPOCH_KEY_NONCE_PER_EPOCH } = CircuitConfig.default
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)

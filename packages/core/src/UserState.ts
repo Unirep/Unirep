@@ -7,7 +7,6 @@ import {
     genEpochKey,
     genStateTreeLeaf,
     genUserStateTransitionNullifier,
-    hash5,
     genEpochTreeLeaf,
     F,
 } from '@unirep/utils'

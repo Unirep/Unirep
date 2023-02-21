@@ -61,7 +61,7 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should reveal epoch key nonce', async () => {
@@ -96,7 +96,7 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(epkNonce)
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should not reveal epoch key nonce', async () => {
@@ -131,7 +131,7 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     // TODO: should prove minRep, maxRep, graffiti
