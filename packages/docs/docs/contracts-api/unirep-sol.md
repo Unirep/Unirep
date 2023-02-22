@@ -23,6 +23,22 @@ function userSignUp(
 ) public
 ```
 
+## manualUserSignUp
+
+Sign up a new user by manually supplying an identity commitment and state tree leaf. This is designed to be used by applications that want custom signup proofs.
+
+:::caution
+`msg.sender` must be the attester.
+:::
+
+```sol
+function manualUserSignUp(
+  uint64 epoch,
+  uint256 identityCommitment,
+  uint256 stateTreeLeaf
+) public
+```
+
 ## attesterSignUp
 
 Register an attester contract. `msg.sender` will become an attester.
