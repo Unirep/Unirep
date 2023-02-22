@@ -158,40 +158,10 @@ contract Unirep is IUnirep, VerifySignature {
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
-        uint256 identityCommitment = publicSignals[0];
-        _updateEpochIfNeeded(attesterId);
-        AttesterData storage attester = attesters[uint160(attesterId)];
-        if (attester.startTimestamp == 0)
-            revert AttesterNotSignUp(uint160(attesterId));
-
-        if (attester.identityCommitments[identityCommitment])
-            revert UserAlreadySignedUp(identityCommitment);
-        attester.identityCommitments[identityCommitment] = true;
-
-        if (attester.currentEpoch != publicSignals[3]) revert EpochNotMatch();
-
-        emit UserSignedUp(
-            attester.currentEpoch,
-            identityCommitment,
-            uint160(attesterId),
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves
-        );
-        emit StateTreeLeaf(
-            attester.currentEpoch,
-            uint160(attesterId),
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+        manualUserSignUp(
+            uint64(publicSignals[3]),
+            publicSignals[0],
             publicSignals[1]
-        );
-        IncrementalBinaryTree.insert(
-            attester.stateTrees[attester.currentEpoch],
-            publicSignals[1]
-        );
-        attester.stateTreeRoots[attester.currentEpoch][
-            attester.stateTrees[attester.currentEpoch].root
-        ] = true;
-        IncrementalBinaryTree.insert(
-            attester.semaphoreGroup,
-            identityCommitment
         );
     }
 

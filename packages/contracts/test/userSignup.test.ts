@@ -70,6 +70,33 @@ describe('User Signup', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 
+    it('should fail to signup with unregistered attester', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[2]
+        const id = new ZkIdentity()
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: 0,
+                identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
+        )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await expect(
+            unirepContract.connect(attester).userSignUp(publicSignals, proof)
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            'AttesterNotSignUp',
+            attester.address
+        )
+    })
+
     it('sign up many users should succeed', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
