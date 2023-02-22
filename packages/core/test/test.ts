@@ -1,4 +1,4 @@
-import { genRandomSalt, ZkIdentity } from '@unirep/utils'
+import { ZkIdentity } from '@unirep/utils'
 import { UserState, Synchronizer } from '../src'
 
 export async function bootstrapUsers(

@@ -81,7 +81,7 @@ describe('Synchronizer watch multiple attesters', function () {
             .attesterSignUp(EPOCH_LENGTH)
             .then((t) => t.wait())
         await p
-        await sync.stop()
+        sync.stop()
     })
 
     it('should finish multiple epochs', async () => {

@@ -45,7 +45,7 @@ describe('State tree', function () {
             unirepContract.address,
             attester.address
         )
-        const epoch = await unirepState.calcCurrentEpoch()
+        const epoch = unirepState.calcCurrentEpoch()
 
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
@@ -69,7 +69,7 @@ describe('State tree', function () {
             stateTree.root.toString()
         )
 
-        await unirepState.stop()
+        unirepState.stop()
     })
 
     it('sign up users should update state tree', async () => {
@@ -134,7 +134,7 @@ describe('State tree', function () {
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
     })
 
@@ -217,7 +217,7 @@ describe('State tree', function () {
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
     })
 
@@ -247,7 +247,7 @@ describe('State tree', function () {
                     val,
                 }
             })
-        await _userState.sync.stop()
+        _userState.sync.stop()
         for (let i = 0; i < 3; i++) {
             const userState = await genUserState(
                 ethers.provider,
@@ -276,7 +276,7 @@ describe('State tree', function () {
             const epochKeys = userState.getEpochKeys(epoch) as bigint[]
             const [epk] = epochKeys
             // now submit the attestation from the attester
-            const { timestamp } = await unirepContract
+            await unirepContract
                 .connect(attester)
                 .attest(
                     epk,
@@ -285,10 +285,7 @@ describe('State tree', function () {
                     attestations[i].val
                 )
                 .then((t) => t.wait())
-                .then(({ blockNumber }) =>
-                    ethers.provider.getBlock(blockNumber)
-                )
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         const unirepState = await genUnirepState(
@@ -310,7 +307,7 @@ describe('State tree', function () {
             .sealEpoch(fromEpoch, attester.address, publicSignals, proof)
             .then((t) => t.wait())
 
-        await unirepState.stop()
+        unirepState.stop()
 
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
@@ -370,7 +367,7 @@ describe('State tree', function () {
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
     })
 
@@ -407,7 +404,7 @@ describe('State tree', function () {
                 Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])

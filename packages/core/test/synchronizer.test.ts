@@ -61,8 +61,8 @@ describe('Synchronizer process events', function () {
                 BigInt(attester.address)
             )
             await compareDB((state.sync as any)._db, (synchronizer as any)._db)
-            await state.sync.stop()
-            await synchronizer.stop()
+            state.sync.stop()
+            synchronizer.stop()
 
             await ethers.provider.send('evm_revert', [snapshot])
         })
@@ -155,7 +155,7 @@ describe('Synchronizer process events', function () {
                 Number(epoch)
             )
         ).to.be.true
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should process attestations', async () => {
@@ -249,7 +249,7 @@ describe('Synchronizer process events', function () {
             {}
         )
         expect(finalAttestCount).to.equal(attestCount + 1)
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should process ust events', async () => {
@@ -356,6 +356,6 @@ describe('Synchronizer process events', function () {
                 expect(d).to.equal(0)
             })
         }
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })

@@ -11,22 +11,29 @@ export const SNARK_SCALAR_FIELD =
 export const F = BigInt(SNARK_SCALAR_FIELD)
 
 // Ordered merkle tree polysum constant
-export const OMT_R = poseidon([
-    BigInt(
-        `0x${Buffer.from('unirep_omt_polysum_constant', 'utf8').toString(
-            'hex'
-        )}`
-    ),
-])
+// export const OMT_R = poseidon([
+//     BigInt(
+//         `0x${Buffer.from('unirep_omt_polysum_constant', 'utf8').toString(
+//             'hex'
+//         )}`
+//     ),
+// ])
+// export a precalculated value to avoid the hash on import
+export const OMT_R = BigInt(
+    '19840472963655813647419884432877523255831900116552197704230384899846353674447'
+)
 
 // Epoch tree leaf polysum constant
-export const EPK_R = poseidon([
-    BigInt(
-        `0x${Buffer.from('unirep_epk_polysum_constant', 'utf8').toString(
-            'hex'
-        )}`
-    ),
-])
+// export const EPK_R = poseidon([
+//     BigInt(
+//         `0x${Buffer.from('unirep_epk_polysum_constant', 'utf8').toString(
+//             'hex'
+//         )}`
+//     ),
+// ])
+export const EPK_R = BigInt(
+    '11105707062209303735980536775061420040143715723438319441848723820903914190159'
+)
 
 export const modexp = (v: bigint, p: number): bigint => {
     let o = BigInt(1)

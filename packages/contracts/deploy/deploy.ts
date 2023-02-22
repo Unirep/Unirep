@@ -1,4 +1,4 @@
-import { BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import poseidon from './poseidon'

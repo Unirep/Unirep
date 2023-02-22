@@ -1,7 +1,6 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { hash4, SparseMerkleTree } from '@unirep/utils'
 import defaultConfig from '@unirep/circuits/config'
 
 const {

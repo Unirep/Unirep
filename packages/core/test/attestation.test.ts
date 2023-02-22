@@ -61,11 +61,10 @@ describe('Attester signs up and gives attestation', function () {
         const fieldIndex = 1
         const val = 5
         // now submit the attestation from the attester
-        const { timestamp: newTimestamp } = await unirepContract
+        await unirepContract
             .connect(attester)
             .attest(epk, epoch, fieldIndex, val)
             .then((t) => t.wait())
-            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         await userState.waitForSync()
         // now commit the attetstations

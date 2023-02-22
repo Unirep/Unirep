@@ -64,7 +64,7 @@ describe('User state transition', function () {
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // epoch transition
@@ -97,7 +97,7 @@ describe('User state transition', function () {
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // Check GST roots match Unirep state
@@ -113,6 +113,6 @@ describe('User state transition', function () {
             )
             expect(exist).to.be.true
         }
-        await unirepState.stop()
+        unirepState.stop()
     })
 })

@@ -73,7 +73,7 @@ describe('Epoch tree', function () {
             epochTree.root.toString()
         )
 
-        await unirepState.stop()
+        unirepState.stop()
     })
 
     it('should generate epoch tree after epoch transition', async () => {
@@ -169,6 +169,6 @@ describe('Epoch tree', function () {
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
         )
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })
