@@ -99,6 +99,51 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
+     * Use this if your application has custom signup proof logic.
+     * e.g. to insert a non-zero data field in the state tree leaf
+     **/
+    function manualUserSignUp(
+        uint64 epoch,
+        uint256 identityCommitment,
+        uint256 stateTreeLeaf
+    ) public {
+        uint160 attesterId = uint160(msg.sender);
+        _updateEpochIfNeeded(attesterId);
+        AttesterData storage attester = attesters[attesterId];
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
+
+        if (attester.identityCommitments[identityCommitment])
+            revert UserAlreadySignedUp(identityCommitment);
+        attester.identityCommitments[identityCommitment] = true;
+
+        if (attester.currentEpoch != epoch) revert EpochNotMatch();
+
+        emit UserSignedUp(
+            attester.currentEpoch,
+            identityCommitment,
+            attesterId,
+            attester.stateTrees[attester.currentEpoch].numberOfLeaves
+        );
+        emit StateTreeLeaf(
+            attester.currentEpoch,
+            attesterId,
+            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            stateTreeLeaf
+        );
+        IncrementalBinaryTree.insert(
+            attester.stateTrees[attester.currentEpoch],
+            stateTreeLeaf
+        );
+        attester.stateTreeRoots[attester.currentEpoch][
+            attester.stateTrees[attester.currentEpoch].root
+        ] = true;
+        IncrementalBinaryTree.insert(
+            attester.semaphoreGroup,
+            identityCommitment
+        );
+    }
+
+    /**
      * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
      * msg.sender must be attester
      */
