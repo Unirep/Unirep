@@ -174,6 +174,11 @@ const sidebars = {
                     label: 'UserStateTransitionProof',
                     id: 'circuits-api/user-state-transition-proof',
                 },
+                {
+                    type: 'doc',
+                    label: 'BuildOrderedTree',
+                    id: 'circuits-api/build-ordered-tree',
+                },
             ],
         },
         {
@@ -189,6 +194,11 @@ const sidebars = {
                     type: 'doc',
                     label: 'hash()',
                     id: 'utils-api/hashes',
+                },
+                {
+                    type: 'doc',
+                    label: 'ZkIdentity()',
+                    id: 'utils-api/identity',
                 },
                 {
                     type: 'link',
