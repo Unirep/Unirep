@@ -16,18 +16,21 @@ template UserStateTransition(
   EPOCH_KEY_NONCE_PER_EPOCH,
   EPK_R,
   FIELD_COUNT,
-  SUM_FIELD_COUNT
+  SUM_FIELD_COUNT,
+  HISTORY_TREE_DEPTH
 ) {
     signal input from_epoch;
     signal input to_epoch;
 
-    // Global state tree leaf: Identity & user state root
+    // State tree leaf: Identity & user state root
     signal input identity_secret;
-    // Global state tree
+    // State tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
     signal output state_tree_root;
+
     signal output state_tree_leaf;
+
     // Attester to prove reputation from
     signal input attester_id;
     // Attestation by the attester
@@ -51,6 +54,10 @@ template UserStateTransition(
 
     signal output transition_nullifier;
     signal output epoch_tree_root;
+
+    signal input history_tree_elements[HISTORY_TREE_DEPTH][1];
+    signal input history_tree_indices[HISTORY_TREE_DEPTH];
+    signal output history_tree_root;
 
     // only check to_epoch
     // from_epoch is implicitly checked by the
@@ -266,4 +273,20 @@ template UserStateTransition(
     transition_nullifier <== nullifier_hasher.out;
 
     /* End of check 4 */
+
+    /* 5. Output history tree root */
+    component history_tree_leaf_hasher = Poseidon(2);
+    history_tree_leaf_hasher.inputs[0] <== state_tree_root;
+    history_tree_leaf_hasher.inputs[1] <== epoch_tree_root;
+
+    component history_tree = MerkleTreeInclusionProof(HISTORY_TREE_DEPTH);
+    history_tree.leaf <== history_tree_leaf_hasher.out;
+    for (var i = 0; i < HISTORY_TREE_DEPTH; i++) {
+        history_tree.path_index[i] <== history_tree_indices[i];
+        history_tree.path_elements[i] <== history_tree_elements[i][0];
+    }
+    history_tree_root <== history_tree.root;
+
+    /* End of check 5 */
+
 }

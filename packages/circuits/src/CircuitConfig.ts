@@ -7,6 +7,7 @@ const defaultConfig = {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH: 3,
     FIELD_COUNT: 6, // total number of fields
     SUM_FIELD_COUNT: 4, // number of fields combined using addition
+    HISTORY_TREE_DEPTH: 20,
 }
 
 export class CircuitConfig {
@@ -17,6 +18,7 @@ export class CircuitConfig {
     FIELD_COUNT: number
     SUM_FIELD_COUNT: number
     SNARK_SCALAR_FIELD: string
+    HISTORY_TREE_DEPTH: number
 
     static get default() {
         return new CircuitConfig(defaultConfig)
@@ -29,6 +31,7 @@ export class CircuitConfig {
         NUM_EPOCH_KEY_NONCE_PER_EPOCH: number
         FIELD_COUNT: number
         SUM_FIELD_COUNT: number
+        HISTORY_TREE_DEPTH: number
     }) {
         this.STATE_TREE_DEPTH = config.STATE_TREE_DEPTH
         this.EPOCH_TREE_DEPTH = config.EPOCH_TREE_DEPTH
@@ -38,6 +41,7 @@ export class CircuitConfig {
         this.FIELD_COUNT = config.FIELD_COUNT
         this.SUM_FIELD_COUNT = config.SUM_FIELD_COUNT
         this.SNARK_SCALAR_FIELD = SNARK_SCALAR_FIELD
+        this.HISTORY_TREE_DEPTH = config.HISTORY_TREE_DEPTH
     }
 }
 
