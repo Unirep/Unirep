@@ -2,14 +2,19 @@
 
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { stringifyBigInts } from '@unirep/utils'
-import { BuildOrderedTree, Circuit } from '@unirep/circuits'
+import {
+    stringifyBigInts,
+    IncrementalMerkleTree,
+    ZkIdentity,
+} from '@unirep/utils'
+import { BuildOrderedTree, Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const { EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, FIELD_COUNT } = defaultConfig
+const { STATE_TREE_DEPTH, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, FIELD_COUNT } =
+    defaultConfig
 
 describe('Epoch sealing', function () {
     this.timeout(120000)
@@ -327,5 +332,133 @@ describe('Epoch sealing', function () {
                     .sealEpoch(epoch, attester.address, publicSignals, _p)
             ).to.be.reverted
         }
+    })
+
+    it('should empty seal epoch with signup', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const id = new ZkIdentity()
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: 0,
+                identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
+        )
+        const { publicSignals, proof, stateTreeLeaf } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await unirepContract
+            .connect(attester)
+            .userSignUp(publicSignals, proof)
+            .then((t) => t.wait())
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        stateTree.insert(stateTreeLeaf)
+
+        const tx = await unirepContract
+            .connect(accounts[5])
+            .sealEmptyEpoch(epoch, attester.address)
+        expect(tx)
+            .to.emit(unirepContract, 'EpochSealed')
+            .withArgs(epoch, attester.address, stateTree.root.toString(), 0)
+    })
+
+    it('should fail to empty seal epoch with empty state tree', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        await expect(
+            unirepContract
+                .connect(accounts[5])
+                .sealEmptyEpoch(epoch, attester.address)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
+    })
+
+    it('should fail to empty seal with wrong epoch', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        await expect(
+            unirepContract
+                .connect(accounts[5])
+                .sealEmptyEpoch(epoch + 1, attester.address)
+        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+    })
+
+    it('should fail to empty seal epoch with attestations', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        await unirepContract
+            .connect(attester)
+            .attest(21414, epoch, 0, 1)
+            .then((t) => t.wait())
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        await expect(
+            unirepContract
+                .connect(accounts[5])
+                .sealEmptyEpoch(epoch, attester.address)
+        ).to.be.revertedWithCustomError(unirepContract, 'IncorrectHash')
+    })
+
+    it('should fail to double empty seal', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const id = new ZkIdentity()
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: 0,
+                identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
+        )
+        const { publicSignals, proof, stateTreeLeaf } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await unirepContract
+            .connect(attester)
+            .userSignUp(publicSignals, proof)
+            .then((t) => t.wait())
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        unirepContract
+            .connect(accounts[5])
+            .sealEmptyEpoch(epoch, attester.address)
+
+        await expect(
+            unirepContract
+                .connect(accounts[5])
+                .sealEmptyEpoch(epoch, attester.address)
+        ).to.be.revertedWithCustomError(unirepContract, 'DoubleSeal')
     })
 })

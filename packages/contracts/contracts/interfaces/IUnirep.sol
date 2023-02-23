@@ -51,7 +51,12 @@ interface IUnirep {
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
-    event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
+    event EpochSealed(
+        uint256 indexed epoch,
+        uint160 indexed attesterId,
+        uint256 stateTreeRoot,
+        uint256 epochTreeRoot
+    );
 
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
@@ -121,6 +126,11 @@ interface IUnirep {
     }
 
     struct AttesterData {
+        IncrementalTreeData historyTree;
+        mapping(uint256 => bool) historyTreeRoots;
+        mapping(uint256 => uint256) historyTreeEpochIndex;
+        mapping(uint256 => uint256) historyTreeEpochLeaf;
+        mapping(uint256 => bool) epochSealed;
         // epoch keyed to tree data
         mapping(uint256 => IncrementalTreeData) stateTrees;
         // epoch keyed to root keyed to whether it's valid
@@ -139,6 +149,7 @@ interface IUnirep {
     struct Config {
         // circuit config
         uint8 stateTreeDepth;
+        uint8 historyTreeDepth;
         uint8 epochTreeDepth;
         uint8 epochTreeArity;
         uint8 fieldCount;

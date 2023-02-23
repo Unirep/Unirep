@@ -43,6 +43,7 @@ export const deployUnirep = async (
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         FIELD_COUNT,
         SUM_FIELD_COUNT,
+        HISTORY_TREE_DEPTH,
     } = { ...CircuitConfig.default, ..._settings }
 
     console.log(
@@ -51,6 +52,7 @@ export const deployUnirep = async (
     console.log(`Epoch tree depth: ${EPOCH_TREE_DEPTH}`)
     console.log(`Epoch tree arity: ${EPOCH_TREE_ARITY}`)
     console.log(`State tree depth: ${STATE_TREE_DEPTH}`)
+    console.log(`History tree depth: ${HISTORY_TREE_DEPTH}`)
     console.log(
         `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
     )
@@ -160,11 +162,13 @@ export const deployUnirep = async (
                     polyContract.address,
                 ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
                     PoseidonT2.address,
+                ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
             },
             deployer
         ).deploy(
             {
                 stateTreeDepth: STATE_TREE_DEPTH,
+                historyTreeDepth: HISTORY_TREE_DEPTH,
                 epochTreeDepth: EPOCH_TREE_DEPTH,
                 epochTreeArity: EPOCH_TREE_ARITY,
                 numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,

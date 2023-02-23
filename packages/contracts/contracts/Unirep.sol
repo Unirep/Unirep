@@ -13,6 +13,7 @@ import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-me
 import {Polysum, PolysumData} from './libraries/Polysum.sol';
 
 import 'poseidon-solidity/PoseidonT2.sol';
+import 'poseidon-solidity/PoseidonT3.sol';
 
 /**
  * @title Unirep
@@ -46,6 +47,7 @@ contract Unirep is IUnirep, VerifySignature {
     mapping(uint256 => bool) public usedNullifiers;
 
     uint8 public immutable stateTreeDepth;
+    uint8 public immutable historyTreeDepth;
     uint8 public immutable epochTreeDepth;
     uint8 public immutable epochTreeArity;
     uint8 public immutable fieldCount;
@@ -62,6 +64,7 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _buildOrderedTreeVerifier
     ) {
         stateTreeDepth = _config.stateTreeDepth;
+        historyTreeDepth = _config.historyTreeDepth;
         epochTreeDepth = _config.epochTreeDepth;
         epochTreeArity = _config.epochTreeArity;
         fieldCount = _config.fieldCount;
@@ -76,7 +79,6 @@ contract Unirep is IUnirep, VerifySignature {
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
         buildOrderedTreeVerifier = _buildOrderedTreeVerifier;
 
-        // for initializing other trees without using poseidon function
         emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint64).max;
         attesters[uint160(0)].startTimestamp = block.timestamp;
@@ -86,6 +88,7 @@ contract Unirep is IUnirep, VerifySignature {
         return
             Config({
                 stateTreeDepth: stateTreeDepth,
+                historyTreeDepth: historyTreeDepth,
                 epochTreeDepth: epochTreeDepth,
                 epochTreeArity: epochTreeArity,
                 fieldCount: fieldCount,
@@ -214,6 +217,11 @@ contract Unirep is IUnirep, VerifySignature {
 
         // set the epoch length
         attester.epochLength = epochLength;
+
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.historyTree,
+            historyTreeDepth
+        );
 
         emit AttesterSignedUp(
             uint160(attesterId),
@@ -418,8 +426,43 @@ contract Unirep is IUnirep, VerifySignature {
             revert IncorrectHash();
         }
         attester.epochTreeRoots[epoch] = root;
+
+        uint256 stateTreeRoot = attester.stateTrees[epoch].root;
+        IncrementalBinaryTree.insert(
+            attester.historyTree,
+            PoseidonT3.hash([stateTreeRoot, root])
+        );
+        attester.historyTreeRoots[attester.historyTree.root] = true;
         // emit an event sealing the epoch
-        emit EpochSealed(epoch, attesterId);
+        emit EpochSealed(epoch, attesterId, stateTreeRoot, root);
+    }
+
+    // seal an epoch with no attestations
+    // only the state tree root will be non-zero
+    function sealEmptyEpoch(uint256 epoch, uint160 attesterId) public {
+        AttesterData storage attester = attesters[attesterId];
+        AttesterState storage state = attester.state[epoch];
+        updateEpochIfNeeded(attesterId);
+        if (attester.currentEpoch <= epoch) revert EpochNotMatch();
+        if (state.polysum.hash != 0) {
+            revert IncorrectHash();
+        }
+        if (attester.epochSealed[epoch]) {
+            revert DoubleSeal();
+        }
+        attester.epochSealed[epoch] = true;
+
+        if (attester.stateTrees[epoch].numberOfLeaves == 0) {
+            revert InvalidField();
+        }
+        uint256 stateTreeRoot = attester.stateTrees[epoch].root;
+        IncrementalBinaryTree.insert(
+            attester.historyTree,
+            PoseidonT3.hash([stateTreeRoot, 0])
+        );
+        attester.historyTreeRoots[attester.historyTree.root] = true;
+        // emit an event sealing the epoch
+        emit EpochSealed(epoch, attesterId, stateTreeRoot, 0);
     }
 
     /**
@@ -432,48 +475,38 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
-        if (publicSignals[6] >= type(uint160).max) revert AttesterInvalid();
-        uint160 attesterId = uint160(publicSignals[6]);
+        if (publicSignals[4] >= type(uint160).max) revert AttesterInvalid();
+        uint160 attesterId = uint160(publicSignals[4]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
         // verify that the transition nullifier hasn't been used
-        if (usedNullifiers[publicSignals[2]])
-            revert NullifierAlreadyUsed(publicSignals[2]);
-        usedNullifiers[publicSignals[2]] = true;
+        if (usedNullifiers[publicSignals[1]])
+            revert NullifierAlreadyUsed(publicSignals[1]);
+        usedNullifiers[publicSignals[1]] = true;
 
         // verify that we're transition to the current epoch
-        if (attester.currentEpoch != publicSignals[5]) revert EpochNotMatch();
+        if (attester.currentEpoch != publicSignals[3]) revert EpochNotMatch();
 
-        uint256 fromEpoch = publicSignals[4];
-        // check for attestation processing
-        if (!attesterEpochSealed(attesterId, fromEpoch))
-            revert EpochNotSealed();
-
-        // make sure from state tree root is valid
-        if (!attester.stateTreeRoots[fromEpoch][publicSignals[0]])
-            revert InvalidStateTreeRoot(publicSignals[0]);
-
-        // make sure from epoch tree root is valid
-        if (attester.epochTreeRoots[fromEpoch] != publicSignals[3])
-            revert InvalidEpochTreeRoot(publicSignals[3]);
+        uint256 fromHistoryRoot = publicSignals[2];
+        if (!attester.historyTreeRoots[fromHistoryRoot]) revert IncorrectHash();
 
         // update the current state tree
         emit StateTreeLeaf(
             attester.currentEpoch,
             attesterId,
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
-            publicSignals[1]
+            publicSignals[0]
         );
         emit UserStateTransitioned(
             attester.currentEpoch,
             attesterId,
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
-            publicSignals[1],
-            publicSignals[2]
+            publicSignals[0],
+            publicSignals[1]
         );
         IncrementalBinaryTree.insert(
             attester.stateTrees[attester.currentEpoch],
-            publicSignals[1]
+            publicSignals[0]
         );
         attester.stateTreeRoots[attester.currentEpoch][
             attester.stateTrees[attester.currentEpoch].root
