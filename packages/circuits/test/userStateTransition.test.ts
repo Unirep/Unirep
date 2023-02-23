@@ -6,6 +6,7 @@ import {
     genUserStateTransitionNullifier,
     stringifyBigInts,
     genStateTreeLeaf,
+    hash2,
 } from '@unirep/utils'
 import { Circuit, CircuitConfig } from '../src'
 import {
@@ -20,6 +21,7 @@ const {
     STATE_TREE_DEPTH,
     SUM_FIELD_COUNT,
     FIELD_COUNT,
+    HISTORY_TREE_DEPTH,
 } = CircuitConfig.default
 
 describe('User state transition', function () {
@@ -35,7 +37,7 @@ describe('User state transition', function () {
         tree.insert(
             genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
         )
-        const circuitInputs = genUserStateTransitionCircuitInput({
+        const { circuitInputs } = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
@@ -79,7 +81,7 @@ describe('User state transition', function () {
         const changes = Array(FIELD_COUNT)
             .fill(0)
             .map(() => BigInt(Math.floor(Math.random() * 100)))
-        const circuitInputs = genUserStateTransitionCircuitInput({
+        const { circuitInputs } = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
@@ -138,7 +140,7 @@ describe('User state transition', function () {
             .fill(0)
             .map(() => BigInt(Math.floor(Math.random() * 2 ** 50)))
         const overwriteEpk = epochKeys[0]
-        const circuitInputs = genUserStateTransitionCircuitInput({
+        const { circuitInputs } = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
             toEpoch,
@@ -202,6 +204,8 @@ describe('User state transition', function () {
             EPOCH_TREE_ARITY
         )
         epochTree.insert(40124)
+        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
+        historyTree.insert(hash2([0, 0]))
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.userStateTransition,
             stringifyBigInts({
@@ -210,6 +214,8 @@ describe('User state transition', function () {
                 identity_secret: id.secretHash,
                 state_tree_indexes: tree.createProof(0).pathIndices,
                 state_tree_elements: tree.createProof(0).siblings,
+                history_tree_elements: historyTree.createProof(0).siblings,
+                history_tree_indices: historyTree.createProof(0).pathIndices,
                 attester_id: attesterId,
                 data,
                 new_data: Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
@@ -317,5 +323,107 @@ describe('User state transition', function () {
                 .then(() => rj())
                 .catch(() => rs())
         })
+    })
+
+    it('should output correct history tree root with no attestations', async () => {
+        const id = new ZkIdentity()
+        const fromEpoch = 1
+        const toEpoch = 5
+        const attesterId = BigInt(1249021895182290)
+        const data = randomData()
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        tree.insert(
+            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
+        )
+        const { circuitInputs, historyTree } =
+            genUserStateTransitionCircuitInput({
+                id,
+                fromEpoch,
+                toEpoch,
+                attesterId,
+                startBalance: data,
+                tree,
+                leafIndex: 0,
+            })
+        const { isValid, publicSignals } = await genProofAndVerify(
+            Circuit.userStateTransition,
+            circuitInputs
+        )
+        expect(isValid, 'invalid proof').to.be.true
+        expect(publicSignals[0]).to.equal(tree.root.toString())
+        const newLeaf = genStateTreeLeaf(
+            id.secretHash,
+            attesterId,
+            toEpoch,
+            data
+        )
+        expect(publicSignals[1]).to.equal(newLeaf.toString())
+        const transitionNullifier = genUserStateTransitionNullifier(
+            id.secretHash,
+            attesterId,
+            fromEpoch
+        )
+        expect(publicSignals[2]).to.equal(transitionNullifier.toString())
+        expect(publicSignals[4].toString()).to.equal(
+            historyTree.root.toString()
+        )
+    })
+
+    it('should output correct history tree root with attestations', async () => {
+        const id = new ZkIdentity()
+        const fromEpoch = 1
+        const toEpoch = 5
+        const attesterId = BigInt(1249021895182290)
+        const data = randomData()
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        tree.insert(
+            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
+        )
+        // we can make changes to any epoch key, it will change the historyTree
+        // root the same way
+        const epochKey = genEpochKey(
+            BigInt(18293128938192),
+            attesterId,
+            fromEpoch,
+            0
+        )
+        const changes = Array(FIELD_COUNT)
+            .fill(0)
+            .map(() => BigInt(Math.floor(Math.random() * 100)))
+        const { circuitInputs, historyTree } =
+            genUserStateTransitionCircuitInput({
+                id,
+                fromEpoch,
+                toEpoch,
+                attesterId,
+                startBalance: data,
+                tree,
+                leafIndex: 0,
+                epochKeyBalances: {
+                    [epochKey.toString()]: changes,
+                },
+            })
+        const { isValid, publicSignals } = await genProofAndVerify(
+            Circuit.userStateTransition,
+            circuitInputs
+        )
+        expect(isValid, 'invalid proof').to.be.true
+        expect(publicSignals[0]).to.equal(tree.root.toString())
+        const newLeaf = genStateTreeLeaf(
+            id.secretHash,
+            attesterId,
+            toEpoch,
+            data
+        )
+        expect(publicSignals[1]).to.equal(newLeaf.toString())
+        const transitionNullifier = genUserStateTransitionNullifier(
+            id.secretHash,
+            attesterId,
+            fromEpoch
+        )
+        expect(publicSignals[2]).to.equal(transitionNullifier.toString())
+        expect(publicSignals[4].toString()).to.equal(
+            historyTree.root.toString()
+        )
     })
 })

@@ -9,6 +9,7 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     SUM_FIELD_COUNT,
     FIELD_COUNT,
+    HISTORY_TREE_DEPTH,
 } = CircuitConfig.default
 
 const genNewEpochTree = (
@@ -93,6 +94,8 @@ const genUserStateTransitionCircuitInput = (config: {
     epochKeyBalances?: {
         [key: string]: (bigint | number)[]
     }
+    historyTree?: utils.IncrementalMerkleTree
+    historyTreeLeafIndex?: number
 }) => {
     const {
         id,
@@ -101,6 +104,8 @@ const genUserStateTransitionCircuitInput = (config: {
         attesterId,
         startBalance: _startBalance,
         tree,
+        historyTree: _historyTree,
+        historyTreeLeafIndex,
         leafIndex,
         epochKeyBalances,
     } = Object.assign(
@@ -115,15 +120,17 @@ const genUserStateTransitionCircuitInput = (config: {
         ...Array(FIELD_COUNT - _startBalance.length).fill(0),
     ]
     const epochTree = genNewEpochTree()
-    let index = 0
     const epochTreeIndices = {} as any
-    for (const [key, val] of Object.entries(epochKeyBalances)) {
-        const b = [...val, ...Array(FIELD_COUNT - val.length).fill(0)]
-        epochKeyBalances[key] = b
-        epochTreeIndices[key] = ++index
-        epochTree.insert(utils.genEpochTreeLeaf(key, b))
+    if (Object.keys(epochKeyBalances).length > 0) {
+        let index = 0
+        for (const [key, val] of Object.entries(epochKeyBalances)) {
+            const b = [...val, ...Array(FIELD_COUNT - val.length).fill(0)]
+            epochKeyBalances[key] = b
+            epochTreeIndices[key] = ++index
+            epochTree.insert(utils.genEpochTreeLeaf(key, b))
+        }
+        epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
     }
-    epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
     const empty = () => Array(FIELD_COUNT).fill(0)
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
@@ -141,6 +148,18 @@ const genUserStateTransitionCircuitInput = (config: {
         }
     }, {})
 
+    const historyTree =
+        _historyTree ?? new utils.IncrementalMerkleTree(HISTORY_TREE_DEPTH)
+    if (!_historyTree) {
+        historyTree.insert(
+            utils.hash2([
+                tree.root,
+                epochTree.leaves.length > 1 ? epochTree.root : 0,
+            ])
+        )
+    }
+    const historyTreeProof = historyTree._createProof(historyTreeLeafIndex ?? 0)
+
     const stateTreeProof = tree._createProof(leafIndex)
     const circuitInputs = {
         from_epoch: fromEpoch,
@@ -150,12 +169,18 @@ const genUserStateTransitionCircuitInput = (config: {
         state_tree_elements: stateTreeProof.siblings.map((s, i) => {
             return s[1 - stateTreeProof.pathIndices[i]]
         }),
+        history_tree_indices: historyTreeProof.pathIndices,
+        history_tree_elements: historyTreeProof.siblings.map(
+            (s, i) => s[1 - historyTreeProof.pathIndices[i]]
+        ),
         attester_id: attesterId,
         data: startBalance,
         new_data: epochKeys.map(
             (k) => epochKeyBalances[k.toString()] || empty()
         ),
         epoch_tree_elements: epochKeys.map((k) => {
+            if (epochTree.leaves.length === 1)
+                return epochTree._createProof(0).siblings.slice(1)
             if (epochTreeIndices[k.toString()]) {
                 const { siblings } = epochTree._createProof(
                     epochTreeIndices[k.toString()]
@@ -169,6 +194,8 @@ const genUserStateTransitionCircuitInput = (config: {
             return siblings.slice(1)
         }),
         epoch_tree_indices: epochKeys.map((k) => {
+            if (epochTree.leaves.length === 1)
+                return Array(EPOCH_TREE_DEPTH - 1).fill(0)
             if (epochTreeIndices[k.toString()]) {
                 const { pathIndices } = epochTree._createProof(
                     epochTreeIndices[k.toString()]
@@ -183,6 +210,7 @@ const genUserStateTransitionCircuitInput = (config: {
         }),
         noninclusion_leaf: epochKeys.map((k) => {
             // find a leaf gt and lt
+            if (epochTree.leaves.length === 1) return [0, 1]
             if (epochTreeIndices[k.toString()]) return [0, 1]
             const leaf = epochLeavesByKey[k.toString()]
             const gtIndex = epochTree.leaves.findIndex(
@@ -191,12 +219,18 @@ const genUserStateTransitionCircuitInput = (config: {
             return [epochTree.leaves[gtIndex - 1], epochTree.leaves[gtIndex]]
         }),
         noninclusion_leaf_index: epochKeys.map((k) => {
+            if (epochTree.leaves.length === 1) return 0
             const leaf = epochLeavesByKey[k.toString()]
             return (
                 epochTree.leaves.findIndex((l) => BigInt(l) > BigInt(leaf)) - 1
             )
         }),
         noninclusion_elements: epochKeys.map((k) => {
+            if (epochTree.leaves.length === 1)
+                return [
+                    Array(EPOCH_TREE_ARITY).fill(0),
+                    Array(EPOCH_TREE_ARITY).fill(0),
+                ]
             const leaf = epochLeavesByKey[k.toString()]
             let gtIndex = epochTree.leaves.findIndex(
                 (l) => BigInt(l) > BigInt(leaf)
@@ -208,16 +242,24 @@ const genUserStateTransitionCircuitInput = (config: {
             ]
         }),
         inclusion_leaf_index: epochKeys.map((k) => {
+            if (epochTree.leaves.length === 1) return 0
             return epochTreeIndices[k.toString()] ?? 0
         }),
         inclusion_elements: epochKeys.map((k) => {
+            if (epochTree.leaves.length === 1)
+                return Array(EPOCH_TREE_ARITY).fill(0)
             const { siblings } = epochTree._createProof(
                 epochTreeIndices[k.toString()] ?? 0
             )
             return siblings[0]
         }),
     }
-    return utils.stringifyBigInts(circuitInputs)
+    return {
+        circuitInputs: utils.stringifyBigInts(circuitInputs),
+        historyTree,
+        tree,
+        epochTree,
+    }
 }
 
 const genReputationCircuitInput = (config: {
