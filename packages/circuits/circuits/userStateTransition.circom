@@ -27,7 +27,7 @@ template UserStateTransition(
     // State tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH][1];
-    signal output state_tree_root;
+    signal state_tree_root;
 
     signal output state_tree_leaf;
 
@@ -53,7 +53,7 @@ template UserStateTransition(
     signal input inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY];
 
     signal output transition_nullifier;
-    signal output epoch_tree_root;
+    signal epoch_tree_root;
 
     signal input history_tree_elements[HISTORY_TREE_DEPTH][1];
     signal input history_tree_indices[HISTORY_TREE_DEPTH];
