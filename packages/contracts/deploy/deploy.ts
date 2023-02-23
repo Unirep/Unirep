@@ -44,6 +44,7 @@ export const deployUnirep = async (
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         FIELD_COUNT,
         SUM_FIELD_COUNT,
+        HISTORY_TREE_DEPTH,
     } = { ...CircuitConfig.default, ..._settings }
 
     console.log(
@@ -52,6 +53,7 @@ export const deployUnirep = async (
     console.log(`Epoch tree depth: ${EPOCH_TREE_DEPTH}`)
     console.log(`Epoch tree arity: ${EPOCH_TREE_ARITY}`)
     console.log(`State tree depth: ${STATE_TREE_DEPTH}`)
+    console.log(`History tree depth: ${HISTORY_TREE_DEPTH}`)
     console.log(
         `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
     )
@@ -75,15 +77,25 @@ export const deployUnirep = async (
         await c.deployed()
         libraries[`Poseidon${inputCount}`] = c.address
     }
-    const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
-    const poseidonArtifacts = tryPath(poseidonPath)
-    const poseidonFactory = new ethers.ContractFactory(
+    let poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
+    let poseidonArtifacts = tryPath(poseidonPath)
+    let poseidonFactory = new ethers.ContractFactory(
         poseidonArtifacts.abi,
         poseidonArtifacts.bytecode,
         deployer
     )
     const PoseidonT2 = await retryAsNeeded(() => poseidonFactory.deploy())
     await PoseidonT2.deployed()
+
+    poseidonPath = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
+    poseidonArtifacts = tryPath(poseidonPath)
+    poseidonFactory = new ethers.ContractFactory(
+        poseidonArtifacts.abi,
+        poseidonArtifacts.bytecode,
+        deployer
+    )
+    const PoseidonT3 = await poseidonFactory.deploy()
+    await PoseidonT3.deployed()
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
@@ -156,11 +168,13 @@ export const deployUnirep = async (
                     polyContract.address,
                 ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
                     PoseidonT2.address,
+                ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
             },
             deployer
         ).deploy(
             {
                 stateTreeDepth: STATE_TREE_DEPTH,
+                historyTreeDepth: HISTORY_TREE_DEPTH,
                 epochTreeDepth: EPOCH_TREE_DEPTH,
                 epochTreeArity: EPOCH_TREE_ARITY,
                 numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
