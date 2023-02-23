@@ -33,9 +33,9 @@ A helper function to build all attestations from attestations.
 ```ts
 buildInputsForLeaves(
     preimages: any[],
-    arity = EPOCH_TREE_ARITY,
-    depth = EPOCH_TREE_DEPTH,
-    fieldCount = FIELD_COUNT
+    arity = CircuitConfig.default.EPOCH_TREE_ARITY,
+    depth = CircuitConfig.default.EPOCH_TREE_DEPTH,
+    fieldCount = CircuitConfig.default.FIELD_COUNT
 ): {
     circuitInputs,
     leaves,
