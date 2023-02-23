@@ -74,12 +74,17 @@ const config = {
                         type: 'doc',
                         docId: 'welcome',
                         position: 'left',
-                        label: 'API',
+                        label: 'Docs',
                     },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         type: 'docsVersionDropdown',
                         dropdownActiveClassDisabled: true,
+                        position: 'right',
+                    },
+                     {
+                        href: 'https://explorer.unirep.io',
+                        label: 'Explorer',
                         position: 'right',
                     },
                     {
@@ -97,6 +102,26 @@ const config = {
                             {
                                 label: 'Welcome',
                                 to: '/docs/welcome',
+                            },
+                            {
+                                label: 'Protocol',
+                                to: '/docs/protocol/attestation',
+                            },
+                             {
+                                label: 'Core',
+                                to: '/docs/core-api/user-state',
+                            },
+                             {
+                                label: 'Contract',
+                                to: '/docs/contracts-api/unirep',
+                            },
+                            {
+                                label: 'Circuits',
+                                to: '/docs/circuits-api/circuits',
+                            },
+                             {
+                                label: 'Utils',
+                                to: '/docs/utilis-api/constants',
                             },
                         ],
                     },
@@ -119,6 +144,14 @@ const config = {
                             {
                                 label: 'Blog',
                                 to: '/blog',
+                            },
+                            {
+                                label: 'Build your own',
+                                to: '/docs/build-your-own',
+                            },
+                              {
+                                label: 'Explorer',
+                                 href: 'https://explorer.unirep.io',
                             },
                             {
                                 label: 'GitHub',

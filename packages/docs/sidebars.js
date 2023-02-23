@@ -28,6 +28,11 @@ const sidebars = {
             id: 'testnet-deployment',
         },
         {
+            type: 'doc',
+            label: '🚀  Build your own',
+            id: 'build-your-own',
+        },
+        {
             type: 'category',
             label: '📘 Protocol',
             items: [
