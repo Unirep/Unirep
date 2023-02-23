@@ -105,6 +105,12 @@ Control fields are use to encode many small values into a single field element. 
 
 The prove reputation proof allows a user to prove a reputation balance in the [state tree](../protocol/trees#state-tree). The user is not able to prove reputation received in the current epoch. The user can optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti pre-image.
 
+In this proof, we assign `data[0] = posRep`, `data[1] = negRep`, `data[SUM_FIELD] = graffiti`.
+
+:::info
+See [data in UniRep protocol](../protocol/data.md) for more information.
+:::
+
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
 
 Control field 0:

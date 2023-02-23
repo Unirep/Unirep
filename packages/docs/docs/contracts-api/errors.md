@@ -118,7 +118,7 @@ Please make sure the signature is signed through the correct attester.
 
 ## 0x7db3aba7
 - `OutOfRange()`<br/>
-    A [graffiti](../protocol/reputation.md#reputation) cannot be out of `SNARK_SCALAR_FIELD`.<br/>
+    A [replacement field data](../protocol/data.md#replacement-field) cannot be out of `SNARK_SCALAR_FIELD`.<br/>
     Please use a value which is less than `SNARK_SCALAR_FIELD`.
 
 ## 0x7fa0b337

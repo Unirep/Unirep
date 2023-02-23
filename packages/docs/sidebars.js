@@ -48,8 +48,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'Reputation',
-                    id: 'protocol/reputation',
+                    label: 'Data',
+                    id: 'protocol/data',
                 },
                 {
                     type: 'doc',
