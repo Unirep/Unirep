@@ -8,21 +8,17 @@ import { BaseProof } from './BaseProof'
  */
 export class UserStateTransitionProof extends BaseProof {
     readonly idx = {
-        fromStateTreeRoot: 0,
-        stateTreeLeaf: 1,
-        transitionNullifier: 2,
-        epochTreeRoot: 3,
-        historyTreeRoot: 4,
-        toEpoch: 5,
-        attesterId: 6,
+        stateTreeLeaf: 0,
+        transitionNullifier: 1,
+        historyTreeRoot: 2,
+        toEpoch: 3,
+        attesterId: 4,
     }
-    public fromStateTreeRoot: BigNumberish
     public stateTreeLeaf: BigNumberish
     public transitionNullifier: BigNumberish
     public historyTreeRoot: BigNumberish
     public toEpoch: BigNumberish
     public attesterId: BigNumberish
-    public epochTreeRoot: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -35,8 +31,6 @@ export class UserStateTransitionProof extends BaseProof {
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.fromStateTreeRoot =
-            _publicSignals[this.idx.fromStateTreeRoot].toString()
         this.stateTreeLeaf = _publicSignals[this.idx.stateTreeLeaf].toString()
         this.transitionNullifier =
             _publicSignals[this.idx.transitionNullifier].toString()
@@ -44,7 +38,6 @@ export class UserStateTransitionProof extends BaseProof {
             _publicSignals[this.idx.historyTreeRoot].toString()
         this.toEpoch = _publicSignals[this.idx.toEpoch].toString()
         this.attesterId = _publicSignals[this.idx.attesterId].toString()
-        this.epochTreeRoot = _publicSignals[this.idx.epochTreeRoot].toString()
         this.circuit = Circuit.userStateTransition
     }
 }
