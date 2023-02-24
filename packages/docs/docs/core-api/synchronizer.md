@@ -150,6 +150,16 @@ Build the latest state tree for a certain epoch.
 synchronizer.genStateTree(epoch: bigint): Promise<IncrementalMerkleTree>
 ```
 
+## genHistoryTree
+
+Build the latest history tree for an attester.
+
+```ts
+synchronizer.genHistoryTree(
+  attesterId: bigint = this.attesterId
+): Promise<IncrementalMerkleTree>
+```
+
 ## genEpochTree
 
 Build the latest epoch tree for a certain epoch.

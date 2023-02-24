@@ -160,10 +160,8 @@ TODO: add a graphic for this
 
 Inputs:
 - `identity_secret`
-- `from_epoch` (public)
 - `to_epoch` (public)
 - `attester_id` (public)
-- `epoch_tree_root` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`
@@ -177,10 +175,9 @@ Inputs:
 - `inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY]`
 
 Outputs:
-- `state_tree_root`
 - `state_tree_leaf`
 - `transition_nullifier`
-- `epoch_tree_root`
+- `history_tree_root`
 
 ## Build Ordered Tree
 
