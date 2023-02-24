@@ -12,28 +12,12 @@ import { UserStateTransitionProof } from '@unirep/circuits'
 const data = new UserStateTransitionProof(publicSignals, proof)
 ```
 
-## fromStateTreeRoot
-
-The state tree root in the from epoch the proof was made for.
-
-```ts
-this.fromStateTreeRoot
-```
-
 ## stateTreeLeaf
 
 The new state tree leaf for the user.
 
 ```ts
 this.stateTreeLeaf
-```
-
-## fromEpoch
-
-The epoch the user is transitioning from.
-
-```ts
-this.fromEpoch
 ```
 
 ## toEpoch
@@ -52,10 +36,18 @@ The attester id for the proof.
 this.attesterId
 ```
 
-## epochTreeRoot
+## historyTreeRoot
 
-The epoch tree root from the old epoch.
+A history tree root the user is transitioning with.
 
 ```ts
-this.epochTreeRoot
+this.historyTreeRoot
+```
+
+## transitionNullifier
+
+A globally unique user state transition nullifier. Used to prevent double UST.
+
+```ts
+this.transitionNullifier
 ```

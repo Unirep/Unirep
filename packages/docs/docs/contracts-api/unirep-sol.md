@@ -67,6 +67,17 @@ function sealEpoch(
 ) public
 ```
 
+## sealEmptyEpoch
+
+Finalize an epoch that contains only state tree leaves (e.g. no attestations). Does not require a zk proof.
+
+```sol
+function sealEmptyEpoch(
+  uint256 epoch,
+  uint160 attesterId
+) public
+```
+
 ## userStateTransition
 
 Execute a user state transition using a ZK proof. This will insert a new state tree leaf in the current epoch.
@@ -361,6 +372,17 @@ function attesterEpochLength(uint160 attesterId)
   returns (uint256)
 ```
 
+## attesterHistoryRootExists
+
+Check if a history root exists for an attester.
+
+```sol
+function attesterHistoryRootExists(uint160 attesterId, uint256 root)
+  public
+  view
+  returns (bool)
+```
+
 ## attesterStateTreeRootExists
 
 Check if a state tree root exists for an attester and epoch.
@@ -433,6 +455,14 @@ Get the state tree depth for the Unirep contract.
 
 ```sol
 function stateTreeDepth() public view returns (uint8)
+```
+
+## historyTreeDepth
+
+Get the history tree depth for the Unirep contract.
+
+```sol
+function historyTreeDepth() public view returns (uint8)
 ```
 
 ## epochTreeDepth
@@ -571,5 +601,10 @@ event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 Emitted when an epoch is sealed.
 
 ```sol
-event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
+event EpochSealed(
+  uint256 indexed epoch,
+  uint160 indexed attesterId,
+  uint256 stateTreeRoot,
+  uint256 epochTreeRoot
+);
 ```
