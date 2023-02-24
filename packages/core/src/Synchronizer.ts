@@ -539,11 +539,13 @@ export class Synchronizer extends EventEmitter {
         return tree
     }
 
-    async genHistoryTree(): Promise<IncrementalMerkleTree> {
+    async genHistoryTree(
+        attesterId: bigint | string = this.attesterId
+    ): Promise<IncrementalMerkleTree> {
         const tree = new IncrementalMerkleTree(this.settings.historyTreeDepth)
         const leaves = await this._db.findMany('HistoryTreeLeaf', {
             where: {
-                attesterId: this.attesterId.toString(),
+                attesterId: BigInt(attesterId).toString(),
             },
             orderBy: {
                 index: 'asc',
