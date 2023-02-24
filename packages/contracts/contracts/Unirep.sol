@@ -740,6 +740,14 @@ contract Unirep is IUnirep, VerifySignature {
             attester.state[epoch].polysum.hash == 0;
     }
 
+    function attesterHistoryRootExists(uint160 attesterId, uint256 root)
+        public
+        view
+        returns (bool)
+    {
+        return attesters[attesterId].historyTreeRoots[root];
+    }
+
     function attesterStateTreeRootExists(
         uint160 attesterId,
         uint256 epoch,
