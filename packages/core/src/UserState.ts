@@ -9,6 +9,7 @@ import {
     genUserStateTransitionNullifier,
     genEpochTreeLeaf,
     F,
+    hash2,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -459,12 +460,35 @@ export default class UserState {
         const latestLeafIndex = await this.latestStateTreeLeafIndex(fromEpoch)
         const stateTree = await this.sync.genStateTree(fromEpoch)
         const stateTreeProof = stateTree.createProof(latestLeafIndex)
+        const historyLeaf = await this.sync._db.findOne('HistoryTreeLeaf', {
+            where: {
+                hash: hash2([
+                    stateTree.root,
+                    epochTree.leaves.length === 2 ? 0 : epochTree.root,
+                ]).toString(),
+            },
+        })
+        if (!historyLeaf) {
+            throw new Error(
+                `@unirep/core: UserState unable to find history tree leaf`
+            )
+        }
+        const index = await this.sync._db.count('HistoryTreeLeaf', {
+            index: {
+                lt: historyLeaf.index,
+            },
+            attesterId: this.sync.attesterId.toString(),
+        })
+        const historyTree = await this.sync.genHistoryTree()
+        const historyTreeProof = historyTree.createProof(index)
         const circuitInputs = {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
             identity_secret: this.id.secretHash,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
+            history_tree_indices: historyTreeProof.pathIndices,
+            history_tree_elements: historyTreeProof.siblings,
             attester_id: this.sync.attesterId.toString(),
             data,
             new_data: epochKeyRep.map(({ newData }) => newData),

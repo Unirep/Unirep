@@ -7,7 +7,12 @@ import {
     Prover,
     SNARK_SCALAR_FIELD,
 } from '@unirep/circuits'
-import { F, IncrementalMerkleTree, stringifyBigInts } from '@unirep/utils'
+import {
+    F,
+    IncrementalMerkleTree,
+    hash2,
+    stringifyBigInts,
+} from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -81,6 +86,7 @@ export class Synchronizer extends EventEmitter {
         this.prover = prover
         this.settings = {
             stateTreeDepth: 0,
+            historyTreeDepth: 0,
             epochTreeDepth: 0,
             epochTreeArity: 2,
             numEpochKeyNoncePerEpoch: 0,
@@ -170,6 +176,7 @@ export class Synchronizer extends EventEmitter {
     async setup() {
         const config = await this.unirepContract.config()
         this.settings.stateTreeDepth = config.stateTreeDepth
+        this.settings.historyTreeDepth = config.historyTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
         this.settings.epochTreeArity = config.epochTreeArity
         this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
@@ -377,6 +384,7 @@ export class Synchronizer extends EventEmitter {
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
+                    'EpochSealed',
                 ],
             },
         }
@@ -523,6 +531,22 @@ export class Synchronizer extends EventEmitter {
             where: {
                 epoch: Number(epoch),
                 attesterId: this.attesterId.toString(),
+            },
+        })
+        for (const leaf of leaves) {
+            tree.insert(leaf.hash)
+        }
+        return tree
+    }
+
+    async genHistoryTree(): Promise<IncrementalMerkleTree> {
+        const tree = new IncrementalMerkleTree(this.settings.historyTreeDepth)
+        const leaves = await this._db.findMany('HistoryTreeLeaf', {
+            where: {
+                attesterId: this.attesterId.toString(),
+            },
+            orderBy: {
+                index: 'asc',
             },
         })
         for (const leaf of leaves) {
@@ -897,9 +921,10 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleEpochSealed({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
         const attesterId = BigInt(decodedData.attesterId).toString()
-
+        const epoch = Number(decodedData.epoch)
+        const stateTreeRoot = BigInt(decodedData.stateTreeRoot).toString()
+        const epochTreeRoot = BigInt(decodedData.epochTreeRoot).toString()
         if (
             attesterId !== this.attesterId.toString() &&
             this.attesterId !== BigInt(0)
@@ -928,6 +953,20 @@ export class Synchronizer extends EventEmitter {
                 sealed: true,
             })
         }
+        const index = `${event.blockNumber
+            .toString()
+            .padStart(15, '0')}${event.transactionIndex
+            .toString()
+            .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
+
+        db.create('HistoryTreeLeaf', {
+            attesterId,
+            epoch,
+            stateTreeRoot,
+            epochTreeRoot,
+            hash: hash2([stateTreeRoot, epochTreeRoot]).toString(),
+            index,
+        })
         return true
     }
 }

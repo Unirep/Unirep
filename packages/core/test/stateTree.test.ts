@@ -164,8 +164,15 @@ describe('State tree', function () {
         }
 
         // epoch transition
+        const fromEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
+        await unirepContract
+            .connect(accounts[4])
+            .sealEmptyEpoch(fromEpoch, attester.address)
+            .then((t) => t.wait())
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 
