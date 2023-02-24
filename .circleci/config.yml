@@ -13,15 +13,26 @@ workflows:
             - contracts-test:
                   requires:
                       - build
-            - contracts-coverage:
+                  filters:
+                      branches:
+                          ignore:
+                              - main
+            - contracts-test-coverage:
                   context: cloudflare
                   requires:
-                      - contracts-test
+                      - build
                   filters:
                       branches:
                           only:
                               - main
-                              - v1.1
+            - contracts-coverage:
+                  context: cloudflare
+                  requires:
+                      - contracts-test-coverage
+                  filters:
+                      branches:
+                          only:
+                              - main
             - utils-test:
                   requires:
                       - build
@@ -33,7 +44,6 @@ workflows:
                       branches:
                           only:
                               - main
-                              - v1.1
 
 # Just for reusing below
 step_defs:
@@ -143,6 +153,23 @@ jobs:
                   name: Test
                   command: yarn circuits test
     contracts-test:
+        parallelism: 4
+        resource_class: large
+        machine:
+            image: ubuntu-2204:2022.04.1
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: ~/project
+            - run: *node_version
+            - run: *check_version
+            - run:
+                  name: Test
+                  command: |
+                      cd packages/contracts
+                      TEST_FILES=$(circleci tests glob "test/*.test.ts" | circleci tests split)
+                      yarn test-ci $TEST_FILES
+    contracts-test-coverage:
         resource_class: large
         machine:
             image: ubuntu-2204:2022.04.1
