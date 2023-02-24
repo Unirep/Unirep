@@ -35,7 +35,7 @@ export const randomData = () => [
             if (i % 2 === SUM_FIELD_COUNT % 2) {
                 return utils.hash1([Math.floor(Math.random() * 128289928892)])
             } else {
-                return BigInt(Math.floor(Math.random() * 2 ** 10))
+                return BigInt(1000000000 + Math.floor(Math.random() * 2 ** 10))
             }
         }),
 ]
