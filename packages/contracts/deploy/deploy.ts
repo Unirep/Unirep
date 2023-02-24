@@ -168,7 +168,8 @@ export const deployUnirep = async (
                     polyContract.address,
                 ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
                     PoseidonT2.address,
-                ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+                ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
+                    PoseidonT3.address,
             },
             deployer
         ).deploy(
