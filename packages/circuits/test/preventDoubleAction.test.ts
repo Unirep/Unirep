@@ -1,207 +1,223 @@
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    genEpochKey,
-    IncrementalMerkleTree,
-    hash7,
-} from '@unirep/utils'
-import { Circuit, PreventDoubleActionProof, EpochKeyProof } from '../src'
-import { defaultProver } from '../provers/defaultProver'
+import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
+import { Circuit, PreventDoubleActionProof } from '../src'
+import { genPreventDoubleActionCircuitInput, genProofAndVerify } from './utils'
 
-import { NUM_EPOCH_KEY_NONCE_PER_EPOCH, STATE_TREE_DEPTH } from '../config'
-
-import { genProofAndVerify, genEpochKeyCircuitInput } from './utils'
-
-describe('Prevent double action', function () {
+describe('Prove reputation while preventing users double action', function () {
     this.timeout(300000)
 
-    it('should prove epoch key membership', async () => {
-        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = BigInt(10210)
-            const epoch = 120958
-            const posRep = 2988
-            const negRep = 987
-            const graffiti = 1294129
-            const timestamp = 214
-            const id = new ZkIdentity()
-            const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = hash7([
-                id.secretHash,
-                attesterId,
-                epoch,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ])
-            tree.insert(leaf)
-            const circuitInputs = genEpochKeyCircuitInput({
-                id,
-                tree,
-                leafIndex: 0,
-                epoch,
-                nonce,
-                attesterId,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            })
-            const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.preventDoubleAction,
-                circuitInputs
-            )
-            expect(isValid).to.be.true
-            expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
-            )
-            expect(publicSignals[1]).to.equal(tree.root.toString())
-            expect(publicSignals[2]).to.equal(
-                (
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8))
-                ).toString()
-            )
-            const data = new EpochKeyProof(publicSignals, proof)
-            expect(data.epoch.toString()).to.equal(epoch.toString())
-            expect(data.nonce.toString()).to.equal('0')
-            expect(data.revealNonce.toString()).to.equal('0')
-            expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        }
-    })
-
-    it('should prove an epoch key', async () => {
-        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = BigInt(10210)
-            const epoch = 120958
-            const id = new ZkIdentity()
-            const circuitInputs = {
-                identity_secret: id.secretHash,
-                control: PreventDoubleActionProof.buildControlInput({
-                    epoch,
-                    attesterId,
-                    nonce,
-                }),
-                data: 0,
-            }
-            const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.preventDoubleAction,
-                circuitInputs
-            )
-            expect(isValid).to.be.true
-            const data = new PreventDoubleActionProof(publicSignals, proof)
-            expect(data.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
-            )
-            expect(data.control).to.equal(
-                (
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8))
-                ).toString()
-            )
-            expect(data.epoch.toString()).to.equal(epoch.toString())
-            expect(data.nonce.toString()).to.equal('0')
-            expect(data.revealNonce.toString()).to.equal('0')
-            expect(data.attesterId.toString()).to.equal(attesterId.toString())
-            expect(data.data.toString()).to.equal('0')
-        }
-    })
-
-    it('should reveal nonce', async () => {
-        for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
-            const attesterId = BigInt(10210)
-            const epoch = 120958
-            const id = new ZkIdentity()
-            const circuitInputs = {
-                identity_secret: id.secretHash,
-                control: PreventDoubleActionProof.buildControlInput({
-                    epoch,
-                    attesterId,
-                    nonce,
-                    revealNonce: 1,
-                }),
-                data: 0,
-            }
-            const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.preventDoubleAction,
-                circuitInputs
-            )
-            expect(isValid).to.be.true
-            const data = new PreventDoubleActionProof(publicSignals, proof)
-            expect(data.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
-            )
-            expect(data.control).to.equal(
-                (
-                    (BigInt(1) << BigInt(232)) +
-                    (BigInt(attesterId) << BigInt(72)) +
-                    (BigInt(epoch) << BigInt(8)) +
-                    BigInt(nonce)
-                ).toString()
-            )
-            expect(data.epoch.toString()).to.equal(epoch.toString())
-            expect(data.nonce.toString()).to.equal(nonce.toString())
-            expect(data.revealNonce.toString()).to.equal('1')
-            expect(data.attesterId.toString()).to.equal(attesterId.toString())
-            expect(data.data.toString()).to.equal('0')
-        }
-    })
-
-    it('should prove a data value', async () => {
-        const attesterId = BigInt(10210)
-        const epoch = 120958
-        const nonce = 1
+    it('should prove a reputation', async () => {
         const id = new ZkIdentity()
-        const _data = BigInt(210128912581953498913)
-        const circuitInputs = {
-            identity_secret: id.secretHash,
-            control: PreventDoubleActionProof.buildControlInput({
-                epoch,
-                attesterId,
-                nonce,
-            }),
-            data: _data,
-        }
+        const epoch = 20
+        const nonce = 2
+        const attesterId = 219090124810
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
+        })
+        console.log('circuitInputs: ' + circuitInputs)
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.preventDoubleAction,
             circuitInputs
         )
         expect(isValid).to.be.true
         const data = new PreventDoubleActionProof(publicSignals, proof)
-        expect(data.epochKey.toString()).to.equal(
-            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
-        )
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
         expect(data.revealNonce.toString()).to.equal('0')
         expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        expect(data.data.toString()).to.equal(_data.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
 
-        const badSignals = [...publicSignals]
-        badSignals[2] = '112901' // change the data value
-        const _isValid = await defaultProver.verifyProof(
+    it('should prove a minRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 20
+        const nonce = 1
+        const attesterId = 219090124810
+        const minRep = 2
+        const proveMinRep = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 5, negRep: 1, graffiti: 0, timestamp: 0 },
+            minRep,
+            proveMinRep,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.preventDoubleAction,
-            badSignals,
-            proof
+            circuitInputs
         )
-        expect(_isValid).to.be.false
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
     })
 
-    it('should fail to prove a nonce that is above max nonce', async () => {
-        const attesterId = BigInt(10210)
-        const epoch = 120958
-        const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+    it('should prove a maxRep', async () => {
         const id = new ZkIdentity()
-        const _data = BigInt(210128912581953498913)
-        const circuitInputs = {
-            identity_secret: id.secretHash,
-            control: PreventDoubleActionProof.buildControlInput({
+        const epoch = 20
+        const nonce = 1
+        const attesterId = 219090124810
+        const maxRep = 4
+        const proveMaxRep = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 5, negRep: 10, graffiti: 0, timestamp: 0 },
+            maxRep,
+            proveMaxRep,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal(proveMaxRep.toString())
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal(maxRep.toString())
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('should prove a minRep and maxRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 20
+        const nonce = 2
+        const attesterId = 219090124810
+        const minRep = 0
+        const maxRep = 0
+        const proveMaxRep = 1
+        const proveMinRep = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 10, graffiti: 0, timestamp: 0 },
+            minRep,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal(proveMaxRep.toString())
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal(maxRep.toString())
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('should prove a minRep and maxRep and zero rep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 20
+        const nonce = 0
+        const attesterId = 219090124810
+        const minRep = 0
+        const maxRep = 0
+        const proveMaxRep = 1
+        const proveMinRep = 1
+        const proveZeroRep = 1
+        const revealNonce = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 10, graffiti: 0, timestamp: 0 },
+            minRep,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
+            proveZeroRep,
+            revealNonce,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        expect(publicSignals[2].toString()).to.equal(
+            PreventDoubleActionProof.buildControlInput({
                 epoch,
-                attesterId,
                 nonce,
-            }),
-            data: _data,
-        }
+                attesterId,
+                revealNonce,
+                proveGraffiti: 0,
+                minRep,
+                maxRep,
+                proveMaxRep,
+                proveMinRep,
+                proveZeroRep,
+            })[0].toString()
+        )
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal(nonce.toString())
+        expect(data.revealNonce.toString()).to.equal(revealNonce.toString())
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal(proveMaxRep.toString())
+        expect(data.proveZeroRep.toString()).to.equal(proveZeroRep.toString())
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal(maxRep.toString())
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('should fail to prove zero rep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const proveZeroRep = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            proveZeroRep,
+        })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.preventDoubleAction, circuitInputs)
                 .then(() => rj())
@@ -209,27 +225,298 @@ describe('Prevent double action', function () {
         })
     })
 
-    it('should fail to prove a control with too many bits', async () => {
-        const attesterId = BigInt(10210)
-        const epoch = 120958
-        const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
+    it('should fail to prove maxRep', async () => {
         const id = new ZkIdentity()
-        const _data = BigInt(210128912581953498913)
-        const circuitInputs = {
-            identity_secret: id.secretHash,
-            control:
-                PreventDoubleActionProof.buildControlInput({
-                    epoch,
-                    attesterId,
-                    nonce,
-                }) +
-                (BigInt(1) << BigInt(233)),
-            data: _data,
-        }
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const maxRep = 8
+        const proveMaxRep = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            maxRep,
+            proveMaxRep,
+        })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.preventDoubleAction, circuitInputs)
                 .then(() => rj())
                 .catch(() => rs())
         })
+    })
+
+    it('should fail to prove minRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const minRep = 8
+        const proveMinRep = 1
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 10, negRep: 5 },
+            minRep,
+            proveMinRep,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.preventDoubleAction, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should choose not to prove minRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const minRep = 10000
+        const proveMinRep = 0
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 5, negRep: 10 },
+            minRep,
+            proveMinRep,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('successfully choose not to prove graffiti with wrong value', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const graffitiPreImage = 124124021
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
+            proveGraffiti: false,
+            graffitiPreImage,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal(
+            graffitiPreImage.toString()
+        )
+    })
+
+    it('should fail to prove wrong graffiti pre-image', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const minRep = 0
+        const proveGraffiti = true
+        const graffitiPreImage = 124124021
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: {
+                posRep: 0,
+                negRep: 0,
+                graffiti: 100191,
+                timestamp: 0,
+            },
+            minRep,
+            proveGraffiti,
+            graffitiPreImage,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.preventDoubleAction, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should prove graffiti pre-image', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const graffitiPreImage = 124914219
+        const graffiti = hash1([graffitiPreImage])
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            proveGraffiti: true,
+            graffitiPreImage,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('1')
+        expect(data.graffitiPreImage.toString()).to.equal(
+            graffitiPreImage.toString()
+        )
+    })
+
+    it('should not reveal nonce', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 1
+        const preImage = 124914219
+        const graffiti = hash1([preImage])
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+        })
+        const { isValid, proof, publicSignals } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('should reveal nonce', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const preImage = 124914219
+        const revealNonce = 1
+        const graffiti = hash1([preImage])
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            revealNonce,
+        })
+        const { isValid, proof, publicSignals } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal(nonce.toString())
+        expect(data.revealNonce.toString()).to.equal(revealNonce.toString())
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
+
+    it('should output an epoch key', async () => {
+        const id = new ZkIdentity()
+        const epoch = 1028
+        const attesterId = 10210
+        const nonce = 0
+        const preImage = 124914219
+        const revealNonce = 1
+        const graffiti = hash1([preImage])
+        const circuitInputs = genPreventDoubleActionCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            revealNonce,
+        })
+        const { isValid, proof, publicSignals } = await genProofAndVerify(
+            Circuit.preventDoubleAction,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        const data = new PreventDoubleActionProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal(nonce.toString())
+        expect(data.revealNonce.toString()).to.equal(revealNonce.toString())
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal('0')
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal('0')
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+        expect(data.epochKey.toString()).to.equal(
+            genEpochKey(
+                id.secretHash,
+                attesterId.toString(),
+                epoch,
+                nonce
+            ).toString()
+        )
     })
 })

@@ -8,6 +8,7 @@ import {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     ReputationProof,
     EpochKeyProof,
+    PreventDoubleActionProof,
 } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 import { SNARK_SCALAR_FIELD } from '../config'
@@ -315,6 +316,83 @@ const genReputationCircuitInput = (config: {
     return utils.stringifyBigInts(circuitInputs)
 }
 
+const genPreventDoubleActionCircuitInput = (config: {
+    id: utils.ZkIdentity
+    epoch: number
+    nonce: number
+    attesterId: number
+    startBalance: { posRep: any; negRep: any; graffiti?: any; timestamp?: any }
+    minRep?: number
+    maxRep?: number
+    proveMinRep?: number
+    proveMaxRep?: number
+    proveZeroRep?: number
+    proveGraffiti?: boolean
+    graffitiPreImage?: any
+    revealNonce?: number
+}) => {
+    const {
+        id,
+        epoch,
+        nonce,
+        attesterId,
+        startBalance,
+        minRep,
+        proveGraffiti,
+        graffitiPreImage,
+        maxRep,
+        proveMinRep,
+        proveMaxRep,
+        proveZeroRep,
+        revealNonce,
+    } = Object.assign(
+        {
+            minRep: 0,
+            maxRep: 0,
+            graffitiPreImage: 0,
+        },
+        config
+    )
+
+    // Global state tree
+    const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const hashedLeaf = utils.hash7([
+        id.secretHash,
+        attesterId,
+        epoch,
+        startBalance.posRep,
+        startBalance.negRep,
+        startBalance.graffiti ?? 0,
+        startBalance.timestamp ?? 0,
+    ])
+    stateTree.insert(hashedLeaf)
+    const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
+
+    const circuitInputs = {
+        identity_secret: id.secretHash,
+        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_elements: stateTreeProof.siblings,
+        pos_rep: startBalance.posRep,
+        neg_rep: startBalance.negRep,
+        graffiti: startBalance.graffiti ?? 0,
+        timestamp: startBalance.timestamp ?? 0,
+        graffiti_pre_image: graffitiPreImage,
+        control: PreventDoubleActionProof.buildControlInput({
+            epoch,
+            nonce,
+            attesterId,
+            proveGraffiti: proveGraffiti ? 1 : 0,
+            minRep,
+            maxRep,
+            proveMaxRep,
+            proveMinRep,
+            proveZeroRep,
+            revealNonce,
+        }),
+    }
+    return utils.stringifyBigInts(circuitInputs)
+}
+
 const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     const startTime = new Date().getTime()
     const { proof, publicSignals } =
@@ -339,4 +417,5 @@ export {
     genReputationCircuitInput,
     genUserStateTransitionCircuitInput,
     genProofAndVerify,
+    genPreventDoubleActionCircuitInput,
 }
