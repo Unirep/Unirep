@@ -98,6 +98,27 @@ contract Unirep is IUnirep, VerifySignature {
             });
     }
 
+    function manualUserSignUp(
+        uint64 epoch,
+        uint256 identityCommitment,
+        uint256 stateTreeLeaf,
+        uint256[] memory initialData
+    ) public {
+        manualUserSignUp(epoch, identityCommitment, stateTreeDepth);
+        require(initialData.length < fieldCount, 'initdatal');
+        for (uint8 x = 0; x < sumFieldCount; x++) {
+            require(initialData[x] < SNARK_SCALAR_FIELD);
+            emit Attestation(
+                epoch,
+                identityCommitment,
+                uint160(msg.sender),
+                x,
+                initialData[x],
+                block.timestamp
+            );
+        }
+    }
+
     /**
      * Use this if your application has custom signup proof logic.
      * e.g. to insert a non-zero data field in the state tree leaf
