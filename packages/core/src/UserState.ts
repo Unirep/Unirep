@@ -212,7 +212,19 @@ export default class UserState {
         const orClauses = [] as any[]
         const attesterId = this.sync.attesterId
         const toEpoch = _toEpoch ?? (await this.latestTransitionedEpoch())
-        for (let x = 0; x <= toEpoch; x++) {
+        const signup = await this.sync._db.findOne('UserSignUp', {
+            where: {
+                commitment: this.commitment.toString(),
+                attesterId: this.sync.attesterId.toString(),
+            },
+        })
+        if (signup) {
+            orClauses.push({
+                epochKey: signup.commitment,
+                epoch: signup.epoch,
+            })
+        }
+        for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
