@@ -29,7 +29,7 @@ export const deployUnirep = async (
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         FIELD_COUNT,
         SUM_FIELD_COUNT,
-    } = _settings
+    } = { ...CircuitConfig.default, ..._settings }
 
     console.log(
         '-----------------------------------------------------------------'
