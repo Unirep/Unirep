@@ -37,6 +37,7 @@ export class Synchronizer extends EventEmitter {
 
     private pollId: string | null = null
     public pollRate: number = 5000
+    public blockRate: number = 100000
 
     private setupComplete = false
 
@@ -311,7 +312,7 @@ export class Synchronizer extends EventEmitter {
         const latestProcessed = state.latestCompleteBlock
         const latestBlock = await this.provider.getBlockNumber()
         const blockStart = latestProcessed + 1
-        const blockEnd = Math.min(+latestBlock, blockStart + 10000)
+        const blockEnd = Math.min(+latestBlock, blockStart + this.blockRate)
 
         const newEvents = await this.loadNewEvents(
             latestProcessed + 1,
