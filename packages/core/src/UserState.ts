@@ -139,11 +139,12 @@ export default class UserState {
             if (signup.epoch !== currentEpoch) {
                 return 0
             }
+            const data = await this.getData(currentEpoch)
             const leaf = genStateTreeLeaf(
                 this.id.secretHash,
                 this.sync.attesterId.toString(),
                 signup.epoch,
-                Array(this.sync.settings.fieldCount).fill(0)
+                data
             )
             const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
                 where: {
