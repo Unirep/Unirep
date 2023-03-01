@@ -4,11 +4,11 @@ description: Definition of data in UniRep
 
 # Data
 
-Attesters define the data system for their application on top of the UniRep protocol. There are `FILED_COUNT` data fields. It composes of two kinds of operations: addition field and replacement field.
+Attesters define the data system for their application on top of the UniRep protocol. There are `FIELD_COUNT` data fields. It composes of two kinds of operations: addition field and replacement field.
 
 ## Addition field
 
-The elements in addition field are combined with addition. E.g. `data[0] = old_data[0] + new_data[0]`. There are `SUM_FIELD` addition fields.
+The elements in addition field are combined with addition and modulo by [`SNARK_SCALAR_FIELD`](../utils-api/constants.md#snark_scalar_field). E.g. `data[0] = (old_data[0] + new_data[0]) % SNARK_SCALAR_FIELD`. There are `SUM_FIELD` addition fields.
 
 ## Replacement field
 
