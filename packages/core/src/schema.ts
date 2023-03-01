@@ -75,7 +75,6 @@ const _schema = [
             ['number', 'Int'],
             ['attesterId', 'String'],
             ['sealed', 'Bool'],
-            ['attest', 'Bool', { optional: true }],
         ],
     },
     {

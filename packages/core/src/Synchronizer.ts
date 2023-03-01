@@ -372,6 +372,7 @@ export class Synchronizer extends EventEmitter {
                     'UserStateTransitioned',
                     'Attestation',
                     'EpochEnded',
+                    'EpochSealed',
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
@@ -601,19 +602,37 @@ export class Synchronizer extends EventEmitter {
             preimages?: bigint[]
         } = {}
     ): Promise<BuildOrderedTree> {
-        const epoch = await this._db.findOne('Epoch', {
+        const attesterId =
+            options.attesterId?.toString() ?? this.attesterId.toString()
+        const unsealedEpoch = await this._db.findOne('Epoch', {
             where: {
                 sealed: false,
-                attest: true,
+                number: options.epoch ? Number(options.epoch) : undefined,
+                attesterId,
             },
             orderBy: {
                 epoch: 'asc',
             },
         })
-        const attesterId = options.attesterId ?? this.attesterId
+
+        if (!unsealedEpoch) {
+            throw new Error(`Synchronizer: sealing epoch is not required.`)
+        }
+        const attestation = await this._db.findOne('Attestation', {
+            where: {
+                attesterId: attesterId.toString(),
+                epoch: unsealedEpoch.number,
+            },
+        })
+        if (!attestation) {
+            throw new Error(
+                `Synchronizer: no attestation is made in epoch ${unsealedEpoch.number}.`
+            )
+        }
+        const epoch = options.epoch ?? unsealedEpoch.number
         const preimages =
             options.preimages ??
-            (await this.genEpochTreePreimages(epoch.number, attesterId))
+            (await this.genEpochTreePreimages(epoch, attesterId))
         const { circuitInputs } =
             BuildOrderedTree.buildInputsForLeaves(preimages)
         const r = await this.prover.genProofAndPublicSignals(
@@ -777,23 +796,18 @@ export class Synchronizer extends EventEmitter {
             timestamp,
             blockNumber: event.blockNumber,
         })
-
-        db.upsert('Epoch', {
+        const findEpoch = await this._db.findOne('Epoch', {
             where: {
                 number: epoch,
-                attesterId,
-            },
-            update: {
-                attest: true,
-                sealed: false,
-            },
-            create: {
-                number: epoch,
-                attesterId,
-                attest: true,
-                sealed: false,
             },
         })
+        if (!findEpoch) {
+            db.create('Epoch', {
+                number: epoch,
+                attesterId,
+                sealed: false,
+            })
+        }
         return true
     }
 
@@ -841,14 +855,14 @@ export class Synchronizer extends EventEmitter {
                     attesterId,
                 },
                 update: {
-                    sealed: true,
+                    sealed: false,
                 },
             })
         } else {
             db.create('Epoch', {
                 number: epoch,
                 attesterId,
-                sealed: true,
+                sealed: false,
             })
         }
         // create the next stub entry
@@ -874,6 +888,41 @@ export class Synchronizer extends EventEmitter {
             epochLength,
             startTimestamp,
         })
+        return true
+    }
+
+    async handleEpochSealed({ decodedData, event, db }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const attesterId = BigInt(decodedData.attesterId).toString()
+
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
+        const existingDoc = await this._db.findOne('Epoch', {
+            where: {
+                number: epoch,
+                attesterId,
+            },
+        })
+        if (existingDoc) {
+            db.update('Epoch', {
+                where: {
+                    number: epoch,
+                    attesterId,
+                },
+                update: {
+                    sealed: true,
+                },
+            })
+        } else {
+            db.create('Epoch', {
+                number: epoch,
+                attesterId,
+                sealed: true,
+            })
+        }
         return true
     }
 }
