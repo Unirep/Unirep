@@ -11,12 +11,14 @@ import {
 
 const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
 
-const retryAsNeeded = async (fn: any) => {
+const retryAsNeeded = async (fn: any, maxRetry = 10) => {
+    let retryCount = 0
     let backoff = 1000
     for (;;) {
         try {
             return await fn()
         } catch (err) {
+            if (++retryCount > maxRetry) throw err
             backoff *= 2
             console.log(`Failed, waiting ${backoff}ms`)
             await new Promise((r) => setTimeout(r, backoff))
