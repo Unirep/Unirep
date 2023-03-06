@@ -51,6 +51,22 @@ Manually poll for new events. Returns a boolean indicating whether the synchroni
 synchronizer.poll(): Promise<{ complete: boolean }>
 ```
 
+## pollRate
+
+How frequently the synchronizer will poll the blockchain for new events (specified in milliseconds). Default: `5000`
+
+```ts
+synchronizer.pollRate
+```
+
+## blockRate
+
+How many blocks the synchronizer will query on each poll. Default: `100000`
+
+```ts
+synchronizer.blockRate
+```
+
 ## waitForSync
 
 Wait for the synchronizer to sync up to a certain block. By default this will wait until the current latest known block (according to the provider).
