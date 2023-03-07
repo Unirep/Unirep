@@ -21,4 +21,5 @@ export const circuitContents = {
     buildOrderedTree: `pragma circom 2.0.0; include "../circuits/buildOrderedTree.circom"; \n\ncomponent main = BuildOrderedTree(${EPOCH_TREE_DEPTH}, ${EPOCH_TREE_ARITY}, ${FIELD_COUNT}, ${OMT_R}, ${EPK_R});`,
     // test circuits
     bigComparators: `pragma circom 2.0.0; include "../circuits/bigComparators.circom"; \n\ncomponent main = BigLessThan();`,
+    preventDoubleAction: `pragma circom 2.0.0; include "../circuits/preventDoubleAction.circom"; \n\ncomponent main { public [ graffiti_pre_image ] } = PreventDoubleAction(${STATE_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, 252);`,
 }

@@ -220,6 +220,81 @@ const genUserStateTransitionCircuitInput = (config: {
     return utils.stringifyBigInts(circuitInputs)
 }
 
+const genPreventDoubleActionCircuitInput = (config: {
+    id: utils.ZkIdentity
+    epoch: number
+    nonce: number
+    attesterId: number | bigint
+    startBalance?: (bigint | number)[]
+    minRep?: number | bigint
+    maxRep?: number | bigint
+    proveMinRep?: number
+    proveMaxRep?: number
+    proveZeroRep?: number
+    proveGraffiti?: boolean | number
+    graffitiPreImage?: any
+    revealNonce?: number
+}) => {
+    const {
+        id,
+        epoch,
+        nonce,
+        attesterId,
+        startBalance: _startBalance,
+        minRep,
+        proveGraffiti,
+        graffitiPreImage,
+        maxRep,
+        proveMinRep,
+        proveMaxRep,
+        proveZeroRep,
+        revealNonce,
+    } = Object.assign(
+        {
+            minRep: 0,
+            maxRep: 0,
+            graffitiPreImage: 0,
+            startBalance: [],
+        },
+        config
+    )
+
+    const startBalance = [
+        ..._startBalance,
+        ...Array(FIELD_COUNT - _startBalance.length).fill(0),
+    ]
+    // Global state tree
+    const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const hashedLeaf = utils.genStateTreeLeaf(
+        id.secretHash,
+        BigInt(attesterId),
+        epoch,
+        startBalance as any
+    )
+    stateTree.insert(hashedLeaf)
+    const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
+
+    const circuitInputs = {
+        identity_secret: id.secretHash,
+        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_elements: stateTreeProof.siblings,
+        data: startBalance,
+        graffiti_pre_image: graffitiPreImage,
+        epoch,
+        nonce,
+        attester_id: attesterId,
+        prove_graffiti: proveGraffiti ? 1 : 0,
+        min_rep: minRep,
+        max_rep: maxRep,
+        prove_max_rep: proveMaxRep ?? 0,
+        prove_min_rep: proveMinRep ?? 0,
+        prove_zero_rep: proveZeroRep ?? 0,
+        reveal_nonce: revealNonce ?? 0,
+        sig_data: 0,
+    }
+    return utils.stringifyBigInts(circuitInputs)
+}
+
 const genReputationCircuitInput = (config: {
     id: utils.ZkIdentity
     epoch: number
@@ -318,5 +393,6 @@ export {
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
     genUserStateTransitionCircuitInput,
+    genPreventDoubleActionCircuitInput,
     genProofAndVerify,
 }
