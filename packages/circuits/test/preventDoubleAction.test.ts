@@ -57,52 +57,52 @@ describe('Prove reputation from attester circuit while preventing double actions
         expect(data.graffitiPreImage.toString()).to.equal('0')
     })
 
-    // it('should prove a minRep', async () => {
-    //     const id = new ZkIdentity()
-    //     const epoch = 20
-    //     const nonce = 1
-    //     const attesterId = 219090124810
-    //     const minRep = 2
-    //     const proveMinRep = 1
-    //     const circuitInputs = genReputationCircuitInput({
-    //         id,
-    //         epoch,
-    //         nonce,
-    //         attesterId,
-    //         startBalance: [5, 1],
-    //         minRep,
-    //         proveMinRep,
-    //     })
-    //     const { isValid, publicSignals, proof } = await genProofAndVerify(
-    //         Circuit.proveReputation,
-    //         circuitInputs
-    //     )
-    //     expect(isValid).to.be.true
-    //     // check two control outputs
-    //     for (let i = 0; i < 2; i++) {
-    //         expect(publicSignals[i + 2].toString()).to.equal(
-    //             ReputationProof.buildControl({
-    //                 epoch,
-    //                 nonce,
-    //                 attesterId,
-    //                 minRep,
-    //                 proveMinRep,
-    //             })[i].toString()
-    //         )
-    //     }
-    //     const data = new ReputationProof(publicSignals, proof)
-    //     expect(data.epoch.toString()).to.equal(epoch.toString())
-    //     expect(data.nonce.toString()).to.equal('0')
-    //     expect(data.revealNonce.toString()).to.equal('0')
-    //     expect(data.attesterId.toString()).to.equal(attesterId.toString())
-    //     expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
-    //     expect(data.proveMaxRep.toString()).to.equal('0')
-    //     expect(data.proveZeroRep.toString()).to.equal('0')
-    //     expect(data.minRep.toString()).to.equal(minRep.toString())
-    //     expect(data.maxRep.toString()).to.equal('0')
-    //     expect(data.proveGraffiti.toString()).to.equal('0')
-    //     expect(data.graffitiPreImage.toString()).to.equal('0')
-    // })
+    it('should prove a minRep', async () => {
+        const id = new ZkIdentity()
+        const epoch = 20
+        const nonce = 1
+        const attesterId = 219090124810
+        const minRep = 2
+        const proveMinRep = 1
+        const circuitInputs = genReputationCircuitInput({
+            id,
+            epoch,
+            nonce,
+            attesterId,
+            startBalance: [5, 1],
+            minRep,
+            proveMinRep,
+        })
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
+            Circuit.proveReputation,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        // check two control outputs
+        for (let i = 0; i < 2; i++) {
+            expect(publicSignals[i + 2].toString()).to.equal(
+                ReputationProof.buildControl({
+                    epoch,
+                    nonce,
+                    attesterId,
+                    minRep,
+                    proveMinRep,
+                })[i].toString()
+            )
+        }
+        const data = new ReputationProof(publicSignals, proof)
+        expect(data.epoch.toString()).to.equal(epoch.toString())
+        expect(data.nonce.toString()).to.equal('0')
+        expect(data.revealNonce.toString()).to.equal('0')
+        expect(data.attesterId.toString()).to.equal(attesterId.toString())
+        expect(data.proveMinRep.toString()).to.equal(proveMinRep.toString())
+        expect(data.proveMaxRep.toString()).to.equal('0')
+        expect(data.proveZeroRep.toString()).to.equal('0')
+        expect(data.minRep.toString()).to.equal(minRep.toString())
+        expect(data.maxRep.toString()).to.equal('0')
+        expect(data.proveGraffiti.toString()).to.equal('0')
+        expect(data.graffitiPreImage.toString()).to.equal('0')
+    })
 
     // it('should prove a maxRep', async () => {
     //     const id = new ZkIdentity()
