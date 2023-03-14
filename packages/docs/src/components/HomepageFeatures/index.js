@@ -1,5 +1,4 @@
 import React from 'react'
-import clsx from 'clsx'
 import styles from './styles.module.css'
 
 const DescriptionImage =
@@ -31,10 +30,10 @@ const FeatureList = [
         title: 'Interoperable',
         description: (
             <>
-                A standard protocol for reputation allows applications to
-                interoperate with each other by verifying common proofs. This
-                can happen offchain using protocols like http or ipfs; and can
-                also happen onchain by verifying a ZK proof in a smart contract.
+                A standard protocol for data allows applications to interoperate
+                with each other by verifying common proofs. This can happen
+                offchain using protocols like http or ipfs; and can also happen
+                onchain by verifying a ZK proof in a smart contract.
             </>
         ),
     },

@@ -8,12 +8,12 @@ description: Definition of user state transition in UniRep protocol.
 
 User state transition is used to:
 
-* Ensure users process their attestations correctly, including negative reputation.
-* Generate a new state tree leaf in a new epoch to prove their latest reputation.
+* Ensure users process their attestations correctly.
+* Generate a new state tree leaf in a new epoch to prove their latest data.
 
 After a user performs user state transition, they can:
 
-1. Prove their latest reputation status.
+1. Prove their latest data status.
 2. Generate new epoch key proofs to receive attestations in the latest epoch.
 
 ### Workflow of a user state transition
@@ -21,7 +21,7 @@ After a user performs user state transition, they can:
 #### 1. Compute epoch key of the latest transition (or sign up) epoch
 
 #### 2. Check the state tree leaf
-* The pre-image of the state tree leaf is checked to determine the user's starting reputation.
+* The pre-image of the state tree leaf is checked to determine the user's starting data.
 
 #### 3. Iterate over epoch keys
 

@@ -31,8 +31,8 @@
                 },
                 {
                     "type": "doc",
-                    "label": "Reputation",
-                    "id": "protocol/reputation"
+                    "label": "Data",
+                    "id": "protocol/data"
                 },
                 {
                     "type": "doc",
@@ -156,6 +156,11 @@
                     "type": "doc",
                     "label": "UserStateTransitionProof",
                     "id": "circuits-api/user-state-transition-proof"
+                },
+                {
+                    "type": "doc",
+                    "label": "BuildOrderedTree",
+                    "id": "circuits-api/build-ordered-tree"
                 }
             ]
         },
@@ -172,6 +177,11 @@
                     "type": "doc",
                     "label": "hash()",
                     "id": "utils-api/hashes"
+                },
+                {
+                    "type": "doc",
+                    "label": "ZkIdentity()",
+                    "id": "utils-api/identity"
                 },
                 {
                     "type": "link",
