@@ -139,7 +139,8 @@ export default class UserState {
             if (signup.epoch !== currentEpoch) {
                 return 0
             }
-            const data = await this.getData(currentEpoch)
+            // don't include attestations that are not provable
+            const data = await this.getData(currentEpoch - 1)
             const leaf = genStateTreeLeaf(
                 this.id.secretHash,
                 this.sync.attesterId.toString(),
