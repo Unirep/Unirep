@@ -633,8 +633,12 @@ export class Synchronizer extends EventEmitter {
         const preimages =
             options.preimages ??
             (await this.genEpochTreePreimages(epoch, attesterId))
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(
+            preimages,
+            this.settings.epochTreeArity,
+            this.settings.epochTreeDepth,
+            this.settings.fieldCount
+        )
         const r = await this.prover.genProofAndPublicSignals(
             Circuit.buildOrderedTree,
             stringifyBigInts(circuitInputs)

@@ -190,3 +190,7 @@ synchronizer.genSealedEpochProof(
   } = {}
 ): Promise<BuildOrderedTree>
 ```
+
+:::tip
+This proof is large and best made with `rapidsnark`. This function should only be used for small trees.
+:::

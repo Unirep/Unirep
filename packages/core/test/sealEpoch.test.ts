@@ -37,7 +37,7 @@ describe('Sealing epoch helper function', function () {
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
 
-        let firstEpoch = 0
+        const firstEpoch = 0
         for (let epoch = firstEpoch; epoch < 5; epoch++) {
             await unirepContract
                 .connect(attester)
@@ -66,7 +66,7 @@ describe('Sealing epoch helper function', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        let firstEpoch = 0
+        const firstEpoch = 0
         for (let epoch = firstEpoch; epoch < 5; epoch++) {
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
