@@ -105,9 +105,15 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] memory initialData
     ) public {
         manualUserSignUp(epoch, identityCommitment, stateTreeLeaf);
-        require(initialData.length < sumFieldCount, 'initdatal');
-        for (uint8 x = 0; x < initialData.length; x++) {
-            require(initialData[x] < SNARK_SCALAR_FIELD);
+        require(initialData.length <= fieldCount, 'initdatal');
+        for (uint8 x = 0; x < fieldCount; x++) {
+            require(initialData[x] < SNARK_SCALAR_FIELD, 'fieldrange');
+            if (
+                x >= sumFieldCount &&
+                (x - sumFieldCount) % 2 == (sumFieldCount + 1) % 2
+            ) {
+                require(initialData[x] == 0, 'timedatanz');
+            }
             emit Attestation(
                 epoch,
                 identityCommitment,
