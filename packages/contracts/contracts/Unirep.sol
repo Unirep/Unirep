@@ -98,13 +98,17 @@ contract Unirep is IUnirep, VerifySignature {
             });
     }
 
+    /**
+     * Use this if your application has custom signup proof logic.
+     * e.g. to insert a non-zero data field in the state tree leaf
+     **/
     function manualUserSignUp(
         uint64 epoch,
         uint256 identityCommitment,
         uint256 stateTreeLeaf,
         uint256[] memory initialData
     ) public {
-        manualUserSignUp(epoch, identityCommitment, stateTreeLeaf);
+        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
         require(initialData.length <= fieldCount, 'initdatal');
         for (uint8 x = 0; x < fieldCount; x++) {
             require(initialData[x] < SNARK_SCALAR_FIELD, 'fieldrange');
@@ -126,14 +130,32 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
-     * Use this if your application has custom signup proof logic.
-     * e.g. to insert a non-zero data field in the state tree leaf
-     **/
-    function manualUserSignUp(
+     * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
+     * msg.sender must be attester
+     */
+    function userSignUp(uint256[] memory publicSignals, uint256[8] memory proof)
+        public
+    {
+        uint256 attesterId = publicSignals[2];
+        // only allow attester to sign up users
+        if (uint256(uint160(msg.sender)) != attesterId)
+            revert AttesterIdNotMatch(uint160(msg.sender));
+        // Verify the proof
+        if (!signupVerifier.verifyProof(publicSignals, proof))
+            revert InvalidProof();
+
+        _userSignUp(
+            uint64(publicSignals[3]),
+            publicSignals[0],
+            publicSignals[1]
+        );
+    }
+
+    function _userSignUp(
         uint64 epoch,
         uint256 identityCommitment,
         uint256 stateTreeLeaf
-    ) public {
+    ) internal {
         uint160 attesterId = uint160(msg.sender);
         _updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
@@ -167,28 +189,6 @@ contract Unirep is IUnirep, VerifySignature {
         IncrementalBinaryTree.insert(
             attester.semaphoreGroup,
             identityCommitment
-        );
-    }
-
-    /**
-     * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
-     * msg.sender must be attester
-     */
-    function userSignUp(uint256[] memory publicSignals, uint256[8] memory proof)
-        public
-    {
-        uint256 attesterId = publicSignals[2];
-        // only allow attester to sign up users
-        if (uint256(uint160(msg.sender)) != attesterId)
-            revert AttesterIdNotMatch(uint160(msg.sender));
-        // Verify the proof
-        if (!signupVerifier.verifyProof(publicSignals, proof))
-            revert InvalidProof();
-
-        manualUserSignUp(
-            uint64(publicSignals[3]),
-            publicSignals[0],
-            publicSignals[1]
         );
     }
 
