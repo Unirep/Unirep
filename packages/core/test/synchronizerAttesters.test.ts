@@ -63,7 +63,7 @@ describe('Synchronizer watch multiple attesters', function () {
             )
             expect(epochKey.toString()).to.equal(x.toString())
         }
-        await sync.stop()
+        sync.stop()
     })
 
     it('should catch attester sign up event', async () => {

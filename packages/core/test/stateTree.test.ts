@@ -163,7 +163,7 @@ describe('State tree', function () {
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // epoch transition

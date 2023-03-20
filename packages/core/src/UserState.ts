@@ -211,7 +211,7 @@ export default class UserState {
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         const orClauses = [] as any[]
         const attesterId = this.sync.attesterId
-        const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch()
+        const toEpoch = _toEpoch ?? (await this.latestTransitionedEpoch())
         for (let x = 0; x <= toEpoch; x++) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
@@ -223,6 +223,25 @@ export default class UserState {
                         i
                     ).toString()
                 )
+            const usted = await this.sync._db.findOne('Nullifier', {
+                where: {
+                    attesterId: this.sync.attesterId.toString(),
+                    nullifier: genUserStateTransitionNullifier(
+                        this.id.secretHash,
+                        this.sync.attesterId,
+                        x
+                    ).toString(),
+                    epoch: x,
+                },
+            })
+            const signedup = await this.sync._db.findOne('UserSignUp', {
+                where: {
+                    attesterId: this.sync.attesterId.toString(),
+                    commitment: this.commitment.toString(),
+                    epoch: x,
+                },
+            })
+            if (!usted && !signedup) continue
             orClauses.push({
                 epochKey: epks,
                 epoch: x,
