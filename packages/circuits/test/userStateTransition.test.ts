@@ -38,7 +38,8 @@ describe('User state transition', function () {
             genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
         )
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([tree.root, 0]))
+        const epochTreeRoot = 0
+        historyTree.insert(hash2([tree.root, epochTreeRoot]))
         const { circuitInputs } = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
@@ -215,7 +216,8 @@ describe('User state transition', function () {
         )
         epochTree.insert(40124)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([tree.root, 0]))
+        const epochTreeRoot
+        historyTree.insert(hash2([tree.root, epochTreeRoot]))
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.userStateTransition,
             stringifyBigInts({
@@ -292,7 +294,8 @@ describe('User state transition', function () {
         )
         epochTree.insert(40124)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([tree.root, 0]))
+        const epochTreeRoot = 0
+        historyTree.insert(hash2([tree.root, epochTreeRoot]))
         const inputs = stringifyBigInts({
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
