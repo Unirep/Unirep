@@ -384,7 +384,6 @@ export class Synchronizer extends EventEmitter {
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
-                    'EpochSealed',
                 ],
             },
         }

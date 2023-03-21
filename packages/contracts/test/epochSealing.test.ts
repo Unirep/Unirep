@@ -366,13 +366,13 @@ describe('Epoch sealing', function () {
 
         const tx = await unirepContract
             .connect(accounts[5])
-            .sealEmptyEpoch(epoch, attester.address)
-        expect(tx)
+            .updateEpochIfNeeded(attester.address)
+        await expect(tx)
             .to.emit(unirepContract, 'EpochSealed')
             .withArgs(epoch, attester.address, stateTree.root.toString(), 0)
     })
 
-    it('should fail to empty seal epoch with empty state tree', async () => {
+    it('should not empty seal epoch with empty state tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const epoch = await unirepContract.attesterCurrentEpoch(
@@ -381,30 +381,19 @@ describe('Epoch sealing', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        await expect(
-            unirepContract
-                .connect(accounts[5])
-                .sealEmptyEpoch(epoch, attester.address)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
+        const tx = await unirepContract
+            .connect(accounts[5])
+            .updateEpochIfNeeded(attester.address)
+        // should not emit event
+        await new Promise((rs, rj) => {
+            expect(tx)
+                .to.emit(unirepContract, 'EpochSealed')
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 
-    it('should fail to empty seal with wrong epoch', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await ethers.provider.send('evm_mine', [])
-
-        await expect(
-            unirepContract
-                .connect(accounts[5])
-                .sealEmptyEpoch(epoch + 1, attester.address)
-        ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
-    })
-
-    it('should fail to empty seal epoch with attestations', async () => {
+    it('should not empty seal epoch with attestations', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const epoch = await unirepContract.attesterCurrentEpoch(
@@ -417,11 +406,16 @@ describe('Epoch sealing', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        await expect(
-            unirepContract
-                .connect(accounts[5])
-                .sealEmptyEpoch(epoch, attester.address)
-        ).to.be.revertedWithCustomError(unirepContract, 'IncorrectHash')
+        const tx = await unirepContract
+            .connect(accounts[5])
+            .updateEpochIfNeeded(attester.address)
+        // should not emit event
+        await new Promise((rs, rj) => {
+            expect(tx)
+                .to.emit(unirepContract, 'EpochSealed')
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 
     it('should fail to double empty seal', async () => {
@@ -451,14 +445,19 @@ describe('Epoch sealing', function () {
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        unirepContract
+        await unirepContract
             .connect(accounts[5])
-            .sealEmptyEpoch(epoch, attester.address)
+            .updateEpochIfNeeded(attester.address)
 
-        await expect(
-            unirepContract
-                .connect(accounts[5])
-                .sealEmptyEpoch(epoch, attester.address)
-        ).to.be.revertedWithCustomError(unirepContract, 'DoubleSeal')
+        const tx = await unirepContract
+            .connect(accounts[5])
+            .updateEpochIfNeeded(attester.address)
+        // should not emit event
+        await new Promise((rs, rj) => {
+            expect(tx)
+                .to.emit(unirepContract, 'EpochSealed')
+                .then(() => rj())
+                .catch(() => rs())
+        })
     })
 })

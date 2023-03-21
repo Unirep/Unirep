@@ -319,10 +319,6 @@ describe('User State Transition', function () {
         expect(await p.verify()).to.be.true
         const { publicSignals, proof } = p
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await unirepContract
-            .connect(accounts[4])
-            .sealEmptyEpoch(fromEpoch, attester.address)
-            .then((t) => t.wait())
         await expect(
             unirepContract
                 .connect(attester)
@@ -394,10 +390,6 @@ describe('User State Transition', function () {
             defaultProver
         )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await unirepContract
-            .connect(accounts[4])
-            .sealEmptyEpoch(0, attester.address)
-            .then((t) => t.wait())
         await unirepContract
             .connect(attester)
             .userStateTransition(publicSignals, proof)
@@ -480,10 +472,6 @@ describe('User State Transition', function () {
             defaultProver
         )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await unirepContract
-            .connect(accounts[4])
-            .sealEmptyEpoch(fromEpoch, attester.address)
-            .then((t) => t.wait())
         const tx = await unirepContract
             .connect(attester)
             .userStateTransition(publicSignals, proof)
@@ -570,10 +558,6 @@ describe('User State Transition', function () {
             defaultProver
         )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await unirepContract
-            .connect(accounts[4])
-            .sealEmptyEpoch(fromEpoch, attester.address)
-            .then((t) => t.wait())
         const tx = await unirepContract
             .connect(attester)
             .userStateTransition(publicSignals, proof)
@@ -631,10 +615,6 @@ describe('User State Transition', function () {
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         for (let epoch = startEpoch; epoch < startEpoch + epochs; epoch++) {
             const toEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            await unirepContract
-                .connect(accounts[4])
-                .sealEmptyEpoch(fromEpoch, attester.address)
-                .then((t) => t.wait())
             historyTree.insert(hash2([fromEpochStateTree.root, 0]))
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
