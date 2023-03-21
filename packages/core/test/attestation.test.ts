@@ -96,7 +96,7 @@ describe('Attester signs up and gives attestation', function () {
         const checkPromises = epochKeys.map(async (key) => {
             const data = await userState.getDataByEpochKey(key, BigInt(epoch))
             if (key.toString() === epk.toString()) {
-                expect(data[fieldIndex]).to.equal(val)
+                expect(data[fieldIndex].toString()).to.equal(val.toString())
                 data.forEach((d, i) => {
                     if (i === fieldIndex) return
                     expect(d).to.equal(0)
@@ -123,13 +123,13 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         {
             const data = await userState.getData()
-            expect(data[fieldIndex]).to.equal(val)
+            expect(data[fieldIndex].toString()).to.equal(val.toString())
             data.forEach((d, i) => {
                 if (i === fieldIndex) return
                 expect(d).to.equal(0)
             })
         }
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should skip multiple epochs', async () => {
@@ -153,6 +153,6 @@ describe('Attester signs up and gives attestation', function () {
             .attest('0x01', epoch, 1, 1)
             .then((t) => t.wait())
         await userState.waitForSync()
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })

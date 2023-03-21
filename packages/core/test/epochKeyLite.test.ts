@@ -57,7 +57,7 @@ describe('Epoch key Lite proof', function () {
         const proof = await userState.genEpochKeyLiteProof()
         const valid = await proof.verify()
         expect(valid).to.be.true
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should reveal the epoch key nonce', async () => {
@@ -91,7 +91,7 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(nonce)
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should not reveal the epoch key nonce', async () => {
@@ -125,7 +125,7 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should prove data', async () => {
@@ -157,7 +157,7 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.data).to.equal(data.toString())
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 
     it('should specify an epoch', async () => {
@@ -189,6 +189,6 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.epoch).to.equal(epoch.toString())
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })
