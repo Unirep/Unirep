@@ -139,7 +139,7 @@ describe('User Signup', function () {
 
         await unirepContract
             .connect(attester)
-            ['manualUserSignUp(uint64,uint256,uint256,uint256[])'](
+            .manualUserSignUp(
                 contractEpoch,
                 id.genIdentityCommitment(),
                 leaf,

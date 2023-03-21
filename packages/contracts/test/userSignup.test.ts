@@ -367,7 +367,7 @@ describe('User Signup', function () {
         )
         const tx = await unirepContract
             .connect(attester)
-            ['manualUserSignUp(uint64,uint256,uint256,uint256[])'](
+            .manualUserSignUp(
                 contractEpoch,
                 id.genIdentityCommitment(),
                 leaf,
@@ -426,13 +426,16 @@ describe('User Signup', function () {
 
         const tx = unirepContract
             .connect(attester)
-            ['manualUserSignUp(uint64,uint256,uint256,uint256[])'](
+            .manualUserSignUp(
                 contractEpoch,
                 id.genIdentityCommitment(),
                 0,
                 data
             )
-        await expect(tx).to.be.revertedWith('timedatanz')
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidTimestamp'
+        )
     })
 
     it('should fail to sign up with too much user data', async () => {
@@ -447,13 +450,16 @@ describe('User Signup', function () {
 
         const tx = unirepContract
             .connect(attester)
-            ['manualUserSignUp(uint64,uint256,uint256,uint256[])'](
+            .manualUserSignUp(
                 contractEpoch,
                 id.genIdentityCommitment(),
                 1,
                 Array(config.fieldCount + 1).fill(1)
             )
-        await expect(tx).to.be.revertedWith('initdatal')
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'OutOfRange'
+        )
     })
 
     it('should fail to sign up with user data out of range', async () => {
@@ -467,12 +473,10 @@ describe('User Signup', function () {
 
         const tx = unirepContract
             .connect(attester)
-            ['manualUserSignUp(uint64,uint256,uint256,uint256[])'](
-                contractEpoch,
-                id.genIdentityCommitment(),
-                1,
-                [F]
-            )
-        await expect(tx).to.be.revertedWith('fieldrange')
+            .manualUserSignUp(contractEpoch, id.genIdentityCommitment(), 1, [F])
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidField'
+        )
     })
 })
