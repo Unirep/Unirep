@@ -21,7 +21,7 @@
         "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc",
         "abi": "node ./scripts/abi",
         "compile": "hardhat compile",
-        "test": "DEPLOY_DELAY=0 hardhat test ./test/userSignup.test.ts",
+        "test": "DEPLOY_DELAY=0 hardhat test ./test/*.test.ts",
         "lint": "prettier --write .",
         "coverage": "hardhat coverage && yarn badge",
         "badge": "lcov-badge-generator ./coverage/lcov.info -o coverage/badge.svg",
