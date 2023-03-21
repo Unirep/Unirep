@@ -1,12 +1,7 @@
 import { ethers } from 'ethers'
-import {
-    Circuit,
-    Prover,
-    CircuitConfig,
-    BuildOrderedTree,
-} from '@unirep/circuits'
+import { Prover, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { genRandomSalt, stringifyBigInts, ZkIdentity } from '@unirep/utils'
+import { genRandomSalt, ZkIdentity } from '@unirep/utils'
 import { Synchronizer, UserState } from '@unirep/core'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import defaultConfig from '@unirep/circuits/config'
@@ -103,17 +98,7 @@ export async function sealEpoch(
         throw new Error('Synchronizer must have attesterId set')
     }
     const { unirepContract } = synchronizer
-    const preimages = await synchronizer.genEpochTreePreimages(epoch)
-    const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(preimages)
-    const r = await defaultProver.genProofAndPublicSignals(
-        Circuit.buildOrderedTree,
-        stringifyBigInts(circuitInputs)
-    )
-    const { publicSignals, proof } = new BuildOrderedTree(
-        r.publicSignals,
-        r.proof,
-        defaultProver
-    )
+    const { publicSignals, proof } = await synchronizer.genSealedEpochProof()
 
     await unirepContract
         .connect(account)

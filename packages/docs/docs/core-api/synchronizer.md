@@ -192,3 +192,21 @@ Get the number of state tree leaves in a certain epoch.
 ```ts
 synchronizer.numStateTreeLeaves(epoch: number): Promise<number>
 ```
+
+## genSealedEpochProof
+
+Generate the sealed epoch proof. See [`sealEpoch`](../contracts-api/unirep-sol.md#sealepoch)
+
+```ts
+synchronizer.genSealedEpochProof(
+  options: {
+    epoch?: bigint
+    attesterId?: bigint
+    preimages?: bigint[]
+  } = {}
+): Promise<BuildOrderedTree>
+```
+
+:::tip
+This proof is large and best made with `rapidsnark`. This function should only be used for small trees.
+:::

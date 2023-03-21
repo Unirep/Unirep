@@ -4,12 +4,10 @@ import { expect } from 'chai'
 import {
     ZkIdentity,
     IncrementalMerkleTree,
-    stringifyBigInts,
     genEpochTreeLeaf,
     F,
 } from '@unirep/utils'
-import { Circuit, SNARK_SCALAR_FIELD, BuildOrderedTree } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUnirepState, genUserState } from './utils'
@@ -150,19 +148,8 @@ describe('Epoch tree', function () {
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-
-        const preimages = await userState.sync.genEpochTreePreimages(epoch)
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-        const { publicSignals, proof } = new BuildOrderedTree(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
+        const { publicSignals, proof } =
+            await userState.sync.genSealedEpochProof()
 
         await unirepContract
             .connect(accounts[5])

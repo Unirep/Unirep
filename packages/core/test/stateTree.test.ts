@@ -5,11 +5,8 @@ import {
     ZkIdentity,
     genStateTreeLeaf,
     IncrementalMerkleTree,
-    stringifyBigInts,
 } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import { Circuit, BuildOrderedTree } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { genUnirepState, genUserState } from './utils'
 
@@ -303,18 +300,7 @@ describe('State tree', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        const preimages = await unirepState.genEpochTreePreimages(fromEpoch)
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-        const { publicSignals, proof } = new BuildOrderedTree(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
+        const { publicSignals, proof } = await unirepState.genSealedEpochProof()
 
         await unirepContract
             .connect(accounts[5])

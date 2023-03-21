@@ -1,10 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, genStateTreeLeaf, stringifyBigInts } from '@unirep/utils'
+import { ZkIdentity, genStateTreeLeaf } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Circuit, BuildOrderedTree } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { bootstrapAttestations, bootstrapUsers } from './test'
 
@@ -44,18 +42,8 @@ describe('Synchronizer process events', function () {
             await synchronizer.waitForSync()
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
-            const preimages = await synchronizer.genEpochTreePreimages(epoch)
-            const { circuitInputs } =
-                BuildOrderedTree.buildInputsForLeaves(preimages)
-            const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.buildOrderedTree,
-                stringifyBigInts(circuitInputs)
-            )
-            const { publicSignals, proof } = new BuildOrderedTree(
-                r.publicSignals,
-                r.proof,
-                defaultProver
-            )
+            const { publicSignals, proof } =
+                await synchronizer.genSealedEpochProof()
 
             const accounts = await ethers.getSigners()
             await unirepContract
@@ -222,18 +210,8 @@ describe('Synchronizer process events', function () {
         // now commit the attetstations
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const preimages = await userState.sync.genEpochTreePreimages(epoch)
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-        const { publicSignals, proof } = new BuildOrderedTree(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
+        const { publicSignals, proof } =
+            await userState.sync.genSealedEpochProof()
 
         await unirepContract
             .connect(accounts[5])
@@ -322,18 +300,8 @@ describe('Synchronizer process events', function () {
 
         // now commit the attetstations
         {
-            const preimages = await userState.sync.genEpochTreePreimages(epoch)
-            const { circuitInputs } =
-                BuildOrderedTree.buildInputsForLeaves(preimages)
-            const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.buildOrderedTree,
-                stringifyBigInts(circuitInputs)
-            )
-            const { publicSignals, proof } = new BuildOrderedTree(
-                r.publicSignals,
-                r.proof,
-                defaultProver
-            )
+            const { publicSignals, proof } =
+                await userState.sync.genSealedEpochProof()
 
             await unirepContract
                 .connect(accounts[5])
