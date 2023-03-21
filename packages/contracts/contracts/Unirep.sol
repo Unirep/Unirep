@@ -404,34 +404,6 @@ contract Unirep is IUnirep, VerifySignature {
         emit EpochSealed(epoch, attesterId, stateTreeRoot, root);
     }
 
-    // seal an epoch with no attestations
-    // only the state tree root will be non-zero
-    function sealEmptyEpoch(uint256 epoch, uint160 attesterId) public {
-        AttesterData storage attester = attesters[attesterId];
-        AttesterState storage state = attester.state[epoch];
-        updateEpochIfNeeded(attesterId);
-        if (attester.currentEpoch <= epoch) revert EpochNotMatch();
-        if (state.polysum.hash != 0) {
-            revert IncorrectHash();
-        }
-        if (attester.epochSealed[epoch]) {
-            revert DoubleSeal();
-        }
-        attester.epochSealed[epoch] = true;
-
-        if (attester.stateTrees[epoch].numberOfLeaves == 0) {
-            revert InvalidField();
-        }
-        uint256 stateTreeRoot = attester.stateTrees[epoch].root;
-        IncrementalBinaryTree.insert(
-            attester.historyTree,
-            PoseidonT3.hash([stateTreeRoot, 0])
-        );
-        attester.historyTreeRoots[attester.historyTree.root] = true;
-        // emit an event sealing the epoch
-        emit EpochSealed(epoch, attesterId, stateTreeRoot, 0);
-    }
-
     /**
      * @dev Allow a user to epoch transition for an attester. Accepts a zk proof outputting the new gst leaf
      **/
@@ -500,7 +472,26 @@ contract Unirep is IUnirep, VerifySignature {
         epoch = attesterCurrentEpoch(attesterId);
         if (epoch == attester.currentEpoch) return epoch;
 
-        // otherwise initialize the new epoch structures
+        // otherwise seal old epoch if empty
+        AttesterState storage state = attester.state[epoch];
+        uint oldEpoch = attester.currentEpoch;
+
+        if (
+            state.polysum.hash == 0 &&
+            attester.stateTrees[oldEpoch].numberOfLeaves > 0
+        ) {
+            attester.epochSealed[oldEpoch] = true;
+            uint256 stateTreeRoot = attester.stateTrees[oldEpoch].root;
+            IncrementalBinaryTree.insert(
+                attester.historyTree,
+                PoseidonT3.hash([stateTreeRoot, 0])
+            );
+            attester.historyTreeRoots[attester.historyTree.root] = true;
+            // emit an event sealing the epoch
+            emit EpochSealed(oldEpoch, attesterId, stateTreeRoot, 0);
+        }
+
+        // and initialize the new epoch structures
 
         for (uint8 i; i < stateTreeDepth; i++) {
             attester.stateTrees[epoch].zeroes[i] = emptyStateTree.zeroes[i];

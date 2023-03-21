@@ -67,17 +67,6 @@ function sealEpoch(
 ) public
 ```
 
-## sealEmptyEpoch
-
-Finalize an epoch that contains only state tree leaves (e.g. no attestations). Does not require a zk proof.
-
-```sol
-function sealEmptyEpoch(
-  uint256 epoch,
-  uint160 attesterId
-) public
-```
-
 ## userStateTransition
 
 Execute a user state transition using a ZK proof. This will insert a new state tree leaf in the current epoch.

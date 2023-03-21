@@ -105,11 +105,11 @@ describe('Attester getters', function () {
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await unirepContract
-            .connect(accounts[4])
-            .sealEmptyEpoch(epoch, attester.address)
-            .then((t) => t.wait())
         await ethers.provider.send('evm_mine', [])
+        await unirepContract
+            .connect(accounts[5])
+            .updateEpochIfNeeded(attester.address)
+            .then((t) => t.wait())
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(stateTreeLeaf)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
