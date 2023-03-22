@@ -25,7 +25,6 @@
     },
     "dependencies": {
         "@zk-kit/incremental-merkle-tree": "^0.4.3",
-        "maci-crypto": "^0.9.1",
         "poseidon-lite": "^0.0.2"
     },
     "devDependencies": {
