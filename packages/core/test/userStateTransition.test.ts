@@ -77,10 +77,6 @@ describe('User state transition', function () {
         )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        await unirepContract
-            .connect(accounts[5])
-            .updateEpochIfNeeded(attester.address)
-            .then((t) => t.wait())
 
         for (let i = 0; i < 5; i++) {
             const userState = await genUserState(

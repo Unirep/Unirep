@@ -169,10 +169,7 @@ describe('State tree', function () {
         )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        await unirepContract
-            .connect(accounts[5])
-            .updateEpochIfNeeded(attester.address)
-            .then((t) => t.wait())
+
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 

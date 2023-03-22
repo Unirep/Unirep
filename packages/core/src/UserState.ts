@@ -454,19 +454,45 @@ export default class UserState {
                 ]).toString(),
             },
         })
-        if (!historyLeaf) {
+        const epoch = await this.sync._db.findOne('Epoch', {
+            where: {
+                number: fromEpoch,
+            },
+        })
+        const historyTree = await this.sync.genHistoryTree()
+        let historyTreeProof
+        if (historyLeaf) {
+            const index = await this.sync._db.count('HistoryTreeLeaf', {
+                index: {
+                    lt: historyLeaf.index,
+                },
+                attesterId: this.sync.attesterId.toString(),
+            })
+            historyTreeProof = historyTree.createProof(index)
+        } else if (!epoch || !epoch.sealed) {
+            // we need to calculate the expected history tree leaf
+            const fromStateTree = await this.sync.genStateTree(fromEpoch)
+            const attestations = await this.sync._db.findMany('Attestation', {
+                where: {
+                    epoch: fromEpoch,
+                },
+            })
+            if (attestations.length > 0) {
+                throw new Error(
+                    '@unirep/core: UserState UST from epoch is not sealed'
+                )
+            }
+            // otherwise we can predict the leaf that will be inserted
+            const newHistoryLeaf = hash2([fromStateTree.root, 0])
+            historyTree.insert(newHistoryLeaf)
+            historyTreeProof = historyTree.createProof(
+                historyTree.leaves.length - 1
+            )
+        } else {
             throw new Error(
                 `@unirep/core: UserState unable to find history tree leaf`
             )
         }
-        const index = await this.sync._db.count('HistoryTreeLeaf', {
-            index: {
-                lt: historyLeaf.index,
-            },
-            attesterId: this.sync.attesterId.toString(),
-        })
-        const historyTree = await this.sync.genHistoryTree()
-        const historyTreeProof = historyTree.createProof(index)
         const circuitInputs = {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
