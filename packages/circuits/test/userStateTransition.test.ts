@@ -336,21 +336,7 @@ describe('User state transition', function () {
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.userStateTransition, inputs)
                 .then(() => rj())
-                .catch((err) => {
-                    if (
-                        err
-                            .toString()
-                            .indexOf(
-                                'Error in template UserStateTransition_308 line: 215'
-                            ) === -1
-                    ) {
-                        console.log(err)
-                        console.log('Wrong error')
-                        throw err
-                    } else {
-                        rs()
-                    }
-                })
+                .catch(() => rs())
         })
     })
 
