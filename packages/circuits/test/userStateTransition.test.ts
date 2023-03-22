@@ -216,7 +216,7 @@ describe('User state transition', function () {
         )
         epochTree.insert(40124)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        const epochTreeRoot
+        const epochTreeRoot = 0
         historyTree.insert(hash2([tree.root, epochTreeRoot]))
         const { isValid, publicSignals } = await genProofAndVerify(
             Circuit.userStateTransition,
