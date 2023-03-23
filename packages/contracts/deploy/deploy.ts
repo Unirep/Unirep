@@ -1,7 +1,6 @@
 import { ethers } from 'ethers'
 import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
-import poseidon from './poseidon'
 import {
     compileVerifier,
     createVerifierName,
@@ -65,25 +64,31 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
 
-    const libraries = {}
-    for (const [inputCount, { abi, bytecode }] of Object.entries(
-        poseidon
-    ) as any) {
-        await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
-        const f = new ethers.ContractFactory(abi, bytecode, deployer)
-        const c = await retryAsNeeded(() => f.deploy())
-        await c.deployed()
-        libraries[`Poseidon${inputCount}`] = c.address
+    let PoseidonT2
+    {
+        const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
+        const poseidonArtifacts = tryPath(poseidonPath)
+        const poseidonFactory = new ethers.ContractFactory(
+            poseidonArtifacts.abi,
+            poseidonArtifacts.bytecode,
+            deployer
+        )
+        PoseidonT2 = await retryAsNeeded(() => poseidonFactory.deploy())
+        await PoseidonT2.deployed()
     }
-    const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
-    const poseidonArtifacts = tryPath(poseidonPath)
-    const poseidonFactory = new ethers.ContractFactory(
-        poseidonArtifacts.abi,
-        poseidonArtifacts.bytecode,
-        deployer
-    )
-    const PoseidonT2 = await retryAsNeeded(() => poseidonFactory.deploy())
-    await PoseidonT2.deployed()
+
+    let PoseidonT3
+    {
+        const poseidonPath = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
+        const poseidonArtifacts = tryPath(poseidonPath)
+        const poseidonFactory = new ethers.ContractFactory(
+            poseidonArtifacts.abi,
+            poseidonArtifacts.bytecode,
+            deployer
+        )
+        PoseidonT3 = await retryAsNeeded(() => poseidonFactory.deploy())
+        await PoseidonT3.deployed()
+    }
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
@@ -92,8 +97,7 @@ export const deployUnirep = async (
     const incrementalMerkleTreeFactory = new ethers.ContractFactory(
         incArtifacts.abi,
         linkLibrary(incArtifacts.bytecode, {
-            ['@zk-kit/incremental-merkle-tree.sol/Hashes.sol:PoseidonT3']:
-                libraries['Poseidon2'],
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
         }),
         deployer
     )
