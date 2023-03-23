@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import random from 'randomf'
 import poseidon from 'poseidon-lite'
 export { poseidon }
 
@@ -31,37 +31,7 @@ export const EPK_R = BigInt(
     '11105707062209303735980536775061420040143715723438319441848723820903914190159'
 )
 
-export const genRandomSalt = () => {
-    if (typeof window !== 'undefined') {
-        // in browser
-        if (
-            typeof window.crypto !== 'undefined' &&
-            typeof window.crypto.getRandomValues === 'function'
-        ) {
-            // webcrypto support
-            const arr = new Uint32Array(32)
-            window.crypto.getRandomValues(arr)
-            return arr.reduce((acc, val) => {
-                return (acc * (BigInt(val) + 1)) % F
-            }, BigInt(1))
-        } else {
-            // no webcrypto support, fallback to math.random
-            console.warn(
-                'No webcrypto support, using insecure random number generator'
-            )
-            return Array(32)
-                .fill(0)
-                .map(() => Math.floor(1 + Math.random() * 2 ** 32))
-                .reduce((acc, val) => {
-                    return (acc * BigInt(val)) % F
-                }, BigInt(1))
-        }
-    } else {
-        return crypto.randomBytes(64).reduce((acc, val) => {
-            return (acc * (BigInt(val) + 1)) % F
-        }, BigInt(1))
-    }
-}
+export const genRandomSalt = () => randomf(F)
 
 export const modexp = (v: bigint, p: number): bigint => {
     let o = BigInt(1)

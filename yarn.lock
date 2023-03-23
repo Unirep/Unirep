@@ -4641,6 +4641,7 @@ __metadata:
     "@zk-kit/incremental-merkle-tree": ^0.4.3
     mocha: ^10.0.0
     poseidon-lite: ^0.0.2
+    randomf: ^0.0.0
     typescript: ^4.7.3
   languageName: unknown
   linkType: soft
@@ -15097,6 +15098,13 @@ __metadata:
   dependencies:
     safe-buffer: ^5.1.0
   checksum: d779499376bd4cbb435ef3ab9a957006c8682f343f14089ed5f27764e4645114196e75b7f6abf1cbd84fd247c0cb0651698444df8c9bf30e62120fbbc52269d6
+  languageName: node
+  linkType: hard
+
+"randomf@npm:^0.0.0":
+  version: 0.0.0
+  resolution: "randomf@npm:0.0.0"
+  checksum: 266dfa466709d48ef5ed0f3510cb9eeebd2aa5a7f602a8e692e98144eede869d98086611ca0c8375748e390c74af31ae0783c5688f83c803013f549d04999117
   languageName: node
   linkType: hard
 
