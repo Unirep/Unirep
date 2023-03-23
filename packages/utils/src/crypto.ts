@@ -1,4 +1,4 @@
-import random from 'randomf'
+import randomf from 'randomf'
 import poseidon from 'poseidon-lite'
 export { poseidon }
 
