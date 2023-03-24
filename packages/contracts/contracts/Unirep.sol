@@ -42,9 +42,6 @@ contract Unirep is IUnirep, VerifySignature {
     // Attester id == address
     mapping(uint160 => AttesterData) attesters;
 
-    // for cheap initialization
-    IncrementalTreeData emptyTree;
-
     // Mapping of used nullifiers
     mapping(uint256 => bool) public usedNullifiers;
 
@@ -80,7 +77,6 @@ contract Unirep is IUnirep, VerifySignature {
         buildOrderedTreeVerifier = _buildOrderedTreeVerifier;
 
         // for initializing other trees without using poseidon function
-        IncrementalBinaryTree.init(emptyTree, _config.stateTreeDepth, 0);
         emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint64).max;
         attesters[uint160(0)].startTimestamp = block.timestamp;
@@ -203,19 +199,17 @@ contract Unirep is IUnirep, VerifySignature {
         attester.startTimestamp = block.timestamp;
 
         // initialize the first state tree
-        for (uint8 i; i < stateTreeDepth; i++) {
-            attester.stateTrees[0].zeroes[i] = emptyTree.zeroes[i];
-        }
-        attester.stateTrees[0].root = emptyTree.root;
-        attester.stateTrees[0].depth = stateTreeDepth;
-        attester.stateTreeRoots[0][emptyTree.root] = true;
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.stateTrees[0],
+            stateTreeDepth
+        );
+        attester.stateTreeRoots[0][attester.stateTrees[0].root] = true;
 
         // initialize the semaphore group tree
-        for (uint8 i; i < stateTreeDepth; i++) {
-            attester.semaphoreGroup.zeroes[i] = emptyTree.zeroes[i];
-        }
-        attester.semaphoreGroup.root = emptyTree.root;
-        attester.semaphoreGroup.depth = stateTreeDepth;
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.semaphoreGroup,
+            stateTreeDepth
+        );
 
         // set the epoch length
         attester.epochLength = epochLength;
@@ -504,12 +498,11 @@ contract Unirep is IUnirep, VerifySignature {
 
         // otherwise initialize the new epoch structures
 
-        for (uint8 i; i < stateTreeDepth; i++) {
-            attester.stateTrees[epoch].zeroes[i] = emptyTree.zeroes[i];
-        }
-        attester.stateTrees[epoch].root = emptyTree.root;
-        attester.stateTrees[epoch].depth = stateTreeDepth;
-        attester.stateTreeRoots[epoch][emptyTree.root] = true;
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.stateTrees[epoch],
+            stateTreeDepth
+        );
+        attester.stateTreeRoots[epoch][attester.stateTrees[epoch].root] = true;
 
         emit EpochEnded(epoch - 1, attesterId);
 
