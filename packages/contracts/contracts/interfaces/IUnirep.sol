@@ -63,6 +63,7 @@ interface IUnirep {
     error AttesterIdNotMatch(uint160 attesterId);
     error OutOfRange();
     error InvalidField();
+    error InvalidTimestamp();
 
     error InvalidSignature();
     error InvalidEpochKey();
