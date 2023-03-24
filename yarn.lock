@@ -4151,7 +4151,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^17.0.41, @types/node@npm:^17.0.5":
+"@types/node@npm:^17.0.5":
   version: 17.0.45
   resolution: "@types/node@npm:17.0.45"
   checksum: aa04366b9103b7d6cfd6b2ef64182e0eaa7d4462c3f817618486ea0422984c51fc69fd0d436eae6c9e696ddfdbec9ccaa27a917f7c2e8c75c5d57827fe3d95e8
@@ -18074,7 +18074,6 @@ __metadata:
   dependencies:
     "@types/chai": ^4.3.1
     "@types/mocha": ^9.1.1
-    "@types/node": ^17.0.41
     "@typescript-eslint/eslint-plugin": ^5.15.0
     argparse: ^2.0.1
     chai: ^4.3.6

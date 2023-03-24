@@ -130,9 +130,10 @@ contract Unirep is IUnirep, VerifySignature {
      * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
      * msg.sender must be attester
      */
-    function userSignUp(uint256[] memory publicSignals, uint256[8] memory proof)
-        public
-    {
+    function userSignUp(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public {
         uint256 attesterId = publicSignals[2];
         // only allow attester to sign up users
         if (uint256(uint160(msg.sender)) != attesterId)
@@ -246,9 +247,12 @@ contract Unirep is IUnirep, VerifySignature {
     /**
      * @dev Attest to a change in data for a user that controls `epochKey`
      */
-    function attest(uint256 epochKey, uint epoch, uint fieldIndex, uint change)
-        public
-    {
+    function attest(
+        uint256 epochKey,
+        uint epoch,
+        uint fieldIndex,
+        uint change
+    ) public {
         {
             uint currentEpoch = updateEpochIfNeeded(uint160(msg.sender));
             if (epoch != currentEpoch) revert EpochNotMatch();
@@ -348,7 +352,7 @@ contract Unirep is IUnirep, VerifySignature {
             // check that we're not at max capacity
             if (
                 state.polysum.index ==
-                uint(epochTreeArity)**uint(epochTreeDepth) - 2 + 1
+                uint(epochTreeArity) ** uint(epochTreeDepth) - 2 + 1
             ) {
                 revert MaxAttestations();
             }
@@ -480,18 +484,16 @@ contract Unirep is IUnirep, VerifySignature {
      * @dev Update the currentEpoch for an attester, if needed
      * https://github.com/ethereum/solidity/issues/13813
      */
-    function _updateEpochIfNeeded(uint256 attesterId)
-        public
-        returns (uint epoch)
-    {
+    function _updateEpochIfNeeded(
+        uint256 attesterId
+    ) public returns (uint epoch) {
         require(attesterId < type(uint160).max);
         return updateEpochIfNeeded(uint160(attesterId));
     }
 
-    function updateEpochIfNeeded(uint160 attesterId)
-        public
-        returns (uint epoch)
-    {
+    function updateEpochIfNeeded(
+        uint160 attesterId
+    ) public returns (uint epoch) {
         AttesterData storage attester = attesters[attesterId];
         epoch = attesterCurrentEpoch(attesterId);
         if (epoch == attester.currentEpoch) return epoch;
@@ -509,7 +511,9 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = epoch;
     }
 
-    function decodeEpochKeyControl(uint256 control)
+    function decodeEpochKeyControl(
+        uint256 control
+    )
         public
         pure
         returns (
@@ -526,7 +530,9 @@ contract Unirep is IUnirep, VerifySignature {
         return (revealNonce, attesterId, epoch, nonce);
     }
 
-    function decodeReputationControl(uint256 control)
+    function decodeReputationControl(
+        uint256 control
+    )
         public
         pure
         returns (
@@ -554,11 +560,9 @@ contract Unirep is IUnirep, VerifySignature {
         );
     }
 
-    function decodeEpochKeySignals(uint256[] memory publicSignals)
-        public
-        pure
-        returns (EpochKeySignals memory)
-    {
+    function decodeEpochKeySignals(
+        uint256[] memory publicSignals
+    ) public pure returns (EpochKeySignals memory) {
         EpochKeySignals memory signals;
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
@@ -592,11 +596,9 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidStateTreeRoot(signals.stateTreeRoot);
     }
 
-    function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
-        public
-        pure
-        returns (EpochKeySignals memory)
-    {
+    function decodeEpochKeyLiteSignals(
+        uint256[] memory publicSignals
+    ) public pure returns (EpochKeySignals memory) {
         EpochKeySignals memory signals;
         signals.epochKey = publicSignals[1];
         signals.data = publicSignals[2];
@@ -628,11 +630,9 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidEpoch(signals.epoch);
     }
 
-    function decodeReputationSignals(uint256[] memory publicSignals)
-        public
-        pure
-        returns (ReputationSignals memory)
-    {
+    function decodeReputationSignals(
+        uint256[] memory publicSignals
+    ) public pure returns (ReputationSignals memory) {
         ReputationSignals memory signals;
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
@@ -677,32 +677,26 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidStateTreeRoot(signals.stateTreeRoot);
     }
 
-    function attesterStartTimestamp(uint160 attesterId)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterStartTimestamp(
+        uint160 attesterId
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         require(attester.startTimestamp != 0); // indicates the attester is signed up
         return attester.startTimestamp;
     }
 
-    function attesterCurrentEpoch(uint160 attesterId)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterCurrentEpoch(
+        uint160 attesterId
+    ) public view returns (uint256) {
         uint256 timestamp = attesters[attesterId].startTimestamp;
         uint256 epochLength = attesters[attesterId].epochLength;
         if (timestamp == 0) revert AttesterNotSignUp(attesterId);
         return (block.timestamp - timestamp) / epochLength;
     }
 
-    function attesterEpochRemainingTime(uint160 attesterId)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterEpochRemainingTime(
+        uint160 attesterId
+    ) public view returns (uint256) {
         uint256 timestamp = attesters[attesterId].startTimestamp;
         uint256 epochLength = attesters[attesterId].epochLength;
         if (timestamp == 0) revert AttesterNotSignUp(attesterId);
@@ -711,20 +705,17 @@ contract Unirep is IUnirep, VerifySignature {
             (timestamp + (_currentEpoch + 1) * epochLength) - block.timestamp;
     }
 
-    function attesterEpochLength(uint160 attesterId)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterEpochLength(
+        uint160 attesterId
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         return attester.epochLength;
     }
 
-    function attesterEpochSealed(uint160 attesterId, uint256 epoch)
-        public
-        view
-        returns (bool)
-    {
+    function attesterEpochSealed(
+        uint160 attesterId,
+        uint256 epoch
+    ) public view returns (bool) {
         uint256 currentEpoch = attesterCurrentEpoch(attesterId);
         AttesterData storage attester = attesters[attesterId];
         if (currentEpoch <= epoch) return false;
@@ -744,47 +735,40 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.stateTreeRoots[epoch][root];
     }
 
-    function attesterStateTreeRoot(uint160 attesterId, uint256 epoch)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterStateTreeRoot(
+        uint160 attesterId,
+        uint256 epoch
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         return attester.stateTrees[epoch].root;
     }
 
-    function attesterStateTreeLeafCount(uint160 attesterId, uint256 epoch)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterStateTreeLeafCount(
+        uint160 attesterId,
+        uint256 epoch
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         return attester.stateTrees[epoch].numberOfLeaves;
     }
 
-    function attesterSemaphoreGroupRoot(uint160 attesterId)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterSemaphoreGroupRoot(
+        uint160 attesterId
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         return attester.semaphoreGroup.root;
     }
 
-    function attesterMemberCount(uint160 attesterId)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterMemberCount(
+        uint160 attesterId
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         return attester.semaphoreGroup.numberOfLeaves;
     }
 
-    function attesterEpochRoot(uint160 attesterId, uint256 epoch)
-        public
-        view
-        returns (uint256)
-    {
+    function attesterEpochRoot(
+        uint160 attesterId,
+        uint256 epoch
+    ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         return attester.epochTreeRoots[epoch];
     }
