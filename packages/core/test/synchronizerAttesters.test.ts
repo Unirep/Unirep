@@ -122,7 +122,10 @@ describe('Synchronizer watch multiple attesters', function () {
 
         for (let count = 1; count < ATTESTER_COUNT; count++) {
             await synchronizer.add(accounts[count].address)
-            const stateCount = await synchronizer._db.count('SynchronizerState', {})
+            const stateCount = await synchronizer._db.count(
+                'SynchronizerState',
+                {}
+            )
             expect(stateCount).to.equal(count + 1)
         }
     })
@@ -156,7 +159,7 @@ describe('Synchronizer watch multiple attesters', function () {
         await synchronizer.waitForSync()
         const userCount = await synchronizer._db.count('UserSignUp', {
             attesterId: BigInt(attester2.address).toString(),
-            commitment: id.genIdentityCommitment().toString()
+            commitment: id.genIdentityCommitment().toString(),
         })
         expect(userCount).to.equal(1)
     })
@@ -189,10 +192,12 @@ describe('Synchronizer watch multiple attesters', function () {
         )
         await synchronizer.add(attester2.address)
         await synchronizer.waitForSync()
-        console.log(await synchronizer._db.findMany('SynchronizerState', { where: {} }))
+        console.log(
+            await synchronizer._db.findMany('SynchronizerState', { where: {} })
+        )
         const userCount = await synchronizer._db.count('UserSignUp', {
             attesterId: BigInt(attester2.address).toString(),
-            commitment: id.genIdentityCommitment().toString()
+            commitment: id.genIdentityCommitment().toString(),
         })
         expect(userCount).to.equal(1)
     })
