@@ -42,9 +42,6 @@ contract Unirep is IUnirep, VerifySignature {
     // Attester id == address
     mapping(uint160 => AttesterData) attesters;
 
-    // for cheap initialization
-    IncrementalTreeData emptyTree;
-
     // Mapping of used nullifiers
     mapping(uint256 => bool) public usedNullifiers;
 
@@ -80,7 +77,6 @@ contract Unirep is IUnirep, VerifySignature {
         buildOrderedTreeVerifier = _buildOrderedTreeVerifier;
 
         // for initializing other trees without using poseidon function
-        IncrementalBinaryTree.init(emptyTree, _config.stateTreeDepth, 0);
         emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint64).max;
         attesters[uint160(0)].startTimestamp = block.timestamp;
@@ -99,6 +95,38 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     /**
+     * Use this if your application has custom signup proof logic.
+     * e.g. to insert a non-zero data field in the state tree leaf
+     **/
+    function manualUserSignUp(
+        uint64 epoch,
+        uint256 identityCommitment,
+        uint256 stateTreeLeaf,
+        uint256[] memory initialData
+    ) public {
+        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
+        if (initialData.length > fieldCount) revert OutOfRange();
+        for (uint8 x = 0; x < initialData.length; x++) {
+            if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
+            if (
+                x >= sumFieldCount &&
+                (x - sumFieldCount) % 2 == (sumFieldCount + 1) % 2 &&
+                initialData[x] != 0
+            ) {
+                revert InvalidTimestamp();
+            }
+            emit Attestation(
+                epoch,
+                identityCommitment,
+                uint160(msg.sender),
+                x,
+                initialData[x],
+                block.timestamp
+            );
+        }
+    }
+
+    /**
      * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
      * msg.sender must be attester
      */
@@ -113,33 +141,44 @@ contract Unirep is IUnirep, VerifySignature {
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
-        uint256 identityCommitment = publicSignals[0];
+        _userSignUp(
+            uint64(publicSignals[3]),
+            publicSignals[0],
+            publicSignals[1]
+        );
+    }
+
+    function _userSignUp(
+        uint64 epoch,
+        uint256 identityCommitment,
+        uint256 stateTreeLeaf
+    ) internal {
+        uint160 attesterId = uint160(msg.sender);
         _updateEpochIfNeeded(attesterId);
-        AttesterData storage attester = attesters[uint160(attesterId)];
-        if (attester.startTimestamp == 0)
-            revert AttesterNotSignUp(uint160(attesterId));
+        AttesterData storage attester = attesters[attesterId];
+        if (attester.startTimestamp == 0) revert AttesterNotSignUp(attesterId);
 
         if (attester.identityCommitments[identityCommitment])
             revert UserAlreadySignedUp(identityCommitment);
         attester.identityCommitments[identityCommitment] = true;
 
-        if (attester.currentEpoch != publicSignals[3]) revert EpochNotMatch();
+        if (attester.currentEpoch != epoch) revert EpochNotMatch();
 
         emit UserSignedUp(
             attester.currentEpoch,
             identityCommitment,
-            uint160(attesterId),
+            attesterId,
             attester.stateTrees[attester.currentEpoch].numberOfLeaves
         );
         emit StateTreeLeaf(
             attester.currentEpoch,
-            uint160(attesterId),
+            attesterId,
             attester.stateTrees[attester.currentEpoch].numberOfLeaves,
-            publicSignals[1]
+            stateTreeLeaf
         );
         IncrementalBinaryTree.insert(
             attester.stateTrees[attester.currentEpoch],
-            publicSignals[1]
+            stateTreeLeaf
         );
         attester.stateTreeRoots[attester.currentEpoch][
             attester.stateTrees[attester.currentEpoch].root
@@ -160,19 +199,17 @@ contract Unirep is IUnirep, VerifySignature {
         attester.startTimestamp = block.timestamp;
 
         // initialize the first state tree
-        for (uint8 i; i < stateTreeDepth; i++) {
-            attester.stateTrees[0].zeroes[i] = emptyTree.zeroes[i];
-        }
-        attester.stateTrees[0].root = emptyTree.root;
-        attester.stateTrees[0].depth = stateTreeDepth;
-        attester.stateTreeRoots[0][emptyTree.root] = true;
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.stateTrees[0],
+            stateTreeDepth
+        );
+        attester.stateTreeRoots[0][attester.stateTrees[0].root] = true;
 
         // initialize the semaphore group tree
-        for (uint8 i; i < stateTreeDepth; i++) {
-            attester.semaphoreGroup.zeroes[i] = emptyTree.zeroes[i];
-        }
-        attester.semaphoreGroup.root = emptyTree.root;
-        attester.semaphoreGroup.depth = stateTreeDepth;
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.semaphoreGroup,
+            stateTreeDepth
+        );
 
         // set the epoch length
         attester.epochLength = epochLength;
@@ -461,12 +498,11 @@ contract Unirep is IUnirep, VerifySignature {
 
         // otherwise initialize the new epoch structures
 
-        for (uint8 i; i < stateTreeDepth; i++) {
-            attester.stateTrees[epoch].zeroes[i] = emptyTree.zeroes[i];
-        }
-        attester.stateTrees[epoch].root = emptyTree.root;
-        attester.stateTrees[epoch].depth = stateTreeDepth;
-        attester.stateTreeRoots[epoch][emptyTree.root] = true;
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.stateTrees[epoch],
+            stateTreeDepth
+        );
+        attester.stateTreeRoots[epoch][attester.stateTrees[epoch].root] = true;
 
         emit EpochEnded(epoch - 1, attesterId);
 
