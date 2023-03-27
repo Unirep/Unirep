@@ -36,7 +36,7 @@ export async function bootstrapAttestations(
             .userSignUp(r.publicSignals, r.proof)
             .then((t) => t.wait())
         await userState.waitForSync()
-        const [epochKey] = userState.getEpochKeys(epoch) as bigint[]
+        const [epochKey] = (await userState.getEpochKeys(epoch)) as bigint[]
         for (let j = 0; j < attestationCount; j++) {
             const fieldIndex = Math.floor(
                 Math.random() * (synchronizer.settings.sumFieldCount + 1)

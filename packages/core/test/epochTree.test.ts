@@ -98,7 +98,7 @@ describe('Epoch tree', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
+        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
         const config = await unirepContract.config()
         const epochTree = new IncrementalMerkleTree(
             config.epochTreeDepth,

@@ -64,7 +64,7 @@ describe('User state', function () {
             .connect(attester)
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
-        const epk = userState.getEpochKeys(epoch, 1)
+        const epk = await userState.getEpochKeys(epoch, 1)
         const fieldIndex = 1
         const v0 = F - BigInt(1)
         const v1 = BigInt(12409124)
@@ -220,7 +220,7 @@ describe('User state', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
+        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
         const [epk] = epochKeys
         const fieldIndex = 0
         const val = 1389

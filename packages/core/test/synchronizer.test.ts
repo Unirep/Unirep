@@ -68,6 +68,47 @@ describe('Synchronizer process events', function () {
         })
     }
 
+    it('should process attester sign up event', async () => {
+        const [AttesterSignedUp] =
+            synchronizer.unirepContract.filters.AttesterSignedUp()
+                .topics as string[]
+        const signUpEvent = new Promise((rs, rj) =>
+            synchronizer.once(AttesterSignedUp, (event) => rs(event))
+        )
+        const attesterCount = await (synchronizer as any)._db.count(
+            'Attester',
+            {}
+        )
+
+        const accounts = await ethers.getSigners()
+        const attester = accounts[2]
+        const epochLength = 100
+        const tx = await synchronizer.unirepContract
+            .connect(attester)
+            .attesterSignUp(epochLength)
+
+        const { timestamp } = await tx
+            .wait()
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
+
+        await signUpEvent
+        const attesterId = BigInt(attester.address).toString()
+        await synchronizer.waitForSync()
+        const docs = await (synchronizer as any)._db.findMany('Attester', {
+            where: {
+                _id: attesterId,
+            },
+        })
+        expect(docs.length).to.equal(1)
+        expect(docs[0].epochLength).to.equal(epochLength)
+        expect(docs[0].startTimestamp).to.equal(timestamp)
+        const finalUserCount = await (synchronizer as any)._db.count(
+            'Attester',
+            {}
+        )
+        expect(finalUserCount).to.equal(attesterCount + 1)
+    })
+
     it('should process sign up event', async () => {
         const [UserSignedUp] =
             synchronizer.unirepContract.filters.UserSignedUp()
@@ -197,7 +238,7 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
+        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
         const [epk] = epochKeys
         const fieldIndex = 1
         const val = 138
@@ -276,7 +317,7 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
+        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
         const [epk] = epochKeys
         const fieldIndex = 1
         const val = 18891
