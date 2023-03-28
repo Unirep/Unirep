@@ -114,7 +114,7 @@ export const compareAttestations = (attestDB: any, attestObj: any) => {
 export const genUnirepState = async (
     provider: ethers.providers.Provider,
     address: string,
-    attesterId: bigint,
+    attesterId?: bigint | bigint[],
     _db?: DB
 ) => {
     const unirep = new Synchronizer({
@@ -141,7 +141,7 @@ export const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
     userIdentity: ZkIdentity,
-    attesterId: bigint,
+    attesterId?: bigint | bigint[],
     _db?: DB
 ) => {
     const synchronizer = await genUnirepState(

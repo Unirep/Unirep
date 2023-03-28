@@ -65,14 +65,6 @@ export default class UserState {
         await this.sync.waitForSync(n)
     }
 
-    async add(attesterId: bigint | string) {
-        await this.sync.add(attesterId)
-    }
-
-    async remove(attesterId: bigint | string) {
-        await this.sync.remove(attesterId)
-    }
-
     /**
      * Query if the user is signed up in the unirep state.
      * @returns True if user has signed up in unirep contract, false otherwise.
@@ -215,12 +207,7 @@ export default class UserState {
         return Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
-                genEpochKey(
-                    this.id.secretHash,
-                    this.sync.attesterId.toString(),
-                    epoch,
-                    i
-                )
+                genEpochKey(this.id.secretHash, attesterId.toString(), epoch, i)
             )
     }
 
