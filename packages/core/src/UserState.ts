@@ -37,7 +37,7 @@ export default class UserState {
         config:
             | {
                   db?: DB
-                  attesterId?: bigint
+                  attesterId?: bigint | bigint[]
                   unirepAddress: string
                   prover: Prover
                   provider: ethers.providers.Provider
