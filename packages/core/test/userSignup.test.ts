@@ -37,7 +37,7 @@ describe('User Signup', function () {
         await ethers.provider.send('evm_revert', [snapshot])
     })
 
-    it('sign up users with no airdrop', async () => {
+    it('sign up users with no initial data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const rootHistories = [] as any
@@ -54,7 +54,7 @@ describe('User Signup', function () {
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
 
-            const tx = await unirepContract
+            await unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
@@ -69,10 +69,7 @@ describe('User Signup', function () {
                 id.secretHash,
                 attester.address,
                 contractEpoch.toNumber(),
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
@@ -85,7 +82,7 @@ describe('User Signup', function () {
                 )
             expect(stateRootExists).to.be.true
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // Check GST roots match Unirep state
@@ -101,6 +98,59 @@ describe('User Signup', function () {
             )
             expect(exist).to.be.true
         }
-        await unirepState.stop()
+        unirepState.stop()
+    })
+
+    it('should sign up user with initial data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const config = await unirepContract.config()
+
+        const id = new ZkIdentity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            BigInt(attester.address)
+        )
+
+        const data = Array(config.fieldCount)
+            .fill(0)
+            .map((_, i) => {
+                if (
+                    i >= config.sumFieldCount &&
+                    (i - config.sumFieldCount) % 2 ===
+                        (config.sumFieldCount + 1) % 2
+                ) {
+                    return 0
+                }
+                return i + 100
+            })
+
+        const leaf = genStateTreeLeaf(
+            id.secretHash,
+            attester.address,
+            contractEpoch.toNumber(),
+            data
+        )
+
+        await unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.genIdentityCommitment(),
+                leaf,
+                data
+            )
+            .then((t) => t.wait())
+        await userState.waitForSync()
+        const _data = await userState.getData()
+        for (let x = 0; x < config.fieldCount; x++) {
+            expect(_data[x].toString()).to.equal(data[x].toString())
+        }
+        await userState.sync.stop()
     })
 })

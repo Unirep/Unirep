@@ -28,69 +28,83 @@ pragma solidity ^0.8.0;
  9077311072387902334759390203097943153730624929858882748844779783513425243973
  */
 
-struct PolyhashData {
+struct PolysumData {
     uint hash;
-    uint degree;
-    uint R;
+    uint index;
 }
 
 // Calculate a hash of elements using a polynomial equation
-library Polyhash {
+library Polysum {
     uint256 internal constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 internal constant R =
-        13541932071940953975015828784917163839116271756887677686605888470260307083494;
 
-    // TODO: add R exp cache?
-
-    function add(PolyhashData storage self, uint val)
-        public
-        returns (uint degree)
-    {
+    function add(
+        PolysumData storage self,
+        uint val,
+        uint R
+    ) public returns (uint) {
         require(val < SNARK_SCALAR_FIELD, 'Polyhash: vlarge');
-        degree = self.degree + 1;
-        uint coef = modexp(degree);
+        uint index = self.index++;
+        uint coef = rForIndex(index, R);
         uint term = mulmod(coef, val, SNARK_SCALAR_FIELD);
         self.hash = addmod(self.hash, term, SNARK_SCALAR_FIELD);
-        self.degree++;
+        return index;
+    }
+
+    function add(PolysumData storage self, uint[] memory vals, uint R) public {
+        require(vals.length < type(uint8).max, 'Polyhash: alarge');
+        require(vals.length > 0, 'Polyhash: asmall');
+        uint index = self.index;
+        uint hash = self.hash;
+
+        uint Rx = rForIndex(index, R);
+        for (uint8 x = 0; x < vals.length; x++) {
+            uint term = mulmod(Rx, vals[x], SNARK_SCALAR_FIELD);
+            hash = addmod(hash, term, SNARK_SCALAR_FIELD);
+            index++;
+            Rx = mulmod(Rx, R, SNARK_SCALAR_FIELD);
+        }
+        self.hash = hash;
+        self.index = index;
     }
 
     /**
      * Update an element in the hash for a degree
      **/
     function update(
-        PolyhashData storage self,
+        PolysumData storage self,
+        uint index,
         uint oldval,
         uint newval,
-        uint degree
+        uint R
     ) public {
-        require(oldval < SNARK_SCALAR_FIELD, 'Polyhash: oldval-large');
-        require(newval < SNARK_SCALAR_FIELD, 'Polyhash: newval-large');
-        require(self.degree >= degree, 'Polyhash: degree-large');
-        uint coef = modexp(degree);
+        require(oldval < SNARK_SCALAR_FIELD, 'Polyhash: ofield');
+        require(newval < SNARK_SCALAR_FIELD, 'Polyhash: nfield');
+        require(index < self.index, 'Polyhash: uindex');
+        uint coef = rForIndex(index, R);
         uint oldterm = mulmod(coef, oldval, SNARK_SCALAR_FIELD);
         uint newterm = mulmod(coef, newval, SNARK_SCALAR_FIELD);
         uint diff = oldterm > newterm ? oldterm - newterm : newterm - oldterm;
+        uint hash = self.hash;
         if (newterm > oldterm) {
             // we are applying an addition
-            self.hash = addmod(self.hash, diff, SNARK_SCALAR_FIELD);
-        } else if (diff <= self.hash) {
+            self.hash = addmod(hash, diff, SNARK_SCALAR_FIELD);
+        } else if (diff <= hash) {
             // we can apply a normal subtraction (no mod)
             self.hash -= diff;
         } else {
             // we need to wrap, we're guaranteed that self.hash < diff < SNARK_SCALAR_FIELD
-            self.hash = SNARK_SCALAR_FIELD - (diff - self.hash);
+            self.hash = SNARK_SCALAR_FIELD - (diff - hash);
         }
     }
 
     /**
      * Calculate R ** degree % SNARK_SCALAR_FIELD
      **/
-    function modexp(uint degree) public view returns (uint xx) {
-        if (degree == 0) return 1;
-        if (degree == 1) return R;
-        uint _R = R;
+    function rForIndex(uint _index, uint R) public view returns (uint xx) {
+        if (_index == 0) return R;
         uint _F = SNARK_SCALAR_FIELD;
+        uint index = _index + 1;
         // modular exponentiation
         assembly {
             let freemem := mload(0x40)
@@ -101,9 +115,9 @@ library Polyhash {
             // length_of_MODULUS: 32 bytes
             mstore(add(freemem, 0x40), 0x20)
             // BASE
-            mstore(add(freemem, 0x60), _R)
+            mstore(add(freemem, 0x60), R)
             // EXPONENT
-            mstore(add(freemem, 0x80), degree)
+            mstore(add(freemem, 0x80), index)
             // MODULUS
             mstore(add(freemem, 0xA0), _F)
             let success := staticcall(

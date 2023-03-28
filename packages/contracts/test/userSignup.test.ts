@@ -6,6 +6,7 @@ import {
     ZkIdentity,
     stringifyBigInts,
     genStateTreeLeaf,
+    F,
 } from '@unirep/utils'
 import { Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -13,12 +14,7 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
-const {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} = defaultConfig
+const { STATE_TREE_DEPTH, FIELD_COUNT } = defaultConfig
 
 describe('User Signup', function () {
     this.timeout(200000)
@@ -75,6 +71,33 @@ describe('User Signup', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
     })
 
+    it('should fail to signup with unregistered attester', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[2]
+        const id = new ZkIdentity()
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: 0,
+                identity_nullifier: id.identityNullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
+        )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await expect(
+            unirepContract.connect(attester).userSignUp(publicSignals, proof)
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            'AttesterNotSignUp',
+            attester.address
+        )
+    })
+
     it('sign up many users should succeed', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -111,10 +134,7 @@ describe('User Signup', function () {
                     id.secretHash,
                     BigInt(attester.address),
                     epoch,
-                    0,
-                    0,
-                    0,
-                    0
+                    Array(FIELD_COUNT).fill(0)
                 )
 
                 stateTree.insert(gstLeaf)
@@ -314,5 +334,149 @@ describe('User Signup', function () {
         await expect(
             unirepContract.connect(attester).userSignUp(publicSignals, proof)
         ).to.be.revertedWithCustomError(unirepContract, 'EpochNotMatch')
+    })
+
+    it('should sign up user with initial data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const config = await unirepContract.config()
+
+        const id = new ZkIdentity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const data = Array(config.fieldCount)
+            .fill(0)
+            .map((_, i) => {
+                if (
+                    i >= config.sumFieldCount &&
+                    (i - config.sumFieldCount) % 2 ===
+                        (config.sumFieldCount + 1) % 2
+                ) {
+                    return 0
+                }
+                return i + 100
+            })
+
+        const leaf = genStateTreeLeaf(
+            id.secretHash,
+            attester.address,
+            contractEpoch.toNumber(),
+            data
+        )
+        const tx = await unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.genIdentityCommitment(),
+                leaf,
+                data
+            )
+        await expect(tx)
+            .to.emit(unirepContract, 'UserSignedUp')
+            .withArgs(
+                contractEpoch,
+                id.genIdentityCommitment(),
+                attester.address,
+                0
+            )
+        await expect(tx)
+            .to.emit(unirepContract, 'StateTreeLeaf')
+            .withArgs(contractEpoch, attester.address, 0, leaf)
+        const { timestamp } = await tx
+            .wait()
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
+        for (const [i, d] of Object.entries(data)) {
+            await expect(tx)
+                .to.emit(unirepContract, 'Attestation')
+                .withArgs(
+                    contractEpoch,
+                    id.genIdentityCommitment(),
+                    attester.address,
+                    i,
+                    d,
+                    timestamp
+                )
+        }
+    })
+
+    it('should fail to sign up with non-zero timestamp data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const config = await unirepContract.config()
+
+        const id = new ZkIdentity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const data = Array(config.fieldCount)
+            .fill(0)
+            .map((_, i) => {
+                if (
+                    i >= config.sumFieldCount &&
+                    (i - config.sumFieldCount) % 2 ===
+                        (config.sumFieldCount + 1) % 2
+                ) {
+                    return 1
+                }
+                return i + 100
+            })
+
+        const tx = unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.genIdentityCommitment(),
+                0,
+                data
+            )
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidTimestamp'
+        )
+    })
+
+    it('should fail to sign up with too much user data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const config = await unirepContract.config()
+
+        const id = new ZkIdentity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const tx = unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.genIdentityCommitment(),
+                1,
+                Array(config.fieldCount + 1).fill(1)
+            )
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'OutOfRange'
+        )
+    })
+
+    it('should fail to sign up with user data out of range', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const id = new ZkIdentity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const tx = unirepContract
+            .connect(attester)
+            .manualUserSignUp(contractEpoch, id.genIdentityCommitment(), 1, [F])
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidField'
+        )
     })
 })

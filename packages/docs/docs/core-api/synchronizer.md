@@ -51,6 +51,22 @@ Manually poll for new events. Returns a boolean indicating whether the synchroni
 synchronizer.poll(): Promise<{ complete: boolean }>
 ```
 
+## pollRate
+
+How frequently the synchronizer will poll the blockchain for new events (specified in milliseconds). Default: `5000`
+
+```ts
+synchronizer.pollRate
+```
+
+## blockRate
+
+How many blocks the synchronizer will query on each poll. Default: `100000`
+
+```ts
+synchronizer.blockRate
+```
+
 ## waitForSync
 
 Wait for the synchronizer to sync up to a certain block. By default this will wait until the current latest known block (according to the provider).
@@ -147,7 +163,10 @@ synchronizer.genEpochTree(epoch: bigint): Promise<IncrementalMerkleTree>
 Get the pre-images for the leaves in an epoch tree.
 
 ```ts
-synchronizer.genEpochTreePreimages(epoch: bigint | number): Promise<bigint[][]>
+synchronizer.genEpochTreePreimages(
+  epoch: bigint | number,
+  attesterId: bigint | string = this.attesterId
+): Promise<bigint[][]>
 ```
 
 ## stateRootExists
@@ -173,3 +192,21 @@ Get the number of state tree leaves in a certain epoch.
 ```ts
 synchronizer.numStateTreeLeaves(epoch: number): Promise<number>
 ```
+
+## genSealedEpochProof
+
+Generate the sealed epoch proof. See [`sealEpoch`](../contracts-api/unirep-sol.md#sealepoch)
+
+```ts
+synchronizer.genSealedEpochProof(
+  options: {
+    epoch?: bigint
+    attesterId?: bigint
+    preimages?: bigint[]
+  } = {}
+): Promise<BuildOrderedTree>
+```
+
+:::tip
+This proof is large and best made with `rapidsnark`. This function should only be used for small trees.
+:::

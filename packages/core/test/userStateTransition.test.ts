@@ -5,10 +5,14 @@ import {
     ZkIdentity,
     genStateTreeLeaf,
     IncrementalMerkleTree,
+    genEpochKey,
+    stringifyBigInts,
 } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState } from './utils'
+import { BuildOrderedTree, Circuit } from '@unirep/circuits'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const EPOCH_LENGTH = 1000
 
@@ -64,7 +68,7 @@ describe('User state transition', function () {
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // epoch transition
@@ -92,15 +96,12 @@ describe('User state transition', function () {
                 users[i].secretHash,
                 attester.address,
                 toEpoch,
-                0,
-                0,
-                0,
-                0
+                Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
 
-            await userState.sync.stop()
+            userState.sync.stop()
         }
 
         // Check GST roots match Unirep state
@@ -116,6 +117,96 @@ describe('User state transition', function () {
             )
             expect(exist).to.be.true
         }
-        await unirepState.stop()
+        unirepState.stop()
+    })
+
+    it('user should not receive rep if he does not transition to', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const user = new ZkIdentity()
+        for (let i = 0; i < 10; i++) {
+            await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+            await ethers.provider.send('evm_mine', [])
+        }
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            user,
+            BigInt(attester.address)
+        )
+        {
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch: epoch.toNumber() }
+            )
+
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+
+        // epoch transition
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        // receive reputation
+        const newEpoch = epoch.toNumber() + 1
+        const epochKey = genEpochKey(
+            user.secretHash,
+            BigInt(attester.address),
+            newEpoch,
+            0
+        )
+        const fieldIndex = 0
+        const val = 10
+        await unirepContract
+            .connect(attester)
+            .attest(epochKey, newEpoch, fieldIndex, val)
+            .then((t) => t.wait())
+
+        // epoch transition
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+        await userState.waitForSync()
+        const preimages = await userState.sync.genEpochTreePreimages(newEpoch)
+        const { circuitInputs } =
+            BuildOrderedTree.buildInputsForLeaves(preimages)
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
+        )
+        const { publicSignals, proof } = new BuildOrderedTree(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        await unirepContract
+            .connect(accounts[5])
+            .sealEpoch(newEpoch, attester.address, publicSignals, proof)
+            .then((t) => t.wait())
+
+        await userState.waitForSync()
+
+        {
+            const toEpoch = newEpoch + 1
+            const { publicSignals, proof } =
+                await userState.genUserStateTransitionProof({
+                    toEpoch,
+                })
+            // submit it
+            await unirepContract
+                .connect(accounts[4])
+                .userStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+
+        await userState.waitForSync()
+        const data = await userState.getData()
+        expect(data[fieldIndex].toString()).to.equal('0')
+        userState.sync.stop()
     })
 })

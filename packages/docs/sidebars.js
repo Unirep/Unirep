@@ -48,8 +48,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'Reputation',
-                    id: 'protocol/reputation',
+                    label: 'Data',
+                    id: 'protocol/data',
                 },
                 {
                     type: 'doc',
@@ -174,6 +174,11 @@ const sidebars = {
                     label: 'UserStateTransitionProof',
                     id: 'circuits-api/user-state-transition-proof',
                 },
+                {
+                    type: 'doc',
+                    label: 'BuildOrderedTree',
+                    id: 'circuits-api/build-ordered-tree',
+                },
             ],
         },
         {
@@ -182,8 +187,18 @@ const sidebars = {
             items: [
                 {
                     type: 'doc',
+                    label: 'constants',
+                    id: 'utils-api/constants',
+                },
+                {
+                    type: 'doc',
                     label: 'hash()',
                     id: 'utils-api/hashes',
+                },
+                {
+                    type: 'doc',
+                    label: 'ZkIdentity()',
+                    id: 'utils-api/identity',
                 },
                 {
                     type: 'link',

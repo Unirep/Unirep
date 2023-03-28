@@ -2,14 +2,12 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import {
-    genRandomSalt,
     ZkIdentity,
-    hash5,
     IncrementalMerkleTree,
-    stringifyBigInts,
+    genEpochTreeLeaf,
+    F,
 } from '@unirep/utils'
-import { Circuit, SNARK_SCALAR_FIELD, BuildOrderedTree } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUnirepState, genUserState } from './utils'
@@ -75,7 +73,7 @@ describe('Epoch tree', function () {
             epochTree.root.toString()
         )
 
-        await unirepState.stop()
+        unirepState.stop()
     })
 
     it('should generate epoch tree after epoch transition', async () => {
@@ -100,7 +98,7 @@ describe('Epoch tree', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = await userState.getEpochKeys(epoch)
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const config = await unirepContract.config()
         const epochTree = new IncrementalMerkleTree(
             config.epochTreeDepth,
@@ -110,37 +108,34 @@ describe('Epoch tree', function () {
         const leaves = [] as any
 
         for (const epk of epochKeys) {
-            let posRep = 0
-            let negRep = 0
-            let graffiti = BigInt(0)
-            let timestamp = 0
-            for (let i = 0; i < 5; i++) {
-                const newPosRep = Math.floor(Math.random() * 10)
-                const newNegRep = Math.floor(Math.random() * 10)
-                const newGraffiti = genRandomSalt()
+            const data = Array(userState.sync.settings.fieldCount).fill(
+                BigInt(0)
+            )
+            for (let i = 0; i < 10; i++) {
+                let fieldIndex = Math.floor(
+                    Math.random() * (userState.sync.settings.sumFieldCount + 1)
+                )
+                let val = Math.floor(Math.random() * 10000000000000)
+                if (i === 0 || i === 1) {
+                    fieldIndex = 0
+                    val = F - BigInt(1)
+                }
                 // now submit the attestation from the attester
                 const { timestamp: newTimestamp } = await unirepContract
                     .connect(attester)
-                    .submitAttestation(
-                        epoch,
-                        epk,
-                        newPosRep,
-                        newNegRep,
-                        newGraffiti,
-                        {
-                            gasLimit: 1000000,
-                        }
-                    )
+                    .attest(epk, epoch, fieldIndex, val)
                     .then((t) => t.wait())
                     .then(({ blockNumber }) =>
                         ethers.provider.getBlock(blockNumber)
                     )
-                posRep += newPosRep
-                negRep += newNegRep
-                graffiti = newGraffiti
-                timestamp = newTimestamp
+                if (fieldIndex < userState.sync.settings.sumFieldCount) {
+                    data[fieldIndex] = (data[fieldIndex] + BigInt(val)) % F
+                } else {
+                    data[fieldIndex] = val
+                    data[fieldIndex + 1] = newTimestamp
+                }
             }
-            leaves.push(hash5([epk, posRep, negRep, graffiti, timestamp]))
+            leaves.push(genEpochTreeLeaf(epk, data))
         }
         leaves.sort((a, b) => (a > b ? 1 : -1))
         epochTree.insert(0)
@@ -153,19 +148,8 @@ describe('Epoch tree', function () {
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-
-        const preimages = await userState.sync.genEpochTreePreimages(epoch)
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-        const { publicSignals, proof } = new BuildOrderedTree(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
+        const { publicSignals, proof } =
+            await userState.sync.genSealedEpochProof()
 
         await unirepContract
             .connect(accounts[5])
@@ -185,6 +169,6 @@ describe('Epoch tree', function () {
         expect(userEpochRoot.root.toString()).to.equal(
             epochTree.root.toString()
         )
-        await userState.sync.stop()
+        userState.sync.stop()
     })
 })

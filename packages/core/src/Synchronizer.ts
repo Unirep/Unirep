@@ -1,8 +1,13 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover, SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { IncrementalMerkleTree, hash4 } from '@unirep/utils'
+import {
+    BuildOrderedTree,
+    Circuit,
+    Prover,
+    SNARK_SCALAR_FIELD,
+} from '@unirep/circuits'
+import { F, IncrementalMerkleTree, stringifyBigInts } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -31,13 +36,13 @@ export class Synchronizer extends EventEmitter {
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf?: bigint
-    protected defaultEpochTreeLeaf = hash4([0, 0, 0, 0])
 
     private _eventHandlers: any
     private _eventFilters: any
 
     private pollId: string | null = null
     public pollRate: number = 5000
+    public blockRate: number = 100000
 
     private setupComplete = false
 
@@ -80,6 +85,8 @@ export class Synchronizer extends EventEmitter {
             epochTreeArity: 2,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
+            fieldCount: 0,
+            sumFieldCount: 0,
         }
         const allEventNames = {} as any
 
@@ -165,8 +172,9 @@ export class Synchronizer extends EventEmitter {
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
         this.settings.epochTreeArity = config.epochTreeArity
-        this.settings.numEpochKeyNoncePerEpoch =
-            config.numEpochKeyNoncePerEpoch.toNumber()
+        this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
+        this.settings.fieldCount = config.fieldCount
+        this.settings.sumFieldCount = config.sumFieldCount
 
         await this.findStartBlock()
 
@@ -309,7 +317,7 @@ export class Synchronizer extends EventEmitter {
         const latestProcessed = state.latestCompleteBlock
         const latestBlock = await this.provider.getBlockNumber()
         const blockStart = latestProcessed + 1
-        const blockEnd = Math.min(+latestBlock, blockStart + 10000)
+        const blockEnd = Math.min(+latestBlock, blockStart + this.blockRate)
 
         const newEvents = await this.loadNewEvents(
             latestProcessed + 1,
@@ -363,8 +371,9 @@ export class Synchronizer extends EventEmitter {
                 eventNames: [
                     'UserSignedUp',
                     'UserStateTransitioned',
-                    'AttestationSubmitted',
+                    'Attestation',
                     'EpochEnded',
+                    'EpochSealed',
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
@@ -435,10 +444,10 @@ export class Synchronizer extends EventEmitter {
         }
     }
 
-    async readCurrentEpoch() {
+    async readCurrentEpoch(attesterId: bigint | string = this.attesterId) {
         const currentEpoch = await this._db.findOne('Epoch', {
             where: {
-                attesterId: this.attesterId.toString(),
+                attesterId: attesterId.toString(),
             },
             orderBy: {
                 number: 'desc',
@@ -550,27 +559,93 @@ export class Synchronizer extends EventEmitter {
     }
 
     async genEpochTreePreimages(
-        _epoch: number | ethers.BigNumberish
+        _epoch: number | ethers.BigNumberish,
+        attesterId: bigint | string = this.attesterId
     ): Promise<any[]> {
         const epoch = Number(_epoch)
-        const leaves = await this._db.findMany('EpochTreeLeaf', {
+        const attestations = await this._db.findMany('Attestation', {
             where: {
                 epoch,
-                attesterId: this.attesterId.toString(),
+                attesterId: attesterId.toString(),
             },
             orderBy: {
                 index: 'asc',
             },
         })
-        return leaves.map(
-            ({ epochKey, posRep, negRep, graffiti, timestamp }) => [
-                epochKey,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
-            ]
+        let _index = 0
+        const indexByEpochKey = {} as any
+        const preimages = [] as bigint[][]
+        for (const a of attestations) {
+            const { epochKey, fieldIndex, change, timestamp } = a
+            if (indexByEpochKey[epochKey] === undefined) {
+                indexByEpochKey[epochKey] = _index++
+                preimages.push([
+                    BigInt(epochKey),
+                    ...Array(this.settings.fieldCount).fill(BigInt(0)),
+                ])
+            }
+            const index = indexByEpochKey[epochKey]
+            if (fieldIndex < this.settings.sumFieldCount) {
+                preimages[index][fieldIndex + 1] =
+                    (preimages[index][fieldIndex + 1] + BigInt(change)) % F
+            } else {
+                preimages[index][fieldIndex + 1] = BigInt(change)
+                preimages[index][fieldIndex + 2] = BigInt(timestamp)
+            }
+        }
+        return preimages
+    }
+
+    async genSealedEpochProof(
+        options: {
+            epoch?: bigint
+            attesterId?: bigint
+            preimages?: bigint[]
+        } = {}
+    ): Promise<BuildOrderedTree> {
+        const attesterId =
+            options.attesterId?.toString() ?? this.attesterId.toString()
+        const unsealedEpoch = await this._db.findOne('Epoch', {
+            where: {
+                sealed: false,
+                number: options.epoch ? Number(options.epoch) : undefined,
+                attesterId,
+            },
+            orderBy: {
+                epoch: 'asc',
+            },
+        })
+
+        if (!unsealedEpoch) {
+            throw new Error(`Synchronizer: sealing epoch is not required.`)
+        }
+        const attestation = await this._db.findOne('Attestation', {
+            where: {
+                attesterId: attesterId.toString(),
+                epoch: unsealedEpoch.number,
+            },
+        })
+        if (!attestation) {
+            throw new Error(
+                `Synchronizer: no attestation is made in epoch ${unsealedEpoch.number}.`
+            )
+        }
+        const epoch = options.epoch ?? unsealedEpoch.number
+        const preimages =
+            options.preimages ??
+            (await this.genEpochTreePreimages(epoch, attesterId))
+        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(
+            preimages,
+            this.settings.epochTreeArity,
+            this.settings.epochTreeDepth,
+            this.settings.fieldCount
         )
+        const r = await this.prover.genProofAndPublicSignals(
+            Circuit.buildOrderedTree,
+            stringifyBigInts(circuitInputs)
+        )
+
+        return new BuildOrderedTree(r.publicSignals, r.proof, this.prover)
     }
 
     /**
@@ -639,11 +714,6 @@ export class Synchronizer extends EventEmitter {
         const epoch = Number(decodedData.epoch)
         const index = BigInt(decodedData.index).toString()
         const attesterId = BigInt(decodedData.attesterId).toString()
-        const epochKey = BigInt(decodedData.epochKey).toString()
-        const posRep = BigInt(decodedData.posRep).toString()
-        const negRep = BigInt(decodedData.negRep).toString()
-        const graffiti = BigInt(decodedData.graffiti).toString()
-        const timestamp = BigInt(decodedData.timestamp).toString()
         const leaf = BigInt(decodedData.leaf).toString()
         if (
             attesterId !== this.attesterId.toString() &&
@@ -657,10 +727,6 @@ export class Synchronizer extends EventEmitter {
             },
             update: {
                 hash: leaf,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
                 blockNumber: event.blockNumber,
             },
             create: {
@@ -669,11 +735,6 @@ export class Synchronizer extends EventEmitter {
                 index,
                 attesterId,
                 hash: leaf,
-                epochKey,
-                posRep,
-                negRep,
-                graffiti,
-                timestamp,
                 blockNumber: event.blockNumber,
             },
         })
@@ -701,16 +762,13 @@ export class Synchronizer extends EventEmitter {
         return true
     }
 
-    async handleAttestationSubmitted({
-        decodedData,
-        event,
-        db,
-    }: EventHandlerArgs) {
+    async handleAttestation({ decodedData, event, db }: EventHandlerArgs) {
         const epoch = Number(decodedData.epoch)
         const epochKey = BigInt(decodedData.epochKey).toString()
         const attesterId = BigInt(decodedData.attesterId).toString()
-        const posRep = Number(decodedData.posRep)
-        const negRep = Number(decodedData.negRep)
+        const fieldIndex = Number(decodedData.fieldIndex)
+        const change = BigInt(decodedData.change).toString()
+        const timestamp = Number(decodedData.timestamp)
         if (
             attesterId !== this.attesterId.toString() &&
             this.attesterId !== BigInt(0)
@@ -723,7 +781,7 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
-        const currentEpoch = await this.readCurrentEpoch()
+        const currentEpoch = await this.readCurrentEpoch(attesterId)
         if (
             epoch !== Number(currentEpoch.number) &&
             this.attesterId !== BigInt(0)
@@ -738,18 +796,23 @@ export class Synchronizer extends EventEmitter {
             epochKey,
             index,
             attesterId,
-            posRep,
-            negRep,
-            graffiti: decodedData.graffiti.toString(),
-            timestamp: decodedData.timestamp.toString(),
-            hash: hash4([
-                posRep,
-                negRep,
-                decodedData.graffiti,
-                decodedData.timestamp,
-            ]).toString(),
+            fieldIndex,
+            change,
+            timestamp,
             blockNumber: event.blockNumber,
         })
+        const findEpoch = await this._db.findOne('Epoch', {
+            where: {
+                number: epoch,
+            },
+        })
+        if (!findEpoch) {
+            db.create('Epoch', {
+                number: epoch,
+                attesterId,
+                sealed: false,
+            })
+        }
         return true
     }
 
@@ -784,20 +847,29 @@ export class Synchronizer extends EventEmitter {
             this.attesterId !== BigInt(0)
         )
             return
-        db.upsert('Epoch', {
+        const existingDoc = await this._db.findOne('Epoch', {
             where: {
                 number: epoch,
                 attesterId,
             },
-            update: {
-                sealed: true,
-            },
-            create: {
+        })
+        if (existingDoc) {
+            db.update('Epoch', {
+                where: {
+                    number: epoch,
+                    attesterId,
+                },
+                update: {
+                    sealed: false,
+                },
+            })
+        } else {
+            db.create('Epoch', {
                 number: epoch,
                 attesterId,
-                sealed: true,
-            },
-        })
+                sealed: false,
+            })
+        }
         // create the next stub entry
         db.create('Epoch', {
             number: epoch + 1,
@@ -821,6 +893,41 @@ export class Synchronizer extends EventEmitter {
             epochLength,
             startTimestamp,
         })
+        return true
+    }
+
+    async handleEpochSealed({ decodedData, event, db }: EventHandlerArgs) {
+        const epoch = Number(decodedData.epoch)
+        const attesterId = BigInt(decodedData.attesterId).toString()
+
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
+        const existingDoc = await this._db.findOne('Epoch', {
+            where: {
+                number: epoch,
+                attesterId,
+            },
+        })
+        if (existingDoc) {
+            db.update('Epoch', {
+                where: {
+                    number: epoch,
+                    attesterId,
+                },
+                update: {
+                    sealed: true,
+                },
+            })
+        } else {
+            db.create('Epoch', {
+                number: epoch,
+                attesterId,
+                sealed: true,
+            })
+        }
         return true
     }
 }

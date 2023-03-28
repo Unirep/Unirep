@@ -3,7 +3,7 @@ import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
-const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = CircuitConfig.default
+const { SUM_FIELD_COUNT, NUM_EPOCH_KEY_NONCE_PER_EPOCH } = CircuitConfig.default
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -18,7 +18,6 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -61,7 +60,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 5, negRep: 1, graffiti: 0, timestamp: 0 },
+            startBalance: [5, 1],
             minRep,
             proveMinRep,
         })
@@ -108,7 +107,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 5, negRep: 10, graffiti: 0, timestamp: 0 },
+            startBalance: [5, 10],
             maxRep,
             proveMaxRep,
         })
@@ -157,7 +156,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 10, graffiti: 0, timestamp: 0 },
+            startBalance: [10, 10],
             minRep,
             maxRep,
             proveMaxRep,
@@ -212,7 +211,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 10, graffiti: 0, timestamp: 0 },
+            startBalance: [10, 10],
             minRep,
             maxRep,
             proveMaxRep,
@@ -266,7 +265,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             proveZeroRep,
         })
         await new Promise<void>((rs, rj) => {
@@ -288,7 +287,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             maxRep,
             proveMaxRep,
         })
@@ -311,7 +310,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             minRep,
             proveMinRep,
         })
@@ -334,7 +333,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 5, negRep: 10 },
+            startBalance: [5, 10],
             minRep,
             proveMinRep,
         })
@@ -380,7 +379,6 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 0, negRep: 0, graffiti: 0, timestamp: 0 },
             proveGraffiti,
             graffitiPreImage,
         })
@@ -429,12 +427,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: {
-                posRep: 0,
-                negRep: 0,
-                graffiti: 100191,
-                timestamp: 0,
-            },
+            startBalance: [...Array(SUM_FIELD_COUNT).fill(0), 100191],
             minRep,
             proveGraffiti,
             graffitiPreImage,
@@ -459,9 +452,9 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
             proveGraffiti,
             graffitiPreImage,
+            startBalance: [...Array(SUM_FIELD_COUNT).fill(0), graffiti],
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -507,7 +500,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            startBalance: [...Array(SUM_FIELD_COUNT).fill(0), graffiti],
         })
         const { isValid, proof, publicSignals } = await genProofAndVerify(
             Circuit.proveReputation,
@@ -551,7 +544,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            startBalance: [...Array(SUM_FIELD_COUNT).fill(0), graffiti],
             revealNonce,
         })
         const { isValid, proof, publicSignals } = await genProofAndVerify(
@@ -597,7 +590,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 0, negRep: 0, graffiti, timestamp: 0 },
+            startBalance: [...Array(SUM_FIELD_COUNT).fill(0), graffiti],
             revealNonce,
         })
         const { isValid, proof, publicSignals } = await genProofAndVerify(
@@ -637,7 +630,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.proveReputation, circuitInputs)
@@ -656,7 +649,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.proveReputation, circuitInputs)
@@ -676,7 +669,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             revealNonce,
         })
         await new Promise<void>((rs, rj) => {
@@ -697,7 +690,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             proveGraffiti,
         })
         await new Promise<void>((rs, rj) => {
@@ -718,7 +711,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             proveMinRep,
         })
         await new Promise<void>((rs, rj) => {
@@ -739,7 +732,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             proveMaxRep,
         })
         await new Promise<void>((rs, rj) => {
@@ -760,7 +753,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             proveZeroRep,
         })
         await new Promise<void>((rs, rj) => {
@@ -781,7 +774,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             minRep,
         })
         await new Promise<void>((rs, rj) => {
@@ -802,7 +795,7 @@ describe('Prove reputation from attester circuit', function () {
             epoch,
             nonce,
             attesterId,
-            startBalance: { posRep: 10, negRep: 5 },
+            startBalance: [10, 5],
             maxRep,
         })
         await new Promise<void>((rs, rj) => {

@@ -1,7 +1,6 @@
-import { BigNumberish, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
-import poseidon from './poseidon'
 import {
     compileVerifier,
     createVerifierName,
@@ -10,6 +9,21 @@ import {
 } from './utils'
 
 const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
+
+const retryAsNeeded = async (fn: any, maxRetry = 10) => {
+    let retryCount = 0
+    let backoff = 1000
+    for (;;) {
+        try {
+            return await fn()
+        } catch (err) {
+            if (++retryCount > maxRetry) throw err
+            backoff *= 2
+            console.log(`Failed, waiting ${backoff}ms`)
+            await new Promise((r) => setTimeout(r, backoff))
+        }
+    }
+}
 
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
@@ -27,7 +41,9 @@ export const deployUnirep = async (
         EPOCH_TREE_ARITY,
         STATE_TREE_DEPTH,
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    } = _settings
+        FIELD_COUNT,
+        SUM_FIELD_COUNT,
+    } = { ...CircuitConfig.default, ..._settings }
 
     console.log(
         '-----------------------------------------------------------------'
@@ -38,6 +54,8 @@ export const deployUnirep = async (
     console.log(
         `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
     )
+    console.log(`Total fields per user: ${FIELD_COUNT}`)
+    console.log(`Sum fields per user: ${SUM_FIELD_COUNT}`)
     console.log(
         '-----------------------------------------------------------------'
     )
@@ -46,16 +64,32 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
 
-    const libraries = {}
-    for (const [inputCount, { abi, bytecode }] of Object.entries(
-        poseidon
-    ) as any) {
-        await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
-        const f = new ethers.ContractFactory(abi, bytecode, deployer)
-        const c = await f.deploy()
-        await c.deployed()
-        libraries[`Poseidon${inputCount}`] = c.address
+    let PoseidonT2
+    {
+        const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
+        const poseidonArtifacts = tryPath(poseidonPath)
+        const poseidonFactory = new ethers.ContractFactory(
+            poseidonArtifacts.abi,
+            poseidonArtifacts.bytecode,
+            deployer
+        )
+        PoseidonT2 = await retryAsNeeded(() => poseidonFactory.deploy())
+        await PoseidonT2.deployed()
     }
+
+    let PoseidonT3
+    {
+        const poseidonPath = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
+        const poseidonArtifacts = tryPath(poseidonPath)
+        const poseidonFactory = new ethers.ContractFactory(
+            poseidonArtifacts.abi,
+            poseidonArtifacts.bytecode,
+            deployer
+        )
+        PoseidonT3 = await retryAsNeeded(() => poseidonFactory.deploy())
+        await PoseidonT3.deployed()
+    }
+
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
@@ -63,23 +97,25 @@ export const deployUnirep = async (
     const incrementalMerkleTreeFactory = new ethers.ContractFactory(
         incArtifacts.abi,
         linkLibrary(incArtifacts.bytecode, {
-            ['@zk-kit/incremental-merkle-tree.sol/Hashes.sol:PoseidonT3']:
-                libraries['Poseidon2'],
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
         }),
         deployer
     )
-    const incrementalMerkleTreeLib = await incrementalMerkleTreeFactory.deploy()
+    const incrementalMerkleTreeLib = await retryAsNeeded(() =>
+        incrementalMerkleTreeFactory.deploy()
+    )
     await incrementalMerkleTreeLib.deployed()
+
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
-    const polyPath = 'contracts/libraries/Polyhash.sol/Polyhash.json'
+    const polyPath = 'contracts/libraries/Polysum.sol/Polysum.json'
     const polyArtifacts = tryPath(polyPath)
     const polyFactory = new ethers.ContractFactory(
         polyArtifacts.abi,
         polyArtifacts.bytecode,
         deployer
     )
-    const polyContract = await polyFactory.deploy()
+    const polyContract = await retryAsNeeded(() => polyFactory.deploy())
     await polyContract.deployed()
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
@@ -105,7 +141,9 @@ export const deployUnirep = async (
             bytecode,
             deployer
         )
-        const verifierContract = await verifierFactory.deploy()
+        const verifierContract = await retryAsNeeded(() =>
+            verifierFactory.deploy()
+        )
         await verifierContract.deployed()
         verifiers[circuit] = verifierContract.address
     }
@@ -113,30 +151,36 @@ export const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    const c: Unirep = await new UnirepFactory(
-        {
-            ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
-                incrementalMerkleTreeLib.address,
-            ['contracts/Hash.sol:Poseidon5']: libraries['Poseidon5'],
-            ['contracts/libraries/Polyhash.sol:Polyhash']: polyContract.address,
-        },
-        deployer
-    ).deploy(
-        {
-            stateTreeDepth: STATE_TREE_DEPTH,
-            epochTreeDepth: EPOCH_TREE_DEPTH,
-            epochTreeArity: EPOCH_TREE_ARITY,
-            numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-        },
-        verifiers[Circuit.signup],
-        verifiers[Circuit.userStateTransition],
-        verifiers[Circuit.proveReputation],
-        verifiers[Circuit.verifyEpochKey],
-        verifiers[Circuit.epochKeyLite],
-        verifiers[Circuit.buildOrderedTree]
+    const c: Unirep = await retryAsNeeded(() =>
+        new UnirepFactory(
+            {
+                ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
+                    incrementalMerkleTreeLib.address,
+                ['contracts/libraries/Polysum.sol:Polysum']:
+                    polyContract.address,
+                ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
+                    PoseidonT2.address,
+            },
+            deployer
+        ).deploy(
+            {
+                stateTreeDepth: STATE_TREE_DEPTH,
+                epochTreeDepth: EPOCH_TREE_DEPTH,
+                epochTreeArity: EPOCH_TREE_ARITY,
+                numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+                fieldCount: FIELD_COUNT,
+                sumFieldCount: SUM_FIELD_COUNT,
+            },
+            verifiers[Circuit.signup],
+            verifiers[Circuit.userStateTransition],
+            verifiers[Circuit.proveReputation],
+            verifiers[Circuit.epochKey],
+            verifiers[Circuit.epochKeyLite],
+            verifiers[Circuit.buildOrderedTree]
+        )
     )
 
-    await c.deployTransaction.wait()
+    await retryAsNeeded(() => c.deployTransaction.wait())
 
     // Print out deployment info
     console.log(
@@ -147,10 +191,11 @@ export const deployUnirep = async (
         Math.floor(UnirepFactory.bytecode.length / 2),
         'bytes'
     )
-    let receipt = await c.provider.getTransactionReceipt(
+    const receipt = await c.provider.getTransactionReceipt(
         c.deployTransaction.hash
     )
     console.log('Gas cost of deploying Unirep:', receipt.gasUsed.toString())
+    console.log(`Deployed to: ${c.address}`)
     console.log(
         '-----------------------------------------------------------------'
     )
