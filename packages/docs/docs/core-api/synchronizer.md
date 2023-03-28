@@ -19,12 +19,28 @@ const state = new Synchronizer({
 
 ```ts
 constructor(config: {
-    prover: Prover
-    provider: ethers.Provider
-    unirepContract: ethers.Contract
-    attesterId?: bigint
     db?: DB
+    attesterId?: bigint | bigint[]
+    prover: Prover
+    provider: ethers.providers.Provider
+    unirepAddress: string
 })
+```
+
+## attesterId
+
+The default attester ID that is set when constructed. If there is a list of attester IDs, then the first one will be the default attester ID.
+
+```ts
+synchronizer.attesterId: bigint
+```
+
+## setAttesterId
+
+Change default [attesterId](#attesterid) to another attester ID. It will fail if an `attesterId` is not synchronized when construction.
+
+```ts
+synchronizer.setAttesterId(attesterId: string | bigint): Promise<void>
 ```
 
 ## start
@@ -80,7 +96,7 @@ synchronizer.waitForSync(blockNumber?: number): Promise<void>
 Calculate the current epoch determining the amount of time since the attester registration timestamp. This operation is synchronous and does not involve any database operations.
 
 ```ts
-synchronizer.calcCurrentEpoch(): number
+synchronizer.calcCurrentEpoch(attesterId?: bigint | string): Promise<number>
 ```
 
 ## calcEpochRemainingTime
@@ -88,7 +104,7 @@ synchronizer.calcCurrentEpoch(): number
 Calculate the amount of time remaining in the current epoch. This operation is synchronous and does not involve any database operations.
 
 ```ts
-synchronizer.calcEpochRemainingTime(): number
+synchronizer.calcEpochRemainingTime(attesterId?: bigint | string): Promise<number>
 ```
 
 ## readCurrentEpoch
@@ -115,7 +131,7 @@ Use this function in test environments where the blockchain timestamp may not ma
 :::
 
 ```ts
-synchronizer.loadCurrentEpoch(): Promise<bigint>
+synchronizer.loadCurrentEpoch(attesterId?: bigint | string): Promise<number>
 ```
 
 ## epochTreeRoot
@@ -123,7 +139,7 @@ synchronizer.loadCurrentEpoch(): Promise<bigint>
 Get the epoch tree root for a certain epoch.
 
 ```ts
-synchronizer.epochTreeRoot(epoch: number): Promise<bigint>
+synchronizer.epochTreeRoot(epoch: number, attesterId?: bigint | string): Promise<bigint>
 ```
 
 ## epochTreeProof
@@ -131,15 +147,15 @@ synchronizer.epochTreeRoot(epoch: number): Promise<bigint>
 Build a merkle inclusion proof for the tree from a certain epoch.
 
 ```ts
-synchronizer.epochTreeProof(epoch: number, leafIndex: bigint): Promise<bigint[]>
+synchronizer.epochTreeProof(epoch: number, leafIndex: bigint, attesterId?: bigint | string): Promise<bigint[]>
 ```
 
-## nullifierExists
+## nullifierExist
 
 Determine if a nullifier exists. This can be a proof nullifier, user state transition nullifier, or any other kind of nullifier. All nullifiers are stored in a single mapping and expected to be globally unique.
 
 ```ts
-synchronizer.nullifierExists(nullifier: bigint): Promise<boolean>
+synchronizer.nullifierExist(nullifier: any): Promise<boolean>
 ```
 
 ## genStateTree
@@ -147,7 +163,7 @@ synchronizer.nullifierExists(nullifier: bigint): Promise<boolean>
 Build the latest state tree for a certain epoch.
 
 ```ts
-synchronizer.genStateTree(epoch: bigint): Promise<IncrementalMerkleTree>
+synchronizer.genStateTree(epoch: bigint, attesterId?: bigint | string): Promise<IncrementalMerkleTree>
 ```
 
 ## genEpochTree
@@ -155,7 +171,7 @@ synchronizer.genStateTree(epoch: bigint): Promise<IncrementalMerkleTree>
 Build the latest epoch tree for a certain epoch.
 
 ```ts
-synchronizer.genEpochTree(epoch: bigint): Promise<IncrementalMerkleTree>
+synchronizer.genEpochTree(epoch: bigint, attesterId?: bigint | string): Promise<IncrementalMerkleTree>
 ```
 
 ## genEpochTreePreimages
@@ -165,32 +181,8 @@ Get the pre-images for the leaves in an epoch tree.
 ```ts
 synchronizer.genEpochTreePreimages(
   epoch: bigint | number,
-  attesterId: bigint | string = this.attesterId
+  attesterId?: bigint | string
 ): Promise<bigint[][]>
-```
-
-## stateRootExists
-
-Determine if a state root exists in a certain epoch.
-
-```ts
-synchronizer.stateRootExists(root: bigint, epoch: bigint): Promise<boolean>
-```
-
-## epochTreeRootExists
-
-Determine if an epoch tree root exists for a certain epoch.
-
-```ts
-synchronizer.epochTreeRootExists(root: bigint, epoch: bigint): Promise<boolean>
-```
-
-## numStateTreeLeaves
-
-Get the number of state tree leaves in a certain epoch.
-
-```ts
-synchronizer.numStateTreeLeaves(epoch: number): Promise<number>
 ```
 
 ## genSealedEpochProof
@@ -210,3 +202,28 @@ synchronizer.genSealedEpochProof(
 :::tip
 This proof is large and best made with `rapidsnark`. This function should only be used for small trees.
 :::
+
+
+## stateTreeRootExists
+
+Determine if a state root exists in a certain epoch.
+
+```ts
+synchronizer.stateTreeRootExists(root: bigint, epoch: bigint, attesterId?: bigint | string): Promise<boolean>
+```
+
+## epochTreeRootExists
+
+Determine if an epoch tree root exists for a certain epoch.
+
+```ts
+synchronizer.epochTreeRootExists(root: bigint, epoch: bigint, attesterId?: bigint | string): Promise<boolean>
+```
+
+## numStateTreeLeaves
+
+Get the number of state tree leaves in a certain epoch.
+
+```ts
+synchronizer.numStateTreeLeaves(epoch: number, attesterId?: bigint | string): Promise<number>
+```
