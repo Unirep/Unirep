@@ -38,10 +38,11 @@ library Polysum {
     uint256 internal constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
-    function add(PolysumData storage self, uint val, uint R)
-        public
-        returns (uint)
-    {
+    function add(
+        PolysumData storage self,
+        uint val,
+        uint R
+    ) public returns (uint) {
         require(val < SNARK_SCALAR_FIELD, 'vlarge');
         uint index = self.index++;
         uint coef = rForIndex(index, R);
