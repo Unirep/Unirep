@@ -504,8 +504,8 @@ contract Unirep is IUnirep, VerifySignature {
         if (epoch == attester.currentEpoch) return epoch;
 
         // otherwise seal old epoch if empty
-        AttesterState storage state = attester.state[epoch];
         uint oldEpoch = attester.currentEpoch;
+        AttesterState storage state = attester.state[oldEpoch];
 
         if (
             state.polysum.hash == 0 &&
@@ -750,11 +750,10 @@ contract Unirep is IUnirep, VerifySignature {
             attester.state[epoch].polysum.hash == 0;
     }
 
-    function attesterHistoryRootExists(uint160 attesterId, uint256 root)
-        public
-        view
-        returns (bool)
-    {
+    function attesterHistoryRootExists(
+        uint160 attesterId,
+        uint256 root
+    ) public view returns (bool) {
         return attesters[attesterId].historyTreeRoots[root];
     }
 
