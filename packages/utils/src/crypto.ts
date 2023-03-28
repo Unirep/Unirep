@@ -1,8 +1,4 @@
-import {
-    genRandomSalt as _genRandomSalt,
-    stringifyBigInts,
-    unstringifyBigInts,
-} from 'maci-crypto'
+import randomf from 'randomf'
 import poseidon from 'poseidon-lite'
 export { poseidon }
 
@@ -34,6 +30,8 @@ export const OMT_R = BigInt(
 export const EPK_R = BigInt(
     '11105707062209303735980536775061420040143715723438319441848723820903914190159'
 )
+
+export const genRandomSalt = () => randomf(F)
 
 export const modexp = (v: bigint, p: number): bigint => {
     let o = BigInt(1)
@@ -70,9 +68,6 @@ export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
 export const hashLeftRight = (input1: any, input2: any) =>
     hash2([input1, input2])
 export const hashOne = (input: any) => hash1([input])
-export const genRandomSalt = () => _genRandomSalt() as bigint
-
-export { stringifyBigInts, unstringifyBigInts }
 
 export const genEpochKey = (
     identitySecret: bigint,

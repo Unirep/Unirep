@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import poseidon from 'poseidon-lite'
-import { genRandomSalt } from 'maci-crypto'
+import { genRandomSalt } from './crypto'
 
 /**
  * Type of snark public signals

@@ -11,11 +11,10 @@ contract VerifySignature {
      * @param signer The address of user who wants to perform an action
      * @param signature The signature signed by the signer
      */
-    function isValidSignature(address signer, bytes memory signature)
-        internal
-        view
-        returns (bool)
-    {
+    function isValidSignature(
+        address signer,
+        bytes memory signature
+    ) internal view returns (bool) {
         // Attester signs over it's own address concatenated with this contract address
         bytes32 messageHash = keccak256(
             abi.encodePacked(
