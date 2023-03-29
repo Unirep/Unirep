@@ -36,8 +36,7 @@ export class Synchronizer extends EventEmitter {
     prover: Prover
     provider: any
     unirepContract: ethers.Contract
-    private _attesterIds: bigint[] = []
-    private _attesterId: bigint = BigInt(0)
+    private _attesterId: bigint[] = [BigInt(0)]
     public settings: any
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
@@ -76,18 +75,14 @@ export class Synchronizer extends EventEmitter {
         super()
         const { db, prover, unirepAddress, provider, attesterId } = config
 
-        if (typeof attesterId === 'bigint' || typeof attesterId === 'string') {
-            this._attesterId = BigInt(attesterId)
-            this._attesterIds = [this._attesterId]
-        } else if (attesterId?.length) {
-            this._attesterIds = attesterId.map((a) => BigInt(a))
-            // set default attesterID to the first attester ID
-            this._attesterId = this._attesterIds[0]
-        } else if (typeof attesterId !== 'undefined') {
-            throw new Error(
-                `@unirep/core:Synchronizer: invalid attester ID or attester ID list: ${attesterId}`
-            )
+        if (Array.isArray(attesterId)) {
+            // multiple attesters
+            this._attesterId = attesterId.map((a) => BigInt(a))
+        } else if (!!attesterId) {
+            // single attester
+            this._attesterId = [BigInt(attesterId)]
         }
+
         this._db = db ?? new MemoryConnector(constructSchema(schema))
         this.unirepContract = new ethers.Contract(
             unirepAddress,
@@ -181,22 +176,22 @@ export class Synchronizer extends EventEmitter {
     }
 
     get attesterId() {
-        return this._attesterId
+        return this._attesterId[0]
     }
 
     async setAttesterId(attesterId: string | bigint) {
-        const decAttesterId = toDecString(attesterId)
-        const state = await this._db.findOne('SynchronizerState', {
-            where: {
-                attesterId: decAttesterId,
-            },
-        })
-        if (!state) {
+        const index = this._attesterId.indexOf(BigInt(attesterId))
+        if (index === -1) {
             throw new Error(
-                `@unirep/core: attester ${decAttesterId} is not synced. Please use .add(attesterId) to synchronized the state.`
+                `@unirep/core:Synchronizer: attester ID ${attesterId.toString()} is not synchronized`
             )
         }
-        this._attesterId = BigInt(attesterId)
+        ;[this._attesterId[0], this._attesterId[index]] = [
+            this._attesterId[index],
+            this._attesterId[0],
+        ]
+
+        const decAttesterId = toDecString(attesterId)
         const { startTimestamp, epochLength } = await this._db.findOne(
             'Attester',
             {
@@ -266,8 +261,8 @@ export class Synchronizer extends EventEmitter {
                 this.attesterId
             )
             events = await this.unirepContract.queryFilter(filter)
-        } else if (this._attesterIds.length) {
-            for (let id of this._attesterIds) {
+        } else if (this._attesterId.length) {
+            for (let id of this._attesterId) {
                 const filter = this.unirepContract.filters.AttesterSignedUp(id)
                 const event = await this.unirepContract.queryFilter(filter)
                 // const events = await this.unirepContract.queryFilter(filter)
@@ -510,7 +505,7 @@ export class Synchronizer extends EventEmitter {
             if (this.attesterId === BigInt(0) && count) return
             if (
                 this.attesterId !== BigInt(0) &&
-                count === this._attesterIds.length
+                count === this._attesterId.length
             )
                 return
             await new Promise((r) => setTimeout(r, 250))
