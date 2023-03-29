@@ -43,8 +43,6 @@ export class Synchronizer extends EventEmitter {
     private _attesterId: bigint[] = [BigInt(0)]
     public settings: any
     private _attesterSettings: { [key: string]: AttesterSetting } = {}
-    // state tree for current epoch
-    private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf: bigint = BigInt(0)
 
     private _eventHandlers: any
@@ -57,13 +55,6 @@ export class Synchronizer extends EventEmitter {
     private setupComplete = false
 
     private lock = new AsyncLock()
-
-    private get _stateTree() {
-        if (!this.stateTree) {
-            throw new Error('Synchronizer: in memory tree not initialized')
-        }
-        return this.stateTree
-    }
 
     /**
      * Maybe we can default the DB argument to an in memory implementation so
@@ -207,38 +198,6 @@ export class Synchronizer extends EventEmitter {
         this.settings.sumFieldCount = config.sumFieldCount
 
         await this.findStartBlock()
-
-        if (this.attesterId === BigInt(0)) return
-
-        // load the GST for the current epoch
-        // assume we're resuming a sync using the same database
-        const epochs = await this._db.findMany('Epoch', {
-            where: {
-                attesterId: this.attesterId.toString(),
-                sealed: false,
-            },
-        })
-        this.stateTree = new IncrementalMerkleTree(
-            this.settings.stateTreeDepth,
-            this.defaultStateTreeLeaf
-        )
-        // if it's a new sync, start with epoch 0
-        const epoch = epochs[epochs.length - 1]?.number ?? 0
-        // otherwise load the leaves and insert them
-        // TODO: index consistency verification, ensure that indexes are
-        // sequential and no entries are skipped, e.g. 1,2,3,5,6,7
-        const leaves = await this._db.findMany('StateTreeLeaf', {
-            where: {
-                epoch,
-                attesterId: this.attesterId.toString(),
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-        for (const leaf of leaves) {
-            this._stateTree.insert(leaf.hash)
-        }
     }
 
     async findStartBlock(attesterId?: bigint | string) {
