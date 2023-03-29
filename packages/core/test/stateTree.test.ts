@@ -45,7 +45,7 @@ describe('State tree', function () {
             unirepContract.address,
             attester.address
         )
-        const epoch = await unirepState.calcCurrentEpoch()
+        const epoch = unirepState.calcCurrentEpoch()
 
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
@@ -273,7 +273,7 @@ describe('State tree', function () {
             }
 
             const epoch = await userState.sync.loadCurrentEpoch()
-            const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
+            const epochKeys = userState.getEpochKeys(epoch) as bigint[]
             const [epk] = epochKeys
             // now submit the attestation from the attester
             await unirepContract

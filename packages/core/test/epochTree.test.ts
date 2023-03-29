@@ -49,7 +49,7 @@ describe('Epoch tree', function () {
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        const unirepEpoch = await unirepState.calcCurrentEpoch()
+        const unirepEpoch = unirepState.calcCurrentEpoch()
         expect(contractEpoch.toNumber()).to.equal(unirepEpoch)
 
         // onchain epoch tree
@@ -98,7 +98,7 @@ describe('Epoch tree', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const config = await unirepContract.config()
         const epochTree = new IncrementalMerkleTree(
             config.epochTreeDepth,

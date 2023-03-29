@@ -238,7 +238,7 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const [epk] = epochKeys
         const fieldIndex = 1
         const val = 138
@@ -317,7 +317,7 @@ describe('Synchronizer process events', function () {
         }
         await userState.waitForSync()
         // we're signed up, now run an attestation
-        const epochKeys = (await userState.getEpochKeys(epoch)) as bigint[]
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
         const [epk] = epochKeys
         const fieldIndex = 1
         const val = 18891

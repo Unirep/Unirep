@@ -84,7 +84,7 @@ Get epoch keys for the current user, for an epoch. If a `nonce` value is supplie
 If no `epoch` is supplied the current epoch will be used (as determined by [`calcCurrentEpoch`](synchronizer#calcCurrentEpoch)).
 
 ```ts
-state.getEpochKeys(epoch?: number, nonce?: number, attesterId?: bigint | string): Promise<bigint | bigint[]>
+state.getEpochKeys(epoch?: number, nonce?: number, attesterId?: bigint | string): bigint | bigint[]
 ```
 
 ## getData

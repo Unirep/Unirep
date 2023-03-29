@@ -130,8 +130,7 @@ export default class UserState {
         attesterId: bigint | string = this.sync.attesterId
     ): Promise<number> {
         if (!(await this.hasSignedUp(attesterId))) return -1
-        const currentEpoch =
-            _epoch ?? (await this.sync.calcCurrentEpoch(attesterId))
+        const currentEpoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const latestTransitionedEpoch = await this.latestTransitionedEpoch(
             attesterId
         )
@@ -182,12 +181,12 @@ export default class UserState {
         return foundLeaf.index
     }
 
-    async getEpochKeys(
+    getEpochKeys(
         _epoch?: bigint | number,
         nonce?: number,
         attesterId: bigint | string = this.sync.attesterId
     ) {
-        const epoch = _epoch ?? (await this.sync.calcCurrentEpoch(attesterId))
+        const epoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
         if (
             typeof nonce === 'number' &&
             nonce >= this.sync.settings.numEpochKeyNoncePerEpoch
@@ -374,8 +373,7 @@ export default class UserState {
         const attesterId = options.attesterId ?? this.sync.attesterId
         const fromEpoch = await this.latestTransitionedEpoch(attesterId)
         const data = await this.getData(fromEpoch - 1, attesterId)
-        const toEpoch =
-            _toEpoch ?? (await this.sync.calcCurrentEpoch(attesterId))
+        const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch(attesterId)
         if (fromEpoch.toString() === toEpoch.toString()) {
             throw new Error('Cannot transition to same epoch')
         }
@@ -597,8 +595,7 @@ export default class UserState {
         options: { epoch?: number | bigint; attesterId?: bigint | string } = {}
     ): Promise<SignupProof> => {
         const attesterId = options.attesterId ?? this.sync.attesterId
-        const epoch =
-            options.epoch ?? (await this.sync.calcCurrentEpoch(attesterId))
+        const epoch = options.epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const circuitInputs = {
             epoch,
             identity_nullifier: this.id.identityNullifier,

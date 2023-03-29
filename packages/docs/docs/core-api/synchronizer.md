@@ -13,6 +13,13 @@ const state = new Synchronizer({
   unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
   provider, // an ethers.js provider
 })
+
+// start the synchronizer deamon
+await state.start()
+await state.waitForSync()
+
+// stop the synchronizer deamon
+state.stop()
 ```
 
 ## constructor
@@ -29,7 +36,13 @@ constructor(config: {
 
 ## attesterId
 
-The default attester ID that is set when constructed. If there is a list of attester IDs, then the first one will be the default attester ID.
+The default attester ID that is set when construction. 
+If there is a list of attester IDs, then the first one will be the default attester ID. 
+If no attester ID is given during construction, all attesters will be synchronized. And the default `attesterId` would be `BigInt(0)`.
+
+:::caution
+Should check which default attester Id is carefully while synchronizing more than one attester. The default attester ID could be changed through [setAttesterId](#setattesterid).
+:::
 
 ```ts
 synchronizer.attesterId: bigint
@@ -40,7 +53,7 @@ synchronizer.attesterId: bigint
 Change default [attesterId](#attesterid) to another attester ID. It will fail if an `attesterId` is not synchronized when construction.
 
 ```ts
-synchronizer.setAttesterId(attesterId: string | bigint): Promise<void>
+synchronizer.setAttesterId(attesterId: string | bigint): void
 ```
 
 ## start
@@ -96,7 +109,7 @@ synchronizer.waitForSync(blockNumber?: number): Promise<void>
 Calculate the current epoch determining the amount of time since the attester registration timestamp. This operation is synchronous and does not involve any database operations.
 
 ```ts
-synchronizer.calcCurrentEpoch(attesterId?: bigint | string): Promise<number>
+synchronizer.calcCurrentEpoch(attesterId?: bigint | string): number
 ```
 
 ## calcEpochRemainingTime
@@ -104,7 +117,7 @@ synchronizer.calcCurrentEpoch(attesterId?: bigint | string): Promise<number>
 Calculate the amount of time remaining in the current epoch. This operation is synchronous and does not involve any database operations.
 
 ```ts
-synchronizer.calcEpochRemainingTime(attesterId?: bigint | string): Promise<number>
+synchronizer.calcEpochRemainingTime(attesterId?: bigint | string): number
 ```
 
 ## readCurrentEpoch

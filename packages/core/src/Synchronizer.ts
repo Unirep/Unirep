@@ -22,7 +22,12 @@ type EventHandlerArgs = {
     db: TransactionDB
 }
 
-function toDecString(content) {
+type AttesterSetting = {
+    startTimestamp: number
+    epochLength: number
+}
+
+function toDecString(content: bigint | string) {
     return BigInt(content).toString()
 }
 
@@ -37,6 +42,7 @@ export class Synchronizer extends EventEmitter {
     unirepContract: ethers.Contract
     private _attesterId: bigint[] = [BigInt(0)]
     public settings: any
+    private _attesterSettings: { [key: string]: AttesterSetting } = {}
     // state tree for current epoch
     private stateTree?: IncrementalMerkleTree
     protected defaultStateTreeLeaf: bigint = BigInt(0)
@@ -178,7 +184,7 @@ export class Synchronizer extends EventEmitter {
         return this._attesterId[0]
     }
 
-    async setAttesterId(attesterId: string | bigint) {
+    setAttesterId(attesterId: string | bigint) {
         const index = this._attesterId.indexOf(BigInt(attesterId))
         if (index === -1) {
             throw new Error(
@@ -189,18 +195,6 @@ export class Synchronizer extends EventEmitter {
             this._attesterId[index],
             this._attesterId[0],
         ]
-
-        const decAttesterId = toDecString(attesterId)
-        const { startTimestamp, epochLength } = await this._db.findOne(
-            'Attester',
-            {
-                where: {
-                    _id: decAttesterId,
-                },
-            }
-        )
-        this.settings.startTimestamp = Number(startTimestamp)
-        this.settings.epochLength = Number(epochLength)
     }
 
     async setup() {
@@ -286,9 +280,9 @@ export class Synchronizer extends EventEmitter {
                 event.topics
             )
             const { timestamp, epochLength, attesterId } = decodedData
-            if (BigInt(attesterId) === this.attesterId) {
-                this.settings.startTimestamp = Number(timestamp)
-                this.settings.epochLength = Number(epochLength)
+            this._attesterSettings[toDecString(attesterId)] = {
+                startTimestamp: Number(timestamp),
+                epochLength: Number(epochLength),
             }
             const syncStartBlock = event.blockNumber - 1
 
@@ -510,40 +504,28 @@ export class Synchronizer extends EventEmitter {
         )
     }
 
-    async calcCurrentEpoch(attesterId: bigint | string = this.attesterId) {
-        const decAttesterId = toDecString(attesterId)
-        const attester = await this._db.findOne('Attester', {
-            where: {
-                _id: decAttesterId,
-            },
-        })
-        if (!attester) {
-            console.error(
-                `@unirep/core: attester ID ${decAttesterId} is not found`
+    calcCurrentEpoch(attesterId: bigint | string = this.attesterId) {
+        if (this._attesterId.indexOf(BigInt(attesterId)) === -1) {
+            throw new Error(
+                `@unirep/core:Synchronizer: attester ID ${attesterId.toString()} is not synchronized`
             )
         }
-        const { startTimestamp, epochLength } = attester
+        const decAttesterId = toDecString(attesterId)
         const timestamp = Math.floor(+new Date() / 1000)
+        const { startTimestamp, epochLength } =
+            this._attesterSettings[decAttesterId]
         return Math.max(
             0,
             Math.floor((timestamp - startTimestamp) / epochLength)
         )
     }
 
-    async calcEpochRemainingTime(
-        attesterId: bigint | string = this.attesterId
-    ) {
+    calcEpochRemainingTime(attesterId: bigint | string = this.attesterId) {
         const timestamp = Math.floor(+new Date() / 1000)
-        const currentEpoch = await this.calcCurrentEpoch()
-        const attester = await this._db.findOne('Attester', {
-            where: {
-                _id: BigInt(attesterId).toString(),
-            },
-        })
-        if (!attester) {
-            console.error('@unirep/core: attester ID is not found')
-        }
-        const { startTimestamp, epochLength } = attester
+        const currentEpoch = this.calcCurrentEpoch(attesterId)
+        const decAttesterId = toDecString(attesterId)
+        const { startTimestamp, epochLength } =
+            this._attesterSettings[decAttesterId]
         const epochEnd = startTimestamp + (currentEpoch + 1) * epochLength
         return Math.max(0, epochEnd - timestamp)
     }

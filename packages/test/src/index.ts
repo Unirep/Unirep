@@ -74,7 +74,7 @@ export async function bootstrapAttestations(
             .userSignUp(r.publicSignals, r.proof)
             .then((t) => t.wait())
         await userState.waitForSync()
-        const epochKey = await userState.getEpochKeys()
+        const epochKey = userState.getEpochKeys()
         for (let j = 0; j < attestationCount; j++) {
             const posRep = Math.floor(Math.random() * 10)
             const negRep = Math.floor(Math.random() * 10)
