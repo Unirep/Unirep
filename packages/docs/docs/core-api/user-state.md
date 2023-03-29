@@ -48,12 +48,28 @@ The underlying synchronizer object.
 state.sync: Synchronizer
 ```
 
+## start
+
+Convenience accessor for synchronizer [`start`](./synchronizer.md#start).
+
+```ts
+state.start(): Promise<void>
+```
+
 ## waitForSync
 
-Convenience accessor for synchronizer `waitForSync`.
+Convenience accessor for synchronizer [`waitForSync`](./synchronizer.md#waitforsync).
 
 ```ts
 state.waitForSync(blockNumber?: number): Promise<void>
+```
+
+## stop
+
+Convenience accessor for synchronizer [`stop`](./synchronizer.md#stop).
+
+```ts
+state.stop(): void
 ```
 
 ## hasSignedUp

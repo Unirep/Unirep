@@ -1,5 +1,4 @@
 import { ethers } from 'ethers'
-import assert from 'assert'
 import { DB } from 'anondb'
 import {
     stringifyBigInts,
@@ -61,8 +60,16 @@ export default class UserState {
         }
     }
 
+    async start() {
+        await this.sync.start()
+    }
+
     async waitForSync(n?: number) {
         await this.sync.waitForSync(n)
+    }
+
+    stop() {
+        this.sync.stop()
     }
 
     /**
@@ -72,6 +79,8 @@ export default class UserState {
     async hasSignedUp(
         attesterId: bigint | string = this.sync.attesterId
     ): Promise<boolean> {
+        this._checkSync()
+        this.sync.checkAttesterId(attesterId)
         const signup = await this.sync._db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
@@ -89,6 +98,8 @@ export default class UserState {
     async latestTransitionedEpoch(
         attesterId: bigint | string = this.sync.attesterId
     ): Promise<number> {
+        this._checkSync()
+        this.sync.checkAttesterId(attesterId)
         const currentEpoch = await this.sync.loadCurrentEpoch(attesterId)
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
@@ -143,7 +154,7 @@ export default class UserState {
                 },
             })
             if (!signup) {
-                throw new Error('user is not signed up')
+                throw new Error('@unirep/core:UserState: user is not signed up')
             }
             if (signup.epoch !== currentEpoch) {
                 return 0
@@ -186,15 +197,9 @@ export default class UserState {
         nonce?: number,
         attesterId: bigint | string = this.sync.attesterId
     ) {
+        this._checkSync()
         const epoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
-        if (
-            typeof nonce === 'number' &&
-            nonce >= this.sync.settings.numEpochKeyNoncePerEpoch
-        ) {
-            throw new Error(
-                `getEpochKeys nonce ${nonce} exceeds max nonce value ${this.sync.settings.numEpochKeyNoncePerEpoch}`
-            )
-        }
+        this._checkEpkNonce(nonce ?? 0)
         if (typeof nonce === 'number') {
             return genEpochKey(
                 this.id.secretHash,
@@ -219,8 +224,6 @@ export default class UserState {
         _toEpoch?: number,
         attesterId: bigint | string = this.sync.attesterId
     ): Promise<bigint[]> => {
-        if (!this.sync)
-            throw new Error('@unirep/core:UserState: no synchronizer is set')
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         const orClauses = [] as any[]
         const toEpoch =
@@ -306,8 +309,8 @@ export default class UserState {
         epoch: number | bigint | string,
         attesterId: bigint | string = this.sync.attesterId
     ) => {
-        if (!this.sync)
-            throw new Error('@unirep/core:UserState: no synchronizer is set')
+        this._checkSync()
+        this.sync.checkAttesterId(attesterId)
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
@@ -332,16 +335,22 @@ export default class UserState {
      * Check if epoch key nonce is valid
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
-        assert(
-            epochKeyNonce < this.sync.settings.numEpochKeyNoncePerEpoch,
-            `epochKeyNonce (${epochKeyNonce}) must be less than max epoch nonce`
-        )
+        if (epochKeyNonce >= this.sync.settings.numEpochKeyNoncePerEpoch)
+            throw new Error(
+                `@unirep/core:UserState: epochKeyNonce (${epochKeyNonce}) must be less than max epoch nonce`
+            )
+    }
+
+    private _checkSync = () => {
+        if (!this.sync)
+            throw new Error('@unirep/core:UserState: no synchronizer is set')
     }
 
     public getEpochKeyIndex = async (
         epoch: number,
         _epochKey: bigint | string
     ) => {
+        this._checkSync()
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 epoch,
@@ -375,7 +384,9 @@ export default class UserState {
         const data = await this.getData(fromEpoch - 1, attesterId)
         const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch(attesterId)
         if (fromEpoch.toString() === toEpoch.toString()) {
-            throw new Error('Cannot transition to same epoch')
+            throw new Error(
+                '@unirep/core:UserState: Cannot transition to same epoch'
+            )
         }
         const epochTree = await this.sync.genEpochTree(fromEpoch, attesterId)
         const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
