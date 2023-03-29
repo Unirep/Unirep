@@ -107,15 +107,18 @@ describe('Synchronizer watch multiple attesters', function () {
 
     it('should sync two and more attesters', async () => {
         const accounts = await ethers.getSigners()
-        const attesters = accounts.slice(0, 2).map((a) => a.address)
+        const count = 2
+        const attesters = accounts.slice(0, count).map((a) => a.address)
         const synchronizer = await genUnirepState(
             ethers.provider,
             unirepContract.address,
             attesters
         )
 
-        const stateCount = await synchronizer._db.count('SynchronizerState', {})
-        expect(stateCount).to.equal(2)
+        for (let i = 0; i < count; i++) {
+            const epoch = await synchronizer.readCurrentEpoch(attesters[i])
+            expect(epoch).not.equal(null)
+        }
         synchronizer.stop()
     })
 
