@@ -21,7 +21,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     signal input identity_secret;
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
-    signal input state_tree_elements[STATE_TREE_DEPTH][1];
+    signal input state_tree_elements[STATE_TREE_DEPTH];
     signal output state_tree_root;
     // Attestation by the attester
     signal input data[FIELD_COUNT];
@@ -96,7 +96,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     epoch_key_prover.sig_data <== sig_data;
     for (var i = 0; i < STATE_TREE_DEPTH; i++) {
         epoch_key_prover.state_tree_indexes[i] <== state_tree_indexes[i];
-        epoch_key_prover.state_tree_elements[i] <== state_tree_elements[i][0];
+        epoch_key_prover.state_tree_elements[i] <== state_tree_elements[i];
     }
     for (var i = 0; i < FIELD_COUNT; i++) {
         epoch_key_prover.data[i] <== data[i];

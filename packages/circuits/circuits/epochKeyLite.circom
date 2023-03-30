@@ -42,12 +42,6 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
         epoch_bits.out[x] === 0;
     }
 
-    component nonce_bits = Num2Bits(254);
-    nonce_bits.in <== nonce;
-    for (var x = 8; x < 254; x++) {
-        nonce_bits.out[x] === 0;
-    }
-
     component nonce_lt = LessThan(8);
     nonce_lt.in[0] <== nonce;
     nonce_lt.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
