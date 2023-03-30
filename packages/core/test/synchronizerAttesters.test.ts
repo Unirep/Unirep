@@ -23,11 +23,13 @@ describe('Synchronizer watch multiple attesters', function () {
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
             const accounts = await ethers.getSigners()
-            const attester = accounts[1]
-            await unirepContract
-                .connect(attester)
-                .attesterSignUp(EPOCH_LENGTH)
-                .then((t) => t.wait())
+            for (let x = 0; x < ATTESTER_COUNT; x++) {
+                const attester = accounts[x]
+                await unirepContract
+                    .connect(attester)
+                    .attesterSignUp(EPOCH_LENGTH)
+                    .then((t) => t.wait())
+            }
         })
 
         afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
