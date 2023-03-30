@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree, genRandomSalt } from '@unirep/utils'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH, genSignature } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
@@ -116,12 +116,10 @@ describe('Attester Signup', function () {
         const attester = accounts[10]
         const relayer = accounts[0]
 
-        const message = ethers.utils.solidityKeccak256(
-            ['address', 'address'],
-            [attester.address, unirepContract.address]
-        )
-        const signature = await attester.signMessage(
-            ethers.utils.arrayify(message)
+        const signature = await genSignature(
+            unirepContract.address,
+            attester,
+            EPOCH_LENGTH
         )
         const tx = await unirepContract
             .connect(relayer)
@@ -170,12 +168,10 @@ describe('Attester Signup', function () {
         const attester = accounts[10]
         const relayer = accounts[0]
 
-        const message = ethers.utils.solidityKeccak256(
-            ['address', 'address'],
-            [attester.address, unirepContract.address]
-        )
-        const signature = await attester.signMessage(
-            ethers.utils.arrayify(message)
+        const signature = await genSignature(
+            unirepContract.address,
+            attester,
+            EPOCH_LENGTH
         )
         await unirepContract
             .connect(relayer)

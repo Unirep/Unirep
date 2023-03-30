@@ -13,14 +13,12 @@ contract VerifySignature {
      */
     function isValidSignature(
         address signer,
+        uint256 epochLength,
         bytes memory signature
     ) internal view returns (bool) {
         // Attester signs over it's own address concatenated with this contract address
-        bytes32 messageHash = keccak256(
-            abi.encodePacked(
-                '\x19Ethereum Signed Message:\n32',
-                keccak256(abi.encodePacked(signer, this))
-            )
+        bytes32 messageHash = ECDSA.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(this, signer, epochLength))
         );
         return ECDSA.recover(messageHash, signature) == signer;
     }
