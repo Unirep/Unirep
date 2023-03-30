@@ -25,7 +25,7 @@ template UserStateTransition(
     signal input identity_secret;
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
-    signal input state_tree_elements[STATE_TREE_DEPTH][1];
+    signal input state_tree_elements[STATE_TREE_DEPTH];
     signal output state_tree_root;
     signal output state_tree_leaf;
     // Attester to prove reputation from
@@ -74,7 +74,7 @@ template UserStateTransition(
     state_merkletree.leaf <== leaf_hasher.out;
     for (var i = 0; i < STATE_TREE_DEPTH; i++) {
         state_merkletree.path_index[i] <== state_tree_indexes[i];
-        state_merkletree.path_elements[i] <== state_tree_elements[i][0];
+        state_merkletree.path_elements[i] <== state_tree_elements[i];
     }
     state_tree_root <== state_merkletree.root;
 
