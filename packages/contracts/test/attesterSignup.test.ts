@@ -13,28 +13,30 @@ describe('Attester Signup', function () {
     this.timeout(120000)
 
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('should fail to double signup', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
         await expect(
             unirepContract.connect(attester).attesterSignUp(EPOCH_LENGTH)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterAlreadySignUp')
@@ -53,7 +55,7 @@ describe('Attester Signup', function () {
                 .then(({ blockNumber }) =>
                     ethers.provider.getBlock(blockNumber)
                 )
-            expect(tx)
+            await expect(tx)
                 .to.emit(unirepContract, 'AttesterSignedUp')
                 .withArgs(attester.address, attesterEpochLength, timestamp)
 
@@ -130,7 +132,7 @@ describe('Attester Signup', function () {
         const { timestamp } = await tx
             .wait()
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
-        expect(tx)
+        await expect(tx)
             .to.emit(unirepContract, 'AttesterSignedUp')
             .withArgs(attester.address, EPOCH_LENGTH, timestamp)
         await tx.wait()

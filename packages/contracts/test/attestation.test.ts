@@ -13,27 +13,28 @@ const { FIELD_COUNT, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, SUM_FIELD_COUNT } =
 
 describe('Attestations', function () {
     this.timeout(120000)
+
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('should fail to attest to out of range field', async () => {
         const accounts = await ethers.getSigners()
@@ -216,7 +217,7 @@ describe('Attestations', function () {
             .wait()
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
-        expect(tx)
+        await expect(tx)
             .to.emit(unirepContract, 'Attestation')
             .withArgs(
                 epoch,
@@ -235,7 +236,7 @@ describe('Attestations', function () {
             attester.address
         )
         const epochKey = BigInt(24910)
-        expect(
+        await expect(
             unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, SUM_FIELD_COUNT, SNARK_SCALAR_FIELD)
@@ -261,7 +262,7 @@ describe('Attestations', function () {
             .wait()
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
-        expect(tx)
+        await expect(tx)
             .to.emit(unirepContract, 'Attestation')
             .withArgs(
                 epoch,
