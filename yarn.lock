@@ -3338,7 +3338,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openzeppelin/contracts@npm:^4.6.0":
+"@openzeppelin/contracts@npm:^4.8.2":
   version: 4.8.2
   resolution: "@openzeppelin/contracts@npm:4.8.2"
   checksum: 1d362f0b9c880549cb82544e23fb70270fbbbe24a69e10bd5aa07649fd82347686173998ae484defafdc473d04004d519f839e3cd3d3e7733d0895b950622243
@@ -4561,7 +4561,7 @@ __metadata:
     "@ethersproject/providers": ^5.6.8
     "@nomicfoundation/hardhat-chai-matchers": ^1.0.5
     "@nomiclabs/hardhat-ethers": ^2.0.6
-    "@openzeppelin/contracts": ^4.6.0
+    "@openzeppelin/contracts": ^4.8.2
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
     "@unirep/circuits": 2.0.0-beta-1

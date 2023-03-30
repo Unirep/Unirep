@@ -52,6 +52,19 @@ The `attesterId` is the address of the attester contract. In this case `msg.send
 function attesterSignUp(uint epochLength) public
 ```
 
+## attesterSignUpViaRelayer
+
+Register an attester contract through a relayer. The signature will be recovered and checked if it matches the given `attester` address.
+
+```sol
+function attesterSignUpViaRelayer(
+  address attester, 
+  uint256 epochLength, 
+  bytes calldata signature
+) public
+```
+
+
 ## attest
 
 Create an attestation to an epoch key. If the current epoch is not the same as `targetEpoch` the transaction will revert.

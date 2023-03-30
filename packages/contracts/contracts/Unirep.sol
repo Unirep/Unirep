@@ -240,7 +240,8 @@ contract Unirep is IUnirep, VerifySignature {
         bytes calldata signature
     ) public {
         // TODO: verify epoch length in signature
-        if (!isValidSignature(attester, signature)) revert InvalidSignature();
+        if (!isValidSignature(attester, epochLength, signature))
+            revert InvalidSignature();
         _attesterSignUp(attester, epochLength);
     }
 
