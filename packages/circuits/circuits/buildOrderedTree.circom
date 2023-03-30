@@ -176,21 +176,20 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, FIELD_COUNT, OMT_R, EPK_R) {
       var i = _i + index \ TREE_ARITY;
 
       // can use the same indexing for hashers
-      var hasher_index = i;
-      hashers[hasher_index] = Poseidon(TREE_ARITY);
+      hashers[i] = Poseidon(TREE_ARITY);
 
       if (level == TREE_DEPTH) {
         for (var z = 0; z < TREE_ARITY; z++) {
-          hashers[hasher_index].inputs[z] <== sorted_leaves[index + z];
+          hashers[i].inputs[z] <== sorted_leaves[index + z];
         }
-        values[i] <== hashers[hasher_index].out;
+        values[i] <== hashers[i].out;
       } else {
         // index of the child leaves in the array
         var t = _i + TREE_ARITY ** (level - 1) + index;
         for (var z = 0; z < TREE_ARITY; z++) {
-          hashers[hasher_index].inputs[z] <== values[t + z];
+          hashers[i].inputs[z] <== values[t + z];
         }
-        values[i] <== hashers[hasher_index].out;
+        values[i] <== hashers[i].out;
       }
     }
   }
