@@ -52,14 +52,9 @@ template UserStateTransition(
     signal output transition_nullifier;
     signal output epoch_tree_root;
 
-    // only check to_epoch
+    // to_epoch will be checked on chain
     // from_epoch is implicitly checked by the
     // state tree leaf membership proof
-    component to_epoch_bits = Num2Bits(254);
-    to_epoch_bits.in <== to_epoch;
-    for (var x = 64; x < 254; x++) {
-        to_epoch_bits.out[x] === 0;
-    }
     component epoch_check = GreaterThan(64);
     epoch_check.in[0] <== to_epoch;
     epoch_check.in[1] <== from_epoch;
