@@ -59,6 +59,7 @@ library Polysum {
 
         uint Rx = rForIndex(index, R);
         for (uint8 x = 0; x < vals.length; x++) {
+            require(vals[x] < SNARK_SCALAR_FIELD, 'vlarge');
             uint term = mulmod(Rx, vals[x], SNARK_SCALAR_FIELD);
             hash = addmod(hash, term, SNARK_SCALAR_FIELD);
             index++;
