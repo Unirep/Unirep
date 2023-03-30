@@ -59,6 +59,7 @@ describe('Sealing epoch helper function', function () {
             .connect(accounts[5])
             .sealEpoch(firstEpoch, attester.address, publicSignals, proof)
             .then((t) => t.wait())
+        unirepState.stop()
     })
 
     it('should not seal the epoch with no attestations', async () => {
@@ -84,6 +85,7 @@ describe('Sealing epoch helper function', function () {
                 .then(() => rj())
                 .catch(() => rs())
         })
+        unirepState.stop()
     })
 
     it('should not seal the epoch if epoch is already sealed', async () => {
@@ -122,5 +124,6 @@ describe('Sealing epoch helper function', function () {
                 .then(() => rj())
                 .catch(() => rs())
         })
+        unirepState.stop()
     })
 })
