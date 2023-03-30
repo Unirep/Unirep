@@ -18,7 +18,7 @@ contract VerifySignature {
     ) internal view returns (bool) {
         // Attester signs over it's own address concatenated with this contract address
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(this, signer, epochLength))
+            keccak256(abi.encodePacked(address(this), signer, epochLength))
         );
         return ECDSA.recover(messageHash, signature) == signer;
     }
