@@ -129,3 +129,18 @@ export const genEpochTreeLeaf = (
     }
     return polysum
 }
+
+export const genNullifier = (
+    identityNullifier: bigint,
+    externalNullifier: number | bigint
+): bigint => {
+    return hash2([BigInt(identityNullifier), BigInt(externalNullifier)])
+}
+
+export const genProposalId = (
+    nullifier: bigint,
+    trapdoor: number | bigint
+): bigint => {
+    let secret = hash2([BigInt(nullifier), BigInt(trapdoor)])
+    return hash1([secret])
+}
