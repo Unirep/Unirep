@@ -33,8 +33,7 @@ describe('Synchronizer process events', function () {
             snapshot = await ethers.provider.send('evm_snapshot', [])
             synchronizer = await genUnirepState(
                 ethers.provider,
-                unirepContract.address,
-                BigInt(attester.address)
+                unirepContract.address
             )
             const epoch = await synchronizer.loadCurrentEpoch()
             await bootstrapUsers(synchronizer, attester)

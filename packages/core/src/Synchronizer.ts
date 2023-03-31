@@ -45,6 +45,7 @@ export class Synchronizer extends EventEmitter {
     private _attesterSettings: { [key: string]: AttesterSetting } = {}
     protected defaultStateTreeLeaf: bigint = BigInt(0)
     protected defaultEpochTreeLeaf: bigint = BigInt(0)
+    private _syncAll = false
 
     private _eventHandlers: any
     private _eventFilters: any
@@ -78,6 +79,8 @@ export class Synchronizer extends EventEmitter {
         } else if (!!attesterId) {
             // single attester
             this._attesterId = [BigInt(attesterId)]
+        } else if (!attesterId) {
+            this._syncAll = true
         }
 
         this._db = db ?? new MemoryConnector(constructSchema(schema))
@@ -203,6 +206,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async setup() {
+        if (this.setupComplete) return
         const config = await this.unirepContract.config()
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
@@ -211,17 +215,16 @@ export class Synchronizer extends EventEmitter {
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
 
-        await this.findStartBlock()
+        await this._findStartBlock()
+        this.setupComplete = true
     }
 
-    async findStartBlock() {
+    private async _findStartBlock() {
         // look for the first attesterSignUp event
         // no events could be emitted before this
         let events: ethers.Event[] = []
-        if (this.attesterId === BigInt(0)) {
-            const filter = this.unirepContract.filters.AttesterSignedUp(
-                this.attesterId
-            )
+        if (this._syncAll) {
+            const filter = this.unirepContract.filters.AttesterSignedUp()
             events = await this.unirepContract.queryFilter(filter)
         } else if (this._attesterId.length) {
             for (let id of this._attesterId) {
@@ -252,6 +255,13 @@ export class Synchronizer extends EventEmitter {
             this._attesterSettings[toDecString(attesterId)] = {
                 startTimestamp: Number(timestamp),
                 epochLength: Number(epochLength),
+            }
+            if (
+                this._syncAll &&
+                !this.attesterExist(attesterId) &&
+                BigInt(attesterId) !== BigInt(0)
+            ) {
+                this._attesterId.push(BigInt(attesterId))
             }
             const syncStartBlock = event.blockNumber - 1
 
@@ -635,8 +645,9 @@ export class Synchronizer extends EventEmitter {
             preimages?: bigint[]
         } = {}
     ): Promise<BuildOrderedTree> {
-        const attesterId =
-            options.attesterId?.toString() ?? toDecString(this.attesterId)
+        const attesterId = options.attesterId
+            ? toDecString(options.attesterId)
+            : toDecString(this.attesterId)
         this.checkAttesterId(attesterId)
         const unsealedEpoch = await this._db.findOne('Epoch', {
             where: {
@@ -736,8 +747,7 @@ export class Synchronizer extends EventEmitter {
         const index = Number(decodedData.index)
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
         db.create('StateTreeLeaf', {
             epoch,
             hash,
@@ -754,8 +764,7 @@ export class Synchronizer extends EventEmitter {
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
         const { blockNumber } = event
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
         const id = `${epoch}-${index}-${attesterId}`
         db.upsert('EpochTreeLeaf', {
             where: {
@@ -783,8 +792,7 @@ export class Synchronizer extends EventEmitter {
         const attesterId = toDecString(decodedData.attesterId)
         const leafIndex = toDecString(decodedData.leafIndex)
         const { blockNumber } = event
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
         db.create('UserSignUp', {
             commitment,
             epoch,
@@ -802,8 +810,7 @@ export class Synchronizer extends EventEmitter {
         const change = toDecString(decodedData.change)
         const timestamp = Number(decodedData.timestamp)
         const { blockNumber } = event
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
 
         const index = `${event.blockNumber
             .toString()
@@ -854,8 +861,7 @@ export class Synchronizer extends EventEmitter {
         const attesterId = toDecString(decodedData.attesterId)
         const nullifier = toDecString(decodedData.nullifier)
         const { blockNumber } = event
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
 
         db.create('Nullifier', {
             epoch,
@@ -872,8 +878,7 @@ export class Synchronizer extends EventEmitter {
         const number = Number(decodedData.epoch)
         const attesterId = toDecString(decodedData.attesterId)
         console.log(`Epoch ${number} ended`)
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
         const existingDoc = await this._db.findOne('Epoch', {
             where: {
                 number,
@@ -912,6 +917,15 @@ export class Synchronizer extends EventEmitter {
         const epochLength = Number(decodedData.epochLength)
         const startTimestamp = Number(decodedData.timestamp)
 
+        if (this._syncAll && !this.attesterExist(_id) && _id !== '0') {
+            this._attesterSettings[_id] = {
+                startTimestamp,
+                epochLength,
+            }
+            this._attesterId.push(BigInt(_id))
+        }
+        if (!this.attesterExist(_id)) return
+
         db.upsert('Attester', {
             where: {
                 _id,
@@ -930,8 +944,7 @@ export class Synchronizer extends EventEmitter {
         const number = Number(decodedData.epoch)
         const attesterId = toDecString(decodedData.attesterId)
 
-        if (!this.attesterExist(attesterId) && this.attesterId !== BigInt(0))
-            return
+        if (!this.attesterExist(attesterId)) return
         const existingDoc = await this._db.findOne('Epoch', {
             where: {
                 number,

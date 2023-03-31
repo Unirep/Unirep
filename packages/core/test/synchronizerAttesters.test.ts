@@ -78,6 +78,39 @@ describe('Synchronizer watch multiple attesters', function () {
         sync.stop()
     })
 
+    it('should access attesters epochs', async () => {
+        const accounts = await ethers.getSigners()
+        const sync = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
+        for (let i = 0; i < ATTESTER_COUNT; i++) {
+            expect(sync.calcCurrentEpoch(accounts[i].address)).to.equal(0)
+        }
+        // should not access epoch if attester is not signed up
+        expect(() =>
+            sync.calcCurrentEpoch(accounts[ATTESTER_COUNT].address)
+        ).to.throw('is not synchronized')
+    })
+
+    it('should access attesters epochs after syn starts', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[ATTESTER_COUNT]
+        const sync = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
+        expect(() => sync.calcCurrentEpoch(attester.address)).to.throw(
+            'is not synchronized'
+        )
+        await unirepContract
+            .connect(attester)
+            .attesterSignUp(EPOCH_LENGTH)
+            .then((t) => t.wait())
+        await sync.waitForSync()
+        expect(sync.calcCurrentEpoch(attester.address)).to.equal(0)
+    })
+
     it('should finish multiple epochs', async () => {
         const accounts = await ethers.getSigners()
         const synchronizer = await genUnirepState(
