@@ -165,4 +165,60 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     return { isValid, proof, publicSignals }
 }
 
-export { genEpochKeyCircuitInput, genReputationCircuitInput, genProofAndVerify }
+const genPreventDoubleActionCircuitInput = (config: {
+    id: utils.ZkIdentity
+    tree: utils.IncrementalMerkleTree
+    leafIndex: number
+    epoch: number
+    nonce: number
+    attesterId: number | bigint
+    data?: bigint[]
+    sigData?: bigint
+    revealNonce?: number
+    externalNullifier: bigint
+}) => {
+    const {
+        id,
+        tree,
+        leafIndex,
+        epoch,
+        nonce,
+        attesterId,
+        data: _data,
+        sigData,
+        revealNonce,
+        externalNullifier,
+    } = Object.assign(
+        {
+            data: [],
+        },
+        config
+    )
+    const data = [..._data, ...Array(FIELD_COUNT - _data.length).fill(0)]
+    const proof = tree.createProof(leafIndex)
+    const circuitInputs = {
+        state_tree_elements: proof.siblings,
+        state_tree_indexes: proof.pathIndices,
+        identity_secret: id.secretHash,
+        data,
+        sig_data: sigData ?? BigInt(0),
+        nonce,
+        epoch,
+        attester_id: attesterId,
+        reveal_nonce: revealNonce ?? 0,
+        identity_nullifier: id.identityNullifier,
+        external_nullifier: externalNullifier,
+        trapdoor: id.trapdoor,
+    }
+
+    return utils.stringifyBigInts(circuitInputs)
+}
+
+export {
+    genNewEpochTree,
+    genEpochKeyCircuitInput,
+    genReputationCircuitInput,
+    genUserStateTransitionCircuitInput,
+    genProofAndVerify,
+    genPreventDoubleActionCircuitInput,
+}
