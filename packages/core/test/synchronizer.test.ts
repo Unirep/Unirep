@@ -20,17 +20,17 @@ describe('Synchronizer process events', function () {
         const accounts = await ethers.getSigners()
         attester = accounts[1]
         unirepContract = await deployUnirep(accounts[0])
-        // now create an attester
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
+            // now create an attester
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
             synchronizer = await genUnirepState(
                 ethers.provider,
                 unirepContract.address,
