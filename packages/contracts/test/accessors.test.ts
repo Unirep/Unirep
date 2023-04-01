@@ -1,7 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, stringifyBigInts } from '@unirep/utils'
+import { Identity } from '@semaphore-project/identity'
+import { stringifyBigInts } from '@unirep/utils'
 import { Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
@@ -46,12 +47,12 @@ describe('Attester getters', function () {
             expect(numberOfUsers).to.equal(0)
         }
         for (let x = 1; x < 5; x++) {
-            const id = new ZkIdentity()
+            const id = new Identity()
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.signup,
                 stringifyBigInts({
                     epoch,
-                    identity_nullifier: id.identityNullifier,
+                    identity_nullifier: id.nullifier,
                     identity_trapdoor: id.trapdoor,
                     attester_id: attester.address,
                 })

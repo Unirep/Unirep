@@ -48,7 +48,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
         Circuit.signup,
         stringifyBigInts({
             epoch: epoch.toString(),
-            identity_nullifier: id.identityNullifier,
+            identity_nullifier: id.nullifier,
             identity_trapdoor: id.trapdoor,
             attester_id: attesterId,
         })
@@ -97,7 +97,7 @@ describe('User State Transition', function () {
     it('should fail to transition with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -110,7 +110,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -123,7 +123,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -176,12 +176,12 @@ describe('User State Transition', function () {
 
     it('should fail to transition with invalid attester', async () => {
         const address = BigInt(12345) // not signed up attester
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     address,
                     0, // from epoch
                     i
@@ -197,7 +197,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: address,
@@ -239,7 +239,7 @@ describe('User State Transition', function () {
     it('should fail to transition from wrong epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -252,7 +252,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     1, // from epoch
                     i
@@ -265,7 +265,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 1,
                 to_epoch: 2,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -309,7 +309,7 @@ describe('User State Transition', function () {
     it('should fail to transition from unsealed epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -340,7 +340,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -353,7 +353,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -398,7 +398,7 @@ describe('User State Transition', function () {
     it('should fail to transition from wrong epoch tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -411,7 +411,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -425,7 +425,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -470,7 +470,7 @@ describe('User State Transition', function () {
     it('should fail to transition from wrong state tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const { leaf } = await signupUser(
             id,
@@ -484,7 +484,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -497,7 +497,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -542,7 +542,7 @@ describe('User State Transition', function () {
     it('should fail to double user state transition', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -555,7 +555,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     0, // from epoch
                     i
@@ -568,7 +568,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: 0,
                 to_epoch: 1,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -612,7 +612,7 @@ describe('User State Transition', function () {
     it('should do user state transition', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
@@ -627,7 +627,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map((_, i) =>
                 genEpochKey(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     fromEpoch, // from epoch
                     i
@@ -640,7 +640,7 @@ describe('User State Transition', function () {
             stringifyBigInts({
                 from_epoch: fromEpoch,
                 to_epoch: toEpoch,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
                 attester_id: attester.address,
@@ -704,7 +704,7 @@ describe('User State Transition', function () {
             .fill(null)
             .map(() => {
                 return {
-                    id: new ZkIdentity(),
+                    id: new Identity(),
                     index: 0,
                 }
             })
@@ -731,7 +731,7 @@ describe('User State Transition', function () {
                     .fill(null)
                     .map((_, n) =>
                         genEpochKey(
-                            userState[i].id.secretHash,
+                            userState[i].id.secret,
                             BigInt(attester.address),
                             fromEpoch, // from epoch
                             n
@@ -746,7 +746,7 @@ describe('User State Transition', function () {
                     stringifyBigInts({
                         from_epoch: fromEpoch,
                         to_epoch: epoch,
-                        identity_secret: userState[i].id.secretHash,
+                        identity_secret: userState[i].id.secret,
                         state_tree_indexes: stateTreeProof.pathIndices,
                         state_tree_elements: stateTreeProof.siblings,
                         attester_id: attester.address,

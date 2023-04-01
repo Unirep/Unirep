@@ -1,6 +1,6 @@
 import { expect } from 'chai'
+import { Identity } from '@semaphore-protocol/identity'
 import {
-    ZkIdentity,
     IncrementalMerkleTree,
     genEpochKey,
     genUserStateTransitionNullifier,
@@ -26,15 +26,13 @@ describe('User state transition', function () {
     this.timeout(300000)
 
     it('should do a user state transition', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
         const attesterId = BigInt(1249021895182290)
         const data = randomData()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        tree.insert(
-            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
-        )
+        tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
@@ -50,15 +48,10 @@ describe('User state transition', function () {
         )
         expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = genStateTreeLeaf(
-            id.secretHash,
-            attesterId,
-            toEpoch,
-            data
-        )
+        const newLeaf = genStateTreeLeaf(id.secret, attesterId, toEpoch, data)
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.secretHash,
+            id.secret,
             attesterId,
             fromEpoch
         )
@@ -66,16 +59,14 @@ describe('User state transition', function () {
     })
 
     it('should do a user state transition with new rep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
         const attesterId = BigInt(124185915945829581290)
         const data = randomData()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        tree.insert(
-            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
-        )
-        const epochKey = genEpochKey(id.secretHash, attesterId, fromEpoch, 0)
+        tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
+        const epochKey = genEpochKey(id.secret, attesterId, fromEpoch, 0)
         const changes = Array(FIELD_COUNT)
             .fill(0)
             .map(() => BigInt(Math.floor(Math.random() * 100)))
@@ -98,7 +89,7 @@ describe('User state transition', function () {
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = genStateTreeLeaf(
-            id.secretHash,
+            id.secret,
             attesterId,
             toEpoch,
             data.map((d, i) => {
@@ -111,7 +102,7 @@ describe('User state transition', function () {
         )
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.secretHash,
+            id.secret,
             attesterId,
             fromEpoch
         )
@@ -119,18 +110,16 @@ describe('User state transition', function () {
     })
 
     it('should do a user state transition with many new rep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
         const attesterId = BigInt(2140158589239525290)
         const data = randomData()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        tree.insert(
-            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
-        )
+        tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
-            .map((_, i) => genEpochKey(id.secretHash, attesterId, fromEpoch, i))
+            .map((_, i) => genEpochKey(id.secret, attesterId, fromEpoch, i))
         const changes = Array(FIELD_COUNT)
             .fill(0)
             .map(() => BigInt(Math.floor(Math.random() * 100)))
@@ -162,7 +151,7 @@ describe('User state transition', function () {
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
         const newLeaf = genStateTreeLeaf(
-            id.secretHash,
+            id.secret,
             attesterId,
             toEpoch,
             data.map((d, i) => {
@@ -179,7 +168,7 @@ describe('User state transition', function () {
         )
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.secretHash,
+            id.secret,
             attesterId,
             fromEpoch
         )
@@ -187,15 +176,13 @@ describe('User state transition', function () {
     })
 
     it('should do ust with 0 epoch tree root', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
         const attesterId = BigInt(1249021895182290)
         const data = randomData()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        tree.insert(
-            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
-        )
+        tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
         const epochTree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
             0,
@@ -207,7 +194,7 @@ describe('User state transition', function () {
             stringifyBigInts({
                 from_epoch: fromEpoch,
                 to_epoch: toEpoch,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: tree.createProof(0).pathIndices,
                 state_tree_elements: tree.createProof(0).siblings,
                 attester_id: attesterId,
@@ -244,15 +231,10 @@ describe('User state transition', function () {
         )
         expect(isValid, 'invalid proof').to.be.true
         expect(publicSignals[0]).to.equal(tree.root.toString())
-        const newLeaf = genStateTreeLeaf(
-            id.secretHash,
-            attesterId,
-            toEpoch,
-            data
-        )
+        const newLeaf = genStateTreeLeaf(id.secret, attesterId, toEpoch, data)
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const transitionNullifier = genUserStateTransitionNullifier(
-            id.secretHash,
+            id.secret,
             attesterId,
             fromEpoch
         )
@@ -262,15 +244,13 @@ describe('User state transition', function () {
     })
 
     it('should fail UST with 0 epoch root with non-zero new reputation', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
         const attesterId = BigInt(1249021895182290)
         const data = randomData()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        tree.insert(
-            genStateTreeLeaf(id.secretHash, attesterId, fromEpoch, data)
-        )
+        tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
         const epochTree = new IncrementalMerkleTree(
             EPOCH_TREE_DEPTH,
             0,
@@ -280,7 +260,7 @@ describe('User state transition', function () {
         const inputs = stringifyBigInts({
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
-            identity_secret: id.secretHash,
+            identity_secret: id.secret,
             state_tree_indexes: tree.createProof(0).pathIndices,
             state_tree_elements: tree.createProof(0).siblings,
             attester_id: attesterId,

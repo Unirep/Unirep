@@ -1,3 +1,4 @@
+import { Identity } from '@semaphore-protocol/identity'
 import * as utils from '@unirep/utils'
 
 import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
@@ -40,7 +41,7 @@ export const randomData = () => [
 ]
 
 const genEpochKeyCircuitInput = (config: {
-    id: utils.ZkIdentity
+    id: Identity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
     epoch: number
@@ -71,7 +72,7 @@ const genEpochKeyCircuitInput = (config: {
     const circuitInputs = {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
-        identity_secret: id.secretHash,
+        identity_secret: id.secret,
         data,
         sig_data: sigData ?? BigInt(0),
         nonce,
@@ -83,7 +84,7 @@ const genEpochKeyCircuitInput = (config: {
 }
 
 const genUserStateTransitionCircuitInput = (config: {
-    id: utils.ZkIdentity
+    id: Identity
     fromEpoch: number
     toEpoch: number
     tree: utils.IncrementalMerkleTree
@@ -128,7 +129,7 @@ const genUserStateTransitionCircuitInput = (config: {
     const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
         .fill(null)
         .map((_, i) =>
-            utils.genEpochKey(id.secretHash, BigInt(attesterId), fromEpoch, i)
+            utils.genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
         )
 
     const epochLeavesByKey = epochKeys.reduce((acc, epk) => {
@@ -145,7 +146,7 @@ const genUserStateTransitionCircuitInput = (config: {
     const circuitInputs = {
         from_epoch: fromEpoch,
         to_epoch: toEpoch,
-        identity_secret: id.secretHash,
+        identity_secret: id.secret,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings.map((s, i) => {
             return s[1 - stateTreeProof.pathIndices[i]]
@@ -221,7 +222,7 @@ const genUserStateTransitionCircuitInput = (config: {
 }
 
 const genReputationCircuitInput = (config: {
-    id: utils.ZkIdentity
+    id: Identity
     epoch: number
     nonce: number
     attesterId: number | bigint
@@ -266,7 +267,7 @@ const genReputationCircuitInput = (config: {
     // Global state tree
     const stateTree = new utils.IncrementalMerkleTree(STATE_TREE_DEPTH)
     const hashedLeaf = utils.genStateTreeLeaf(
-        id.secretHash,
+        id.secret,
         BigInt(attesterId),
         epoch,
         startBalance as any
@@ -275,7 +276,7 @@ const genReputationCircuitInput = (config: {
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
-        identity_secret: id.secretHash,
+        identity_secret: id.secret,
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
         data: startBalance,

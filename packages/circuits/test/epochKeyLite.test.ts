@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { ZkIdentity, genEpochKey } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
+import { genEpochKey } from '@unirep/utils'
 import { Circuit, CircuitConfig, EpochKeyLiteProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
@@ -14,9 +15,9 @@ describe('Epoch key lite circuits', function () {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const attesterId = BigInt(10210)
             const epoch = 120958
-            const id = new ZkIdentity()
+            const id = new Identity()
             const circuitInputs = {
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 epoch,
                 attester_id: attesterId,
                 nonce,
@@ -30,7 +31,7 @@ describe('Epoch key lite circuits', function () {
             expect(isValid).to.be.true
             const data = new EpochKeyLiteProof(publicSignals, proof)
             expect(data.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(data.control).to.equal(
                 EpochKeyLiteProof.buildControl({
@@ -51,10 +52,10 @@ describe('Epoch key lite circuits', function () {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const attesterId = BigInt(10210)
             const epoch = 120958
-            const id = new ZkIdentity()
+            const id = new Identity()
             const revealNonce = 1
             const circuitInputs = {
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 epoch,
                 attester_id: attesterId,
                 nonce,
@@ -68,7 +69,7 @@ describe('Epoch key lite circuits', function () {
             expect(isValid).to.be.true
             const data = new EpochKeyLiteProof(publicSignals, proof)
             expect(data.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(data.control).to.equal(
                 EpochKeyLiteProof.buildControl({
@@ -90,10 +91,10 @@ describe('Epoch key lite circuits', function () {
         const attesterId = BigInt(10210)
         const epoch = 120958
         const nonce = 1
-        const id = new ZkIdentity()
+        const id = new Identity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_secret: id.secretHash,
+            identity_secret: id.secret,
             epoch,
             attester_id: attesterId,
             nonce,
@@ -107,7 +108,7 @@ describe('Epoch key lite circuits', function () {
         expect(isValid).to.be.true
         const data = new EpochKeyLiteProof(publicSignals, proof)
         expect(data.epochKey.toString()).to.equal(
-            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+            genEpochKey(id.secret, attesterId, epoch, nonce).toString()
         )
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.nonce.toString()).to.equal('0')
@@ -129,10 +130,10 @@ describe('Epoch key lite circuits', function () {
         const attesterId = BigInt(10210)
         const epoch = 120958
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
-        const id = new ZkIdentity()
+        const id = new Identity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_secret: id.secretHash,
+            identity_secret: id.secret,
             epoch,
             attester_id: attesterId,
             nonce,
@@ -150,10 +151,10 @@ describe('Epoch key lite circuits', function () {
         const attesterId = BigInt(10210)
         const epoch = BigInt(2) ** BigInt(64)
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_secret: id.secretHash,
+            identity_secret: id.secret,
             epoch,
             attester_id: attesterId,
             nonce,
@@ -171,10 +172,10 @@ describe('Epoch key lite circuits', function () {
         const attesterId = BigInt(2) ** BigInt(160)
         const epoch = 18241924
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_secret: id.secretHash,
+            identity_secret: id.secret,
             epoch,
             attester_id: attesterId,
             nonce,
@@ -192,10 +193,10 @@ describe('Epoch key lite circuits', function () {
         const attesterId = 479187498124
         const epoch = 18241924
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const _data = BigInt(210128912581953498913)
         const circuitInputs = {
-            identity_secret: id.secretHash,
+            identity_secret: id.secret,
             epoch,
             attester_id: attesterId,
             nonce,

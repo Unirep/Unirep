@@ -88,7 +88,7 @@ import { getUnirepContract, Unirep } from '@unirep/contracts'
 import { DB, SQLiteConnector } from 'anondb/node'
 
 // random generate a user identity
-const identity = new ZkIdentity()
+const identity = new Identity()
 // connect a unirep contract with the address and a provider
 const unirepContract: Unirep = getUnirepContract(address, provider)
 // initialize a database
@@ -132,13 +132,13 @@ const index = await unirepContract.getProofIndex(proofHash)
 import { ZkIdentity, genEpochKey } from '@unirep/utils'
 import { genEpochKey } from '@unirep/core'
 
-const identity = new ZkIdentity()
+const identity = new Identity()
 const epoch = 1
 const nonce = 0
 const epochTreeDepth = 64
 
 const epk = genEpochKey(
-    identity.secretHash,
+    identity.secret,
     epoch,
     nonce,
     epochTreeDepth
