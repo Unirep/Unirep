@@ -3340,7 +3340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openzeppelin/contracts@npm:^4.6.0":
+"@openzeppelin/contracts@npm:^4.8.2":
   version: 4.8.2
   resolution: "@openzeppelin/contracts@npm:4.8.2"
   checksum: 1d362f0b9c880549cb82544e23fb70270fbbbe24a69e10bd5aa07649fd82347686173998ae484defafdc473d04004d519f839e3cd3d3e7733d0895b950622243
@@ -4577,7 +4577,7 @@ __metadata:
     "@ethersproject/providers": ^5.6.8
     "@nomicfoundation/hardhat-chai-matchers": ^1.0.5
     "@nomiclabs/hardhat-ethers": ^2.0.6
-    "@openzeppelin/contracts": ^4.6.0
+    "@openzeppelin/contracts": ^4.8.2
     "@semaphore-protocol/identity": ^3.5.0
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
@@ -4587,6 +4587,7 @@ __metadata:
     "@zk-kit/incremental-merkle-tree.sol": ^1.4.0
     big-integer: ^1.6.51
     ethers: ^5.6.8
+    global-factory: ^0.0.0
     hardhat: ^2.12.3
     hardhat-gas-reporter: ^1.0.8
     lcov-badge-generator: ^1.0.5
@@ -10028,6 +10029,16 @@ __metadata:
   dependencies:
     ini: 2.0.0
   checksum: 70147b80261601fd40ac02a104581432325c1c47329706acd773f3a6ce99bb36d1d996038c85ccacd482ad22258ec233c586b6a91535b1a116b89663d49d6438
+  languageName: node
+  linkType: hard
+
+"global-factory@npm:^0.0.0":
+  version: 0.0.0
+  resolution: "global-factory@npm:0.0.0"
+  dependencies:
+    "@ethersproject/address": ^5.7.0
+    "@ethersproject/keccak256": ^5.7.0
+  checksum: c6fc186b0da01f520a4f11dad1b0d19ac8d2726c9161a975c59a3d09c8feeab98e001064ea97ca300de00210b1e72deb9683b9191a3ae18e79fbb69fe43a4881
   languageName: node
   linkType: hard
 

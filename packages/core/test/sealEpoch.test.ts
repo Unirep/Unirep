@@ -14,22 +14,21 @@ describe('Sealing epoch helper function', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
         })
 
-        afterEach(async () => {
-            await ethers.provider.send('evm_revert', [snapshot])
-        })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
     }
 
     it('should seal the oldest epoch', async () => {
@@ -60,6 +59,7 @@ describe('Sealing epoch helper function', function () {
             .connect(accounts[5])
             .sealEpoch(firstEpoch, attester.address, publicSignals, proof)
             .then((t) => t.wait())
+        unirepState.stop()
     })
 
     it('should not seal the epoch with no attestations', async () => {
@@ -85,6 +85,7 @@ describe('Sealing epoch helper function', function () {
                 .then(() => rj())
                 .catch(() => rs())
         })
+        unirepState.stop()
     })
 
     it('should not seal the epoch if epoch is already sealed', async () => {
@@ -123,5 +124,6 @@ describe('Sealing epoch helper function', function () {
                 .then(() => rj())
                 .catch(() => rs())
         })
+        unirepState.stop()
     })
 })

@@ -16,11 +16,6 @@ describe('User state', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
     {
@@ -29,6 +24,10 @@ describe('User state', function () {
             snapshot = await ethers.provider.send('evm_snapshot', [])
             const accounts = await ethers.getSigners()
             const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
             const synchronizer = await genUnirepState(
                 ethers.provider,
                 unirepContract.address,

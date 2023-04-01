@@ -1,5 +1,6 @@
 import { ethers } from 'ethers'
 import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
+import GlobalFactory from 'global-factory'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import {
     compileVerifier,
@@ -68,11 +69,12 @@ export const deployUnirep = async (
     {
         const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
         const poseidonArtifacts = tryPath(poseidonPath)
-        const poseidonFactory = new ethers.ContractFactory(
+        const _poseidonFactory = new ethers.ContractFactory(
             poseidonArtifacts.abi,
             poseidonArtifacts.bytecode,
             deployer
         )
+        const poseidonFactory = await GlobalFactory(_poseidonFactory)
         PoseidonT2 = await retryAsNeeded(() => poseidonFactory.deploy())
         await PoseidonT2.deployed()
     }
@@ -81,11 +83,12 @@ export const deployUnirep = async (
     {
         const poseidonPath = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
         const poseidonArtifacts = tryPath(poseidonPath)
-        const poseidonFactory = new ethers.ContractFactory(
+        const _poseidonFactory = new ethers.ContractFactory(
             poseidonArtifacts.abi,
             poseidonArtifacts.bytecode,
             deployer
         )
+        const poseidonFactory = await GlobalFactory(_poseidonFactory)
         PoseidonT3 = await retryAsNeeded(() => poseidonFactory.deploy())
         await PoseidonT3.deployed()
     }
@@ -94,12 +97,15 @@ export const deployUnirep = async (
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
     const incArtifacts: any = tryPath(incPath)
-    const incrementalMerkleTreeFactory = new ethers.ContractFactory(
+    const _incrementalMerkleTreeFactory = new ethers.ContractFactory(
         incArtifacts.abi,
         linkLibrary(incArtifacts.bytecode, {
             ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
         }),
         deployer
+    )
+    const incrementalMerkleTreeFactory = await GlobalFactory(
+        _incrementalMerkleTreeFactory
     )
     const incrementalMerkleTreeLib = await retryAsNeeded(() =>
         incrementalMerkleTreeFactory.deploy()
@@ -110,11 +116,12 @@ export const deployUnirep = async (
 
     const polyPath = 'contracts/libraries/Polysum.sol/Polysum.json'
     const polyArtifacts = tryPath(polyPath)
-    const polyFactory = new ethers.ContractFactory(
+    const _polyFactory = new ethers.ContractFactory(
         polyArtifacts.abi,
         polyArtifacts.bytecode,
         deployer
     )
+    const polyFactory = await GlobalFactory(_polyFactory)
     const polyContract = await retryAsNeeded(() => polyFactory.deploy())
     await polyContract.deployed()
 
@@ -136,11 +143,12 @@ export const deployUnirep = async (
         }
 
         const { bytecode, abi } = artifacts
-        const verifierFactory = new ethers.ContractFactory(
+        const _verifierFactory = new ethers.ContractFactory(
             abi,
             bytecode,
             deployer
         )
+        const verifierFactory = await GlobalFactory(_verifierFactory)
         const verifierContract = await retryAsNeeded(() =>
             verifierFactory.deploy()
         )
@@ -151,17 +159,21 @@ export const deployUnirep = async (
 
     console.log('Deploying Unirep')
 
-    const c: Unirep = await retryAsNeeded(() =>
-        new UnirepFactory(
-            {
-                ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
-                    incrementalMerkleTreeLib.address,
-                ['contracts/libraries/Polysum.sol:Polysum']:
-                    polyContract.address,
-                ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
-                    PoseidonT2.address,
-            },
-            deployer
+    const c: Unirep = await retryAsNeeded(async () =>
+        (
+            await GlobalFactory(
+                new UnirepFactory(
+                    {
+                        ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
+                            incrementalMerkleTreeLib.address,
+                        ['contracts/libraries/Polysum.sol:Polysum']:
+                            polyContract.address,
+                        ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
+                            PoseidonT2.address,
+                    },
+                    deployer
+                )
+            )
         ).deploy(
             {
                 stateTreeDepth: STATE_TREE_DEPTH,
@@ -180,7 +192,7 @@ export const deployUnirep = async (
         )
     )
 
-    await retryAsNeeded(() => c.deployTransaction.wait())
+    await retryAsNeeded(() => c.deployTransaction?.wait())
 
     // Print out deployment info
     console.log(
@@ -191,10 +203,17 @@ export const deployUnirep = async (
         Math.floor(UnirepFactory.bytecode.length / 2),
         'bytes'
     )
-    const receipt = await c.provider.getTransactionReceipt(
-        c.deployTransaction.hash
-    )
-    console.log('Gas cost of deploying Unirep:', receipt.gasUsed.toString())
+    if (c.deployTransaction) {
+        const receipt = await deployer.provider?.getTransactionReceipt(
+            c.deployTransaction.hash
+        )
+        console.log(
+            'Gas cost of deploying Unirep:',
+            receipt?.gasUsed.toString()
+        )
+    } else {
+        console.log('Re-using existing Unirep deployment')
+    }
     console.log(`Deployed to: ${c.address}`)
     console.log(
         '-----------------------------------------------------------------'

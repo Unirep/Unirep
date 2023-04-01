@@ -59,9 +59,9 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, FIELD_COUNT, OMT_R, EPK_R) {
    * TODO: find a way to not use a LessThan component
    * can use value differences/subtraction for this?
    **/
-  component lt_comp[TREE_ARITY**TREE_DEPTH];
+  component lt_comp[TREE_ARITY**TREE_DEPTH-1];
   component gt_comp[TREE_ARITY**TREE_DEPTH];
-  component leaf_mux[TREE_ARITY**TREE_DEPTH];
+  component leaf_mux[TREE_ARITY**TREE_DEPTH-1];
   component leaf_max[TREE_ARITY**TREE_DEPTH];
   component leaf_zero[TREE_ARITY**TREE_DEPTH];
   component leaf_ors[TREE_ARITY**TREE_DEPTH];
@@ -79,20 +79,20 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, FIELD_COUNT, OMT_R, EPK_R) {
     leaf_ors[x].a <== leaf_max[x].out;
     leaf_ors[x].b <== leaf_zero[x].out;
   }
-  for (var x = 1; x < TREE_ARITY**TREE_DEPTH; x++) {
+  for (var x = 0; x < TREE_ARITY**TREE_DEPTH - 1; x++) {
     // sorted_leaves[x] \ 2**252 === 0;
     lt_comp[x] = BigLessThan();
-    lt_comp[x].in[0] <== sorted_leaves[x-1];
-    lt_comp[x].in[1] <== sorted_leaves[x];
+    lt_comp[x].in[0] <== sorted_leaves[x];
+    lt_comp[x].in[1] <== sorted_leaves[x+1];
 
     // If the leaf is zero require that the previous leaf was
     // SNARK_SCALAR_FIELD-1 or 0
 
     leaf_mux[x] = Mux1();
-    leaf_mux[x].s <== leaf_zero[x].out;
+    leaf_mux[x].s <== leaf_zero[x+1].out;
 
     leaf_mux[x].c[0] <== lt_comp[x].out;
-    leaf_mux[x].c[1] <== leaf_ors[x-1].out;
+    leaf_mux[x].c[1] <== leaf_ors[x].out;
 
     leaf_mux[x].out === 1;
   }
@@ -176,21 +176,20 @@ template BuildOrderedTree(TREE_DEPTH, TREE_ARITY, FIELD_COUNT, OMT_R, EPK_R) {
       var i = _i + index \ TREE_ARITY;
 
       // can use the same indexing for hashers
-      var hasher_index = i;
-      hashers[hasher_index] = Poseidon(TREE_ARITY);
+      hashers[i] = Poseidon(TREE_ARITY);
 
       if (level == TREE_DEPTH) {
         for (var z = 0; z < TREE_ARITY; z++) {
-          hashers[hasher_index].inputs[z] <== sorted_leaves[index + z];
+          hashers[i].inputs[z] <== sorted_leaves[index + z];
         }
-        values[i] <== hashers[hasher_index].out;
+        values[i] <== hashers[i].out;
       } else {
         // index of the child leaves in the array
         var t = _i + TREE_ARITY ** (level - 1) + index;
         for (var z = 0; z < TREE_ARITY; z++) {
-          hashers[hasher_index].inputs[z] <== values[t + z];
+          hashers[i].inputs[z] <== values[t + z];
         }
-        values[i] <== hashers[hasher_index].out;
+        values[i] <== hashers[i].out;
       }
     }
   }
