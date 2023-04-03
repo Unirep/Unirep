@@ -102,7 +102,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint64 epoch,
         uint256 identityCommitment,
         uint256 stateTreeLeaf,
-        uint256[] memory initialData
+        uint256[] calldata initialData
     ) public {
         _userSignUp(epoch, identityCommitment, stateTreeLeaf);
         if (initialData.length > fieldCount) revert OutOfRange();
@@ -131,8 +131,8 @@ contract Unirep is IUnirep, VerifySignature {
      * msg.sender must be attester
      */
     function userSignUp(
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public {
         uint256 attesterId = publicSignals[2];
         // only allow attester to sign up users
@@ -390,8 +390,8 @@ contract Unirep is IUnirep, VerifySignature {
     function sealEpoch(
         uint256 epoch,
         uint160 attesterId,
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public {
         if (!buildOrderedTreeVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
@@ -427,8 +427,8 @@ contract Unirep is IUnirep, VerifySignature {
      * @dev Allow a user to epoch transition for an attester. Accepts a zk proof outputting the new gst leaf
      **/
     function userStateTransition(
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
@@ -562,7 +562,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function decodeEpochKeySignals(
-        uint256[] memory publicSignals
+        uint256[] calldata publicSignals
     ) public pure returns (EpochKeySignals memory) {
         EpochKeySignals memory signals;
         signals.epochKey = publicSignals[0];
@@ -579,8 +579,8 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function verifyEpochKeyProof(
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public {
         EpochKeySignals memory signals = decodeEpochKeySignals(publicSignals);
         bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
@@ -598,7 +598,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function decodeEpochKeyLiteSignals(
-        uint256[] memory publicSignals
+        uint256[] calldata publicSignals
     ) public pure returns (EpochKeySignals memory) {
         EpochKeySignals memory signals;
         signals.epochKey = publicSignals[1];
@@ -614,8 +614,8 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function verifyEpochKeyLiteProof(
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public {
         EpochKeySignals memory signals = decodeEpochKeyLiteSignals(
             publicSignals
@@ -632,7 +632,7 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function decodeReputationSignals(
-        uint256[] memory publicSignals
+        uint256[] calldata publicSignals
     ) public pure returns (ReputationSignals memory) {
         ReputationSignals memory signals;
         signals.epochKey = publicSignals[0];
@@ -658,8 +658,8 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function verifyReputationProof(
-        uint256[] memory publicSignals,
-        uint256[8] memory proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public {
         bool valid = reputationVerifier.verifyProof(publicSignals, proof);
         if (!valid) revert InvalidProof();
