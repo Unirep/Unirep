@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { genUnirepState, genUserState } from './utils'
-import { ZkIdentity } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
 
 const ATTESTER_COUNT = 5
 
@@ -159,7 +159,7 @@ describe('Synchronizer watch multiple attesters', function () {
         const count = 2
         const attesters = accounts.slice(0, count).map((a) => a.address)
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
             unirepContract.address,
@@ -182,7 +182,7 @@ describe('Synchronizer watch multiple attesters', function () {
             await userState.waitForSync()
             const userCount = await userState.sync._db.count('UserSignUp', {
                 attesterId: BigInt(accounts[i].address).toString(),
-                commitment: id.genIdentityCommitment().toString(),
+                commitment: id.commitment.toString(),
             })
             expect(userCount).to.equal(1)
         }
@@ -194,7 +194,7 @@ describe('Synchronizer watch multiple attesters', function () {
         const count = 2
         const attesters = accounts.slice(0, count).map((a) => a.address)
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         {
             const userState = await genUserState(
                 ethers.provider,
@@ -224,7 +224,7 @@ describe('Synchronizer watch multiple attesters', function () {
         )
         const userCount = await userState.sync._db.count('UserSignUp', {
             attesterId: BigInt(accounts[0].address).toString(),
-            commitment: id.genIdentityCommitment().toString(),
+            commitment: id.commitment.toString(),
         })
         expect(userCount).to.equal(1)
         userState.sync.stop()
@@ -235,7 +235,7 @@ describe('Synchronizer watch multiple attesters', function () {
         const count = 2
         const attesters = accounts.slice(0, count).map((a) => a.address)
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
             unirepContract.address,
@@ -258,7 +258,7 @@ describe('Synchronizer watch multiple attesters', function () {
             await userState.waitForSync()
             const userCount = await userState.sync._db.count('UserSignUp', {
                 attesterId: BigInt(accounts[i].address).toString(),
-                commitment: id.genIdentityCommitment().toString(),
+                commitment: id.commitment.toString(),
             })
             expect(userCount).to.equal(1)
         }
