@@ -36,11 +36,6 @@ Please call [`attesterSignUp()`](unirep-sol#attestersignup)
 The givein attester address is not a valid `uint160` type data. <br/>
 Please check if the attester address is correctly assigned while generating proofs.
 
-## 0x4ae5505e
-- `ProofAlreadyUsed(bytes32 nullilier)`<br/>
-The proof is already used in Unirep contract. <br/>
-A proof cannot be submitted twice in the Unirep protocol. This is used to prevent replay attack.
-
 ## 0xdc215c0a
 - `NullifierAlreadyUsed(uint256 nullilier)`<br/>
 The [nullifier](../protocol/nullifiers) is already used in Unirep contract. <br/>
@@ -51,6 +46,19 @@ A nullifier cannot be submitted twice in the Unirep protocol.
 The `msg.sender` does not match the claimed attester ID. <br/>
 Please send the transaction through the attester.
 
+## 0x7db3aba7
+- `OutOfRange()`<br/>
+    A [replacement field data](../protocol/data.md#replacement-field) cannot be out of `SNARK_SCALAR_FIELD`.<br/>
+    Please use a value which is less than `SNARK_SCALAR_FIELD`.
+
+## 0x7fa0b337
+- `InvalidField()`<br />
+    An attestation was made to a field that was either out of range, or not capable of receiving attestations.
+
+## 0xb7d09497
+- `InvalidTimestamp`<br/>
+    If a user is [signed up by an attester manually](unirep-sol.md#manualusersignup), the [timestamp field](../protocol/data.md) should be `0`.
+
 ## 0x8baa579f
 - `InvalidSignature()`<br/>
 The signature does not match the attester ID. <br/>
@@ -58,11 +66,7 @@ Please make sure the signature is signed through the correct attester.
 
 ## 0x2217bbbc
 - `InvalidEpochKey()`<br/>
-    The max [epoch key](../protocol/epoch-key.md) is computed by
-    ```sol
-    uint256 maxEpochKey = uint256(config.epochTreeArity) ** config.epochTreeDepth - 1;
-    ```
-    The epoch key which is greater than this range is recognized invalid. <br/> Please check if the contract configs `maxEpochKey()`, `epochTreeArity()` and `epochTreeDepth()` match the circuit configs.
+    If The epoch key is greater than `SNARK_SCALAR_FIELD` is recognized invalid. And epoch key `0` and `1` are also preserved in the Unirep protocol. See [BuildOrderedTree proof](../circuits-api/build-ordered-tree.md).
 
 ## 0x53d3ff53
 - `EpochNotMatch()` <br/>
@@ -73,6 +77,24 @@ Please make sure the signature is signed through the correct attester.
 - `InvalidEpoch(uint256 epoch)`<br/>
     The [epoch](../protocol/epoch.md) in the proof is greater than the current epoch. <br/>
     Please check the current epoch and generate a corresponding proof.
+
+## 0x74d1bcdc
+- `MaxAttestations()`<br/>
+    The [epoch tree](../protocol/trees.md#epoch-tree) can only store `tree_arity ** tree_degree - 3` epoch keys per attester per epoch. See also [build ordered tree](../circuits-api/circuits.md#build-ordered-tree).<br/>
+    There is no more new epoch keys that can receive attestations. Users should wait until the next epoch and then generate a new epoch key to receive attestations.
+
+## 0xef32b8ef
+- `NoAttestations()`<br/>
+    If there is no attestations in an epoch, the `sealEpoch` cannot be executed. Users can perform user state transition without `sealEpoch` and then move on to the new epoch.
+
+## 0x997bdc87
+- `DoubleSeal()`<br/>
+    The `sealEpoch` can only be called once. See [epoch transition](../protocol/epoch.md#epoch-transition).
+
+## 0x3fbcde72
+- `IncorrectHash()`<br/>
+    The circuit should output the [polysum](../protocol/polysum.md#polysum) that matches the on-chain polysum. <br/>
+    If the error occurs, please check if the off-chain attestations matches the on-chain attestations.
 
 ## 0x09bde339
 - `InvalidProof()`<br/>
@@ -97,30 +119,3 @@ Please make sure the signature is signed through the correct attester.
 ## 0x39b6da94
 - `EpochNotSealed()`<br/>
     The epoch a user is attempting to transition from has not been sealed.
-
-## 0x997bdc87
-- `DoubleSeal()`<br/>
-    The `sealEpoch` can only be called once. See [epoch transition](../protocol/epoch.md#epoch-transition).
-
-## 0x3fbcde72
-- `IncorrectHash()`<br/>
-    The circuit should output the [polysum](../protocol/polysum.md#polysum) that matches the on-chain polysum. <br/>
-    If the error occurs, please check if the off-chain attestations matches the on-chain attestations.
-
-## 0x74d1bcdc
-- `MaxAttestations()`<br/>
-    The [epoch tree](../protocol/trees.md#epoch-tree) can only store `tree_arity ** tree_degree - 3` epoch keys per attester per epoch. See also [build ordered tree](../circuits-api/circuits.md#build-ordered-tree).<br/>
-    There is no more new epoch keys that can receive attestations. Users should wait until the next epoch and then generate a new epoch key to receive attestations.
-
-## 0xef32b8ef
-- `NoAttestations()`<br/>
-    If there is no attestations in an epoch, the `sealEpoch` cannot be executed. Users can perform user state transition without `sealEpoch` and then move on to the new epoch.
-
-## 0x7db3aba7
-- `OutOfRange()`<br/>
-    A [replacement field data](../protocol/data.md#replacement-field) cannot be out of `SNARK_SCALAR_FIELD`.<br/>
-    Please use a value which is less than `SNARK_SCALAR_FIELD`.
-
-## 0x7fa0b337
-- `InvalidField()`<br />
-    An attestation was made to a field that was either out of range, or not capable of receiving attestations.
