@@ -1,9 +1,9 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { Identity } from '@semaphore-protocol/identity'
 import {
     IncrementalMerkleTree,
-    ZkIdentity,
     stringifyBigInts,
     genStateTreeLeaf,
     F,
@@ -44,12 +44,12 @@ describe('User Signup', function () {
     it('should fail to signup with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
                 epoch: 0,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
             })
@@ -74,12 +74,12 @@ describe('User Signup', function () {
     it('should fail to signup with unregistered attester', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[2]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
                 epoch: 0,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
             })
@@ -110,12 +110,12 @@ describe('User Signup', function () {
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             roots[epoch] = []
             for (let i = 0; i < 3; i++) {
-                const id = new ZkIdentity()
+                const id = new Identity()
                 const r = await defaultProver.genProofAndPublicSignals(
                     Circuit.signup,
                     stringifyBigInts({
                         epoch,
-                        identity_nullifier: id.identityNullifier,
+                        identity_nullifier: id.nullifier,
                         identity_trapdoor: id.trapdoor,
                         attester_id: attester.address,
                     })
@@ -131,7 +131,7 @@ describe('User Signup', function () {
                     .then((t) => t.wait())
 
                 const gstLeaf = genStateTreeLeaf(
-                    id.secretHash,
+                    id.secret,
                     BigInt(attester.address),
                     epoch,
                     Array(FIELD_COUNT).fill(0)
@@ -152,7 +152,7 @@ describe('User Signup', function () {
                 expect(currentRoot.toString(), 'state tree root').to.equal(
                     stateTree.root.toString()
                 )
-                semaphoreTree.insert(id.genIdentityCommitment())
+                semaphoreTree.insert(id.commitment)
                 const semaphoreRoot =
                     await unirepContract.attesterSemaphoreGroupRoot(
                         attester.address
@@ -177,7 +177,7 @@ describe('User Signup', function () {
     })
 
     it('double sign up should fail', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         await unirepContract
@@ -192,7 +192,7 @@ describe('User Signup', function () {
                 Circuit.signup,
                 stringifyBigInts({
                     epoch,
-                    identity_nullifier: id.identityNullifier,
+                    identity_nullifier: id.nullifier,
                     identity_trapdoor: id.trapdoor,
                     attester_id: attester.address,
                 })
@@ -212,7 +212,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
             })
@@ -228,7 +228,7 @@ describe('User Signup', function () {
     })
 
     it('should fail to signup for unregistered attester', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const unregisteredAttester = accounts[5]
@@ -239,7 +239,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: BigInt(unregisteredAttester.address),
             })
@@ -257,7 +257,7 @@ describe('User Signup', function () {
     })
 
     it('should fail to signup with wrong zk epoch', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const wrongEpoch = 44444
@@ -265,7 +265,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch: wrongEpoch,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
             })
@@ -281,7 +281,7 @@ describe('User Signup', function () {
     })
 
     it('should fail to signup with wrong msg.sender', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const wrongAttester = accounts[2]
@@ -292,7 +292,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
             })
@@ -310,7 +310,7 @@ describe('User Signup', function () {
     })
 
     it('should update current epoch if needed', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const epoch = await unirepContract.attesterCurrentEpoch(
@@ -320,7 +320,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.identityNullifier,
+                identity_nullifier: id.nullifier,
                 identity_trapdoor: id.trapdoor,
                 attester_id: attester.address,
             })
@@ -341,7 +341,7 @@ describe('User Signup', function () {
         const attester = accounts[1]
         const config = await unirepContract.config()
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
@@ -360,27 +360,17 @@ describe('User Signup', function () {
             })
 
         const leaf = genStateTreeLeaf(
-            id.secretHash,
+            id.secret,
             attester.address,
             contractEpoch.toNumber(),
             data
         )
         const tx = await unirepContract
             .connect(attester)
-            .manualUserSignUp(
-                contractEpoch,
-                id.genIdentityCommitment(),
-                leaf,
-                data
-            )
+            .manualUserSignUp(contractEpoch, id.commitment, leaf, data)
         await expect(tx)
             .to.emit(unirepContract, 'UserSignedUp')
-            .withArgs(
-                contractEpoch,
-                id.genIdentityCommitment(),
-                attester.address,
-                0
-            )
+            .withArgs(contractEpoch, id.commitment, attester.address, 0)
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(contractEpoch, attester.address, 0, leaf)
@@ -392,7 +382,7 @@ describe('User Signup', function () {
                 .to.emit(unirepContract, 'Attestation')
                 .withArgs(
                     contractEpoch,
-                    id.genIdentityCommitment(),
+                    id.commitment,
                     attester.address,
                     i,
                     d,
@@ -406,7 +396,7 @@ describe('User Signup', function () {
         const attester = accounts[1]
         const config = await unirepContract.config()
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
@@ -426,12 +416,7 @@ describe('User Signup', function () {
 
         const tx = unirepContract
             .connect(attester)
-            .manualUserSignUp(
-                contractEpoch,
-                id.genIdentityCommitment(),
-                0,
-                data
-            )
+            .manualUserSignUp(contractEpoch, id.commitment, 0, data)
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'InvalidTimestamp'
@@ -443,7 +428,7 @@ describe('User Signup', function () {
         const attester = accounts[1]
         const config = await unirepContract.config()
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
@@ -452,7 +437,7 @@ describe('User Signup', function () {
             .connect(attester)
             .manualUserSignUp(
                 contractEpoch,
-                id.genIdentityCommitment(),
+                id.commitment,
                 1,
                 Array(config.fieldCount + 1).fill(1)
             )
@@ -466,14 +451,14 @@ describe('User Signup', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
-        const id = new ZkIdentity()
+        const id = new Identity()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
 
         const tx = unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.genIdentityCommitment(), 1, [F])
+            .manualUserSignUp(contractEpoch, id.commitment, 1, [F])
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'InvalidField'

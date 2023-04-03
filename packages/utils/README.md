@@ -51,41 +51,6 @@ yarn add @unirep/utils
 
 ## 📔 Usage
 
-### ZkIdentity
-
-**Generate a random ZkIdentity**
-```typescript
-import { ZkIdentity } from '@unirep/utils'
-const identity = new ZkIdentity()
-```
-
-**Generate identity commitment**
-```typescript
-const commitment = identity.genIdentityCommitment()
-```
-
-**Get identity nullifier**
-```typescript
-const commitment = identity.identityNullifier
-```
-
-**get identity trapdoor**
-```typescript
-const commitment = identity.trapdoor
-```
-**Serialize/ unserialize identity**
-
-```typescript
-import { Strategy } from '@unirep/utils'
-// serialize identity
-const serializedIdentity = identity.serializeIdentity()
-// unserialize identity
-const unserializedIdentity = new ZkIdentity(
-    Strategy.SERIALIZED,
-    serializedIdentity
-)
-```
-
 ### IncrementalMerkleTree
 
 **Create a IncrementalMerkleTree**

@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState } from './utils'
@@ -37,7 +37,7 @@ describe('Attester signs up and gives attestation', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
             unirepContract.address,
@@ -123,7 +123,7 @@ describe('Attester signs up and gives attestation', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,

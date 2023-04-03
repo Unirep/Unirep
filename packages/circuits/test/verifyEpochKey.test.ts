@@ -1,7 +1,7 @@
 import { expect } from 'chai'
+import { Identity } from '@semaphore-protocol/identity'
 import {
     IncrementalMerkleTree,
-    ZkIdentity,
     genEpochKey,
     genStateTreeLeaf,
 } from '@unirep/utils'
@@ -21,14 +21,9 @@ describe('Verify Epoch Key circuits', function () {
             const attesterId = BigInt(10210)
             const epoch = 120958
             const data = randomData()
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const circuitInputs = genEpochKeyCircuitInput({
                 id,
@@ -45,7 +40,7 @@ describe('Verify Epoch Key circuits', function () {
             )
             expect(isValid).to.be.true
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
@@ -69,14 +64,9 @@ describe('Verify Epoch Key circuits', function () {
             const epoch = 120958
             const data = randomData()
             const revealNonce = 1
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const circuitInputs = genEpochKeyCircuitInput({
                 id,
@@ -102,7 +92,7 @@ describe('Verify Epoch Key circuits', function () {
                 }).toString()
             )
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
@@ -127,14 +117,9 @@ describe('Verify Epoch Key circuits', function () {
             const epoch = 120958
             const data = randomData()
             const sigData = BigInt(1288972090)
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const circuitInputs = genEpochKeyCircuitInput({
                 id,
@@ -159,7 +144,7 @@ describe('Verify Epoch Key circuits', function () {
                 }).toString()
             )
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[3].toString()).to.equal(sigData.toString())
@@ -177,14 +162,9 @@ describe('Verify Epoch Key circuits', function () {
             const epoch = 120958
             const data = randomData()
             const sigData = BigInt(1288972090)
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const circuitInputs = genEpochKeyCircuitInput({
                 id,
@@ -202,7 +182,7 @@ describe('Verify Epoch Key circuits', function () {
             )
             expect(isValid).to.be.true
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[3].toString()).to.equal(sigData.toString())
@@ -221,9 +201,9 @@ describe('Verify Epoch Key circuits', function () {
         const epoch = 120958
         const data = randomData()
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, data)
+        const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
         const circuitInputs = genEpochKeyCircuitInput({
             id,
@@ -241,7 +221,7 @@ describe('Verify Epoch Key circuits', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(
-            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+            genEpochKey(id.secret, attesterId, epoch, nonce).toString()
         )
         expect(publicSignals[1]).to.not.equal(tree.root.toString())
     })
@@ -251,9 +231,9 @@ describe('Verify Epoch Key circuits', function () {
         const epoch = 120958
         const data = randomData()
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, data)
+        const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
         const circuitInputs = genEpochKeyCircuitInput({
             id,
@@ -271,7 +251,7 @@ describe('Verify Epoch Key circuits', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.not.equal(
-            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+            genEpochKey(id.secret, attesterId, epoch, nonce).toString()
         )
         expect(publicSignals[1]).to.not.equal(tree.root.toString())
     })
@@ -281,9 +261,9 @@ describe('Verify Epoch Key circuits', function () {
         const epoch = 120958
         const data = randomData()
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
-        const id = new ZkIdentity()
+        const id = new Identity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, data)
+        const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
         const circuitInputs = genEpochKeyCircuitInput({
             id,
