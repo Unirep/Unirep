@@ -33,6 +33,7 @@
         "@unirep/utils": "2.0.0-beta-1",
         "@zk-kit/incremental-merkle-tree.sol": "^1.4.0",
         "ethers": "^5.6.8",
+        "global-factory": "^0.0.0",
         "poseidon-solidity": "^0.0.3",
         "solc": "^0.8.16"
     },
@@ -42,7 +43,8 @@
         "@ethersproject/providers": "^5.6.8",
         "@nomicfoundation/hardhat-chai-matchers": "^1.0.5",
         "@nomiclabs/hardhat-ethers": "^2.0.6",
-        "@openzeppelin/contracts": "^4.6.0",
+        "@openzeppelin/contracts": "^4.8.2",
+        "@semaphore-protocol/identity": "^3.5.0",
         "@typechain/ethers-v5": "^10.1.0",
         "@typechain/hardhat": "^6.1.0",
         "@unirep/test": "1.0.0",

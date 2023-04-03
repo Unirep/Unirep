@@ -1,7 +1,7 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState } from './utils'
@@ -16,29 +16,28 @@ describe('Attester signs up and gives attestation', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
         })
 
-        afterEach(async () => {
-            await ethers.provider.send('evm_revert', [snapshot])
-        })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
     }
 
     it('user sign up and receive attestation', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
             unirepContract.address,
@@ -124,7 +123,7 @@ describe('Attester signs up and gives attestation', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,

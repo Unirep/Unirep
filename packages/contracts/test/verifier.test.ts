@@ -1,11 +1,11 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { Identity } from '@semaphore-protocol/identity'
 import {
     genRandomSalt,
     IncrementalMerkleTree,
     stringifyBigInts,
-    ZkIdentity,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -28,7 +28,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
         Circuit.signup,
         stringifyBigInts({
             epoch: epoch.toString(),
-            identity_nullifier: id.identityNullifier,
+            identity_nullifier: id.nullifier,
             identity_trapdoor: id.trapdoor,
             attester_id: attesterId,
         })
@@ -55,23 +55,33 @@ function randomBits(bit: number) {
 
 describe('Epoch key lite proof verifier', function () {
     this.timeout(300000)
+
     let unirepContract
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
+
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
+
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('should verify an epoch key lite proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const attesterId = attester.address
         const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 
@@ -80,7 +90,7 @@ describe('Epoch key lite proof verifier', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.epochKeyLite,
                 stringifyBigInts({
-                    identity_secret: id.secretHash,
+                    identity_secret: id.secret,
                     sig_data,
                     epoch,
                     nonce,
@@ -162,7 +172,7 @@ describe('Epoch key lite proof verifier', function () {
     it('should fail to verify an epoch key lite proof with invalid epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const attesterId = attester.address
 
         const data = 0
@@ -171,7 +181,7 @@ describe('Epoch key lite proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts({
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 sig_data: data,
                 epoch: invalidEpoch,
                 nonce,
@@ -198,7 +208,7 @@ describe('Epoch key lite proof verifier', function () {
     it('should fail to verify an epoch key lite proof with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         const attesterId = attester.address
         const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const data = 0
@@ -206,7 +216,7 @@ describe('Epoch key lite proof verifier', function () {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts({
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 sig_data: data,
                 epoch,
                 nonce,
@@ -245,32 +255,33 @@ describe('Epoch key lite proof verifier', function () {
 
 describe('Epoch key proof verifier', function () {
     this.timeout(500000)
+
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('should verify an epoch key proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index, epoch } = await signupUser(
             id,
@@ -289,7 +300,7 @@ describe('Epoch key proof verifier', function () {
                 stringifyBigInts({
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
-                    identity_secret: id.secretHash,
+                    identity_secret: id.secret,
                     data: Array(FIELD_COUNT).fill(0),
                     sig_data: data,
                     epoch,
@@ -318,7 +329,7 @@ describe('Epoch key proof verifier', function () {
     it('should decode public signals', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index, epoch } = await signupUser(
             id,
@@ -337,7 +348,7 @@ describe('Epoch key proof verifier', function () {
                 stringifyBigInts({
                     state_tree_elements: merkleProof.siblings,
                     state_tree_indexes: merkleProof.pathIndices,
-                    identity_secret: id.secretHash,
+                    identity_secret: id.secret,
                     data: Array(FIELD_COUNT).fill(0),
                     sig_data: data,
                     epoch,
@@ -378,7 +389,7 @@ describe('Epoch key proof verifier', function () {
     it('should fail to verify an epoch key proof with invalid epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index } = await signupUser(
             id,
@@ -398,7 +409,7 @@ describe('Epoch key proof verifier', function () {
             stringifyBigInts({
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 data: Array(FIELD_COUNT).fill(0),
                 sig_data: data,
                 epoch: invalidEpoch,
@@ -426,7 +437,7 @@ describe('Epoch key proof verifier', function () {
     it('should fail to verify an epoch key proof with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index, epoch } = await signupUser(
             id,
@@ -445,7 +456,7 @@ describe('Epoch key proof verifier', function () {
             stringifyBigInts({
                 state_tree_elements: merkleProof.siblings,
                 state_tree_indexes: merkleProof.pathIndices,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 data: Array(FIELD_COUNT).fill(0),
                 sig_data: data,
                 epoch,
@@ -485,7 +496,7 @@ describe('Epoch key proof verifier', function () {
     it('should fail to verify an epoch key proof with bad state tree root', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { epoch } = await signupUser(
             id,
@@ -501,7 +512,7 @@ describe('Epoch key proof verifier', function () {
             stringifyBigInts({
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 data: Array(FIELD_COUNT).fill(0),
                 sig_data: data,
                 epoch,
@@ -529,8 +540,7 @@ describe('Epoch key proof verifier', function () {
 
 describe('Reputation proof verifier', function () {
     this.timeout(120000)
-    let unirepContract
-    let snapshot
+
     const zeroCircuitInputs = {
         identity_secret: 0,
         state_tree_indexes: 0,
@@ -550,29 +560,32 @@ describe('Reputation proof verifier', function () {
         sig_data: 696969,
     }
 
+    let unirepContract
+
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('should verify a reputation proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index, epoch } = await signupUser(
             id,
@@ -589,7 +602,7 @@ describe('Reputation proof verifier', function () {
                 Circuit.proveReputation,
                 stringifyBigInts({
                     ...zeroCircuitInputs,
-                    identity_secret: id.secretHash,
+                    identity_secret: id.secret,
                     state_tree_indexes: merkleProof.pathIndices,
                     state_tree_elements: merkleProof.siblings,
                     attester_id: attester.address,
@@ -672,7 +685,7 @@ describe('Reputation proof verifier', function () {
     it('should fail to verify a reputation proof with invalid epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index } = await signupUser(
             id,
@@ -689,7 +702,7 @@ describe('Reputation proof verifier', function () {
             Circuit.proveReputation,
             stringifyBigInts({
                 ...zeroCircuitInputs,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
                 attester_id: attester.address,
@@ -715,7 +728,7 @@ describe('Reputation proof verifier', function () {
     it('should fail to verify a reputation proof with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { leaf, index, epoch } = await signupUser(
             id,
@@ -731,7 +744,7 @@ describe('Reputation proof verifier', function () {
             Circuit.proveReputation,
             stringifyBigInts({
                 ...zeroCircuitInputs,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_indexes: merkleProof.pathIndices,
                 state_tree_elements: merkleProof.siblings,
                 attester_id: attester.address,
@@ -763,7 +776,7 @@ describe('Reputation proof verifier', function () {
     it('should fail to verify a reputation proof with invalid state tree', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const id = new ZkIdentity()
+        const id = new Identity()
         // sign up a user
         const { epoch } = await signupUser(
             id,
@@ -776,7 +789,7 @@ describe('Reputation proof verifier', function () {
             Circuit.proveReputation,
             stringifyBigInts({
                 ...zeroCircuitInputs,
-                identity_secret: id.secretHash,
+                identity_secret: id.secret,
                 state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
                 state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
                 attester_id: attester.address,

@@ -197,8 +197,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'ZkIdentity()',
-                    id: 'utils-api/identity',
+                    label: 'types',
+                    id: 'utils-api/types',
                 },
                 {
                     type: 'link',

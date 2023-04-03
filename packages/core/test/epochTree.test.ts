@@ -1,12 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    IncrementalMerkleTree,
-    genEpochTreeLeaf,
-    F,
-} from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
+import { IncrementalMerkleTree, genEpochTreeLeaf, F } from '@unirep/utils'
 import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
@@ -18,25 +14,26 @@ describe('Epoch tree', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('initialization', async () => {
         const accounts = await ethers.getSigners()
@@ -80,7 +77,7 @@ describe('Epoch tree', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
             unirepContract.address,

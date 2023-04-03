@@ -1,8 +1,8 @@
 import { ethers } from 'ethers'
 import { DB } from 'anondb'
+import { Identity } from '@semaphore-protocol/identity'
 import {
     stringifyBigInts,
-    ZkIdentity,
     genEpochKey,
     genStateTreeLeaf,
     genUserStateTransitionNullifier,
@@ -25,11 +25,11 @@ import { Synchronizer } from './Synchronizer'
  * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
  */
 export default class UserState {
-    public id: ZkIdentity
+    public id: Identity
     public sync: Synchronizer
 
     get commitment() {
-        return this.id.genIdentityCommitment()
+        return this.id.commitment
     }
 
     constructor(
@@ -40,10 +40,10 @@ export default class UserState {
                   unirepAddress: string
                   prover: Prover
                   provider: ethers.providers.Provider
-                  _id?: ZkIdentity // TODO: remove this and only accept as second arg
+                  _id?: Identity // TODO: remove this and only accept as second arg
               }
             | Synchronizer,
-        id: ZkIdentity
+        id: Identity
     ) {
         if (config instanceof Synchronizer) {
             if (!id) {
@@ -104,7 +104,7 @@ export default class UserState {
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
             const epkNullifier = genUserStateTransitionNullifier(
-                this.id.secretHash,
+                this.id.secret,
                 attesterId.toString(),
                 x
             )
@@ -162,7 +162,7 @@ export default class UserState {
             // don't include attestations that are not provable
             const data = await this.getData(currentEpoch - 1)
             const leaf = genStateTreeLeaf(
-                this.id.secretHash,
+                this.id.secret,
                 attesterId.toString(),
                 signup.epoch,
                 data
@@ -177,7 +177,7 @@ export default class UserState {
         }
         const data = await this.getData(latestTransitionedEpoch - 1)
         const leaf = genStateTreeLeaf(
-            this.id.secretHash,
+            this.id.secret,
             attesterId.toString(),
             latestTransitionedEpoch,
             data
@@ -202,7 +202,7 @@ export default class UserState {
         this._checkEpkNonce(nonce ?? 0)
         if (typeof nonce === 'number') {
             return genEpochKey(
-                this.id.secretHash,
+                this.id.secret,
                 attesterId.toString(),
                 epoch,
                 nonce
@@ -211,7 +211,7 @@ export default class UserState {
         return Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
-                genEpochKey(this.id.secretHash, attesterId.toString(), epoch, i)
+                genEpochKey(this.id.secret, attesterId.toString(), epoch, i)
             )
     }
 
@@ -245,7 +245,7 @@ export default class UserState {
                 .fill(null)
                 .map((_, i) =>
                     genEpochKey(
-                        this.id.secretHash,
+                        this.id.secret,
                         attesterId.toString(),
                         x,
                         i
@@ -255,7 +255,7 @@ export default class UserState {
                 where: {
                     attesterId: attesterId.toString(),
                     nullifier: genUserStateTransitionNullifier(
-                        this.id.secretHash,
+                        this.id.secret,
                         attesterId,
                         x
                     ).toString(),
@@ -392,12 +392,7 @@ export default class UserState {
         const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
-                genEpochKey(
-                    this.id.secretHash,
-                    attesterId.toString(),
-                    fromEpoch,
-                    i
-                )
+                genEpochKey(this.id.secret, attesterId.toString(), fromEpoch, i)
             )
         const epochKeyLeafIndices = await Promise.all(
             epochKeys.map(async (epk) => this.getEpochKeyIndex(fromEpoch, epk))
@@ -498,7 +493,7 @@ export default class UserState {
         const circuitInputs = {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
-            identity_secret: this.id.secretHash,
+            identity_secret: this.id.secret,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: attesterId.toString(),
@@ -568,7 +563,7 @@ export default class UserState {
         const stateTreeProof = stateTree.createProof(leafIndex)
 
         const circuitInputs = {
-            identity_secret: this.id.secretHash,
+            identity_secret: this.id.secret,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             data,
@@ -609,7 +604,7 @@ export default class UserState {
         const epoch = options.epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const circuitInputs = {
             epoch,
-            identity_nullifier: this.id.identityNullifier,
+            identity_nullifier: this.id.nullifier,
             identity_trapdoor: this.id.trapdoor,
             attester_id: attesterId.toString(),
         }
@@ -642,7 +637,7 @@ export default class UserState {
         const data = await this.getData(epoch - 1, attesterId)
         const proof = tree.createProof(leafIndex)
         const circuitInputs = {
-            identity_secret: this.id.secretHash,
+            identity_secret: this.id.secret,
             data,
             sig_data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
@@ -677,7 +672,7 @@ export default class UserState {
         const epoch =
             options.epoch ?? (await this.latestTransitionedEpoch(attesterId))
         const circuitInputs = {
-            identity_secret: this.id.secretHash,
+            identity_secret: this.id.secret,
             sig_data: options.data ?? BigInt(0),
             epoch,
             nonce,

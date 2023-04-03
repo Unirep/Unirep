@@ -1,8 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { Identity } from '@semaphore-protocol/identity'
 import {
-    ZkIdentity,
     genStateTreeLeaf,
     IncrementalMerkleTree,
     genEpochKey,
@@ -20,27 +20,26 @@ describe('User state transition', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
-
         unirepContract = await deployUnirep(accounts[0])
-
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('users should perform user state transition', async () => {
         const accounts = await ethers.getSigners()
@@ -51,7 +50,7 @@ describe('User state transition', function () {
         const users = Array(5)
             .fill(null)
             .map(() => {
-                return new ZkIdentity()
+                return new Identity()
             })
         for (let i = 0; i < 5; i++) {
             const userState = await genUserState(
@@ -93,7 +92,7 @@ describe('User state transition', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                users[i].secretHash,
+                users[i].secret,
                 attester.address,
                 toEpoch,
                 Array(userState.sync.settings.fieldCount).fill(0)
@@ -123,7 +122,7 @@ describe('User state transition', function () {
     it('user should not receive rep if he does not transition to', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const user = new ZkIdentity()
+        const user = new Identity()
         for (let i = 0; i < 10; i++) {
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
@@ -155,7 +154,7 @@ describe('User state transition', function () {
         // receive reputation
         const newEpoch = epoch.toNumber() + 1
         const epochKey = genEpochKey(
-            user.secretHash,
+            user.secret,
             BigInt(attester.address),
             newEpoch,
             0

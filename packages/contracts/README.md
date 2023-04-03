@@ -133,8 +133,8 @@ const signer = new ethers.Wallet(privateKey, provider)
 const unirepContract: Unirep = getUnirepContract(address, signer)
 
 // user sign up
-const id = new ZkIdentity()
-const tx = await unirepContract.userSignUp(id.genIdentityCommitment())
+const id = new Identity()
+const tx = await unirepContract.userSignUp(id.commitment)
 
 // attester sign up
 const tx = await unirepContract.attesterSignUp()

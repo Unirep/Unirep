@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { ZkIdentity, hash1, genEpochKey } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
+import { hash1, genEpochKey } from '@unirep/utils'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
@@ -9,7 +10,7 @@ describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
 
     it('should prove a reputation', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 20
         const nonce = 2
         const attesterId = 219090124810
@@ -49,7 +50,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should prove a minRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 20
         const nonce = 1
         const attesterId = 219090124810
@@ -96,7 +97,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should prove a maxRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 20
         const nonce = 1
         const attesterId = 219090124810
@@ -143,7 +144,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should prove a minRep and maxRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 20
         const nonce = 2
         const attesterId = 219090124810
@@ -196,7 +197,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should prove a minRep and maxRep and zero rep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 20
         const nonce = 0
         const attesterId = 219090124810
@@ -255,7 +256,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove zero rep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -276,7 +277,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove maxRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -299,7 +300,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove minRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -322,7 +323,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should choose not to prove minRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -368,7 +369,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('successfully choose not to prove graffiti with wrong value', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -415,7 +416,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove wrong graffiti pre-image', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -440,7 +441,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should prove graffiti pre-image', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -489,7 +490,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should not reveal nonce', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 1
@@ -532,7 +533,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should reveal nonce', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -578,7 +579,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should output an epoch key', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -612,7 +613,7 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.graffitiPreImage.toString()).to.equal('0')
         expect(data.epochKey.toString()).to.equal(
             genEpochKey(
-                id.secretHash,
+                id.secret,
                 attesterId.toString(),
                 epoch,
                 nonce
@@ -621,7 +622,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove a nonce that is above max nonce', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = NUM_EPOCH_KEY_NONCE_PER_EPOCH
@@ -640,7 +641,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range attesterId', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = BigInt(2) ** BigInt(160)
         const nonce = 0
@@ -659,7 +660,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range revealNonce', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -680,7 +681,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range proveGraffiti', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -701,7 +702,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range proveMinRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -722,7 +723,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range proveMaxRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -743,7 +744,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range proveZeroRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -764,7 +765,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range minRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
@@ -785,7 +786,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range maxRep', async () => {
-        const id = new ZkIdentity()
+        const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0

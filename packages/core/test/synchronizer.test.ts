@@ -1,7 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { ZkIdentity, genStateTreeLeaf } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
+import { genStateTreeLeaf } from '@unirep/utils'
 import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { bootstrapAttestations, bootstrapUsers } from './test'
@@ -20,17 +21,17 @@ describe('Synchronizer process events', function () {
         const accounts = await ethers.getSigners()
         attester = accounts[1]
         unirepContract = await deployUnirep(accounts[0])
-        // now create an attester
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
+            // now create an attester
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
             synchronizer = await genUnirepState(
                 ethers.provider,
                 unirepContract.address
@@ -56,7 +57,7 @@ describe('Synchronizer process events', function () {
             const state = await genUserState(
                 synchronizer.unirepContract.provider,
                 synchronizer.unirepContract.address,
-                new ZkIdentity(),
+                new Identity(),
                 BigInt(attester.address)
             )
             await compareDB((state.sync as any)._db, (synchronizer as any)._db)
@@ -125,7 +126,7 @@ describe('Synchronizer process events', function () {
             'UserSignUp',
             {}
         )
-        const id = new ZkIdentity()
+        const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
             synchronizer.unirepContract.address,
@@ -149,7 +150,7 @@ describe('Synchronizer process events', function () {
         await stateLeafEvent
         const docs = await (synchronizer as any)._db.findMany('UserSignUp', {
             where: {
-                commitment: id.genIdentityCommitment().toString(),
+                commitment: id.commitment.toString(),
             },
         })
         expect(docs.length).to.equal(1)
@@ -166,7 +167,7 @@ describe('Synchronizer process events', function () {
                 attester.address
             )
         const leaf = genStateTreeLeaf(
-            id.secretHash,
+            id.secret,
             BigInt(attester.address),
             contractEpoch.toNumber(),
             Array(synchronizer.settings.fieldCount).fill(0)
@@ -217,7 +218,7 @@ describe('Synchronizer process events', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,
@@ -296,7 +297,7 @@ describe('Synchronizer process events', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
-        const id = new ZkIdentity()
+        const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,

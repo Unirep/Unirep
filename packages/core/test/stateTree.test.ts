@@ -1,11 +1,8 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import {
-    ZkIdentity,
-    genStateTreeLeaf,
-    IncrementalMerkleTree,
-} from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
+import { genStateTreeLeaf, IncrementalMerkleTree } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUnirepState, genUserState } from './utils'
@@ -16,26 +13,26 @@ describe('State tree', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
-    let snapshot
 
     before(async () => {
         const accounts = await ethers.getSigners()
-
         unirepContract = await deployUnirep(accounts[0])
-        const attester = accounts[1]
-        await unirepContract
-            .connect(attester)
-            .attesterSignUp(EPOCH_LENGTH)
-            .then((t) => t.wait())
     })
 
-    beforeEach(async () => {
-        snapshot = await ethers.provider.send('evm_snapshot', [])
-    })
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+            const accounts = await ethers.getSigners()
+            const attester = accounts[1]
+            await unirepContract
+                .connect(attester)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+        })
 
-    afterEach(async () => {
-        await ethers.provider.send('evm_revert', [snapshot])
-    })
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
 
     it('initialization', async () => {
         const accounts = await ethers.getSigners()
@@ -78,7 +75,7 @@ describe('State tree', function () {
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
         for (let i = 0; i < 3; i++) {
-            const id = new ZkIdentity()
+            const id = new Identity()
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,
@@ -100,7 +97,7 @@ describe('State tree', function () {
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
-                id.secretHash,
+                id.secret,
                 attester.address,
                 contractEpoch.toNumber(),
                 Array(userState.sync.settings.fieldCount).fill(0)
@@ -144,7 +141,7 @@ describe('State tree', function () {
         const users = Array(5)
             .fill(null)
             .map(() => {
-                return new ZkIdentity()
+                return new Identity()
             })
         for (let i = 0; i < 3; i++) {
             const userState = await genUserState(
@@ -187,7 +184,7 @@ describe('State tree', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                users[i].secretHash,
+                users[i].secret,
                 attester.address,
                 toEpoch,
                 Array(userState.sync.settings.fieldCount).fill(0)
@@ -227,12 +224,12 @@ describe('State tree', function () {
         const users = Array(3)
             .fill(null)
             .map(() => {
-                return new ZkIdentity()
+                return new Identity()
             })
         const _userState = await genUserState(
             ethers.provider,
             unirepContract.address,
-            new ZkIdentity(),
+            new Identity(),
             BigInt(attester.address)
         )
         const attestations = Array(3)
@@ -330,7 +327,7 @@ describe('State tree', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                users[i].secretHash,
+                users[i].secret,
                 attester.address,
                 toEpoch,
                 Array(userState.sync.settings.fieldCount)
@@ -381,7 +378,7 @@ describe('State tree', function () {
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
 
         for (let i = 0; i < 3; i++) {
-            const id = new ZkIdentity()
+            const id = new Identity()
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,
@@ -398,7 +395,7 @@ describe('State tree', function () {
                 .then((t) => t.wait())
 
             const leaf = genStateTreeLeaf(
-                id.secretHash,
+                id.secret,
                 attester.address,
                 prevEpoch,
                 Array(userState.sync.settings.fieldCount).fill(0)
