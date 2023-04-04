@@ -9,6 +9,7 @@ import {
 } from '@unirep/utils'
 import { Circuit, CircuitConfig } from '../src'
 import { randomData, combineData, genProofAndVerify } from './utils'
+import { UserStateTransitionProof } from '../src/UserStateTransitionProof'
 const {
     EPOCH_TREE_DEPTH,
     EPOCH_TREE_ARITY,
@@ -40,7 +41,7 @@ describe('User state transition', function () {
             .map((_, i) =>
                 genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
             )
-        const { isValid, publicSignals } = await genProofAndVerify(
+        const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.userStateTransition,
             {
                 from_epoch: fromEpoch,
@@ -69,9 +70,21 @@ describe('User state transition', function () {
             .map((_, i) => {
                 return genEpochKey(id.secret, attesterId, fromEpoch, i)
             })
+        const ustProof = new UserStateTransitionProof(publicSignals, proof)
         for (let x = 0; x < NUM_EPOCH_KEY_NONCE_PER_EPOCH; x++) {
             expect(publicSignals[2 + x]).to.equal(expectedKeys[x].toString())
+            expect(ustProof.epochKeys[x]).to.equal(expectedKeys[x].toString())
         }
+        expect(ustProof.fromStateTreeRoot.toString()).to.equal(
+            stateTree.root.toString()
+        )
+        expect(ustProof.stateTreeLeaf.toString()).to.equal(newLeaf.toString())
+        expect(ustProof.fromEpoch.toString()).to.equal(fromEpoch.toString())
+        expect(ustProof.toEpoch.toString()).to.equal(toEpoch.toString())
+        expect(ustProof.attesterId.toString()).to.equal(attesterId.toString())
+        expect(ustProof.epochTreeRoot.toString()).to.equal(
+            epochTree.root.toString()
+        )
     })
 
     it('should do a user state transition with new rep', async () => {
