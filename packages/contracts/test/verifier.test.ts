@@ -39,8 +39,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
         defaultProver
     )
     const leafIndex = await unirepContract.attesterStateTreeLeafCount(
-        attesterId,
-        epoch
+        attesterId
     )
     await unirepContract
         .connect(account)

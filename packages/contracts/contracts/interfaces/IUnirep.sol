@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
+import {ReusableMerkleTree, ReusableTreeData} from '../libraries/ReusableMerkleTree.sol';
 import {PolysumData} from '../libraries/Polysum.sol';
 
 interface IUnirep {
@@ -63,21 +64,16 @@ interface IUnirep {
     error OutOfRange();
     error InvalidField();
     error InvalidTimestamp();
+    error EpochKeyNotProcessed();
 
     error InvalidSignature();
     error InvalidEpochKey();
     error EpochNotMatch();
     error InvalidEpoch(uint256 epoch);
-    error MaxAttestations();
-    error NoAttestations();
-    error DoubleSeal();
-    error IncorrectHash();
 
     error InvalidProof();
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
-
-    error EpochNotSealed();
 
     struct EpochKeySignals {
         uint256 revealNonce;
@@ -105,34 +101,27 @@ interface IUnirep {
         uint256 maxRep;
     }
 
-    struct AttesterState {
-        // latest epoch key balances
-        ///// Needs to be manually set to FIELD_COUNT
-        mapping(uint256 => PolysumData) epkPolysum;
-        mapping(uint256 => uint256[30]) data;
-        mapping(uint256 => uint256[30]) dataHashes;
-        // epoch key => polyhash degree
-        mapping(uint256 => uint256) epochKeyIndex;
-        // epoch key => latest leaf (0 if no attestation in epoch)
-        mapping(uint256 => uint256) epochKeyLeaves;
-        // the attester polysum
-        PolysumData polysum;
+    struct EpochKeyData {
+        uint256 leaf;
+        uint256[30] data;
+        uint64 leafIndex;
+        uint64 epoch;
     }
 
     struct AttesterData {
-        // epoch keyed to tree data
-        mapping(uint256 => IncrementalTreeData) stateTrees;
         // epoch keyed to root keyed to whether it's valid
         mapping(uint256 => mapping(uint256 => bool)) stateTreeRoots;
+        ReusableTreeData stateTree;
         // epoch keyed to root
         mapping(uint256 => uint256) epochTreeRoots;
+        ReusableTreeData epochTree;
         uint256 startTimestamp;
         uint256 currentEpoch;
         uint256 epochLength;
         mapping(uint256 => bool) identityCommitments;
         IncrementalTreeData semaphoreGroup;
-        // attestation management
-        mapping(uint256 => AttesterState) state;
+        // epoch key management
+        mapping(uint256 => EpochKeyData) epkData;
     }
 
     struct Config {
