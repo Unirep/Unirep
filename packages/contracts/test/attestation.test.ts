@@ -162,7 +162,15 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(attester)
-                .attest(SNARK_SCALAR_FIELD, epoch, 1, 0)
+                .attest(SNARK_SCALAR_FIELD, epoch, 1, 3)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
+
+        await expect(
+            unirepContract.connect(attester).attest(0, epoch, 1, 3)
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
+
+        await expect(
+            unirepContract.connect(attester).attest(1, epoch, 1, 3)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 

@@ -258,7 +258,8 @@ contract Unirep is IUnirep, VerifySignature {
             uint currentEpoch = updateEpochIfNeeded(uint160(msg.sender));
             if (epoch != currentEpoch) revert EpochNotMatch();
         }
-        if (epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
+        if (epochKey >= SNARK_SCALAR_FIELD || epochKey == 0 || epochKey == 1)
+            revert InvalidEpochKey();
 
         if (fieldIndex >= fieldCount) revert InvalidField();
 

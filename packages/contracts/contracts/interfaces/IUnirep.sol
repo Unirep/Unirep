@@ -58,7 +58,6 @@ interface IUnirep {
     error AttesterAlreadySignUp(uint160 attester);
     error AttesterNotSignUp(uint160 attester);
     error AttesterInvalid();
-    error ProofAlreadyUsed(bytes32 nullilier);
     error NullifierAlreadyUsed(uint256 nullilier);
     error AttesterIdNotMatch(uint160 attesterId);
     error OutOfRange();

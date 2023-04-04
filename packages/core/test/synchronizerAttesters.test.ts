@@ -40,7 +40,7 @@ describe('Synchronizer watch multiple attesters', function () {
         for (let x = 0; x < ATTESTER_COUNT; x++) {
             await unirepContract
                 .connect(accounts[x])
-                .attest(x, 0, 1, x)
+                .attest(x + 2, 0, 1, x + 1)
                 .then((t) => t.wait())
         }
         const sync = await genUnirepState(
@@ -57,7 +57,7 @@ describe('Synchronizer watch multiple attesters', function () {
             expect(attesterId.toString()).to.equal(
                 BigInt(accounts[x].address).toString()
             )
-            expect(epochKey.toString()).to.equal(x.toString())
+            expect(epochKey.toString()).to.equal((x + 2).toString())
         }
         sync.stop()
     })

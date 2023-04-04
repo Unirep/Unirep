@@ -137,7 +137,7 @@ describe('Attester signs up and gives attestation', function () {
         const epoch = await userState.sync.loadCurrentEpoch()
         await unirepContract
             .connect(attester)
-            .attest('0x01', epoch, 1, 1)
+            .attest('0x02', epoch, 1, 1)
             .then((t) => t.wait())
         await userState.waitForSync()
         userState.sync.stop()
