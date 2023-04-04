@@ -58,7 +58,7 @@ describe('User state transition', function () {
         expect(publicSignals[2]).to.equal(transitionNullifier.toString())
     })
 
-    it('should do a user state transition with new rep', async () => {
+    it('should do a user state transition with new rep (without replacement field)', async () => {
         const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
@@ -67,9 +67,10 @@ describe('User state transition', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
         const epochKey = genEpochKey(id.secret, attesterId, fromEpoch, 0)
-        const changes = Array(FIELD_COUNT)
+        const changes = Array(SUM_FIELD_COUNT)
             .fill(0)
             .map(() => BigInt(Math.floor(Math.random() * 100)))
+        changes.push(...Array(FIELD_COUNT - SUM_FIELD_COUNT).fill(0))
         const circuitInputs = genUserStateTransitionCircuitInput({
             id,
             fromEpoch,
@@ -97,6 +98,60 @@ describe('User state transition', function () {
                     return d + changes[i]
                 } else {
                     return d
+                }
+            })
+        )
+        expect(publicSignals[1]).to.equal(newLeaf.toString())
+        const transitionNullifier = genUserStateTransitionNullifier(
+            id.secret,
+            attesterId,
+            fromEpoch
+        )
+        expect(publicSignals[2]).to.equal(transitionNullifier.toString())
+    })
+
+    it('should do a user state transition with new rep (with replacement field)', async () => {
+        const id = new Identity()
+        const fromEpoch = 1
+        const toEpoch = 5
+        const attesterId = BigInt(124185915945829581290)
+        const data = randomData()
+        const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        tree.insert(genStateTreeLeaf(id.secret, attesterId, fromEpoch, data))
+        const epochKey = genEpochKey(id.secret, attesterId, fromEpoch, 0)
+        const changes = Array(SUM_FIELD_COUNT)
+            .fill(0)
+            .map(() => BigInt(Math.floor(Math.random() * 100)))
+        for (let i = SUM_FIELD_COUNT; i < FIELD_COUNT; i++) {
+            changes.push(data[i] + BigInt(Math.floor(Math.random() * 100)))
+        }
+        const circuitInputs = genUserStateTransitionCircuitInput({
+            id,
+            fromEpoch,
+            toEpoch,
+            attesterId,
+            startBalance: data,
+            tree,
+            leafIndex: 0,
+            epochKeyBalances: {
+                [epochKey.toString()]: changes,
+            },
+        })
+        const { isValid, publicSignals } = await genProofAndVerify(
+            Circuit.userStateTransition,
+            circuitInputs
+        )
+        expect(isValid).to.be.true
+        expect(publicSignals[0]).to.equal(tree.root.toString())
+        const newLeaf = genStateTreeLeaf(
+            id.secret,
+            attesterId,
+            toEpoch,
+            data.map((d, i) => {
+                if (i < SUM_FIELD_COUNT) {
+                    return d + changes[i]
+                } else {
+                    return changes[i]
                 }
             })
         )
