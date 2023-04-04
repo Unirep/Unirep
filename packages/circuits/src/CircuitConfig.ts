@@ -1,9 +1,9 @@
 import { SNARK_SCALAR_FIELD } from '@unirep/utils'
 
 const defaultConfig = {
-    STATE_TREE_DEPTH: 12,
-    EPOCH_TREE_DEPTH: 4,
-    EPOCH_TREE_ARITY: 3,
+    STATE_TREE_DEPTH: 10,
+    EPOCH_TREE_DEPTH: 10,
+    EPOCH_TREE_ARITY: 2,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH: 3,
     FIELD_COUNT: 6, // total number of fields
     SUM_FIELD_COUNT: 4, // number of fields combined using addition
